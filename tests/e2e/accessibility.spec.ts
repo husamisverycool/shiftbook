@@ -34,3 +34,28 @@ test("converter steps have no serious accessibility problems", async ({ page }) 
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
   await check(page, "source panel");
 });
+
+test("totals and files steps, with their dialogs, have no serious accessibility problems", async ({ page }) => {
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  await page.goto("/en/convert");
+  await page.getByRole("link", { name: "Start" }).first().click();
+  await page.getByTestId("file-input").setInputFiles(["demo/samples/2026-10-05/IL-prairie-line-timeclock-2026-10-05.csv", "demo/samples/2026-10-05/CA-pacific-crest-fieldglass-approved-time-sheets.csv"]);
+  await expect(page.getByTestId("document-row")).toHaveCount(2, { timeout: 60_000 });
+  await page.getByTestId("forward").click();
+  await expect(page.getByTestId("hours-grid").or(page.getByText("Nothing needs review"))).toBeVisible();
+  await page.getByTestId("forward").click();
+  await expect(page.getByRole("heading", { level: 1, name: "Review totals" })).toBeVisible({ timeout: 60_000 });
+  await check(page, "review totals (blocked)");
+  await page.getByTestId("skip-workers").first().click();
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  await check(page, "skip dialog");
+  await page.locator("#skip-reason").fill("Paid separately (test)");
+  await page.getByTestId("confirm-skip").click();
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await check(page, "review totals (ready)");
+  await page.getByRole("tab", { name: "Billing" }).click();
+  await check(page, "review totals (billing tab)");
+  await page.getByTestId("forward").click();
+  await expect(page.getByRole("heading", { level: 1, name: "Files" })).toBeVisible({ timeout: 60_000 });
+  await check(page, "files");
+});

@@ -96,7 +96,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
                 {t(`blockers.${b.code}` as "blockers.invalid_input")}
                 {b.workerIds.length > 0 && <span className="font-normal"> · {t("blockerCount", { count: b.workerIds.length })}</span>}
               </AlertTitle>
-              <AlertDescription className="flex flex-col gap-2">
+              <AlertDescription className="flex flex-col gap-2 text-foreground!">
                 {b.ruleCodes.length > 0 ? (
                   <div className="flex flex-col gap-1">
                     <p>

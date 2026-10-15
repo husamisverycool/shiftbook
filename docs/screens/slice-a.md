@@ -43,7 +43,8 @@ Screen: `slice-a/en-4-upload-done.png`.
 - ✓ Refused files listed in the panel with the reason (already uploaded, unsupported type,
   too large).
 - ✓ Processing section while files are read; the list refreshes on its own.
-- ✓ Failed reading: red indicator, the message, and "Try again".
+- ✓ Failed reading: red indicator, the message, "Try again", and "Archive" with a required reason
+  (Dext archive); archived files stay in the list marked Archived.
 - Differences (the converter uses the upload part of the inbox; the full `/inbox` page is a later
   slice):
   - No page header with search, filters and export.
@@ -103,7 +104,10 @@ Screens: `slice-a/en-6-totals-blocked.png`, `slice-a/en-7-totals-ready.png`,
   workers.
 - ✓ A blocker that can be resolved here offers to skip the workers for this run, with a required
   reason.
-- ✓ Entry-level blockers link back to Review hours.
+- ✓ Entry-level blockers link back to Review hours; timesheet blockers (still reading, could not be
+  read) link back to Upload.
+- ✓ A possible double-counted day offers "Both are real" with a required reason (cleared if either
+  entry changes later).
 - ✓ Warnings can be dismissed; blockers cannot.
 - ✓ Summary heading and a one-row figures table: workers · regular hours · overtime hours · gross
   pay · billed.
@@ -138,6 +142,12 @@ Screens: `slice-a/invoice-1.png`, `slice-a/invoice-2.png`.
 - Differences:
   - No memo block and no Ship-to column (neither applies).
   - Letter size only (A4 not offered yet).
+
+## Accessibility
+`tests/e2e/accessibility.spec.ts` runs axe (WCAG 2.1 A/AA) on every step and dialog: no serious or
+critical problems. Two token choices were made for contrast, not taste: the demo banner's text and
+the body text inside blocker alerts use the theme's regular foreground colour (the default muted and
+translucent red text failed contrast); titles and icons keep their colours.
 
 ## Known gaps across the slice
 - Photos and the signed PDF are read only from recorded readings in demo mode. None exist until
