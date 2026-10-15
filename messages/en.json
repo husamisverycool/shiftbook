@@ -21,6 +21,7 @@
       "REG": "Regular",
       "OT": "Overtime",
       "DT": "Double time",
+      "MW_TRUEUP": "Minimum-wage top-up",
       "HOL": "Holiday",
       "DIFF": "Differential",
       "MEAL_PREMIUM": "Meal premium",

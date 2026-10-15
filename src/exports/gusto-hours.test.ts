@@ -209,3 +209,29 @@ describe("Gusto hours CSV — fifth review fixes", () => {
     expect(code(() => renderGustoHours(fixture))).toBe("invalid_pay_line");
   });
 });
+
+describe("Gusto hours CSV — pay the engine now computes but this file cannot carry", () => {
+  it("refuses a minimum-wage top-up line and says what to do", () => {
+    const fixture = base({
+      payLines: [
+        { workerId: "w1", type: "REG", minutes: 480, amountCents: 11_600, rate: { num: 1450, den: 1 } },
+        { workerId: "w1", type: "MW_TRUEUP", minutes: 480, amountCents: 400, rate: { num: 50, den: 1 } },
+      ],
+    });
+    expect(() => renderGustoHours(fixture)).toThrowError(ExportError);
+    expect(() => renderGustoHours(fixture)).toThrowError("cannot carry a minimum-wage top-up (the rate card is below the minimum wage); fix the rate card");
+  });
+
+  it("refuses overtime on a weighted regular rate plainly, even when its fraction is large", () => {
+    const fixture = base({
+      payLines: [
+        { workerId: "w1", type: "REG", minutes: 1800, amountCents: 60_000, rate: { num: 2000, den: 1 } },
+        { workerId: "w1", type: "REG", minutes: 600, amountCents: 17_000, rate: { num: 1700, den: 1 } },
+        { workerId: "w1", type: "OT", minutes: 360, amountCents: 15_887, rate: { num: 60_900, den: 23 } },
+      ],
+    });
+    expect(() => renderGustoHours(fixture)).toThrowError(expect.objectContaining({ code: "several_pay_rates" }));
+    const huge = base({ payLines: [{ workerId: "w1", type: "OT", minutes: 10_000, amountCents: 1, rate: { num: 200_000_000_000_007, den: 10_079 } }] });
+    expect(() => renderGustoHours(huge)).toThrowError(ExportError);
+  });
+});

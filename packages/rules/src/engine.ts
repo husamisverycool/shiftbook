@@ -4,7 +4,8 @@
  *
  * Order per worker-week (SPEC §9):
  *   1. classify minutes        — validate shifts, group into fixed workweeks, jurisdiction gate
- *   2. apply wage floor        — block pay below the highest applicable minimum wage
+ *   2. apply wage floor        — the highest applicable minimum wage each day; a rate card below it
+ *                                is topped up on a separate line, with a warning
  *   3. straight pay            — regular minutes × the pay rate in effect for each shift
  *   4. regular rate            — the weighted average of the week's rates, exact (29 C.F.R. § 778.115)
  *   5. overtime                — weekly overtime, most protective rule once, never double counted
@@ -23,14 +24,14 @@ import { overtimeRate, premiumBase, RATE_FLOOR_CITATION, REGULAR_RATE_CITATION, 
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-c1";
+export const RULES_VERSION = "2026.10-c2";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set([WEEKLY_OVERTIME, MINIMUM_WAGE]);
 /** Federal rules that must always be present; without them nothing is computed. */
 const REQUIRED_FEDERAL_RULES = [WEEKLY_OVERTIME, MINIMUM_WAGE];
 
-const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
+const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "MW_TRUEUP", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
 const MINUTES_PER_DAY = 1440;
 /** Bounds that keep every product inside safe integers: $100,000/h, factors up to 1000. */
 const MAX_RATE_CENTS = 10_000_000;
@@ -133,6 +134,8 @@ interface Bucket {
   overtimeEntries: string[];
   /** Overtime minutes by the premium's base (the regular rate, or a day's higher minimum wage). */
   overtimeParts: { key: string; base: Fraction; floorApplies: boolean; minutes: number; entries: string[] }[];
+  /** Minutes paid below the minimum wage, by that minimum: each gets the difference on a top-up line. */
+  trueUps: { floor: number; minutes: number; entries: string[]; dates: string[]; citations: string[] }[];
   /** How the bill rate came about on the regular and the overtime line: each distinct working (never splits a line). */
   billRate: { regular: BillRateWorking; overtime: BillRateWorking };
 }
@@ -312,6 +315,8 @@ export function computePay(input: PayInput): PayResult {
     // 2. wage floor: the highest of the federal, state and local minimum wage on each day worked.
     const seen = new Set<string>();
     const floorOf = new Map<Shift, number>();
+    const floorCitations = new Map<Shift, string[]>();
+    const weekWarnings: Issue[] = [];
     for (const s of shifts) {
       const floor = selectMinimumWage(rules.minimumWageRules, s, s.date);
       if (!floor.ok) {
@@ -324,10 +329,11 @@ export function computePay(input: PayInput): PayResult {
         continue;
       }
       floorOf.set(s, floor.rateCents);
+      floorCitations.set(s, floor.citations);
       const k = `${s.payRateCents}|${floor.rateCents}`;
       if (s.payRateCents < floor.rateCents && !seen.has(k)) {
         seen.add(k);
-        weekBlockers.push({ code: "below_minimum_wage", ...who, jurisdiction: s.jurisdiction, ruleCode: MINIMUM_WAGE, date: s.date, entryIds: s.entryIds, message: `${first.workerName} on ${s.date}: pay rate ${formatRate({ num: s.payRateCents, den: 1 })} is below the minimum wage of ${formatRate({ num: floor.rateCents, den: 1 })} (${floor.citations.join("; ")}).` });
+        weekWarnings.push({ code: "below_minimum_wage", ...who, jurisdiction: s.jurisdiction, ruleCode: MINIMUM_WAGE, date: s.date, entryIds: s.entryIds, message: `${first.workerName} on ${s.date}: pay rate ${formatRate({ num: s.payRateCents, den: 1 })} is below the minimum wage of ${formatRate({ num: floor.rateCents, den: 1 })} (${floor.citations.join("; ")}). A top-up line pays the difference; fix the rate card.` });
       }
     }
 
@@ -351,14 +357,16 @@ export function computePay(input: PayInput): PayResult {
     const totalMinutes = shifts.reduce((sum, s) => sum + s.minutes, 0);
     const overtimeMinutes = splits.reduce((sum, s) => sum + s.overtime, 0);
 
-    // 4. regular rate: the weighted average of the week's rates, exact (one rate: that rate).
-    const singleRate = new Set(shifts.map((s) => s.payRateCents)).size === 1;
-    const regularRate = weightedRegularRate(shifts);
-
     if (weekBlockers.length > 0) {
       blockers.push(...weekBlockers);
       continue;
     }
+
+    // 4. regular rate: the weighted average of the week's rates, exact (one rate: that rate).
+    // Every minute counts at least at that day's minimum wage (a rate card below it is topped up).
+    const effective = (s: Shift) => Math.max(s.payRateCents, floorOf.get(s)!);
+    const singleRate = new Set(shifts.map(effective)).size === 1 && shifts.every((s) => s.payRateCents >= floorOf.get(s)!);
+    const regularRate = weightedRegularRate(shifts.map((s) => ({ minutes: s.minutes, payRateCents: effective(s) })));
 
     // Overtime allocation follows the order of work; flag days where that order was assumed.
     const otDays = new Set(splits.filter((x) => x.overtime > 0).map((x) => x.shift.date));
@@ -373,7 +381,7 @@ export function computePay(input: PayInput): PayResult {
     const buckets = new Map<string, Bucket>();
     splits.forEach(({ shift, regular, overtime }, index) => {
       const k = lineKey(shift);
-      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], overtimeParts: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } } };
+      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], overtimeParts: [], trueUps: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } } };
       if (regular > 0) noteWorking(b.billRate.regular, shift.billRateExplain);
       if (overtime > 0) noteWorking(b.billRate.overtime, shift.billRateExplain);
       b.regular += regular;
@@ -386,6 +394,14 @@ export function computePay(input: PayInput): PayResult {
         const part = b.overtimeParts.find((p) => p.key === partKey) ?? b.overtimeParts[b.overtimeParts.push({ key: partKey, base, floorApplies, minutes: 0, entries: [] }) - 1]!;
         part.minutes += overtime;
         part.entries.push(...shift.entryIds);
+      }
+      const floor = floorOf.get(shift)!;
+      if (shift.payRateCents < floor) {
+        const t = b.trueUps.find((x) => x.floor === floor) ?? b.trueUps[b.trueUps.push({ floor, minutes: 0, entries: [], dates: [], citations: [] }) - 1]!;
+        t.minutes += shift.minutes;
+        t.entries.push(...shift.entryIds);
+        if (!t.dates.includes(shift.date)) t.dates.push(shift.date);
+        for (const c of floorCitations.get(shift) ?? []) if (!t.citations.includes(c)) t.citations.push(c);
       }
       buckets.set(k, b);
     });
@@ -441,6 +457,13 @@ export function computePay(input: PayInput): PayResult {
           weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `Overtime not billed: ${formatDuration(b.overtime)} (${b.overtime} min) → ${formatCents(0)}. Client profile marks overtime not billable.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
         }
       }
+      // 2 (paid). minimum-wage top-up for every minute paid below that day's minimum
+      for (const t of b.trueUps) {
+        const rate: Fraction = { num: t.floor - b.sample.payRateCents, den: 1 };
+        const pay = arithmetic("Minimum-wage top-up", t.minutes, rate, ` (${formatRate({ num: t.floor, den: 1 }).replace("/h", "")} minimum wage − ${formatRate(payRate).replace("/h", "")} pay rate)`);
+        const why = `Rule ${MINIMUM_WAGE}: the pay rate is below the minimum wage on ${t.dates.join(", ")} (${t.citations.join("; ")}), so the difference is paid for every hour worked.`;
+        weekPay.push({ ...base, type: "MW_TRUEUP", minutes: t.minutes, rate, amountCents: pay.amountCents, ruleId: MINIMUM_WAGE, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(t.entries) });
+      }
       // 6. confirmed premiums — slice (c).
     }
 
@@ -451,6 +474,7 @@ export function computePay(input: PayInput): PayResult {
     }
     payLines.push(...weekPay);
     billLines.push(...weekBill);
+    warnings.push(...weekWarnings);
   }
 
   const order = (a: Line, b: Line) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);

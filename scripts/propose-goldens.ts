@@ -153,18 +153,12 @@ ruleCase(
 );
 
 ruleCase(
-  "below-minimum-wage-blocked",
-  "Illinois worker paid $14.50/h in October 2026. The Illinois minimum wage has been $15.00/h since January 1, 2025 (820 ILCS 105/4(a)(1)), so the week is blocked and nothing is paid or billed until the rate is fixed.",
+  "below-minimum-wage-topped-up",
+  "Illinois worker on a $14.50/h rate card in October 2026, 8 hours. The Illinois minimum wage has been $15.00/h since January 1, 2025 (820 ILCS 105/4(a)(1)), so the 8 hours are paid at the rate card ($116.00) plus a minimum-wage top-up of 8 × $0.50 = $4.00 on its own line, and a warning asks for the rate card to be fixed. The client is billed at the bill rate only: 8 × $26.50 = $212.00.",
   input([shift(WEEK[0]!, 480, { payRateCents: 1450 })]),
-  { pay: [], bill: [], blockers: ["below_minimum_wage"] },
+  { pay: [["REG", 480, 11600], ["MW_TRUEUP", 480, 400]], bill: [["REG", 480, 21200]] },
 );
 
-ruleCase(
-  "chicago-local-ordinance-blocked",
-  "A worksite in Chicago (Cook County), Illinois. Chicago and Cook County have their own minimum wage ordinances that are not modeled yet, so the week is held with two reasons rather than paid at the state rate.",
-  input([shift(WEEK[0]!, 480, { countyFips: "17031", placeFips: "1714000", payRateCents: 1800 })]),
-  { pay: [], bill: [], blockers: ["rule_not_supported_yet", "rule_not_supported_yet"] },
-);
 
 ruleCase(
   "multi-rate-regular-rate",
@@ -177,6 +171,20 @@ ruleCase(
     pay: [["REG", 1800, 60000], ["REG", 600, 17000], ["OT", 360, 15887]],
     bill: [["REG", 1800, 84000], ["REG", 600, 24000], ["OT", 360, 21600]],
   },
+);
+
+ruleCase(
+  "chicago-minimum-wage-rises-july-1",
+  "A Chicago worksite (Cook County), rate card $16.60/h, 8 hours a day Monday June 29 to Friday July 3, 2026. Chicago's minimum wage is $16.60/h until June 30 and $17.05/h from July 1 (Chicago Municipal Code ch. 6-105), higher than Cook County's and Illinois's. Monday and Tuesday are paid at the rate card; Wednesday to Friday also get a top-up of 24 h × $0.45 = $10.80. Pay: 40 × $16.60 = $664.00 + $10.80 = $674.80. Bill: 40 × $26.50 = $1,060.00.",
+  input(["2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03"].map((d) => shift(d, 480, { countyFips: "17031", placeFips: "1714000", payRateCents: 1660 }))),
+  { pay: [["REG", 2400, 66400], ["MW_TRUEUP", 1440, 1080]], bill: [["REG", 2400, 106000]] },
+);
+
+ruleCase(
+  "cook-county-minimum-wage",
+  "An Evanston worksite (Cook County, outside Chicago), rate card $15.20/h, 8 hours in October 2026. Cook County's minimum wage is $15.40/h from July 1, 2026 (Cook County Code § 42-13), above Illinois's $15.00, and no opt-out by Evanston is on file, so the county rate applies: $121.60 at the rate card plus a top-up of 8 × $0.20 = $1.60. Bill: 8 × $26.50 = $212.00.",
+  input([shift(WEEK[0]!, 480, { countyFips: "17031", placeFips: "1724582", payRateCents: 1520 })]),
+  { pay: [["REG", 480, 12160], ["MW_TRUEUP", 480, 160]], bill: [["REG", 480, 21200]] },
 );
 
 // ---------- export goldens ----------

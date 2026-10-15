@@ -74,6 +74,7 @@ export const earningType = pgEnum("earning_type", [
   "REG",
   "OT",
   "DT",
+  "MW_TRUEUP",
   "HOL",
   "DIFF",
   "MEAL_PREMIUM",

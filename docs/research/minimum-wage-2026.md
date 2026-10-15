@@ -14,8 +14,11 @@ Verified by a research subagent against primary sources. Feeds `minimum_wage_rul
 
 Scope notes:
 - Cook County's rate does not apply in Chicago (own ordinance) or in municipalities that opted out; the
-  county publishes no current opt-out list. **Decision:** Cook County and Chicago worksites are held
-  ("local_minimum_wage" not implemented) until slice (c) models local ordinances, instead of guessing.
+  county publishes no current opt-out list. **Decision (slice c, 2026-10-15):** both are modeled as
+  dated local rates (drizzle/0015). The Cook County rate applies everywhere in the county outside
+  Chicago unless a municipality's opt-out is on file with its source (none is): paying the county
+  rate where it might not apply is lawful, paying less where it does is not. Before slice (c),
+  these worksites were held.
 - No other Illinois local minimum wage found (not an exhaustive statewide list). Joliet (Will/Kendall
   counties) is outside Cook County; no ordinance found.
 - Massachusetts has no local minimum wages: Amend. Art. 89 § 7(5) of the state constitution bars

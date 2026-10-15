@@ -256,11 +256,34 @@ describe("computePay — second-opinion review fixes", () => {
     expect(r.blockers.map((b) => b.code)).toEqual(["rule_data_missing"]);
   });
 
-  it("blocks pay below the applicable minimum wage (the highest of federal, state and local)", () => {
-    const r = computePay(input([shift(WEEK[0]!, 480, { payRateCents: 500 })]));
-    expect(r.payLines).toEqual([]);
-    expect(r.blockers[0]).toMatchObject({ code: "below_minimum_wage", jurisdiction: "IL" });
-    expect(r.blockers[0]!.message).toContain("$15.00/h");
+  it("tops up pay below the applicable minimum wage (the highest of federal, state and local), and warns", () => {
+    const r = computePay(input([shift(WEEK[0]!, 480, { payRateCents: 1450 })]));
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => [l.type, l.minutes, l.rate, l.amountCents])).toEqual([
+      ["REG", 480, { num: 1450, den: 1 }, 11_600],
+      ["MW_TRUEUP", 480, { num: 50, den: 1 }, 400],
+    ]);
+    expect(r.payLines[1]!.explain).toContain("Minimum-wage top-up: 8h 00m (480 min) × $0.50/h ($15.00 minimum wage − $14.50 pay rate) = 400¢ exactly → $4.00.");
+    expect(r.payLines[1]!.ruleId).toBe("minimum_wage");
+    // The client is billed at the bill rate only; the top-up is the agency's.
+    expect(r.billLines.map((l) => [l.type, l.amountCents])).toEqual([["REG", 21_200]]);
+    expect(r.warnings[0]).toMatchObject({ code: "below_minimum_wage", jurisdiction: "IL" });
+    expect(r.warnings[0]!.message).toContain("$15.00/h");
+  });
+
+  it("pays overtime on a regular rate raised to the minimum wage, never on the low rate card", () => {
+    // $14.50 all week, 45 hours, minimum $15.00: 45 h × $15.00 + ½ × $15.00 × 5 h = $712.50.
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 540, { payRateCents: 1450 }))));
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
+      ["REG", 2400, 58_000],
+      ["OT", 300, 11_000],
+      ["MW_TRUEUP", 2700, 2250],
+    ]);
+    expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(71_250);
+    const ot = r.payLines.find((l) => l.type === "OT")!;
+    expect(ot.explain).not.toContain("1.5 × $14.50");
+    expect(ot.explain).toContain("$14.50 + 0.5 × regular rate $15.00/h");
   });
 
   it("blocks worksites covered by a local ordinance the engine does not implement yet", () => {
@@ -451,8 +474,10 @@ describe("computePay — fourth review fixes", () => {
 
     const willRate: MinimumWageRule = { jurisdiction: "IL", countyFips: WILL, scopeName: "Will County", rateCents: 1900, effectiveFrom: "2026-01-01", effectiveTo: null, citation: "hypothetical Will County ordinance — $19.00" };
     const below = computePay(input([shift(WEEK[0]!, 480)], { jurisdictionRules, minimumWageRules: [...MIN_WAGE, willRate] }));
-    expect(codes(below)).toEqual([["below_minimum_wage", "minimum_wage"]]);
-    expect(below.blockers[0]!.message).toContain("$19.00/h");
+    expect(codes(below)).toEqual([]);
+    expect(below.warnings.map((w) => [w.code, w.ruleCode])).toEqual([["below_minimum_wage", "minimum_wage"]]);
+    expect(below.warnings[0]!.message).toContain("$19.00/h");
+    expect(below.payLines.find((l) => l.type === "MW_TRUEUP")).toMatchObject({ minutes: 480, rate: { num: 75, den: 1 }, amountCents: 600 });
   });
 
   it("blocks local overtime rules (not implemented in this version)", () => {
@@ -663,6 +688,28 @@ describe("computePay — regular rate as the weighted average of the week's rate
     const ot = r.payLines.find((l) => l.type === "OT")!;
     expect(ot).toMatchObject({ minutes: 360, rate: { num: 2450, den: 1 }, amountCents: 14_700 });
     expect(ot.explain).toContain("the minimum wage that day, $16.00/h, is higher than the regular rate");
+  });
+
+  it("tops up the days a new minimum wage covers, and bases those days' overtime premium on it", () => {
+    const minimumWageRules = [
+      ...MIN_WAGE.filter((m) => m.jurisdiction !== "IL"),
+      { jurisdiction: "IL", rateCents: 1500, effectiveFrom: "2025-01-01", effectiveTo: "2026-10-14", citation: "820 ILCS 105/4(a)(1)" },
+      { jurisdiction: "IL", rateCents: 1600, effectiveFrom: "2026-10-15", effectiveTo: null, citation: "820 ILCS 105/4(a)(1) (test rise)" },
+    ];
+    const shifts = [
+      ...G2.slice(0, 3).map((d) => shift(d, 600, { assignmentId: "aA", payRateCents: 1500 })),
+      ...G2.slice(3).map((d) => shift(d, 480, { assignmentId: "aB", payRateCents: 1550 })),
+    ];
+    const r = computePay(input(shifts, { minimumWageRules }));
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => [l.assignmentId, l.type, l.minutes, l.amountCents])).toEqual([
+      ["aA", "REG", 1800, 45_000],
+      ["aB", "REG", 600, 15_500],
+      ["aB", "OT", 360, 14_100],
+      ["aB", "MW_TRUEUP", 960, 800],
+    ]);
+    // 30 h × $15.00 + 16 h × $16.00 + ½ × $16.00 × 6 h = $754.00.
+    expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(75_400);
   });
 
   it("computes very large weeks exactly, without leaving safe integers", () => {

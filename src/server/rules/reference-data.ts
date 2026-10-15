@@ -45,16 +45,16 @@ export const REFERENCE_JURISDICTION_RULES: JurisdictionRule[] = [
   j("IL", "minimum_wage", "820 ILCS 105/4"),
   j("MA", "minimum_wage", "M.G.L. c. 151, § 1"),
   j("CA", "minimum_wage", "Cal. Lab. Code § 1182.12"),
-  // Census FIPS codes: Cook County, IL = 17031; City of Chicago = 1714000.
-  j("IL", "local_minimum_wage", "Cook County Code § 42-13 (Ord. 16-5768); municipalities may opt out", { countyFips: "17031", scopeName: "Cook County" }),
-  j("IL", "local_minimum_wage", "Chicago Municipal Code ch. 6-105", { placeFips: "1714000", scopeName: "City of Chicago" }),
+  // Census FIPS codes: Cook County, IL = 17031; City of Chicago = 1714000 (drizzle/0015).
+  j("IL", "minimum_wage", "Cook County Minimum Wage Ordinance, Cook County Code § 42-13 (Ord. 16-5768)", { countyFips: "17031", scopeName: "Cook County" }),
+  j("IL", "minimum_wage", "Chicago Minimum Wage Ordinance, Chicago Municipal Code ch. 6-105", { placeFips: "1714000", scopeName: "City of Chicago" }),
 ];
 
-const mw = (jurisdiction: string, rateCents: number, effectiveFrom: string, effectiveTo: string | null, citation: string): MinimumWageRule => ({
+const mw = (jurisdiction: string, rateCents: number, effectiveFrom: string, effectiveTo: string | null, citation: string, scope?: Scope): MinimumWageRule => ({
   jurisdiction,
-  countyFips: null,
-  placeFips: null,
-  scopeName: null,
+  countyFips: scope?.countyFips ?? null,
+  placeFips: scope?.placeFips ?? null,
+  scopeName: scope?.scopeName ?? null,
   rateCents,
   effectiveFrom,
   effectiveTo,
@@ -70,4 +70,9 @@ export const REFERENCE_MINIMUM_WAGE_RULES: MinimumWageRule[] = [
   mw("CA", 1650, "2025-01-01", "2025-12-31", "Cal. Lab. Code § 1182.12 — $16.50 per hour in 2025"),
   mw("CA", 1690, "2026-01-01", "2026-12-31", "Cal. Lab. Code § 1182.12 — $16.90 per hour in 2026"),
   mw("CA", 1740, "2027-01-01", null, "Cal. Lab. Code § 1182.12 — $17.40 per hour from January 1, 2027 (certified July 31, 2026)"),
+  // Local rates (drizzle/0015): applied wherever the worksite is inside the city or county.
+  mw("IL", 1660, "2025-07-01", "2026-06-30", "Chicago Municipal Code ch. 6-105; OLS Rule MW 2.01 — $16.60 per hour from July 1, 2025 (employers with 4 or more employees)", { placeFips: "1714000", scopeName: "City of Chicago" }),
+  mw("IL", 1705, "2026-07-01", null, "Chicago Municipal Code ch. 6-105; OLS Rule MW 2.01 — $17.05 per hour from July 1, 2026 (employers with 4 or more employees)", { placeFips: "1714000", scopeName: "City of Chicago" }),
+  mw("IL", 1500, "2025-07-01", "2026-06-30", "Cook County Code § 42-13 — $15.00 per hour from July 1, 2025 (held at the state rate)", { countyFips: "17031", scopeName: "Cook County" }),
+  mw("IL", 1540, "2026-07-01", null, "Cook County Code § 42-13 — $15.40 per hour from July 1, 2026", { countyFips: "17031", scopeName: "Cook County" }),
 ];

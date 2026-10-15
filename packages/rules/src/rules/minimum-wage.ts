@@ -11,10 +11,12 @@
  * - Massachusetts, M.G.L. c. 151, § 1.
  * - California, Cal. Lab. Code § 1182.12.
  *
- * Slice (a): a pay rate below the floor BLOCKS the run (SPEC §11 blocking check). The minimum-wage
- * true-up line (SPEC §23 golden) comes with the full rules engine. A local ordinance that is a plain
- * hourly floor is a local `minimum_wage` row plus a local rate row; ordinances with more to them
- * (opt-outs, employer-size tiers) carry their own rule code and block until modeled.
+ * A pay rate below the floor is topped up on its own line for every minute worked that day, with a
+ * warning to fix the rate card (minimum wage is owed per hour: 29 U.S.C. § 206; in California per
+ * hour, not averaged over the week — Armenta v. Osmose (2005) 135 Cal.App.4th 314). A local
+ * ordinance that is a plain hourly floor is a local `minimum_wage` row plus dated local rate rows
+ * (Chicago, Cook County); an ordinance with more to it carries its own rule code and blocks until
+ * modeled.
  */
 import { isEffective } from "../dates";
 import { isLocal, sameScope, scopeMatches } from "../places";

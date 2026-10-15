@@ -8,6 +8,8 @@ export type EarningType =
   | "REG"
   | "OT"
   | "DT"
+  /** The difference up to the minimum wage when a rate card is below it that day. */
+  | "MW_TRUEUP"
   | "HOL"
   | "DIFF"
   | "MEAL_PREMIUM"

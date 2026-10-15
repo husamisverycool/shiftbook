@@ -19,7 +19,7 @@
  * Reconciliation: the file is read back and must give the run's workers and minutes by type exactly
  * (two-decimal hours rounded up are within 0.4 minutes, so they round back to the exact minute).
  */
-import { ceilDiv, exactDecimal, floorDiv, formatCents, formatRate, mod, roundHalfUp, type EarningType, type Fraction } from "@shiftbook/rules";
+import { ceilDiv, exactDecimal, floorDiv, formatCents, formatRate, mod, roundHalfUp, roundHalfUpBig, type EarningType, type Fraction } from "@shiftbook/rules";
 import type { ControlTotals } from "../server/db/schema";
 import { readCsv, writeCsv } from "./csv";
 import { ExportError } from "./errors";
@@ -56,19 +56,29 @@ const GUSTO_MULTIPLIER: Record<HourColumn, Fraction> = {
   overtime_hours: { num: 3, den: 2 },
   double_overtime_hours: { num: 2, den: 1 },
 };
-const sameRate = (a: Fraction, b: Fraction) => a.num * b.den === b.num * a.den;
+const sameRate = (a: Fraction, b: Fraction) => BigInt(a.num) * BigInt(b.den) === BigInt(b.num) * BigInt(a.den);
+/** minutes × rate ÷ 60 rounded once, in big integers (a weighted overtime rate has a large denominator). */
+const lineCents = (minutes: number, rate: Fraction) => roundHalfUpBig(BigInt(minutes) * BigInt(rate.num), 60n * BigInt(rate.den));
 /** Name order that is the same on every machine: accents folded, case folded, plain comparison. */
 const sortKey = (name: string) => name.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const signedCents = (c: number) => (c >= 0 ? `+${formatCents(c)}` : `−${formatCents(-c)}`);
 
+/** Plain names for the earning types this file cannot carry, and what to do instead. */
+const NOT_CARRIED: Partial<Record<EarningType, string>> = {
+  MW_TRUEUP: "a minimum-wage top-up (the rate card is below the minimum wage); fix the rate card, or pay the top-up in Gusto as a separate amount",
+};
+
 function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): HourColumn {
   const mapped = map[type];
   const allowed = GUSTO_CAPABILITY[type];
   if (!mapped || !allowed || mapped !== allowed) {
+    const plain = NOT_CARRIED[type];
     throw new ExportError(
       "unsupported_earning_type",
-      `The Gusto hours file cannot carry earning type ${type}${mapped ? ` (mapped to "${mapped}")` : " (no column mapped)"}. It carries ${Object.keys(GUSTO_CAPABILITY).join(", ")} only.`,
+      plain
+        ? `The Gusto hours file carries regular, overtime and double-time hours only, so it cannot carry ${plain}.`
+        : `The Gusto hours file cannot carry earning type ${type}${mapped ? ` (mapped to "${mapped}")` : " (no column mapped)"}. It carries ${Object.keys(GUSTO_CAPABILITY).join(", ")} only.`,
     );
   }
   return allowed;
@@ -106,8 +116,8 @@ function checkLine(line: ExportFixture["payLines"][number], who: string): void {
     (!Number.isSafeInteger(line.minutes) || line.minutes < 0) ? `${line.minutes} minutes is not a whole number ≥ 0`
     : !Number.isSafeInteger(line.amountCents) ? `${line.amountCents} is not a whole number of cents`
     : (!Number.isSafeInteger(line.rate.num) || !Number.isSafeInteger(line.rate.den) || line.rate.num <= 0 || line.rate.den <= 0) ? "its rate is not a positive amount"
-    : roundHalfUp(line.minutes * line.rate.num, 60 * line.rate.den) !== line.amountCents
-      ? `${formatCents(line.amountCents)} is not ${line.minutes} min × ${formatRate(line.rate)} rounded once (${formatCents(roundHalfUp(line.minutes * line.rate.num, 60 * line.rate.den))})`
+    : lineCents(line.minutes, line.rate) !== line.amountCents
+      ? `${formatCents(line.amountCents)} is not ${line.minutes} min × ${formatRate(line.rate)} rounded once (${formatCents(lineCents(line.minutes, line.rate))})`
       : null;
   if (problem) throw new ExportError("invalid_pay_line", `${who}: the ${line.type} pay line cannot be exported because ${problem}.`);
 }
@@ -199,7 +209,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
     HOUR_COLUMNS.forEach((col, i) => {
       const rate = rates[col];
       if (!rate || minutes[col] === 0) return;
-      const gustoCents = roundHalfUp(hours[i]! * rate.num, 100 * rate.den);
+      const gustoCents = roundHalfUpBig(BigInt(hours[i]!) * BigInt(rate.num), 100n * BigInt(rate.den));
       payrollSystemGrossCents += gustoCents;
       const exactHours = hours[i]! * 60 === minutes[col] * 100;
       if (!exactHours || gustoCents !== amounts[col]) {
