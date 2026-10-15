@@ -585,7 +585,8 @@ describe("computePay — a bill rate's explanation never splits a line", () => {
     expect(withNote.payLines.map((l) => l.amountCents)).toEqual(without.payLines.map((l) => l.amountCents));
     expect(withNote.billLines.map((l) => l.amountCents)).toEqual(without.billLines.map((l) => l.amountCents));
     expect(withNote.billLines).toHaveLength(1);
-    expect(withNote.billLines[0]!.explain).toContain(`(${a})`);
+    // One shift's rate was typed and the other's worked out: the working is said to cover some shifts.
+    expect(withNote.billLines[0]!.explain).toContain(`Bill rate from the rate card (some shifts: ${a}).`);
   });
 
   it("puts the explanation on the overtime bill line as well", () => {

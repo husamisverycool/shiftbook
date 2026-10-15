@@ -196,6 +196,8 @@ export function settleDocumentClient(drafts: EntryDraft[], named: string | null)
     assignmentId: null,
     clientId,
     status: "needs_review",
+    // Held for a person: never offered to bulk approval as high confidence.
+    confidence: d.confidence === "low" ? "low" : "medium",
     reviewReasons: d.reviewReasons.includes(reason) ? d.reviewReasons : [...d.reviewReasons, reason],
   });
   return {

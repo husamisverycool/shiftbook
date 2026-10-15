@@ -6,8 +6,8 @@ import { MAX_PLACEMENT_FILE_BYTES } from "@/lib/limits";
 import { withAgency } from "@/server/db";
 import { StaleRequestError } from "@/server/errors";
 import { FIELDS, SOURCES, type Mapping, type Source } from "@/server/placements/fields";
-import type { Decisions } from "@/server/placements/plan";
-import { ImportFileError, runImport, saveDecision, saveMapping, startImport } from "@/server/placements/service";
+import type { DateOrder, Decisions } from "@/server/placements/plan";
+import { ImportFileError, runImport, saveDateOrder, saveDecision, saveMapping, startImport } from "@/server/placements/service";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { currentActor } from "@/server/session";
 import { agencyToday } from "@/server/settings";
@@ -19,7 +19,7 @@ const refresh = () => {
   revalidatePath("/[locale]/(app)/assignments", "page");
   revalidatePath("/[locale]/(app)/job-orders", "page");
 };
-type Refusal = "unsupported" | "empty" | "too_large" | "too_many_rows" | "busy" | "stale";
+type Refusal = "unsupported" | "empty" | "too_large" | "too_many_rows" | "no_header" | "busy" | "stale";
 
 // Every input is checked against its shape: a hand-made request gets the same refusal as a stale tab.
 const id = z.uuid();
@@ -28,6 +28,7 @@ const MappingSchema = z.partialRecord(z.enum(FIELDS), z.string().max(500));
 const KindSchema = z.enum(["worker", "client", "jobOrder", "status"]);
 const RawSchema = z.string().max(500);
 const ValueSchema = z.string().max(200).nullable();
+const DateOrderSchema = z.enum(["month_first", "day_first"]).nullable();
 
 async function guarded<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: Refusal }> {
   try {
@@ -42,7 +43,8 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { ok: false; error:
   }
 }
 
-export async function startImportAction(source: Source, form: FormData): Promise<{ ok: true; id: string; removed: string[] } | { ok: false; error: Refusal }> {
+/** Starts an import; the columns removed on receipt are kept on it and shown on the mapping step. */
+export async function startImportAction(source: Source, form: FormData): Promise<{ ok: true; id: string } | { ok: false; error: Refusal }> {
   const actor = currentActor();
   const file = form.get("file");
   if (!SourceSchema.safeParse(source).success) return { ok: false, error: "unsupported" };
@@ -51,7 +53,7 @@ export async function startImportAction(source: Source, form: FormData): Promise
   const bytes = new Uint8Array(await file.arrayBuffer());
   return guarded(async () => {
     const r = await withAgency(actor.agencyId, async (tx) => startImport(tx, actor, documentStore, { source, filename: file.name, bytes }, await agencyToday(tx)));
-    return { ok: true as const, ...r };
+    return { ok: true as const, id: r.id };
   });
 }
 
@@ -72,6 +74,15 @@ export async function saveDecisionAction(importId: string, kind: keyof Decisions
   }
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => saveDecision(tx, actor, importId, kind, raw, value));
+    return { ok: true as const };
+  });
+}
+
+export async function saveDateOrderAction(importId: string, order: DateOrder | null): Promise<{ ok: true } | { ok: false; error: Refusal }> {
+  const actor = currentActor();
+  if (!id.safeParse(importId).success || !DateOrderSchema.safeParse(order).success) return { ok: false, error: "stale" };
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => saveDateOrder(tx, actor, importId, order));
     return { ok: true as const };
   });
 }

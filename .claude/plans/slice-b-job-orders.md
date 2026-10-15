@@ -14,7 +14,14 @@ pattern files below (copied from the research notes, every claim with its URL).
   frame. 289 unit/integration/golden tests and 14 browser tests pass; screens compared in
   `docs/screens/slice-b.md`.
 - First outside review fixed (ended assignments, rate input checks, amounts, markup explanation).
-  Second review (import and fixes) running.
+- Second review fixed (sensitive columns, strict import rates, one client per timesheet).
+- Third review fixed: a file without a header row is refused before anything is kept; removed
+  columns are kept by position with why and shown on Match columns; Excel dates exact and the
+  date order a choice; old dates remove a column only when most are old and never the start or end
+  date; Excel SSN numbers keep their zeros; more SSN/birth-date spellings and formats; ZIP+4 kept;
+  source row numbers; review names the other client and offers "Confirmed with the client";
+  held entries are medium confidence. 411 unit/integration/golden tests, 16 browser tests pass.
+  Fourth review next.
 
 ## Goal (what the owner can do at the end)
 From a sidebar on every page: open **Job orders**, see them as a list grouped by client, open one
@@ -79,6 +86,13 @@ The converter moves inside the app frame (its route and pattern file do not chan
 - B3 import accepts Excel as well as CSV, because Spott exports Excel only.
 - B4 navigation frame: Linear's sidebar (the reference the root layout said was due before this
   slice).
+- B5 one client per timesheet (second review, to tell the owner): a timesheet's hours only take
+  that client's assignments, so a worker who moved clients is never billed to the new client by
+  mistake. Hours matched elsewhere wait in review, named with the other client; a person who
+  chose "Confirmed with the client" attaches them there (a sheet that really covers two clients).
+- B6 date order in the import (third review): read from the file (day first only when two or
+  more dates show it and none shows month first), shown date by date, and changeable by the
+  person, as Attio sets a date format in the review step. Excel date cells are always exact.
 
 ## Out of this slice
 Workers directory (slice k), client billing profiles editing (slice g), differentials and holiday

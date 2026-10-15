@@ -201,7 +201,7 @@
         "grand_total_mismatch": "El total general escrito no coincide",
         "duplicate_day_in_vms": "El día aparece en más de una hoja del VMS",
         "other": "Necesita revisión",
-        "assignment_at_other_client": "Coincide con una asignación de otro cliente",
+        "assignment_at_other_client": "La asignación del trabajador ese día es con otro cliente; si estas horas son de ese cliente, edite y elija “Confirmado con el cliente”",
         "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas"
       },
       "fields": {
@@ -242,7 +242,8 @@
         "several_assignments": "Ese trabajador tiene más de una asignación activa en esa fecha.",
         "worker_required": "Elige primero un trabajador.",
         "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar.",
-        "period_busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento."
+        "period_busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento.",
+        "assignment_at_other_client": "La asignación de ese trabajador en esa fecha es con {client}, no con el cliente de esta hoja de horas. Si estas horas son para {client}, elija “Confirmado con el cliente” y guarde de nuevo."
       },
       "history": "Historial",
       "historyEmpty": "Aún no hay cambios.",
@@ -759,7 +760,8 @@
       "too_large": "El archivo pesa más de 10 MB.",
       "busy": "Otra persona está cambiando órdenes de trabajo o pagando una semana ahora mismo. Inténtalo de nuevo en un momento.",
       "stale": "Esta importación cambió en otra pestaña o ventana. La página ahora muestra lo más reciente.",
-      "too_many_rows": "Una importación acepta hasta 2,000 filas. Divide el archivo e importa cada parte."
+      "too_many_rows": "Una importación acepta hasta 2,000 filas. Divide el archivo e importa cada parte.",
+      "no_header": "La primera fila debe tener los nombres de las columnas. En este archivo tiene una fecha o un número con forma de número de Seguro Social, así que parece una colocación. Agregue una fila con los nombres de las columnas arriba y vuelva a subirlo."
     },
     "back": "Atrás",
     "next": "Siguiente",
@@ -790,7 +792,8 @@
       "worker": "Trabajadores",
       "client": "Clientes",
       "jobOrder": "Órdenes de trabajo",
-      "status": "Estado"
+      "status": "Estado",
+      "dates": "Fechas"
     },
     "inFile": "En el archivo",
     "rows": "Filas",
@@ -864,16 +867,35 @@
     "pay": "Tarifa de pago",
     "bill": "Tarifa de cobro",
     "datesRead": {
-      "month_first": "Las fechas como 10/05/2026 se leen con el mes primero (5 de octubre).",
-      "day_first": "Las fechas como 05/10/2026 se leen con el día primero (5 de octubre), porque así las escribe el archivo."
+      "month_first": "Las fechas como 10/05/2026 se leen con el mes primero (5 de octubre). Puede cambiarlo en Revisar valores.",
+      "day_first": "Las fechas como 05/10/2026 se leen con el día primero (5 de octubre). Puede cambiarlo en Revisar valores."
     },
-    "removed": "{count, plural, one {Se quitó # columna y no se guardó} other {Se quitaron # columnas y no se guardaron}} porque puede contener números de Seguro Social o fechas de nacimiento: {columns}.",
     "rateRefusals": {
       "invalid": "las tarifas no son válidas",
       "paid": "una semana pagada ya usa esas fechas",
       "same_start": "ya hay una versión que empieza ese día",
       "no_default_multipliers": "la agencia no tiene multiplicadores de horas extra predeterminados",
       "other": "se rechazaron"
-    }
+    },
+    "removedTitle": "{count, plural, one {Se quitó # columna al recibir el archivo} other {Se quitaron # columnas al recibir el archivo}}",
+    "removedBody": "Nunca se guardaron ni se mostraron. Si necesita alguna, quite los datos sensibles del archivo y vuelva a subirlo.",
+    "removedColumn": "Columna {column} ({heading}): {reason}",
+    "removedReason": {
+      "heading": "su encabezado nombra un número de Seguro Social, un número fiscal o una fecha de nacimiento",
+      "ssn_values": "tiene números con forma de número de Seguro Social",
+      "birth_dates": "tiene fechas de nacimiento (la mayoría de sus fechas tienen 14 años o más, o una fecha está junto a una palabra como DOB)"
+    },
+    "dateOrder": {
+      "legend": "Cómo escribe las fechas este archivo",
+      "month_first": "Mes primero: 10/05/2026 es el 5 de octubre de 2026",
+      "day_first": "Día primero: 05/10/2026 es el 5 de octubre de 2026",
+      "auto": "Elegido según las fechas del archivo. Cámbielo si las fechas de abajo se leen mal.",
+      "chosen": "Elegido por usted."
+    },
+    "readsAs": "Se lee como",
+    "invalidFormat": "Formato no válido: las filas con este valor se omiten",
+    "invalidDates": "{count, plural, one {# fecha} other {# fechas}} con formato no válido",
+    "jobOrder": "Orden de trabajo",
+    "newBadge": "Nueva"
   }
 }

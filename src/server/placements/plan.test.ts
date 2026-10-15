@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { autoMap, PRESETS } from "./fields";
-import { distinctValues, planRows, type Catalog } from "./plan";
-import { dropSensitive } from "./sensitive";
+import { dateOrderOf, dateValues, distinctValues, planRows, type Catalog } from "./plan";
 
 const catalog: Catalog = {
   workers: [
@@ -14,51 +13,6 @@ const catalog: Catalog = {
   worksites: [{ id: "ws-joliet", clientId: "c-prairie" }],
   imported: new Set(["bullhorn|9001"]),
 };
-
-describe("sensitive columns never leave the upload, however they are written", () => {
-  const today = "2026-10-15";
-  it.each([
-    "S.S.N.", "SS#", "SS No", "SS Number", "Soc. Sec. No.", "social_security_number", "SocialSecurityNumber", "Employee SSN", "Tax ID", "ITIN",
-    "Birth_Date", "D.O.B.", "date_of_birth", "Born", "Birth", "Birthday", "Fecha de nacimiento", "Seguro Social", "Número de Seguro Social",
-  ])("drops a column headed %s", (heading) => {
-    const out = dropSensitive(["Name", heading], [["Anita Patel", "x"]], today);
-    expect(out.header).toEqual(["Name"]);
-    expect(out.removed).toEqual([heading]);
-  });
-
-  it.each(["900123456", "900 12 3456", "900.12.3456", "SSN 900123456", "900–12–3456", "900-12-3456"])("drops a column holding %s", (value) => {
-    const out = dropSensitive(["Name", "Notes"], [["Anita Patel", value]], today);
-    expect(out.header).toEqual(["Name"]);
-  });
-
-  it("drops a date column whose dates are at least 14 years old (birth dates), and keeps start dates", () => {
-    const out = dropSensitive(["Name", "Started", "When"], [["Anita Patel", "10/19/2026", "01/02/1990"], ["Bob Jones", "2026-10-19", "1991-03-04"]], today);
-    expect(out.header).toEqual(["Name", "Started"]);
-  });
-
-  it("keeps ordinary columns that only look a little alike", () => {
-    const out = dropSensitive(["Business Name", "Job Title", "Shift", "Placement ID"], [["Acme", "Assembler", "Day", "70001"]], today);
-    expect(out.header).toEqual(["Business Name", "Job Title", "Shift", "Placement ID"]);
-  });
-});
-
-describe("sensitive columns never leave the upload", () => {
-  it("drops SSN and birth-date columns by header, and any column holding SSN-shaped values", () => {
-    const header = ["ID", "Candidate", "SSN", "Date of Birth", "Notes", "Start Date"];
-    const rows = [
-      ["1", "Anita Patel", "900-11-2222", "01/02/1990", "ok", "10/12/2026"],
-      ["2", "Bob Jones", "", "", "id 900-33-4444 on file", "10/12/2026"],
-    ];
-    const out = dropSensitive(header, rows, "2026-10-15");
-    expect(out.header).toEqual(["ID", "Candidate", "Start Date"]);
-    expect(out.rows).toEqual([
-      ["1", "Anita Patel", "10/12/2026"],
-      ["2", "Bob Jones", "10/12/2026"],
-    ]);
-    expect(out.removed).toEqual(["SSN", "Date of Birth", "Notes"]);
-    expect(JSON.stringify(out)).not.toMatch(/\d{3}-\d{2}-\d{4}/);
-  });
-});
 
 describe("column mapping", () => {
   it("maps a Bullhorn placement list by its documented labels", () => {
@@ -186,11 +140,52 @@ describe("planning: rates, statuses and dates are read strictly", () => {
     expect(codes([row({ Status: "On hold" })], { status: { "On hold": "active" } })).toEqual(["create"]);
   });
 
-  it("reads day-first dates when the file shows it uses them, and month-first otherwise", () => {
-    const dayFirst = plan([row({ "Start Date": "19/10/2026" }), row({ Candidate: "Robert Jones", "Start Date": "05/11/2026" })]);
-    expect(dayFirst.map((p) => (p.outcome === "create" ? p.startDate : p.reason.code))).toEqual(["2026-10-19", "2026-11-05"]);
-    const monthFirst = plan([row({ "Start Date": "10/19/2026" }), row({ Candidate: "Robert Jones", "Start Date": "11/05/2026" })]);
-    expect(monthFirst.map((p) => (p.outcome === "create" ? p.startDate : p.reason.code))).toEqual(["2026-10-19", "2026-11-05"]);
+  it("reads dates day first only when at least two dates show it and none shows month first", () => {
+    const starts = (dates: string[], opts = {}) =>
+      planRows("other", header, dates.map((d, i) => row({ Candidate: i % 2 ? "Robert Jones" : "Anita Patel", "Start Date": d })), mapping, {}, catalog, opts).map((p) =>
+        p.outcome === "create" ? p.startDate : p.reason.code,
+      );
+    expect(dateOrderOf(["19/10/2026", "25/12/2026", "05/11/2026"])).toBe("day_first");
+    expect(starts(["19/10/2026", "25/12/2026", "05/11/2026"])).toEqual(["2026-10-19", "2026-12-25", "2026-11-05"]);
+    // One typo does not turn a whole US file around: that date alone is refused.
+    expect(dateOrderOf(["10/05/2026", "13/12/2026", "11/02/2026"])).toBe("month_first");
+    expect(starts(["10/05/2026", "13/12/2026", "11/02/2026"])).toEqual(["2026-10-05", "invalid_date", "2026-11-02"]);
+    // Signs both ways: month first, and the day-first dates are refused.
+    expect(dateOrderOf(["19/10/2026", "25/12/2026", "10/19/2026"])).toBe("month_first");
+  });
+
+  it("follows the order the person chose, and never re-reads an ISO date", () => {
+    const rows = [row({ "Start Date": "05/11/2026" }), row({ Candidate: "Robert Jones", "Start Date": "2026-10-05", "End Date": "2026-11-02" })];
+    const planned = planRows("other", header, rows, mapping, {}, catalog, { dateOrder: "day_first" });
+    expect(planned.map((p) => (p.outcome === "create" ? [p.startDate, p.endDate] : p.reason.code))).toEqual([
+      ["2026-11-05", null],
+      ["2026-10-05", "2026-11-02"],
+    ]);
+  });
+
+  it("lists each distinct date with what it reads as in the order used", () => {
+    const rows = [row({ "Start Date": "05/11/2026" }), row({ "Start Date": "05/11/2026", "End Date": "31/12/2026" }), row({ "Start Date": "2026-10-05" })];
+    expect(dateValues(header, rows, mapping, "month_first")).toEqual([
+      { raw: "31/12/2026", count: 1, date: null },
+      { raw: "05/11/2026", count: 2, date: "2026-05-11" },
+      { raw: "2026-10-05", count: 1, date: "2026-10-05" },
+    ]);
+    expect(dateValues(header, rows, mapping, "day_first").map((d) => d.date)).toEqual(["2026-11-05", "2026-10-05", "2026-12-31"]);
+  });
+
+  it("gives each row the number it has in the file, blank rows counted", () => {
+    const planned = planRows("other", header, [row(), row({ Candidate: "Robert Jones", "Start Date": "bad" })], mapping, {}, catalog, { rowNumbers: [4, 9] });
+    expect(planned.map((p) => p.row)).toEqual([4, 9]);
+  });
+
+  it("spells a new job order as the file first spells it, even when that row is skipped", () => {
+    const rows = [
+      row({ Candidate: "Maria Gomez", "Job Title": "Forklift Operator", Shift: "Night" }),
+      row({ "Job Title": "forklift operator", Shift: "night" }),
+    ];
+    const planned = planRows("other", header, rows, mapping, { jobOrder: { "c-prairie|forklift operator|night": "new:ws-joliet" } }, catalog);
+    expect(planned[0]).toMatchObject({ outcome: "skip", reason: { code: "not_on_roster" } });
+    expect(planned[1]).toMatchObject({ outcome: "create", jobOrder: { new: { position: "Forklift Operator", shift: "Night" } } });
   });
 
   it("refuses an over-long placement id", () => {

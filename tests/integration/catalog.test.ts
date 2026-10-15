@@ -12,11 +12,12 @@ import { cancelAssignment, createAssignment, setAssignmentDates } from "../../sr
 import { createJobOrder, updateJobOrder, type JobOrderInput } from "../../src/server/catalog/job-orders";
 import { addRateVersion, deleteRateVersion, editRateVersion } from "../../src/server/catalog/rate-cards";
 import type { RateInput } from "../../src/server/catalog/versions";
-import { agencies, assignments, auditEvents, billLines, payLines, rateCards, sourceDocuments, timeEntries, workers } from "../../src/server/db/schema";
+import { agencies, assignments, auditEvents, billLines, clients, payLines, rateCards, sourceDocuments, timeEntries, workers } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId, worksiteId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
 import { lockCatalog, PeriodBusyError, periodLock } from "../../src/server/run/period-lock";
+import { editEntry } from "../../src/server/review/service";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -229,9 +230,24 @@ describe("assignments", () => {
     );
     expect(late.length).toBeGreaterThan(0);
     expect(late.every((e) => e.status === "needs_review" && e.assignmentId === null && e.reviewReasons.includes("assignment_at_other_client"))).toBe(true);
+    // Held entries never show as high confidence: bulk approval could never take them.
+    expect(late.every((e) => e.confidence !== "high")).toBe(true);
     const run = await inAgency((tx) => computeRun(tx, actor, week));
     const bill = await inAgency((tx) => tx.select().from(billLines).where(eq(billLines.payRunId, run.runId)));
     expect(bill.some((l) => l.clientId === clientId("ma"))).toBe(false);
+
+    // Review names where the assignment is; a person who confirmed the client can attach it there.
+    const [ma] = await inAgency((tx) => tx.select().from(clients).where(eq(clients.id, clientId("ma"))));
+    const entry = late[0]!;
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["confirmed_worker"], ""))).toEqual({
+      ok: false,
+      error: "assignment_at_other_client",
+      client: ma!.name,
+    });
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["confirmed_client"], "Hours are for the Boston site"))).toEqual({ ok: true });
+    const [moved] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, entry.id)));
+    const [maAssignment] = await inAgency((tx) => tx.select().from(assignments).where(and(eq(assignments.workerId, workerId("anita-patel")), eq(assignments.jobOrderId, jobOrderId("ma-server")))));
+    expect(moved!.assignmentId).toBe(maAssignment!.id);
   });
 
   it("never moves an assignment's dates so that paid hours fall outside them", async () => {

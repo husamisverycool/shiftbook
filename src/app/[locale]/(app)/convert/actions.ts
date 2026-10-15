@@ -154,7 +154,7 @@ async function edited<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: 
   }
 }
 
-export async function editAction(entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy" }> {
+export async function editAction(entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy"; client?: string }> {
   const actor = currentActor();
   if (!ok(id, entryId) || !ok(ChangeSchema, change) || !ok(reasonsSchema, reasons) || !ok(text, note)) return { ok: false, error: "invalid_value" };
   return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, entryId, change, reasons, note)));

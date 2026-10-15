@@ -15,43 +15,70 @@ export class UnrecognisedFileError extends Error {
   }
 }
 
-export type Table = { header: string[]; rows: string[][] };
+/** A file's header and rows, with each row's own number in the spreadsheet (blank rows count). */
+export type Table = { header: string[]; rows: string[][]; rowNumbers: number[] };
 
-export function tableFromCsv(bytes: Uint8Array): Table {
-  const text = new TextDecoder().decode(bytes).replace(/^﻿/, "");
-  const all = readCsv(text).filter((r) => r.some((c) => c.trim() !== ""));
-  const [header = [], ...rows] = all;
-  return { header, rows };
+const blank = (r: string[]) => r.every((c) => c.trim() === "");
+
+function table(numbered: { n: number; values: string[] }[]): Table {
+  const [header, ...rows] = numbered;
+  return { header: header?.values ?? [], rows: rows.map((r) => r.values), rowNumbers: rows.map((r) => r.n) };
 }
 
-/** An Excel cell as the text a person sees: dates as MM/DD/YYYY, a formula's result, rich text joined, errors blank. */
-export function cellText(v: unknown): string {
+export function tableFromCsv(bytes: Uint8Array): Table {
+  const text = new TextDecoder().decode(bytes).replace(/^\uFEFF/, "");
+  return table(readCsv(text).flatMap((values, i) => (blank(values) ? [] : [{ n: i + 1, values }])));
+}
+
+export interface CellOptions {
+  /** "iso" writes date cells as 2026-10-05, which cannot be read with day and month swapped. */
+  dates?: "us" | "iso";
+  /** The cell's number format: a zero-padded one ("00000", Excel's SSN format) keeps its leading zeros. */
+  numFmt?: string;
+}
+
+/** A whole number in a format made only of zeros and dashes or spaces, as Excel shows it. */
+function padded(n: number, numFmt: string | undefined): string | null {
+  const format = (numFmt ?? "").replace(/["\\]/g, "");
+  if (!/^0+(?:[- ]0+)*$/.test(format) || !Number.isSafeInteger(n) || n < 0) return null;
+  const digits = String(n).padStart(format.replace(/[- ]/g, "").length, "0").split("");
+  let out = "";
+  for (let i = format.length - 1; i >= 0; i--) out = (format[i] === "0" ? digits.pop() : format[i]) + out;
+  return digits.join("") + out;
+}
+
+/**
+ * An Excel cell as the text a person sees: dates as MM/DD/YYYY (or ISO), a formula's result, rich
+ * text joined, errors blank, and zero-padded numbers with their zeros.
+ */
+export function cellText(v: unknown, opts: CellOptions = {}): string {
   if (v === null || v === undefined) return "";
   if (v instanceof Date) {
     const iso = v.toISOString().slice(0, 10);
-    return `${iso.slice(5, 7)}/${iso.slice(8, 10)}/${iso.slice(0, 4)}`;
+    return opts.dates === "iso" ? iso : `${iso.slice(5, 7)}/${iso.slice(8, 10)}/${iso.slice(0, 4)}`;
   }
+  if (typeof v === "number") return padded(v, opts.numFmt) ?? String(v);
   if (typeof v === "object") {
-    if ("result" in v) return cellText((v as { result: unknown }).result);
+    if ("result" in v) return cellText((v as { result: unknown }).result, opts);
     if ("richText" in v) return ((v as { richText: { text?: string }[] }).richText ?? []).map((r) => r.text ?? "").join("");
-    if ("text" in v) return cellText((v as { text: unknown }).text);
+    if ("text" in v) return cellText((v as { text: unknown }).text, opts);
     if ("error" in v) return "";
     return "";
   }
   return String(v);
 }
 
-export async function tableFromXlsx(bytes: Uint8Array): Promise<Table> {
+export async function tableFromXlsx(bytes: Uint8Array, opts: Pick<CellOptions, "dates"> = {}): Promise<Table> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(Buffer.from(bytes) as unknown as ArrayBuffer);
   const sheet = workbook.worksheets[0];
-  if (!sheet) return { header: [], rows: [] };
-  const all: string[][] = [];
-  sheet.eachRow({ includeEmpty: false }, (row) => {
-    all.push((row.values as unknown[]).slice(1).map(cellText));
+  if (!sheet) return { header: [], rows: [], rowNumbers: [] };
+  const numbered: { n: number; values: string[] }[] = [];
+  sheet.eachRow({ includeEmpty: false }, (row, n) => {
+    const values = (row.values as unknown[]).slice(1).map((v, i) => cellText(v, { dates: opts.dates, numFmt: row.getCell(i + 1).numFmt }));
+    if (!blank(values)) numbered.push({ n, values });
   });
-  const [header = [], ...rows] = all;
-  return { header, rows };
+  return table(numbered);
 }
 
 const column = (table: Table, name: string) => table.header.findIndex((h) => normalizeHeader(h) === normalizeHeader(name));
@@ -69,7 +96,7 @@ function readTimeclock(table: Table, profile: TimeclockProfile, kind: "timeclock
     totalHours: c.totalHours ? column(table, c.totalHours) : -1,
   };
   const entries: RawEntry[] = table.rows.map((row, i) => {
-    const rowNumber = i + 2;
+    const rowNumber = table.rowNumbers[i] ?? i + 2;
     const cell = (j: number) => (j >= 0 ? (row[j] ?? "").trim() : "");
     const src = (name: string) => ({ kind: "cell" as const, row: rowNumber, column: name });
     const checks: string[] = [];
@@ -122,7 +149,7 @@ function readVms(table: Table, profile: VmsProfile): ParsedDocument {
     const hoursText = cell(idx.hours);
     const minutes = parseDecimalHours(hoursText);
     const g = groups.get(key) ?? {
-      firstRow: i + 2,
+      firstRow: table.rowNumbers[i] ?? i + 2,
       sheets: new Set<string>(),
       minutes: 0,
       texts: [],

@@ -62,22 +62,31 @@ Screen: `slice-b/b7-assignments.png`.
 - Differences: as for job orders.
 
 ## Import placements — `docs/patterns/assignments/import.md` (Attio import, Linear importers, Flatfile)
-Screens: `slice-b/b8-import-source.png`, `slice-b/b9-import-map.png`,
-`slice-b/b10-import-values.png`, `slice-b/b11-import-preview.png`, `slice-b/b12-import-results.png`.
+Screens: `slice-b/b8-import-source.png`, `slice-b/b8b-import-no-header.png`, `slice-b/b9-import-map.png`,
+`slice-b/b10-import-values.png`, `slice-b/b10b-import-dates.png`, `slice-b/b11-import-preview.png`,
+`slice-b/b12-import-results.png`.
 - ✓ Steps across the top: Source · Match columns · Review values · Preview · Import; Back/Next.
 - ✓ Source first (Bullhorn, JobAdder, Spott, other); drop or choose a CSV or Excel file.
+- ✓ A file whose first row holds a date or an SSN-shaped number is refused under the drop area with
+  what to do; nothing is kept (b8b).
 - ✓ Columns that may hold SSNs or birth dates (by heading in English or Spanish, by any nine-digit
-  number, or by dates 14+ years old) are removed on receipt and never shown; a notice names them.
+  number, by mostly old dates or a date next to "DOB") are removed on receipt and never shown; the
+  Match columns step lists them by position with why and what to do (b9).
 - ✓ Match columns: file columns on the left with sample values, Shiftbook fields on the right,
   auto-matched from the preset or the last import from the same source; required fields listed.
 - ✓ Review values: each distinct worker, client, job order and status with its row count; choosing
   a match fixes every row; workers are matched to the roster or left out, never created; a new job
   order needs its worksite; unresolved values are marked and Next waits for them.
-- ✓ Preview: assignments to create, new job orders, own rate versions to add (with their amounts),
-  rows already imported, rows skipped with their reasons, and how dates were read.
+- ✓ Review values → Dates: month first or day first (read from the file until the person chooses),
+  each start and end date with what it reads as, invalid ones marked (b10b).
+- ✓ Preview: assignments to create listed with row, worker, job order (new ones marked) and dates;
+  new job orders, own rate versions to add (with their amounts), rows already imported, rows
+  skipped with their reasons, and how dates are read (b11).
 - ✓ Results: every row imported or skipped with its reason, filterable; earlier imports listed.
 - Differences:
-  - No date-format setting: day-first dates are recognised when the file shows it (a first number
-    above 12); otherwise dates are read month first, and the preview says which was used.
+  - The date choice is one setting for both date columns (Attio sets it per column), with two
+    orders only; Excel date cells are always read as the dates they are.
+  - The list of removed columns is a Shiftbook safety rule (SPEC §21), not from the references.
+  - The preview's three lists sit one under another rather than in tabs.
   - No find-and-replace or cell editing; at most 2,000 rows per import.
   - Imports cannot be deleted afterwards, and drafts cannot be shared by link.

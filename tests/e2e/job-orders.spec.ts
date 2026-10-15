@@ -78,8 +78,14 @@ test("create a job order, add a rate version from a markup, and assign a worker"
 test("the list works from the keyboard: highlight, preview panel, select, display options", async ({ page }) => {
   await page.goto("/en/job-orders");
   await expect(page.getByTestId("record-row").first()).toBeVisible();
+  // Each key is checked before the next, so a key pressed while the page is still loading is retried.
+  const rows = page.getByTestId("record-row");
+  await expect(async () => {
+    await page.keyboard.press("j");
+    await expect(rows.nth(0)).toHaveAttribute("data-highlighted", "true", { timeout: 1000 });
+  }).toPass();
   await page.keyboard.press("j");
-  await page.keyboard.press("j");
+  await expect(rows.nth(1)).toHaveAttribute("data-highlighted", "true");
   await page.keyboard.press("Space");
   const panel = page.getByTestId("side-panel");
   await expect(panel).toContainText("2 of 5");
@@ -108,6 +114,11 @@ test("import placements from the Bullhorn sample, deciding what the file could n
   await page.getByTestId("import-next").click();
   await expect(page).toHaveURL(/step=map/);
   await expect(page.getByRole("table", { name: en.import.step.map })).not.toContainText("SSN");
+  // The removed columns stay listed on this step, by position, never with their values.
+  const removed = page.getByTestId("removed-columns");
+  await expect(removed).toContainText("Column D (SSN)");
+  await expect(removed).toContainText("Column E (Date of Birth)");
+  await expect(removed).not.toContainText("900-");
   await noSeriousProblems(page, "import: map");
   await page.getByTestId("import-next").click();
   await expect(page).toHaveURL(/step=values/);
@@ -117,9 +128,15 @@ test("import placements from the Bullhorn sample, deciding what the file could n
   await page.getByRole("button", { name: en.import.kinds.jobOrder }).click();
   await page.getByLabel(en.import.choiceFor.replace("{value}", "Forklift Operator · Night")).selectOption({ label: en.import.newAt.replace("{site}", "Joliet Plant 2, Joliet, IL") });
   await expect(page.getByTestId("import-next")).toBeEnabled();
+  // Dates: the order the file uses, and each date as read.
+  await page.getByRole("button", { name: en.import.kinds.dates }).click();
+  await expect(page.getByLabel(en.import.dateOrder.month_first)).toBeChecked();
+  await expect(page.getByTestId("date-row").filter({ hasText: "10/19/2026" })).toContainText("October 19, 2026");
+  await noSeriousProblems(page, "import: dates");
   await page.getByTestId("import-next").click();
   await expect(page).toHaveURL(/step=preview/);
   await expect(page.getByTestId("preview-create")).toHaveText("4");
+  await expect(page.getByTestId("preview-row")).toHaveCount(4);
   await expect(page.getByTestId("preview-skip")).toHaveText("2");
   await noSeriousProblems(page, "import: preview");
   await page.getByTestId("import-next").click();
@@ -146,4 +163,13 @@ test("a placement file over 1 MB is taken (the request limit is the app's own, n
   await page.locator("#placement-file").setInputFiles({ name: "big.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
   await page.getByTestId("import-next").click();
   await expect(page).toHaveURL(/step=map/, { timeout: 30_000 });
+});
+
+test("a file without a header row is refused with what to do", async ({ page }) => {
+  const rows = readFileSync(PLACEMENTS, "utf8").split("\n").slice(1).join("\n");
+  await page.goto("/en/assignments/import");
+  await page.locator("#placement-file").setInputFiles({ name: "no-header.csv", mimeType: "text/csv", buffer: Buffer.from(rows) });
+  await page.getByTestId("import-next").click();
+  await expect(page.getByText(en.import.refused.no_header)).toHaveAttribute("role", "alert");
+  await expect(page).not.toHaveURL(/step=map/);
 });

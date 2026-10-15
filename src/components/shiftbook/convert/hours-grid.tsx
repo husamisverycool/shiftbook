@@ -44,6 +44,8 @@ interface Draft {
   reasons: string[];
   note: string;
   error: EditError | "period_busy" | null;
+  /** For an assignment at another client: that client's name. */
+  errorClient?: string;
 }
 
 type AddError = EditError | "period_busy" | "worker_required";
@@ -145,7 +147,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
       if (result.ok) {
         setEditing(null);
         router.refresh();
-      } else setEditing({ id: r.id, draft: { ...d, error: result.error } });
+      } else setEditing({ id: r.id, draft: { ...d, error: result.error, errorClient: "client" in result ? result.client : undefined } });
     });
   };
 
@@ -464,6 +466,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                           reasons={d.reasons}
                           note={d.note}
                           error={d.error}
+                          errorClient={d.errorClient}
                           pending={pending}
                           onChange={(patch) => set(patch)}
                           onSave={() => save(r, d)}
@@ -564,6 +567,7 @@ function ReasonControls(props: {
   reasons: string[];
   note: string;
   error: AddError | null;
+  errorClient?: string;
   pending: boolean;
   onChange: (patch: { reasons?: string[]; note?: string }) => void;
   onSave: () => void;
@@ -599,7 +603,7 @@ function ReasonControls(props: {
       </Button>
       {props.error && (
         <span role="alert" className="text-sm text-destructive">
-          {t(`editErrors.${props.error}`)}
+          {t(`editErrors.${props.error}`, { client: props.errorClient ?? "" })}
         </span>
       )}
     </div>

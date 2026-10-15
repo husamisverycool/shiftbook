@@ -22,7 +22,7 @@ import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-w
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-a6";
+export const RULES_VERSION = "2026.10-a7";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set([WEEKLY_OVERTIME, MINIMUM_WAGE]);
@@ -132,10 +132,12 @@ interface Bucket {
   overtimeEntries: string[];
   /** How the bill rate came about, for each distinct working among the line's shifts (never splits a line). */
   billRateExplains: string[];
+  /** Some shift on the line had its bill rate entered as is (no working to show). */
+  billRateTyped: boolean;
 }
 
-/** " (working; working)" for a bill line, or "" when the rate was entered as is. */
-const billRateNote = (b: Bucket) => (b.billRateExplains.length > 0 ? ` (${b.billRateExplains.join("; ")})` : "");
+/** " (working; working)" for a bill line — "some shifts:" when others' rate was entered as is — or "" when none was worked out. */
+const billRateNote = (b: Bucket) => (b.billRateExplains.length === 0 ? "" : ` (${b.billRateTyped ? "some shifts: " : ""}${b.billRateExplains.join("; ")})`);
 
 function emptyResult(blockers: Issue[]): PayResult {
   return { rulesVersion: RULES_VERSION, payLines: [], billLines: [], blockers, warnings: [] };
@@ -363,8 +365,9 @@ export function computePay(input: PayInput): PayResult {
     const buckets = new Map<string, Bucket>();
     splits.forEach(({ shift, regular, overtime }, index) => {
       const k = lineKey(shift);
-      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], billRateExplains: [] };
-      if (shift.billRateExplain && !b.billRateExplains.includes(shift.billRateExplain)) b.billRateExplains.push(shift.billRateExplain);
+      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], billRateExplains: [], billRateTyped: false };
+      if (!shift.billRateExplain) b.billRateTyped = true;
+      else if (!b.billRateExplains.includes(shift.billRateExplain)) b.billRateExplains.push(shift.billRateExplain);
       b.regular += regular;
       b.overtime += overtime;
       if (regular > 0) b.regularEntries.push(...shift.entryIds);

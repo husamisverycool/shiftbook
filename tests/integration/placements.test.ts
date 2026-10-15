@@ -8,10 +8,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { agencies, agencySettings, assignments, jobOrders, mappingProfiles, placementImports, rateCards } from "../../src/server/db/schema";
+import { agencies, agencySettings, assignments, auditEvents, jobOrders, mappingProfiles, placementImports, rateCards } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, seedDemoAgency, workerId, worksiteId } from "../../src/server/demo/seed";
-import { ImportFileError, importView, MAX_IMPORT_ROWS, runImport, saveDecision, startImport } from "../../src/server/placements/service";
+import ExcelJS from "exceljs";
+import { ImportFileError, importView, MAX_IMPORT_ROWS, runImport, saveDateOrder, saveDecision, startImport } from "../../src/server/placements/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { openAppDb, openOwnerDb } from "./helpers";
@@ -41,7 +42,10 @@ afterAll(async () => {
 describe("importing placements", () => {
   it("drops SSN and birth-date columns before the file is stored", async () => {
     const { id, removed } = await inAgency((tx) => startImport(tx, actor, store, { source: "bullhorn", filename: FILE, bytes: bytes() }, TODAY));
-    expect(removed).toEqual(["SSN", "Date of Birth"]);
+    expect(removed).toEqual([
+      { column: "D", heading: "SSN", reason: "heading" },
+      { column: "E", heading: "Date of Birth", reason: "heading" },
+    ]);
     const [record] = await inAgency((tx) => tx.select().from(placementImports).where(eq(placementImports.id, id)));
     const stored = new TextDecoder().decode(await store.get(record!.storageKey));
     expect(stored).not.toMatch(/SSN|Birth|\d{3}-\d{2}-\d{4}|01\/02\/1990/);
@@ -131,3 +135,95 @@ describe("importing placements", () => {
   });
 });
 
+describe("third review: headerless files, removed columns, dates and row numbers", () => {
+  const start = (filename: string, data: Uint8Array | string, source: "bullhorn" | "other" = "other") =>
+    inAgency((tx) => startImport(tx, actor, store, { source, filename, bytes: typeof data === "string" ? new TextEncoder().encode(data) : data }, TODAY));
+  const ssnShaped = /\d{3}[\s.\-]?\d{2}[\s.\-]?\d{4}/;
+
+  it("refuses a file without a header row before anything is kept, so no record reaches the log", async () => {
+    const headerless = readFileSync(`demo/samples/placements/${FILE}`, "utf8").split("\n").slice(1).join("\n");
+    const auditBefore = await inAgency((tx) => tx.select().from(auditEvents));
+    await expect(start("no-header.csv", headerless, "bullhorn")).rejects.toMatchObject({ reason: "no_header" });
+    const auditAfter = await inAgency((tx) => tx.select().from(auditEvents));
+    expect(auditAfter).toHaveLength(auditBefore.length);
+    expect(await inAgency((tx) => tx.select().from(placementImports))).toHaveLength(0);
+  });
+
+  it("keeps which columns were removed, by position and without their values, for the screens and the log", async () => {
+    const csv = ["Candidate,Company,Job Title,Start Date,Employee Ref,When", "Anita Patel,Prairie Line Manufacturing (demo),Assembler,10/19/2026,900123461,01/02/1990"].join("\n");
+    const { id } = await start("refs.csv", csv);
+    const view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.removed).toEqual([
+      { column: "E", heading: "Employee Ref", reason: "ssn_values" },
+      { column: "F", heading: "When", reason: "birth_dates" },
+    ]);
+    const logged = await inAgency((tx) => tx.select({ after: auditEvents.after }).from(auditEvents).where(eq(auditEvents.entityId, id)));
+    expect(JSON.stringify(logged)).not.toMatch(ssnShaped);
+    expect(JSON.stringify(logged)).not.toContain("1990");
+  });
+
+  it("keeps a start date column that holds an old placement, so the import can still run", async () => {
+    const csv = ["Candidate,Company,Job Title,Start Date,End Date", "Anita Patel,Prairie Line Manufacturing (demo),Assembler,03/05/2012,06/30/2012", "Marcus Bell,Prairie Line Manufacturing (demo),Assembler,10/19/2026,"].join("\n");
+    const { id, removed } = await start("history.csv", csv);
+    expect(removed).toEqual([]);
+    const view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.missing).toEqual([]);
+  });
+
+  it("drops an Excel column of SSNs stored as numbers with the SSN format (leading zero hidden by Excel)", async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Placements");
+    ws.addRow(["Candidate", "Company", "Job Title", "Start Date", "Employee Ref"]);
+    ws.addRow(["Anita Patel", "Prairie Line Manufacturing (demo)", "Assembler", new Date(Date.UTC(2026, 9, 19)), 9_000_001]);
+    ws.getCell("E2").numFmt = ["000", "00", "0000"].join("-");
+    const { removed } = await start("refs.xlsx", new Uint8Array(await wb.xlsx.writeBuffer()));
+    expect(removed).toEqual([{ column: "E", heading: "Employee Ref", reason: "ssn_values" }]);
+  });
+
+  it("reads Excel date cells as the dates they are, whatever a typed date elsewhere looks like", async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Placements");
+    ws.addRow(["Candidate", "Company", "Job Title", "Shift", "Start Date", "End Date"]);
+    ws.addRow(["Anita Patel", "Prairie Line Manufacturing (demo)", "Assembler", "Day", new Date(Date.UTC(2026, 9, 5)), "25/12/2026"]);
+    ws.addRow(["Marcus Bell", "Prairie Line Manufacturing (demo)", "Assembler", "Second", new Date(Date.UTC(2026, 10, 2)), "26/12/2026"]);
+    const { id } = await start("dates.xlsx", new Uint8Array(await wb.xlsx.writeBuffer()));
+    const view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.dates.order).toBe("day_first");
+    expect(view!.plan.map((p) => (p.outcome === "create" ? [p.startDate, p.endDate] : p.reason.code))).toEqual([
+      ["2026-10-05", "2026-12-25"],
+      ["2026-11-02", "2026-12-26"],
+    ]);
+  });
+
+  it("lets the person choose the date order, shows each date as read, and runs with that order", async () => {
+    const csv = ["Candidate,Company,Job Title,Shift,Start Date", "Anita Patel,Prairie Line Manufacturing (demo),Assembler,Day,05/11/2026", "Marcus Bell,Prairie Line Manufacturing (demo),Assembler,Second,13/11/2026"].join("\n");
+    const { id } = await start("uk.csv", csv);
+    let view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.dates).toMatchObject({ order: "month_first", chosen: null });
+    expect(view!.dates.values).toEqual([
+      { raw: "13/11/2026", count: 1, date: null },
+      { raw: "05/11/2026", count: 1, date: "2026-05-11" },
+    ]);
+    await inAgency((tx) => saveDateOrder(tx, actor, id, "day_first"));
+    view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.dates).toMatchObject({ order: "day_first", chosen: "day_first" });
+    // The preview lists each assignment it will create with its dates.
+    expect(view!.preview.rows.map((r) => [r.row, r.workerName, r.startDate, r.endDate])).toEqual([
+      [2, "Anita Patel", "2026-11-05", null],
+      [3, "Marcus Bell", "2026-11-13", null],
+    ]);
+    await inAgency((tx) => runImport(tx, actor, store, id, TODAY));
+    const made = await inAgency((tx) => tx.select().from(assignments).where(eq(assignments.startDate, "2026-11-13")));
+    expect(made).toHaveLength(1);
+  });
+
+  it("numbers rows as the file does when it has blank lines", async () => {
+    const csv = ["Candidate,Company,Job Title,Start Date", "", "Anita Patel,Prairie Line Manufacturing (demo),Assembler,10/19/2026", "", "", "Nobody Known,Prairie Line Manufacturing (demo),Assembler,10/19/2026"].join("\n");
+    const { id } = await start("gaps.csv", csv);
+    const view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.plan.map((p) => [p.row, p.outcome])).toEqual([
+      [3, "skip"],
+      [6, "skip"],
+    ]);
+  });
+});

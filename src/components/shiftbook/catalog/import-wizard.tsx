@@ -5,11 +5,11 @@
 // Shiftbook fields on the right with sample values (Attio), each distinct value with its row count
 // and match, unresolved values marked (Flatfile), a preview of what will happen, then every row
 // with its result, filterable; earlier imports listed underneath (Attio import history).
-import { CheckIcon, CircleAlertIcon, FileSpreadsheetIcon, UploadIcon } from "lucide-react";
+import { CheckIcon, CircleAlertIcon, FileSpreadsheetIcon, ShieldCheckIcon, UploadIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { runImportAction, saveDecisionAction, saveMappingAction, startImportAction } from "@/app/[locale]/(app)/assignments/import/actions";
+import { runImportAction, saveDateOrderAction, saveDecisionAction, saveMappingAction, startImportAction } from "@/app/[locale]/(app)/assignments/import/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -20,7 +20,7 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { MAX_PLACEMENT_FILE_BYTES } from "@/lib/limits";
 import { cn } from "@/lib/utils";
 import { FIELDS, SOURCES, type Field, type Mapping, type Source } from "@/server/placements/fields";
-import type { DistinctValue, PlannedRow } from "@/server/placements/plan";
+import type { DateOrder, DistinctValue, PlannedRow } from "@/server/placements/plan";
 import type { ImportView } from "@/server/placements/service";
 import { longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
@@ -115,10 +115,8 @@ function SourceStep() {
       const form = new FormData();
       form.append("file", file);
       const r = await startImportAction(source, form);
-      if (r.ok) {
-        if (r.removed.length > 0) toast.info(t("removed", { count: r.removed.length, columns: r.removed.join(", ") }), { duration: 10_000 });
-        go(r.id, "map");
-      } else setError(t(`refused.${r.error}`));
+      if (r.ok) go(r.id, "map");
+      else setError(t(`refused.${r.error}`));
     });
   return (
     <section className="flex flex-col gap-6">
@@ -213,6 +211,7 @@ function MapStep({ view }: { view: ImportView }) {
   return (
     <section className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">{t("mapBody")}</p>
+      <RemovedColumns removed={view.removed} />
       {missing.length > 0 && (
         <Alert variant="destructive">
           <CircleAlertIcon />
@@ -256,21 +255,43 @@ function MapStep({ view }: { view: ImportView }) {
   );
 }
 
+/** The columns removed on receipt, kept with the import so the notice never disappears. */
+function RemovedColumns({ removed }: { removed: ImportView["removed"] }) {
+  const t = useTranslations("import");
+  if (removed.length === 0) return null;
+  return (
+    <Alert data-testid="removed-columns">
+      <ShieldCheckIcon />
+      <AlertTitle>{t("removedTitle", { count: removed.length })}</AlertTitle>
+      <AlertDescription>
+        <ul className="list-disc pl-4">
+          {removed.map((r) => (
+            <li key={r.column}>{t("removedColumn", { column: r.column, heading: r.heading, reason: t(`removedReason.${r.reason}`) })}</li>
+          ))}
+        </ul>
+        <p>{t("removedBody")}</p>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 const KINDS = ["worker", "client", "jobOrder", "status"] as const;
-type Kind = (typeof KINDS)[number];
+type Kind = (typeof KINDS)[number] | "dates";
 
 function ValuesStep({ view, options }: { view: ImportView; options: CatalogOptions }) {
   const t = useTranslations("import");
   const go = useGo();
   const router = useRouter();
   const values = view.values!;
-  const kinds = KINDS.filter((k) => values[k].length > 0);
-  const [kind, setKind] = useState<Kind>(kinds.find((k) => values[k].some((v) => v.match === null)) ?? "worker");
+  const kinds: Kind[] = [...KINDS.filter((k) => values[k].length > 0), ...(view.dates.values.length > 0 ? (["dates"] as const) : [])];
+  const [kind, setKind] = useState<Kind>(KINDS.find((k) => values[k].some((v) => v.match === null)) ?? "worker");
   const [pending, run] = useTransition();
-  const open = (k: Kind) => values[k].filter((v) => v.match === null).length;
+  const open = (k: Kind) => (k === "dates" ? 0 : values[k].filter((v) => v.match === null).length);
+  const invalidDates = view.dates.values.filter((d) => d.date === null).length;
   const unresolved = KINDS.reduce((n, k) => n + open(k), 0);
   const decide = (raw: string, value: string) =>
     run(async () => {
+      if (kind === "dates") return;
       const r = await saveDecisionAction(view.id, kind, raw, value === "" ? null : value);
       if (!r.ok) toast.error(t(`refused.${r.error}`));
       router.refresh();
@@ -289,32 +310,44 @@ function ValuesStep({ view, options }: { view: ImportView; options: CatalogOptio
               className={cn("flex items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted", k === kind && "bg-muted font-medium")}
             >
               {t(`kinds.${k}`)}
-              {open(k) > 0 ? <Badge variant="destructive">{open(k)}</Badge> : <CheckIcon className="size-4 text-muted-foreground" />}
+              {k === "dates" && invalidDates > 0 ? (
+                <Badge variant="outline" aria-label={t("invalidDates", { count: invalidDates })}>
+                  {invalidDates}
+                </Badge>
+              ) : open(k) > 0 ? (
+                <Badge variant="destructive">{open(k)}</Badge>
+              ) : (
+                <CheckIcon className="size-4 text-muted-foreground" />
+              )}
             </button>
           ))}
         </nav>
-        <div className="rounded-lg border">
-          <Table aria-label={t(`kinds.${kind}`)}>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("inFile")}</TableHead>
-                <TableHead className="text-right">{t("rows")}</TableHead>
-                <TableHead>{t("becomes")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {values[kind].map((v) => (
-                <TableRow key={v.raw} data-testid="value-row" className={cn(v.match === null && "bg-destructive/5")}>
-                  <TableCell className="font-medium">{kind === "jobOrder" ? v.label : v.raw || t("blank")}</TableCell>
-                  <TableCell className="text-right tabular-nums">{v.count}</TableCell>
-                  <TableCell>
-                    <ValueChoice kind={kind} value={v} options={options} disabled={pending} onChange={(next) => decide(v.raw, next)} />
-                  </TableCell>
+        {kind === "dates" ? (
+          <DatesPanel view={view} />
+        ) : (
+          <div className="rounded-lg border">
+            <Table aria-label={t(`kinds.${kind}`)}>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("inFile")}</TableHead>
+                  <TableHead className="text-right">{t("rows")}</TableHead>
+                  <TableHead>{t("becomes")}</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {values[kind].map((v) => (
+                  <TableRow key={v.raw} data-testid="value-row" className={cn(v.match === null && "bg-destructive/5")}>
+                    <TableCell className="font-medium">{kind === "jobOrder" ? v.label : v.raw || t("blank")}</TableCell>
+                    <TableCell className="text-right tabular-nums">{v.count}</TableCell>
+                    <TableCell>
+                      <ValueChoice kind={kind} value={v} options={options} disabled={pending} onChange={(next) => decide(v.raw, next)} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
       {unresolved > 0 && <p className="text-sm text-destructive">{t("unresolved", { count: unresolved })}</p>}
       <Nav back={() => go(view.id, "map")} next={() => go(view.id, "preview")} disabled={unresolved > 0} pending={pending} />
@@ -322,7 +355,55 @@ function ValuesStep({ view, options }: { view: ImportView; options: CatalogOptio
   );
 }
 
-function ValueChoice({ kind, value, options, disabled, onChange }: { kind: Kind; value: DistinctValue; options: CatalogOptions; disabled: boolean; onChange: (v: string) => void }) {
+/** Start and end dates: the format the file uses (Attio's per-column format setting) and each date as read. */
+function DatesPanel({ view }: { view: ImportView }) {
+  const t = useTranslations("import");
+  const locale = useLocale();
+  const router = useRouter();
+  const [pending, run] = useTransition();
+  const choose = (order: DateOrder) =>
+    run(async () => {
+      const r = await saveDateOrderAction(view.id, order);
+      if (!r.ok) toast.error(t(`refused.${r.error}`));
+      router.refresh();
+    });
+  return (
+    <div className="flex flex-col gap-4">
+      <fieldset className="flex flex-col gap-2 rounded-lg border p-4" disabled={pending}>
+        <legend className="px-1 text-sm font-medium">{t("dateOrder.legend")}</legend>
+        {(["month_first", "day_first"] as const).map((o) => (
+          <label key={o} className="flex items-center gap-2 text-sm">
+            <input type="radio" name="date-order" value={o} checked={view.dates.order === o} onChange={() => choose(o)} />
+            {t(`dateOrder.${o}`)}
+          </label>
+        ))}
+        <p className="text-xs text-muted-foreground">{t(view.dates.chosen ? "dateOrder.chosen" : "dateOrder.auto")}</p>
+      </fieldset>
+      <div className="rounded-lg border">
+        <Table aria-label={t("kinds.dates")}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("inFile")}</TableHead>
+              <TableHead className="text-right">{t("rows")}</TableHead>
+              <TableHead>{t("readsAs")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {view.dates.values.map((d) => (
+              <TableRow key={d.raw} data-testid="date-row" className={cn(d.date === null && "bg-destructive/5")}>
+                <TableCell className="font-medium tabular-nums">{d.raw}</TableCell>
+                <TableCell className="text-right tabular-nums">{d.count}</TableCell>
+                <TableCell className={cn(d.date === null && "text-destructive")}>{d.date ? longDate(d.date, locale) : t("invalidFormat")}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+function ValueChoice({ kind, value, options, disabled, onChange }: { kind: Exclude<Kind, "dates">; value: DistinctValue; options: CatalogOptions; disabled: boolean; onChange: (v: string) => void }) {
   const t = useTranslations("import");
   const common = { "aria-label": t("choiceFor", { value: value.label ?? value.raw }), className: "w-72", disabled, value: value.match ?? "", onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value) };
   if (kind === "worker") {
@@ -393,6 +474,7 @@ function ValueChoice({ kind, value, options, disabled, onChange }: { kind: Kind;
 
 function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
   const t = useTranslations("import");
+  const tf = useTranslations("import.fields");
   const locale = useLocale();
   const go = useGo();
   const router = useRouter();
@@ -424,7 +506,40 @@ function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
         {tile(t("alreadyImported"), p.alreadyImported)}
         {tile(t("willSkip"), skips.length, "preview-skip")}
       </dl>
-      <p className="text-sm text-muted-foreground">{t(`datesRead.${p.dateOrder}`)}</p>
+      <p className="text-sm text-muted-foreground">{t(`datesRead.${view.dates.order}`)}</p>
+      {p.rows.length > 0 && (
+        <div className="max-h-96 overflow-auto rounded-lg border">
+          <Table aria-label={t("willCreate")}>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-20">{t("row")}</TableHead>
+                <TableHead>{t("worker")}</TableHead>
+                <TableHead>{t("jobOrder")}</TableHead>
+                <TableHead>{tf("startDate")}</TableHead>
+                <TableHead>{tf("endDate")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {p.rows.map((r) => (
+                <TableRow key={r.row} data-testid="preview-row">
+                  <TableCell className="tabular-nums">{r.row}</TableCell>
+                  <TableCell>{r.workerName}</TableCell>
+                  <TableCell>
+                    {r.jobOrder}
+                    {r.newJobOrder && (
+                      <Badge variant="outline" className="ml-2">
+                        {t("newBadge")}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>{longDate(r.startDate, locale)}</TableCell>
+                  <TableCell>{r.endDate ? longDate(r.endDate, locale) : "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
       {p.rateVersions.length > 0 && (
         <div className="rounded-lg border">
           <Table aria-label={t("rateVersions")}>

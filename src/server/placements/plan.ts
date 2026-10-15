@@ -71,23 +71,24 @@ function parseRate(text: string): number | null {
 export type DateOrder = "month_first" | "day_first";
 
 /**
- * Whether the file writes dates day first (19/10/2026) or month first (10/19/2026). A file that has
- * a first number above 12 somewhere, and never a second one above 12, is day first; otherwise month
- * first (the preview says which was used).
+ * Whether the file writes dates day first (19/10/2026) or month first (10/19/2026). Day first only
+ * when at least two dates have a first number above 12 and none has a second number above 12 — one
+ * typo does not turn a whole file around; otherwise month first. The person sees each date as read
+ * and can choose the other order (Attio: the format is chosen in the review step).
  */
 export function dateOrderOf(values: string[]): DateOrder {
-  let dayFirst = false;
-  let monthFirst = false;
+  let dayFirst = 0;
+  let monthFirst = 0;
   for (const v of values) {
     const m = /^\s*(\d{1,2})\/(\d{1,2})\/\d{2,4}\s*$/.exec(v);
     if (!m) continue;
-    if (Number(m[1]) > 12) dayFirst = true;
-    if (Number(m[2]) > 12) monthFirst = true;
+    if (Number(m[1]) > 12) dayFirst += 1;
+    if (Number(m[2]) > 12) monthFirst += 1;
   }
-  return dayFirst && !monthFirst ? "day_first" : "month_first";
+  return dayFirst >= 2 && monthFirst === 0 ? "day_first" : "month_first";
 }
 
-function parseDate(text: string, order: DateOrder): string | null {
+export function parseDate(text: string, order: DateOrder): string | null {
   const iso = parseIsoDateText(text);
   if (iso) return iso;
   if (order === "month_first") return parseUsDate(text);
@@ -124,17 +125,45 @@ function autoWorker(raw: string, catalog: Catalog): { id: string | null; several
   return m.status === "matched" ? { id: m.workerId, several: false } : { id: null, several: m.status === "ambiguous" };
 }
 const autoClient = (raw: string, catalog: Catalog) => catalog.clients.find((c) => fold(c.name) === fold(raw))?.id ?? null;
+/** The client a value names: the person's decision, else an exact match (case and spacing aside). */
+function clientOf(raw: string, decisions: Decisions, catalog: Catalog): string | null {
+  if (!raw) return null;
+  const decided = decisions.client?.[raw];
+  if (decided === "leave_out") return null;
+  return decided && catalog.clients.some((c) => c.id === decided) ? decided : autoClient(raw, catalog);
+}
 export const jobKey = (clientId: string, position: string, shift: string) => `${clientId}|${fold(position)}|${fold(shift)}`;
 function autoJob(clientId: string, position: string, shift: string, catalog: Catalog) {
   return catalog.jobOrders.filter((j) => j.clientId === clientId && fold(j.position) === fold(position) && (shift === "" || fold(j.shift ?? "") === fold(shift)));
 }
 
-export function planRows(source: Source, header: string[], rows: string[][], mapping: Mapping, decisions: Decisions, catalog: Catalog): PlannedRow[] {
+/** The start and end dates as written in the file. */
+const datesIn = (header: string[], rows: string[][], mapping: Mapping) => rows.flatMap((r) => [cell(header, r, mapping.startDate), cell(header, r, mapping.endDate)]);
+
+/** The date order used: the person's choice, or what the file shows. */
+export const dateOrderFor = (header: string[], rows: string[][], mapping: Mapping, chosen?: DateOrder | null): DateOrder => chosen ?? dateOrderOf(datesIn(header, rows, mapping));
+
+export interface PlanOptions {
+  /** The order the person chose for dates; otherwise what the file shows. */
+  dateOrder?: DateOrder | null;
+  /** Each row's own number in the file (blank rows count); otherwise the header is row 1 and none is blank. */
+  rowNumbers?: number[];
+}
+
+export function planRows(source: Source, header: string[], rows: string[][], mapping: Mapping, decisions: Decisions, catalog: Catalog, opts: PlanOptions = {}): PlannedRow[] {
   const seen = new Set<string>();
-  const order = dateOrderOf(rows.flatMap((r) => [cell(header, r, mapping.startDate), cell(header, r, mapping.endDate)]));
+  const order = dateOrderFor(header, rows, mapping, opts.dateOrder);
+  // A new job order is spelled as the file first spells it, whichever rows are imported.
+  const spelling = new Map<string, { position: string; shift: string }>();
+  for (const r of rows) {
+    const clientId = clientOf(cell(header, r, mapping.client), decisions, catalog);
+    const position = cell(header, r, mapping.position);
+    const shift = cell(header, r, mapping.shift);
+    const key = clientId && position ? jobKey(clientId, position, shift) : null;
+    if (key && !spelling.has(key)) spelling.set(key, { position, shift });
+  }
   return rows.map((r, i): PlannedRow => {
-    // The spreadsheet's own row number: the header is row 1.
-    const row = i + 2;
+    const row = opts.rowNumbers?.[i] ?? i + 2;
     const skip = (code: SkipReason["code"], value: string): PlannedRow => ({ row, outcome: "skip", reason: { code, value } });
     const externalId = cell(header, r, mapping.externalId) || null;
     if (externalId && externalId.length > MAX_ID_LENGTH) return skip("invalid_value", "externalId");
@@ -154,21 +183,22 @@ export function planRows(source: Source, header: string[], rows: string[][], map
 
     const clientRaw = cell(header, r, mapping.client);
     if (!clientRaw) return skip("missing_value", "client");
-    const decidedClient = decisions.client?.[clientRaw];
-    if (decidedClient === "leave_out") return skip("left_out", clientRaw);
-    const clientId = decidedClient && catalog.clients.some((c) => c.id === decidedClient) ? decidedClient : autoClient(clientRaw, catalog);
+    if (decisions.client?.[clientRaw] === "leave_out") return skip("left_out", clientRaw);
+    const clientId = clientOf(clientRaw, decisions, catalog);
     if (!clientId) return skip("client_not_found", clientRaw);
 
     const position = cell(header, r, mapping.position);
     if (!position) return skip("missing_value", "position");
     const shift = cell(header, r, mapping.shift);
-    const decidedJob = decisions.jobOrder?.[jobKey(clientId, position, shift)];
+    const key = jobKey(clientId, position, shift);
+    const spelled = spelling.get(key) ?? { position, shift };
+    const decidedJob = decisions.jobOrder?.[key];
     let jobOrder: { id: string } | { new: { clientId: string; worksiteId: string; position: string; shift: string | null } };
     if (decidedJob === "leave_out") return skip("left_out", position);
     if (decidedJob?.startsWith("new:")) {
       const worksiteId = decidedJob.slice(4);
       if (!catalog.worksites.some((w) => w.id === worksiteId && w.clientId === clientId)) return skip("new_job_order_needs_worksite", position);
-      jobOrder = { new: { clientId, worksiteId, position, shift: shift || null } };
+      jobOrder = { new: { clientId, worksiteId, position: spelled.position, shift: spelled.shift || null } };
     } else if (decidedJob && catalog.jobOrders.some((j) => j.id === decidedJob && j.clientId === clientId)) {
       jobOrder = { id: decidedJob };
     } else {
@@ -208,6 +238,15 @@ export function planRows(source: Source, header: string[], rows: string[][], map
     }
     return { row, outcome: "create", externalId, workerId, jobOrder, startDate, endDate, status, rates };
   });
+}
+
+/** Each distinct start or end date as written, with what it reads as in the order used (null: invalid format). */
+export function dateValues(header: string[], rows: string[][], mapping: Mapping, order: DateOrder): { raw: string; count: number; date: string | null }[] {
+  const counts = new Map<string, number>();
+  for (const raw of datesIn(header, rows, mapping)) if (raw) counts.set(raw, (counts.get(raw) ?? 0) + 1);
+  return [...counts]
+    .map(([raw, count]) => ({ raw, count, date: parseDate(raw, order) }))
+    .sort((a, b) => (a.date === null ? 0 : 1) - (b.date === null ? 0 : 1) || b.count - a.count || a.raw.localeCompare(b.raw));
 }
 
 export interface DistinctValue {

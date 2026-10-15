@@ -16,21 +16,28 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { StaleRequestError } from "../errors";
 import { readCsv, writeCsv } from "../../exports/csv";
-import { tableFromCsv, tableFromXlsx } from "../intake/structured";
+import { tableFromCsv, tableFromXlsx, type Table } from "../intake/structured";
 import { lockCatalog } from "../run/period-lock";
 import { settingOn } from "../settings";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { autoMap, FIELDS, missingFields, SOURCES, type Field, type Mapping, type Source } from "./fields";
-import { dateOrderOf, distinctValues, planRows, type Catalog, type Decisions, type PlannedRow } from "./plan";
-import { dropSensitive, safeFilename } from "./sensitive";
+import { dateOrderFor, dateValues, distinctValues, planRows, type Catalog, type DateOrder, type Decisions, type PlannedRow } from "./plan";
+import { dropSensitive, headingProblem, safeFilename, type RemovedColumn } from "./sensitive";
 
 /** The most rows one import takes: it runs under the catalog lock, so "create files" waits for it. */
 export const MAX_IMPORT_ROWS = 2000;
 
+const FILE_ERRORS = {
+  unsupported: "Only CSV and Excel (.xlsx) files can be imported.",
+  empty: "The file has no header row or no rows.",
+  too_many_rows: `An import takes at most ${MAX_IMPORT_ROWS} rows.`,
+  no_header: "The first row must hold column names.",
+} as const;
+
 export class ImportFileError extends Error {
-  constructor(readonly reason: "unsupported" | "empty" | "too_many_rows") {
-    super(reason === "unsupported" ? "Only CSV and Excel (.xlsx) files can be imported." : reason === "empty" ? "The file has no header row or no rows." : `An import takes at most ${MAX_IMPORT_ROWS} rows.`);
+  constructor(readonly reason: keyof typeof FILE_ERRORS) {
+    super(FILE_ERRORS[reason]);
     this.name = "ImportFileError";
   }
 }
@@ -49,33 +56,49 @@ function uniqueNames(header: string[]): string[] {
 export type ImportResult = NonNullable<typeof s.placementImports.$inferSelect.results>[number];
 const PROFILE = (source: Source) => `placements:${source}`;
 
-export async function startImport(tx: Tx, actor: Actor, store: DocumentStore, input: { source: Source; filename: string; bytes: Uint8Array }, today: string): Promise<{ id: string; removed: string[] }> {
+export async function startImport(
+  tx: Tx,
+  actor: Actor,
+  store: DocumentStore,
+  input: { source: Source; filename: string; bytes: Uint8Array },
+  today: string,
+): Promise<{ id: string; removed: RemovedColumn[] }> {
   if (!SOURCES.includes(input.source)) throw new ImportFileError("unsupported");
   const ext = input.filename.toLowerCase().split(".").pop();
   if (ext !== "csv" && ext !== "xlsx") throw new ImportFileError("unsupported");
-  let table: Awaited<ReturnType<typeof tableFromXlsx>>;
+  let table: Table;
   try {
-    table = ext === "csv" ? tableFromCsv(input.bytes) : await tableFromXlsx(input.bytes);
+    // Excel date cells as ISO dates: they cannot be read with day and month swapped.
+    table = ext === "csv" ? tableFromCsv(input.bytes) : await tableFromXlsx(input.bytes, { dates: "iso" });
   } catch {
     throw new ImportFileError("unsupported"); // a damaged or mislabelled file
   }
   if (table.header.length === 0 || table.rows.length === 0) throw new ImportFileError("empty");
   if (table.rows.length > MAX_IMPORT_ROWS) throw new ImportFileError("too_many_rows");
+  // A first row holding an SSN or a date is a record, not column names: refused before anything is kept.
+  if (headingProblem(table.header, today)) throw new ImportFileError("no_header");
+  const [profile] = await tx.select().from(s.mappingProfiles).where(eq(s.mappingProfiles.source, PROFILE(input.source))).orderBy(desc(s.mappingProfiles.version)).limit(1);
+  const remembered = ((profile?.definition as { mapping?: Mapping } | undefined)?.mapping ?? {}) as Mapping;
+  const header = uniqueNames(table.header);
+  // The start and end dates the import recognises hold history, not birth dates.
+  const guess = autoMap(header, input.source, remembered);
   // Before anything is stored, shown or logged.
-  const clean = dropSensitive(uniqueNames(table.header), table.rows, today);
+  const clean = dropSensitive(header, table.rows, today, { dateColumns: [guess.startDate, guess.endDate].filter((c): c is string => !!c) });
+  const kept = clean.rows.flatMap((r, i) => (r.some((c) => c.trim() !== "") ? [i] : []));
+  const rows = kept.map((i) => clean.rows[i]!);
+  const rowNumbers = kept.map((i) => table.rowNumbers[i]!);
+  if (rows.length === 0) throw new ImportFileError("empty");
   const filename = safeFilename(input.filename);
-  const bytes = writeCsv([clean.header, ...clean.rows]);
+  const bytes = writeCsv([clean.header, ...rows]);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const storageKey = `${actor.agencyId}/imports/${sha256}.csv`;
   await store.put(storageKey, bytes);
-  const [profile] = await tx.select().from(s.mappingProfiles).where(eq(s.mappingProfiles.source, PROFILE(input.source))).orderBy(desc(s.mappingProfiles.version)).limit(1);
-  const remembered = ((profile?.definition as { mapping?: Mapping } | undefined)?.mapping ?? {}) as Mapping;
   const mapping = autoMap(clean.header, input.source, remembered);
   const [row] = await tx
     .insert(s.placementImports)
-    .values({ agencyId: actor.agencyId, source: input.source, filename, sha256, storageKey, mapping, createdBy: actor.userId })
+    .values({ agencyId: actor.agencyId, source: input.source, filename, sha256, storageKey, mapping, removedColumns: clean.removed, rowNumbers, createdBy: actor.userId })
     .returning({ id: s.placementImports.id });
-  await audit(tx, actor, [{ action: "create", entityType: "placement_import", entityId: row!.id, after: { source: input.source, filename, rows: clean.rows.length, columnsRemoved: clean.removed } }]);
+  await audit(tx, actor, [{ action: "create", entityType: "placement_import", entityId: row!.id, after: { source: input.source, filename, rows: rows.length, columnsRemoved: clean.removed } }]);
   return { id: row!.id, removed: clean.removed };
 }
 
@@ -83,7 +106,8 @@ async function load(tx: Tx, store: DocumentStore, id: string) {
   const [record] = await tx.select().from(s.placementImports).where(eq(s.placementImports.id, id));
   if (!record) return null;
   const [header = [], ...rows] = readCsv(new TextDecoder().decode(await store.get(record.storageKey)));
-  return { record, header, rows: rows.filter((r) => r.some((c) => c.trim() !== "")) };
+  // Stored rows are never blank (a trailing line end aside), so they line up with their numbers.
+  return { record, header, rows: rows.filter((r) => r.some((c) => c.trim() !== "")), opts: { dateOrder: record.dateOrder, rowNumbers: record.rowNumbers.length > 0 ? record.rowNumbers : undefined } };
 }
 
 export async function catalogFor(tx: Tx): Promise<Catalog> {
@@ -110,12 +134,13 @@ export async function catalogFor(tx: Tx): Promise<Catalog> {
 export async function importView(tx: Tx, store: DocumentStore, id: string) {
   const loaded = await load(tx, store, id);
   if (!loaded) return null;
-  const { record, header, rows } = loaded;
+  const { record, header, rows, opts } = loaded;
   const mapping = record.mapping as Mapping;
   const decisions = record.decisions as Decisions;
   const catalog = await catalogFor(tx);
   const missing = missingFields(mapping);
-  const plan = missing.length === 0 ? planRows(record.source as Source, header, rows, mapping, decisions, catalog) : [];
+  const plan = missing.length === 0 ? planRows(record.source as Source, header, rows, mapping, decisions, catalog, opts) : [];
+  const order = dateOrderFor(header, rows, mapping, record.dateOrder);
   // What the run will add, worked out the same way the run does.
   const cards = await tx.select().from(s.rateCards);
   const names = new Map(catalog.workers.map((w) => [w.workerId, `${w.firstName} ${w.lastName}`]));
@@ -126,6 +151,22 @@ export async function importView(tx: Tx, store: DocumentStore, id: string) {
     return [{ row: p.row, workerName: names.get(p.workerId) ?? "", from: p.startDate, payRateCents: p.rates.payRateCents, billRateCents: p.rates.billRateCents }];
   });
   const newJobOrders = new Set(plan.flatMap((p) => (p.outcome === "create" && "new" in p.jobOrder ? [newJobKey(p.jobOrder.new)] : []))).size;
+  const jobLabel = new Map(catalog.jobOrders.map((j) => [j.id, j.shift ? `${j.position} · ${j.shift}` : j.position]));
+  // Each assignment the import will create, with the dates it will get (Attio: the records per tab).
+  const previewRows = plan.flatMap((p) =>
+    p.outcome !== "create"
+      ? []
+      : [
+          {
+            row: p.row,
+            workerName: names.get(p.workerId) ?? "",
+            jobOrder: "id" in p.jobOrder ? (jobLabel.get(p.jobOrder.id) ?? "") : p.jobOrder.new.shift ? `${p.jobOrder.new.position} · ${p.jobOrder.new.shift}` : p.jobOrder.new.position,
+            newJobOrder: "new" in p.jobOrder,
+            startDate: p.startDate,
+            endDate: p.endDate,
+          },
+        ],
+  );
   return {
     id: record.id,
     source: record.source as Source,
@@ -137,14 +178,16 @@ export async function importView(tx: Tx, store: DocumentStore, id: string) {
     samples: Object.fromEntries(header.map((h, i) => [h, rows.slice(0, 100).map((r) => r[i] ?? "").filter((v) => v !== "").slice(0, 5)])),
     mapping,
     missing,
+    removed: record.removedColumns,
     values: missing.length === 0 ? distinctValues(header, rows, mapping, decisions, catalog) : null,
+    dates: { order, chosen: record.dateOrder ?? null, values: missing.length === 0 ? dateValues(header, rows, mapping, order) : [] },
     plan,
     preview: {
       create: plan.filter((p) => p.outcome === "create").length,
       newJobOrders,
       rateVersions,
       alreadyImported: plan.filter((p) => p.outcome === "skip" && p.reason.code === "already_imported").length,
-      dateOrder: dateOrderOf(rows.flatMap((r) => [r[header.indexOf(mapping.startDate ?? "")] ?? "", r[header.indexOf(mapping.endDate ?? "")] ?? ""])),
+      rows: previewRows,
     },
     results: record.results,
   };
@@ -180,6 +223,14 @@ export async function saveDecision(tx: Tx, actor: Actor, id: string, kind: keyof
   await audit(tx, actor, [{ action: "update", entityType: "placement_import", entityId: id, after: { decision: { kind, raw, value } } }]);
 }
 
+/** The person's choice of date order in the review step; null goes back to reading it from the file. */
+export async function saveDateOrder(tx: Tx, actor: Actor, id: string, order: DateOrder | null): Promise<void> {
+  await draft(tx, id);
+  if (order !== null && order !== "month_first" && order !== "day_first") throw new StaleRequestError();
+  await tx.update(s.placementImports).set({ dateOrder: order, updatedAt: new Date() }).where(eq(s.placementImports.id, id));
+  await audit(tx, actor, [{ action: "update", entityType: "placement_import", entityId: id, after: { dateOrder: order } }]);
+}
+
 /** Runs the import once; afterwards it only returns what happened. */
 export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: string, today: string): Promise<ImportResult[]> {
   await lockCatalog(tx, actor.agencyId, "exclusive");
@@ -190,7 +241,7 @@ export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: 
   const mapping = record.mapping as Mapping;
   if (missingFields(mapping).length > 0) throw new StaleRequestError();
   const source = record.source as Source;
-  const plan = planRows(source, loaded.header, loaded.rows, mapping, record.decisions as Decisions, await catalogFor(tx));
+  const plan = planRows(source, loaded.header, loaded.rows, mapping, record.decisions as Decisions, await catalogFor(tx), loaded.opts);
   const defaults = await settingOn<Defaults>(tx, "rate_card.default_bill_multipliers", today);
   const newJobs = new Map<string, string>();
   const results: ImportResult[] = [];

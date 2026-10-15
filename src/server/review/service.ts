@@ -26,7 +26,11 @@ export type EditError =
   | "break_too_long"
   | "invalid_value"
   | "no_assignment"
-  | "several_assignments";
+  | "several_assignments"
+  | "assignment_at_other_client";
+
+/** A refused change; for an assignment at another client, that client's name. */
+export type EditFailure = { ok: false; error: EditError; client?: string };
 
 export interface EntryChange {
   workerId?: string | null;
@@ -61,18 +65,26 @@ const snapshot = (e: typeof s.timeEntries.$inferSelect) => ({
   status: e.status,
 });
 
-/** A worker's assignments (not cancelled) covering a date — only at the timesheet's client when it has one. */
-async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: string | null): Promise<string | EditError> {
+/**
+ * The worker's assignment (not cancelled) covering a date. A timesheet belongs to one client, so its
+ * entries take that client's assignments; one at another client is named, and taken only when the
+ * person chose "Confirmed with the client" (a timesheet that really covers two clients).
+ */
+async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: string | null, clientConfirmed: boolean): Promise<string | Omit<EditFailure, "ok">> {
   const rows = await tx
-    .select({ id: s.assignments.id, clientId: s.jobOrders.clientId, start: s.assignments.startDate, end: s.assignments.endDate, status: s.assignments.status })
+    .select({ id: s.assignments.id, clientId: s.jobOrders.clientId, clientName: s.clients.name, start: s.assignments.startDate, end: s.assignments.endDate, status: s.assignments.status })
     .from(s.assignments)
     .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
+    .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId))
     .where(eq(s.assignments.workerId, workerId));
   const active = rows.filter((a) => a.status !== "cancelled" && a.start <= date && (a.end === null || date <= a.end));
-  // A timesheet belongs to one client: its entries only take that client's assignments.
-  const pick = clientId ? active.filter((a) => a.clientId === clientId) : active;
-  if (pick.length === 0) return "no_assignment";
-  if (pick.length > 1) return "several_assignments";
+  const here = clientId ? active.filter((a) => a.clientId === clientId) : active;
+  const pick = here.length === 0 && clientId && clientConfirmed ? active : here;
+  if (pick.length === 0) {
+    const elsewhere = [...new Set(active.map((a) => a.clientName))];
+    return elsewhere.length === 1 ? { error: "assignment_at_other_client", client: elsewhere[0]! } : { error: "no_assignment" };
+  }
+  if (pick.length > 1) return { error: "several_assignments" };
   return pick[0]!.id;
 }
 
@@ -97,12 +109,12 @@ async function openPeriodsOf(tx: Tx, ids: string[]) {
 }
 
 /** The reasons chosen, or the error when none (or "other" without a note) was given. */
-function checkedReason(reasons: string[], note: string): { ok: true; text: string } | { ok: false; error: EditError } {
+function checkedReason(reasons: string[], note: string): { ok: true; text: string; chosen: EditReason[] } | { ok: false; error: EditError } {
   const chosen = [...new Set(reasons)].filter((r): r is EditReason => (EDIT_REASONS as readonly string[]).includes(r));
   if (chosen.length === 0) return { ok: false, error: "reason_required" };
   if (chosen.includes("other") && note.trim() === "") return { ok: false, error: "note_required" };
   const text = chosen.map((r) => (r === "other" ? `other: ${note.trim()}` : r)).join(", ") + (note.trim() && !chosen.includes("other") ? `: ${note.trim()}` : "");
-  return { ok: true, text };
+  return { ok: true, text, chosen };
 }
 
 /** Applies a change to an entry's values and checks the result the same way for edits and additions. */
@@ -112,7 +124,8 @@ async function applyChange(
   change: EntryChange,
   period: { startsOn: string; endsOn: string },
   documentClientId: string | null,
-): Promise<{ ok: true; next: Values } | { ok: false; error: EditError }> {
+  clientConfirmed: boolean,
+): Promise<{ ok: true; next: Values } | EditFailure> {
   const next = { ...start };
   for (const key of Object.keys(change) as (keyof EntryChange)[]) {
     const value = change[key];
@@ -144,8 +157,8 @@ async function applyChange(
   }
 
   if (next.workerId) {
-    const found = await assignmentFor(tx, next.workerId, next.workDate, documentClientId);
-    if (found === "no_assignment" || found === "several_assignments") return { ok: false, error: found };
+    const found = await assignmentFor(tx, next.workerId, next.workDate, documentClientId, clientConfirmed);
+    if (typeof found !== "string") return { ok: false, ...found };
     next.assignmentId = found;
   } else {
     next.assignmentId = null;
@@ -167,7 +180,7 @@ function editedFields(fields: s.EntryFields, before: Values, next: Values): s.En
   return out;
 }
 
-export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError }> {
+export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | EditFailure> {
   const reason = checkedReason(reasons, note);
   if (!reason.ok) return reason;
 
@@ -182,7 +195,7 @@ export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: E
   const [doc] = entry.sourceDocumentId ? await tx.select({ clientId: s.sourceDocuments.clientId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, entry.sourceDocumentId)) : [];
 
   const before = snapshot(entry);
-  const result = await applyChange(tx, before, change, period, doc?.clientId ?? null);
+  const result = await applyChange(tx, before, change, period, doc?.clientId ?? null, reason.chosen.includes("confirmed_client"));
   if (!result.ok) return result;
   const next = result.next;
   await tx
@@ -201,13 +214,13 @@ export async function addEntry(
   input: EntryChange & { workerId: string; workDate: string },
   reasons: string[],
   note: string,
-): Promise<{ ok: true; entryId: string } | { ok: false; error: EditError }> {
+): Promise<{ ok: true; entryId: string } | EditFailure> {
   const reason = checkedReason(reasons, note);
   if (!reason.ok) return reason;
   const period = await openOrLocked(tx, payPeriodId);
   if (period === "period_locked") return { ok: false, error: period };
   const empty: Values = { workerId: null, assignmentId: null, workDate: null, inMinute: null, outMinute: null, breakMinutes: null, minutes: null, status: "needs_review" };
-  const result = await applyChange(tx, empty, input, period, null);
+  const result = await applyChange(tx, empty, input, period, null, false);
   if (!result.ok) return result;
   const next = result.next;
   const [worker] = await tx.select().from(s.workers).where(eq(s.workers.id, next.workerId!));

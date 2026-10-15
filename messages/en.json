@@ -201,7 +201,7 @@
         "grand_total_mismatch": "Sheet's written grand total does not match",
         "duplicate_day_in_vms": "Day appears on more than one VMS sheet",
         "other": "Needs a check",
-        "assignment_at_other_client": "Matched to an assignment at another client",
+        "assignment_at_other_client": "The worker's assignment that day is at another client; if these hours are theirs, edit and choose “Confirmed with the client”",
         "timesheet_client_unclear": "Which client this timesheet is for is unclear"
       },
       "fields": {
@@ -242,7 +242,8 @@
         "several_assignments": "That worker has more than one active assignment on that date.",
         "worker_required": "Choose a worker first.",
         "period_locked": "This period's files were already created; its hours can no longer change.",
-        "period_busy": "Someone else is changing this pay period right now. Try again in a moment."
+        "period_busy": "Someone else is changing this pay period right now. Try again in a moment.",
+        "assignment_at_other_client": "That worker's assignment on that date is at {client}, not this timesheet's client. If these hours are for {client}, choose “Confirmed with the client” and save again."
       },
       "history": "History",
       "historyEmpty": "No changes yet.",
@@ -759,7 +760,8 @@
       "too_large": "The file is larger than 10 MB.",
       "busy": "Someone else is changing job orders or paying a week right now. Try again in a moment.",
       "stale": "This import changed in another tab or window. The page now shows the latest.",
-      "too_many_rows": "An import takes at most 2,000 rows. Split the file and import each part."
+      "too_many_rows": "An import takes at most 2,000 rows. Split the file and import each part.",
+      "no_header": "The first row must hold column names. In this file it holds a date or a number shaped like a Social Security number, so it looks like a placement. Add a row of column names at the top and upload again."
     },
     "back": "Back",
     "next": "Next",
@@ -790,7 +792,8 @@
       "worker": "Workers",
       "client": "Clients",
       "jobOrder": "Job orders",
-      "status": "Status"
+      "status": "Status",
+      "dates": "Dates"
     },
     "inFile": "In the file",
     "rows": "Rows",
@@ -864,16 +867,35 @@
     "pay": "Pay rate",
     "bill": "Bill rate",
     "datesRead": {
-      "month_first": "Dates like 10/05/2026 are read month first (October 5).",
-      "day_first": "Dates like 05/10/2026 are read day first (5 October), because the file writes them that way."
+      "month_first": "Dates like 10/05/2026 are read month first (October 5). You can change this in Review values.",
+      "day_first": "Dates like 05/10/2026 are read day first (5 October). You can change this in Review values."
     },
-    "removed": "{count, plural, one {# column was removed and not stored} other {# columns were removed and not stored}} because it may hold Social Security numbers or birth dates: {columns}.",
     "rateRefusals": {
       "invalid": "the rates are not valid",
       "paid": "a paid week already uses these dates",
       "same_start": "a version already starts that day",
       "no_default_multipliers": "no default overtime multipliers are set for the agency",
       "other": "they were refused"
-    }
+    },
+    "removedTitle": "{count, plural, one {# column was removed when the file was received} other {# columns were removed when the file was received}}",
+    "removedBody": "They were never stored or shown. If you need one of them, take the sensitive values out of the file and upload it again.",
+    "removedColumn": "Column {column} ({heading}): {reason}",
+    "removedReason": {
+      "heading": "its heading names a Social Security number, tax ID or birth date",
+      "ssn_values": "it holds numbers shaped like Social Security numbers",
+      "birth_dates": "it holds birth dates (most of its dates are 14 or more years old, or a date sits next to a word like DOB)"
+    },
+    "dateOrder": {
+      "legend": "How this file writes dates",
+      "month_first": "Month first: 10/05/2026 is October 5, 2026",
+      "day_first": "Day first: 05/10/2026 is 5 October 2026",
+      "auto": "Chosen from the file's dates. Change it if the dates below are read wrong.",
+      "chosen": "Chosen by you."
+    },
+    "readsAs": "Reads as",
+    "invalidFormat": "Invalid format: rows with it are skipped",
+    "invalidDates": "{count, plural, one {# date} other {# dates}} with an invalid format",
+    "jobOrder": "Job order",
+    "newBadge": "New"
   }
 }

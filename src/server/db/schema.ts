@@ -319,6 +319,12 @@ export const placementImports = pgTable("placement_imports", {
   /** Per field, raw value → decision (matched id, "leave_out", or a new job order's worksite). */
   decisions: jsonb("decisions").$type<Record<string, Record<string, string>>>().notNull().default({}),
   results: jsonb("results").$type<{ row: number; outcome: "imported" | "skipped"; reason: { code: string; value: string } | null }[] | null>(),
+  /** Columns removed on receipt: position, heading with SSN- or date-shaped parts hidden, and why. */
+  removedColumns: jsonb("removed_columns").$type<{ column: string; heading: string; reason: "heading" | "ssn_values" | "birth_dates" }[]>().notNull().default([]),
+  /** Each stored row's own number in the uploaded file (blank rows count). */
+  rowNumbers: jsonb("row_numbers").$type<number[]>().notNull().default([]),
+  /** The date order the person chose; null reads it from the file. */
+  dateOrder: text("date_order").$type<"month_first" | "day_first">(),
   createdBy: uuid("created_by"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
