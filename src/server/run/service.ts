@@ -24,6 +24,7 @@ export type RunIssueCode =
   | "entry_needs_review"
   | "unmatched_entry"
   | "entry_incomplete"
+  | "outside_period"
   | "outside_assignment"
   | "missing_rate"
   | "missing_billing_profile"
@@ -164,6 +165,10 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     }
     if (!e.workDate || e.minutes === null) {
       issue("entry_incomplete", `${name}: the entry has no ${!e.workDate ? "date" : "worked minutes"}.`);
+      continue;
+    }
+    if (!effective(e.workDate, period.startsOn, period.endsOn)) {
+      issue("outside_period", `${name} on ${e.workDate}: the date is outside the pay period (${period.startsOn} to ${period.endsOn}).`);
       continue;
     }
     if (!effective(e.workDate, a.assignment.startDate, a.assignment.endDate) || a.assignment.status === "cancelled") {

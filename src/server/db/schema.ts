@@ -353,6 +353,10 @@ export type FieldProvenance = {
   handwritten: boolean;
   confidence: "high" | "medium" | "low";
   checks: string[]; // failed check codes for this field
+  /** Spreadsheet row and column for structured files (header = row 1). */
+  source?: { row: number; column: string };
+  /** Changed by a person after reading (the review grid marks it). */
+  edited?: boolean;
 };
 export type EntryFields = Partial<Record<"worker" | "date" | "in" | "out" | "break" | "total", FieldProvenance>>;
 
@@ -473,6 +477,8 @@ export const exports = pgTable("exports", {
   filename: text("filename").notNull(),
   sha256: text("sha256").notNull(),
   controlTotals: jsonb("control_totals").$type<ControlTotals>().notNull(),
+  // Plain-English notes for the payroll clerk (e.g. hours rounded up to the file's precision).
+  notes: jsonb("notes").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
   storageKey: text("storage_key").notNull(),
   createdAt: createdAt(),
 });

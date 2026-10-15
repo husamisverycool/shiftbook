@@ -16,10 +16,10 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
   webServer: {
-    command: `pnpm exec next start --port ${PORT}`,
+    command: `pnpm exec next build && pnpm exec next start --port ${PORT}`,
     url: `http://localhost:${PORT}/en/convert`,
     reuseExistingServer: false,
-    timeout: 120_000,
-    env: { SHIFTBOOK_MODE: "demo" },
+    timeout: 600_000,
+    env: { SHIFTBOOK_MODE: "demo", NEXT_TELEMETRY_DISABLED: "1" },
   },
 });

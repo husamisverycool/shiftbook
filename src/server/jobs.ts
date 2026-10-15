@@ -7,6 +7,8 @@ import type { Tx } from "./db/client";
 import { jobs } from "./db/schema";
 
 export const MAX_ATTEMPTS = 3;
+/** A job still "running" after this long was left by a crashed or restarted server: run it again. */
+export const STALE_AFTER_MINUTES = 10;
 
 export interface JobRow {
   id: string;
@@ -20,7 +22,10 @@ type WithAgency = <T>(agencyId: string, fn: (tx: Tx) => Promise<T>) => Promise<T
 export async function claimNextJob(withAgency: WithAgency, agencyId: string): Promise<JobRow | null> {
   return withAgency(agencyId, async (tx) => {
     const rows = await tx.execute<{ id: string; kind: string; payload: Record<string, unknown>; attempts: number }>(
-      sql`select id, kind, payload, attempts from jobs where status = 'queued' order by created_at limit 1 for update skip locked`,
+      sql`select id, kind, payload, attempts from jobs
+          where status = 'queued'
+             or (status = 'running' and updated_at < now() - make_interval(mins => ${STALE_AFTER_MINUTES}))
+          order by created_at limit 1 for update skip locked`,
     );
     const job = rows[0];
     if (!job) return null;
@@ -46,7 +51,8 @@ export async function runPendingJobs(
       await withAgency(agencyId, (tx) => tx.update(jobs).set({ status: "done", lastError: null, updatedAt: new Date() }).where(eq(jobs.id, job.id)));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const status = job.attempts >= MAX_ATTEMPTS ? "failed" : "queued";
+      const permanent = typeof error === "object" && error !== null && (error as { permanent?: unknown }).permanent === true;
+      const status = permanent || job.attempts >= MAX_ATTEMPTS ? "failed" : "queued";
       await withAgency(agencyId, (tx) => tx.update(jobs).set({ status, lastError: message, updatedAt: new Date() }).where(eq(jobs.id, job.id)));
       if (status === "queued") continue;
     }

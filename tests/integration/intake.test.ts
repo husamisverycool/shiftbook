@@ -7,6 +7,7 @@ import { agencies, auditEvents, jobs, sourceDocuments, timeEntries } from "../..
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, periodId, seedDemoAgency } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
+import { RecordingMissingError } from "../../src/server/extraction/transport";
 import { runPendingJobs } from "../../src/server/jobs";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -93,5 +94,33 @@ describe("intake of structured files (time clock, Fieldglass)", () => {
     expect(ran).toBe(handled);
     const left = await app.withAgency(actor.agencyId, (tx) => tx.select().from(jobs).where(eq(jobs.status, "queued")));
     expect(left).toHaveLength(0);
+  });
+
+  it("picks up a job left running by a crashed server, but not one still running", async () => {
+    const [stale] = await app.withAgency(actor.agencyId, (tx) =>
+      tx.insert(jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: {}, status: "running", attempts: 1, updatedAt: new Date(Date.now() - 11 * 60_000) }).returning(),
+    );
+    const [fresh] = await app.withAgency(actor.agencyId, (tx) =>
+      tx.insert(jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: {}, status: "running", attempts: 1 }).returning(),
+    );
+    const seen: string[] = [];
+    await runPendingJobs(app.withAgency, actor.agencyId, async (job) => {
+      seen.push(job.id);
+    });
+    expect(seen).toEqual([stale!.id]);
+    await app.withAgency(actor.agencyId, (tx) => tx.delete(jobs).where(eq(jobs.id, fresh!.id)));
+  });
+
+  it("fails a job at once when retrying cannot help (e.g. no recorded reading in demo mode)", async () => {
+    const [job] = await app.withAgency(actor.agencyId, (tx) => tx.insert(jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: {} }).returning());
+    let calls = 0;
+    await runPendingJobs(app.withAgency, actor.agencyId, async () => {
+      calls += 1;
+      throw new RecordingMissingError("0123456789abcdef");
+    });
+    expect(calls).toBe(1);
+    const [after] = await app.withAgency(actor.agencyId, (tx) => tx.select().from(jobs).where(eq(jobs.id, job!.id)));
+    expect(after!.status).toBe("failed");
+    expect(after!.lastError).toMatch(/no recorded reading/);
   });
 });

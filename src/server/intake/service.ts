@@ -179,7 +179,8 @@ export async function readStoredDocument(
     const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
     const clients = await tx.select({ name: s.clients.name }).from(s.clients);
     await tx.update(s.sourceDocuments).set({ status: "reading", error: null, updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
-    return { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name) };
+    // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
+    return { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() };
   });
 
   try {

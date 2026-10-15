@@ -34,6 +34,8 @@ export function requestHash(r: PassRequest): string {
 }
 
 export class ExtractionRefusedError extends Error {
+  /** Retrying gives the same answer: the job fails at once. */
+  readonly permanent = true;
   constructor(detail: string) {
     super(`The model declined to read this document (${detail}). It needs to be entered by hand.`);
     this.name = "ExtractionRefusedError";
@@ -70,9 +72,10 @@ export class AnthropicTransport implements ExtractionTransport {
 }
 
 export class RecordingMissingError extends Error {
+  readonly permanent = true;
   constructor(hash: string) {
     super(
-      `Demo mode makes no outside calls, and this document is not one of the demo's sample timesheets (no recorded reading ${hash.slice(0, 12)}…). Use the sample files, or run with an API key outside demo mode.`,
+      `Demo mode makes no outside calls, so photos and PDFs are read only from readings recorded earlier, and there is no recorded reading for this page (${hash.slice(0, 12)}…).`,
     );
     this.name = "RecordingMissingError";
   }

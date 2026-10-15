@@ -79,7 +79,7 @@ export async function createRunFiles(tx: Tx, actor: Actor, store: DocumentStore,
   const payrollSha = sha(file.bytes);
   const [exportRow] = await tx
     .insert(s.exports)
-    .values({ agencyId: actor.agencyId, payRunId: run!.id, format: fixture.format, mappingVersion: fixture.mappingVersion, filename: file.filename, sha256: payrollSha, controlTotals: file.controlTotals, storageKey: payrollKey })
+    .values({ agencyId: actor.agencyId, payRunId: run!.id, format: fixture.format, mappingVersion: fixture.mappingVersion, filename: file.filename, sha256: payrollSha, controlTotals: file.controlTotals, notes: file.notes, storageKey: payrollKey })
     .returning();
   await audit(tx, actor, [{ action: "export", entityType: "export", entityId: exportRow!.id, after: { filename: file.filename, sha256: payrollSha, controlTotals: file.controlTotals } }]);
 
@@ -135,7 +135,7 @@ export async function createRunFiles(tx: Tx, actor: Actor, store: DocumentStore,
       amountDueLine: fill(t.amountDue, { amount: formatCents(totalCents), date: longDate(dueOn) }),
       lines: lines.map(({ l, w, a }) => ({
         description: `${w.firstName} ${w.lastName}${a ? ` — ${a.position}` : ""}`,
-        detail: `${t.earning[l.type]}${l.ruleId === "bill_overtime_not_billable" ? ` (${t.notBillable})` : ""} · ${longDate(l.workweekStart)}`,
+        detail: `${t.earning[l.type]}${l.ruleId === "bill_overtime_not_billable" ? ` (${t.notBillable})` : ""} · ${fill(t.weekOf, { date: longDate(l.workweekStart) })}`,
         hours: hoursMinutes(l.minutes),
         rate: formatRate({ num: l.rateNum, den: l.rateDen }),
         amount: formatCents(l.amountCents),

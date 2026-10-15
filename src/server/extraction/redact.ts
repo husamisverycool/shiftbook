@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import sharp from "sharp";
+import { existsSync } from "node:fs";
 import { createWorker, OEM, type Worker } from "tesseract.js";
 
 export type SensitiveKind = "ssn" | "dob";
@@ -41,13 +42,37 @@ export function sensitiveSpans(line: string, periodYear: number): { kind: Sensit
 
 let workerPromise: Promise<Worker> | null = null;
 
+/**
+ * The bundled English model. Inside the Next.js server bundle, module resolution can return a
+ * virtual path, so the project's node_modules is tried as well; the first real file wins.
+ */
+export function ocrLanguageDir(): string {
+  const candidates = [
+    () => dirname(createRequire(import.meta.url).resolve("@tesseract.js-data/eng/package.json")),
+    () => join(process.cwd(), "node_modules", "@tesseract.js-data", "eng"),
+  ];
+  for (const candidate of candidates) {
+    try {
+      const dir = join(candidate(), "4.0.0_best_int");
+      if (existsSync(join(dir, "eng.traineddata.gz"))) return dir;
+    } catch {
+      // try the next place
+    }
+  }
+  throw new Error("The text-recognition model (@tesseract.js-data/eng) is not installed, so identifying numbers cannot be blacked out.");
+}
+
 function ocrWorker(): Promise<Worker> {
   if (!workerPromise) {
-    const dataRoot = dirname(createRequire(import.meta.url).resolve("@tesseract.js-data/eng/package.json"));
     workerPromise = createWorker("eng", OEM.LSTM_ONLY, {
-      langPath: join(dataRoot, "4.0.0_best_int"),
+      langPath: ocrLanguageDir(),
       cachePath: join(tmpdir(), "shiftbook-ocr-cache"),
       gzip: true,
+      // Errors reject the job's own promise instead of crashing the server process.
+      errorHandler: () => undefined,
+    }).catch((error: unknown) => {
+      workerPromise = null;
+      throw error;
     });
   }
   return workerPromise;

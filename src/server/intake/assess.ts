@@ -149,6 +149,7 @@ export function assessEntry(raw: RawEntry, ctx: AssessContext): EntryDraft {
       passB: f.passB,
       agree: f.agree,
       handwritten: f.handwritten,
+      ...(f.source ? { source: { row: f.source.row, column: f.source.column } } : {}),
       confidence: checks.some((c) => READING_PROBLEMS.test(c)) ? "low" : checks.length > 0 ? "medium" : "high",
       checks,
     };

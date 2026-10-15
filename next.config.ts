@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   // Cache Components is off: every Shiftbook page shows live, per-agency data, and its loading
   // placeholders would need a design reference we do not have. See docs/decisions/0007.
   cacheComponents: false,
+  // No generated agent-instruction files in the repository.
+  agentRules: false,
   turbopack: {
     rules: {
       "*.css": {
