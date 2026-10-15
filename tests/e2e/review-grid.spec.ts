@@ -69,3 +69,31 @@ for (const locale of ["en", "es"] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+test("review grid keyboard: arrows, Enter to the next row needing review, F2 edit, Esc, Space panel", async ({ page }) => {
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  await page.goto("/en/convert");
+  await page.getByRole("link", { name: "Start" }).first().click();
+  await page.getByTestId("file-input").setInputFiles(FIXTURE);
+  await expect(page.getByTestId("document-row")).toHaveCount(1, { timeout: 60_000 });
+  await page.getByTestId("forward").click();
+  await page.getByRole("button", { name: /^All/ }).click();
+
+  const grid = page.getByTestId("hours-grid");
+  const rows = grid.getByTestId("hours-row");
+  await expect(rows).toHaveCount(4);
+  // Rows are sorted by name: Anita Patel (clean) is first; the next one needing review is second.
+  await grid.locator('[data-cell="0:0"]').click();
+  await page.keyboard.press("ArrowRight");
+  await expect(grid.locator('[data-cell="0:1"]')).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("Enter");
+  await expect(grid.locator('[data-cell="1:0"]')).toBeFocused();
+  await page.keyboard.press("F2");
+  await expect(page.getByTestId("reason-row")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("reason-row")).toHaveCount(0);
+  await grid.locator('[data-cell="1:0"]').focus();
+  await page.keyboard.press(" ");
+  await expect(page.getByTestId("source-panel")).toBeVisible();
+});

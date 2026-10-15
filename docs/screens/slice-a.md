@@ -34,6 +34,7 @@ Screens: all step screenshots; `slice-a/m1-hours-phone.png` for narrow screens.
   the run is blocked, and while working; the label changes and the body becomes a loading panel.
 - ✓ One-way lock: after "Create files" the earlier steps are no longer links and the page stays on
   Files.
+- ✓ States: a loading panel while a step loads; an error alert with "Try again" if loading fails.
 - Differences: none.
 
 ## Step 1, Upload — `docs/patterns/inbox.md` (Dext add-documents panel, Expensify states)
@@ -75,8 +76,9 @@ Screens: `slice-a/g1-hours-flagged.png`, `slice-a/g2-hours-edit-reason.png`,
     needs a note.
   - Cancel leaves the row unchanged.
   - Edited values carry a marker.
-- ✓ Keyboard: arrow keys move between cells, Enter/F2 edits the row, Space opens the side panel,
-  Esc leaves.
+- ✓ Keyboard: arrow keys move between cells, F2 edits the row, Enter edits a row that needs review
+  and on a checked row moves to the next one still awaiting review (Rossum), Space opens the side
+  panel, Esc leaves.
 - ✓ Dates outside the period cannot be chosen.
 - Differences:
   - Filters: no pay-period, client or confidence filters (the converter fixes the period).
@@ -87,7 +89,7 @@ Screens: `slice-a/g1-hours-flagged.png`, `slice-a/g2-hours-edit-reason.png`,
   - No "+" to add an entry by hand.
   - Summary bar: only the hours sum, with no choice of summary function.
   - Keyboard shortcuts not built: Shift-range selection, copy/cut/paste, undo/redo, Cmd+F,
-    Shift+Enter, Cmd+/, previous/next entry in the panel, Enter to the next value awaiting review.
+    Shift+Enter, Cmd+/, previous/next entry in the panel.
   - Side panel has no comments tab.
   - Source boxes on photos could not be shown yet: photo readings need the recorded readings
     (Anthropic key).

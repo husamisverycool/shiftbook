@@ -153,7 +153,7 @@ export function LoadingPanel({ title, body }: { title: string; body: string }) {
     <div role="status" className="flex flex-col items-center gap-2 rounded-lg border py-16 text-center">
       <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
       <p className="font-medium">{title}</p>
-      <p className="text-sm text-muted-foreground">{body}</p>
+      {body && <p className="text-sm text-muted-foreground">{body}</p>}
     </div>
   );
 }

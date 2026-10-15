@@ -147,7 +147,13 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
     else if (e.key === "ArrowUp") focusCell(active.row - 1, active.col);
     else if (e.key === "ArrowRight") focusCell(active.row, active.col + 1);
     else if (e.key === "ArrowLeft") focusCell(active.row, active.col - 1);
-    else if ((e.key === "Enter" || e.key === "F2") && row) beginEdit(row);
+    else if (e.key === "F2" && row) beginEdit(row);
+    else if (e.key === "Enter" && row) {
+      // Rossum: Enter on a value already checked moves to the next one still awaiting review.
+      const next = needsAttention(row) ? -1 : visible.findIndex((r, i) => i > active.row && needsAttention(r));
+      if (next >= 0) focusCell(next, active.col);
+      else beginEdit(row);
+    }
     else if (e.key === " " && row) setPanel({ id: row.id, field: COLUMNS[active.col] ?? null });
     else return;
     e.preventDefault();
