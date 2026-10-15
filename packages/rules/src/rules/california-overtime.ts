@@ -40,23 +40,27 @@ export interface PremiumSplit {
   premiums: PremiumPart[];
 }
 
-export type CaliforniaRules = Partial<Record<(typeof CALIFORNIA_RULE_CODES)[number], OvertimeRule>>;
+export type CaliforniaRules = Record<(typeof CALIFORNIA_RULE_CODES)[number], OvertimeRule>;
 
 export type CaliforniaSelection = { ok: true; rules: CaliforniaRules } | { ok: false; reason: "missing" | "changes_mid_week"; ruleCode: string; date?: IsoDate };
 
-/** The California rows that apply (the codes the jurisdiction data lists), each covering the whole workweek. */
+/**
+ * The four California rows, each covering the whole workweek. All four apply to every California
+ * week by statute: a missing one (in the jurisdiction list or the overtime rows) holds the week
+ * instead of paying less.
+ */
 export function selectCaliforniaRules(rules: OvertimeRule[], codes: string[], week: IsoDate): CaliforniaSelection {
   const weekEnd = addDays(week, 6);
-  const out: CaliforniaRules = {};
+  const out: Partial<CaliforniaRules> = {};
   for (const code of CALIFORNIA_RULE_CODES) {
-    if (!codes.includes(code)) continue;
+    if (!codes.includes(code)) return { ok: false, reason: "missing", ruleCode: code };
     const touching = rules.filter((r) => r.jurisdiction === "CA" && r.ruleCode === code && r.effectiveFrom <= weekEnd && (r.effectiveTo === null || r.effectiveTo >= week));
     const change = touching.flatMap((r) => [r.effectiveFrom > week ? r.effectiveFrom : null, r.effectiveTo !== null && r.effectiveTo < weekEnd ? addDays(r.effectiveTo, 1) : null]).find((d) => d !== null);
     if (change) return { ok: false, reason: "changes_mid_week", ruleCode: code, date: change };
     if (touching.length === 0) return { ok: false, reason: "missing", ruleCode: code };
     out[code] = touching[0]!;
   }
-  return { ok: true, rules: out };
+  return { ok: true, rules: out as CaliforniaRules };
 }
 
 /** How many of a shift's minutes, which start `start` minutes into the day, fall in [0, a), [a, b) and [b, ∞). */
@@ -76,26 +80,21 @@ export function splitCalifornia(ordered: Shift[], week: IsoDate, ca: CaliforniaR
   const seventhDay = dates.every((d) => worked.has(d)) ? dates[6]! : null;
   const dayUsed = new Map<string, number>();
   let straightSoFar = 0;
-  const part = (rule: OvertimeRule | undefined, minutes: number): PremiumPart[] =>
-    rule && minutes > 0 ? [{ ruleCode: rule.ruleCode, type: rule.earningType === "DT" ? "DT" : "OT", multiplier: rule.multiplier, minutes, citation: rule.citation, thresholdMinutes: rule.thresholdMinutes }] : [];
+  const part = (rule: OvertimeRule, minutes: number): PremiumPart[] =>
+    minutes > 0 ? [{ ruleCode: rule.ruleCode, type: rule.earningType === "DT" ? "DT" : "OT", multiplier: rule.multiplier, minutes, citation: rule.citation, thresholdMinutes: rule.thresholdMinutes }] : [];
   return ordered.map((shift) => {
     const start = dayUsed.get(shift.date) ?? 0;
     dayUsed.set(shift.date, start + shift.minutes);
     const premiums: PremiumPart[] = [];
     let straight: number;
-    if (shift.date === seventhDay && ca.ca_seventh_day) {
-      const ot = ca.ca_seventh_day;
-      const dt = ca.ca_seventh_day_double_time;
-      const [before, first, rest] = segments(start, shift.minutes, ot.thresholdMinutes, dt ? dt.thresholdMinutes : Number.MAX_SAFE_INTEGER);
+    if (shift.date === seventhDay) {
+      const [before, first, rest] = segments(start, shift.minutes, ca.ca_seventh_day.thresholdMinutes, ca.ca_seventh_day_double_time.thresholdMinutes);
       straight = before;
-      premiums.push(...part(ot, first), ...part(dt, rest));
+      premiums.push(...part(ca.ca_seventh_day, first), ...part(ca.ca_seventh_day_double_time, rest));
     } else {
-      const ot = ca.ca_daily_overtime;
-      const dt = ca.ca_daily_double_time;
-      const [first, over8, over12] = segments(start, shift.minutes, ot ? ot.thresholdMinutes : Number.MAX_SAFE_INTEGER, dt ? dt.thresholdMinutes : Number.MAX_SAFE_INTEGER);
-      // Without a double-time row, minutes past its threshold stay daily overtime (never straight).
-      premiums.push(...part(ot, over8 + (dt ? 0 : over12)), ...part(dt, over12));
-      straight = first + (ot ? 0 : over8 + (dt ? 0 : over12));
+      const [first, over8, over12] = segments(start, shift.minutes, ca.ca_daily_overtime.thresholdMinutes, ca.ca_daily_double_time.thresholdMinutes);
+      premiums.push(...part(ca.ca_daily_overtime, over8), ...part(ca.ca_daily_double_time, over12));
+      straight = first;
     }
     // Weekly overtime only on minutes not already paid at a daily or seventh-day premium.
     const room = Math.max(0, weekly.thresholdMinutes - straightSoFar);

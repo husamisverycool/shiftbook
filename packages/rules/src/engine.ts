@@ -20,7 +20,7 @@ import { exactDecimalBig, mul, reduceFraction as reduce, roundHalfUpBig } from "
 import { isLocal, placeProblem, scopeMatches } from "./places";
 import { canonicalRules, ruleDataProblems } from "./rule-data";
 import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-wage";
-import { overtimeRate, premiumBase, RATE_FLOOR_CITATION, REGULAR_RATE_CITATION, weightedRegularRate } from "./rules/regular-rate";
+import { CA_REGULAR_RATE_CITATION, overtimeRate, premiumBase, premiumWorth, RATE_FLOOR_CITATION, REGULAR_RATE_CITATION, weightedRegularRate, worthMore } from "./rules/regular-rate";
 import { CA_DAILY_DOUBLE_TIME, CA_DAILY_OVERTIME, CA_SEVENTH_DAY, CALIFORNIA_RULE_CODES, selectCaliforniaRules, splitCalifornia, type PremiumSplit } from "./rules/california-overtime";
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import { CA_REPORTING_TIME, caReportingTime } from "./rules/ca-reporting-time";
@@ -29,7 +29,7 @@ import { MA_REPORTING_PAY, maReportingPay } from "./rules/ma-reporting-pay";
 import { guaranteeRuleFor, PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
 import type { ConfirmationKind, EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, PremiumRule, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-c5";
+export const RULES_VERSION = "2026.10-c6";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set<string>([WEEKLY_OVERTIME, MINIMUM_WAGE, ...CALIFORNIA_RULE_CODES]);
@@ -378,7 +378,13 @@ export function computePay(input: PayInput): PayResult {
     // California counts hours day by day (daily, double-time and seventh-day overtime) before the
     // week; elsewhere only the week counts. A week mixing California with another state is held.
     const california = states.includes("CA");
-    let splits: PremiumSplit[];
+    const weeklySplits: PremiumSplit[] = splitAtThreshold(shifts, weekly.thresholdMinutes).map(({ shift, regular, overtime }) => ({
+      shift,
+      regular,
+      premiums: overtime > 0 ? [{ ruleCode: WEEKLY_OVERTIME, type: "OT" as const, multiplier: weekly.multiplier, minutes: overtime, citation: citations, thresholdMinutes: weekly.thresholdMinutes }] : [],
+    }));
+    let splits: PremiumSplit[] = weeklySplits;
+    let caSplits: PremiumSplit[] | null = null;
     if (california) {
       const others = states.filter((st) => st !== "CA");
       if (others.length > 0) {
@@ -397,18 +403,10 @@ export function computePay(input: PayInput): PayResult {
         blockers.push(...weekBlockers);
         continue;
       }
-      splits = splitCalifornia(shifts, week, ca.rules, { ...weekly, citation: citations });
-    } else {
-      splits = splitAtThreshold(shifts, weekly.thresholdMinutes).map(({ shift, regular, overtime }) => ({
-        shift,
-        regular,
-        premiums: overtime > 0 ? [{ ruleCode: WEEKLY_OVERTIME, type: "OT" as const, multiplier: weekly.multiplier, minutes: overtime, citation: citations, thresholdMinutes: weekly.thresholdMinutes }] : [],
-      }));
+      caSplits = splitCalifornia(shifts, week, ca.rules, { ...weekly, citation: citations });
     }
     const totalMinutes = shifts.reduce((sum, s) => sum + s.minutes, 0);
     const premiumOf = (x: PremiumSplit) => x.premiums.reduce((sum, p) => sum + p.minutes, 0);
-    const weeklyMinutes = splits.reduce((sum, x) => sum + x.premiums.filter((p) => p.ruleCode === WEEKLY_OVERTIME).reduce((s2, p) => s2 + p.minutes, 0), 0);
-    const straightEligible = splits.reduce((sum, x) => sum + x.regular, 0) + weeklyMinutes;
 
     // Confirmed premiums must be for a day the worker worked on that assignment.
     const confirmed = (input.confirmations ?? []).filter((c) => c.workerId === first.workerId && workweekStart(c.date, input.workweekStartsOn) === week).sort((a, b) => cmp(a.date, b.date) || cmp(a.id, b.id));
@@ -435,6 +433,17 @@ export function computePay(input: PayInput): PayResult {
     const regularRate = shifts.some((s) => s.minutes > 0)
       ? weightedRegularRate(shifts.map((s) => ({ minutes: s.minutes, payRateCents: effective(s) })))
       : { num: Math.max(...shifts.map(effective)), den: 1 };
+
+    // California pays at least what the federal weekly rule would: both apply, so when the weekly
+    // rule's premiums are worth more (a minimum wage rising mid-week can do it) they are paid instead.
+    let federalGoverns = false;
+    if (caSplits) {
+      if (worthMore(premiumWorth(weeklySplits, regularRate, floorOf), premiumWorth(caSplits, regularRate, floorOf))) federalGoverns = true;
+      else splits = caSplits;
+    }
+    const californiaDaily = caSplits !== null && !federalGoverns;
+    const weeklyMinutes = splits.reduce((sum, x) => sum + x.premiums.filter((p) => p.ruleCode === WEEKLY_OVERTIME).reduce((s2, p) => s2 + p.minutes, 0), 0);
+    const straightEligible = splits.reduce((sum, x) => sum + x.regular, 0) + weeklyMinutes;
 
     // Overtime allocation follows the order of work; flag days where that order was assumed.
     const otDays = new Set(splits.filter((x) => premiumOf(x) > 0).map((x) => x.shift.date));
@@ -490,7 +499,7 @@ export function computePay(input: PayInput): PayResult {
       // 3. straight pay
       if (b.regular > 0) {
         const pay = arithmetic("Regular", b.regular, payRate, "");
-        const scope = california
+        const scope = californiaDaily
           ? `hours not paid at a daily, seventh-day or weekly premium in the workweek starting ${week}`
           : `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}`;
         weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: uniqueSorted(b.regularEntries) });
@@ -504,14 +513,14 @@ export function computePay(input: PayInput): PayResult {
         const elsewhereNote = elsewhere > 0 ? ` ${formatDuration(elsewhere)} of the first ${formatDuration(weekly.thresholdMinutes)} were worked on other assignments.` : "";
         const straight = formatRate(payRate).replace("/h", "");
         const rrText = formatRate(regularRate);
-        const rrWhy = ` Regular rate: ${formatMoney(reduce({ num: mul(regularRate.num, totalMinutes), den: mul(regularRate.den, 60) }))} earned at straight time ÷ ${formatDuration(totalMinutes)} worked = ${rrText}, used unrounded (${REGULAR_RATE_CITATION}).`;
+        const rrWhy = ` Regular rate: ${formatMoney(reduce({ num: mul(regularRate.num, totalMinutes), den: mul(regularRate.den, 60) }))} earned at straight time ÷ ${formatDuration(totalMinutes)} worked = ${rrText}, used unrounded (${REGULAR_RATE_CITATION}${california ? `; ${CA_REGULAR_RATE_CITATION}` : ""}).`;
         const whyFor = (part: Bucket["overtimeParts"][number]) => {
           const on = listDates(part.dates);
           switch (part.ruleCode) {
             case WEEKLY_OVERTIME:
-              return california
+              return californiaDaily
                 ? `Rule ${WEEKLY_OVERTIME}: ${formatDuration(straightEligible)} worked in the workweek starting ${week} not already paid at a daily or seventh-day premium is ${formatDuration(weeklyMinutes)} over the ${formatDuration(weekly.thresholdMinutes)} threshold (${citations}; DLSE Opinion Letter 2000.01.19).${elsewhereNote}`
-                : `Rule ${WEEKLY_OVERTIME}: ${formatDuration(totalMinutes)} worked in the workweek starting ${week} is ${formatDuration(weeklyMinutes)} over the ${formatDuration(weekly.thresholdMinutes)} threshold (${citations}).${elsewhereNote}`;
+                : `Rule ${WEEKLY_OVERTIME}: ${formatDuration(totalMinutes)} worked in the workweek starting ${week} is ${formatDuration(weeklyMinutes)} over the ${formatDuration(weekly.thresholdMinutes)} threshold (${citations}).${elsewhereNote}${federalGoverns ? " The weekly rule pays more this week than California's daily and seventh-day rules (both apply, so the larger is paid; 29 U.S.C. § 218(a))." : ""}`;
             case CA_DAILY_OVERTIME:
             case CA_DAILY_DOUBLE_TIME:
               return `Rule ${part.ruleCode}: hours over ${formatDuration(part.thresholdMinutes)} in a workday, on ${on} (${part.citation}).`;
@@ -537,10 +546,10 @@ export function computePay(input: PayInput): PayResult {
         }
 
         // Billing mirrors the pay lines by rule (a minimum-wage base never splits a bill line).
-        const billParts = new Map<string, { type: "OT" | "DT"; minutes: number; entries: string[] }>();
+        const billParts = new Map<string, { type: "OT" | "DT"; ruleCode: string; minutes: number; entries: string[] }>();
         for (const part of ordered) {
           const k2 = `${part.ruleCode}|${part.type}`;
-          const bp = billParts.get(k2) ?? { type: part.type, minutes: 0, entries: [] };
+          const bp = billParts.get(k2) ?? { type: part.type, ruleCode: part.ruleCode, minutes: 0, entries: [] };
           bp.minutes += part.minutes;
           bp.entries.push(...part.entries);
           billParts.set(k2, bp);
@@ -548,17 +557,19 @@ export function computePay(input: PayInput): PayResult {
         const rule = b.sample.otBillingRule;
         for (const bp of billParts.values()) {
           const what = bp.type === "DT" ? "double time" : "overtime";
-          const note = bp.type === "OT" ? elsewhereNote : "";
+          const note = bp.ruleCode === WEEKLY_OVERTIME ? elsewhereNote : "";
+          // In California a line can carry several rules' hours: the bill line says whose it mirrors.
+          const forRule = caSplits !== null ? ` (${bp.ruleCode} hours)` : "";
           if (rule === "multiplier") {
             const m = bp.type === "DT" ? b.sample.billDtMultiplier : b.sample.billOtMultiplier;
             const rate = reduce({ num: mul(b.sample.billRateCents, m.num), den: m.den });
-            const bill = arithmetic(bp.type === "DT" ? "Billed double time" : "Billed overtime", bp.minutes, rate, ` (${formatMultiplier(m)} × ${formatRate(billRate).replace("/h", "")} bill rate)`);
+            const bill = arithmetic(`${bp.type === "DT" ? "Billed double time" : "Billed overtime"}${forRule}`, bp.minutes, rate, ` (${formatMultiplier(m)} × ${formatRate(billRate).replace("/h", "")} bill rate)`);
             weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills ${what} at the rate-card ${what} multiplier; bill rate from the rate card${billRateNote(b.billRate.overtime)}.${note}`, entryIds: uniqueSorted(bp.entries) });
           } else if (rule === "straight_time") {
-            const bill = arithmetic(`Billed ${what} at straight time`, bp.minutes, billRate, "");
-            weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills overtime at straight time; bill rate from the rate card${billRateNote(b.billRate.overtime)}.${note}`, entryIds: uniqueSorted(bp.entries) });
+            const bill = arithmetic(`Billed ${what} at straight time${forRule}`, bp.minutes, billRate, "");
+            weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills ${what} at straight time; bill rate from the rate card${billRateNote(b.billRate.overtime)}.${note}`, entryIds: uniqueSorted(bp.entries) });
           } else {
-            weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `${bp.type === "DT" ? "Double time" : "Overtime"} not billed: ${formatDuration(bp.minutes)} (${bp.minutes} min) → ${formatCents(0)}. Client profile marks overtime not billable.${note}`, entryIds: uniqueSorted(bp.entries) });
+            weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `${bp.type === "DT" ? "Double time" : "Overtime"} not billed${forRule}: ${formatDuration(bp.minutes)} (${bp.minutes} min) → ${formatCents(0)}. Client profile marks overtime not billable.${note}`, entryIds: uniqueSorted(bp.entries) });
           }
         }
       }
@@ -566,6 +577,8 @@ export function computePay(input: PayInput): PayResult {
       for (const t of b.trueUps) {
         const rate: Fraction = { num: t.floor - b.sample.payRateCents, den: 1 };
         const pay = arithmetic("Minimum-wage top-up", t.minutes, rate, ` (${formatRate({ num: t.floor, den: 1 }).replace("/h", "")} minimum wage − ${formatRate(payRate).replace("/h", "")} pay rate)`);
+        // Less than half a cent rounds to nothing: no line (the warning still asks for the rate card to be fixed).
+        if (pay.amountCents === 0) continue;
         const why = `Rule ${MINIMUM_WAGE}: the pay rate is below the minimum wage on ${t.dates.join(", ")} (${t.citations.join("; ")}), so the difference is paid for every hour worked.`;
         weekPay.push({ ...base, type: "MW_TRUEUP", minutes: t.minutes, rate, amountCents: pay.amountCents, ruleId: MINIMUM_WAGE, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(t.entries) });
       }

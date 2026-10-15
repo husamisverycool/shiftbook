@@ -16,10 +16,12 @@
  * are rounded, once. The multiplier comes from the overtime rule data.
  */
 import { mul, reduceFraction as reduce } from "../int";
-import type { Fraction } from "../types";
+import type { Fraction, Shift } from "../types";
 
 export const REGULAR_RATE_CITATION = "29 C.F.R. § 778.115; § 778.111(a)";
 export const RATE_FLOOR_CITATION = "29 C.F.R. § 778.107";
+/** California computes the regular rate the same way (DLSE Enforcement Manual 49.2.5; DLSE overtime FAQ). */
+export const CA_REGULAR_RATE_CITATION = "DLSE Enforcement Manual 49.2.5";
 
 /** Σ minutes × rate ÷ Σ minutes, in cents per hour (Σ minutes > 0). */
 export function weightedRegularRate(shifts: { minutes: number; payRateCents: number }[]): Fraction {
@@ -44,3 +46,30 @@ export function overtimeRate(payRateCents: number, base: Fraction, multiplier: F
     den: mul(multiplier.den, base.den),
   });
 }
+
+/**
+ * The exact worth, in cents, of a week's premiums (what overtime and double time add on top of
+ * straight time): Σ minutes × (multiplier − 1) × that day's premium base ÷ 60, as a fraction in
+ * big integers so two ways of splitting the week compare exactly.
+ */
+export function premiumWorth(
+  splits: { shift: Shift; premiums: { minutes: number; multiplier: Fraction }[] }[],
+  regularRate: Fraction,
+  floorOf: Map<Shift, number>,
+): { num: bigint; den: bigint } {
+  let num = 0n;
+  let den = 1n;
+  for (const { shift, premiums } of splits) {
+    const { base } = premiumBase(regularRate, floorOf.get(shift)!);
+    for (const p of premiums) {
+      const n = BigInt(p.minutes) * BigInt(p.multiplier.num - p.multiplier.den) * BigInt(base.num);
+      const d = BigInt(p.multiplier.den) * BigInt(base.den) * 60n;
+      num = num * d + n * den;
+      den = den * d;
+    }
+  }
+  return { num, den };
+}
+
+/** a > b for two exact fractions (positive denominators). */
+export const worthMore = (a: { num: bigint; den: bigint }, b: { num: bigint; den: bigint }) => a.num * b.den > b.num * a.den;

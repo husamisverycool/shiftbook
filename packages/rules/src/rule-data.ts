@@ -39,6 +39,8 @@ const positiveInt = (n: unknown) => Number.isSafeInteger(n) && (n as number) > 0
 /** Factors stay small so every product of rate × multiplier × minutes is a safe integer. */
 const MAX_FACTOR = 1000;
 const MAX_THRESHOLD_MINUTES = 10_080; // one week
+/** No minimum wage is anywhere near $1,000 an hour: a larger row is a typo, not a rate to pay. */
+const MAX_MINIMUM_WAGE_CENTS = 100_000;
 
 function multiplierProblem(m: { num?: unknown; den?: unknown } | undefined): string | null {
   if (!m || !positiveInt(m.num) || !positiveInt(m.den) || (m.num as number) > MAX_FACTOR || (m.den as number) > MAX_FACTOR) {
@@ -101,7 +103,7 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
       (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
       datesProblem(r) ||
       scopeProblem(r.jurisdiction, r.countyFips, r.placeFips) ||
-      (!positiveInt(r.rateCents) && "its rate must be a positive whole number of cents");
+      ((!positiveInt(r.rateCents) || r.rateCents > MAX_MINIMUM_WAGE_CENTS) && "its rate must be a positive whole number of cents, at most $1,000 an hour");
     if (problem) issues.push(invalid(`${where}: ${problem}`));
   }
   for (const r of t.premiumRules) {

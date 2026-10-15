@@ -253,6 +253,33 @@ ruleCase(
   },
 );
 
+ruleCase(
+  "ca-minimum-wage-rises-new-year",
+  "An Ontario, California worker on a $16.60/h rate card works 8 hours a day Monday December 29, 2025 to Friday January 2, 2026 (the workweek starts Monday). The state minimum is $16.50/h in 2025 and $16.90/h from January 1, 2026 (Cal. Lab. Code § 1182.12), and it is owed for each hour, not averaged over the week (Armenta v. Osmose). Monday to Wednesday are paid at the rate card; Thursday and Friday also get a top-up of 16 h × $0.30 = $4.80 on its own line, with a warning to fix the rate card. Pay: 40 h × $16.60 = $664.00 + $4.80 = $668.80. Bill: 40 h × $26.00 = $1,040.00.",
+  { ...input(["2025-12-29", "2025-12-30", "2025-12-31", "2026-01-01", "2026-01-02"].map((d) => shift(d, 480, { ...CA, payRateCents: 1660, billRateCents: 2600 }))), workweekStartsOn: 1 },
+  { pay: [["REG", 2400, 66400], ["MW_TRUEUP", 960, 480]], bill: [["REG", 2400, 104000]] },
+);
+
+ruleCase(
+  "ca-seventh-day-billing-variants",
+  "The California seven-day week of ca-daily-and-seventh-day ($1,368.00 of pay, unchanged) billed to two other clients: one bills overtime and double time at straight time — 63 h × $26.00 = $1,638.00; the other does not bill overtime — 40 h × $26.00 = $1,040.00, with the 20 overtime and 3 double-time hours listed at $0.00.",
+  caInput(
+    (["straight_time", "not_billable"] as const).flatMap((rule, i) =>
+      [480, 600, 780, 480, 480, 360, 600].map((m, d) => shift(CA_WEEK[d]!, m, { ...CA, workerId: `worker-${i + 1}`, workerName: `Worker ${i + 1}`, assignmentId: `assignment-${i + 1}`, clientId: `client-${i + 1}`, payRateCents: 1800, billRateCents: 2600, otBillingRule: rule })),
+    ),
+  ),
+  {
+    pay: [
+      ["REG", 2400, 72000], ["OT", 360, 16200], ["OT", 360, 16200], ["OT", 480, 21600], ["DT", 60, 3600], ["DT", 120, 7200],
+      ["REG", 2400, 72000], ["OT", 360, 16200], ["OT", 360, 16200], ["OT", 480, 21600], ["DT", 60, 3600], ["DT", 120, 7200],
+    ],
+    bill: [
+      ["REG", 2400, 104000], ["OT", 360, 15600], ["OT", 360, 15600], ["OT", 480, 20800], ["DT", 60, 2600], ["DT", 120, 5200],
+      ["REG", 2400, 104000], ["OT", 360, 0], ["OT", 360, 0], ["OT", 480, 0], ["DT", 60, 0], ["DT", 120, 0],
+    ],
+  },
+);
+
 // ---------- export goldens ----------
 function exportCase(name: string, summary: string, fixture: ExportFixture, handTotals: unknown) {
   const result = renderExport(fixture);

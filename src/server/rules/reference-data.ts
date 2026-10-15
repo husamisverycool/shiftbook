@@ -1,6 +1,7 @@
 /**
  * The reference wage-rule rows, mirrored from migrations drizzle/0002_reference_rules.sql,
- * drizzle/0004_rule_data_v2.sql and drizzle/0005_place_codes.sql. An integration test proves the database holds exactly these rows,
+ * drizzle/0004_rule_data_v2.sql, drizzle/0005_place_codes.sql, drizzle/0015 (Chicago and Cook County),
+ * drizzle/0016 (premiums and short-day pay) and drizzle/0017 (California local minimum wages). An integration test proves the database holds exactly these rows,
  * so tests and goldens that use this module can never drift from what the app computes with.
  * Sources: docs/research/minimum-wage-2026.md and the citations on each row.
  */
@@ -32,6 +33,8 @@ const j = (jurisdiction: string, ruleCode: string, citation: string, scope?: Sco
   citation,
 });
 
+const CA_LOCAL = "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet";
+
 export const REFERENCE_JURISDICTION_RULES: JurisdictionRule[] = [
   j("US", "weekly_overtime", "29 U.S.C. § 207(a)(1)"),
   j("IL", "weekly_overtime", "820 ILCS 105/4a"),
@@ -48,6 +51,47 @@ export const REFERENCE_JURISDICTION_RULES: JurisdictionRule[] = [
   // Census FIPS codes: Cook County, IL = 17031; City of Chicago = 1714000 (drizzle/0015).
   j("IL", "minimum_wage", "Cook County Minimum Wage Ordinance, Cook County Code § 42-13 (Ord. 16-5768)", { countyFips: "17031", scopeName: "Cook County" }),
   j("IL", "minimum_wage", "Chicago Minimum Wage Ordinance, Chicago Municipal Code ch. 6-105", { placeFips: "1714000", scopeName: "City of Chicago" }),
+  // California localities with their own minimum wage (drizzle/0017): held until their rates are on file.
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0600562", scopeName: "City of Alameda" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0605108", scopeName: "City of Belmont" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0606000", scopeName: "City of Berkeley" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0609066", scopeName: "City of Burlingame" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0617610", scopeName: "City of Cupertino" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0617918", scopeName: "Daly City" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0620956", scopeName: "City of East Palo Alto" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0621796", scopeName: "City of El Cerrito" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0622594", scopeName: "City of Emeryville" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0625338", scopeName: "Foster City" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0626000", scopeName: "City of Fremont" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0631708", scopeName: "City of Half Moon Bay" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0633000", scopeName: "City of Hayward" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0643280", scopeName: "City of Los Altos" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0644000", scopeName: "City of Los Angeles" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0645246", scopeName: "City of Malibu" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0646870", scopeName: "City of Menlo Park" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0647766", scopeName: "City of Milpitas" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0649670", scopeName: "City of Mountain View" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0652582", scopeName: "City of Novato" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0653000", scopeName: "City of Oakland" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0655282", scopeName: "City of Palo Alto" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0656000", scopeName: "City of Pasadena" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0656784", scopeName: "City of Petaluma" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0660102", scopeName: "Redwood City" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0660620", scopeName: "City of Richmond" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0665070", scopeName: "City of San Carlos" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0666000", scopeName: "City of San Diego" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0667000", scopeName: "City and County of San Francisco" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0668000", scopeName: "City of San Jose" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0668252", scopeName: "City of San Mateo" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0669084", scopeName: "City of Santa Clara" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0670000", scopeName: "City of Santa Monica" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0670098", scopeName: "City of Santa Rosa" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0673262", scopeName: "City of South San Francisco" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0672646", scopeName: "City of Sonoma" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0677000", scopeName: "City of Sunnyvale" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { placeFips: "0684410", scopeName: "City of West Hollywood" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { countyFips: "06037", scopeName: "Los Angeles County (its ordinance covers unincorporated areas; cities there are held too until checked)" }),
+  j("CA", "local_minimum_wage", CA_LOCAL, { countyFips: "06081", scopeName: "San Mateo County (its ordinance covers unincorporated areas; cities there are held too until checked)" }),
 ];
 
 const mw = (jurisdiction: string, rateCents: number, effectiveFrom: string, effectiveTo: string | null, citation: string, scope?: Scope): MinimumWageRule => ({

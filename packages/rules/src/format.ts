@@ -1,5 +1,5 @@
 /** Text formatting for explain strings. Integer-only; no "/" (see int.ts). */
-import { exactDecimal, floorDiv, mod, mul } from "./int";
+import { exactDecimal, exactDecimalBig, floorDiv, mod } from "./int";
 import type { Fraction } from "./types";
 
 /** 2280 → "38h 00m". */
@@ -20,7 +20,8 @@ export function formatCents(cents: number): string {
 
 /** {5475, 2} cents/hour → "$27.375/h"; always at least two decimals. */
 export function formatRate(rate: Fraction): string {
-  const text = exactDecimal(rate.num, mul(rate.den, 100));
+  // Big integers: a malformed rate with a huge denominator is shown, never a crash.
+  const text = exactDecimalBig(BigInt(rate.num), BigInt(rate.den) * 100n);
   const [whole, frac = ""] = text.split(".");
   const fraction = frac.length >= 2 ? frac : frac.padEnd(2, "0");
   return `$${withThousands(whole ?? "0")}.${fraction}/h`;

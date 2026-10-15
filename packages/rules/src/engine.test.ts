@@ -705,6 +705,19 @@ describe("computePay — regular rate as the weighted average of the week's rate
     expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(75_400);
   });
 
+  it("pays no top-up line that would round to nothing, and still warns", () => {
+    const r = computePay(input([shift(WEEK[0]!, 20, { payRateCents: 1499 })]));
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => l.type)).toEqual(["REG"]);
+    expect(r.warnings.map((w) => w.code)).toEqual(["below_minimum_wage"]);
+  });
+
+  it("refuses a minimum-wage row that is not a plausible hourly rate", () => {
+    const minimumWageRules = [...MIN_WAGE, { jurisdiction: "IL", countyFips: WILL, scopeName: "Will County", rateCents: 150_000, effectiveFrom: "2026-01-01", effectiveTo: null, citation: "typo" }];
+    const r = computePay(input([shift(WEEK[0]!, 480)], { minimumWageRules }));
+    expect(r.blockers.map((b) => b.code)).toEqual(["rule_data_invalid"]);
+  });
+
   it("computes very large weeks exactly, without leaving safe integers", () => {
     const shifts = WEEK.map((d, i) => shift(d, 1440, { startMinute: 0, assignmentId: i % 2 ? "aA" : "aB", payRateCents: i % 2 ? 9_999_999 : 9_999_998 }));
     const r = computePay(input(shifts));
@@ -846,6 +859,43 @@ describe("computePay — California daily, double-time and seventh-day overtime 
     expect(il.warnings.map((w) => w.code)).toEqual(["premium_not_applicable"]);
   });
 
+  it("never pays less than the federal weekly rule: when the minimum wage rises mid-week, the larger result is paid", () => {
+    // Rate card $16.60; the minimum is $16.50 in 2025 and $16.90 from 2026-01-01 (review round c1, B1).
+    const minimumWageRules = [
+      ...MIN_WAGE.filter((m) => m.jurisdiction !== "CA"),
+      { jurisdiction: "CA", rateCents: 1650, effectiveFrom: "2025-01-01", effectiveTo: "2025-12-31", citation: "Cal. Lab. Code § 1182.12 (2025)" },
+      { jurisdiction: "CA", rateCents: 1690, effectiveFrom: "2026-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 1182.12 (2026)" },
+    ];
+    const days = ["2025-12-29", "2025-12-30", "2025-12-31", "2026-01-01", "2026-01-02"];
+    const shifts = days.map((d, i) => ca(d, i === 0 ? 720 : 480, { payRateCents: 1660 }));
+    const r = computePay(input(shifts, { workweekStartsOn: 1, overtimeRules: CA_OT, jurisdictionRules: CA_J, minimumWageRules }));
+    expect(r.blockers).toEqual([]);
+    // California's daily rule: 4 h × ½ × $16.709… on Monday → $768.62; the weekly rule: Friday's 4 h
+    // over 40 on a $16.90 base → $769.00. The worker gets the larger.
+    expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(76_900);
+    const ot = r.payLines.find((l) => l.type === "OT")!;
+    expect(ot.ruleId).toBe("weekly_overtime");
+    expect(ot.explain).toContain("pays more this week than California's daily and seventh-day rules");
+  });
+
+  it("holds a California week whose rule data is incomplete instead of paying less", () => {
+    const missingDt = CA_J.filter((j) => j.ruleCode !== "ca_daily_double_time");
+    const r = computePay(input([ca(G1[1]!, 780)], { workweekStartsOn: 0, overtimeRules: CA_OT, jurisdictionRules: missingDt }));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.map((b) => [b.code, b.ruleCode])).toEqual([["rule_data_missing", "ca_daily_double_time"]]);
+  });
+
+  it("names the pay rule on each bill line, and keeps California daily lines free of weekly notes", () => {
+    const shifts = [ca(G1[1]!, 600, { assignmentId: "aA", clientId: "cA" }), ...G1.slice(2, 6).map((d) => ca(d, 480, { assignmentId: "aB", clientId: "cB" })), ca(G1[6]!, 120, { assignmentId: "aB", clientId: "cB" })];
+    const r = computePay(caInput(shifts));
+    const daily = r.billLines.find((l) => l.type === "OT" && l.explain.includes("ca_daily_overtime"))!;
+    expect(daily.explain).not.toContain("were worked on other assignments");
+    const straight = computePay(caInput([ca(G1[1]!, 780, { otBillingRule: "straight_time" })]));
+    expect(straight.billLines.find((l) => l.type === "DT")!.explain).toContain("Client bills double time at straight time");
+    const rr = computePay(caInput([ca(G1[1]!, 600, { assignmentId: "aA" }), ca(G1[2]!, 480, { assignmentId: "aB", payRateCents: 2000 })]));
+    expect(rr.payLines.find((l) => l.type === "OT")!.explain).toContain("DLSE Enforcement Manual 49.2.5");
+  });
+
   it("holds a week that mixes California with another state", () => {
     const r = computePay(caInput([ca(G1[1]!, 480), shift(G1[2]!, 480, { assignmentId: "aIL" })]));
     expect(r.payLines).toEqual([]);
@@ -880,9 +930,14 @@ describe("computePay — pay when a worker reports or is sent and gets less work
   ];
   const CA_SITE = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const;
   const MA_SITE = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const;
-  const CA_J: JurisdictionRule[] = [...JURISDICTIONS.filter((j) => j.jurisdiction !== "CA"), ...["weekly_overtime", "ca_daily_overtime"].map((ruleCode) => ({ jurisdiction: "CA", ruleCode, effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" }))];
+  const CA_J: JurisdictionRule[] = [
+    ...JURISDICTIONS.filter((j) => j.jurisdiction !== "CA"),
+    ...["weekly_overtime", "ca_daily_overtime", "ca_daily_double_time", "ca_seventh_day", "ca_seventh_day_double_time"].map((ruleCode) => ({ jurisdiction: "CA", ruleCode, effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" })),
+  ];
   const CA_WEEKLY: OvertimeRule = { jurisdiction: "CA", ruleCode: "weekly_overtime", kind: "weekly", thresholdMinutes: 2400, multiplier: { num: 3, den: 2 }, earningType: "OT", effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" };
-  const run = (shifts: Shift[], confirmations: Confirmation[]) => computePay({ ...input(shifts, { jurisdictionRules: CA_J, overtimeRules: [...OT_RULES, CA_WEEKLY] }), guaranteeRules: GUARANTEES, confirmations });
+  const caRow = (ruleCode: string, kind: OvertimeRule["kind"], thresholdMinutes: number, num: number, den: number, earningType: "OT" | "DT"): OvertimeRule => ({ jurisdiction: "CA", ruleCode, kind, thresholdMinutes, multiplier: { num, den }, earningType, effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" });
+  const CA_ROWS = [CA_WEEKLY, caRow("ca_daily_overtime", "daily", 480, 3, 2, "OT"), caRow("ca_daily_double_time", "daily_double", 720, 2, 1, "DT"), caRow("ca_seventh_day", "seventh_day", 0, 3, 2, "OT"), caRow("ca_seventh_day_double_time", "seventh_day", 480, 2, 1, "DT")];
+  const run = (shifts: Shift[], confirmations: Confirmation[]) => computePay({ ...input(shifts, { jurisdictionRules: CA_J, overtimeRules: [...OT_RULES.filter((o) => o.jurisdiction !== "CA"), ...CA_ROWS] }), guaranteeRules: GUARANTEES, confirmations });
   const sent = (date: string, assignmentId: string, over: Partial<Confirmation> = {}): Confirmation => ({ id: `c-${date}-${assignmentId}`, kind: "reported_short", workerId: "w1", assignmentId, date, ...over });
   const lines = (r: ReturnType<typeof computePay>) => r.payLines.map((l) => [l.type, l.ruleId, l.minutes, l.amountCents]);
 

@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { exactDecimal, floorDiv, mod, roundHalfUp } from "./int";
+import { exactDecimal, exactDecimalBig, floorDiv, mod, roundHalfUp, roundHalfUpBig } from "./int";
 
 describe("roundHalfUp(num, den) — integer division rounded half away from zero", () => {
   it("rounds exact quotients without change", () => {
@@ -59,3 +59,15 @@ describe("exactDecimal(num, den) — shows a rational exactly for explain string
     expect(exactDecimal(-5, 2)).toBe("-2.5");
   });
 });
+
+describe("big-integer helpers for line amounts", () => {
+  it("round half away from zero and stay exact past 2^53", () => {
+    expect(roundHalfUpBig(5n, 2n)).toBe(3);
+    expect(roundHalfUpBig(-5n, 2n)).toBe(-3);
+    expect(roundHalfUpBig(10_000n * 200_000_000_000_007n, 60n * 10_079n)).toBe(3_307_206_402_752);
+    expect(exactDecimalBig(1n, 3n)).toBe("0.3333…");
+    expect(exactDecimalBig(-7n, 2n)).toBe("-3.5");
+    expect(() => roundHalfUpBig(1n, 0n)).toThrow();
+  });
+});
+
