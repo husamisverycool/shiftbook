@@ -217,3 +217,16 @@ export async function readStoredDocument(
     throw error;
   }
 }
+
+/** Sets a timesheet that could not be read aside, with a reason (Dext archive). Its hours are not paid. */
+export async function archiveDocument(tx: Tx, actor: Actor, documentId: string, reason: string): Promise<void> {
+  const why = reason.trim();
+  if (why === "") throw new Error("A reason is required to archive a timesheet.");
+  const [found] = await tx.select({ payPeriodId: s.sourceDocuments.payPeriodId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
+  if (!found) throw new Error("document not found");
+  await openPeriod(tx, found.payPeriodId);
+  const [doc] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
+  if (doc!.status !== "failed") throw new Error("Only a timesheet that could not be read can be archived.");
+  await tx.update(s.sourceDocuments).set({ status: "archived", updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
+  await audit(tx, actor, [{ action: "update", entityType: "source_document", entityId: documentId, before: { status: doc!.status }, after: { status: "archived" }, reason: why }]);
+}

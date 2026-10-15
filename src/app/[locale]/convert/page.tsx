@@ -2,7 +2,7 @@
 // (upload → review hours → review totals → files) inside the step frame.
 import { CircleAlertIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { after } from "next/server";
 import { ConvertFrame } from "@/components/shiftbook/convert/frame";
 import { FilesStep } from "@/components/shiftbook/convert/files-step";
@@ -83,6 +83,8 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
 
   if (step === "totals") {
     const data = await inAgency((tx) => totalsStep(tx, actor, periodId));
+    // The files were created while this page loaded (another tab): show them.
+    if (data.run.status === "exported") redirect(`/${locale}/convert?period=${periodId}&step=files`);
     return (
       <ConvertFrame {...frame} editHref forward={{ kind: "createFiles", disabled: data.run.status !== "ready", fingerprint: data.run.fingerprint }}>
         <TotalsReview periodId={periodId} data={data} locked={locked} />

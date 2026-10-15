@@ -117,13 +117,19 @@
         "received": "En espera",
         "reading": "Leyendo",
         "read": "Leído",
-        "failed": "No se pudo leer"
+        "failed": "No se pudo leer",
+        "archived": "Archivado"
       },
       "duplicate": "Ya se subió en este periodo",
       "unsupported": "Este tipo de archivo no se acepta",
       "tooLarge": "Más de 25 MB",
       "empty": "Aún no hay hojas de horas",
-      "uploading": "Subiendo…"
+      "uploading": "Subiendo…",
+      "archive": "Archivar",
+      "archiveTitle": "¿Archivar esta hoja de horas?",
+      "archiveBody": "Sus horas no se pagan ni se facturan. Explica por qué, por ejemplo, que las mismas horas están en otro archivo.",
+      "archiveReason": "Motivo",
+      "archiveConfirm": "Archivar"
     },
     "hours": {
       "sectionTitle": "Horas",
@@ -318,7 +324,10 @@
         "possible_duplicate_day": "Días que podrían contarse dos veces",
         "export_refused": "El archivo de nómina sería rechazado",
         "period_not_aligned": "El periodo de pago no coincide con la semana laboral",
-        "no_entries": "No hay horas que pagar"
+        "no_entries": "No hay horas que pagar",
+        "documents_pending": "Hojas de horas que aún se están leyendo",
+        "document_failed": "Hojas de horas que no se pudieron leer",
+        "invoice_problem": "No se puede crear una factura"
       },
       "rules": {
         "ca_daily_overtime": "horas extra diarias",
@@ -332,7 +341,12 @@
       "rulesLine": "{place}: {rules}.",
       "federal": "Federal",
       "workersLine": "Trabajadores: {names}.",
-      "bringBackAll": "Volver a incluir a todos"
+      "bringBackAll": "Volver a incluir a todos",
+      "bothReal": "Ambos son reales",
+      "bothRealTitle": "¿Ambos registros son trabajo real?",
+      "bothRealBody": "Confirma que estos registros son trabajos distintos del mismo día, no las mismas horas leídas dos veces. Si alguno cambia después, se volverá a preguntar.",
+      "bothRealConfirm": "Confirmar",
+      "goToUpload": "Ir a las hojas de horas"
     },
     "files": {
       "successTitle": "Archivos creados",

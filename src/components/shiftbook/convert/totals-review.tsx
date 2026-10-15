@@ -8,7 +8,7 @@
 import { CircleAlertIcon, InfoIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
-import { skipAction } from "@/app/[locale]/convert/actions";
+import { confirmDistinctAction, skipAction } from "@/app/[locale]/convert/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -22,13 +22,22 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { hoursMinutes, money } from "../format";
 
 const ENTRY_LEVEL = new Set(["entry_needs_review", "unmatched_entry", "entry_incomplete", "outside_period", "outside_assignment", "crosses_midnight", "possible_duplicate_day", "no_entries"]);
+const DOCUMENT_LEVEL = new Set(["documents_pending", "document_failed"]);
 const PAGE = 25;
 
 export interface TotalsData {
   summary: { workers: number; regular: number; overtime: number; double: number; grossCents: number; billedCents: number };
   workers: { workerId: string; name: string; regular: number; overtime: number; double: number; grossCents: number }[];
   clients: { clientId: string; name: string; minutes: number; billedCents: number }[];
-  blockers: { code: string; ruleCode: string | null; jurisdiction: string | null; ruleCodes: string[]; issues: { message: string; workerName?: string }[]; workerIds: string[]; workerNames: string[] }[];
+  blockers: {
+    code: string;
+    ruleCode: string | null;
+    jurisdiction: string | null;
+    ruleCodes: string[];
+    issues: { message: string; workerName?: string; entryIds?: string[] }[];
+    workerIds: string[];
+    workerNames: string[];
+  }[];
   warnings: { code: string; ruleCode: string | null; issues: { message: string }[] }[];
   skipped: { workerId: string; name: string; reason: string; by: string }[];
 }
@@ -42,6 +51,8 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
   const [pending, start] = useTransition();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [skipping, setSkipping] = useState<{ workerIds: string[] } | null>(null);
+  const [confirming, setConfirming] = useState<string[] | null>(null);
+  const [confirmReason, setConfirmReason] = useState("");
   const [reason, setReason] = useState("");
   const skipped = new Set(data.skipped.map((s) => s.workerId));
 
@@ -96,11 +107,28 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
                     </p>
                     {b.workerNames.length > 0 && <p>{t("workersLine", { names: b.workerNames.join(", ") })}</p>}
                   </div>
+                ) : b.code === "possible_duplicate_day" ? (
+                  <ul className="flex flex-col gap-2">
+                    {b.issues.map((i, n) => (
+                      <li key={n} className="flex flex-col gap-1">
+                        <span>{i.message}</span>
+                        {!locked && i.entryIds && (
+                          <Button size="sm" variant="outline" className="w-fit" onClick={() => setConfirming(i.entryIds!)} data-testid="both-real">
+                            {t("bothReal")}
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 ) : (
                   <Issues issues={b.issues} />
                 )}
                 {!locked &&
-                  (ENTRY_LEVEL.has(b.code) ? (
+                  (DOCUMENT_LEVEL.has(b.code) ? (
+                    <Link href={{ pathname: "/convert", query: { period: periodId, step: "upload" } }} className={buttonVariants({ size: "sm", variant: "outline", className: "w-fit" })}>
+                      {t("goToUpload")}
+                    </Link>
+                  ) : ENTRY_LEVEL.has(b.code) ? (
                     <Link href={{ pathname: "/convert", query: { period: periodId, step: "hours" } }} className={buttonVariants({ size: "sm", variant: "outline", className: "w-fit" })}>
                       {t("edit")}
                     </Link>
@@ -232,6 +260,40 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
           />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("bothRealTitle")}</DialogTitle>
+            <DialogDescription>{t("bothRealBody")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="confirm-reason">{t("skipReasonLabel")}</Label>
+            <Textarea id="confirm-reason" value={confirmReason} onChange={(e) => setConfirmReason(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(null)}>
+              {tc("cancel")}
+            </Button>
+            <Button
+              disabled={pending || confirmReason.trim() === ""}
+              data-testid="confirm-both-real"
+              onClick={() =>
+                confirming &&
+                start(async () => {
+                  const r = await confirmDistinctAction(confirming, confirmReason);
+                  if ("error" in r) toast.error(tx(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+                  setConfirming(null);
+                  setConfirmReason("");
+                  router.refresh();
+                })
+              }
+            >
+              {t("bothRealConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={skipping !== null} onOpenChange={(open) => !open && setSkipping(null)}>
         <DialogContent>

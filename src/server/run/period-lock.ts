@@ -11,6 +11,8 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 
 export class PeriodLockedError extends Error {
+  /** Retrying cannot help (a background job fails at once). */
+  readonly permanent = true;
   constructor() {
     super("This pay period's files were already created, so its hours and totals can no longer change.");
     this.name = "PeriodLockedError";
@@ -24,8 +26,9 @@ export class PeriodNotFoundError extends Error {
   }
 }
 
-/** Waits for, then holds until the transaction ends, the period's lock. */
+/** Waits (at most a minute) for, then holds until the transaction ends, the period's lock. */
 export async function lockPeriod(tx: Tx, payPeriodId: string): Promise<void> {
+  await tx.execute(sql`set local lock_timeout = '60s'`);
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`pay_period:${payPeriodId}`}, 0))`);
 }
 
@@ -36,5 +39,10 @@ export async function openPeriod(tx: Tx, payPeriodId: string) {
   if (!period) throw new PeriodNotFoundError();
   const [latest] = await tx.select({ status: s.payRuns.status }).from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
   if (latest && (latest.status === "exported" || latest.status === "closed")) throw new PeriodLockedError();
+  if (!latest) {
+    // A period paid before Shiftbook: every entry locked and no run here.
+    const entries = await tx.select({ status: s.timeEntries.status }).from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, payPeriodId));
+    if (entries.length > 0 && entries.every((e) => e.status === "locked")) throw new PeriodLockedError();
+  }
   return period;
 }

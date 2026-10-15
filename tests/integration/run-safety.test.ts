@@ -7,12 +7,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { agencies, agencySettings, exports, invoices, payLines, payPeriods, rateCards, timeEntries, workers } from "../../src/server/db/schema";
+import { agencies, agencySettings, clientBillingProfiles, exports, invoices, payLines, payPeriods, payRuns, rateCards, sourceDocuments, timeEntries, workers } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
-import { clearDemoAgency, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
-import { createRunFiles, TotalsChangedError } from "../../src/server/files/service";
-import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
-import { addEntry, approveEntries, editEntry, rejectEntry } from "../../src/server/review/service";
+import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
+import { createRunFiles, RunNotReadyError, TotalsChangedError } from "../../src/server/files/service";
+import { archiveDocument, readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
+import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry } from "../../src/server/review/service";
 import { computeRun, PeriodLockedError, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -159,5 +159,72 @@ describe("uploads only into the agency's own periods (N9)", () => {
     ).rejects.toThrow(/pay period/);
     const periods = await inAgency((tx) => tx.select().from(payPeriods));
     expect(periods.some((p) => p.id === other)).toBe(false);
+  });
+});
+
+describe("sixth review", () => {
+  const late = () =>
+    inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: period, filename: "late.csv", bytes: new TextEncoder().encode("Employee ID,Employee Name\n1,x\n") }));
+
+  it("holds the run while a timesheet is still waiting to be read", async () => {
+    await late();
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.blockers.map((b) => b.code)).toContain("documents_pending");
+    await expect(inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY }))).rejects.toBeInstanceOf(RunNotReadyError);
+  });
+
+  it("holds the run for a timesheet that could not be read, until it is archived with a reason", async () => {
+    const { documentId } = await late();
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "failed", error: "unreadable" }).where(eq(sourceDocuments.id, documentId)));
+    expect((await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code)).toContain("document_failed");
+    await expect(inAgency((tx) => archiveDocument(tx, actor, documentId, " "))).rejects.toThrow(/reason/);
+    await inAgency((tx) => archiveDocument(tx, actor, documentId, "Duplicate of the clock export"));
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.status).toBe("ready");
+  });
+
+  it("lets a person confirm two entries on one day are both real, until either changes", async () => {
+    await inAgency((tx) => addEntry(tx, actor, period, { workerId: workerId("anita-patel"), workDate: "2026-10-05", minutes: 120 }, ["confirmed_client"], ""));
+    const held = await inAgency((tx) => computeRun(tx, actor, period));
+    const group = held.blockers.find((b) => b.code === "possible_duplicate_day")!;
+    await expect(inAgency((tx) => confirmDistinctDay(tx, actor, group.entryIds!, ""))).rejects.toThrow(/reason/);
+    await inAgency((tx) => confirmDistinctDay(tx, actor, group.entryIds!, "Evening cleanup shift, confirmed with the supervisor"));
+    expect((await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code)).not.toContain("possible_duplicate_day");
+    const handEntry = (await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.workDate, "2026-10-05"))))).find(
+      (e) => e.sourceDocumentId === null,
+    )!;
+    await inAgency((tx) => editEntry(tx, actor, handEntry.id, { minutes: 180 }, ["confirmed_client"], ""));
+    expect((await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code)).toContain("possible_duplicate_day");
+  });
+
+  it("checks the invoices before 'create files': billing profile on the last day, free number, total that fits", async () => {
+    await inAgency((tx) => tx.update(clientBillingProfiles).set({ effectiveTo: "2026-10-10" }).where(eq(clientBillingProfiles.clientId, clientId("il"))));
+    expect((await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code)).toContain("invoice_problem");
+    await freshWeek();
+    await inAgency(async (tx) => {
+      const [old] = await tx.insert(payRuns).values({ agencyId: actor.agencyId, payPeriodId: periodId("w1"), version: 1, status: "exported", rulesVersion: "x" }).returning();
+      await tx.insert(invoices).values({ agencyId: actor.agencyId, clientId: clientId("il"), payRunId: old!.id, number: "PLM-20261005", issuedOn: TODAY, dueOn: TODAY, subtotalCents: 1, totalCents: 1 });
+    });
+    expect((await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code)).toContain("invoice_problem");
+    await freshWeek();
+    await inAgency((tx) => tx.update(rateCards).set({ billRateCents: 9_000_000 }));
+    expect((await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code)).toContain("invoice_problem");
+  });
+
+  it("refuses files when a PO number, a name or a Gusto id changed after the totals were shown", async () => {
+    const shown = await inAgency((tx) => computeRun(tx, actor, period));
+    await inAgency((tx) => tx.update(clientBillingProfiles).set({ poNumber: "PO-99999" }).where(eq(clientBillingProfiles.clientId, clientId("il"))));
+    await expect(inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY, expectedFingerprint: shown.fingerprint }))).rejects.toBeInstanceOf(TotalsChangedError);
+    const again = await inAgency((tx) => computeRun(tx, actor, period));
+    await inAgency((tx) => tx.update(workers).set({ lastName: "Renamed" }).where(eq(workers.id, workerId("anita-patel"))));
+    await expect(inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY, expectedFingerprint: again.fingerprint }))).rejects.toBeInstanceOf(TotalsChangedError);
+  });
+
+  it("treats a period paid before Shiftbook (all hours locked, no run) as closed", async () => {
+    await expect(inAgency((tx) => computeRun(tx, actor, periodId("w1")))).rejects.toBeInstanceOf(PeriodLockedError);
+    await expect(
+      inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: periodId("w1"), filename: SAMPLE, bytes: readFileSync(`demo/samples/2026-10-05/${SAMPLE}`) })),
+    ).rejects.toBeInstanceOf(PeriodLockedError);
+    expect(new PeriodLockedError().permanent).toBe(true);
   });
 });

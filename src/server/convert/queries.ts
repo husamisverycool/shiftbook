@@ -5,6 +5,7 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { PeriodLockedError } from "../run/period-lock";
 import { computeRun, type RunIssue } from "../run/service";
 import type { Actor } from "../session";
 
@@ -125,8 +126,14 @@ export async function hoursStep(tx: Tx, payPeriodId: string) {
 export async function ensureFreshRun(tx: Tx, actor: Actor, payPeriodId: string) {
   const run = await latestRun(tx, payPeriodId);
   if (run && (run.status === "exported" || run.status === "closed")) return { run, fingerprint: null };
-  const computed = await computeRun(tx, actor, payPeriodId);
-  return { run: (await latestRun(tx, payPeriodId))!, fingerprint: computed.fingerprint };
+  try {
+    const computed = await computeRun(tx, actor, payPeriodId);
+    return { run: (await latestRun(tx, payPeriodId))!, fingerprint: computed.fingerprint };
+  } catch (error) {
+    // The files were created between the status check and the lock: show the exported run.
+    if (error instanceof PeriodLockedError) return { run: (await latestRun(tx, payPeriodId))!, fingerprint: null };
+    throw error;
+  }
 }
 
 export interface BlockerGroup {

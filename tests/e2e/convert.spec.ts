@@ -43,6 +43,14 @@ for (const locale of ["en", "es"] as const) {
     const timeclock = page.getByTestId("document-row").filter({ hasText: "timeclock" });
     await expect(timeclock).toContainText(m.convert.upload.status.read);
     await expect(timeclock).toContainText("51");
+    // Photos and the PDF are read only from recorded readings in demo mode. Without them they cannot
+    // be read, and a person archives them with a reason so the run can go on without their hours.
+    for (let i = 0; i < 10 && (await page.getByTestId("archive").count()) > 0; i++) {
+      await page.getByTestId("archive").first().click();
+      await page.locator("#archive-reason").fill("No recorded reading in this demo (test)");
+      await page.getByTestId("confirm-archive").click();
+      await expect(page.getByRole("dialog")).toBeHidden();
+    }
 
     // Review hours: every row a person must check is resolved before totals.
     await page.getByTestId("forward").click();

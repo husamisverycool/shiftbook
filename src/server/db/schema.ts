@@ -49,7 +49,8 @@ export const documentKind = pgEnum("document_kind", [
   "manual",
 ]);
 export const receivedVia = pgEnum("received_via", ["upload", "email", "manual"]);
-export const documentStatus = pgEnum("document_status", ["received", "reading", "read", "failed"]);
+// "archived": set aside by a person with a reason (Dext archive), e.g. a duplicate or unreadable file.
+export const documentStatus = pgEnum("document_status", ["received", "reading", "read", "failed", "archived"]);
 export const timeEntryStatus = pgEnum("time_entry_status", [
   "extracted",
   "needs_review",
@@ -380,6 +381,9 @@ export const timeEntries = pgTable(
     confidence: confidenceLevel("confidence").notNull().default("low"),
     status: timeEntryStatus("status").notNull().default("extracted"),
     reviewReasons: jsonb("review_reasons").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    // A person confirmed this entry is not the same work as another entry for the worker that day
+    // (cleared whenever the entry changes).
+    distinctConfirmed: boolean("distinct_confirmed").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

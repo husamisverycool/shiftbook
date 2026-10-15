@@ -7,8 +7,8 @@ import { withAgency } from "@/server/db";
 import { auditEvents, jobs, sourceDocuments } from "@/server/db/schema";
 import { createRunFiles, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
 import { openPeriod, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
-import { classifyUpload, receiveDocument } from "@/server/intake/service";
-import { addEntry, approveEntries, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
+import { archiveDocument, classifyUpload, receiveDocument } from "@/server/intake/service";
+import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { computeRun, setSkipped } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
@@ -47,6 +47,10 @@ export async function uploadTimesheets(payPeriodId: string, form: FormData): Pro
         if (duplicate) result.refused.push({ filename: entry.name, reason: "duplicate" });
         else result.accepted.push(entry.name);
       } catch (error) {
+        if (error instanceof PeriodNotFoundError) {
+          result.refused.push({ filename: entry.name, reason: "unsupported" });
+          break;
+        }
         if (!(error instanceof PeriodLockedError)) throw error;
         result.locked = true;
         break;
@@ -64,17 +68,40 @@ export async function readQueued(): Promise<void> {
   after(() => processQueuedDocuments(actor).catch(() => undefined));
 }
 
-export async function retryDocument(documentId: string): Promise<void> {
+export async function retryDocument(documentId: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
-  await withAgency(actor.agencyId, async (tx) => {
-    const [doc] = await tx.select({ payPeriodId: sourceDocuments.payPeriodId }).from(sourceDocuments).where(eq(sourceDocuments.id, documentId));
-    if (!doc) return;
-    await openPeriod(tx, doc.payPeriodId);
-    await tx.update(sourceDocuments).set({ status: "received", error: null, updatedAt: new Date() }).where(eq(sourceDocuments.id, documentId));
-    await tx.insert(jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: { documentId } });
+  return guarded(async () => {
+    await withAgency(actor.agencyId, async (tx) => {
+      const [doc] = await tx.select({ payPeriodId: sourceDocuments.payPeriodId }).from(sourceDocuments).where(eq(sourceDocuments.id, documentId));
+      if (!doc) return;
+      await openPeriod(tx, doc.payPeriodId);
+      await tx.update(sourceDocuments).set({ status: "received", error: null, updatedAt: new Date() }).where(eq(sourceDocuments.id, documentId));
+      await tx.insert(jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: { documentId } });
+    });
+    after(() => processQueuedDocuments(actor).catch(() => undefined));
+    refresh();
+    return { ok: true as const };
   });
-  after(() => processQueuedDocuments(actor).catch(() => undefined));
-  refresh();
+}
+
+export async function archiveAction(documentId: string, reason: string): Promise<{ ok: true } | { error: ActionError }> {
+  const actor = currentActor();
+  if (reason.trim() === "") return { error: "generic" };
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => archiveDocument(tx, actor, documentId, reason));
+    refresh();
+    return { ok: true as const };
+  });
+}
+
+export async function confirmDistinctAction(entryIds: string[], reason: string): Promise<{ ok: true } | { error: ActionError }> {
+  const actor = currentActor();
+  if (reason.trim() === "") return { error: "generic" };
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => confirmDistinctDay(tx, actor, entryIds, reason));
+    refresh();
+    return { ok: true as const };
+  });
 }
 
 export async function approveAction(ids: string[], bulk: boolean): Promise<{ approved: number; skipped: number } | { error: ActionError }> {

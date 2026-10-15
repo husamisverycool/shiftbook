@@ -117,13 +117,19 @@
         "received": "Waiting",
         "reading": "Reading",
         "read": "Read",
-        "failed": "Could not be read"
+        "failed": "Could not be read",
+        "archived": "Archived"
       },
       "duplicate": "Already uploaded for this period",
       "unsupported": "This file type is not accepted",
       "tooLarge": "Larger than 25 MB",
       "empty": "No timesheets yet",
-      "uploading": "Uploading…"
+      "uploading": "Uploading…",
+      "archive": "Archive",
+      "archiveTitle": "Archive this timesheet?",
+      "archiveBody": "Its hours are not paid or billed. Say why, for example that the same hours are in another file.",
+      "archiveReason": "Reason",
+      "archiveConfirm": "Archive"
     },
     "hours": {
       "sectionTitle": "Hours",
@@ -318,7 +324,10 @@
         "possible_duplicate_day": "Days that may be counted twice",
         "export_refused": "The payroll file would be refused",
         "period_not_aligned": "The pay period does not match the workweek",
-        "no_entries": "No hours to pay"
+        "no_entries": "No hours to pay",
+        "documents_pending": "Timesheets still being read",
+        "document_failed": "Timesheets that could not be read",
+        "invoice_problem": "An invoice cannot be created"
       },
       "rules": {
         "ca_daily_overtime": "daily overtime",
@@ -332,7 +341,12 @@
       "rulesLine": "{place}: {rules}.",
       "federal": "Federal",
       "workersLine": "Workers: {names}.",
-      "bringBackAll": "Bring all back"
+      "bringBackAll": "Bring all back",
+      "bothReal": "Both are real",
+      "bothRealTitle": "Are both entries real work?",
+      "bothRealBody": "Confirm these entries are different work on the same day, not the same hours read twice. If either entry changes later, this is asked again.",
+      "bothRealConfirm": "Confirm",
+      "goToUpload": "Go to timesheets"
     },
     "files": {
       "successTitle": "Files created",

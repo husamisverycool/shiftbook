@@ -18,6 +18,7 @@ import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { fileTextInputs, planInvoices } from "../files/invoice-plan";
 import { payrollFixture } from "../files/payroll-fixture";
 import type { Actor } from "../session";
 import { openPeriod, PeriodLockedError } from "./period-lock";
@@ -42,7 +43,10 @@ export type RunIssueCode =
   | "possible_duplicate_day"
   | "export_refused"
   | "period_not_aligned"
-  | "no_entries";
+  | "no_entries"
+  | "documents_pending"
+  | "document_failed"
+  | "invoice_problem";
 
 export interface RunIssue extends Omit<Issue, "code"> {
   code: RunIssueCode;
@@ -166,6 +170,15 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const profiles = await tx.select().from(s.clientBillingProfiles);
 
   const blockers: RunIssue[] = [];
+  // Every timesheet must be read (or archived by a person) before the period's files are made.
+  const documents = (await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, payPeriodId))).sort((a, b) => cmp(a.id, b.id));
+  for (const d of documents) {
+    if (d.status === "received" || d.status === "reading") {
+      blockers.push({ code: "documents_pending", message: `${d.filename} is still being read; its hours are not in the totals yet.` });
+    } else if (d.status === "failed") {
+      blockers.push({ code: "document_failed", message: `${d.filename} could not be read${d.error ? ` (${d.error})` : ""}. Read it again, or archive it with a reason if its hours are elsewhere.` });
+    }
+  }
   const shifts: Shift[] = [];
   const paidWorkers = new Set<string>();
   const ordered = [...entries].sort((a, b) => cmp(a.workerNameRaw, b.workerNameRaw) || cmp(a.workDate ?? "", b.workDate ?? "") || (a.inMinute ?? -1) - (b.inMinute ?? -1) || cmp(a.id, b.id));
@@ -231,11 +244,13 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   // The same worker-day from two sources, where one has no clock times, may be the same work counted
   // twice: a person rejects one copy or adds the times (then overlapping times are caught as usual).
   const sourceOf = new Map(ordered.map((e) => [e.id, e.sourceDocumentId ?? `by-hand:${e.id}`]));
+  const confirmed = new Set(ordered.filter((e) => e.distinctConfirmed).map((e) => e.id));
   const days = new Map<string, Shift[]>();
   for (const sh of shifts) days.set(`${sh.workerId}|${sh.date}`, [...(days.get(`${sh.workerId}|${sh.date}`) ?? []), sh]);
   for (const [, same] of [...days].sort((a, b) => cmp(a[0], b[0]))) {
     const sources = new Set(same.map((sh) => sourceOf.get(sh.entryIds[0]!)));
-    if (same.length > 1 && sources.size > 1 && same.some((sh) => sh.startMinute === null)) {
+    const allConfirmed = same.every((sh) => sh.entryIds.every((id) => confirmed.has(id)));
+    if (same.length > 1 && sources.size > 1 && same.some((sh) => sh.startMinute === null) && !allConfirmed) {
       const first = same[0]!;
       blockers.push({
         code: "possible_duplicate_day",
@@ -243,7 +258,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         workerName: first.workerName,
         date: first.date,
         entryIds: same.flatMap((sh) => sh.entryIds),
-        message: `${first.workerName} on ${first.date}: ${same.length} entries from different timesheets, and at least one has no clock times, so the same work may be counted twice. Reject one, or add the times.`,
+        message: `${first.workerName} on ${first.date}: ${same.length} entries from different timesheets, and at least one has no clock times, so the same work may be counted twice. Reject one, or confirm both are real.`,
       });
     }
   }
@@ -282,7 +297,9 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       blockers.push({ code: "invalid_input", workerId: l.workerId, message: `A ${l.type} line for the workweek starting ${l.workweekStart} is too large to store; check the rates.` });
     }
   }
-  // Dry run of the payroll file: anything the file would refuse is a blocker now, not an error later.
+  // Dry run of the files: anything the payroll file or an invoice would refuse is a blocker now,
+  // not an error after "Create files".
+  const invoicePlan = await planInvoices(tx, period, result.billLines.map((l) => ({ clientId: l.clientId, amountCents: l.amountCents })));
   if (blockers.length === 0 && result.payLines.length > 0) {
     try {
       renderExport(await payrollFixture(tx, period, result.payLines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate }))));
@@ -290,11 +307,25 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       if (!(error instanceof ExportError)) throw error;
       blockers.push({ code: "export_refused", message: error.message });
     }
+    for (const problem of invoicePlan.problems) blockers.push({ code: "invoice_problem", message: problem });
   }
+  // Everything the files will say, so a change after the totals were shown is caught at "Create files".
+  const textInputs = await fileTextInputs(tx, actor.agencyId, invoicePlan.plans, [...new Set(result.payLines.map((l) => l.workerId))]);
 
   const status = blockers.length > 0 ? "blocked" : "ready";
   const fingerprint = createHash("sha256")
-    .update(JSON.stringify({ rulesVersion: result.rulesVersion, pay: result.payLines, bill: result.billLines, blockers, warnings: result.warnings, skipped: run.skipped.map((x) => x.workerId).sort(cmp) }))
+    .update(
+      JSON.stringify({
+        rulesVersion: result.rulesVersion,
+        pay: result.payLines,
+        bill: result.billLines,
+        blockers,
+        warnings: result.warnings,
+        skipped: run.skipped.map((x) => x.workerId).sort(cmp),
+        documents: documents.map((d) => [d.id, d.status]),
+        text: textInputs,
+      }),
+    )
     .digest("hex");
   const previous = (run.snapshot as { fingerprint?: string } | null)?.fingerprint;
   if (previous === fingerprint && run.status === status) {

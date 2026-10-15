@@ -8,7 +8,10 @@
 import { CircleAlertIcon, FileTextIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { retryDocument, uploadTimesheets, type UploadResult } from "@/app/[locale]/convert/actions";
+import { archiveAction, retryDocument, uploadTimesheets, type UploadResult } from "@/app/[locale]/convert/actions";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,7 +22,7 @@ export interface UploadDoc {
   id: string;
   filename: string;
   kind: string;
-  status: "received" | "reading" | "read" | "failed";
+  status: "received" | "reading" | "read" | "failed" | "archived";
   error: string | null;
   clientName: string | null;
   entries: number;
@@ -36,7 +39,15 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
   const [refused, setRefused] = useState<UploadResult["refused"]>([]);
   const [uploading, start] = useTransition();
   const processing = documents.filter((d) => d.status === "received" || d.status === "reading");
-  const done = documents.filter((d) => d.status === "read" || d.status === "failed");
+  const done = documents.filter((d) => d.status === "read" || d.status === "failed" || d.status === "archived");
+  const [archiving, setArchiving] = useState<UploadDoc | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
+  const run = (fn: () => Promise<{ ok: true } | { error: "period_locked" | "generic" }>) =>
+    start(async () => {
+      const r = await fn();
+      if ("error" in r) toast.error(tc(r.error === "period_locked" ? "periodLocked" : "generic"));
+      router.refresh();
+    });
 
   // Keep the list fresh while files are being read.
   useEffect(() => {
@@ -160,9 +171,14 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
                             {t("status.failed")}
                           </span>
                           {d.error && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.error}</span>}
-                          <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => start(() => retryDocument(d.id))}>
-                            {tcommon("retry")}
-                          </Button>
+                          <div className="flex gap-3">
+                            <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => run(() => retryDocument(d.id))}>
+                              {tcommon("retry")}
+                            </Button>
+                            <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => setArchiving(d)} data-testid="archive">
+                              {t("archive")}
+                            </Button>
+                          </div>
                         </div>
                       ) : (
                         <Badge variant="secondary">{t(`status.${d.status}`)}</Badge>
@@ -178,6 +194,37 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
           </div>
         )}
       </section>
+
+      <Dialog open={archiving !== null} onOpenChange={(open) => !open && setArchiving(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("archiveTitle")}</DialogTitle>
+            <DialogDescription>{t("archiveBody")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="archive-reason">{t("archiveReason")}</Label>
+            <Textarea id="archive-reason" value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setArchiving(null)}>
+              {tcommon("cancel")}
+            </Button>
+            <Button
+              disabled={uploading || archiveReason.trim() === ""}
+              data-testid="confirm-archive"
+              onClick={() => {
+                const doc = archiving;
+                if (!doc) return;
+                setArchiving(null);
+                setArchiveReason("");
+                run(() => archiveAction(doc.id, archiveReason));
+              }}
+            >
+              {t("archiveConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

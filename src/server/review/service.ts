@@ -186,7 +186,7 @@ export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: E
   const next = result.next;
   await tx
     .update(s.timeEntries)
-    .set({ ...next, fields: editedFields(entry.fields, before, next), reviewReasons: [], updatedAt: new Date() })
+    .set({ ...next, fields: editedFields(entry.fields, before, next), reviewReasons: [], distinctConfirmed: false, updatedAt: new Date() })
     .where(eq(s.timeEntries.id, entryId));
   await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: next, reason: reason.text }]);
   return { ok: true };
@@ -298,4 +298,20 @@ export async function restoreEntry(tx: Tx, actor: Actor, id: string): Promise<bo
     .returning({ id: s.timeEntries.id });
   if (done.length > 0) await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: id, before: { status: "rejected" }, after: { status: "needs_review" }, reason: "restored" }]);
   return done.length > 0;
+}
+
+/**
+ * A person confirms that entries for one worker on one day are different work, not the same work
+ * read twice (the run holds such days otherwise). Cleared whenever one of the entries changes.
+ */
+export async function confirmDistinctDay(tx: Tx, actor: Actor, entryIds: string[], reason: string): Promise<void> {
+  const why = reason.trim();
+  if (why === "") throw new Error("A reason is required to confirm both entries are real.");
+  await openPeriodsOf(tx, entryIds);
+  const rows = await tx.select().from(s.timeEntries).where(inArray(s.timeEntries.id, entryIds));
+  if (rows.length !== entryIds.length || new Set(rows.map((r) => `${r.workerId}|${r.workDate}`)).size !== 1) {
+    throw new Error("Only entries for one worker on one day can be confirmed together.");
+  }
+  await tx.update(s.timeEntries).set({ distinctConfirmed: true, updatedAt: new Date() }).where(inArray(s.timeEntries.id, entryIds));
+  await audit(tx, actor, rows.map((r) => ({ action: "update" as const, entityType: "time_entry", entityId: r.id, before: { distinctConfirmed: r.distinctConfirmed }, after: { distinctConfirmed: true }, reason: why })));
 }
