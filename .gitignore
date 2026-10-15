@@ -1,0 +1,29 @@
+# dependencies and builds
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# tests
+playwright-report/
+test-results/
+blob-report/
+
+# secrets — never committed
+.env
+.env.*
+!.env.example
+
+# local data (database files, uploaded documents in dev/demo)
+.pgdata/
+.storage/
+
+# Claude guardrail state (one-turn unlocks written by hooks)
+.claude/state/
+.claude/settings.local.json
+
+# OS
+.DS_Store
