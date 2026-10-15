@@ -14,7 +14,7 @@ import { ExtractionRefusedError, RecordingMissingError } from "../extraction/tra
 import { openPeriod, PeriodBusyError, PeriodLockedError } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
-import { assessEntry, type AssessContext, type EntryDraft } from "./assess";
+import { assessEntry, resolveClient, settleDocumentClient, type AssessContext, type EntryDraft } from "./assess";
 import { parseStructuredUpload, UnrecognisedFileError } from "./structured";
 import type { ParsedDocument } from "./types";
 
@@ -257,11 +257,15 @@ export async function readStoredDocument(
     return await deps.withAgency(actor.agencyId, async (tx) => {
       await openPeriod(tx, doc.payPeriodId);
       const context = await loadAssessContext(tx, doc.payPeriodId, result.parsed.clientHint);
-      const drafts = result.parsed.entries.map((raw) => assessEntry(raw, context));
+      const settled = settleDocumentClient(
+        result.parsed.entries.map((raw) => assessEntry(raw, context)),
+        resolveClient(result.parsed.clientHint, context.clients),
+      );
+      const drafts = settled.drafts;
       // Saved only while the claim holds; otherwise the whole save is rolled back.
       const done = await tx
         .update(s.sourceDocuments)
-        .set({ status: "read", kind: result.parsed.kind, clientId: drafts.find((d) => d.clientId)?.clientId ?? null, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
+        .set({ status: "read", kind: result.parsed.kind, clientId: settled.clientId, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
         .where(mine(claim!))
         .returning({ id: s.sourceDocuments.id });
       if (done.length === 0) throw new ClaimLostError();

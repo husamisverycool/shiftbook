@@ -66,14 +66,18 @@ Screens: `slice-b/b8-import-source.png`, `slice-b/b9-import-map.png`,
 `slice-b/b10-import-values.png`, `slice-b/b11-import-preview.png`, `slice-b/b12-import-results.png`.
 - ✓ Steps across the top: Source · Match columns · Review values · Preview · Import; Back/Next.
 - ✓ Source first (Bullhorn, JobAdder, Spott, other); drop or choose a CSV or Excel file.
-- ✓ SSN and birth-date columns removed on receipt and never shown (a notice says how many).
+- ✓ Columns that may hold SSNs or birth dates (by heading in English or Spanish, by any nine-digit
+  number, or by dates 14+ years old) are removed on receipt and never shown; a notice names them.
 - ✓ Match columns: file columns on the left with sample values, Shiftbook fields on the right,
   auto-matched from the preset or the last import from the same source; required fields listed.
 - ✓ Review values: each distinct worker, client, job order and status with its row count; choosing
   a match fixes every row; workers are matched to the roster or left out, never created; a new job
   order needs its worksite; unresolved values are marked and Next waits for them.
-- ✓ Preview: assignments to create, new job orders, rows skipped with their reasons.
+- ✓ Preview: assignments to create, new job orders, own rate versions to add (with their amounts),
+  rows already imported, rows skipped with their reasons, and how dates were read.
 - ✓ Results: every row imported or skipped with its reason, filterable; earlier imports listed.
 - Differences:
-  - No date-format setting (US and ISO dates are read); no find-and-replace or cell editing.
+  - No date-format setting: day-first dates are recognised when the file shows it (a first number
+    above 12); otherwise dates are read month first, and the preview says which was used.
+  - No find-and-replace or cell editing; at most 2,000 rows per import.
   - Imports cannot be deleted afterwards, and drafts cannot be shared by link.

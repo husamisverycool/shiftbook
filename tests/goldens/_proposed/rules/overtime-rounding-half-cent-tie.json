@@ -477,7 +477,7 @@
     ]
   },
   "expected": {
-    "rulesVersion": "2026.10-a5",
+    "rulesVersion": "2026.10-a6",
     "payLines": [
       {
         "workerId": "worker-1",
@@ -556,7 +556,7 @@
         },
         "amountCents": 265,
         "ruleId": "bill_overtime_multiplier",
-        "explain": "Billed overtime: 0h 04m (4 min) × $39.75/h (1.5 × $26.50 bill rate) = 265¢ exactly → $2.65. Client bills overtime at the rate-card overtime multiplier.",
+        "explain": "Billed overtime: 0h 04m (4 min) × $39.75/h (1.5 × $26.50 bill rate) = 265¢ exactly → $2.65. Client bills overtime at the rate-card overtime multiplier; bill rate from the rate card.",
         "entryIds": [
           "entry-049"
         ]

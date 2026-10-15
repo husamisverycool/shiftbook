@@ -218,6 +218,22 @@ describe("assignments", () => {
     expect(hers.filter((e) => e.workDate! <= "2026-10-09").every((e) => e.assignmentId === assignmentId("anita-patel"))).toBe(true);
   });
 
+  it("a worker who moved to another client: the old client's timesheet days after the move go to review, never to the new client's bill", async () => {
+    expect((await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-01-01", endDate: "2026-10-07" }))).ok).toBe(true);
+    expect((await inAgency((tx) => createAssignment(tx, actor, { workerId: workerId("anita-patel"), jobOrderId: jobOrderId("ma-server"), startDate: "2026-10-08", endDate: null }))).ok).toBe(true);
+    const [doc] = await inAgency((tx) => tx.select().from(sourceDocuments).where(eq(sourceDocuments.filename, SAMPLE)));
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "received" }).where(eq(sourceDocuments.id, doc!.id)));
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc!.id);
+    const late = (await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.payPeriodId, week))))).filter(
+      (e) => e.workDate! >= "2026-10-08",
+    );
+    expect(late.length).toBeGreaterThan(0);
+    expect(late.every((e) => e.status === "needs_review" && e.assignmentId === null && e.reviewReasons.includes("assignment_at_other_client"))).toBe(true);
+    const run = await inAgency((tx) => computeRun(tx, actor, week));
+    const bill = await inAgency((tx) => tx.select().from(billLines).where(eq(billLines.payRunId, run.runId)));
+    expect(bill.some((l) => l.clientId === clientId("ma"))).toBe(false);
+  });
+
   it("never moves an assignment's dates so that paid hours fall outside them", async () => {
     const r = await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-10-05", endDate: null }));
     expect(r).toMatchObject({ ok: false, error: "paid_outside" });

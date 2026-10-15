@@ -455,7 +455,7 @@
     ]
   },
   "expected": {
-    "rulesVersion": "2026.10-a5",
+    "rulesVersion": "2026.10-a6",
     "payLines": [
       {
         "workerId": "worker-1",

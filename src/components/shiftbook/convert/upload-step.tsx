@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
+import { MAX_TIMESHEET_BYTES } from "@/lib/limits";
 import { REFUSAL_MESSAGE, type ActionRefusal } from "./types";
 
 export interface UploadDoc {
@@ -60,16 +61,32 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
     return () => clearInterval(timer);
   }, [processing.length, router]);
 
+  // One file per request, so a batch never meets the request size limit; files over the limit are
+  // refused here with the same reason the server gives.
   const send = (files: FileList | File[]) => {
     const list = [...files];
     if (list.length === 0) return;
-    const form = new FormData();
-    for (const f of list) form.append("files", f);
     start(async () => {
-      const result = await uploadTimesheets(periodId, form);
-      setRefused(result.refused);
-      if (result.locked) toast.error(tc("periodLocked"));
-      if (result.busy) toast.error(tc("busy"));
+      const refusedNow: UploadResult["refused"] = [];
+      for (const f of list) {
+        if (f.size > MAX_TIMESHEET_BYTES) {
+          refusedNow.push({ filename: f.name, reason: "tooLarge" });
+          continue;
+        }
+        const form = new FormData();
+        form.append("files", f);
+        const result = await uploadTimesheets(periodId, form);
+        refusedNow.push(...result.refused);
+        if (result.locked) {
+          toast.error(tc("periodLocked"));
+          break;
+        }
+        if (result.busy) {
+          toast.error(tc("busy"));
+          break;
+        }
+      }
+      setRefused(refusedNow);
       router.refresh();
     });
   };

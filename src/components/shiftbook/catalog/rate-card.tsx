@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "@/i18n/navigation";
 import type { RateVersionView } from "@/server/catalog/queries";
 import { billFromMarkup, inForce, type RateInput } from "@/server/catalog/versions";
-import { bpToInput, centsToInput, multiplierToInput, parseDollars, parseMultiplier, parsePercentBp } from "../amounts";
+import { bpToInput, centsToInput, multiplierToInput, parseDollars, parseMultiplier, parsePercentBp } from "@/lib/amounts";
 import { longDate, money } from "../format";
 
 const REASONS = ["wrong_from_start", "client_agreed", "data_entry", "other"] as const;

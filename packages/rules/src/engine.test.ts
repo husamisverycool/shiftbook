@@ -575,3 +575,23 @@ describe("computePay — how a bill rate came about is in the bill line", () => 
     expect(plain.billLines[0]!.explain).toContain("Bill rate from the rate card.");
   });
 });
+
+describe("computePay — a bill rate's explanation never splits a line", () => {
+  it("keeps shifts with the same rates on one line and lists each explanation", () => {
+    const a = "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46";
+    const shifts = [shift(WEEK[0]!, 450, { billRateCents: 2646, billRateExplain: a }), shift(WEEK[1]!, 450, { billRateCents: 2646 })];
+    const withNote = computePay(input(shifts));
+    const without = computePay(input(shifts.map((s) => ({ ...s, billRateExplain: undefined }))));
+    expect(withNote.payLines.map((l) => l.amountCents)).toEqual(without.payLines.map((l) => l.amountCents));
+    expect(withNote.billLines.map((l) => l.amountCents)).toEqual(without.billLines.map((l) => l.amountCents));
+    expect(withNote.billLines).toHaveLength(1);
+    expect(withNote.billLines[0]!.explain).toContain(`(${a})`);
+  });
+
+  it("puts the explanation on the overtime bill line as well", () => {
+    const a = "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46";
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 540, { billRateCents: 2646, billRateExplain: a }))));
+    const ot = r.billLines.find((l) => l.type === "OT")!;
+    expect(ot.explain).toContain(`(${a})`);
+  });
+});

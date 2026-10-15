@@ -135,3 +135,15 @@ test("Spanish job orders", async ({ page }) => {
   await expect(page.getByRole("heading", { name: es.jobOrders.title })).toBeVisible();
   await expect(page.getByRole("link", { name: es.nav.assignments })).toBeVisible();
 });
+
+test("a placement file over 1 MB is taken (the request limit is the app's own, not the framework's)", async ({ page }) => {
+  const header = "Candidate,Company,Job Title,Shift,Start Date,Notes";
+  const row = `Anita Patel,Prairie Line Manufacturing (demo),Assembler,Day,10/19/2026,${"x".repeat(800)}`;
+  const csv = [header, ...Array.from({ length: 1500 }, () => row)].join("\n");
+  expect(csv.length).toBeGreaterThan(1024 * 1024);
+  await page.goto("/en/assignments/import");
+  await page.getByLabel(en.import.sources.other).check();
+  await page.locator("#placement-file").setInputFiles({ name: "big.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  await page.getByTestId("import-next").click();
+  await expect(page).toHaveURL(/step=map/, { timeout: 30_000 });
+});

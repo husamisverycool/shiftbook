@@ -200,7 +200,9 @@
         "row_total_mismatch": "El total semanal escrito del trabajador no coincide",
         "grand_total_mismatch": "El total general escrito no coincide",
         "duplicate_day_in_vms": "El día aparece en más de una hoja del VMS",
-        "other": "Necesita revisión"
+        "other": "Necesita revisión",
+        "assignment_at_other_client": "Coincide con una asignación de otro cliente",
+        "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas"
       },
       "fields": {
         "worker": "trabajador",
@@ -748,16 +750,16 @@
     "whichSource": "¿De dónde vienen las colocaciones?",
     "drop": "Suelta el archivo aquí",
     "chosen": "{name} está listo para subir",
-    "accepted": "CSV o Excel (.xlsx), hasta 10 MB. Los números de Seguro Social y las fechas de nacimiento se quitan al recibir el archivo.",
+    "accepted": "CSV o Excel (.xlsx), hasta 10 MB y 2,000 filas. Las columnas que pueden contener números de Seguro Social o fechas de nacimiento se quitan al recibir el archivo.",
     "choose": "Elegir un archivo",
     "upload": "Subir",
-    "dropped": "{count, plural, one {Se quitó # columna con números de Seguro Social o fechas de nacimiento} other {Se quitaron # columnas con números de Seguro Social o fechas de nacimiento}} y no se guardaron.",
     "refused": {
       "unsupported": "Solo se pueden importar archivos CSV y Excel (.xlsx).",
       "empty": "El archivo no tiene fila de encabezados o no tiene filas.",
       "too_large": "El archivo pesa más de 10 MB.",
       "busy": "Otra persona está cambiando órdenes de trabajo o pagando una semana ahora mismo. Inténtalo de nuevo en un momento.",
-      "stale": "Esta importación cambió en otra pestaña o ventana. La página ahora muestra lo más reciente."
+      "stale": "Esta importación cambió en otra pestaña o ventana. La página ahora muestra lo más reciente.",
+      "too_many_rows": "Una importación acepta hasta 2,000 filas. Divide el archivo e importa cada parte."
     },
     "back": "Atrás",
     "next": "Siguiente",
@@ -812,7 +814,7 @@
     "willSkip": "Filas omitidas",
     "row": "Fila",
     "reason": "Motivo",
-    "previewNote": "Las tarifas distintas a las de la orden se vuelven tarifas propias del trabajador desde su fecha de inicio.",
+    "previewNote": "Las tarifas distintas a las de la orden se vuelven tarifas propias del trabajador desde su fecha de inicio. No se escribe nada hasta que empieces la importación.",
     "start": "Importar",
     "doneTitle": "{imported} importadas, {skipped} omitidas",
     "openAssignments": "Abrir asignaciones",
@@ -839,18 +841,39 @@
       "client_not_found": "No hay un cliente llamado {value}.",
       "new_job_order_needs_worksite": "No hay una orden {value} en este cliente; elige una existente o un lugar para una nueva.",
       "several_job_orders": "Más de una orden coincide con {value}.",
-      "missing_value": "Falta un valor obligatorio.",
+      "missing_value": "{value} está vacío.",
       "invalid_date": "{value} no es una fecha.",
       "end_before_start": "La fecha de fin {value} es anterior a la de inicio.",
-      "invalid_rate": "{value} no es una tarifa.",
+      "invalid_rate": "\"{value}\" no es una tarifa (usa un punto para los centavos, como 18.25).",
       "cancelled_in_source": "Cancelada en el sistema de origen ({value}).",
       "overlaps": "El trabajador ya tiene una asignación en esta orden para esas fechas.",
-      "rates_refused": "No se pudieron agregar las tarifas.",
+      "rates_refused": "No se pudieron agregar las tarifas: {value}.",
       "job_order_refused": "No se pudo crear la orden nueva {value}.",
       "worker_not_found": "El trabajador ya no está en la lista.",
       "job_order_not_found": "La orden de trabajo ya no existe.",
       "end_before_start_assignment": "La fecha de fin es anterior a la de inicio.",
-      "invalid_date_assignment": "Una fecha no es válida."
+      "invalid_date_assignment": "Una fecha no es válida.",
+      "invalid_value": "{value} no es válido.",
+      "status_unclear": "El estado \"{value}\" no está claro; elige qué significa en la revisión.",
+      "could_not_save": "Esta fila no se pudo guardar."
+    },
+    "rateVersions": "Versiones de tarifas propias por agregar",
+    "alreadyImported": "Ya importadas",
+    "worker": "Trabajador",
+    "from": "Desde",
+    "pay": "Tarifa de pago",
+    "bill": "Tarifa de cobro",
+    "datesRead": {
+      "month_first": "Las fechas como 10/05/2026 se leen con el mes primero (5 de octubre).",
+      "day_first": "Las fechas como 05/10/2026 se leen con el día primero (5 de octubre), porque así las escribe el archivo."
+    },
+    "removed": "{count, plural, one {Se quitó # columna y no se guardó} other {Se quitaron # columnas y no se guardaron}} porque puede contener números de Seguro Social o fechas de nacimiento: {columns}.",
+    "rateRefusals": {
+      "invalid": "las tarifas no son válidas",
+      "paid": "una semana pagada ya usa esas fechas",
+      "same_start": "ya hay una versión que empieza ese día",
+      "no_default_multipliers": "la agencia no tiene multiplicadores de horas extra predeterminados",
+      "other": "se rechazaron"
     }
   }
 }

@@ -1,3 +1,4 @@
+import { RULES_VERSION } from "@shiftbook/rules";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -85,8 +86,8 @@ describe("computing a pay run from the period's time entries", () => {
   it("stores what it computed from: rules version, inputs and results", async () => {
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     const [row] = await inAgency((tx) => tx.select().from(payRuns).where(eq(payRuns.id, run.runId)));
-    expect(row!.rulesVersion).toBe("2026.10-a5");
-    expect(row!.snapshot).toMatchObject({ rulesVersion: "2026.10-a5", input: { workweekStartsOn: 1 } });
+    expect(row!.rulesVersion).toBe(RULES_VERSION);
+    expect(row!.snapshot).toMatchObject({ rulesVersion: RULES_VERSION, input: { workweekStartsOn: 1 } });
     const events = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "pay_run"), eq(auditEvents.entityId, run.runId))));
     expect(events.length).toBeGreaterThan(0);
   });

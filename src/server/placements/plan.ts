@@ -4,6 +4,7 @@
  * is skipped with its reason — nothing is silently blanked. Workers are matched to the roster and
  * never created (SPEC §6). Pure: no I/O.
  */
+import { parseDollars } from "../../lib/amounts";
 import { parseIsoDateText, parseUsDate } from "../intake/parse";
 import { matchWorker, type RosterWorker } from "../intake/names";
 import type { Mapping, Source } from "./fields";
@@ -21,7 +22,25 @@ export interface Catalog {
 /** The person's choices in the review step: per kind, raw value → id, "leave_out", or "new:<worksiteId>". */
 export type Decisions = Partial<Record<"worker" | "client" | "jobOrder" | "status", Record<string, string>>>;
 
-export type SkipReason = { code: "already_imported" | "twice_in_file" | "left_out" | "not_on_roster" | "several_on_roster" | "client_not_found" | "new_job_order_needs_worksite" | "several_job_orders" | "missing_value" | "invalid_date" | "end_before_start" | "invalid_rate" | "cancelled_in_source"; value: string };
+export type SkipReason = {
+  code:
+    | "already_imported"
+    | "twice_in_file"
+    | "left_out"
+    | "not_on_roster"
+    | "several_on_roster"
+    | "client_not_found"
+    | "new_job_order_needs_worksite"
+    | "several_job_orders"
+    | "missing_value"
+    | "invalid_value"
+    | "invalid_date"
+    | "end_before_start"
+    | "invalid_rate"
+    | "cancelled_in_source"
+    | "status_unclear";
+  value: string;
+};
 
 export type PlannedRow =
   | {
@@ -38,24 +57,56 @@ export type PlannedRow =
   | { row: number; outcome: "skip"; reason: SkipReason };
 
 const fold = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
-const parseDate = (text: string) => parseIsoDateText(text) ?? parseUsDate(text);
+/** The highest hourly rate accepted ($100,000), as for rate cards. */
+const MAX_RATE_CENTS = 10_000_000;
+/** A placement id longer than this is not an id. */
+const MAX_ID_LENGTH = 200;
 
-/** "19.00" / "$19" → cents; at most two decimals; nothing else. */
+/** "19.00" / "$1,019" → cents, exactly as the rate forms read it (a comma only separates thousands). */
 function parseRate(text: string): number | null {
-  const t = text.trim().replace(/^\$/, "").replace(/,/g, "");
-  const m = /^(\d+)(?:\.(\d{1,2}))?$/.exec(t);
-  if (!m) return null;
-  const cents = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0") || "0");
-  return cents > 0 && Number.isSafeInteger(cents) ? cents : null;
+  const cents = parseDollars(text);
+  return cents !== null && cents > 0 && cents <= MAX_RATE_CENTS ? cents : null;
 }
 
-/** Cancelled placements are not imported; completed ones are imported as ended. */
-export function statusOf(raw: string, decided?: string): "active" | "ended" | "cancelled" {
+export type DateOrder = "month_first" | "day_first";
+
+/**
+ * Whether the file writes dates day first (19/10/2026) or month first (10/19/2026). A file that has
+ * a first number above 12 somewhere, and never a second one above 12, is day first; otherwise month
+ * first (the preview says which was used).
+ */
+export function dateOrderOf(values: string[]): DateOrder {
+  let dayFirst = false;
+  let monthFirst = false;
+  for (const v of values) {
+    const m = /^\s*(\d{1,2})\/(\d{1,2})\/\d{2,4}\s*$/.exec(v);
+    if (!m) continue;
+    if (Number(m[1]) > 12) dayFirst = true;
+    if (Number(m[2]) > 12) monthFirst = true;
+  }
+  return dayFirst && !monthFirst ? "day_first" : "month_first";
+}
+
+function parseDate(text: string, order: DateOrder): string | null {
+  const iso = parseIsoDateText(text);
+  if (iso) return iso;
+  if (order === "month_first") return parseUsDate(text);
+  const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*$/.exec(text);
+  return m ? parseUsDate(`${m[2]}/${m[1]}/${m[3]}`) : null;
+}
+
+const ACTIVE = /^(|approved|placed|active|current|confirmed|started|ongoing|open|working|on assignment)$/;
+const ENDED = /^(complete|completed|terminated|ended|finished|closed|done)$/;
+const CANCELLED = /^(cancel|cancelled|canceled|withdrawn|declined|rejected|fell through|no show|no-show)$/;
+
+/** A status word read as active, ended or cancelled; null when it is not clear (the person decides). */
+export function statusOf(raw: string, decided?: string): "active" | "ended" | "cancelled" | null {
   if (decided === "active" || decided === "ended" || decided === "cancelled") return decided;
   const s = fold(raw);
-  if (/cancel|withdrawn|declined|rejected|fell through/.test(s)) return "cancelled";
-  if (/complete|terminated|ended|finished|closed/.test(s)) return "ended";
-  return "active";
+  if (CANCELLED.test(s)) return "cancelled";
+  if (ENDED.test(s)) return "ended";
+  if (ACTIVE.test(s)) return "active";
+  return null;
 }
 
 function cell(header: string[], row: string[], column: string | undefined): string {
@@ -80,10 +131,13 @@ function autoJob(clientId: string, position: string, shift: string, catalog: Cat
 
 export function planRows(source: Source, header: string[], rows: string[][], mapping: Mapping, decisions: Decisions, catalog: Catalog): PlannedRow[] {
   const seen = new Set<string>();
+  const order = dateOrderOf(rows.flatMap((r) => [cell(header, r, mapping.startDate), cell(header, r, mapping.endDate)]));
   return rows.map((r, i): PlannedRow => {
-    const row = i + 1;
+    // The spreadsheet's own row number: the header is row 1.
+    const row = i + 2;
     const skip = (code: SkipReason["code"], value: string): PlannedRow => ({ row, outcome: "skip", reason: { code, value } });
     const externalId = cell(header, r, mapping.externalId) || null;
+    if (externalId && externalId.length > MAX_ID_LENGTH) return skip("invalid_value", "externalId");
     if (externalId) {
       if (catalog.imported.has(`${source}|${externalId}`)) return skip("already_imported", externalId);
       if (seen.has(externalId)) return skip("twice_in_file", externalId);
@@ -126,15 +180,16 @@ export function planRows(source: Source, header: string[], rows: string[][], map
 
     const startRaw = cell(header, r, mapping.startDate);
     if (!startRaw) return skip("missing_value", "startDate");
-    const startDate = parseDate(startRaw);
+    const startDate = parseDate(startRaw, order);
     if (!startDate) return skip("invalid_date", startRaw);
     const endRaw = cell(header, r, mapping.endDate);
-    const endDate = endRaw ? parseDate(endRaw) : null;
+    const endDate = endRaw ? parseDate(endRaw, order) : null;
     if (endRaw && !endDate) return skip("invalid_date", endRaw);
     if (endDate && endDate < startDate) return skip("end_before_start", endRaw);
 
     const statusRaw = cell(header, r, mapping.status);
     const status = statusOf(statusRaw, decisions.status?.[statusRaw]);
+    if (status === null) return skip("status_unclear", statusRaw);
     if (status === "cancelled") return skip("cancelled_in_source", statusRaw);
     // An ended placement is imported with its end date (whether it has ended is read from the dates).
     if (status === "ended" && !endDate) return skip("missing_value", "endDate");
@@ -143,6 +198,8 @@ export function planRows(source: Source, header: string[], rows: string[][], map
     const billRaw = cell(header, r, mapping.billRate);
     let rates: { payRateCents: number; billRateCents: number } | null = null;
     if (payRaw || billRaw) {
+      if (!payRaw) return skip("missing_value", "payRate");
+      if (!billRaw) return skip("missing_value", "billRate");
       const pay = parseRate(payRaw);
       const bill = parseRate(billRaw);
       if (pay === null) return skip("invalid_rate", payRaw);

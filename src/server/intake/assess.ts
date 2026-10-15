@@ -178,3 +178,32 @@ export function assessEntry(raw: RawEntry, ctx: AssessContext): EntryDraft {
     reviewReasons: reasons,
   };
 }
+
+/**
+ * A timesheet belongs to one client: the one named on it, or else the client most of its matched
+ * entries are at. An entry matched to an assignment at another client goes back to review instead of
+ * being billed there (a worker who moved clients still appears on the old client's time clock). When
+ * the client cannot be told (a tie), every matched entry is held for review.
+ */
+export function settleDocumentClient(drafts: EntryDraft[], named: string | null): { clientId: string | null; drafts: EntryDraft[] } {
+  const counts = new Map<string, number>();
+  for (const d of drafts) if (d.assignmentId && d.clientId) counts.set(d.clientId, (counts.get(d.clientId) ?? 0) + 1);
+  const ranked = [...counts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+  const clear = ranked.length <= 1 || ranked[0]![1] > ranked[1]![1];
+  const clientId = named ?? (clear ? (ranked[0]?.[0] ?? null) : null);
+  const hold = (d: EntryDraft, reason: string): EntryDraft => ({
+    ...d,
+    assignmentId: null,
+    clientId,
+    status: "needs_review",
+    reviewReasons: d.reviewReasons.includes(reason) ? d.reviewReasons : [...d.reviewReasons, reason],
+  });
+  return {
+    clientId,
+    drafts: drafts.map((d) => {
+      if (!d.assignmentId) return clientId && !d.clientId ? { ...d, clientId } : d;
+      if (clientId === null) return hold(d, "timesheet_client_unclear");
+      return d.clientId === clientId ? d : hold(d, "assignment_at_other_client");
+    }),
+  };
+}

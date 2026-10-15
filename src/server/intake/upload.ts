@@ -9,7 +9,9 @@ import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { classifyUpload, receiveDocument } from "./service";
 
-export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+import { MAX_TIMESHEET_BYTES } from "../../lib/limits";
+
+export const MAX_UPLOAD_BYTES = MAX_TIMESHEET_BYTES;
 
 export interface UploadResult {
   accepted: string[];

@@ -24,6 +24,23 @@ export function tableFromCsv(bytes: Uint8Array): Table {
   return { header, rows };
 }
 
+/** An Excel cell as the text a person sees: dates as MM/DD/YYYY, a formula's result, rich text joined, errors blank. */
+export function cellText(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (v instanceof Date) {
+    const iso = v.toISOString().slice(0, 10);
+    return `${iso.slice(5, 7)}/${iso.slice(8, 10)}/${iso.slice(0, 4)}`;
+  }
+  if (typeof v === "object") {
+    if ("result" in v) return cellText((v as { result: unknown }).result);
+    if ("richText" in v) return ((v as { richText: { text?: string }[] }).richText ?? []).map((r) => r.text ?? "").join("");
+    if ("text" in v) return cellText((v as { text: unknown }).text);
+    if ("error" in v) return "";
+    return "";
+  }
+  return String(v);
+}
+
 export async function tableFromXlsx(bytes: Uint8Array): Promise<Table> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(Buffer.from(bytes) as unknown as ArrayBuffer);
@@ -31,15 +48,7 @@ export async function tableFromXlsx(bytes: Uint8Array): Promise<Table> {
   if (!sheet) return { header: [], rows: [] };
   const all: string[][] = [];
   sheet.eachRow({ includeEmpty: false }, (row) => {
-    const values = (row.values as unknown[]).slice(1).map((v) => {
-      if (v instanceof Date) {
-        const iso = v.toISOString().slice(0, 10);
-        return `${iso.slice(5, 7)}/${iso.slice(8, 10)}/${iso.slice(0, 4)}`;
-      }
-      if (v && typeof v === "object" && "text" in v) return String((v as { text: unknown }).text);
-      return v === null || v === undefined ? "" : String(v);
-    });
-    all.push(values);
+    all.push((row.values as unknown[]).slice(1).map(cellText));
   });
   const [header = [], ...rows] = all;
   return { header, rows };

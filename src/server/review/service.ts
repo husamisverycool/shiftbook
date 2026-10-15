@@ -61,7 +61,7 @@ const snapshot = (e: typeof s.timeEntries.$inferSelect) => ({
   status: e.status,
 });
 
-/** A worker's assignments (not cancelled) covering a date, at the document's client first. */
+/** A worker's assignments (not cancelled) covering a date — only at the timesheet's client when it has one. */
 async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: string | null): Promise<string | EditError> {
   const rows = await tx
     .select({ id: s.assignments.id, clientId: s.jobOrders.clientId, start: s.assignments.startDate, end: s.assignments.endDate, status: s.assignments.status })
@@ -69,8 +69,8 @@ async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: s
     .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
     .where(eq(s.assignments.workerId, workerId));
   const active = rows.filter((a) => a.status !== "cancelled" && a.start <= date && (a.end === null || date <= a.end));
-  const atClient = clientId ? active.filter((a) => a.clientId === clientId) : active;
-  const pick = atClient.length > 0 ? atClient : active;
+  // A timesheet belongs to one client: its entries only take that client's assignments.
+  const pick = clientId ? active.filter((a) => a.clientId === clientId) : active;
   if (pick.length === 0) return "no_assignment";
   if (pick.length > 1) return "several_assignments";
   return pick[0]!.id;

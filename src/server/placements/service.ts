@@ -22,27 +22,48 @@ import { settingOn } from "../settings";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { autoMap, FIELDS, missingFields, SOURCES, type Field, type Mapping, type Source } from "./fields";
-import { distinctValues, planRows, type Catalog, type Decisions, type PlannedRow } from "./plan";
-import { dropSensitive } from "./sensitive";
+import { dateOrderOf, distinctValues, planRows, type Catalog, type Decisions, type PlannedRow } from "./plan";
+import { dropSensitive, safeFilename } from "./sensitive";
+
+/** The most rows one import takes: it runs under the catalog lock, so "create files" waits for it. */
+export const MAX_IMPORT_ROWS = 2000;
 
 export class ImportFileError extends Error {
-  constructor(readonly reason: "unsupported" | "empty") {
-    super(reason === "unsupported" ? "Only CSV and Excel (.xlsx) files can be imported." : "The file has no header row or no rows.");
+  constructor(readonly reason: "unsupported" | "empty" | "too_many_rows") {
+    super(reason === "unsupported" ? "Only CSV and Excel (.xlsx) files can be imported." : reason === "empty" ? "The file has no header row or no rows." : `An import takes at most ${MAX_IMPORT_ROWS} rows.`);
     this.name = "ImportFileError";
   }
+}
+
+/** Repeated column names get a number, so each column can be matched on its own. */
+function uniqueNames(header: string[]): string[] {
+  const seen = new Map<string, number>();
+  return header.map((h) => {
+    const name = h.trim() || "Column";
+    const n = (seen.get(name) ?? 0) + 1;
+    seen.set(name, n);
+    return n === 1 ? name : `${name} (${n})`;
+  });
 }
 
 export type ImportResult = NonNullable<typeof s.placementImports.$inferSelect.results>[number];
 const PROFILE = (source: Source) => `placements:${source}`;
 
-export async function startImport(tx: Tx, actor: Actor, store: DocumentStore, input: { source: Source; filename: string; bytes: Uint8Array }): Promise<{ id: string; dropped: number }> {
+export async function startImport(tx: Tx, actor: Actor, store: DocumentStore, input: { source: Source; filename: string; bytes: Uint8Array }, today: string): Promise<{ id: string; removed: string[] }> {
   if (!SOURCES.includes(input.source)) throw new ImportFileError("unsupported");
   const ext = input.filename.toLowerCase().split(".").pop();
   if (ext !== "csv" && ext !== "xlsx") throw new ImportFileError("unsupported");
-  const table = ext === "csv" ? tableFromCsv(input.bytes) : await tableFromXlsx(input.bytes);
+  let table: Awaited<ReturnType<typeof tableFromXlsx>>;
+  try {
+    table = ext === "csv" ? tableFromCsv(input.bytes) : await tableFromXlsx(input.bytes);
+  } catch {
+    throw new ImportFileError("unsupported"); // a damaged or mislabelled file
+  }
   if (table.header.length === 0 || table.rows.length === 0) throw new ImportFileError("empty");
+  if (table.rows.length > MAX_IMPORT_ROWS) throw new ImportFileError("too_many_rows");
   // Before anything is stored, shown or logged.
-  const clean = dropSensitive(table.header.map((h) => h.trim()), table.rows);
+  const clean = dropSensitive(uniqueNames(table.header), table.rows, today);
+  const filename = safeFilename(input.filename);
   const bytes = writeCsv([clean.header, ...clean.rows]);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const storageKey = `${actor.agencyId}/imports/${sha256}.csv`;
@@ -52,10 +73,10 @@ export async function startImport(tx: Tx, actor: Actor, store: DocumentStore, in
   const mapping = autoMap(clean.header, input.source, remembered);
   const [row] = await tx
     .insert(s.placementImports)
-    .values({ agencyId: actor.agencyId, source: input.source, filename: input.filename, sha256, storageKey, mapping, createdBy: actor.userId })
+    .values({ agencyId: actor.agencyId, source: input.source, filename, sha256, storageKey, mapping, createdBy: actor.userId })
     .returning({ id: s.placementImports.id });
-  await audit(tx, actor, [{ action: "create", entityType: "placement_import", entityId: row!.id, after: { source: input.source, filename: input.filename, rows: clean.rows.length, columnsDropped: clean.dropped } }]);
-  return { id: row!.id, dropped: clean.dropped };
+  await audit(tx, actor, [{ action: "create", entityType: "placement_import", entityId: row!.id, after: { source: input.source, filename, rows: clean.rows.length, columnsRemoved: clean.removed } }]);
+  return { id: row!.id, removed: clean.removed };
 }
 
 async function load(tx: Tx, store: DocumentStore, id: string) {
@@ -95,6 +116,16 @@ export async function importView(tx: Tx, store: DocumentStore, id: string) {
   const catalog = await catalogFor(tx);
   const missing = missingFields(mapping);
   const plan = missing.length === 0 ? planRows(record.source as Source, header, rows, mapping, decisions, catalog) : [];
+  // What the run will add, worked out the same way the run does.
+  const cards = await tx.select().from(s.rateCards);
+  const names = new Map(catalog.workers.map((w) => [w.workerId, `${w.firstName} ${w.lastName}`]));
+  const rateVersions = plan.flatMap((p) => {
+    if (p.outcome !== "create" || !p.rates) return [];
+    const jobCard = "id" in p.jobOrder ? inForce(cards.filter((c) => c.jobOrderId === (p.jobOrder as { id: string }).id && c.assignmentId === null), p.startDate) : null;
+    if (jobCard && jobCard.payRateCents === p.rates.payRateCents && jobCard.billRateCents === p.rates.billRateCents) return [];
+    return [{ row: p.row, workerName: names.get(p.workerId) ?? "", from: p.startDate, payRateCents: p.rates.payRateCents, billRateCents: p.rates.billRateCents }];
+  });
+  const newJobOrders = new Set(plan.flatMap((p) => (p.outcome === "create" && "new" in p.jobOrder ? [newJobKey(p.jobOrder.new)] : []))).size;
   return {
     id: record.id,
     source: record.source as Source,
@@ -108,6 +139,13 @@ export async function importView(tx: Tx, store: DocumentStore, id: string) {
     missing,
     values: missing.length === 0 ? distinctValues(header, rows, mapping, decisions, catalog) : null,
     plan,
+    preview: {
+      create: plan.filter((p) => p.outcome === "create").length,
+      newJobOrders,
+      rateVersions,
+      alreadyImported: plan.filter((p) => p.outcome === "skip" && p.reason.code === "already_imported").length,
+      dateOrder: dateOrderOf(rows.flatMap((r) => [r[header.indexOf(mapping.startDate ?? "")] ?? "", r[header.indexOf(mapping.endDate ?? "")] ?? ""])),
+    },
     results: record.results,
   };
 }
@@ -153,7 +191,7 @@ export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: 
   if (missingFields(mapping).length > 0) throw new StaleRequestError();
   const source = record.source as Source;
   const plan = planRows(source, loaded.header, loaded.rows, mapping, record.decisions as Decisions, await catalogFor(tx));
-  const defaults = (await settingOn<{ ot: { num: number; den: number }; dt: { num: number; den: number } }>(tx, "rate_card.default_bill_multipliers", today))!;
+  const defaults = await settingOn<Defaults>(tx, "rate_card.default_bill_multipliers", today);
   const newJobs = new Map<string, string>();
   const results: ImportResult[] = [];
   for (const p of plan) {
@@ -162,12 +200,15 @@ export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: 
       continue;
     }
     try {
-      await tx.transaction(async (sp) => {
-        results.push(await importRow(sp, actor, source, p, newJobs, defaults));
-      });
+      const made = await tx.transaction((sp) => importRow(sp, actor, source, p, newJobs, defaults));
+      // A job order made by this row counts only once the row is kept (a refused row rolls it back).
+      if (made.newJob) newJobs.set(made.newJob.key, made.newJob.id);
+      results.push(made.result);
     } catch (error) {
-      if (!(error instanceof RowRefused)) throw error;
-      results.push({ row: p.row, outcome: "skipped", reason: error.reason });
+      if (error instanceof RowRefused) results.push({ row: p.row, outcome: "skipped", reason: error.reason });
+      // The database refused this row's values: it is skipped with a plain reason, the rest go in.
+      else if (isDatabaseError(error)) results.push({ row: p.row, outcome: "skipped", reason: { code: "could_not_save", value: "" } });
+      else throw error;
     }
   }
   // Remember this mapping for the next import from the same source (Flatfile memory).
@@ -177,6 +218,16 @@ export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: 
   const imported = results.filter((r) => r.outcome === "imported").length;
   await audit(tx, actor, [{ action: "import", entityType: "placement_import", entityId: id, after: { imported, skipped: results.length - imported } }]);
   return results;
+}
+
+type Defaults = { ot: { num: number; den: number }; dt: { num: number; den: number } };
+
+/** A Postgres error (it carries an SQLSTATE code), as opposed to a fault in this code. */
+function isDatabaseError(error: unknown): boolean {
+  for (let e = error; typeof e === "object" && e !== null; e = (e as { cause?: unknown }).cause) {
+    if (typeof (e as { code?: unknown }).code === "string" && /^[0-9A-Z]{5}$/.test((e as { code: string }).code)) return true;
+  }
+  return false;
 }
 
 class RowRefused extends Error {
@@ -191,20 +242,21 @@ async function importRow(
   source: Source,
   p: Extract<PlannedRow, { outcome: "create" }>,
   newJobs: Map<string, string>,
-  defaults: { ot: { num: number; den: number }; dt: { num: number; den: number } },
-): Promise<ImportResult> {
+  defaults: Defaults | undefined,
+): Promise<{ result: ImportResult; newJob?: { key: string; id: string } }> {
   let jobOrderId: string;
+  let newJob: { key: string; id: string } | undefined;
   if ("id" in p.jobOrder) jobOrderId = p.jobOrder.id;
   else {
     const n = p.jobOrder.new;
-    const key = `${n.clientId}|${n.worksiteId}|${n.position.toLowerCase()}|${(n.shift ?? "").toLowerCase()}`;
+    const key = newJobKey(n);
     const made = newJobs.get(key);
     if (made) jobOrderId = made;
     else {
       const r = await createJobOrder(tx, actor, { clientId: n.clientId, worksiteId: n.worksiteId, position: n.position, shift: n.shift, socCode: null, headcount: 1, payMinCents: null, payMaxCents: null, prevailingWage: false });
       if (!r.ok) throw new RowRefused({ code: "job_order_refused", value: n.position });
       jobOrderId = r.id;
-      newJobs.set(key, r.id);
+      newJob = { key, id: r.id };
     }
   }
   const a = await createAssignment(tx, actor, { workerId: p.workerId, jobOrderId, startDate: p.startDate, endDate: p.endDate, external: p.externalId ? { source, id: p.externalId } : undefined });
@@ -213,19 +265,25 @@ async function importRow(
     // The placement's own rates, unless they are the job order's rates on its start date.
     const jobCard = inForce(await versionsOf(tx, { jobOrderId, assignmentId: null }), p.startDate);
     if (!jobCard || jobCard.payRateCents !== p.rates.payRateCents || jobCard.billRateCents !== p.rates.billRateCents) {
+      const multipliers = jobCard ? { ot: { num: jobCard.otMultiplierNum, den: jobCard.otMultiplierDen }, dt: { num: jobCard.dtMultiplierNum, den: jobCard.dtMultiplierDen } } : defaults;
+      if (!multipliers) throw new RowRefused({ code: "rates_refused", value: "no_default_multipliers" });
       const r = await addRateVersion(tx, actor, { assignmentId: a.id }, {
         effectiveFrom: p.startDate,
         payRateCents: p.rates.payRateCents,
         bill: { rateCents: p.rates.billRateCents },
-        otMultiplier: jobCard ? { num: jobCard.otMultiplierNum, den: jobCard.otMultiplierDen } : defaults.ot,
-        dtMultiplier: jobCard ? { num: jobCard.dtMultiplierNum, den: jobCard.dtMultiplierDen } : defaults.dt,
+        otMultiplier: multipliers.ot,
+        dtMultiplier: multipliers.dt,
         wcClassCode: jobCard?.wcClassCode ?? null,
       });
       if (!r.ok) throw new RowRefused({ code: "rates_refused", value: r.error });
     }
   }
-  return { row: p.row, outcome: "imported", reason: null };
+  return { result: { row: p.row, outcome: "imported", reason: null }, newJob };
 }
+
+/** One new job order per client, worksite, position and shift (case does not matter). */
+export const newJobKey = (n: { clientId: string; worksiteId: string; position: string; shift: string | null }) =>
+  `${n.clientId}|${n.worksiteId}|${n.position.trim().toLowerCase()}|${(n.shift ?? "").trim().toLowerCase()}`;
 
 export async function listImports(tx: Tx) {
   const rows = await tx.select().from(s.placementImports).orderBy(desc(s.placementImports.createdAt));

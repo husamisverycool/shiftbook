@@ -22,7 +22,7 @@ import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-w
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-a5";
+export const RULES_VERSION = "2026.10-a6";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set([WEEKLY_OVERTIME, MINIMUM_WAGE]);
@@ -118,7 +118,7 @@ function scopeLabel(row: JurisdictionRule): string {
 }
 
 /** Shifts on one line share assignment, client, rates and billing rule. */
-const lineKey = (s: Shift) => [s.assignmentId, s.clientId, s.payRateCents, s.billRateCents, s.billRateExplain ?? "", s.billOtMultiplier.num, s.billOtMultiplier.den, s.otBillingRule].join("|");
+const lineKey = (s: Shift) => [s.assignmentId, s.clientId, s.payRateCents, s.billRateCents, s.billOtMultiplier.num, s.billOtMultiplier.den, s.otBillingRule].join("|");
 
 interface Bucket {
   key: string;
@@ -130,7 +130,12 @@ interface Bucket {
   overtime: number;
   regularEntries: string[];
   overtimeEntries: string[];
+  /** How the bill rate came about, for each distinct working among the line's shifts (never splits a line). */
+  billRateExplains: string[];
 }
+
+/** " (working; working)" for a bill line, or "" when the rate was entered as is. */
+const billRateNote = (b: Bucket) => (b.billRateExplains.length > 0 ? ` (${b.billRateExplains.join("; ")})` : "");
 
 function emptyResult(blockers: Issue[]): PayResult {
   return { rulesVersion: RULES_VERSION, payLines: [], billLines: [], blockers, warnings: [] };
@@ -358,7 +363,8 @@ export function computePay(input: PayInput): PayResult {
     const buckets = new Map<string, Bucket>();
     splits.forEach(({ shift, regular, overtime }, index) => {
       const k = lineKey(shift);
-      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [] };
+      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], billRateExplains: [] };
+      if (shift.billRateExplain && !b.billRateExplains.includes(shift.billRateExplain)) b.billRateExplains.push(shift.billRateExplain);
       b.regular += regular;
       b.overtime += overtime;
       if (regular > 0) b.regularEntries.push(...shift.entryIds);
@@ -380,7 +386,7 @@ export function computePay(input: PayInput): PayResult {
         const scope = `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}`;
         weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: uniqueSorted(b.regularEntries) });
         const bill = arithmetic("Billed regular", b.regular, billRate, "");
-        weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card${b.sample.billRateExplain ? ` (${b.sample.billRateExplain})` : ""}.`, entryIds: uniqueSorted(b.regularEntries) });
+        weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card${billRateNote(b)}.`, entryIds: uniqueSorted(b.regularEntries) });
       }
 
       // 5. overtime pay and its billing
@@ -398,10 +404,10 @@ export function computePay(input: PayInput): PayResult {
           const m = b.sample.billOtMultiplier;
           const rate = reduce({ num: mul(b.sample.billRateCents, m.num), den: m.den });
           const bill = arithmetic("Billed overtime", b.overtime, rate, ` (${formatMultiplier(m)} × ${formatRate(billRate).replace("/h", "")} bill rate)`);
-          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills overtime at the rate-card overtime multiplier.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills overtime at the rate-card overtime multiplier; bill rate from the rate card${billRateNote(b)}.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
         } else if (rule === "straight_time") {
           const bill = arithmetic("Billed overtime at straight time", b.overtime, billRate, "");
-          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills overtime at straight time.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills overtime at straight time; bill rate from the rate card${billRateNote(b)}.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
         } else {
           weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `Overtime not billed: ${formatDuration(b.overtime)} (${b.overtime} min) → ${formatCents(0)}. Client profile marks overtime not billable.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
         }

@@ -15,8 +15,19 @@ export async function settingOn<T>(tx: Tx, key: string, date: string): Promise<T
   return inEffect[0]?.value as T | undefined;
 }
 
+/** The date in a time zone as YYYY-MM-DD; an unknown zone is read as UTC rather than failing the page. */
+export function dateIn(zone: unknown, now: Date): string {
+  let format: Intl.DateTimeFormat;
+  try {
+    format = new Intl.DateTimeFormat("en-US", { timeZone: typeof zone === "string" ? zone : "UTC", year: "numeric", month: "2-digit", day: "2-digit" });
+  } catch {
+    format = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit" });
+  }
+  const part = (type: string) => format.formatToParts(now).find((p) => p.type === type)!.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 /** Today's date where the agency is (its time zone setting), as YYYY-MM-DD. */
 export async function agencyToday(tx: Tx, now: Date = new Date()): Promise<string> {
-  const zone = (await settingOn<string>(tx, "time_zone", now.toISOString().slice(0, 10))) ?? "UTC";
-  return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  return dateIn(await settingOn<unknown>(tx, "time_zone", now.toISOString().slice(0, 10)), now);
 }

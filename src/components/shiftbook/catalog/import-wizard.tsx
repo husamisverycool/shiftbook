@@ -17,11 +17,12 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { MAX_PLACEMENT_FILE_BYTES } from "@/lib/limits";
 import { cn } from "@/lib/utils";
 import { FIELDS, SOURCES, type Field, type Mapping, type Source } from "@/server/placements/fields";
 import type { DistinctValue, PlannedRow } from "@/server/placements/plan";
 import type { ImportView } from "@/server/placements/service";
-import { longDate } from "../format";
+import { longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
 
 const STEPS = ["source", "map", "values", "preview", "run"] as const;
@@ -107,11 +108,15 @@ function SourceStep() {
   const upload = () =>
     run(async () => {
       if (!file) return;
+      if (file.size > MAX_PLACEMENT_FILE_BYTES) {
+        setError(t("refused.too_large"));
+        return;
+      }
       const form = new FormData();
       form.append("file", file);
       const r = await startImportAction(source, form);
       if (r.ok) {
-        if (r.dropped > 0) toast.info(t("dropped", { count: r.dropped }));
+        if (r.removed.length > 0) toast.info(t("removed", { count: r.removed.length, columns: r.removed.join(", ") }), { duration: 10_000 });
         go(r.id, "map");
       } else setError(t(`refused.${r.error}`));
     });
@@ -375,7 +380,8 @@ function ValueChoice({ kind, value, options, disabled, onChange }: { kind: Kind;
     );
   }
   return (
-    <NativeSelect {...common}>
+    <NativeSelect {...common} aria-invalid={value.match === null || undefined}>
+      <NativeSelectOption value="">{t("notMatched")}</NativeSelectOption>
       {(["active", "ended", "cancelled"] as const).map((s) => (
         <NativeSelectOption key={s} value={s}>
           {t(`statusAs.${s}`)}
@@ -385,14 +391,15 @@ function ValueChoice({ kind, value, options, disabled, onChange }: { kind: Kind;
   );
 }
 
-function PreviewStep({ view, options }: { view: ImportView; options: CatalogOptions }) {
+function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
   const t = useTranslations("import");
+  const locale = useLocale();
   const go = useGo();
   const router = useRouter();
+  const reason = useReason();
   const [pending, run] = useTransition();
-  const creates = view.plan.filter((p): p is Extract<PlannedRow, { outcome: "create" }> => p.outcome === "create");
-  const skips = view.plan.filter((p): p is Extract<PlannedRow, { outcome: "skip" }> => p.outcome === "skip");
-  const newJobs = new Set(creates.flatMap((p) => ("new" in p.jobOrder ? [`${p.jobOrder.new.worksiteId}|${p.jobOrder.new.position}|${p.jobOrder.new.shift ?? ""}`] : []))).size;
+  const skips = view.plan.filter((p): p is Extract<PlannedRow, { outcome: "skip" }> => p.outcome === "skip" && p.reason.code !== "already_imported");
+  const p = view.preview;
   const start = () =>
     run(async () => {
       const r = await runImportAction(view.id);
@@ -400,26 +407,50 @@ function PreviewStep({ view, options }: { view: ImportView; options: CatalogOpti
       router.refresh();
       go(view.id, "run");
     });
+  const tile = (label: string, value: number, testId?: string) => (
+    <div className="rounded-lg border p-4">
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd className="text-2xl font-semibold tabular-nums" data-testid={testId}>
+        {value}
+      </dd>
+    </div>
+  );
   return (
     <section className="flex flex-col gap-4">
-      <dl className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border p-4">
-          <dt className="text-sm text-muted-foreground">{t("willCreate")}</dt>
-          <dd className="text-2xl font-semibold tabular-nums" data-testid="preview-create">
-            {creates.length}
-          </dd>
-        </div>
-        <div className="rounded-lg border p-4">
-          <dt className="text-sm text-muted-foreground">{t("newJobOrders")}</dt>
-          <dd className="text-2xl font-semibold tabular-nums">{newJobs}</dd>
-        </div>
-        <div className="rounded-lg border p-4">
-          <dt className="text-sm text-muted-foreground">{t("willSkip")}</dt>
-          <dd className="text-2xl font-semibold tabular-nums" data-testid="preview-skip">
-            {skips.length}
-          </dd>
-        </div>
+      <dl className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {tile(t("willCreate"), p.create, "preview-create")}
+        {tile(t("newJobOrders"), p.newJobOrders)}
+        {tile(t("rateVersions"), p.rateVersions.length)}
+        {tile(t("alreadyImported"), p.alreadyImported)}
+        {tile(t("willSkip"), skips.length, "preview-skip")}
       </dl>
+      <p className="text-sm text-muted-foreground">{t(`datesRead.${p.dateOrder}`)}</p>
+      {p.rateVersions.length > 0 && (
+        <div className="rounded-lg border">
+          <Table aria-label={t("rateVersions")}>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-20">{t("row")}</TableHead>
+                <TableHead>{t("worker")}</TableHead>
+                <TableHead>{t("from")}</TableHead>
+                <TableHead className="text-right">{t("pay")}</TableHead>
+                <TableHead className="text-right">{t("bill")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {p.rateVersions.map((v) => (
+                <TableRow key={v.row}>
+                  <TableCell className="tabular-nums">{v.row}</TableCell>
+                  <TableCell>{v.workerName}</TableCell>
+                  <TableCell>{longDate(v.from, locale)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{money(v.payRateCents, locale)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{money(v.billRateCents, locale)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
       {skips.length > 0 && (
         <div className="rounded-lg border">
           <Table aria-label={t("willSkip")}>
@@ -430,24 +461,44 @@ function PreviewStep({ view, options }: { view: ImportView; options: CatalogOpti
               </TableRow>
             </TableHeader>
             <TableBody>
-              {skips.map((p) => (
-                <TableRow key={p.row}>
-                  <TableCell className="tabular-nums">{p.row}</TableCell>
-                  <TableCell>{t(`reasons.${p.reason.code}`, { value: p.reason.value })}</TableCell>
+              {skips.map((x) => (
+                <TableRow key={x.row}>
+                  <TableCell className="tabular-nums">{x.row}</TableCell>
+                  <TableCell>{reason(x.reason)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       )}
-      <p className="text-sm text-muted-foreground">{t("previewNote", { workers: options.workers.length })}</p>
-      <Nav back={() => go(view.id, "values")} onNext={start} disabled={creates.length === 0} pending={pending} nextLabel={t("start")} />
+      <p className="text-sm text-muted-foreground">{t("previewNote")}</p>
+      <Nav back={() => go(view.id, "values")} onNext={start} disabled={p.create === 0} pending={pending} nextLabel={t("start")} />
     </section>
   );
 }
 
+/** A skip reason in plain words: the field it is about, or the refusal behind it, named. */
+function useReason() {
+  const t = useTranslations("import");
+  const tf = useTranslations("import.fields");
+  return (r: { code: string; value: string }) => {
+    const value =
+      r.code === "missing_value" || r.code === "invalid_value"
+        ? (FIELDS as readonly string[]).includes(r.value)
+          ? tf(r.value as Field)
+          : r.value
+        : r.code === "rates_refused"
+          ? t.has(`rateRefusals.${r.value}`)
+            ? t(`rateRefusals.${r.value}`)
+            : t("rateRefusals.other")
+          : r.value;
+    return t.has(`reasons.${r.code}`) ? t(`reasons.${r.code}`, { value }) : r.code;
+  };
+}
+
 function RunStep({ view }: { view: ImportView }) {
   const t = useTranslations("import");
+  const reason = useReason();
   const [filter, setFilter] = useState<"all" | "imported" | "skipped">("all");
   const results = view.results ?? [];
   const shown = results.filter((r) => filter === "all" || r.outcome === filter);
@@ -486,7 +537,7 @@ function RunStep({ view }: { view: ImportView }) {
                 <TableCell>
                   <Badge variant={r.outcome === "imported" ? "secondary" : "outline"}>{t(`results.${r.outcome}`)}</Badge>
                 </TableCell>
-                <TableCell>{r.reason ? t(`reasons.${r.reason.code}`, { value: r.reason.value }) : "—"}</TableCell>
+                <TableCell>{r.reason ? reason(r.reason) : "—"}</TableCell>
               </TableRow>
             ))}
           </TableBody>

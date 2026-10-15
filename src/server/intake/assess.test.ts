@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assessEntry, type AssessContext } from "./assess";
+import { assessEntry, settleDocumentClient, type AssessContext, type EntryDraft } from "./assess";
 import { reading, type FieldReading, type RawEntry } from "./types";
 
 const ctx = (over: Partial<AssessContext> = {}): AssessContext => ({
@@ -129,5 +129,45 @@ describe("assessEntry", () => {
   it("uses the written total when there are no clock times (VMS daily totals)", () => {
     const d = assessEntry(row({ in: null, out: null, break: null, total: reading("ST/Hr 8.00 + OT/Hr 1.00", 540) }), ctx());
     expect(d).toMatchObject({ minutes: 540, inMinute: null, status: "extracted" });
+  });
+});
+
+describe("a timesheet belongs to one client", () => {
+  const draft = (over: Partial<EntryDraft>): EntryDraft => ({
+    rowIndex: 0,
+    workerNameRaw: "x",
+    workerId: "w",
+    assignmentId: "a",
+    clientId: "c-il",
+    workDate: "2026-10-05",
+    inMinute: null,
+    outMinute: null,
+    breakMinutes: null,
+    minutes: 480,
+    fields: {},
+    confidence: "high",
+    status: "extracted",
+    reviewReasons: [],
+    ...over,
+  });
+
+  it("sends an entry matched to an assignment at another client back to review, instead of billing that client", () => {
+    const drafts = [draft({ rowIndex: 1 }), draft({ rowIndex: 2 }), draft({ rowIndex: 3, assignmentId: "a-ma", clientId: "c-ma" })];
+    const settled = settleDocumentClient(drafts, null);
+    expect(settled.clientId).toBe("c-il");
+    expect(settled.drafts[2]).toMatchObject({ assignmentId: null, clientId: "c-il", status: "needs_review", reviewReasons: ["assignment_at_other_client"] });
+    expect(settled.drafts.slice(0, 2).every((d) => d.status === "extracted")).toBe(true);
+  });
+
+  it("uses the client named on the timesheet when there is one", () => {
+    const settled = settleDocumentClient([draft({ assignmentId: "a-ma", clientId: "c-ma" })], "c-il");
+    expect(settled.clientId).toBe("c-il");
+    expect(settled.drafts[0]).toMatchObject({ status: "needs_review", assignmentId: null });
+  });
+
+  it("holds every matched entry when the timesheet's client cannot be told", () => {
+    const settled = settleDocumentClient([draft({}), draft({ assignmentId: "a-ma", clientId: "c-ma" })], null);
+    expect(settled.clientId).toBeNull();
+    expect(settled.drafts.every((d) => d.status === "needs_review" && d.reviewReasons.includes("timesheet_client_unclear"))).toBe(true);
   });
 });

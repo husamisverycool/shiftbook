@@ -200,7 +200,9 @@
         "row_total_mismatch": "Worker's written weekly total does not match",
         "grand_total_mismatch": "Sheet's written grand total does not match",
         "duplicate_day_in_vms": "Day appears on more than one VMS sheet",
-        "other": "Needs a check"
+        "other": "Needs a check",
+        "assignment_at_other_client": "Matched to an assignment at another client",
+        "timesheet_client_unclear": "Which client this timesheet is for is unclear"
       },
       "fields": {
         "worker": "worker",
@@ -748,16 +750,16 @@
     "whichSource": "Where do the placements come from?",
     "drop": "Drop the file here",
     "chosen": "{name} is ready to upload",
-    "accepted": "CSV or Excel (.xlsx), up to 10 MB. Social Security numbers and birth dates are removed when the file is received.",
+    "accepted": "CSV or Excel (.xlsx), up to 10 MB and 2,000 rows. Columns that may hold Social Security numbers or birth dates are removed when the file is received.",
     "choose": "Choose a file",
     "upload": "Upload",
-    "dropped": "{count, plural, one {# column with Social Security numbers or birth dates was removed} other {# columns with Social Security numbers or birth dates were removed}} and not stored.",
     "refused": {
       "unsupported": "Only CSV and Excel (.xlsx) files can be imported.",
       "empty": "The file has no header row or no rows.",
       "too_large": "The file is larger than 10 MB.",
       "busy": "Someone else is changing job orders or paying a week right now. Try again in a moment.",
-      "stale": "This import changed in another tab or window. The page now shows the latest."
+      "stale": "This import changed in another tab or window. The page now shows the latest.",
+      "too_many_rows": "An import takes at most 2,000 rows. Split the file and import each part."
     },
     "back": "Back",
     "next": "Next",
@@ -812,7 +814,7 @@
     "willSkip": "Rows skipped",
     "row": "Row",
     "reason": "Reason",
-    "previewNote": "Rates that differ from the job order's become the worker's own rates from their start date.",
+    "previewNote": "Rates that differ from the job order's become the worker's own rates from their start date. Nothing is written until you start the import.",
     "start": "Start import",
     "doneTitle": "{imported} imported, {skipped} skipped",
     "openAssignments": "Open assignments",
@@ -839,18 +841,39 @@
       "client_not_found": "No client named {value}.",
       "new_job_order_needs_worksite": "No job order {value} at this client; choose an existing one or a worksite for a new one.",
       "several_job_orders": "More than one job order matches {value}.",
-      "missing_value": "A required value is empty.",
+      "missing_value": "{value} is empty.",
       "invalid_date": "{value} is not a date.",
       "end_before_start": "The end date {value} is before the start date.",
-      "invalid_rate": "{value} is not a rate.",
+      "invalid_rate": "\"{value}\" is not a rate (use a period for cents, like 18.25).",
       "cancelled_in_source": "Cancelled in the source system ({value}).",
       "overlaps": "The worker already has an assignment on this job order for those dates.",
-      "rates_refused": "The rates could not be added.",
+      "rates_refused": "The rates could not be added: {value}.",
       "job_order_refused": "The new job order {value} could not be created.",
       "worker_not_found": "The worker is no longer on the roster.",
       "job_order_not_found": "The job order no longer exists.",
       "end_before_start_assignment": "The end date is before the start date.",
-      "invalid_date_assignment": "A date is not valid."
+      "invalid_date_assignment": "A date is not valid.",
+      "invalid_value": "{value} is not valid.",
+      "status_unclear": "The status \"{value}\" is not clear; choose what it means in the review step.",
+      "could_not_save": "This row could not be saved."
+    },
+    "rateVersions": "Own rate versions to add",
+    "alreadyImported": "Already imported",
+    "worker": "Worker",
+    "from": "From",
+    "pay": "Pay rate",
+    "bill": "Bill rate",
+    "datesRead": {
+      "month_first": "Dates like 10/05/2026 are read month first (October 5).",
+      "day_first": "Dates like 05/10/2026 are read day first (5 October), because the file writes them that way."
+    },
+    "removed": "{count, plural, one {# column was removed and not stored} other {# columns were removed and not stored}} because it may hold Social Security numbers or birth dates: {columns}.",
+    "rateRefusals": {
+      "invalid": "the rates are not valid",
+      "paid": "a paid week already uses these dates",
+      "same_start": "a version already starts that day",
+      "no_default_multipliers": "no default overtime multipliers are set for the agency",
+      "other": "they were refused"
     }
   }
 }

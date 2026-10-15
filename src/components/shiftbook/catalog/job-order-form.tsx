@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useRouter } from "@/i18n/navigation";
-import { centsToInput, parseDollars } from "../amounts";
+import { centsToInput, parseDollars } from "@/lib/amounts";
 
 export interface CatalogOptions {
   clients: { id: string; name: string }[];
