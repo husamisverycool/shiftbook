@@ -345,7 +345,7 @@
     ]
   },
   "expected": {
-    "rulesVersion": "2026.10-a2",
+    "rulesVersion": "2026.10-a3",
     "payLines": [],
     "billLines": [],
     "blockers": [
@@ -356,6 +356,7 @@
         "workweekStart": "2026-10-05",
         "jurisdiction": "CA",
         "ruleCode": "ca_daily_overtime",
+        "date": "2026-10-05",
         "message": "Worker One, workweek starting 2026-10-05: CA rule ca_daily_overtime (Cal. Lab. Code § 510(a)) is not implemented yet, so this week cannot be computed."
       },
       {
@@ -365,6 +366,7 @@
         "workweekStart": "2026-10-05",
         "jurisdiction": "CA",
         "ruleCode": "ca_daily_double_time",
+        "date": "2026-10-05",
         "message": "Worker One, workweek starting 2026-10-05: CA rule ca_daily_double_time (Cal. Lab. Code § 510(a)) is not implemented yet, so this week cannot be computed."
       },
       {
@@ -374,6 +376,7 @@
         "workweekStart": "2026-10-05",
         "jurisdiction": "CA",
         "ruleCode": "ca_seventh_day",
+        "date": "2026-10-05",
         "message": "Worker One, workweek starting 2026-10-05: CA rule ca_seventh_day (Cal. Lab. Code § 510(a)) is not implemented yet, so this week cannot be computed."
       },
       {
@@ -383,6 +386,7 @@
         "workweekStart": "2026-10-05",
         "jurisdiction": "CA",
         "ruleCode": "ca_seventh_day_double_time",
+        "date": "2026-10-05",
         "message": "Worker One, workweek starting 2026-10-05: CA rule ca_seventh_day_double_time (Cal. Lab. Code § 510(a)) is not implemented yet, so this week cannot be computed."
       }
     ],

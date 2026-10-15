@@ -13,17 +13,20 @@
  *
  * Anything this version cannot compute correctly blocks the worker-week instead of guessing.
  */
-import { isEffective, isIsoDate, toDayNumber, workweekStart } from "./dates";
+import { addDays, isEffective, isIsoDate, toDayNumber, workweekStart } from "./dates";
 import { formatCents, formatDuration, formatMultiplier, formatRate } from "./format";
 import { exactDecimal, mul, reduceFraction as reduce, roundHalfUp } from "./int";
+import { placeKey, placeMatches } from "./places";
 import { MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-wage";
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-a2";
+export const RULES_VERSION = "2026.10-a3";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set([WEEKLY_OVERTIME, MINIMUM_WAGE]);
+/** Federal rules that must always be present; without them nothing is computed. */
+const REQUIRED_FEDERAL_RULES = [WEEKLY_OVERTIME, MINIMUM_WAGE];
 
 const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
 const MINUTES_PER_DAY = 1440;
@@ -50,6 +53,7 @@ function arithmetic(label: string, minutes: number, rate: Fraction, rateNote: st
 function validShift(s: Shift): string | null {
   if (!isIsoDate(s.date)) return `"${s.date}" is not a real calendar date`;
   if (!STATE.test(s.jurisdiction) || s.jurisdiction === "US") return `worksite state "${s.jurisdiction}" is not a two-letter state code`;
+  if (placeKey(s.county) === "" || placeKey(s.city) === "") return "the worksite's county and city are needed to check local ordinances";
   if (!Number.isSafeInteger(s.minutes) || s.minutes < 0) return `minutes must be a whole number ≥ 0 (got ${s.minutes})`;
   if (s.minutes > MINUTES_PER_DAY) return `${s.minutes} minutes is more than one day`;
   if (s.startMinute !== null) {
@@ -71,16 +75,18 @@ function chronological(a: Shift, b: Shift): number {
   return cmp(a.entryIds[0] ?? "", b.entryIds[0] ?? "");
 }
 
-/** Jurisdiction rows that apply to a worksite: statewide rows plus rows for its county or city. */
+/** Jurisdiction rows for a worksite on a date: statewide rows plus rows for its county or city. */
 function rowsFor(rules: JurisdictionRule[], state: string, county: string, city: string, date: string) {
   return rules.filter(
     (r) =>
       r.jurisdiction === state &&
-      (r.county == null || r.county === county) &&
-      (r.city == null || r.city === city) &&
+      (state === "US" || (placeMatches(r.county, county) && placeMatches(r.city, city))) &&
       isEffective(date, r.effectiveFrom, r.effectiveTo),
   );
 }
+
+/** Shifts on one line share assignment, rates and billing rule. */
+const lineKey = (s: Shift) => [s.assignmentId, s.payRateCents, s.billRateCents, s.billOtMultiplier.num, s.billOtMultiplier.den, s.otBillingRule].join("|");
 
 interface Bucket {
   key: string;
@@ -94,21 +100,44 @@ interface Bucket {
   overtimeEntries: string[];
 }
 
+function emptyResult(blockers: Issue[]): PayResult {
+  return { rulesVersion: RULES_VERSION, payLines: [], billLines: [], blockers, warnings: [] };
+}
+
 export function computePay(input: PayInput): PayResult {
+  if (!Number.isInteger(input.workweekStartsOn) || input.workweekStartsOn < 0 || input.workweekStartsOn > 6) {
+    return emptyResult([{ code: "invalid_input", message: `The workweek start day must be 0 (Sunday) to 6 (Saturday); got ${String(input.workweekStartsOn)}.` }]);
+  }
+
   const blockers: Issue[] = [];
   const warnings: Issue[] = [];
   const payLines: Line[] = [];
   const billLines: Line[] = [];
 
+  // A worker with a shift that cannot be placed in any week is held entirely.
+  const heldWorkers = new Set<string>();
+  const seenEntries = new Map<string, string>();
+  for (const shift of input.shifts) {
+    if (!isIsoDate(shift.date)) {
+      heldWorkers.add(shift.workerId);
+      blockers.push({ code: "invalid_input", workerId: shift.workerId, workerName: shift.workerName, entryIds: shift.entryIds, message: `${shift.workerName}: "${shift.date}" is not a real calendar date. All of this worker's weeks are held until it is fixed.` });
+    }
+    for (const id of shift.entryIds) {
+      const other = seenEntries.get(id);
+      if (other !== undefined && !heldWorkers.has(shift.workerId)) {
+        heldWorkers.add(shift.workerId);
+        blockers.push({ code: "invalid_input", workerId: shift.workerId, workerName: shift.workerName, entryIds: [id], message: `${shift.workerName}: time entry ${id} appears in more than one shift, so it would be paid twice. All of this worker's weeks are held.` });
+      }
+      seenEntries.set(id, shift.workerId);
+    }
+  }
+
   // 1. classify minutes: group by worker and fixed workweek; remember invalid shifts per week.
   const weeks = new Map<string, Shift[]>();
   const invalid = new Map<string, Issue[]>();
   for (const shift of input.shifts) {
+    if (heldWorkers.has(shift.workerId)) continue;
     const problem = validShift(shift);
-    if (problem && !isIsoDate(shift.date)) {
-      blockers.push({ code: "invalid_input", workerId: shift.workerId, workerName: shift.workerName, entryIds: shift.entryIds, message: `${shift.workerName}: ${problem}.` });
-      continue;
-    }
     const week = workweekStart(shift.date, input.workweekStartsOn);
     const key = `${shift.workerId}\u0000${week}`;
     if (problem) {
@@ -133,30 +162,54 @@ export function computePay(input: PayInput): PayResult {
       continue;
     }
 
-    const perDay = new Map<string, number>();
-    for (const s of shifts) perDay.set(s.date, (perDay.get(s.date) ?? 0) + s.minutes);
-    for (const [date, minutes] of [...perDay].sort((a, b) => cmp(a[0], b[0]))) {
+    // A day can hold at most 24 hours, and shifts with known start times must not overlap.
+    const byDay = new Map<string, Shift[]>();
+    for (const s of shifts) byDay.set(s.date, [...(byDay.get(s.date) ?? []), s]);
+    for (const [date, dayShifts] of [...byDay].sort((a, b) => cmp(a[0], b[0]))) {
+      const minutes = dayShifts.reduce((sum, s) => sum + s.minutes, 0);
       if (minutes > MINUTES_PER_DAY) {
         weekBlockers.push({ code: "invalid_input", ...who, date, message: `${first.workerName} on ${date}: ${formatDuration(minutes)} recorded in one day, more than 24 hours.` });
+        continue;
+      }
+      const timed = dayShifts.filter((s) => s.startMinute !== null).sort((a, b) => a.startMinute! - b.startMinute!);
+      for (let i = 1; i < timed.length; i++) {
+        const prev = timed[i - 1]!;
+        if (timed[i]!.startMinute! < prev.startMinute! + prev.minutes) {
+          weekBlockers.push({ code: "invalid_input", ...who, date, entryIds: [...prev.entryIds, ...timed[i]!.entryIds], message: `${first.workerName} on ${date}: two shifts overlap in time, so the same minutes would be paid twice.` });
+          break;
+        }
       }
     }
 
-    // Jurisdiction gate: every worksite state must be known, and every rule that applies there
-    // (statewide or local) must be implemented by this version. Otherwise block, never guess.
+    // Jurisdiction gate, checked on every day worked: every worksite state must be known, and every
+    // rule that applies there (statewide or local) must be implemented by this version.
     const applicable = new Set<string>();
-    const sites = [...new Map(shifts.map((s) => [`${s.jurisdiction}|${s.county}|${s.city}`, s])).values()];
-    for (const row of rowsFor(input.jurisdictionRules, "US", "", "", week)) applicable.add(row.ruleCode);
+    const federal = new Set<string>();
+    const dates = [...byDay.keys()].sort(cmp);
+    for (const date of dates) for (const row of rowsFor(input.jurisdictionRules, "US", "", "", date)) federal.add(row.ruleCode);
+    for (const code of federal) applicable.add(code);
+    const missingFederal = REQUIRED_FEDERAL_RULES.filter((c) => !federal.has(c));
+    if (missingFederal.length > 0) {
+      weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: "US", message: `${first.workerName}, workweek starting ${week}: the federal rule data (${missingFederal.join(", ")}) is missing, so nothing can be computed.` });
+    }
+    const reported = new Set<string>();
+    const sites = [...new Map(shifts.map((s) => [`${s.jurisdiction}|${placeKey(s.county)}|${placeKey(s.city)}`, s])).values()];
     for (const site of sites.sort((a, b) => cmp(`${a.jurisdiction}${a.county}${a.city}`, `${b.jurisdiction}${b.county}${b.city}`))) {
-      const statewide = input.jurisdictionRules.filter((r) => r.jurisdiction === site.jurisdiction && isEffective(week, r.effectiveFrom, r.effectiveTo));
-      if (statewide.length === 0) {
+      const siteDates = [...new Set(shifts.filter((s) => s.jurisdiction === site.jurisdiction && placeKey(s.county) === placeKey(site.county) && placeKey(s.city) === placeKey(site.city)).map((s) => s.date))].sort(cmp);
+      const known = siteDates.some((d) => input.jurisdictionRules.some((r) => r.jurisdiction === site.jurisdiction && isEffective(d, r.effectiveFrom, r.effectiveTo)));
+      if (!known) {
         weekBlockers.push({ code: "unknown_jurisdiction", ...who, jurisdiction: site.jurisdiction, message: `${first.workerName}, workweek starting ${week}: no wage rules are on file for ${site.jurisdiction}, so this week cannot be computed.` });
         continue;
       }
-      for (const row of rowsFor(input.jurisdictionRules, site.jurisdiction, site.county, site.city, week)) {
-        applicable.add(row.ruleCode);
-        if (!IMPLEMENTED_RULE_CODES.has(row.ruleCode)) {
-          const scope = row.city ? `${row.city}, ${site.jurisdiction}` : row.county ? `${row.county} County, ${site.jurisdiction}` : site.jurisdiction;
-          weekBlockers.push({ code: "rule_not_supported_yet", ...who, jurisdiction: site.jurisdiction, ruleCode: row.ruleCode, message: `${first.workerName}, workweek starting ${week}: ${scope} rule ${row.ruleCode} (${row.citation}) is not implemented yet, so this week cannot be computed.` });
+      for (const date of siteDates) {
+        for (const row of rowsFor(input.jurisdictionRules, site.jurisdiction, site.county, site.city, date)) {
+          applicable.add(row.ruleCode);
+          const k = `${site.jurisdiction}|${row.county ?? ""}|${row.city ?? ""}|${row.ruleCode}`;
+          if (!IMPLEMENTED_RULE_CODES.has(row.ruleCode) && !reported.has(k)) {
+            reported.add(k);
+            const scope = row.city ? `${row.city}, ${site.jurisdiction}` : row.county ? `${row.county} County, ${site.jurisdiction}` : site.jurisdiction;
+            weekBlockers.push({ code: "rule_not_supported_yet", ...who, jurisdiction: site.jurisdiction, ruleCode: row.ruleCode, date, message: `${first.workerName}, workweek starting ${week}: ${scope} rule ${row.ruleCode} (${row.citation}) is not implemented yet, so this week cannot be computed.` });
+          }
         }
       }
     }
@@ -183,9 +236,18 @@ export function computePay(input: PayInput): PayResult {
       }
     }
 
-    // 5. overtime: the most protective weekly rule, applied once.
+    // 5. overtime: each state that lists weekly overtime must have its own rule row; then the most
+    // protective weekly rule across federal and state rows is applied once.
+    for (const state of states) {
+      const listsWeekly = dates.some((d) => rowsFor(input.jurisdictionRules, state, "", "", d).some((r) => r.ruleCode === WEEKLY_OVERTIME && r.county == null && r.city == null));
+      const hasRow = input.overtimeRules.some((r) => r.jurisdiction === state && r.ruleCode === WEEKLY_OVERTIME && r.kind === "weekly" && isEffective(week, r.effectiveFrom, r.effectiveTo));
+      if (listsWeekly && !hasRow) {
+        weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: state, ruleCode: WEEKLY_OVERTIME, message: `${first.workerName}, workweek starting ${week}: ${state} weekly overtime applies but its rule row is missing, so this week cannot be computed.` });
+      }
+    }
+    const stateRowMissing = weekBlockers.some((b) => b.code === "rule_data_missing" && b.ruleCode === WEEKLY_OVERTIME);
     const weekly = applicable.has(WEEKLY_OVERTIME) ? selectWeeklyRule(input.overtimeRules, ["US", ...states], week) : null;
-    if (applicable.has(WEEKLY_OVERTIME) && !weekly) {
+    if (applicable.has(WEEKLY_OVERTIME) && !weekly && !stateRowMissing) {
       weekBlockers.push({ code: "rule_data_missing", ...who, ruleCode: WEEKLY_OVERTIME, message: `${first.workerName}, workweek starting ${week}: weekly overtime applies but no overtime rule row is in effect, so this week cannot be computed.` });
     }
 
@@ -208,16 +270,16 @@ export function computePay(input: PayInput): PayResult {
     // Overtime allocation follows the order of work; flag days where that order was assumed.
     const otDays = new Set(splits.filter((x) => x.overtime > 0).map((x) => x.shift.date));
     for (const date of [...otDays].sort(cmp)) {
-      const sameDay = shifts.filter((s) => s.date === date);
-      if (new Set(sameDay.map((s) => s.assignmentId)).size > 1 && sameDay.some((s) => s.startMinute === null)) {
-        warnings.push({ code: "allocation_order_assumed", ...who, date, message: `${first.workerName} on ${date}: shifts at different assignments have no start time, so the order used to decide which one carries the overtime was assumed.` });
+      const sameDay = byDay.get(date) ?? [];
+      if (new Set(sameDay.map(lineKey)).size > 1 && sameDay.some((s) => s.startMinute === null)) {
+        warnings.push({ code: "allocation_order_assumed", ...who, date, message: `${first.workerName} on ${date}: shifts paid or billed differently have no start time, so the order used to decide which one carries the overtime was assumed.` });
       }
     }
 
     // 7. allocate to assignments (and so to clients) at the rates in effect for each shift.
     const buckets = new Map<string, Bucket>();
     splits.forEach(({ shift, regular, overtime }, index) => {
-      const k = [shift.assignmentId, shift.payRateCents, shift.billRateCents, shift.billOtMultiplier.num, shift.billOtMultiplier.den, shift.otBillingRule].join("|");
+      const k = lineKey(shift);
       const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [] };
       b.regular += regular;
       b.overtime += overtime;
@@ -226,6 +288,8 @@ export function computePay(input: PayInput): PayResult {
       buckets.set(k, b);
     });
 
+    const weekPay: Line[] = [];
+    const weekBill: Line[] = [];
     const citations = weekly ? weekly.citations.join("; ") : "";
     for (const b of [...buckets.values()].sort((x, y) => x.firstIndex - y.firstIndex)) {
       const base = { workerId: first.workerId, assignmentId: b.assignmentId, clientId: b.clientId, workweekStart: week };
@@ -236,9 +300,9 @@ export function computePay(input: PayInput): PayResult {
       if (b.regular > 0) {
         const pay = arithmetic("Regular", b.regular, payRate, "");
         const scope = weekly ? `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}` : `all hours in the workweek starting ${week}`;
-        payLines.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: b.regularEntries });
+        weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: b.regularEntries });
         const bill = arithmetic("Billed regular", b.regular, billRate, "");
-        billLines.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card.`, entryIds: b.regularEntries });
+        weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card.`, entryIds: b.regularEntries });
       }
 
       // 5. overtime pay and its billing
@@ -249,29 +313,31 @@ export function computePay(input: PayInput): PayResult {
         const note = ` (${formatMultiplier(weekly.multiplier)} × ${formatRate(payRate).replace("/h", "")})`;
         const pay = arithmetic("Overtime", b.overtime, otRate, note);
         const why = `Rule ${WEEKLY_OVERTIME}: ${formatDuration(totalMinutes)} worked in the workweek starting ${week} is ${formatDuration(overtimeMinutes)} over the ${formatDuration(weekly.thresholdMinutes)} threshold (${citations}).${elsewhereNote}`;
-        payLines.push({ ...base, type: "OT", minutes: b.overtime, rate: otRate, amountCents: pay.amountCents, ruleId: WEEKLY_OVERTIME, explain: `${pay.text} ${why}`, entryIds: b.overtimeEntries });
+        weekPay.push({ ...base, type: "OT", minutes: b.overtime, rate: otRate, amountCents: pay.amountCents, ruleId: WEEKLY_OVERTIME, explain: `${pay.text} ${why}`, entryIds: b.overtimeEntries });
 
         const rule = b.sample.otBillingRule;
         if (rule === "multiplier") {
           const m = b.sample.billOtMultiplier;
           const rate = reduce({ num: mul(b.sample.billRateCents, m.num), den: m.den });
           const bill = arithmetic("Billed overtime", b.overtime, rate, ` (${formatMultiplier(m)} × ${formatRate(billRate).replace("/h", "")} bill rate)`);
-          billLines.push({ ...base, type: "OT", minutes: b.overtime, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills overtime at the rate-card overtime multiplier.${elsewhereNote}`, entryIds: b.overtimeEntries });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills overtime at the rate-card overtime multiplier.${elsewhereNote}`, entryIds: b.overtimeEntries });
         } else if (rule === "straight_time") {
           const bill = arithmetic("Billed overtime at straight time", b.overtime, billRate, "");
-          billLines.push({ ...base, type: "OT", minutes: b.overtime, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills overtime at straight time.${elsewhereNote}`, entryIds: b.overtimeEntries });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills overtime at straight time.${elsewhereNote}`, entryIds: b.overtimeEntries });
         } else {
-          billLines.push({ ...base, type: "OT", minutes: b.overtime, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `Overtime not billed: ${formatDuration(b.overtime)} (${b.overtime} min) → ${formatCents(0)}. Client profile marks overtime not billable.${elsewhereNote}`, entryIds: b.overtimeEntries });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `Overtime not billed: ${formatDuration(b.overtime)} (${b.overtime} min) → ${formatCents(0)}. Client profile marks overtime not billable.${elsewhereNote}`, entryIds: b.overtimeEntries });
         }
       }
       // 6. confirmed premiums — slice (c).
     }
-  }
 
-  for (const line of payLines) {
-    if (line.minutes > 0 && line.amountCents <= 0) {
-      blockers.push({ code: "zero_or_negative_pay", workerId: line.workerId, workweekStart: line.workweekStart, entryIds: line.entryIds, message: `Pay line ${line.type} for workweek ${line.workweekStart} computes to ${formatCents(line.amountCents)}.` });
+    const zero = weekPay.filter((l) => l.minutes > 0 && l.amountCents <= 0);
+    if (zero.length > 0) {
+      blockers.push(...zero.map((l) => ({ code: "zero_or_negative_pay" as const, ...who, entryIds: l.entryIds, message: `${first.workerName}: pay line ${l.type} for the workweek starting ${week} computes to ${formatCents(l.amountCents)}.` })));
+      continue;
     }
+    payLines.push(...weekPay);
+    billLines.push(...weekBill);
   }
 
   const order = (a: Line, b: Line) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
@@ -295,3 +361,6 @@ function sortLines(lines: Line[], typeOrder: (a: Line, b: Line) => number): Line
     })
     .map((x) => x.line);
 }
+
+/** Exposed for tests of week boundaries. */
+export const _internal = { addDays };

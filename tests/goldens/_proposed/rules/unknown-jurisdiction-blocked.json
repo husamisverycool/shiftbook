@@ -345,7 +345,7 @@
     ]
   },
   "expected": {
-    "rulesVersion": "2026.10-a2",
+    "rulesVersion": "2026.10-a3",
     "payLines": [],
     "billLines": [],
     "blockers": [

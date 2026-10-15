@@ -16,6 +16,7 @@
  * come with the full rules engine.
  */
 import { isEffective } from "../dates";
+import { placeMatches } from "../places";
 import type { IsoDate, MinimumWageRule } from "../types";
 
 export const MINIMUM_WAGE = "minimum_wage";
@@ -30,8 +31,8 @@ export function selectMinimumWage(
   const matches = rules.filter(
     (r) =>
       (r.jurisdiction === "US" || r.jurisdiction === state) &&
-      (r.county == null || (r.jurisdiction === state && r.county === county)) &&
-      (r.city == null || (r.jurisdiction === state && r.city === city)) &&
+      (r.county == null || (r.jurisdiction === state && placeMatches(r.county, county))) &&
+      (r.city == null || (r.jurisdiction === state && placeMatches(r.city, city))) &&
       isEffective(date, r.effectiveFrom, r.effectiveTo),
   );
   // A state with no statewide row of its own is missing data, even if the federal floor exists.

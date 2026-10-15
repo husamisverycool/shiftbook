@@ -57,6 +57,9 @@ const GUSTO_MULTIPLIER: Record<HourColumn, Fraction> = {
   double_overtime_hours: { num: 2, den: 1 },
 };
 const sameRate = (a: Fraction, b: Fraction) => a.num * b.den === b.num * a.den;
+/** Name order that is the same on every machine: accents folded, case folded, plain comparison. */
+const sortKey = (name: string) => name.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const signedCents = (c: number) => (c >= 0 ? `+${formatCents(c)}` : `−${formatCents(-c)}`);
 
 function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): HourColumn {
@@ -77,6 +80,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   const minutesByType: Record<string, number> = {};
   const baseRates = new Map<string, Set<string>>();
   const columnRates = new Map<string, Partial<Record<HourColumn, Fraction>>>();
+  const premiumLines: { workerId: string; column: HourColumn; rate: Fraction }[] = [];
   const columnAmounts = new Map<string, Record<HourColumn, number>>();
   let grossCents = 0;
 
@@ -113,6 +117,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
     const rates = columnRates.get(line.workerId) ?? {};
     rates[column] = line.rate;
     columnRates.set(line.workerId, rates);
+    if (column !== "regular_hours") premiumLines.push({ workerId: line.workerId, column, rate: line.rate });
     const amounts = columnAmounts.get(line.workerId) ?? { regular_hours: 0, overtime_hours: 0, double_overtime_hours: 0 };
     amounts[column] += line.amountCents;
     columnAmounts.set(line.workerId, amounts);
@@ -120,30 +125,29 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
     grossCents += line.amountCents;
   }
 
-  for (const [id, rates] of columnRates) {
-    const reg = rates.regular_hours;
-    if (!reg) continue;
-    for (const col of ["overtime_hours", "double_overtime_hours"] as const) {
-      const rate = rates[col];
-      const m = GUSTO_MULTIPLIER[col];
-      if (rate && !sameRate(rate, { num: reg.num * m.num, den: reg.den * m.den })) {
-        const w = workersById.get(id)!;
-        throw new ExportError(
-          "several_pay_rates",
-          `${w.lastName}, ${w.firstName}: ${col} is paid at ${formatRate(rate)}, but Gusto pays it at ${exactDecimal(m.num, m.den)} × the regular rate (${formatRate({ num: reg.num * m.num, den: reg.den * m.den })}).`,
-        );
-      }
+  // Gusto pays overtime and double time at its own multiple of the employee's base rate, so every
+  // premium line must be exactly that multiple of the worker's single regular rate.
+  for (const line of premiumLines) {
+    const w = workersById.get(line.workerId)!;
+    const reg = columnRates.get(line.workerId)?.regular_hours;
+    if (!reg) {
+      throw new ExportError(
+        "several_pay_rates",
+        `${w.lastName}, ${w.firstName} has ${line.column} but no regular hours, so the base rate Gusto multiplies is unknown.`,
+      );
+    }
+    const m = GUSTO_MULTIPLIER[line.column];
+    if (!sameRate(line.rate, { num: reg.num * m.num, den: reg.den * m.den })) {
+      throw new ExportError(
+        "several_pay_rates",
+        `${w.lastName}, ${w.firstName}: ${line.column} is paid at ${formatRate(line.rate)}, but Gusto pays it at ${exactDecimal(m.num, m.den)} × the regular rate (${formatRate({ num: reg.num * m.num, den: reg.den * m.den })}).`,
+      );
     }
   }
 
   const ordered = [...perWorker.keys()]
     .map((id) => workersById.get(id)!)
-    .sort(
-      (a, b) =>
-        a.lastName.localeCompare(b.lastName, "en") ||
-        a.firstName.localeCompare(b.firstName, "en") ||
-        a.payrollIds.gusto!.id.localeCompare(b.payrollIds.gusto!.id),
-    );
+    .sort((a, b) => cmp(sortKey(a.lastName), sortKey(b.lastName)) || cmp(sortKey(a.firstName), sortKey(b.firstName)) || cmp(a.payrollIds.gusto!.id, b.payrollIds.gusto!.id));
 
   const notes: string[] = [];
   const rows: string[][] = [[...GUSTO_HEADER]];
@@ -158,10 +162,15 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
       if (!rate || minutes[col] === 0) return;
       const gustoCents = roundHalfUp(hours[i]! * rate.num, 100 * rate.den);
       payrollSystemGrossCents += gustoCents;
-      if (hours[i]! * 60 !== minutes[col] * 100) {
+      const exactHours = hours[i]! * 60 === minutes[col] * 100;
+      if (!exactHours || gustoCents !== amounts[col]) {
         const type = (Object.keys(GUSTO_CAPABILITY) as EarningType[]).find((t) => GUSTO_CAPABILITY[t] === col)!;
+        const written = exactHours
+          ? `${minutes[col]} min written as ${hoursText(hours[i]!)} h (exact)`
+          : `${minutes[col]} min written as ${hoursText(hours[i]!)} h (${exactDecimal(minutes[col], 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
+        const why = exactHours ? ", because Shiftbook rounds each pay line separately" : "";
         notes.push(
-          `${w.lastName}, ${w.firstName} — ${type}: ${minutes[col]} min written as ${hoursText(hours[i]!)} h (${exactDecimal(minutes[col], 60)} h exactly, rounded up to the next hundredth so no worked time is lost). Gusto pays ${hoursText(hours[i]!)} h × ${formatRate(rate)} = ${formatCents(gustoCents)}; Shiftbook computed ${formatCents(amounts[col])} (${signedCents(gustoCents - amounts[col])}).`,
+          `${w.lastName}, ${w.firstName} — ${type}: ${written}. Gusto pays ${hoursText(hours[i]!)} h × ${formatRate(rate)} = ${formatCents(gustoCents)}; Shiftbook computed ${formatCents(amounts[col])} (${signedCents(gustoCents - amounts[col])})${why}.`,
         );
       }
     });

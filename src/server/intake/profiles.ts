@@ -42,6 +42,8 @@ export interface VmsProfile {
     hours: string;
     rateCategory: string;
     site?: string;
+    /** The buyer (client) named in the export, used as the document's client hint. */
+    clientName?: string;
   };
 }
 
@@ -66,6 +68,7 @@ export const BUILT_IN_PROFILES: MappingProfile[] = [
       hours: "Total Hours",
       rateCategory: "Rate Category/UOM",
       site: "Site Name",
+      clientName: "Buyer Name",
     },
   },
   {

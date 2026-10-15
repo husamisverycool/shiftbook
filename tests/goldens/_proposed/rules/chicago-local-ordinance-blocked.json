@@ -345,7 +345,7 @@
     ]
   },
   "expected": {
-    "rulesVersion": "2026.10-a2",
+    "rulesVersion": "2026.10-a3",
     "payLines": [],
     "billLines": [],
     "blockers": [
@@ -356,6 +356,7 @@
         "workweekStart": "2026-10-05",
         "jurisdiction": "IL",
         "ruleCode": "local_minimum_wage",
+        "date": "2026-10-05",
         "message": "Worker One, workweek starting 2026-10-05: Cook County, IL rule local_minimum_wage (Cook County Code § 42-13 (Ord. 16-5768); municipalities may opt out) is not implemented yet, so this week cannot be computed."
       },
       {
@@ -365,6 +366,7 @@
         "workweekStart": "2026-10-05",
         "jurisdiction": "IL",
         "ruleCode": "local_minimum_wage",
+        "date": "2026-10-05",
         "message": "Worker One, workweek starting 2026-10-05: Chicago, IL rule local_minimum_wage (Chicago Municipal Code ch. 6-105) is not implemented yet, so this week cannot be computed."
       }
     ],

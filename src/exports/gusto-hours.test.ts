@@ -96,6 +96,36 @@ describe("Gusto hours CSV", () => {
     expect(() => renderGustoHours(fixture)).toThrow(/more than one pay rate/);
   });
 
+  it("checks every overtime line against the regular rate, not just the last one", () => {
+    const fixture = base({
+      payLines: [
+        { workerId: "w1", type: "REG", minutes: 2400, amountCents: 73_000, rate: { num: 1825, den: 1 } },
+        { workerId: "w1", type: "OT", minutes: 60, amountCents: 3650, rate: { num: 3650, den: 1 } },
+        { workerId: "w1", type: "OT", minutes: 60, amountCents: 2738, rate: { num: 5475, den: 2 } },
+      ],
+    });
+    expect(() => renderGustoHours(fixture)).toThrow(/1\.5/);
+  });
+
+  it("refuses overtime for a worker with no regular line (Gusto needs the base rate)", () => {
+    const fixture = base({ payLines: [{ workerId: "w1", type: "OT", minutes: 60, amountCents: 2738, rate: { num: 5475, den: 2 } }] });
+    expect(() => renderGustoHours(fixture)).toThrow(/regular/);
+  });
+
+  it("notes a cent difference even when the hours are exact (two lines rounded separately)", () => {
+    const fixture = base({
+      payLines: [
+        { workerId: "w1", type: "REG", minutes: 1206, amountCents: 36_683, rate: { num: 1825, den: 1 } },
+        { workerId: "w1", type: "REG", minutes: 1194, amountCents: 36_318, rate: { num: 1825, den: 1 } },
+      ],
+    });
+    const r = renderGustoHours(fixture);
+    expect(r.controlTotals.payrollSystemDifferenceCents).toBe(-1);
+    expect(r.notes).toEqual([
+      "Álvarez, Ana — REG: 2400 min written as 40.00 h (exact). Gusto pays 40.00 h × $18.25/h = $730.00; Shiftbook computed $730.01 (−$0.01), because Shiftbook rounds each pay line separately.",
+    ]);
+  });
+
   it("quotes fields that contain commas or quotes", () => {
     const fixture = base({
       workers: [{ workerId: "w1", firstName: 'Lee "Junior"', lastName: "Park, Jr.", payrollIds: { gusto: { id: "abc123", title: "Loader, Dock (Primary)" } } }],

@@ -293,17 +293,82 @@ describe("computePay — second-opinion review fixes", () => {
   });
 });
 
+describe("computePay — third review fixes", () => {
+  it("recognises local ordinances however the county and city are written", () => {
+    for (const [county, city] of [["Cook County", "CHICAGO"], [" cook ", "City of Chicago"], ["COOK", "Evanston"]] as const) {
+      const r = computePay(input([shift(WEEK[0]!, 480, { county, city })]));
+      expect(r.payLines).toEqual([]);
+      expect(r.blockers.some((b) => b.ruleCode === "local_minimum_wage")).toBe(true);
+    }
+  });
+
+  it("blocks a worksite with no county or city (local ordinances cannot be checked)", () => {
+    const r = computePay(input([shift(WEEK[0]!, 480, { county: " ", city: "Joliet" })]));
+    expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+  });
+
+  it("holds every week of a worker who has a shift with an impossible date", () => {
+    const r = computePay(input([...WEEK.slice(0, 5).map((d) => shift(d, 480)), shift("2026-10-32", 480)]));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+  });
+
+  it("applies a jurisdiction rule that takes effect in the middle of the week", () => {
+    const local = { jurisdiction: "IL", county: "Will", ruleCode: "local_minimum_wage", effectiveFrom: "2026-10-07", effectiveTo: null, citation: "hypothetical Will County ordinance" };
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 480)), { jurisdictionRules: [...JURISDICTIONS, local] }));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.some((b) => b.ruleCode === "local_minimum_wage")).toBe(true);
+  });
+
+  it("never runs without the federal overtime and minimum-wage rules", () => {
+    const noFederal = JURISDICTIONS.filter((j) => j.jurisdiction !== "US");
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 540)), { jurisdictionRules: noFederal }));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.map((b) => b.code)).toContain("rule_data_missing");
+  });
+
+  it("blocks when a state lists weekly overtime but has no overtime row of its own", () => {
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 540)), { overtimeRules: OT_RULES.filter((o) => o.jurisdiction !== "IL") }));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.map((b) => [b.code, b.jurisdiction])).toEqual([["rule_data_missing", "IL"]]);
+  });
+
+  it("warns about assumed order between same-assignment shifts at different bill rates", () => {
+    const shifts = [
+      ...WEEK.slice(0, 4).map((d) => shift(d, 540)),
+      shift(WEEK[4]!, 300, { startMinute: null }),
+      shift(WEEK[4]!, 300, { startMinute: null, billRateCents: 3000 }),
+    ];
+    expect(computePay(input(shifts)).warnings.map((w) => w.code)).toEqual(["allocation_order_assumed"]);
+  });
+
+  it("blocks overlapping shifts and entries counted twice", () => {
+    const overlap = computePay(input([shift(WEEK[0]!, 480, { startMinute: 480 }), shift(WEEK[0]!, 480, { startMinute: 600, assignmentId: "a2" })]));
+    expect(overlap.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+    const twice = shift(WEEK[0]!, 480);
+    const dup = computePay(input([twice, { ...twice, date: WEEK[1]! }]));
+    expect(dup.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+  });
+
+  it("rejects an invalid workweek start day", () => {
+    const r = computePay(input([shift(WEEK[0]!, 480)], { workweekStartsOn: 7 as never }));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+  });
+});
+
 describe("computePay — effective dating", () => {
   it("uses the rule row in effect for that workweek", () => {
+    const usRow = OT_RULES[0]!;
     const rules: OvertimeRule[] = [
-      ...OT_RULES.map((r) => (r.jurisdiction === "US" ? { ...r, effectiveTo: "2026-12-31" } : r)).filter((r) => r.jurisdiction !== "IL"),
-      { ...OT_RULES[0]!, thresholdMinutes: 2100, effectiveFrom: "2027-01-01", citation: "hypothetical future rule" },
+      { ...usRow, effectiveTo: "2026-12-31" },
+      { ...usRow, thresholdMinutes: 2100, effectiveFrom: "2027-01-01", citation: "hypothetical future rule" },
+      ...OT_RULES.filter((r) => r.jurisdiction !== "US"),
     ];
-    const jur = JURISDICTIONS.filter((j) => j.jurisdiction !== "IL").concat({ ...JURISDICTIONS[1]! });
-    const r2026 = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 480)), { overtimeRules: rules, jurisdictionRules: jur }));
+    const r2026 = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 480)), { overtimeRules: rules }));
     expect(r2026.payLines.map((l) => l.type)).toEqual(["REG"]);
     const jan = ["2027-01-04", "2027-01-05", "2027-01-06", "2027-01-07", "2027-01-08"];
-    const r2027 = computePay(input(jan.map((d) => shift(d, 480)), { overtimeRules: rules, jurisdictionRules: jur }));
+    const r2027 = computePay(input(jan.map((d) => shift(d, 480)), { overtimeRules: rules }));
     expect(r2027.payLines.map((l) => [l.type, l.minutes])).toEqual([
       ["REG", 2100],
       ["OT", 300],
