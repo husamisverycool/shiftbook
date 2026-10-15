@@ -20,8 +20,8 @@ banner on every page (SPEC §18) with the one-click reset.
    Dashboard"). Contents: that this is demo data, a download of the sample timesheets (decision D6),
    and the reset control (SPEC §18).
 2. **Page content** — the route's own pattern.
-3. Navigation frame (sidebar): none in slice (a), which has one screen. The owner picks a reference
-   for the navigation frame before slice (b).
+3. Navigation frame (sidebar): none in slice (a), which has one screen. From slice (b), app pages sit
+   in the Linear-style sidebar frame (`_layouts/app.md`, decision B4).
 
 ## Interactions
 - Reset demo → confirms in a dialog (shadcn alert dialog: title, one line, cancel and confirm), then
