@@ -3,6 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { z } from "zod";
 import { withAgency } from "@/server/db";
 import { auditEvents } from "@/server/db/schema";
 import { StaleRequestError } from "@/server/errors";
@@ -21,6 +22,19 @@ const refresh = () => revalidatePath("/[locale]/(app)/convert", "page");
 
 export type { UploadResult } from "@/server/intake/upload";
 export type ActionError = "period_locked" | "busy" | "stale" | "generic";
+
+// Every input is checked against its shape: a hand-made request gets a plain refusal, never a crash.
+const id = z.uuid();
+const ids = z.array(id).max(5000);
+const text = z.string().max(2000);
+const reasonsSchema = z.array(z.string().max(100)).max(20);
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const minute = z.number().int().nullable();
+const ChangeSchema = z
+  .object({ workerId: id.nullable().optional(), workDate: isoDate.optional(), inMinute: minute.optional(), outMinute: minute.optional(), breakMinutes: minute.optional(), minutes: minute.optional() })
+  .strict();
+const AddSchema = ChangeSchema.extend({ workerId: id, workDate: isoDate }).strict();
+const ok = (schema: z.ZodType, value: unknown) => schema.safeParse(value).success;
 
 /** The plain refusal for an expected error, or null for a real error. */
 function refusal(error: unknown): ActionError | null {
@@ -45,6 +59,7 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { error: ActionErro
 
 export async function uploadTimesheets(payPeriodId: string, form: FormData): Promise<UploadResult> {
   const actor = currentActor();
+  if (!ok(id, payPeriodId) || !(form instanceof FormData)) return { accepted: [], refused: [] };
   const files = form.getAll("files").filter((f): f is File => f instanceof File);
   const result = await receiveUploads(
     withAgency,
@@ -66,6 +81,7 @@ export async function readQueued(): Promise<void> {
 
 export async function retryAction(documentId: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(id, documentId)) return { error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => retryDocument(tx, actor, documentId));
     after(() => processQueuedDocuments(actor).catch(() => undefined));
@@ -76,6 +92,7 @@ export async function retryAction(documentId: string): Promise<{ ok: true } | { 
 
 export async function archiveAction(documentId: string, reason: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(id, documentId) || !ok(text, reason)) return { error: "stale" };
   if (reason.trim() === "") return { error: "generic" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => archiveDocument(tx, actor, documentId, reason));
@@ -86,6 +103,7 @@ export async function archiveAction(documentId: string, reason: string): Promise
 
 export async function confirmDistinctAction(entryIds: string[], reason: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(ids, entryIds) || !ok(text, reason)) return { error: "stale" };
   if (reason.trim() === "") return { error: "generic" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => confirmDistinctDay(tx, actor, entryIds, reason));
@@ -94,28 +112,31 @@ export async function confirmDistinctAction(entryIds: string[], reason: string):
   });
 }
 
-export async function approveAction(ids: string[], bulk: boolean): Promise<{ approved: number; skipped: number } | { error: ActionError }> {
+export async function approveAction(entryIds: string[], bulk: boolean): Promise<{ approved: number; skipped: number } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(ids, entryIds) || typeof bulk !== "boolean") return { error: "stale" };
   return guarded(async () => {
-    const r = await withAgency(actor.agencyId, (tx) => approveEntries(tx, actor, ids, { bulk }));
+    const r = await withAgency(actor.agencyId, (tx) => approveEntries(tx, actor, entryIds, { bulk }));
     refresh();
     return { approved: r.approved.length, skipped: r.skipped.length };
   });
 }
 
-export async function rejectAction(id: string): Promise<{ ok: true } | { error: ActionError }> {
+export async function rejectAction(entryId: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(id, entryId)) return { error: "stale" };
   return guarded(async () => {
-    await withAgency(actor.agencyId, (tx) => rejectEntry(tx, actor, id));
+    await withAgency(actor.agencyId, (tx) => rejectEntry(tx, actor, entryId));
     refresh();
     return { ok: true as const };
   });
 }
 
-export async function restoreAction(id: string): Promise<{ ok: true } | { error: ActionError }> {
+export async function restoreAction(entryId: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(id, entryId)) return { error: "stale" };
   return guarded(async () => {
-    await withAgency(actor.agencyId, (tx) => restoreEntry(tx, actor, id));
+    await withAgency(actor.agencyId, (tx) => restoreEntry(tx, actor, entryId));
     refresh();
     return { ok: true as const };
   });
@@ -133,9 +154,10 @@ async function edited<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: 
   }
 }
 
-export async function editAction(id: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy" }> {
+export async function editAction(entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy" }> {
   const actor = currentActor();
-  return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, id, change, reasons, note)));
+  if (!ok(id, entryId) || !ok(ChangeSchema, change) || !ok(reasonsSchema, reasons) || !ok(text, note)) return { ok: false, error: "invalid_value" };
+  return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, entryId, change, reasons, note)));
 }
 
 export async function addAction(
@@ -145,12 +167,14 @@ export async function addAction(
   note: string,
 ): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy" }> {
   const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(AddSchema, input) || !ok(reasonsSchema, reasons) || !ok(text, note)) return { ok: false, error: "invalid_value" };
   const r = await edited(() => withAgency(actor.agencyId, (tx) => addEntry(tx, actor, payPeriodId, input, reasons, note)));
   return r.ok ? { ok: true } : r;
 }
 
 export async function computeTotalsAction(payPeriodId: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(id, payPeriodId)) return { error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => computeRun(tx, actor, payPeriodId));
     refresh();
@@ -160,10 +184,11 @@ export async function computeTotalsAction(payPeriodId: string): Promise<{ ok: tr
 
 export async function skipAction(payPeriodId: string, workerIds: string[], skipped: boolean, reason: string): Promise<{ ok: boolean } | { error: ActionError }> {
   const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(z.array(id).max(500), workerIds) || typeof skipped !== "boolean" || !ok(text, reason)) return { error: "stale" };
   if (reason.trim() === "") return { ok: false };
   return guarded(async () => {
     await withAgency(actor.agencyId, async (tx) => {
-      for (const id of workerIds) await setSkipped(tx, actor, payPeriodId, id, { skipped, reason });
+      for (const workerId of workerIds) await setSkipped(tx, actor, payPeriodId, workerId, { skipped, reason });
       await computeRun(tx, actor, payPeriodId);
     });
     refresh();
@@ -176,6 +201,7 @@ export async function createFilesAction(
   expectedFingerprint: string,
 ): Promise<{ ok: true } | { ok: false; error: "not_ready" | "totals_changed" | "period_locked" | "busy" | "generic" }> {
   const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(z.string().max(128), expectedFingerprint)) return { ok: false, error: "generic" };
   try {
     await withAgency(actor.agencyId, async (tx) => createRunFiles(tx, actor, documentStore, payPeriodId, { today: await agencyToday(tx), expectedFingerprint }));
     refresh();
@@ -202,6 +228,7 @@ export interface HistoryEvent {
 /** The entry's audit log in time order (docs/patterns/review.md: Restaurant365 Punch Edit Audit Log). */
 export async function entryHistory(entryId: string): Promise<HistoryEvent[]> {
   const actor = currentActor();
+  if (!ok(id, entryId)) return [];
   const rows = await withAgency(actor.agencyId, (tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "time_entry"), eq(auditEvents.entityId, entryId))));
   return rows
     .sort((a, b) => a.id - b.id)
