@@ -17,7 +17,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
   return (
     <SidebarProvider className="min-h-0">
       <AppSidebar agencyName={agency?.name ?? ""} />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden">
           <SidebarTrigger />
           <span className="truncate text-sm font-medium">{agency?.name}</span>

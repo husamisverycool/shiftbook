@@ -70,7 +70,7 @@ export async function createAssignment(
       externalId: input.external?.id ?? null,
     })
     .returning({ id: s.assignments.id });
-  await audit(tx, actor, [{ action: "create", entityType: "assignment", entityId: row!.id, after: { ...input } }]);
+  await audit(tx, actor, [{ action: "create", entityType: "assignment", entityId: row!.id, after: { ...input, jobOrderId: input.jobOrderId } }]);
   return { ok: true, id: row!.id };
 }
 
@@ -88,7 +88,7 @@ export async function setAssignmentDates(tx: Tx, actor: Actor, id: string, dates
   const status = dates.endDate !== null && dates.endDate < today ? "ended" : "active";
   await tx.update(s.assignments).set({ startDate: dates.startDate, endDate: dates.endDate, status }).where(eq(s.assignments.id, id));
   await audit(tx, actor, [
-    { action: "update", entityType: "assignment", entityId: id, before: { startDate: current.startDate, endDate: current.endDate, status: current.status }, after: { ...dates, status } },
+    { action: "update", entityType: "assignment", entityId: id, before: { startDate: current.startDate, endDate: current.endDate, status: current.status }, after: { ...dates, status, jobOrderId: current.jobOrderId } },
   ]);
   return { ok: true, id };
 }
@@ -117,6 +117,6 @@ export async function cancelAssignment(tx: Tx, actor: Actor, id: string, reason:
   const paid = await paidDates(tx, id);
   if (paid) return { ok: false, error: "has_paid_hours", paid };
   await tx.update(s.assignments).set({ status: "cancelled" }).where(eq(s.assignments.id, id));
-  await audit(tx, actor, [{ action: "update", entityType: "assignment", entityId: id, before: { status: current.status }, after: { status: "cancelled" }, reason: why }]);
+  await audit(tx, actor, [{ action: "update", entityType: "assignment", entityId: id, before: { status: current.status }, after: { status: "cancelled", jobOrderId: current.jobOrderId }, reason: why }]);
   return { ok: true, id };
 }

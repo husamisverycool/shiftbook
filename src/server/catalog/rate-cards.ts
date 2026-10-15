@@ -98,8 +98,8 @@ export async function addRateVersion(tx: Tx, actor: Actor, ref: { jobOrderId: st
     .values({ agencyId: actor.agencyId, jobOrderId: card.jobOrderId, assignmentId: card.assignmentId, ...row, effectiveTo: plan.effectiveTo })
     .returning({ id: s.rateCards.id });
   await audit(tx, actor, [
-    { action: "create", entityType: "rate_card", entityId: created!.id, after: { ...row, effectiveTo: plan.effectiveTo, assignmentId: card.assignmentId }, reason: explain },
-    ...plan.updates.map((u) => ({ action: "update" as const, entityType: "rate_card", entityId: u.id, before: { effectiveTo: versions.find((v) => v.id === u.id)!.effectiveTo }, after: { effectiveTo: u.effectiveTo }, reason: `ended by the version from ${input.effectiveFrom}` })),
+    { action: "create", entityType: "rate_card", entityId: created!.id, after: { ...row, effectiveTo: plan.effectiveTo, jobOrderId: card.jobOrderId, assignmentId: card.assignmentId }, reason: explain },
+    ...plan.updates.map((u) => ({ action: "update" as const, entityType: "rate_card", entityId: u.id, before: { effectiveTo: versions.find((v) => v.id === u.id)!.effectiveTo }, after: { effectiveTo: u.effectiveTo, jobOrderId: card.jobOrderId, assignmentId: card.assignmentId }, reason: `ended by the version from ${input.effectiveFrom}` })),
   ]);
   return { ok: true, id: created!.id };
 }
@@ -134,8 +134,8 @@ export async function editRateVersion(tx: Tx, actor: Actor, versionId: string, i
   await tx.update(s.rateCards).set({ ...row, effectiveTo: plan.effectiveTo }).where(eq(s.rateCards.id, versionId));
   const before = { effectiveFrom: current.effectiveFrom, effectiveTo: current.effectiveTo, payRateCents: current.payRateCents, billRateCents: current.billRateCents, markupBp: current.markupBp };
   await audit(tx, actor, [
-    { action: "update", entityType: "rate_card", entityId: versionId, before, after: { ...row, effectiveTo: plan.effectiveTo }, reason: explain ? `${reason.text} (${explain})` : reason.text },
-    ...changed.map((u) => ({ action: "update" as const, entityType: "rate_card", entityId: u.id, before: { effectiveTo: others.find((v) => v.id === u.id)!.effectiveTo }, after: { effectiveTo: u.effectiveTo }, reason: "neighbouring version moved" })),
+    { action: "update", entityType: "rate_card", entityId: versionId, before, after: { ...row, effectiveTo: plan.effectiveTo, ...card }, reason: explain ? `${reason.text} (${explain})` : reason.text },
+    ...changed.map((u) => ({ action: "update" as const, entityType: "rate_card", entityId: u.id, before: { effectiveTo: others.find((v) => v.id === u.id)!.effectiveTo }, after: { effectiveTo: u.effectiveTo, ...card }, reason: "neighbouring version moved" })),
   ]);
   return { ok: true, id: versionId };
 }
@@ -154,8 +154,8 @@ export async function deleteRateVersion(tx: Tx, actor: Actor, versionId: string)
   await tx.delete(s.rateCards).where(eq(s.rateCards.id, versionId));
   await setEnds(tx, plan.updates);
   await audit(tx, actor, [
-    { action: "delete", entityType: "rate_card", entityId: versionId, before: { effectiveFrom: current.effectiveFrom, effectiveTo: current.effectiveTo, payRateCents: current.payRateCents, billRateCents: current.billRateCents } },
-    ...plan.updates.map((u) => ({ action: "update" as const, entityType: "rate_card", entityId: u.id, after: { effectiveTo: u.effectiveTo }, reason: "extended over a deleted version" })),
+    { action: "delete", entityType: "rate_card", entityId: versionId, before: { effectiveFrom: current.effectiveFrom, effectiveTo: current.effectiveTo, payRateCents: current.payRateCents, billRateCents: current.billRateCents, ...card } },
+    ...plan.updates.map((u) => ({ action: "update" as const, entityType: "rate_card", entityId: u.id, after: { effectiveTo: u.effectiveTo, ...card }, reason: "extended over a deleted version" })),
   ]);
   return { ok: true, id: versionId };
 }
