@@ -20,16 +20,13 @@ export async function Landing({ periods }: { periods: LandingPeriod[] }) {
   const locale = await getLocale();
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
       <div className="rounded-lg border">
         <Table aria-label={t("title")}>
           <TableHeader>
             <TableRow>
               <TableHead>{t("period")}</TableHead>
-              <TableHead>{t("status")}</TableHead>
+              <TableHead className="max-md:hidden">{t("status")}</TableHead>
               <TableHead className="text-right">
                 <span className="sr-only">{t("action")}</span>
               </TableHead>
@@ -42,10 +39,13 @@ export async function Landing({ periods }: { periods: LandingPeriod[] }) {
               const step = exported ? "files" : "upload";
               return (
                 <TableRow key={p.id}>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium whitespace-normal">
                     {longDate(p.startsOn, locale)} – {longDate(p.endsOn, locale)}
+                    <div className="mt-1 md:hidden">
+                      <Badge variant={status === "blocked" ? "destructive" : status === "none" ? "outline" : "secondary"}>{t(`runStatus.${status}`)}</Badge>
+                    </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="max-md:hidden">
                     <Badge variant={status === "blocked" ? "destructive" : status === "none" ? "outline" : "secondary"}>{t(`runStatus.${status}`)}</Badge>
                   </TableCell>
                   <TableCell className="text-right">

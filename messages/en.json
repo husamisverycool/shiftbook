@@ -55,7 +55,6 @@
   },
   "landing": {
     "title": "Pay periods",
-    "description": "Turn a week of timesheets into a payroll file and client invoices.",
     "period": "Period",
     "status": "Status",
     "action": "Action",

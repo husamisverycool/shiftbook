@@ -55,7 +55,6 @@
   },
   "landing": {
     "title": "Periodos de pago",
-    "description": "Convierte una semana de hojas de horas en un archivo de nómina y facturas para clientes.",
     "period": "Periodo",
     "status": "Estado",
     "action": "Acción",
