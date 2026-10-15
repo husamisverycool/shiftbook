@@ -12,6 +12,9 @@ Contract: SPEC.md §25 slice (a). Screens: `docs/patterns/convert.md` (+ `inbox.
   converter screens (upload, review hours, review totals, files), demo banner with reset, English
   and Spanish, Playwright end-to-end (2 flows × 2 languages), screens compared with pattern files
   (`docs/screens/slice-a.md`), decision records 0001–0010.
+- Fifth review fixed: a period is paid once (locked after its files exist; correction versions
+  that pay only differences move to slice e — decision 0011), one writer per period, possible
+  double-counted days held, files refused when totals changed since they were shown.
 - Waiting on the owner: the Anthropic key (D5) to record real photo readings; approval of the
   proposed goldens; the URL (D4) — the app runs only inside this cloud container, so screenshots
   are sent until the owner deploys.
