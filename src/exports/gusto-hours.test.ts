@@ -181,3 +181,31 @@ describe("Gusto hours CSV — fourth review fixes", () => {
     expect(code(() => renderGustoHours(fixture))).toBe("invalid_pay_line");
   });
 });
+
+describe("Gusto hours CSV — fifth review fixes", () => {
+  const code = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (e) {
+      return e instanceof ExportError ? e.code : "not an export error";
+    }
+    return "no error";
+  };
+  const withIds = (a: string, b: string) => {
+    const [ana, ben] = base().workers;
+    return base({ workers: [{ ...ana!, payrollIds: { gusto: { id: a, title: "Picker (Primary)" } } }, { ...ben!, payrollIds: { gusto: { id: b, title: "Loader (Primary)" } } }] });
+  };
+
+  it("treats Gusto ids that differ only in capital letters as the same id", () => {
+    expect(code(() => renderGustoHours(withIds("9A1B2C", "9a1b2c")))).toBe("duplicate_payroll_id");
+  });
+
+  it("refuses a Gusto id with spaces around it", () => {
+    expect(code(() => renderGustoHours(withIds("9a1b2c ", "d4e5f6")))).toBe("missing_payroll_id");
+  });
+
+  it("refuses a pay line whose amount is not whole cents, as an export error", () => {
+    const fixture = base({ payLines: [{ workerId: "w1", type: "REG", minutes: 60, amountCents: 1825.5, rate: { num: 1825, den: 1 } }] });
+    expect(code(() => renderGustoHours(fixture))).toBe("invalid_pay_line");
+  });
+});

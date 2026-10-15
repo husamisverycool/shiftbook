@@ -1,0 +1,2 @@
+ALTER TABLE "worksites" ADD COLUMN "outside_any_place" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "worksites" ADD CONSTRAINT "worksites_place_or_outside" CHECK (NOT ("worksites"."outside_any_place" AND "worksites"."place_fips" IS NOT NULL));

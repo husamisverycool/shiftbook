@@ -2,8 +2,9 @@
  * Worksites and local wage rules are matched by official Census codes, never by names: names have
  * too many spellings ("Cook Co.", "County of Cook", "Chicago, IL") for a match to be safe.
  *   - county: 5-digit FIPS code = 2-digit state code + 3-digit county code ("17031" = Cook County, IL)
- *   - place:  7-digit FIPS code = 2-digit state code + 5-digit place code ("1714000" = Chicago, IL);
- *             null when the worksite is outside any incorporated place.
+ *   - place:  7-digit FIPS code = 2-digit state code + 5-digit place code ("1714000" = Chicago, IL),
+ *             or NO_PLACE when someone has confirmed the worksite is outside any city or town.
+ *             A missing place code is unknown, never "outside": a city ordinance could be missed.
  * Source: U.S. Census Bureau, ANSI/FIPS codes for states, counties and places.
  */
 
@@ -17,6 +18,9 @@ export const STATE_FIPS: Readonly<Record<string, string>> = {
   WY: "56",
 };
 
+/** The worksite is confirmed to be outside any incorporated city or town. */
+export const NO_PLACE = "none";
+
 const COUNTY = /^\d{5}$/;
 const PLACE = /^\d{7}$/;
 
@@ -28,10 +32,11 @@ export function placeProblem(state: string, countyFips: unknown, placeFips: unkn
     return "the worksite's county code (5-digit FIPS) is needed to check local ordinances";
   }
   if (!countyFips.startsWith(prefix)) return `county code ${countyFips} is not a county in ${state}`;
-  if (placeFips !== null) {
-    if (typeof placeFips !== "string" || !PLACE.test(placeFips)) return "the worksite's place code must be a 7-digit FIPS code, or none outside a city or town";
-    if (!placeFips.startsWith(prefix)) return `place code ${placeFips} is not a place in ${state}`;
+  if (placeFips === NO_PLACE) return null;
+  if (typeof placeFips !== "string" || !PLACE.test(placeFips)) {
+    return "the worksite's city or town code (7-digit FIPS) is needed to check city ordinances, or it must be marked as outside any city or town";
   }
+  if (!placeFips.startsWith(prefix)) return `place code ${placeFips} is not a place in ${state}`;
   return null;
 }
 

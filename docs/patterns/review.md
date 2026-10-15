@@ -2,7 +2,8 @@
 
 Status: researched — ready for owner review
 Reference product and screen: Airtable — Grid view (primary: grid mechanics, keyboard, summary bar);
-Rippling — Time > Timesheets (secondary: hours content, approval status, per-entry actions)
+Rippling — Time > Timesheets (secondary: hours content, approval status, per-entry actions);
+Rossum — validation screen (the source document beside the values: boxes, their states, review order)
 Source URL: https://support.airtable.com/articles/7905594155-airtable-grid-view
 Source URL: https://support.airtable.com/articles/7980233311-airtable-keyboard-shortcuts
 Source URL: https://support.airtable.com/articles/2203617073-accessibility-in-airtable
@@ -10,6 +11,9 @@ Source URL: https://support.airtable.com/articles/7344081006-using-the-summary-b
 Source URL: https://support.airtable.com/articles/4087973664-adding-duplicating-and-deleting-airtable-records
 Source URL: https://help.rippling.com/article?articleId=1500010823462 (to verify in a browser)
 Source URL: https://help.rippling.com/article?articleId=360058673234 (to verify in a browser)
+Source URL: https://knowledge-base.rossum.ai/docs/document-validation-screen-in-rossum
+Source URL: https://knowledge-base.rossum.ai/docs/interactive-bounding-boxes-in-rossum
+Source URL: https://knowledge-base.rossum.ai/docs/keyboard-shortcuts
 Researched: 2026-10-15. Confidence: high for Airtable shortcuts and behaviors, medium for Airtable
 toolbar order (not documented); high for Rippling content, medium until URLs are browser-checked.
 
@@ -38,8 +42,13 @@ needs review, with the source image beside the grid, and approves what is right.
    the selection; grouped views show per-group summaries and a total.
 8. **Side panel** (Airtable expanded record, opened with Space or the expand icon): the entry's
    fields, and on the right an activity section (All activity / Comments / Revision history). For
-   Shiftbook the panel also shows the source document image with the cell's bounding box
-   highlighted (SPEC §7; behavior from `documents/[documentId].md`).
+   Shiftbook the panel also shows the source document image (Rossum validation screen):
+   - zoom in, zoom out and reset zoom above the image;
+   - a box around every value read from it, in one of three states (Rossum): read but not yet
+     reviewed · checked by a person · stops confirmation (shadcn theme tokens, destructive for the
+     last);
+   - hovering a box names the field it fills; clicking a value on the image selects its cell in
+     the grid (Rossum: clicking a value jumps to its field).
 9. **Bulk action bar** (Rippling: "bottom center of your screen" when rows are checked): Approve /
    Reject. Shiftbook rule: bulk approve applies only to high-confidence rows (SPEC §7); other
    selected rows are left unchanged and counted in the bar.
@@ -56,6 +65,7 @@ Keyboard (Airtable; Cmd on Mac = Ctrl on Windows):
 - Cmd+F find (Esc closes). Cmd+Shift+F filter menu, Cmd+Shift+D group menu, Cmd+Shift+S sort menu.
 - In the side panel: Cmd+Shift+< / > previous / next entry; Esc closes.
 - Cmd+/ shows the shortcut list.
+- Enter on a reviewed cell moves to the next value still awaiting review (Rossum).
 Mouse:
 - Click a Start/End cell to edit it inline (Rippling).
 - Right-click a row: insert above/below, duplicate, delete (Airtable).

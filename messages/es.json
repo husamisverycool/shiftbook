@@ -1,0 +1,33 @@
+{
+  "invoice": {
+    "title": "Factura",
+    "number": "Número de factura",
+    "issued": "Fecha de emisión",
+    "due": "Fecha de vencimiento",
+    "po": "Número de orden de compra",
+    "period": "Periodo de servicio",
+    "worksite": "Lugar de trabajo",
+    "billTo": "Facturar a",
+    "amountDue": "{amount} a pagar el {date}",
+    "description": "Descripción",
+    "hours": "Horas",
+    "rate": "Tarifa",
+    "amount": "Importe",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "amountDueLabel": "Importe a pagar",
+    "page": "Página {page} de {pages}",
+    "earning": {
+      "REG": "Normal",
+      "OT": "Horas extra",
+      "DT": "Tiempo doble",
+      "HOL": "Feriado",
+      "DIFF": "Diferencial",
+      "MEAL_PREMIUM": "Prima por comida",
+      "REST_PREMIUM": "Prima por descanso",
+      "MIN_GUARANTEE": "Mínimo garantizado"
+    },
+    "notBillable": "no facturable",
+    "footer": "Las horas provienen de las hojas de horas aprobadas del periodo de servicio. Los importes se calculan con minutos enteros y se redondean una sola vez por línea."
+  }
+}

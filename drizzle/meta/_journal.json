@@ -50,6 +50,20 @@
       "when": 1792083447506,
       "tag": "0006_drop_place_names",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792083782569,
+      "tag": "0007_run_skips_and_rejected",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792084177338,
+      "tag": "0008_worksite_outside_any_place",
+      "breakpoints": true
     }
   ]
 }

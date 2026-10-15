@@ -77,7 +77,7 @@ function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): Hou
 /** Each worker once, and each Gusto employee id on one worker only (Gusto would merge their hours). */
 function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
   const byId = new Map<string, ExportWorker>();
-  const byGustoId = new Map<string, ExportWorker>();
+  const byGustoId = new Map<string, ExportWorker>(); // keyed case-insensitively
   for (const w of workers) {
     if (byId.has(w.workerId)) {
       throw new ExportError("duplicate_payroll_id", `${w.lastName}, ${w.firstName} is listed twice in the run's workers, so which Gusto id to use would be a guess.`);
@@ -85,14 +85,17 @@ function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
     byId.set(w.workerId, w);
     const gid = w.payrollIds.gusto?.id;
     if (!gid) continue;
-    const other = byGustoId.get(gid);
+    if (gid.trim() !== gid) {
+      throw new ExportError("missing_payroll_id", `${w.lastName}, ${w.firstName}: the Gusto employee id "${gid}" has spaces around it; fix it so Gusto matches the right person.`);
+    }
+    const other = byGustoId.get(gid.toLowerCase());
     if (other) {
       throw new ExportError(
         "duplicate_payroll_id",
         `${other.lastName}, ${other.firstName} and ${w.lastName}, ${w.firstName} both have Gusto employee id ${gid}; Gusto would put both workers' hours on one person.`,
       );
     }
-    byGustoId.set(gid, w);
+    byGustoId.set(gid.toLowerCase(), w);
   }
   return byId;
 }
@@ -101,6 +104,7 @@ function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
 function checkLine(line: ExportFixture["payLines"][number], who: string): void {
   const problem =
     (!Number.isSafeInteger(line.minutes) || line.minutes < 0) ? `${line.minutes} minutes is not a whole number ≥ 0`
+    : !Number.isSafeInteger(line.amountCents) ? `${line.amountCents} is not a whole number of cents`
     : (!Number.isSafeInteger(line.rate.num) || !Number.isSafeInteger(line.rate.den) || line.rate.num <= 0 || line.rate.den <= 0) ? "its rate is not a positive amount"
     : roundHalfUp(line.minutes * line.rate.num, 60 * line.rate.den) !== line.amountCents
       ? `${formatCents(line.amountCents)} is not ${line.minutes} min × ${formatRate(line.rate)} rounded once (${formatCents(roundHalfUp(line.minutes * line.rate.num, 60 * line.rate.den))})`

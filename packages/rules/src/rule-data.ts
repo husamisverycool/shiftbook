@@ -23,7 +23,7 @@ export function canonicalRules(input: PayInput): RuleTables {
   const by = <T>(rows: T[], f: (r: T) => string) => [...rows].sort((a, b) => cmp(f(a), f(b)));
   return {
     overtimeRules: by(input.overtimeRules, (r) =>
-      key([r.jurisdiction, r.ruleCode, r.kind, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.thresholdMinutes, r.multiplier.num, r.multiplier.den, r.earningType, r.citation]),
+      key([r.jurisdiction, r.ruleCode, r.kind, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.thresholdMinutes, r.multiplier?.num, r.multiplier?.den, r.earningType, r.citation]),
     ),
     jurisdictionRules: by(input.jurisdictionRules, (r) => key([r.jurisdiction, scopeKey(r), r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.citation, r.scopeName])),
     minimumWageRules: by(input.minimumWageRules, (r) => key([r.jurisdiction, scopeKey(r), r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.rateCents, r.citation, r.scopeName])),
@@ -32,6 +32,17 @@ export function canonicalRules(input: PayInput): RuleTables {
 
 const knownJurisdiction = (j: string) => j === "US" || Object.hasOwn(STATE_FIPS, j);
 const positiveInt = (n: unknown) => Number.isSafeInteger(n) && (n as number) > 0;
+/** Factors stay small so every product of rate × multiplier × minutes is a safe integer. */
+const MAX_FACTOR = 1000;
+const MAX_THRESHOLD_MINUTES = 10_080; // one week
+
+function multiplierProblem(m: { num?: unknown; den?: unknown } | undefined): string | null {
+  if (!m || !positiveInt(m.num) || !positiveInt(m.den) || (m.num as number) > MAX_FACTOR || (m.den as number) > MAX_FACTOR) {
+    return "its multiplier must be a positive whole-number fraction";
+  }
+  if ((m.num as number) < (m.den as number)) return "its multiplier is below 1, which would pay overtime at less than the regular rate";
+  return null;
+}
 
 function datesProblem(r: { effectiveFrom: string; effectiveTo: string | null }): string | null {
   if (!isIsoDate(r.effectiveFrom)) return `effective-from "${r.effectiveFrom}" is not a date`;
@@ -70,8 +81,9 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
     const problem =
       (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
       datesProblem(r) ||
-      ((!Number.isSafeInteger(r.thresholdMinutes) || r.thresholdMinutes < 0) && "its threshold must be a whole number of minutes") ||
-      ((!positiveInt(r.multiplier.num) || !positiveInt(r.multiplier.den)) && "its multiplier must be a positive whole-number fraction");
+      ((!Number.isSafeInteger(r.thresholdMinutes) || r.thresholdMinutes < 0 || r.thresholdMinutes > MAX_THRESHOLD_MINUTES) && "its threshold must be a whole number of minutes within a week") ||
+      multiplierProblem(r.multiplier) ||
+      (r.kind === "weekly" && r.earningType !== "OT" && `a weekly overtime row must pay earning type OT, not ${String(r.earningType)}`);
     if (problem) issues.push(invalid(`${where}: ${problem}`));
   }
   for (const r of t.jurisdictionRules) {

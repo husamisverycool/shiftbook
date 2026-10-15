@@ -30,7 +30,10 @@ export interface Shift {
   jurisdiction: string;
   /** Worksite county as its 5-digit Census FIPS code ("17031" = Cook County, IL). */
   countyFips: string;
-  /** Worksite city or town as its 7-digit Census place code ("1714000" = Chicago); null outside any. */
+  /**
+   * Worksite city or town as its 7-digit Census place code ("1714000" = Chicago), or NO_PLACE
+   * ("none") when confirmed outside any city or town. null means unknown, and the week is held.
+   */
   placeFips: string | null;
   date: IsoDate;
   /**

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computePay } from "./engine";
+import { NO_PLACE } from "./places";
 import type { JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, Shift } from "./types";
 
 // Census FIPS codes: county = state (2) + county (3); place = state (2) + place (5).
@@ -400,8 +401,8 @@ describe("computePay — fourth review fixes", () => {
     expect(codes(computePay(input([shift(WEEK[0]!, 480, { countyFips: COOK, placeFips: EVANSTON })])))).toEqual([["rule_not_supported_yet", "local_minimum_wage"]]);
     // The part of Chicago in DuPage County: the city ordinance applies.
     expect(codes(computePay(input([shift(WEEK[0]!, 480, { countyFips: DUPAGE, placeFips: CHICAGO })])))).toEqual([["rule_not_supported_yet", "local_minimum_wage"]]);
-    // Unincorporated Will County: no place, nothing local applies.
-    expect(computePay(input([shift(WEEK[0]!, 480, { placeFips: null })])).blockers).toEqual([]);
+    // Unincorporated Will County, confirmed outside any city: nothing local applies.
+    expect(computePay(input([shift(WEEK[0]!, 480, { placeFips: NO_PLACE })])).blockers).toEqual([]);
   });
 
   it("refuses a worksite whose codes are not well-formed codes inside its state", () => {
@@ -523,5 +524,43 @@ describe("computePay — fourth review fixes", () => {
         expect(r).toEqual(expected);
       }
     }
+  });
+});
+
+describe("computePay — fifth review fixes", () => {
+  const codes = (r: ReturnType<typeof computePay>) => r.blockers.map((b) => b.code);
+
+  it("treats a missing place code as unknown (held), and only an explicit 'none' as outside any city", () => {
+    // Part of Chicago lies in DuPage County: with no place code the city ordinance could be missed.
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { countyFips: DUPAGE, placeFips: null })])))).toEqual(["invalid_input"]);
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { placeFips: "" })])))).toEqual(["invalid_input"]);
+    expect(computePay(input([shift(WEEK[0]!, 480, { placeFips: NO_PLACE })])).blockers).toEqual([]);
+  });
+
+  it("refuses an overtime billing rule it does not know instead of billing overtime at $0", () => {
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 528, { otBillingRule: "Multiplier" as never }))));
+    expect(r.billLines).toEqual([]);
+    expect(codes(r)).toEqual(Array(5).fill("invalid_input"));
+  });
+
+  it("refuses an overtime rule row whose multiplier is below 1 or whose earning type is not OT", () => {
+    const low = computePay(input([shift(WEEK[0]!, 480)], { overtimeRules: [...OT_RULES.filter((o) => o.jurisdiction !== "US"), { ...OT_RULES[0]!, multiplier: { num: 1, den: 2 } }] }));
+    expect(codes(low)).toEqual(["rule_data_invalid"]);
+    const type = computePay(input([shift(WEEK[0]!, 480)], { overtimeRules: [...OT_RULES.filter((o) => o.jurisdiction !== "US"), { ...OT_RULES[0]!, earningType: "REG" }] }));
+    expect(codes(type)).toEqual(["rule_data_invalid"]);
+  });
+
+  it("lists each line's time entries sorted and once, and refuses an entry repeated inside one shift", () => {
+    const r = computePay(input([shift(WEEK[0]!, 480, { entryIds: ["z9", "a1"] })]));
+    expect(r.payLines[0]!.entryIds).toEqual(["a1", "z9"]);
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { entryIds: ["e1", "e1"] })])))).toEqual(["invalid_input"]);
+  });
+
+  it("turns impossible sizes and missing fields into blockers instead of crashing", () => {
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { payRateCents: 2 ** 50 })])))).toEqual(["invalid_input"]);
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { billOtMultiplier: { num: 2 ** 40, den: 1 } })])))).toEqual(["invalid_input"]);
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { billOtMultiplier: undefined as never })])))).toEqual(["invalid_input"]);
+    const noMultiplier = { ...OT_RULES[1]!, multiplier: undefined as never };
+    expect(codes(computePay(input([shift(WEEK[0]!, 480)], { overtimeRules: [...OT_RULES.filter((o) => o.jurisdiction !== "IL"), noMultiplier] })))).toEqual(["rule_data_invalid"]);
   });
 });

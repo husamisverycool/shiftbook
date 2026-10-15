@@ -11,6 +11,9 @@ Source URL: https://support.ramp.com/receipt-verification
 Source URL: https://support.ramp.com/troubleshooting-transaction-receipt-matching
 Source URL: https://help.dext.com/en/articles/105789-the-costs-inbox
 Source URL: https://help.dext.com/en/articles/105716-managing-table-columns-and-density-in-inbox-archive-and-approvals
+Source URL: https://help.dext.com/en/s/article/how-to-upload-costs-sales-documents
+Source URL: https://help.dext.com/en/articles/416680-why-was-my-document-rejected
+Source URL: https://help.dext.com/en/articles/105787-how-to-use-the-submission-history-in-dext
 Researched: 2026-10-15. Confidence: Expensify states high, Expensify list layout low, Ramp low.
 
 ## Decision D1
@@ -27,8 +30,11 @@ review, and what is done.
 
 ## Hierarchy
 1. **Page header:** search box (Expensify), Filters button (Expensify), Export menu (Expensify).
-2. **Upload target:** drag-and-drop files anywhere onto the page, or choose files; several files at
-   once, then one button to start reading them (Expensify bulk upload). Other channels shown as
+2. **Upload target (Dext "Add documents" panel, re-researched 2026-10-15):** a drop area with a
+   "select files" button; several files at once; the accepted file types and size limit stated in
+   the panel. Files a check refuses at upload are listed in the panel with the reason (Dext:
+   "already exists", unsupported type). Accepted files go to **Processing** (Dext: documents being
+   read, with the estimated time remaining), then to the list below. Other channels shown as
    information: forwarding email address (Ramp/Expensify email channel).
 3. **Tabs (Dext):** Inbox · Processing · Archive.
 4. **Table** (column headers; Expensify): one row per source document. Columns (Dext default-column
@@ -39,8 +45,8 @@ review, and what is done.
    minutes read.
 
 ## Interactions
-- Drop files → each appears immediately as a row in a reading state; reading continues in the
-  background (Expensify).
+- Drop files → refused files listed with their reason at once (Dext); accepted files appear in
+  Processing in a reading state; reading continues in the background (Dext, Expensify).
 - Reading state shows in the row's value cell (Expensify shows it in the amount cell); when done the
   row shows its result.
 - A document that cannot be read shows a red-dot indicator and a message, and can be retried by

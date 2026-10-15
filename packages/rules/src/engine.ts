@@ -22,7 +22,7 @@ import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-w
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-a4";
+export const RULES_VERSION = "2026.10-a5";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set([WEEKLY_OVERTIME, MINIMUM_WAGE]);
@@ -31,9 +31,14 @@ const REQUIRED_FEDERAL_RULES = [WEEKLY_OVERTIME, MINIMUM_WAGE];
 
 const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
 const MINUTES_PER_DAY = 1440;
+/** Bounds that keep every product inside safe integers: $100,000/h, factors up to 1000. */
+const MAX_RATE_CENTS = 10_000_000;
+const MAX_FACTOR = 1000;
+const BILLING_RULES = new Set(["multiplier", "straight_time", "not_billable"]);
 
 /** Plain code-unit comparison: deterministic on every machine, unlike locale collation. */
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+const uniqueSorted = (ids: string[]) => [...new Set(ids)].sort(cmp);
 
 /** amount = minutes × rate / 60, in cents, rounded half-up exactly once. */
 function lineAmount(minutes: number, rate: Fraction): { amountCents: number; exact: string; wasExact: boolean } {
@@ -69,6 +74,7 @@ function totalOrder(a: Shift, b: Shift): number {
 
 function validShift(s: Shift): string | null {
   if (!hasEntryIds(s)) return "the shift has no time entry id, so it cannot be traced to a timesheet";
+  if (new Set(s.entryIds).size !== s.entryIds.length) return "the same time entry is listed twice in this shift";
   if (!isIsoDate(s.date)) return `"${s.date}" is not a real calendar date`;
   const place = placeProblem(s.jurisdiction, s.countyFips, s.placeFips);
   if (place) return place;
@@ -78,10 +84,13 @@ function validShift(s: Shift): string | null {
     if (!Number.isSafeInteger(s.startMinute) || s.startMinute < 0 || s.startMinute >= MINUTES_PER_DAY) return "start time must be within the day";
     if (s.startMinute + s.minutes > MINUTES_PER_DAY) return "the shift runs past midnight; split it at midnight so each day carries its own minutes";
   }
-  if (!Number.isSafeInteger(s.payRateCents) || s.payRateCents <= 0) return "pay rate must be a positive number of cents";
-  if (!Number.isSafeInteger(s.billRateCents) || s.billRateCents <= 0) return "bill rate must be a positive number of cents";
-  const m = s.billOtMultiplier;
-  if (!Number.isSafeInteger(m.num) || !Number.isSafeInteger(m.den) || m.num <= 0 || m.den <= 0) return "multipliers must be positive whole-number fractions";
+  if (!Number.isSafeInteger(s.payRateCents) || s.payRateCents <= 0 || s.payRateCents > MAX_RATE_CENTS) return "pay rate must be a positive number of cents per hour, at most $100,000";
+  if (!Number.isSafeInteger(s.billRateCents) || s.billRateCents <= 0 || s.billRateCents > MAX_RATE_CENTS) return "bill rate must be a positive number of cents per hour, at most $100,000";
+  const m = s.billOtMultiplier as Partial<Fraction> | undefined;
+  if (!m || !Number.isSafeInteger(m.num) || !Number.isSafeInteger(m.den) || m.num! <= 0 || m.den! <= 0 || m.num! > MAX_FACTOR || m.den! > MAX_FACTOR) {
+    return "the overtime bill multiplier must be a positive whole-number fraction";
+  }
+  if (!BILLING_RULES.has(s.otBillingRule)) return `overtime billing rule "${String(s.otBillingRule)}" is not one of multiplier, straight time or not billable`;
   return null;
 }
 
@@ -368,9 +377,9 @@ export function computePay(input: PayInput): PayResult {
       if (b.regular > 0) {
         const pay = arithmetic("Regular", b.regular, payRate, "");
         const scope = `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}`;
-        weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: b.regularEntries });
+        weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: uniqueSorted(b.regularEntries) });
         const bill = arithmetic("Billed regular", b.regular, billRate, "");
-        weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card.`, entryIds: b.regularEntries });
+        weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card.`, entryIds: uniqueSorted(b.regularEntries) });
       }
 
       // 5. overtime pay and its billing
@@ -381,19 +390,19 @@ export function computePay(input: PayInput): PayResult {
         const note = ` (${formatMultiplier(weekly.multiplier)} × ${formatRate(payRate).replace("/h", "")})`;
         const pay = arithmetic("Overtime", b.overtime, otRate, note);
         const why = `Rule ${WEEKLY_OVERTIME}: ${formatDuration(totalMinutes)} worked in the workweek starting ${week} is ${formatDuration(overtimeMinutes)} over the ${formatDuration(weekly.thresholdMinutes)} threshold (${citations}).${elsewhereNote}`;
-        weekPay.push({ ...base, type: "OT", minutes: b.overtime, rate: otRate, amountCents: pay.amountCents, ruleId: WEEKLY_OVERTIME, explain: `${pay.text} ${why}`, entryIds: b.overtimeEntries });
+        weekPay.push({ ...base, type: "OT", minutes: b.overtime, rate: otRate, amountCents: pay.amountCents, ruleId: WEEKLY_OVERTIME, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(b.overtimeEntries) });
 
         const rule = b.sample.otBillingRule;
         if (rule === "multiplier") {
           const m = b.sample.billOtMultiplier;
           const rate = reduce({ num: mul(b.sample.billRateCents, m.num), den: m.den });
           const bill = arithmetic("Billed overtime", b.overtime, rate, ` (${formatMultiplier(m)} × ${formatRate(billRate).replace("/h", "")} bill rate)`);
-          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills overtime at the rate-card overtime multiplier.${elsewhereNote}`, entryIds: b.overtimeEntries });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills overtime at the rate-card overtime multiplier.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
         } else if (rule === "straight_time") {
           const bill = arithmetic("Billed overtime at straight time", b.overtime, billRate, "");
-          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills overtime at straight time.${elsewhereNote}`, entryIds: b.overtimeEntries });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills overtime at straight time.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
         } else {
-          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `Overtime not billed: ${formatDuration(b.overtime)} (${b.overtime} min) → ${formatCents(0)}. Client profile marks overtime not billable.${elsewhereNote}`, entryIds: b.overtimeEntries });
+          weekBill.push({ ...base, type: "OT", minutes: b.overtime, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `Overtime not billed: ${formatDuration(b.overtime)} (${b.overtime} min) → ${formatCents(0)}. Client profile marks overtime not billable.${elsewhereNote}`, entryIds: uniqueSorted(b.overtimeEntries) });
         }
       }
       // 6. confirmed premiums — slice (c).

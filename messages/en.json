@@ -1,0 +1,33 @@
+{
+  "invoice": {
+    "title": "Invoice",
+    "number": "Invoice number",
+    "issued": "Date of issue",
+    "due": "Date due",
+    "po": "PO number",
+    "period": "Service period",
+    "worksite": "Worksite",
+    "billTo": "Bill to",
+    "amountDue": "{amount} due {date}",
+    "description": "Description",
+    "hours": "Hours",
+    "rate": "Rate",
+    "amount": "Amount",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "amountDueLabel": "Amount due",
+    "page": "Page {page} of {pages}",
+    "earning": {
+      "REG": "Regular",
+      "OT": "Overtime",
+      "DT": "Double time",
+      "HOL": "Holiday",
+      "DIFF": "Differential",
+      "MEAL_PREMIUM": "Meal premium",
+      "REST_PREMIUM": "Rest premium",
+      "MIN_GUARANTEE": "Minimum guarantee"
+    },
+    "notBillable": "not billable",
+    "footer": "Hours are from the approved timesheets for the service period. Amounts are computed from whole minutes and rounded once per line."
+  }
+}

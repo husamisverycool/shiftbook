@@ -57,6 +57,8 @@ export const timeEntryStatus = pgEnum("time_entry_status", [
   "client_approved",
   "disputed",
   "locked",
+  // Rippling timesheet "reject" (docs/patterns/review.md): kept for the record, never paid or billed.
+  "rejected",
 ]);
 export const confidenceLevel = pgEnum("confidence_level", ["high", "medium", "low"]);
 export const payRunStatus = pgEnum("pay_run_status", [
@@ -151,13 +153,18 @@ export const worksites = pgTable(
     county: text("county").notNull(),
     state: text("state").notNull(), // two-letter USPS code; drives jurisdiction
     postalCode: text("postal_code").notNull(),
-    // The address's county and incorporated place as Census codes. A worksite without a county code
-    // is held by the pay engine (local ordinances cannot be checked); place is null outside any.
+    // The address's county and incorporated place as Census codes. A worksite without them is held
+    // by the pay engine (local ordinances cannot be checked). "Outside any city or town" is recorded
+    // explicitly, never inferred from a blank place code.
     countyFips: countyFips(),
     placeFips: placeFips(),
+    outsideAnyPlace: boolean("outside_any_place").notNull().default(false),
     createdAt: createdAt(),
   },
-  (t) => placeCodeChecks("worksites", t),
+  (t) => [
+    ...placeCodeChecks("worksites", t),
+    check("worksites_place_or_outside", sql`NOT (${t.outsideAnyPlace} AND ${t.placeFips} IS NOT NULL)`),
+  ],
 );
 
 export const clientBillingProfiles = pgTable(
@@ -376,6 +383,7 @@ export const timeEntries = pgTable(
 );
 
 // ---------- runs, lines, invoices, exports ----------
+export type SkippedWorker = { workerId: string; reason: string; by: string; at: string };
 export const payRuns = pgTable(
   "pay_runs",
   {
@@ -385,6 +393,8 @@ export const payRuns = pgTable(
     version: integer("version").notNull().default(1),
     status: payRunStatus("status").notNull().default("draft"),
     rulesVersion: text("rules_version").notNull(),
+    // Workers left out of this run (Gusto "skip employee"), with who skipped them and why.
+    skipped: jsonb("skipped").$type<SkippedWorker[]>().notNull().default(sql`'[]'::jsonb`),
     blockers: jsonb("blockers").$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
     warnings: jsonb("warnings").$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
     snapshot: jsonb("snapshot"),
