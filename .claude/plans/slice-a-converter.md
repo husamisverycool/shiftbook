@@ -5,6 +5,17 @@ Contract: SPEC.md §25 slice (a). Screens: `docs/patterns/convert.md` (+ `inbox.
 `documents/[documentId].md`, `exports.md`, `_documents/invoice.md`, `_layouts/root.md`,
 `_components/empty-state.md`).
 
+## Progress (2026-10-15)
+- Done and tested: scaffold, database with row-level security and audit, demo agency and samples,
+  intake (time clock, Fieldglass), photo/PDF pipeline (redaction, two passes, comparison, recorded
+  replay), pay engine with five second-opinion reviews, pay runs, Gusto hours CSV, invoice PDF,
+  converter screens (upload, review hours, review totals, files), demo banner with reset, English
+  and Spanish, Playwright end-to-end (2 flows × 2 languages), screens compared with pattern files
+  (`docs/screens/slice-a.md`), decision records 0001–0010.
+- Waiting on the owner: the Anthropic key (D5) to record real photo readings; approval of the
+  proposed goldens; the URL (D4) — the app runs only inside this cloud container, so screenshots
+  are sent until the owner deploys.
+
 ## Goal (what the owner can do at the end)
 Open one page in demo mode (English or Spanish), drop last week's sample timesheets (handwritten-style
 photos, a client-signed PDF, a time-clock CSV, a Fieldglass-style export), watch them get read, fix
