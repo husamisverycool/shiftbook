@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { computePay, type PayInput, type Shift } from "@shiftbook/rules";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
-import { REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
+import { REFERENCE_GUARANTEE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
 const WEEK = ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"];
@@ -43,6 +43,7 @@ const input = (shifts: Shift[]): PayInput => ({
   jurisdictionRules: REFERENCE_JURISDICTION_RULES,
   minimumWageRules: REFERENCE_MINIMUM_WAGE_RULES,
   premiumRules: REFERENCE_PREMIUM_RULES,
+  guaranteeRules: REFERENCE_GUARANTEE_RULES,
 });
 const MA = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const; // Worcester County; Worcester
 const CA = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const; // San Bernardino County; Ontario
@@ -220,6 +221,35 @@ ruleCase(
   {
     pay: [["REG", 1440, 43200], ["REG", 960, 32000], ["MEAL_PREMIUM", 60, 1880], ["REST_PREMIUM", 60, 1880]],
     bill: [["REG", 1440, 62400], ["REG", 960, 46000]],
+  },
+);
+
+ruleCase(
+  "il-day-labor-four-hour-minimum",
+  "An Illinois day laborer at $17.00/h works 10 hours a day Monday to Thursday at client C (40 hours), then on Friday is sent to client D, works 1 hour 30 minutes and is sent home; a person confirmed that client D did not use the worker, who was not placed elsewhere. Friday's 90 minutes are overtime (over 40 hours): 1.5 h × $25.50 = $38.25. The Day and Temporary Labor Services Act requires at least 4 hours of pay at the agreed rate when a laborer is sent and not used (820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b)): 4 h − 1.5 h worked = 2.5 h × $17.00 = $42.50 more, not as hours worked (the safe reading: overtime already earned is not counted against it). Pay: $680.00 + $38.25 + $42.50 = $760.75. Bill: client C 40 h × $26.50 = $1,060.00; client D 1.5 h of overtime × $39.75 = $59.63 (the minimum itself is not billed).",
+  {
+    ...input([
+      ...WEEK.slice(0, 4).map((d) => shift(d, 600, { assignmentId: "assignment-C", clientId: "client-C", payRateCents: 1700 })),
+      shift(WEEK[4]!, 90, { assignmentId: "assignment-D", clientId: "client-D", payRateCents: 1700 }),
+    ]),
+    confirmations: [{ id: "confirmation-1", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-D", date: WEEK[4]! }],
+  },
+  {
+    pay: [["REG", 2400, 68000], ["OT", 90, 3825], ["MIN_GUARANTEE", 150, 4250]],
+    bill: [["REG", 2400, 106000], ["OT", 90, 5963]],
+  },
+);
+
+ruleCase(
+  "ca-reporting-time-pay",
+  "A California worker at $18.00/h, scheduled for 8 hours on Friday, reports and is sent home after 2 hours (8 hours a day Monday to Thursday). California reporting-time pay is half the scheduled day, at least 2 and at most 4 hours, at the regular rate (IWC wage orders § 5(A)): half of 8 h is 4 h; 2 h were worked, so 2 h × $18.00 = $36.00 more, not as hours worked. Pay: 34 h × $18 = $612.00 + $36.00 = $648.00. Bill: 34 h × $26.00 = $884.00 (reporting pay is not billed).",
+  {
+    ...caInput([...CA_WEEK.slice(1, 5).map((d) => shift(d, 480, { ...CA, payRateCents: 1800, billRateCents: 2600 })), shift(CA_WEEK[5]!, 120, { ...CA, payRateCents: 1800, billRateCents: 2600 })]),
+    confirmations: [{ id: "confirmation-1", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-1", date: CA_WEEK[5]!, scheduledMinutes: 480 }],
+  },
+  {
+    pay: [["REG", 2040, 61200], ["REPORTING_PAY", 120, 3600]],
+    bill: [["REG", 2040, 88400]],
   },
 );
 

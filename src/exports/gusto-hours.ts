@@ -67,6 +67,10 @@ const signedCents = (c: number) => (c >= 0 ? `+${formatCents(c)}` : `−${format
 /** Plain names for the earning types this file cannot carry, and what to do instead. */
 const NOT_CARRIED: Partial<Record<EarningType, string>> = {
   MW_TRUEUP: "a minimum-wage top-up (the rate card is below the minimum wage); fix the rate card, or pay the top-up in Gusto as a separate amount",
+  MEAL_PREMIUM: "a meal-period premium; pay it in Gusto as a separate amount",
+  REST_PREMIUM: "a rest-period premium; pay it in Gusto as a separate amount",
+  REPORTING_PAY: "reporting-time pay for a short day; pay it in Gusto as a separate amount",
+  MIN_GUARANTEE: "a day-labor minimum for a short day; pay it in Gusto as a separate amount",
 };
 
 function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): HourColumn {

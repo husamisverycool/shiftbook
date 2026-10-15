@@ -10,6 +10,8 @@ export type EarningType =
   | "DT"
   /** The difference up to the minimum wage when a rate card is below it that day. */
   | "MW_TRUEUP"
+  /** Pay for reporting to work and being given less than the scheduled work (California, Massachusetts). */
+  | "REPORTING_PAY"
   | "HOL"
   | "DIFF"
   | "MEAL_PREMIUM"
@@ -52,6 +54,10 @@ export interface Shift {
   /** The rate card's double-time bill multiplier (California double time). */
   billDtMultiplier: Fraction;
   otBillingRule: OvertimeBillingRule;
+  /** A day the worker reported (or was sent) but did no work: 0 minutes, no time entry; only reporting pay can follow. */
+  reportedOnly?: boolean;
+  /** Illinois day and temporary labor (820 ILCS 175): false for clerical or professional work. Default true. */
+  dayAndTemporaryLabor?: boolean;
 }
 
 export interface OvertimeRule {
@@ -106,7 +112,7 @@ export interface PremiumRule {
   citation: string;
 }
 
-export type ConfirmationKind = "meal_period_missed" | "rest_period_missed";
+export type ConfirmationKind = "meal_period_missed" | "rest_period_missed" | "reported_short";
 
 /** Something a person confirmed about a worker's day on one assignment (the engine computes, a person confirms). */
 export interface Confirmation {
@@ -115,6 +121,36 @@ export interface Confirmation {
   workerId: string;
   assignmentId: string;
   date: IsoDate;
+  /** reported_short: the minutes the worker was scheduled for that day (California and Massachusetts need them). */
+  scheduledMinutes?: number | null;
+  /** reported_short: placed at another client the same shift (Illinois day labor). */
+  reassigned?: boolean;
+}
+
+/**
+ * A dated minimum-pay rule for a worker who reports (or is sent) and gets less work than scheduled:
+ * California reporting time, Massachusetts reporting pay, the Illinois day-labor minimum. Every
+ * number is data; which fields are used depends on the rule code (one rule file each).
+ */
+export interface GuaranteeRule {
+  jurisdiction: string;
+  ruleCode: string;
+  /** Minutes due in all (Massachusetts 180; Illinois 240). */
+  dueMinutes: number | null;
+  /** Illinois: minutes due for the whole shift when placed elsewhere the same shift (120). */
+  reassignedDueMinutes: number | null;
+  /** California: the share of the scheduled day due (1/2). */
+  scheduledFraction: Fraction | null;
+  /** California: the least and most minutes due (120, 240). */
+  minMinutes: number | null;
+  maxMinutes: number | null;
+  /** Massachusetts: owed only when at least this much was scheduled (180). */
+  minScheduledMinutes: number | null;
+  /** Paid at the week's regular rate, or at the day's own pay rate (never below the minimum wage). */
+  basis: "regular_rate" | "pay_rate";
+  effectiveFrom: IsoDate;
+  effectiveTo: IsoDate | null;
+  citation: string;
 }
 
 export interface PayInput {
@@ -124,6 +160,7 @@ export interface PayInput {
   jurisdictionRules: JurisdictionRule[];
   minimumWageRules: MinimumWageRule[];
   premiumRules?: PremiumRule[];
+  guaranteeRules?: GuaranteeRule[];
   confirmations?: Confirmation[];
 }
 

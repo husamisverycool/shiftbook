@@ -1,10 +1,11 @@
 import { sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
-import { jurisdictionRules, minimumWageRules, overtimeRules, premiumRules } from "../../src/server/db/schema";
+import { guaranteeRules, jurisdictionRules, minimumWageRules, overtimeRules, premiumRules } from "../../src/server/db/schema";
 import {
   REFERENCE_JURISDICTION_RULES,
   REFERENCE_MINIMUM_WAGE_RULES,
   REFERENCE_OVERTIME_RULES,
+  REFERENCE_GUARANTEE_RULES,
   REFERENCE_PREMIUM_RULES,
 } from "../../src/server/rules/reference-data";
 import { openAppDb, openOwnerDb } from "./helpers";
@@ -75,6 +76,26 @@ describe("reference wage-rule data in the database matches src/server/rules/refe
     const fromDb = rows.map(({ jurisdiction, ruleCode, premiumMinutes, perWorkdayMax, effectiveFrom, effectiveTo, citation }) => ({ jurisdiction, ruleCode, premiumMinutes, perWorkdayMax, effectiveFrom, effectiveTo, citation }));
     const key = (r: { jurisdiction: string; ruleCode: string; effectiveFrom: string }) => `${r.jurisdiction}:${r.ruleCode}:${r.effectiveFrom}`;
     expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_PREMIUM_RULES, key));
+  });
+
+  it("minimum-pay rules for a short day", async () => {
+    const rows = await app.db.select().from(guaranteeRules);
+    const fromDb = rows.map((r) => ({
+      jurisdiction: r.jurisdiction,
+      ruleCode: r.ruleCode,
+      dueMinutes: r.dueMinutes,
+      reassignedDueMinutes: r.reassignedDueMinutes,
+      scheduledFraction: r.scheduledFractionNum !== null && r.scheduledFractionDen !== null ? { num: r.scheduledFractionNum, den: r.scheduledFractionDen } : null,
+      minMinutes: r.minMinutes,
+      maxMinutes: r.maxMinutes,
+      minScheduledMinutes: r.minScheduledMinutes,
+      basis: r.basis,
+      effectiveFrom: r.effectiveFrom,
+      effectiveTo: r.effectiveTo,
+      citation: r.citation,
+    }));
+    const key = (r: { jurisdiction: string; ruleCode: string }) => `${r.jurisdiction}:${r.ruleCode}`;
+    expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_GUARANTEE_RULES, key));
   });
 
   it("refuses malformed place codes in the rule tables", async () => {

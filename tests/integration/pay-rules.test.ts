@@ -68,4 +68,22 @@ describe("pay rules through the weekly run", () => {
       ["MEAL_PREMIUM", 60, 1950],
     ]);
   });
+
+  it("pays California reporting time for a short day and for a day sent home without any work", async () => {
+    const added = await inAgency((tx) => addEntry(tx, actor, period, { workerId: workerId("luis-hernandez"), workDate: "2026-10-08", inMinute: 420, outMinute: 540, breakMinutes: 0 }, ["other"], "sent home early"));
+    if (!added.ok) throw new Error(added.error);
+    const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, added.entryId)));
+    const base = { agencyId: actor.agencyId, workerId: workerId("luis-hernandez"), assignmentId: entry!.assignmentId!, kind: "reported_short" as const, scheduledMinutes: 480, confirmedBy: actor.userId };
+    await inAgency((tx) => tx.insert(premiumConfirmations).values([{ ...base, workDate: "2026-10-08" }, { ...base, workDate: "2026-10-09" }]));
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.blockers.map((b) => b.code)).not.toContain("pay_bill_mismatch");
+    expect(run.blockers.filter((b) => b.workerId === workerId("luis-hernandez"))).toEqual([]);
+    const lines = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, workerId("luis-hernandez")))));
+    // Thursday: 2 h worked of 8 scheduled → half the day (4 h) is due: 2 h more. Friday: no work → 4 h.
+    expect(lines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
+      ["REG", 120, 3900],
+      ["REPORTING_PAY", 120, 3900],
+      ["REPORTING_PAY", 240, 7800],
+    ]);
+  });
 });

@@ -5,7 +5,7 @@
  */
 import { isIsoDate } from "./dates";
 import { scopeProblem, STATE_FIPS } from "./places";
-import type { Issue, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
+import type { GuaranteeRule, Issue, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const OPEN_END = "9999-12-31";
@@ -16,6 +16,7 @@ export interface RuleTables {
   jurisdictionRules: JurisdictionRule[];
   minimumWageRules: MinimumWageRule[];
   premiumRules: PremiumRule[];
+  guaranteeRules: GuaranteeRule[];
 }
 
 /** Copies of the rule tables in one fixed order. */
@@ -29,6 +30,7 @@ export function canonicalRules(input: PayInput): RuleTables {
     jurisdictionRules: by(input.jurisdictionRules, (r) => key([r.jurisdiction, scopeKey(r), r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.citation, r.scopeName])),
     minimumWageRules: by(input.minimumWageRules, (r) => key([r.jurisdiction, scopeKey(r), r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.rateCents, r.citation, r.scopeName])),
     premiumRules: by(input.premiumRules ?? [], (r) => key([r.jurisdiction, r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.premiumMinutes, r.perWorkdayMax, r.citation])),
+    guaranteeRules: by(input.guaranteeRules ?? [], (r) => key([r.jurisdiction, r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, JSON.stringify(r), r.citation])),
   };
 }
 
@@ -111,6 +113,19 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
       ((!positiveInt(r.perWorkdayMax) || r.perWorkdayMax > 24) && "its per-workday limit must be a small positive whole number");
     if (problem) issues.push(invalid(`${where}: ${problem}`));
   }
+  for (const r of t.guaranteeRules) {
+    const where = `minimum-pay rule ${r.jurisdiction} ${r.ruleCode}`;
+    const minutes = (n: number | null) => n === null || (Number.isSafeInteger(n) && n >= 0 && n <= MAX_THRESHOLD_MINUTES);
+    const f = r.scheduledFraction;
+    const problem =
+      (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
+      datesProblem(r) ||
+      (![r.dueMinutes, r.reassignedDueMinutes, r.minMinutes, r.maxMinutes, r.minScheduledMinutes].every(minutes) && "its minutes must be whole numbers within a week") ||
+      (f !== null && (!positiveInt(f.num) || !positiveInt(f.den) || f.num > f.den) && "its share of the scheduled day must be a fraction from 0 to 1") ||
+      (r.minMinutes !== null && r.maxMinutes !== null && r.minMinutes > r.maxMinutes && "its least minutes are more than its most") ||
+      (r.basis !== "regular_rate" && r.basis !== "pay_rate" && "its rate basis must be the regular rate or the pay rate");
+    if (problem) issues.push(invalid(`${where}: ${problem}`));
+  }
   if (issues.length > 0) return issues;
 
   issues.push(
@@ -118,6 +133,8 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
     ...overlapProblems(t.jurisdictionRules, (r) => `${r.jurisdiction}|${scopeKey(r)}|${r.ruleCode}`, (r) => `jurisdiction rule ${r.jurisdiction} ${r.ruleCode}${r.scopeName ? ` (${r.scopeName})` : ""}`),
     ...overlapProblems(t.minimumWageRules, (r) => `${r.jurisdiction}|${scopeKey(r)}`, (r) => `minimum-wage rate ${r.jurisdiction}${r.scopeName ? ` (${r.scopeName})` : ""}`),
     ...overlapProblems(t.premiumRules, (r) => `${r.jurisdiction}|${r.ruleCode}`, (r) => `premium rule ${r.jurisdiction} ${r.ruleCode}`),
+    // One minimum-pay rule per state at a time: which one applies would otherwise be a guess.
+    ...overlapProblems(t.guaranteeRules, (r) => r.jurisdiction, (r) => `minimum-pay rule ${r.jurisdiction} ${r.ruleCode}`),
   );
   return issues;
 }

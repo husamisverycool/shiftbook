@@ -23,17 +23,20 @@ import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-w
 import { overtimeRate, premiumBase, RATE_FLOOR_CITATION, REGULAR_RATE_CITATION, weightedRegularRate } from "./rules/regular-rate";
 import { CA_DAILY_DOUBLE_TIME, CA_DAILY_OVERTIME, CA_SEVENTH_DAY, CALIFORNIA_RULE_CODES, selectCaliforniaRules, splitCalifornia, type PremiumSplit } from "./rules/california-overtime";
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
-import { PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
+import { CA_REPORTING_TIME, caReportingTime } from "./rules/ca-reporting-time";
+import { IL_DAY_LABOR_MINIMUM, ilDayLaborMinimum } from "./rules/il-day-labor-minimum";
+import { MA_REPORTING_PAY, maReportingPay } from "./rules/ma-reporting-pay";
+import { guaranteeRuleFor, PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
 import type { ConfirmationKind, EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, PremiumRule, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-c4";
+export const RULES_VERSION = "2026.10-c5";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set<string>([WEEKLY_OVERTIME, MINIMUM_WAGE, ...CALIFORNIA_RULE_CODES]);
 /** Federal rules that must always be present; without them nothing is computed. */
 const REQUIRED_FEDERAL_RULES = [WEEKLY_OVERTIME, MINIMUM_WAGE];
 
-const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "MW_TRUEUP", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
+const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "MW_TRUEUP", "REPORTING_PAY", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
 const MINUTES_PER_DAY = 1440;
 /** Bounds that keep every product inside safe integers: $100,000/h, factors up to 1000. */
 const MAX_RATE_CENTS = 10_000_000;
@@ -77,8 +80,12 @@ function totalOrder(a: Shift, b: Shift): number {
 }
 
 function validShift(s: Shift): string | null {
-  if (!hasEntryIds(s)) return "the shift has no time entry id, so it cannot be traced to a timesheet";
-  if (new Set(s.entryIds).size !== s.entryIds.length) return "the same time entry is listed twice in this shift";
+  if (s.reportedOnly) {
+    if (s.minutes !== 0 || !Array.isArray(s.entryIds) || s.entryIds.length > 0) return "a day reported without work carries no minutes and no time entry";
+  } else {
+    if (!hasEntryIds(s)) return "the shift has no time entry id, so it cannot be traced to a timesheet";
+    if (new Set(s.entryIds).size !== s.entryIds.length) return "the same time entry is listed twice in this shift";
+  }
   if (!isIsoDate(s.date)) return `"${s.date}" is not a real calendar date`;
   const place = placeProblem(s.jurisdiction, s.countyFips, s.placeFips);
   if (place) return place;
@@ -232,7 +239,7 @@ export function computePay(input: PayInput): PayResult {
       list.push({ code: "invalid_input", workerId: shift.workerId, workerName: shift.workerName, workweekStart: week, date: shift.date, entryIds: shift.entryIds, message: `${shift.workerName} on ${shift.date}: ${problem}. The whole workweek is held until it is fixed.` });
       invalid.set(key, list);
     }
-    if (shift.minutes === 0 && !problem) continue;
+    if (shift.minutes === 0 && !problem && !shift.reportedOnly) continue;
     const list = weeks.get(key) ?? [];
     list.push(shift);
     weeks.set(key, list);
@@ -406,8 +413,12 @@ export function computePay(input: PayInput): PayResult {
     // Confirmed premiums must be for a day the worker worked on that assignment.
     const confirmed = (input.confirmations ?? []).filter((c) => c.workerId === first.workerId && workweekStart(c.date, input.workweekStartsOn) === week).sort((a, b) => cmp(a.date, b.date) || cmp(a.id, b.id));
     for (const c of confirmed) {
-      if (!PREMIUM_OF[c.kind] || !shifts.some((s) => s.assignmentId === c.assignmentId && s.date === c.date && s.minutes > 0)) {
-        weekBlockers.push({ code: "invalid_input", ...who, date: c.date, message: `${first.workerName} on ${c.date}: a confirmed ${PREMIUM_OF[c.kind]?.what ?? c.kind} is for an assignment with no hours that day, so it cannot be paid; correct the confirmation.` });
+      const reported = c.kind === "reported_short";
+      if ((!reported && !PREMIUM_OF[c.kind]) || !shifts.some((s) => s.assignmentId === c.assignmentId && s.date === c.date && (reported || s.minutes > 0))) {
+        const what = reported ? "short day" : (PREMIUM_OF[c.kind]?.what ?? c.kind);
+        weekBlockers.push({ code: "invalid_input", ...who, date: c.date, message: `${first.workerName} on ${c.date}: a confirmed ${what} is for an assignment with no ${reported ? "report" : "hours"} that day, so it cannot be paid; correct the confirmation.` });
+      } else if (reported && c.scheduledMinutes !== undefined && c.scheduledMinutes !== null && (!Number.isSafeInteger(c.scheduledMinutes) || c.scheduledMinutes <= 0 || c.scheduledMinutes > MINUTES_PER_DAY)) {
+        weekBlockers.push({ code: "invalid_input", ...who, date: c.date, message: `${first.workerName} on ${c.date}: the scheduled hours of a confirmed short day must be more than none and at most a day.` });
       }
     }
 
@@ -420,7 +431,10 @@ export function computePay(input: PayInput): PayResult {
     // Every minute counts at least at that day's minimum wage (a rate card below it is topped up).
     const effective = (s: Shift) => Math.max(s.payRateCents, floorOf.get(s)!);
     const singleRate = new Set(shifts.map(effective)).size === 1 && shifts.every((s) => s.payRateCents >= floorOf.get(s)!);
-    const regularRate = weightedRegularRate(shifts.map((s) => ({ minutes: s.minutes, payRateCents: effective(s) })));
+    // A week of reported days without work has no hours to average: its rate is the day's own.
+    const regularRate = shifts.some((s) => s.minutes > 0)
+      ? weightedRegularRate(shifts.map((s) => ({ minutes: s.minutes, payRateCents: effective(s) })))
+      : { num: Math.max(...shifts.map(effective)), den: 1 };
 
     // Overtime allocation follows the order of work; flag days where that order was assumed.
     const otDays = new Set(splits.filter((x) => premiumOf(x) > 0).map((x) => x.shift.date));
@@ -455,7 +469,7 @@ export function computePay(input: PayInput): PayResult {
         if (!part.dates.includes(shift.date)) part.dates.push(shift.date);
       }
       const floor = floorOf.get(shift)!;
-      if (shift.payRateCents < floor) {
+      if (shift.payRateCents < floor && shift.minutes > 0) {
         const t = b.trueUps.find((x) => x.floor === floor) ?? b.trueUps[b.trueUps.push({ floor, minutes: 0, entries: [], dates: [], citations: [] }) - 1]!;
         t.minutes += shift.minutes;
         t.entries.push(...shift.entryIds);
@@ -562,9 +576,9 @@ export function computePay(input: PayInput): PayResult {
     const premiums = new Map<string, { assignmentId: string; clientId: string; kind: ConfirmationKind; rule: PremiumRule; minutes: number; dates: string[]; entries: string[] }>();
     const perDay = new Map<string, number>();
     const notApplicable = new Set<string>();
-    for (const c of confirmed) {
+    for (const c of confirmed.filter((x) => x.kind !== "reported_short")) {
       const day = shifts.filter((s) => s.assignmentId === c.assignmentId && s.date === c.date);
-      const what = PREMIUM_OF[c.kind];
+      const what = PREMIUM_OF[c.kind]!;
       const rule = premiumRuleFor(rules.premiumRules, day[0]!.jurisdiction, what.ruleCode, c.date);
       if (!rule) {
         const k = `${day[0]!.jurisdiction}|${c.kind}`;
@@ -585,11 +599,70 @@ export function computePay(input: PayInput): PayResult {
       premiums.set(k, p);
     }
     for (const p of premiums.values()) {
-      const what = PREMIUM_OF[p.kind];
+      const what = PREMIUM_OF[p.kind]!;
       const pay = arithmetic(what.label, p.minutes, regularRate, " (the week's regular rate)");
       const why = `Rule ${p.rule.ruleCode}: ${what.what} on ${p.dates.join(", ")}, as a person confirmed; one hour of pay at the regular rate, not hours worked, at most ${p.rule.perWorkdayMax} per workday (${p.rule.citation}).`;
       weekPay.push({ workerId: first.workerId, assignmentId: p.assignmentId, clientId: p.clientId, workweekStart: week, type: what.type, minutes: p.minutes, rate: regularRate, amountCents: pay.amountCents, ruleId: p.rule.ruleCode, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(p.entries) });
     }
+
+    // 6. minimum pay for a confirmed short day: California reporting time, Massachusetts reporting pay,
+    // the Illinois day-labor minimum. Not hours worked; never counted toward overtime.
+    const shortDays = new Set<string>();
+    for (const c of confirmed.filter((x) => x.kind === "reported_short")) {
+      if (shortDays.has(`${c.assignmentId}|${c.date}`)) continue;
+      shortDays.add(`${c.assignmentId}|${c.date}`);
+      const day = shifts.filter((s) => s.assignmentId === c.assignmentId && s.date === c.date);
+      const sample = day[0]!;
+      const atAssignment = day.reduce((sum, s) => sum + s.minutes, 0);
+      const atClient = shifts.filter((s) => s.clientId === sample.clientId && s.date === c.date).reduce((sum, s) => sum + s.minutes, 0);
+      const allDay = shifts.filter((s) => s.date === c.date).reduce((sum, s) => sum + s.minutes, 0);
+      const rule = guaranteeRuleFor(rules.guaranteeRules, sample.jurisdiction, c.date);
+      const notHere = (why: string) => {
+        weekWarnings.push({ code: "premium_not_applicable", ...who, jurisdiction: sample.jurisdiction, date: c.date, message: `${first.workerName} on ${c.date}: a short day was confirmed, but ${why}, so nothing more is paid for it.` });
+      };
+      if (!rule) {
+        notHere(`no reporting or minimum-pay rule applies in ${sample.jurisdiction}`);
+        continue;
+      }
+      if (rule.ruleCode === IL_DAY_LABOR_MINIMUM && sample.dayAndTemporaryLabor === false) {
+        notHere("the Illinois day-labor minimum does not cover clerical or professional work (820 ILCS 175/5)");
+        continue;
+      }
+      const needsSchedule = rule.ruleCode === CA_REPORTING_TIME || rule.ruleCode === MA_REPORTING_PAY;
+      if (needsSchedule && !c.scheduledMinutes) {
+        blockers.push({ code: "invalid_input", ...who, date: c.date, message: `${first.workerName} on ${c.date}: a short day was confirmed, but ${sample.jurisdiction} reporting pay depends on the scheduled hours, which are missing; add them to the confirmation.` });
+        weekPay.length = 0;
+        break;
+      }
+      let shortfall: number;
+      let story: string;
+      if (rule.ruleCode === CA_REPORTING_TIME) {
+        const r = caReportingTime(rule, c.scheduledMinutes!, atAssignment);
+        shortfall = r.shortfall;
+        story = `on ${c.date} the worker reported but was given less than half the scheduled day; half the scheduled ${formatDuration(c.scheduledMinutes!)} is ${formatDuration(r.halfMinutes)} (at least ${formatDuration(rule.minMinutes ?? 0)}, at most ${formatDuration(rule.maxMinutes ?? r.halfMinutes)}); ${formatDuration(atAssignment)} were worked, so ${formatDuration(shortfall)} more are paid`;
+      } else if (rule.ruleCode === MA_REPORTING_PAY) {
+        const r = maReportingPay(rule, c.scheduledMinutes!, atAssignment);
+        shortfall = r.shortfall;
+        story = `on ${c.date} the worker, scheduled for ${formatDuration(c.scheduledMinutes!)}, reported and was not given the expected hours; at least ${formatDuration(r.dueMinutes)} are owed for the day; ${formatDuration(atAssignment)} were worked, so ${formatDuration(shortfall)} more are paid`;
+      } else if (rule.ruleCode === IL_DAY_LABOR_MINIMUM) {
+        const r = ilDayLaborMinimum(rule, c.reassigned === true, atClient, allDay);
+        shortfall = r.shortfall;
+        story = c.reassigned
+          ? `on ${c.date} the worker was sent to the client, not used, and placed elsewhere the same shift, so the shift is paid at least ${formatDuration(r.dueMinutes)}; ${formatDuration(allDay)} were worked, so ${formatDuration(shortfall)} more are paid at the agreed rate`
+          : `on ${c.date} the worker was sent to the client and not used for ${formatDuration(r.dueMinutes)}; ${formatDuration(atClient)} were worked there, so ${formatDuration(shortfall)} more are paid at the agreed rate`;
+      } else {
+        notHere(`rule ${rule.ruleCode} is not one this version computes`);
+        continue;
+      }
+      if (shortfall <= 0) continue;
+      const rate: Fraction = rule.basis === "regular_rate" ? premiumBase(regularRate, floorOf.get(sample)!).base : { num: effective(sample), den: 1 };
+      const type: EarningType = rule.ruleCode === IL_DAY_LABOR_MINIMUM ? "MIN_GUARANTEE" : "REPORTING_PAY";
+      const label = type === "MIN_GUARANTEE" ? "Day-labor minimum" : "Reporting-time pay";
+      const basisNote = rule.basis === "regular_rate" ? " (the week's regular rate)" : sample.payRateCents < effective(sample) ? " (the minimum wage that day)" : " (the agreed pay rate)";
+      const pay = arithmetic(label, shortfall, rate, basisNote);
+      weekPay.push({ workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type, minutes: shortfall, rate, amountCents: pay.amountCents, ruleId: rule.ruleCode, explain: `${pay.text} Rule ${rule.ruleCode}: ${story}, not as hours worked (${rule.citation}).`, entryIds: uniqueSorted(day.flatMap((s) => s.entryIds)) });
+    }
+    if (blockers.some((b) => b.workerId === first.workerId && b.workweekStart === week)) continue;
 
     const zero = weekPay.filter((l) => l.minutes > 0 && l.amountCents <= 0);
     if (zero.length > 0) {

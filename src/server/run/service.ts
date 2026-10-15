@@ -11,7 +11,7 @@
  * the period is locked (period-lock.ts) — in this slice a period is paid once.
  */
 import { createHash } from "node:crypto";
-import { addDays, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Confirmation, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { renderExport } from "../../exports/registry";
@@ -103,12 +103,27 @@ export async function setSkipped(tx: Tx, actor: Actor, payPeriodId: string, work
   await audit(tx, actor, [{ action: "update", entityType: "pay_run", entityId: run.id, before: { skipped: run.skipped.map((x) => x.workerId) }, after: { skipped: next.map((x) => x.workerId) }, reason }]);
 }
 
-async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules" | "premiumRules">> {
+async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules" | "premiumRules" | "guaranteeRules">> {
   const ot = await tx.select().from(s.overtimeRules);
   const jr = await tx.select().from(s.jurisdictionRules);
   const mw = await tx.select().from(s.minimumWageRules);
   const pr = await tx.select().from(s.premiumRules);
+  const gr = await tx.select().from(s.guaranteeRules);
   return {
+    guaranteeRules: gr.map((r) => ({
+      jurisdiction: r.jurisdiction,
+      ruleCode: r.ruleCode,
+      dueMinutes: r.dueMinutes,
+      reassignedDueMinutes: r.reassignedDueMinutes,
+      scheduledFraction: r.scheduledFractionNum !== null && r.scheduledFractionDen !== null ? { num: r.scheduledFractionNum, den: r.scheduledFractionDen } : null,
+      minMinutes: r.minMinutes,
+      maxMinutes: r.maxMinutes,
+      minScheduledMinutes: r.minScheduledMinutes,
+      basis: r.basis,
+      effectiveFrom: r.effectiveFrom,
+      effectiveTo: r.effectiveTo,
+      citation: r.citation,
+    })),
     premiumRules: pr.map((r) => ({ jurisdiction: r.jurisdiction, ruleCode: r.ruleCode, premiumMinutes: r.premiumMinutes, perWorkdayMax: r.perWorkdayMax, effectiveFrom: r.effectiveFrom, effectiveTo: r.effectiveTo, citation: r.citation })),
     overtimeRules: ot.map(
       (r): OvertimeRule => ({
@@ -181,6 +196,44 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const rateCards = await tx.select().from(s.rateCards);
   const profiles = await tx.select().from(s.clientBillingProfiles);
 
+  // What a person confirmed for days in this period: missed meal or rest periods, short days (the engine computes, a person confirms).
+  const confirmations: Confirmation[] = (await tx.select().from(s.premiumConfirmations).where(and(gte(s.premiumConfirmations.workDate, period.startsOn), lte(s.premiumConfirmations.workDate, period.endsOn))))
+    .filter((c) => !skippedIds.has(c.workerId))
+    .map((c) => ({ id: c.id, kind: c.kind, workerId: c.workerId, assignmentId: c.assignmentId, date: c.workDate, scheduledMinutes: c.scheduledMinutes, reassigned: c.reassigned }))
+    .sort((a, b) => cmp(a.id, b.id));
+
+  /** The shift for an assignment on a date with that day's rate card, billing profile and worksite; or why there is none. */
+  const shiftOn = (
+    a: (typeof assignmentRows)[number],
+    date: string,
+    base: Pick<Shift, "entryIds" | "workerId" | "workerName" | "startMinute" | "minutes"> & { reportedOnly?: true },
+  ): Shift | { code: RunIssueCode; message: string } => {
+    // A worker's own rates on this assignment apply on the dates they cover; the job order's otherwise.
+    const covering = rateCards.filter((r) => r.jobOrderId === a.jobOrder.id && effective(date, r.effectiveFrom, r.effectiveTo));
+    const own = covering.filter((r) => r.assignmentId === a.assignment.id);
+    const cards = own.length > 0 ? own : covering.filter((r) => r.assignmentId === null);
+    if (cards.length !== 1) return { code: "missing_rate", message: `${base.workerName} on ${date}: ${cards.length === 0 ? "no rate card is" : `${cards.length} rate cards are`} in effect for ${a.jobOrder.position}.` };
+    const profile = profiles.filter((p) => p.clientId === a.jobOrder.clientId && effective(date, p.effectiveFrom, p.effectiveTo));
+    if (profile.length !== 1) return { code: "missing_billing_profile", message: `${base.workerName} on ${date}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect for the client.` };
+    const card = cards[0]!;
+    return {
+      ...base,
+      assignmentId: a.assignment.id,
+      clientId: a.jobOrder.clientId,
+      jurisdiction: a.worksite.state,
+      countyFips: a.worksite.countyFips ?? "",
+      placeFips: a.worksite.placeFips ?? (a.worksite.outsideAnyPlace ? NO_PLACE : null),
+      date,
+      payRateCents: card.payRateCents,
+      billRateCents: card.billRateCents,
+      ...billRateExplain(card),
+      billOtMultiplier: { num: card.otMultiplierNum, den: card.otMultiplierDen },
+      billDtMultiplier: { num: card.dtMultiplierNum, den: card.dtMultiplierDen },
+      otBillingRule: profile[0]!.overtimeBillingRule,
+      dayAndTemporaryLabor: a.jobOrder.dayAndTemporaryLabor,
+    };
+  };
+
   const blockers: RunIssue[] = [];
   for (const d of documents) {
     if (isStuck(d)) {
@@ -227,47 +280,42 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       issue("crosses_midnight", `${name} on ${e.workDate}: the shift runs past midnight; split it at midnight so each day carries its own minutes.`);
       continue;
     }
-    // A worker's own rates on this assignment apply on the dates they cover; the job order's otherwise.
-    const covering = rateCards.filter((r) => r.jobOrderId === a.jobOrder.id && effective(e.workDate!, r.effectiveFrom, r.effectiveTo));
-    const own = covering.filter((r) => r.assignmentId === a.assignment.id);
-    const cards = own.length > 0 ? own : covering.filter((r) => r.assignmentId === null);
-    if (cards.length !== 1) {
-      issue("missing_rate", `${name} on ${e.workDate}: ${cards.length === 0 ? "no rate card is" : `${cards.length} rate cards are`} in effect for ${a.jobOrder.position}.`);
+    const built = shiftOn(a, e.workDate, { entryIds: [e.id], workerId: worker.id, workerName: name, startMinute: e.inMinute, minutes: e.minutes });
+    if ("code" in built) {
+      issue(built.code, built.message);
       continue;
     }
-    const profile = profiles.filter((p) => p.clientId === a.jobOrder.clientId && effective(e.workDate!, p.effectiveFrom, p.effectiveTo));
-    if (profile.length !== 1) {
-      issue("missing_billing_profile", `${name} on ${e.workDate}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect for the client.`);
-      continue;
-    }
-    const card = cards[0]!;
     paidWorkers.add(worker.id);
-    shifts.push({
-      entryIds: [e.id],
-      workerId: worker.id,
-      workerName: name,
-      assignmentId: a.assignment.id,
-      clientId: a.jobOrder.clientId,
-      jurisdiction: a.worksite.state,
-      countyFips: a.worksite.countyFips ?? "",
-      placeFips: a.worksite.placeFips ?? (a.worksite.outsideAnyPlace ? NO_PLACE : null),
-      date: e.workDate,
-      startMinute: e.inMinute,
-      minutes: e.minutes,
-      payRateCents: card.payRateCents,
-      billRateCents: card.billRateCents,
-      ...billRateExplain(card),
-      billOtMultiplier: { num: card.otMultiplierNum, den: card.otMultiplierDen },
-      billDtMultiplier: { num: card.dtMultiplierNum, den: card.dtMultiplierDen },
-      otBillingRule: profile[0]!.overtimeBillingRule,
-    });
+    shifts.push(built);
+  }
+
+  // A day a worker reported (or was sent) and did no work at all, confirmed by a person, is a
+  // 0-minute day on its assignment: only reporting or day-labor minimum pay can follow from it.
+  for (const c of confirmations.filter((x) => x.kind === "reported_short" && !shifts.some((sh) => sh.workerId === x.workerId && sh.assignmentId === x.assignmentId && sh.date === x.date))) {
+    const worker = workersById.get(c.workerId);
+    const a = assignmentsById.get(c.assignmentId);
+    const name = worker ? `${worker.firstName} ${worker.lastName}` : c.workerId;
+    const issue = (code: RunIssueCode, message: string) => blockers.push({ code, workerId: c.workerId, workerName: name, date: c.date, message });
+    if (skippedIds.has(c.workerId)) continue;
+    if (!worker || !a || a.assignment.workerId !== worker.id || a.assignment.status === "cancelled" || !effective(c.date, a.assignment.startDate, a.assignment.endDate)) {
+      issue("outside_assignment", `${name} on ${c.date}: a confirmed short day is not on an assignment the worker has that day.`);
+      continue;
+    }
+    const built = shiftOn(a, c.date, { entryIds: [], workerId: worker.id, workerName: name, startMinute: null, minutes: 0, reportedOnly: true });
+    if ("code" in built) {
+      issue(built.code, built.message);
+      continue;
+    }
+    paidWorkers.add(worker.id);
+    shifts.push(built);
   }
   // The same worker-day from two sources, where one has no clock times, may be the same work counted
   // twice: a person rejects one copy or adds the times (then overlapping times are caught as usual).
   const sourceOf = new Map(ordered.map((e) => [e.id, e.sourceDocumentId ?? `by-hand:${e.id}`]));
   const confirmed = new Set(ordered.filter((e) => e.distinctConfirmed).map((e) => e.id));
   const days = new Map<string, Shift[]>();
-  for (const sh of shifts) days.set(`${sh.workerId}|${sh.date}`, [...(days.get(`${sh.workerId}|${sh.date}`) ?? []), sh]);
+  // (A day reported without work has no entry and no minutes: it is never a copy of other work.)
+  for (const sh of shifts.filter((x) => !x.reportedOnly)) days.set(`${sh.workerId}|${sh.date}`, [...(days.get(`${sh.workerId}|${sh.date}`) ?? []), sh]);
   for (const [, same] of [...days].sort((a, b) => cmp(a[0], b[0]))) {
     const sources = new Set(same.map((sh) => sourceOf.get(sh.entryIds[0]!)));
     const allConfirmed = same.every((sh) => sh.entryIds.every((id) => confirmed.has(id)));
@@ -301,10 +349,6 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     }
   }
 
-  // Missed meal and rest periods a person confirmed for days in this period (engine computes, a person confirms).
-  const confirmations = (await tx.select().from(s.premiumConfirmations).where(and(gte(s.premiumConfirmations.workDate, period.startsOn), lte(s.premiumConfirmations.workDate, period.endsOn))))
-    .map((c) => ({ id: c.id, kind: c.kind, workerId: c.workerId, assignmentId: c.assignmentId, date: c.workDate }))
-    .sort((a, b) => cmp(a.id, b.id));
   const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, ...(await ruleTables(tx)) };
   const result = computePay(input);
   blockers.push(...result.blockers);

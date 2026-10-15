@@ -75,6 +75,7 @@ export const earningType = pgEnum("earning_type", [
   "OT",
   "DT",
   "MW_TRUEUP",
+  "REPORTING_PAY",
   "HOL",
   "DIFF",
   "MEAL_PREMIUM",
@@ -228,6 +229,8 @@ export const jobOrders = pgTable("job_orders", {
   payMinCents: integer("pay_min_cents"),
   payMaxCents: integer("pay_max_cents"),
   prevailingWage: boolean("prevailing_wage").notNull().default(false),
+  /** Illinois day and temporary labor (820 ILCS 175): false for clerical or professional work. */
+  dayAndTemporaryLabor: boolean("day_and_temporary_labor").notNull().default(true),
   createdAt: createdAt(),
 });
 
@@ -635,7 +638,25 @@ export const premiumRules = pgTable("premium_rules", {
   citation: text("citation").notNull(),
 });
 
-export const confirmationKind = pgEnum("confirmation_kind", ["meal_period_missed", "rest_period_missed"]);
+export const confirmationKind = pgEnum("confirmation_kind", ["meal_period_missed", "rest_period_missed", "reported_short"]);
+
+/** Minimum pay for a short day, one dated rule per state (drizzle/0016). */
+export const guaranteeRules = pgTable("guarantee_rules", {
+  id: id(),
+  jurisdiction: text("jurisdiction").notNull(),
+  ruleCode: text("rule_code").notNull(),
+  dueMinutes: integer("due_minutes"),
+  reassignedDueMinutes: integer("reassigned_due_minutes"),
+  scheduledFractionNum: integer("scheduled_fraction_num"),
+  scheduledFractionDen: integer("scheduled_fraction_den"),
+  minMinutes: integer("min_minutes"),
+  maxMinutes: integer("max_minutes"),
+  minScheduledMinutes: integer("min_scheduled_minutes"),
+  basis: text("basis").$type<"regular_rate" | "pay_rate">().notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+  citation: text("citation").notNull(),
+});
 
 /** A person's confirmation that a worker missed a meal or rest period on one assignment and day. */
 export const premiumConfirmations = pgTable(
@@ -647,6 +668,10 @@ export const premiumConfirmations = pgTable(
     assignmentId: uuid("assignment_id").notNull().references(() => assignments.id),
     workDate: isoDate("work_date").notNull(),
     kind: confirmationKind("kind").notNull(),
+    /** reported_short: the minutes scheduled that day. */
+    scheduledMinutes: integer("scheduled_minutes"),
+    /** reported_short: placed at another client the same shift (Illinois day labor). */
+    reassigned: boolean("reassigned").notNull().default(false),
     note: text("note"),
     confirmedBy: uuid("confirmed_by"),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }).notNull().defaultNow(),

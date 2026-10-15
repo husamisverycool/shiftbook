@@ -4,7 +4,7 @@
  * so tests and goldens that use this module can never drift from what the app computes with.
  * Sources: docs/research/minimum-wage-2026.md and the citations on each row.
  */
-import type { JurisdictionRule, MinimumWageRule, OvertimeRule, PremiumRule } from "@shiftbook/rules";
+import type { GuaranteeRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PremiumRule } from "@shiftbook/rules";
 
 const since = "2000-01-01";
 
@@ -86,3 +86,13 @@ export const REFERENCE_PREMIUM_RULES: PremiumRule[] = [
   premium("ca_rest_premium", "2000-01-01", "2026-12-31", "Cal. Lab. Code § 226.7(c) (version in effect through December 31, 2026) — one additional hour of pay at the regular rate for each workday a rest period is not provided; Ferra v. Loews Hollywood Hotel, LLC (2021) 11 Cal.5th 858; UPS v. Superior Court (2011) 196 Cal.App.4th 57"),
   premium("ca_rest_premium", "2027-01-01", null, "Cal. Lab. Code § 226.7(c) (version operative January 1, 2027; Stats. 2020, ch. 343) — one additional hour of pay at the regular rate for each workday a rest period is not provided; Ferra; UPS"),
 ];
+
+const guarantee = (r: Omit<GuaranteeRule, "effectiveFrom" | "effectiveTo">): GuaranteeRule => ({ ...r, effectiveFrom: "2000-01-01", effectiveTo: null });
+
+/** Minimum pay for a short day, one per state (drizzle/0016). */
+export const REFERENCE_GUARANTEE_RULES: GuaranteeRule[] = [
+  guarantee({ jurisdiction: "CA", ruleCode: "ca_reporting_time", dueMinutes: null, reassignedDueMinutes: null, scheduledFraction: { num: 1, den: 2 }, minMinutes: 120, maxMinutes: 240, minScheduledMinutes: null, basis: "regular_rate", citation: "IWC wage orders § 5(A) (e.g. 8 CCR § 11070) — reporting time pay: half the usual or scheduled day's work, at least two and at most four hours, at the regular rate of pay" }),
+  guarantee({ jurisdiction: "MA", ruleCode: "ma_reporting_pay", dueMinutes: 180, reassignedDueMinutes: null, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: 180, basis: "pay_rate", citation: "454 CMR 27.04(1) — a worker scheduled for three or more hours who reports and is not given the expected hours is paid for at least three hours, at no less than the minimum wage" }),
+  guarantee({ jurisdiction: "IL", ruleCode: "il_day_labor_minimum", dueMinutes: 240, reassignedDueMinutes: 120, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: null, basis: "pay_rate", citation: "Day and Temporary Labor Services Act, 820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b) — sent and not utilized: at least 4 hours at the agreed rate; placed elsewhere the same shift: at least 2 hours" }),
+];
+

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computePay } from "./engine";
 import { NO_PLACE } from "./places";
-import type { Confirmation, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule, Shift } from "./types";
+import type { Confirmation, GuaranteeRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule, Shift } from "./types";
 
 // Census FIPS codes: county = state (2) + county (3); place = state (2) + place (5).
 const COOK = "17031";
@@ -868,6 +868,83 @@ describe("computePay — California daily, double-time and seventh-day overtime 
       expect(total).toBeGreaterThanOrEqual(Math.floor(federal) - r.payLines.length);
       expect(computePay(caInput([...shifts].reverse()))).toEqual(r);
     }
+  });
+});
+
+describe("computePay — pay when a worker reports or is sent and gets less work than scheduled", () => {
+  const since = "2000-01-01";
+  const GUARANTEES: GuaranteeRule[] = [
+    { jurisdiction: "CA", ruleCode: "ca_reporting_time", dueMinutes: null, reassignedDueMinutes: null, scheduledFraction: { num: 1, den: 2 }, minMinutes: 120, maxMinutes: 240, minScheduledMinutes: null, basis: "regular_rate", effectiveFrom: since, effectiveTo: null, citation: "IWC Wage Order 7-2001 § 5(A), 8 CCR § 11070" },
+    { jurisdiction: "MA", ruleCode: "ma_reporting_pay", dueMinutes: 180, reassignedDueMinutes: null, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: 180, basis: "pay_rate", effectiveFrom: since, effectiveTo: null, citation: "454 CMR 27.04(1)" },
+    { jurisdiction: "IL", ruleCode: "il_day_labor_minimum", dueMinutes: 240, reassignedDueMinutes: 120, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: null, basis: "pay_rate", effectiveFrom: since, effectiveTo: null, citation: "820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b)" },
+  ];
+  const CA_SITE = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const;
+  const MA_SITE = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const;
+  const CA_J: JurisdictionRule[] = [...JURISDICTIONS.filter((j) => j.jurisdiction !== "CA"), ...["weekly_overtime", "ca_daily_overtime"].map((ruleCode) => ({ jurisdiction: "CA", ruleCode, effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" }))];
+  const CA_WEEKLY: OvertimeRule = { jurisdiction: "CA", ruleCode: "weekly_overtime", kind: "weekly", thresholdMinutes: 2400, multiplier: { num: 3, den: 2 }, earningType: "OT", effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" };
+  const run = (shifts: Shift[], confirmations: Confirmation[]) => computePay({ ...input(shifts, { jurisdictionRules: CA_J, overtimeRules: [...OT_RULES, CA_WEEKLY] }), guaranteeRules: GUARANTEES, confirmations });
+  const sent = (date: string, assignmentId: string, over: Partial<Confirmation> = {}): Confirmation => ({ id: `c-${date}-${assignmentId}`, kind: "reported_short", workerId: "w1", assignmentId, date, ...over });
+  const lines = (r: ReturnType<typeof computePay>) => r.payLines.map((l) => [l.type, l.ruleId, l.minutes, l.amountCents]);
+
+  it("California: half the scheduled day (2 to 4 hours) at the regular rate, less the time worked", () => {
+    const shifts = [...WEEK.slice(0, 4).map((d) => shift(d, 480, { ...CA_SITE, payRateCents: 1800 })), shift(WEEK[4]!, 120, { ...CA_SITE, payRateCents: 1800 })];
+    const r = run(shifts, [sent(WEEK[4]!, "a1", { scheduledMinutes: 480 })]);
+    expect(r.blockers).toEqual([]);
+    expect(lines(r)).toEqual([
+      ["REG", "straight_time", 2040, 61_200],
+      ["REPORTING_PAY", "ca_reporting_time", 120, 3600],
+    ]);
+    expect(r.payLines[1]!.explain).toContain("half the scheduled 8h 00m is 4h 00m (at least 2h 00m, at most 4h 00m); 2h 00m were worked");
+    // Given at least half the scheduled day: nothing more is due.
+    expect(lines(run([shift(WEEK[0]!, 300, { ...CA_SITE })], [sent(WEEK[0]!, "a1", { scheduledMinutes: 480 })])).map((l) => l[0])).toEqual(["REG"]);
+  });
+
+  it("California: a worker sent home without any work is still paid the reporting time", () => {
+    const shifts = [shift(WEEK[0]!, 480, { ...CA_SITE, payRateCents: 1800 }), shift(WEEK[1]!, 0, { ...CA_SITE, payRateCents: 1800, entryIds: [], reportedOnly: true })];
+    const r = run(shifts, [sent(WEEK[1]!, "a1", { scheduledMinutes: 360 })]);
+    expect(r.blockers).toEqual([]);
+    expect(lines(r)).toEqual([
+      ["REG", "straight_time", 480, 14_400],
+      ["REPORTING_PAY", "ca_reporting_time", 180, 5400],
+    ]);
+  });
+
+  it("California: the scheduled hours are needed", () => {
+    const r = run([shift(WEEK[0]!, 60, { ...CA_SITE })], [sent(WEEK[0]!, "a1")]);
+    expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+    expect(r.blockers[0]!.message).toContain("scheduled hours");
+  });
+
+  it("Massachusetts: at least 3 hours when 3 or more were scheduled, at no less than the minimum wage", () => {
+    const r = run([shift(WEEK[0]!, 60, { ...MA_SITE, payRateCents: 1900 })], [sent(WEEK[0]!, "a1", { scheduledMinutes: 240 })]);
+    expect(lines(r)).toEqual([
+      ["REG", "straight_time", 60, 1900],
+      ["REPORTING_PAY", "ma_reporting_pay", 120, 3800],
+    ]);
+    expect(lines(run([shift(WEEK[0]!, 60, { ...MA_SITE })], [sent(WEEK[0]!, "a1", { scheduledMinutes: 120 })])).map((l) => l[0])).toEqual(["REG"]);
+  });
+
+  it("Illinois day and temporary labor: 4 hours at the agreed rate when not used (research example G5)", () => {
+    const shifts = [
+      ...WEEK.slice(0, 4).map((d) => shift(d, 600, { assignmentId: "aC", clientId: "cC", payRateCents: 1700 })),
+      shift(WEEK[4]!, 90, { assignmentId: "aD", clientId: "cD", payRateCents: 1700 }),
+    ];
+    const r = run(shifts, [sent(WEEK[4]!, "aD")]);
+    expect(r.blockers).toEqual([]);
+    expect(lines(r)).toEqual([
+      ["REG", "straight_time", 2400, 68_000],
+      ["OT", "weekly_overtime", 90, 3825],
+      ["MIN_GUARANTEE", "il_day_labor_minimum", 150, 4250],
+    ]);
+    expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(76_075);
+  });
+
+  it("Illinois: 2 hours for the whole shift when placed elsewhere the same shift; never for clerical work", () => {
+    const shifts = [shift(WEEK[0]!, 30, { assignmentId: "aD", clientId: "cD", payRateCents: 1700 }), shift(WEEK[0]!, 60, { assignmentId: "aE", clientId: "cE", payRateCents: 1700, startMinute: 600 })];
+    expect(lines(run(shifts, [sent(WEEK[0]!, "aD", { reassigned: true })])).slice(2)).toEqual([["MIN_GUARANTEE", "il_day_labor_minimum", 30, 850]]);
+    const clerical = run([shift(WEEK[0]!, 30, { dayAndTemporaryLabor: false })], [sent(WEEK[0]!, "a1")]);
+    expect(lines(clerical).map((l) => l[0])).toEqual(["REG"]);
+    expect(clerical.warnings.map((w) => w.code)).toEqual(["premium_not_applicable"]);
   });
 });
 

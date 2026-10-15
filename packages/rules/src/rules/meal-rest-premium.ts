@@ -14,12 +14,12 @@
  * Minutes per premium and the per-workday cap are rule data.
  */
 import { isEffective } from "../dates";
-import type { ConfirmationKind, IsoDate, PremiumRule } from "../types";
+import type { ConfirmationKind, GuaranteeRule, IsoDate, PremiumRule } from "../types";
 
 export const CA_MEAL_PREMIUM = "ca_meal_premium";
 export const CA_REST_PREMIUM = "ca_rest_premium";
 
-export const PREMIUM_OF: Record<ConfirmationKind, { ruleCode: string; type: "MEAL_PREMIUM" | "REST_PREMIUM"; label: string; what: string }> = {
+export const PREMIUM_OF: Partial<Record<ConfirmationKind, { ruleCode: string; type: "MEAL_PREMIUM" | "REST_PREMIUM"; label: string; what: string }>> = {
   meal_period_missed: { ruleCode: CA_MEAL_PREMIUM, type: "MEAL_PREMIUM", label: "Meal-period premium", what: "a meal period was not provided" },
   rest_period_missed: { ruleCode: CA_REST_PREMIUM, type: "REST_PREMIUM", label: "Rest-period premium", what: "a rest period was not provided" },
 };
@@ -27,4 +27,9 @@ export const PREMIUM_OF: Record<ConfirmationKind, { ruleCode: string; type: "MEA
 /** The premium rule in effect for a worksite's state on a date, if that state has one. */
 export function premiumRuleFor(rules: PremiumRule[], jurisdiction: string, ruleCode: string, date: IsoDate): PremiumRule | null {
   return rules.find((r) => r.jurisdiction === jurisdiction && r.ruleCode === ruleCode && isEffective(date, r.effectiveFrom, r.effectiveTo)) ?? null;
+}
+
+/** The reporting or minimum-pay rule in effect for a worksite's state on a date (one per state). */
+export function guaranteeRuleFor(rules: GuaranteeRule[], jurisdiction: string, date: IsoDate): GuaranteeRule | null {
+  return rules.find((r) => r.jurisdiction === jurisdiction && isEffective(date, r.effectiveFrom, r.effectiveTo)) ?? null;
 }
