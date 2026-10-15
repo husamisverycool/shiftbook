@@ -38,7 +38,8 @@ Screens: all step screenshots; `slice-a/m1-hours-phone.png` for narrow screens.
 - Differences: none.
 
 ## Step 1, Upload — `docs/patterns/inbox.md` (Dext add-documents panel, Expensify states)
-Screen: `slice-a/en-4-upload-done.png`.
+Screens: `slice-a/en-4-upload-done.png`, `slice-a/en-4b-archive-dialog.png`,
+`slice-a/en-4c-upload-archived.png`.
 - ✓ Drop area with a "select files" button; accepted types and size limit stated.
 - ✓ Refused files listed in the panel with the reason (already uploaded, unsupported type,
   too large).

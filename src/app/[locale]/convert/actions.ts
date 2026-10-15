@@ -7,7 +7,7 @@ import { withAgency } from "@/server/db";
 import { auditEvents, jobs, sourceDocuments } from "@/server/db/schema";
 import { createRunFiles, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
 import { openPeriod, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
-import { archiveDocument, classifyUpload, receiveDocument } from "@/server/intake/service";
+import { archiveDocument, classifyUpload, NotArchivableError, receiveDocument } from "@/server/intake/service";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { computeRun, setSkipped } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
@@ -28,7 +28,7 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { error: ActionErro
   } catch (error) {
     refresh();
     if (error instanceof PeriodLockedError) return { error: "period_locked" };
-    if (error instanceof PeriodNotFoundError) return { error: "generic" };
+    if (error instanceof PeriodNotFoundError || error instanceof NotArchivableError) return { error: "generic" };
     throw error;
   }
 }
