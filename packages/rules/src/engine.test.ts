@@ -183,16 +183,6 @@ describe("computePay — blocking (never guess)", () => {
     expect(r.blockers).toEqual([expect.objectContaining({ code: "unknown_jurisdiction", jurisdiction: "TX" })]);
   });
 
-  it("blocks overtime weeks with more than one pay rate (regular-rate blending comes in slice c)", () => {
-    const shifts = [
-      ...WEEK.slice(0, 4).map((d) => shift(d, 480, { assignmentId: "aA" })),
-      shift(WEEK[4]!, 600, { assignmentId: "aB", payRateCents: 2000 }),
-    ];
-    const r = computePay(input(shifts));
-    expect(r.payLines).toEqual([]);
-    expect(r.blockers).toEqual([expect.objectContaining({ code: "multiple_pay_rates_with_overtime", workerId: "w1" })]);
-  });
-
   it("pays different rates as separate straight-time lines when there is no overtime", () => {
     const shifts = [shift(WEEK[0]!, 480, { assignmentId: "aA" }), shift(WEEK[1]!, 480, { assignmentId: "aB", payRateCents: 2000 })];
     const r = computePay(input(shifts));
@@ -607,3 +597,83 @@ describe("computePay — a bill rate's explanation never splits a line", () => {
     expect(ot.explain).toContain(`(${a})`);
   });
 });
+
+describe("computePay — regular rate as the weighted average of the week's rates (29 C.F.R. § 778.115)", () => {
+  // Research golden G2: Joliet IL, week of Monday 2026-10-12. Forklift $20.00 at client A (bill $28.00),
+  // general labor $17.00 at client B (bill $24.00).
+  const G2 = ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"];
+  const forklift = (d: string) => shift(d, 600, { assignmentId: "aA", clientId: "cA", payRateCents: 2000, billRateCents: 2800 });
+  const labor = (d: string) => shift(d, 480, { assignmentId: "aB", clientId: "cB", payRateCents: 1700, billRateCents: 2400 });
+  const g2 = () => [...G2.slice(0, 3).map(forklift), ...G2.slice(3).map(labor)];
+
+  it("pays straight time at each rate plus half the week's regular rate for each overtime hour", () => {
+    const r = computePay(input(g2()));
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => [l.assignmentId, l.type, l.minutes, l.amountCents])).toEqual([
+      ["aA", "REG", 1800, 60_000],
+      ["aB", "REG", 600, 17_000],
+      ["aB", "OT", 360, 15_887],
+    ]);
+    // $872.00 ÷ 46 h = 43,600/23 ¢/h, never rounded; the overtime rate is $17.00 + ½ × that.
+    const ot = r.payLines.find((l) => l.type === "OT")!;
+    expect(ot.rate).toEqual({ num: 60_900, den: 23 });
+    expect(ot.explain).toContain("$17.00 + 0.5 × regular rate $18.9565…/h");
+    expect(ot.explain).toContain("Regular rate: $872.00 earned at straight time ÷ 46h 00m worked = $18.9565…/h, used unrounded (29 C.F.R. § 778.115; § 778.111(a))");
+    expect(ot.explain).toContain("15886.9565…¢ → rounded half-up once → $158.87");
+    // Paying 1.5 × $17.00 instead would have been $153.00, $5.87 short.
+    expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(92_887);
+  });
+
+  it("bills each client at its own rates", () => {
+    const r = computePay(input(g2()));
+    expect(r.billLines.map((l) => [l.clientId, l.type, l.amountCents])).toEqual([
+      ["cA", "REG", 84_000],
+      ["cB", "REG", 24_000],
+      ["cB", "OT", 21_600],
+    ]);
+  });
+
+  it("gives the same result whatever order the shifts arrive in", () => {
+    const shifts = g2();
+    expect(computePay(input([...shifts].reverse()))).toEqual(computePay(input(shifts)));
+  });
+
+  it("keeps a single-rate week exactly as before (1.5 × the rate)", () => {
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 540))));
+    const ot = r.payLines.find((l) => l.type === "OT")!;
+    expect(ot.rate).toEqual({ num: 5475, den: 2 });
+    expect(ot.explain).toContain("(1.5 × $18.25)");
+    expect(ot.explain).not.toContain("Regular rate:");
+  });
+
+  it("never lets the overtime premium's base fall below that day's minimum wage (29 C.F.R. § 778.107)", () => {
+    // The Illinois minimum rises to $16.00 on Thursday; the week's regular rate is $15.52…, so
+    // Friday's overtime premium is half of $16.00, not half of $15.52….
+    const minimumWageRules = [
+      ...MIN_WAGE.filter((m) => m.jurisdiction !== "IL"),
+      { jurisdiction: "IL", rateCents: 1500, effectiveFrom: "2025-01-01", effectiveTo: "2026-10-14", citation: "820 ILCS 105/4(a)(1)" },
+      { jurisdiction: "IL", rateCents: 1600, effectiveFrom: "2026-10-15", effectiveTo: null, citation: "820 ILCS 105/4(a)(1) (test rise)" },
+    ];
+    const shifts = [
+      ...G2.slice(0, 3).map((d) => shift(d, 600, { assignmentId: "aA", payRateCents: 1500 })),
+      ...G2.slice(3).map((d) => shift(d, 480, { assignmentId: "aB", payRateCents: 1650 })),
+    ];
+    const r = computePay(input(shifts, { minimumWageRules }));
+    expect(r.blockers).toEqual([]);
+    const ot = r.payLines.find((l) => l.type === "OT")!;
+    expect(ot).toMatchObject({ minutes: 360, rate: { num: 2450, den: 1 }, amountCents: 14_700 });
+    expect(ot.explain).toContain("the minimum wage that day, $16.00/h, is higher than the regular rate");
+  });
+
+  it("computes very large weeks exactly, without leaving safe integers", () => {
+    const shifts = WEEK.map((d, i) => shift(d, 1440, { startMinute: 0, assignmentId: i % 2 ? "aA" : "aB", payRateCents: i % 2 ? 9_999_999 : 9_999_998 }));
+    const r = computePay(input(shifts));
+    expect(r.blockers).toEqual([]);
+    const total = r.payLines.reduce((sum, l) => sum + l.amountCents, 0);
+    // Straight time for every minute plus half the regular rate for each overtime minute, rounded per line.
+    const straight = shifts.reduce((sum, s) => sum + BigInt(s.minutes) * BigInt(s.payRateCents), 0n);
+    const premium = straight * BigInt(10080 - 2400) / (2n * 10080n);
+    expect(Math.abs(total - Number((straight + premium) / 60n))).toBeLessThanOrEqual(4);
+  });
+});
+

@@ -26,6 +26,11 @@ export function formatRate(rate: Fraction): string {
   return `$${withThousands(whole ?? "0")}.${fraction}/h`;
 }
 
+/** An exact amount of cents as dollars: {87200, 1} → "$872.00"; {100, 3} → "$0.3333…". */
+export function formatMoney(cents: Fraction): string {
+  return formatRate(cents).replace("/h", "");
+}
+
 /** {3, 2} → "1.5". */
 export function formatMultiplier(m: Fraction): string {
   return exactDecimal(m.num, m.den);

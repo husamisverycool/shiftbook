@@ -95,3 +95,34 @@ export function exactDecimal(num: number, den: number, places = 4): string {
   const repeating = remainder !== 0 ? "…" : "";
   return `${negative ? "-" : ""}${text}${repeating}`;
 }
+
+/**
+ * Big-integer versions for line amounts, where minutes × a rate's numerator can pass 2^53 (a
+ * weighted regular rate has a large denominator). The result is checked back into a safe integer.
+ */
+export function roundHalfUpBig(num: bigint, den: bigint): number {
+  if (den <= 0n) throw new Error("denominator must be positive");
+  const abs = num < 0n ? -num : num;
+  const q = (2n * abs + den) / (2n * den);
+  const out = Number(num < 0n ? -q : q);
+  assertSafeInt(out, "rounded amount");
+  return out;
+}
+
+/** exactDecimal for big integers (explain text only). */
+export function exactDecimalBig(num: bigint, den: bigint, places = 4): string {
+  if (den <= 0n) throw new Error("denominator must be positive");
+  const negative = num < 0n;
+  let remainder = negative ? -num : num;
+  const whole = remainder / den;
+  remainder -= whole * den;
+  let digits = "";
+  for (let i = 0; i < places && remainder !== 0n; i++) {
+    remainder *= 10n;
+    const digit = remainder / den;
+    digits += String(digit);
+    remainder -= digit * den;
+  }
+  const text = digits.length > 0 ? `${whole}.${digits}` : String(whole);
+  return `${negative ? "-" : ""}${text}${remainder !== 0n ? "…" : ""}`;
+}

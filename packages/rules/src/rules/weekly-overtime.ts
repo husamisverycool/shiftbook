@@ -15,9 +15,8 @@
  * used once (lowest threshold, then highest multiplier): overtime is never counted twice. The federal
  * row is always required; a state's row is required when the state lists weekly overtime.
  *
- * Slice (a) limit: the regular rate is the single pay rate of the workweek. A workweek with several
- * pay rates and overtime is blocked by the engine until the weighted-average regular rate
- * (29 C.F.R. § 778.115) arrives in slice (c).
+ * The premium is paid on the week's regular rate, the weighted average of its pay rates
+ * (rules/regular-rate.ts, 29 C.F.R. § 778.115); this file only decides which minutes are overtime.
  */
 import { addDays } from "../dates";
 import type { Fraction, IsoDate, OvertimeRule, Shift } from "../types";

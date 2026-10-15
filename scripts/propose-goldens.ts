@@ -166,6 +166,19 @@ ruleCase(
   { pay: [], bill: [], blockers: ["rule_not_supported_yet", "rule_not_supported_yet"] },
 );
 
+ruleCase(
+  "multi-rate-regular-rate",
+  "One Illinois worker with two pay rates in a 46-hour week: 30 hours driving a forklift at $20.00/h for client A (Mon–Wed, 10 h a day), then 16 hours of general labor at $17.00/h for client B (Thu–Fri). Straight-time earnings are 30 × $20 + 16 × $17 = $872.00, so the regular rate is $872.00 ÷ 46 h = $18.9565…/h, kept exact (29 C.F.R. § 778.115). The last 6 hours, on Friday at client B, are overtime at $17.00 + ½ × $18.9565… = $26.4782…/h: $158.87. Pay: $600.00 + $170.00 + $158.87 = $928.87 (paying 1.5 × $17.00 instead would underpay $5.87). Bill: A 30 h × $28 = $840.00; B 10 h × $24 = $240.00 and overtime 6 h × $36 = $216.00.",
+  input([
+    ...WEEK.slice(0, 3).map((d) => shift(d, 600, { assignmentId: "assignment-A", clientId: "client-A", payRateCents: 2000, billRateCents: 2800 })),
+    ...WEEK.slice(3, 5).map((d) => shift(d, 480, { assignmentId: "assignment-B", clientId: "client-B", payRateCents: 1700, billRateCents: 2400 })),
+  ]),
+  {
+    pay: [["REG", 1800, 60000], ["REG", 600, 17000], ["OT", 360, 15887]],
+    bill: [["REG", 1800, 84000], ["REG", 600, 24000], ["OT", 360, 21600]],
+  },
+);
+
 // ---------- export goldens ----------
 function exportCase(name: string, summary: string, fixture: ExportFixture, handTotals: unknown) {
   const result = renderExport(fixture);

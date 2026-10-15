@@ -6,7 +6,7 @@
  *   1. classify minutes        — validate shifts, group into fixed workweeks, jurisdiction gate
  *   2. apply wage floor        — block pay below the highest applicable minimum wage
  *   3. straight pay            — regular minutes × the pay rate in effect for each shift
- *   4. regular rate            — slice (a): the week's single pay rate (several rates + OT block)
+ *   4. regular rate            — the weighted average of the week's rates, exact (29 C.F.R. § 778.115)
  *   5. overtime                — weekly overtime, most protective rule once, never double counted
  *   6. confirmed premiums      — slice (c): meal/rest premiums, holidays, guarantees
  *   7. allocate to clients     — lines per assignment and rate; bill lines mirror pay-line minutes
@@ -14,15 +14,16 @@
  * Anything this version cannot compute correctly blocks the worker-week instead of guessing.
  */
 import { addDays, isEffective, isIsoDate, toDayNumber, workweekStart } from "./dates";
-import { formatCents, formatDuration, formatMultiplier, formatRate } from "./format";
-import { exactDecimal, mul, reduceFraction as reduce, roundHalfUp } from "./int";
+import { formatCents, formatDuration, formatMoney, formatMultiplier, formatRate } from "./format";
+import { exactDecimalBig, mul, reduceFraction as reduce, roundHalfUpBig } from "./int";
 import { isLocal, placeProblem, scopeMatches } from "./places";
 import { canonicalRules, ruleDataProblems } from "./rule-data";
 import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-wage";
+import { overtimeRate, premiumBase, RATE_FLOOR_CITATION, REGULAR_RATE_CITATION, weightedRegularRate } from "./rules/regular-rate";
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-a8";
+export const RULES_VERSION = "2026.10-c1";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set([WEEKLY_OVERTIME, MINIMUM_WAGE]);
@@ -40,12 +41,12 @@ const BILLING_RULES = new Set(["multiplier", "straight_time", "not_billable"]);
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const uniqueSorted = (ids: string[]) => [...new Set(ids)].sort(cmp);
 
-/** amount = minutes × rate / 60, in cents, rounded half-up exactly once. */
+/** amount = minutes × rate / 60, in cents, rounded half-up exactly once (big integers: no overflow). */
 function lineAmount(minutes: number, rate: Fraction): { amountCents: number; exact: string; wasExact: boolean } {
-  const num = mul(minutes, rate.num);
-  const den = mul(60, rate.den);
-  const amountCents = roundHalfUp(num, den);
-  return { amountCents, exact: exactDecimal(num, den), wasExact: mul(amountCents, den) === num };
+  const num = BigInt(minutes) * BigInt(rate.num);
+  const den = 60n * BigInt(rate.den);
+  const amountCents = roundHalfUpBig(num, den);
+  return { amountCents, exact: exactDecimalBig(num, den), wasExact: BigInt(amountCents) * den === num };
 }
 
 function arithmetic(label: string, minutes: number, rate: Fraction, rateNote: string): { text: string; amountCents: number } {
@@ -130,6 +131,8 @@ interface Bucket {
   overtime: number;
   regularEntries: string[];
   overtimeEntries: string[];
+  /** Overtime minutes by the premium's base (the regular rate, or a day's higher minimum wage). */
+  overtimeParts: { key: string; base: Fraction; floorApplies: boolean; minutes: number; entries: string[] }[];
   /** How the bill rate came about on the regular and the overtime line: each distinct working (never splits a line). */
   billRate: { regular: BillRateWorking; overtime: BillRateWorking };
 }
@@ -308,6 +311,7 @@ export function computePay(input: PayInput): PayResult {
 
     // 2. wage floor: the highest of the federal, state and local minimum wage on each day worked.
     const seen = new Set<string>();
+    const floorOf = new Map<Shift, number>();
     for (const s of shifts) {
       const floor = selectMinimumWage(rules.minimumWageRules, s, s.date);
       if (!floor.ok) {
@@ -319,6 +323,7 @@ export function computePay(input: PayInput): PayResult {
         }
         continue;
       }
+      floorOf.set(s, floor.rateCents);
       const k = `${s.payRateCents}|${floor.rateCents}`;
       if (s.payRateCents < floor.rateCents && !seen.has(k)) {
         seen.add(k);
@@ -346,11 +351,9 @@ export function computePay(input: PayInput): PayResult {
     const totalMinutes = shifts.reduce((sum, s) => sum + s.minutes, 0);
     const overtimeMinutes = splits.reduce((sum, s) => sum + s.overtime, 0);
 
-    // 4. regular rate: a single pay rate in this slice.
-    const rates = new Set(shifts.map((s) => s.payRateCents));
-    if (overtimeMinutes > 0 && rates.size > 1) {
-      weekBlockers.push({ code: "multiple_pay_rates_with_overtime", ...who, message: `${first.workerName}, workweek starting ${week}: overtime with ${rates.size} different pay rates needs the weighted regular rate (29 C.F.R. § 778.115), which arrives with the full rules engine.` });
-    }
+    // 4. regular rate: the weighted average of the week's rates, exact (one rate: that rate).
+    const singleRate = new Set(shifts.map((s) => s.payRateCents)).size === 1;
+    const regularRate = weightedRegularRate(shifts);
 
     if (weekBlockers.length > 0) {
       blockers.push(...weekBlockers);
@@ -370,13 +373,20 @@ export function computePay(input: PayInput): PayResult {
     const buckets = new Map<string, Bucket>();
     splits.forEach(({ shift, regular, overtime }, index) => {
       const k = lineKey(shift);
-      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } } };
+      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], overtimeParts: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } } };
       if (regular > 0) noteWorking(b.billRate.regular, shift.billRateExplain);
       if (overtime > 0) noteWorking(b.billRate.overtime, shift.billRateExplain);
       b.regular += regular;
       b.overtime += overtime;
       if (regular > 0) b.regularEntries.push(...shift.entryIds);
-      if (overtime > 0) b.overtimeEntries.push(...shift.entryIds);
+      if (overtime > 0) {
+        b.overtimeEntries.push(...shift.entryIds);
+        const { base, floorApplies } = premiumBase(regularRate, floorOf.get(shift)!);
+        const partKey = `${base.num}/${base.den}`;
+        const part = b.overtimeParts.find((p) => p.key === partKey) ?? b.overtimeParts[b.overtimeParts.push({ key: partKey, base, floorApplies, minutes: 0, entries: [] }) - 1]!;
+        part.minutes += overtime;
+        part.entries.push(...shift.entryIds);
+      }
       buckets.set(k, b);
     });
 
@@ -397,15 +407,26 @@ export function computePay(input: PayInput): PayResult {
         weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card${billRateNote(b.billRate.regular)}.`, entryIds: uniqueSorted(b.regularEntries) });
       }
 
-      // 5. overtime pay and its billing
+      // 5. overtime pay (straight time + the premium on the regular rate) and its billing
       if (b.overtime > 0) {
         const elsewhere = splits.filter((x) => x.shift.assignmentId !== b.assignmentId).reduce((sum, x) => sum + x.regular, 0);
         const elsewhereNote = elsewhere > 0 ? ` ${formatDuration(elsewhere)} of the first ${formatDuration(weekly.thresholdMinutes)} were worked on other assignments.` : "";
-        const otRate = reduce({ num: mul(b.sample.payRateCents, weekly.multiplier.num), den: weekly.multiplier.den });
-        const note = ` (${formatMultiplier(weekly.multiplier)} × ${formatRate(payRate).replace("/h", "")})`;
-        const pay = arithmetic("Overtime", b.overtime, otRate, note);
         const why = `Rule ${WEEKLY_OVERTIME}: ${formatDuration(totalMinutes)} worked in the workweek starting ${week} is ${formatDuration(overtimeMinutes)} over the ${formatDuration(weekly.thresholdMinutes)} threshold (${citations}).${elsewhereNote}`;
-        weekPay.push({ ...base, type: "OT", minutes: b.overtime, rate: otRate, amountCents: pay.amountCents, ruleId: WEEKLY_OVERTIME, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(b.overtimeEntries) });
+        const premium = formatMultiplier({ num: weekly.multiplier.num - weekly.multiplier.den, den: weekly.multiplier.den });
+        const straight = formatRate(payRate).replace("/h", "");
+        const rrText = formatRate(regularRate);
+        const rrWhy = ` Regular rate: ${formatMoney(reduce({ num: mul(regularRate.num, totalMinutes), den: mul(regularRate.den, 60) }))} earned at straight time ÷ ${formatDuration(totalMinutes)} worked = ${rrText}, used unrounded (${REGULAR_RATE_CITATION}).`;
+        for (const part of b.overtimeParts) {
+          const otRate = overtimeRate(b.sample.payRateCents, part.base, weekly.multiplier);
+          const note =
+            singleRate && !part.floorApplies
+              ? ` (${formatMultiplier(weekly.multiplier)} × ${straight})`
+              : part.floorApplies
+                ? ` (${straight} + ${premium} × ${formatRate(part.base)}, because the minimum wage that day, ${formatRate(part.base)}, is higher than the regular rate ${rrText}; ${RATE_FLOOR_CITATION})`
+                : ` (${straight} + ${premium} × regular rate ${rrText})`;
+          const pay = arithmetic("Overtime", part.minutes, otRate, note);
+          weekPay.push({ ...base, type: "OT", minutes: part.minutes, rate: otRate, amountCents: pay.amountCents, ruleId: WEEKLY_OVERTIME, explain: `${pay.text} ${why}${singleRate ? "" : rrWhy}`, entryIds: uniqueSorted(part.entries) });
+        }
 
         const rule = b.sample.otBillingRule;
         if (rule === "multiplier") {
