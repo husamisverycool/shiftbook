@@ -82,6 +82,7 @@ export function createImageReader(deps: { transport: ExtractionTransport; store:
         const reading = comparePasses(a.output, bb.output, (box) => mapCropBoxToPage(box, b.crop), page.pageNumber);
         clientHint ??= reading.clientHint;
         for (const e of reading.entries) entries.push({ ...e, rowIndex: entries.length });
+        await input.onPage?.();
       }
 
       return {

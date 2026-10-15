@@ -4,7 +4,7 @@
  * Every time entry written is audited.
  */
 import { createHash } from "node:crypto";
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, eq, inArray, lt, or } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
@@ -165,10 +165,33 @@ export interface ReadResult {
 
 /** Reads images and PDFs (two independent passes). Implemented by the extraction pipeline. */
 export interface ImageReader {
-  read(input: { agencyId: string; documentId: string; filename: string; mediaType: string; bytes: Uint8Array; period: { startsOn: string; endsOn: string }; clients: string[] }): Promise<ReadResult>;
+  read(input: {
+    agencyId: string;
+    documentId: string;
+    filename: string;
+    mediaType: string;
+    bytes: Uint8Array;
+    period: { startsOn: string; endsOn: string };
+    clients: string[];
+    /** Called after each page: keeps the reading's claim fresh, and stops it if the claim was lost. */
+    onPage?: () => Promise<void>;
+  }): Promise<ReadResult>;
 }
 
-/** Turns a stored document into checked entries. Long model calls happen outside any transaction. */
+/** The document is no longer this reading's: a person archived it, or a newer reading took it over. */
+class ClaimLostError extends Error {}
+
+const NOTHING_READ = { entries: 0, needsReview: 0 } as const;
+
+/**
+ * Turns a stored document into checked entries. Long model calls happen outside any transaction.
+ *
+ * A reading first claims the document in one statement: only a document waiting to be read, one
+ * whose reading failed, or one whose reading was cut off (no sign of life for STALE_AFTER_MINUTES)
+ * can be claimed — never one already read or archived, so a stray or late job changes nothing a
+ * person reviewed. The claim is the `updated_at` this reading wrote; it is refreshed after each page,
+ * and the entries are saved only while the claim is still this reading's.
+ */
 export async function readStoredDocument(
   deps: {
     withAgency: <T>(agencyId: string, fn: (tx: Tx) => Promise<T>) => Promise<T>;
@@ -178,52 +201,69 @@ export async function readStoredDocument(
   actor: Actor,
   documentId: string,
 ): Promise<{ entries: number; needsReview: number }> {
-  const doc = await deps.withAgency(actor.agencyId, async (tx) => {
-    const [d] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
-    if (!d) throw new Error("document not found");
-    if (d.status === "archived") return null; // set aside by a person: a queued reading changes nothing
-    const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
-    const clients = await tx.select({ name: s.clients.name }).from(s.clients);
-    await tx.update(s.sourceDocuments).set({ status: "reading", error: null, updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
-    // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
-    return { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() };
-  });
-  if (!doc) return { entries: 0, needsReview: 0 };
-
+  let claim: Date | null = null;
+  const mine = (at: Date) => and(eq(s.sourceDocuments.id, documentId), eq(s.sourceDocuments.status, "reading"), eq(s.sourceDocuments.updatedAt, at));
   try {
+    const doc = await deps.withAgency(actor.agencyId, async (tx) => {
+      const now = new Date();
+      const cutOff = new Date(now.getTime() - STALE_AFTER_MINUTES * 60_000);
+      const [d] = await tx
+        .update(s.sourceDocuments)
+        .set({ status: "reading", error: null, updatedAt: now })
+        .where(
+          and(
+            eq(s.sourceDocuments.id, documentId),
+            or(inArray(s.sourceDocuments.status, ["received", "failed"]), and(eq(s.sourceDocuments.status, "reading"), lt(s.sourceDocuments.updatedAt, cutOff))),
+          ),
+        )
+        .returning();
+      if (!d) return null;
+      claim = now;
+      const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
+      const clients = await tx.select({ name: s.clients.name }).from(s.clients);
+      // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
+      return { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() };
+    });
+    if (!doc) return NOTHING_READ; // read, archived, gone, or being read by another reading
+
+    const onPage = async () => {
+      const next = new Date();
+      const kept = await deps.withAgency(actor.agencyId, (tx) =>
+        tx.update(s.sourceDocuments).set({ updatedAt: next }).where(mine(claim!)).returning({ id: s.sourceDocuments.id }),
+      );
+      if (kept.length === 0) throw new ClaimLostError();
+      claim = next;
+    };
     const bytes = await deps.store.get(doc.storageKey);
     const result: ReadResult =
       doc.kind === "image" || doc.kind === "pdf"
-        ? await deps.imageReader.read({ agencyId: actor.agencyId, documentId, filename: doc.filename, mediaType: doc.mediaType, bytes, period: doc.period, clients: doc.clients })
+        ? await deps.imageReader.read({ agencyId: actor.agencyId, documentId, filename: doc.filename, mediaType: doc.mediaType, bytes, period: doc.period, clients: doc.clients, onPage })
         : { parsed: await parseStructuredUpload(doc.filename, bytes), pages: [] };
 
     return await deps.withAgency(actor.agencyId, async (tx) => {
       await openPeriod(tx, doc.payPeriodId);
-      // Archived while it was being read: keep it set aside.
-      const [now] = await tx.select({ status: s.sourceDocuments.status }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
-      if (now?.status === "archived") return { entries: 0, needsReview: 0 };
       const context = await loadAssessContext(tx, doc.payPeriodId, result.parsed.clientHint);
       const drafts = result.parsed.entries.map((raw) => assessEntry(raw, context));
+      // Saved only while the claim holds; otherwise the whole save is rolled back.
+      const done = await tx
+        .update(s.sourceDocuments)
+        .set({ status: "read", kind: result.parsed.kind, clientId: drafts.find((d) => d.clientId)?.clientId ?? null, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
+        .where(mine(claim!))
+        .returning({ id: s.sourceDocuments.id });
+      if (done.length === 0) throw new ClaimLostError();
       await tx.delete(s.documentPages).where(eq(s.documentPages.documentId, documentId));
       if (result.pages.length > 0) {
         await tx.insert(s.documentPages).values(result.pages.map((p) => ({ ...p, agencyId: actor.agencyId, documentId })));
       }
       await saveEntries(tx, actor, documentId, doc.payPeriodId, drafts);
-      const clientId = drafts.find((d) => d.clientId)?.clientId ?? null;
-      await tx
-        .update(s.sourceDocuments)
-        .set({ status: "read", kind: result.parsed.kind, clientId, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
-        .where(eq(s.sourceDocuments.id, documentId));
       return { entries: drafts.length, needsReview: drafts.filter((d) => d.status === "needs_review").length };
     });
   } catch (error) {
+    if (error instanceof ClaimLostError) return NOTHING_READ;
     const message = error instanceof Error ? error.message : String(error);
-    await deps.withAgency(actor.agencyId, (tx) =>
-      tx
-        .update(s.sourceDocuments)
-        .set({ status: "failed", error: message, updatedAt: new Date() })
-        .where(and(eq(s.sourceDocuments.id, documentId), ne(s.sourceDocuments.status, "archived"))),
-    );
+    // Only this reading's claim (or, if the claim itself failed, a document still waiting) becomes "failed".
+    const which = claim ? mine(claim) : and(eq(s.sourceDocuments.id, documentId), eq(s.sourceDocuments.status, "received"));
+    await deps.withAgency(actor.agencyId, (tx) => tx.update(s.sourceDocuments).set({ status: "failed", error: message, updatedAt: new Date() }).where(which));
     throw error;
   }
 }
@@ -268,13 +308,19 @@ export async function archiveDocument(tx: Tx, actor: Actor, documentId: string, 
   if (doc!.status === "archived") return; // already done (a second click)
   if (doc!.status !== "failed" && !isStuck(doc!)) throw new NotArchivableError();
   await tx.update(s.sourceDocuments).set({ status: "archived", updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
+  const SET_ASIDE = ["extracted", "needs_review", "reviewed", "client_approved", "disputed"] as const;
   const left = await tx
-    .update(s.timeEntries)
-    .set({ status: "rejected", distinctConfirmed: false, updatedAt: new Date() })
-    .where(and(eq(s.timeEntries.sourceDocumentId, documentId), inArray(s.timeEntries.status, ["extracted", "needs_review", "reviewed", "client_approved"])))
-    .returning({ id: s.timeEntries.id, status: s.timeEntries.status });
+    .select({ id: s.timeEntries.id, status: s.timeEntries.status })
+    .from(s.timeEntries)
+    .where(and(eq(s.timeEntries.sourceDocumentId, documentId), inArray(s.timeEntries.status, [...SET_ASIDE])));
+  if (left.length > 0) {
+    await tx
+      .update(s.timeEntries)
+      .set({ status: "rejected", distinctConfirmed: false, updatedAt: new Date() })
+      .where(inArray(s.timeEntries.id, left.map((e) => e.id)));
+  }
   await audit(tx, actor, [
     { action: "update", entityType: "source_document", entityId: documentId, before: { status: doc!.status }, after: { status: "archived" }, reason: why },
-    ...left.map((e) => ({ action: "update" as const, entityType: "time_entry", entityId: e.id, after: { status: "rejected" }, reason: `timesheet archived: ${why}` })),
+    ...left.map((e) => ({ action: "update" as const, entityType: "time_entry", entityId: e.id, before: { status: e.status }, after: { status: "rejected" }, reason: `timesheet archived: ${why}` })),
   ]);
 }

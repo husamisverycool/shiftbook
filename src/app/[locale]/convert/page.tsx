@@ -4,6 +4,7 @@ import { CircleAlertIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { after } from "next/server";
+import { BusyNotice } from "@/components/shiftbook/convert/busy-notice";
 import { ConvertFrame } from "@/components/shiftbook/convert/frame";
 import { FilesStep } from "@/components/shiftbook/convert/files-step";
 import { HoursGrid } from "@/components/shiftbook/convert/hours-grid";
@@ -15,7 +16,7 @@ import { longDate } from "@/components/shiftbook/format";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { filesStep, getPeriod, hoursStep, latestRun, listPeriods, totalsStep, uploadStep } from "@/server/convert/queries";
 import { withAgency } from "@/server/db";
-import { periodState } from "@/server/run/period-lock";
+import { PeriodBusyError, periodState } from "@/server/run/period-lock";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
 
@@ -86,7 +87,18 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
   }
 
   if (step === "totals") {
-    const data = await inAgency((tx) => totalsStep(tx, actor, periodId));
+    const data = await inAgency((tx) => totalsStep(tx, actor, periodId)).catch((error: unknown) => {
+      if (error instanceof PeriodBusyError) return null;
+      throw error;
+    });
+    // Someone else is changing the period, so the totals could not be brought up to date.
+    if (!data) {
+      return (
+        <ConvertFrame {...frame} editHref forward={{ kind: "createFiles", disabled: true, fingerprint: null }}>
+          <BusyNotice />
+        </ConvertFrame>
+      );
+    }
     // The files were created while this page loaded (another tab): show them.
     if (data.run.status === "exported") redirect(`/${locale}/convert?period=${periodId}&step=files`);
     return (

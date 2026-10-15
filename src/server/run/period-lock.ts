@@ -59,12 +59,13 @@ export async function lockPeriod(tx: Tx, payPeriodId: string): Promise<void> {
 
 /**
  * "exported": its files were created here (the latest run is exported or closed).
- * "history": paid before Shiftbook — no run here, and hours already locked by that payment.
+ * "history": paid before Shiftbook — no exported run here, and hours already locked by that payment.
  */
 export async function periodState(tx: Tx, payPeriodId: string): Promise<"open" | "exported" | "history"> {
   const [latest] = await tx.select({ status: s.payRuns.status }).from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
-  if (latest) return latest.status === "exported" || latest.status === "closed" ? "exported" : "open";
-  // Entries are locked only by an export, so a locked entry without a run here was paid elsewhere.
+  if (latest && (latest.status === "exported" || latest.status === "closed")) return "exported";
+  // Entries are locked only by an export (which also marks its run exported), so a locked entry
+  // without an exported run here was paid elsewhere — even if a draft run was started on it.
   const [locked] = await tx
     .select({ id: s.timeEntries.id })
     .from(s.timeEntries)

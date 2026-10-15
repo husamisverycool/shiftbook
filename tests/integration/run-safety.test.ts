@@ -7,13 +7,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { listPeriods, uploadStep, hoursStep } from "../../src/server/convert/queries";
-import { agencies, agencySettings, clientBillingProfiles, exports, invoices, jobOrders, jobs, payLines, payPeriods, payRuns, rateCards, sourceDocuments, timeEntries, workers, worksites } from "../../src/server/db/schema";
+import { listPeriods, totalsStep, uploadStep, hoursStep } from "../../src/server/convert/queries";
+import { agencies, agencySettings, auditEvents, clientBillingProfiles, exports, invoices, jobOrders, jobs, payLines, payPeriods, payRuns, rateCards, sourceDocuments, timeEntries, workers, worksites } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { createRunFiles, RunNotReadyError, TotalsChangedError } from "../../src/server/files/service";
 import { StaleRequestError } from "../../src/server/errors";
 import { archiveDocument, NotArchivableError, readStoredDocument, receiveDocument, retryDocument, type ImageReader } from "../../src/server/intake/service";
+import { receiveUploads } from "../../src/server/intake/upload";
 import { STALE_AFTER_MINUTES } from "../../src/server/jobs";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry } from "../../src/server/review/service";
 import { lockPeriod, PeriodBusyError, periodLock, periodState } from "../../src/server/run/period-lock";
@@ -329,6 +330,7 @@ describe("seventh review", () => {
       await isLocked;
       await expect(inAgency((tx) => computeRun(tx, actor, period))).rejects.toBeInstanceOf(PeriodBusyError);
       const doc = await docOf(SAMPLE);
+      await inAgency((tx) => tx.update(sourceDocuments).set({ status: "received" }).where(eq(sourceDocuments.id, doc.id))); // read again
       await expect(readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc.id)).rejects.toBeInstanceOf(PeriodBusyError);
       const after = await docOf(SAMPLE);
       expect(after.error).toBe(new PeriodBusyError().message);
@@ -367,5 +369,140 @@ describe("seventh review", () => {
     const again = await inAgency((tx) => computeRun(tx, actor, period));
     await inAgency((tx) => tx.update(worksites).set({ name: "Renamed site" }));
     await expect(inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY, expectedFingerprint: again.fingerprint }))).rejects.toBeInstanceOf(TotalsChangedError);
+  });
+});
+
+describe("eighth review", () => {
+  const docOf = async (filename: string) =>
+    (await inAgency((tx) => tx.select().from(sourceDocuments).where(and(eq(sourceDocuments.payPeriodId, period), eq(sourceDocuments.filename, filename)))))[0]!;
+  const entriesOfDoc = (documentId: string) => inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.sourceDocumentId, documentId)));
+  const deps = { withAgency: app.withAgency, store, imageReader: noImages };
+  const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000);
+  const signal = () => {
+    let done!: () => void;
+    const promise = new Promise<void>((resolve) => (done = resolve));
+    return { promise, done };
+  };
+  /** Holds the period's lock (another person working) while `fn` runs, with a short wait. */
+  async function whileBusy(fn: () => Promise<void>) {
+    const usual = periodLock.timeoutMs;
+    periodLock.timeoutMs = 200;
+    const locked = signal();
+    const release = signal();
+    const holder = inAgency(async (tx) => {
+      await lockPeriod(tx, period);
+      locked.done();
+      await release.promise;
+    });
+    try {
+      await locked.promise;
+      await fn();
+    } finally {
+      release.done();
+      await holder;
+      periodLock.timeoutMs = usual;
+    }
+  }
+
+  it("a reading that starts while a person archives the timesheet does nothing (B1 race)", async () => {
+    const doc = await docOf(SAMPLE);
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "failed", error: "unreadable" }).where(eq(sourceDocuments.id, doc.id)));
+    const archived = signal();
+    const commit = signal();
+    const archiving = inAgency(async (tx) => {
+      await archiveDocument(tx, actor, doc.id, "The same hours are in the client's export");
+      archived.done();
+      await commit.promise;
+    });
+    await archived.promise;
+    const reading = readStoredDocument(deps, actor, doc.id); // waits on the archived row
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    commit.done();
+    await archiving;
+    expect(await reading).toEqual({ entries: 0, needsReview: 0 });
+    expect((await docOf(SAMPLE)).status).toBe("archived");
+    expect((await entriesOfDoc(doc.id)).every((e) => e.status === "rejected")).toBe(true);
+    expect((await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code)).toContain("no_entries");
+  });
+
+  it("a stray second reading of a timesheet already read changes nothing a person reviewed (should-fix 1)", async () => {
+    const doc = await docOf(SAMPLE);
+    const e = await entryOf("anita-patel", "2026-10-05");
+    await inAgency((tx) => rejectEntry(tx, actor, e.id));
+    const before = await entriesOfDoc(doc.id);
+    expect(await readStoredDocument(deps, actor, doc.id)).toEqual({ entries: 0, needsReview: 0 });
+    const after = await entriesOfDoc(doc.id);
+    expect(after.map((x) => [x.id, x.status]).sort()).toEqual(before.map((x) => [x.id, x.status]).sort());
+    expect((await docOf(SAMPLE)).status).toBe("read");
+  });
+
+  it("a slow reading stays fresh page by page, and one archived while cut off stays archived", async () => {
+    const { documentId } = await inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: period, filename: "sheet.jpg", bytes: new Uint8Array([1, 2, 3]) }));
+    const seen: Date[] = [];
+    const slow: ImageReader = {
+      async read(input) {
+        seen.push((await docOf("sheet.jpg")).updatedAt);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        await input.onPage?.();
+        seen.push((await docOf("sheet.jpg")).updatedAt);
+        return { parsed: { kind: "image", profileKey: null, clientHint: null, entries: [], notes: [] }, pages: [] };
+      },
+    };
+    await readStoredDocument({ ...deps, imageReader: slow }, actor, documentId);
+    expect(seen[1]!.getTime()).toBeGreaterThan(seen[0]!.getTime());
+
+    // Cut off: no sign of life for longer than the stale limit, so a person archives it; the reading then ends.
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "failed" }).where(eq(sourceDocuments.id, documentId)));
+    const cutOff: ImageReader = {
+      async read(input) {
+        await inAgency((tx) => tx.update(sourceDocuments).set({ updatedAt: minutesAgo(STALE_AFTER_MINUTES + 1) }).where(eq(sourceDocuments.id, documentId)));
+        await inAgency((tx) => archiveDocument(tx, actor, documentId, "Uploaded twice"));
+        await input.onPage?.();
+        return { parsed: { kind: "image", profileKey: null, clientHint: null, entries: [], notes: [] }, pages: [] };
+      },
+    };
+    expect(await readStoredDocument({ ...deps, imageReader: cutOff }, actor, documentId)).toEqual({ entries: 0, needsReview: 0 });
+    expect((await docOf("sheet.jpg")).status).toBe("archived");
+  });
+
+  it("a timesheet whose reading could not even start is shown as failed, so it can be read again", async () => {
+    const { documentId } = await inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: period, filename: "late.csv", bytes: new TextEncoder().encode("a,b\n1,2\n") }));
+    let calls = 0;
+    const flaky = { ...deps, withAgency: <T>(agencyId: string, fn: Parameters<typeof app.withAgency<T>>[1]) => (calls++ === 0 ? Promise.reject(new Error("The database connection was reset.")) : app.withAgency(agencyId, fn)) };
+    await expect(readStoredDocument(flaky, actor, documentId)).rejects.toThrow(/reset/);
+    expect((await docOf("late.csv")).status).toBe("failed");
+  });
+
+  it("an upload into a busy period says so, and keeps the files already taken (S3)", async () => {
+    await whileBusy(async () => {
+      const r = await receiveUploads(app.withAgency, actor, store, period, [{ name: "late.csv", size: 10, bytes: () => new TextEncoder().encode("a,b\n1,2\n") }]);
+      expect(r).toEqual({ accepted: [], refused: [], busy: true });
+      await expect(inAgency((tx) => totalsStep(tx, actor, period))).rejects.toBeInstanceOf(PeriodBusyError);
+    });
+  });
+
+  it("archiving records what each entry was before it was set aside, including disputed ones (notes 1, 2)", async () => {
+    const doc = await docOf(SAMPLE);
+    const e = await entryOf("anita-patel", "2026-10-05");
+    await inAgency((tx) => tx.update(timeEntries).set({ status: "disputed" }).where(eq(timeEntries.id, e.id)));
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "failed" }).where(eq(sourceDocuments.id, doc.id)));
+    await inAgency((tx) => archiveDocument(tx, actor, doc.id, "Hours are in the client's export"));
+    expect((await entriesOfDoc(doc.id)).every((x) => x.status === "rejected")).toBe(true);
+    const [event] = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityId, e.id), eq(auditEvents.action, "update"))));
+    expect(event!.before).toEqual({ status: "disputed" });
+  });
+
+  it("a period paid before Shiftbook stays history even with a draft run on it (note 3)", async () => {
+    const w1 = periodId("w1");
+    await inAgency((tx) => tx.insert(payRuns).values({ agencyId: actor.agencyId, payPeriodId: w1, version: 1, status: "draft", rulesVersion: "x" }));
+    expect(await inAgency((tx) => periodState(tx, w1))).toBe("history");
+  });
+
+  it("a reading that stopped part-way is described as stopped in the totals (note 5)", async () => {
+    const doc = await docOf(SAMPLE);
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "reading", updatedAt: minutesAgo(STALE_AFTER_MINUTES + 1) }).where(eq(sourceDocuments.id, doc.id)));
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    const blocker = run.blockers.find((b) => b.code === "document_failed")!;
+    expect(blocker.message).toMatch(/stopped before it finished/);
   });
 });

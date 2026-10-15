@@ -69,6 +69,7 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
       const result = await uploadTimesheets(periodId, form);
       setRefused(result.refused);
       if (result.locked) toast.error(tc("periodLocked"));
+      if (result.busy) toast.error(tc("busy"));
       router.refresh();
     });
   };

@@ -19,6 +19,7 @@ import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { fileTextInputs, planInvoices } from "../files/invoice-plan";
+import { isStuck } from "../intake/service";
 import { payrollFixture } from "../files/payroll-fixture";
 import type { Actor } from "../session";
 import { openPeriod, PeriodLockedError } from "./period-lock";
@@ -175,7 +176,9 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
 
   const blockers: RunIssue[] = [];
   for (const d of documents) {
-    if (d.status === "received" || d.status === "reading") {
+    if (isStuck(d)) {
+      blockers.push({ code: "document_failed", message: `${d.filename}: reading stopped before it finished. Read it again, or archive it with a reason if its hours are elsewhere.` });
+    } else if (d.status === "received" || d.status === "reading") {
       blockers.push({ code: "documents_pending", message: `${d.filename} is still being read; its hours are not in the totals yet.` });
     } else if (d.status === "failed") {
       blockers.push({ code: "document_failed", message: `${d.filename} could not be read${d.error ? ` (${d.error})` : ""}. Read it again, or archive it with a reason if its hours are elsewhere.` });

@@ -8,18 +8,18 @@ import { auditEvents } from "@/server/db/schema";
 import { StaleRequestError } from "@/server/errors";
 import { createRunFiles, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
 import { PeriodBusyError, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
-import { archiveDocument, classifyUpload, NotArchivableError, receiveDocument, retryDocument } from "@/server/intake/service";
+import { archiveDocument, NotArchivableError, retryDocument } from "@/server/intake/service";
+import { receiveUploads, type UploadResult } from "@/server/intake/upload";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { computeRun, setSkipped } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
 import { documentStore } from "@/server/storage";
 
-const MAX_BYTES = 25 * 1024 * 1024;
 const refresh = () => revalidatePath("/[locale]/convert", "page");
 const today = () => new Date().toISOString().slice(0, 10);
 
-export type UploadResult = { accepted: string[]; refused: { filename: string; reason: "unsupported" | "tooLarge" | "duplicate" }[]; locked?: true };
+export type { UploadResult } from "@/server/intake/upload";
 export type ActionError = "period_locked" | "busy" | "stale" | "generic";
 
 /** The plain refusal for an expected error, or null for a real error. */
@@ -45,28 +45,14 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { error: ActionErro
 
 export async function uploadTimesheets(payPeriodId: string, form: FormData): Promise<UploadResult> {
   const actor = currentActor();
-  const result: UploadResult = { accepted: [], refused: [] };
-  for (const entry of form.getAll("files")) {
-    if (!(entry instanceof File)) continue;
-    if (!classifyUpload(entry.name)) result.refused.push({ filename: entry.name, reason: "unsupported" });
-    else if (entry.size > MAX_BYTES) result.refused.push({ filename: entry.name, reason: "tooLarge" });
-    else {
-      const bytes = new Uint8Array(await entry.arrayBuffer());
-      try {
-        const { duplicate } = await withAgency(actor.agencyId, (tx) => receiveDocument(tx, actor, documentStore, { payPeriodId, filename: entry.name, bytes }));
-        if (duplicate) result.refused.push({ filename: entry.name, reason: "duplicate" });
-        else result.accepted.push(entry.name);
-      } catch (error) {
-        if (error instanceof PeriodNotFoundError) {
-          result.refused.push({ filename: entry.name, reason: "unsupported" });
-          break;
-        }
-        if (!(error instanceof PeriodLockedError)) throw error;
-        result.locked = true;
-        break;
-      }
-    }
-  }
+  const files = form.getAll("files").filter((f): f is File => f instanceof File);
+  const result = await receiveUploads(
+    withAgency,
+    actor,
+    documentStore,
+    payPeriodId,
+    files.map((f) => ({ name: f.name, size: f.size, bytes: async () => new Uint8Array(await f.arrayBuffer()) })),
+  );
   if (result.accepted.length > 0) after(() => processQueuedDocuments(actor).catch(() => undefined));
   refresh();
   return result;
