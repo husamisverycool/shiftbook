@@ -17,7 +17,7 @@ import { InvoiceDocument, type InvoiceData } from "../../pdf/invoice";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
-import { openPeriod } from "../run/period-lock";
+import { lockCatalog, openPeriod } from "../run/period-lock";
 import { computeRun, type RunIssue } from "../run/service";
 import { planInvoices } from "./invoice-plan";
 import { payrollFixture } from "./payroll-fixture";
@@ -61,6 +61,8 @@ export async function createRunFiles(
   opts: { today: string; expectedFingerprint?: string },
 ): Promise<RunFiles> {
   await openPeriod(tx, payPeriodId);
+  // Rates and assignments cannot change while this period is paid with them.
+  await lockCatalog(tx, actor.agencyId, "shared");
   const computed = await computeRun(tx, actor, payPeriodId);
   if (computed.status !== "ready") throw new RunNotReadyError(computed.blockers);
   if (opts.expectedFingerprint !== undefined && opts.expectedFingerprint !== computed.fingerprint) throw new TotalsChangedError();

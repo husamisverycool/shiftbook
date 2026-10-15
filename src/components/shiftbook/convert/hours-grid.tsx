@@ -13,7 +13,7 @@ import { CheckIcon, CircleIcon, Maximize2Icon, PencilIcon, PlusIcon, RotateCcwIc
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { toast } from "sonner";
-import { addAction, approveAction, editAction, rejectAction, restoreAction } from "@/app/[locale]/convert/actions";
+import { addAction, approveAction, editAction, rejectAction, restoreAction } from "@/app/[locale]/(app)/convert/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

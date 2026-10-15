@@ -5,8 +5,8 @@
 import { withAgency } from "./db";
 import { RecordedTransport, AnthropicTransport, type ExtractionTransport } from "./extraction/transport";
 import { createImageReader } from "./extraction/pipeline";
-import { readStoredDocument, type ImageReader } from "./intake/service";
-import { runPendingJobs } from "./jobs";
+import { queueWaitingDocuments, readStoredDocument, type ImageReader } from "./intake/service";
+import { runPendingJobs, touchJob } from "./jobs";
 import { isDemo, type Actor } from "./session";
 import { documentStore } from "./storage";
 
@@ -24,8 +24,9 @@ export function imageReader(): ImageReader {
 /** Reads every queued upload for the agency, one at a time. Safe to call more than once. */
 export async function processQueuedDocuments(actor: Actor): Promise<number> {
   const reader = imageReader();
+  await withAgency(actor.agencyId, (tx) => queueWaitingDocuments(tx, actor));
   return runPendingJobs(withAgency, actor.agencyId, async (job) => {
     if (job.kind !== "read_document") throw Object.assign(new Error(`unknown job kind ${job.kind}`), { permanent: true });
-    await readStoredDocument({ withAgency, store: documentStore, imageReader: reader }, actor, String(job.payload.documentId));
+    await readStoredDocument({ withAgency, store: documentStore, imageReader: reader }, actor, String(job.payload.documentId), () => touchJob(withAgency, actor.agencyId, job.id));
   });
 }

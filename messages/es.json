@@ -382,5 +382,12 @@
       "stale": "Esto cambió en otra pestaña o ventana. La página ahora muestra lo más reciente.",
       "totalsChanged": "Los totales cambiaron desde que los revisaste. Revísalos de nuevo y luego crea los archivos."
     }
+  },
+  "nav": {
+    "label": "Principal",
+    "convert": "Convertir hojas de horas",
+    "jobOrders": "Órdenes de trabajo",
+    "assignments": "Asignaciones",
+    "shortcuts": "Atajos de teclado"
   }
 }

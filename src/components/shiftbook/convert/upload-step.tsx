@@ -8,7 +8,7 @@
 import { CircleAlertIcon, FileTextIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { archiveAction, retryAction, uploadTimesheets, type UploadResult } from "@/app/[locale]/convert/actions";
+import { archiveAction, retryAction, uploadTimesheets, type UploadResult } from "@/app/[locale]/(app)/convert/actions";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";

@@ -4,17 +4,18 @@
  * Every time entry written is audited.
  */
 import { createHash } from "node:crypto";
-import { and, eq, inArray, lt, or } from "drizzle-orm";
+import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { StaleRequestError } from "../errors";
 import { STALE_AFTER_MINUTES } from "../jobs";
-import { openPeriod } from "../run/period-lock";
+import { ExtractionRefusedError, RecordingMissingError } from "../extraction/transport";
+import { openPeriod, PeriodBusyError, PeriodLockedError } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { assessEntry, type AssessContext, type EntryDraft } from "./assess";
-import { parseStructuredUpload } from "./structured";
+import { parseStructuredUpload, UnrecognisedFileError } from "./structured";
 import type { ParsedDocument } from "./types";
 
 export type DocumentKind = (typeof s.documentKind.enumValues)[number];
@@ -178,6 +179,15 @@ export interface ImageReader {
   }): Promise<ReadResult>;
 }
 
+/** What a person sees when a reading fails for a reason that is not theirs to fix (a database or network fault). */
+export const READ_FAILED = "Something went wrong while reading this timesheet. Read it again; if it keeps failing, archive it with a reason.";
+
+/** The reason shown for a failed reading: our own plain messages as they are, never technical text. */
+function plainReason(error: unknown): string {
+  const plain = [PeriodBusyError, PeriodLockedError, UnrecognisedFileError, UnsupportedFileError, ExtractionRefusedError, RecordingMissingError];
+  return plain.some((kind) => error instanceof kind) ? (error as Error).message : READ_FAILED;
+}
+
 /** The document is no longer this reading's: a person archived it, or a newer reading took it over. */
 class ClaimLostError extends Error {}
 
@@ -200,11 +210,13 @@ export async function readStoredDocument(
   },
   actor: Actor,
   documentId: string,
+  /** Called with each sign of life (the job queue keeps its job from being taken over). */
+  heartbeat?: () => Promise<void>,
 ): Promise<{ entries: number; needsReview: number }> {
   let claim: Date | null = null;
   const mine = (at: Date) => and(eq(s.sourceDocuments.id, documentId), eq(s.sourceDocuments.status, "reading"), eq(s.sourceDocuments.updatedAt, at));
   try {
-    const doc = await deps.withAgency(actor.agencyId, async (tx) => {
+    const claimed = await deps.withAgency(actor.agencyId, async (tx) => {
       const now = new Date();
       const cutOff = new Date(now.getTime() - STALE_AFTER_MINUTES * 60_000);
       const [d] = await tx
@@ -218,13 +230,14 @@ export async function readStoredDocument(
         )
         .returning();
       if (!d) return null;
-      claim = now;
       const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
       const clients = await tx.select({ name: s.clients.name }).from(s.clients);
       // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
-      return { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() };
+      return { at: now, doc: { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() } };
     });
-    if (!doc) return NOTHING_READ; // read, archived, gone, or being read by another reading
+    if (!claimed) return NOTHING_READ; // read, archived, gone, or being read by another reading
+    claim = claimed.at; // only once the claim is committed
+    const doc = claimed.doc;
 
     const onPage = async () => {
       const next = new Date();
@@ -233,6 +246,7 @@ export async function readStoredDocument(
       );
       if (kept.length === 0) throw new ClaimLostError();
       claim = next;
+      await heartbeat?.();
     };
     const bytes = await deps.store.get(doc.storageKey);
     const result: ReadResult =
@@ -260,12 +274,25 @@ export async function readStoredDocument(
     });
   } catch (error) {
     if (error instanceof ClaimLostError) return NOTHING_READ;
-    const message = error instanceof Error ? error.message : String(error);
+    const message = plainReason(error);
     // Only this reading's claim (or, if the claim itself failed, a document still waiting) becomes "failed".
     const which = claim ? mine(claim) : and(eq(s.sourceDocuments.id, documentId), eq(s.sourceDocuments.status, "received"));
     await deps.withAgency(actor.agencyId, (tx) => tx.update(s.sourceDocuments).set({ status: "failed", error: message, updatedAt: new Date() }).where(which));
     throw error;
   }
+}
+
+/** Gives every timesheet waiting to be read a job if it has none queued or running (a lost job is never a dead end). */
+export async function queueWaitingDocuments(tx: Tx, actor: Actor): Promise<void> {
+  await tx.execute(sql`
+    insert into jobs (agency_id, kind, payload)
+    select d.agency_id, 'read_document', jsonb_build_object('documentId', d.id)
+    from source_documents d
+    where d.agency_id = ${actor.agencyId} and d.status = 'received'
+      and not exists (
+        select 1 from jobs j
+        where j.kind = 'read_document' and j.payload->>'documentId' = d.id::text and j.status in ('queued', 'running')
+      )`);
 }
 
 /** A reading that has not finished long after it started was cut off (a crash or restart). */
@@ -278,7 +305,8 @@ export async function retryDocument(tx: Tx, actor: Actor, documentId: string): P
   const [found] = await tx.select({ payPeriodId: s.sourceDocuments.payPeriodId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
   if (!found) throw new StaleRequestError();
   await openPeriod(tx, found.payPeriodId);
-  const [doc] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
+  // Locked: a reading's claim waits for this decision and then sees it.
+  const [doc] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId)).for("update");
   if (doc!.status === "received") return; // already waiting to be read (a second click)
   if (doc!.status !== "failed" && !isStuck(doc!)) throw new StaleRequestError();
   await tx.update(s.sourceDocuments).set({ status: "received", error: null, updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
@@ -304,7 +332,7 @@ export async function archiveDocument(tx: Tx, actor: Actor, documentId: string, 
   const [found] = await tx.select({ payPeriodId: s.sourceDocuments.payPeriodId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
   if (!found) throw new StaleRequestError();
   await openPeriod(tx, found.payPeriodId);
-  const [doc] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
+  const [doc] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId)).for("update");
   if (doc!.status === "archived") return; // already done (a second click)
   if (doc!.status !== "failed" && !isStuck(doc!)) throw new NotArchivableError();
   await tx.update(s.sourceDocuments).set({ status: "archived", updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));

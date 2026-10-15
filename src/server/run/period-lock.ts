@@ -45,16 +45,31 @@ function isLockTimeout(error: unknown): boolean {
   return false;
 }
 
-/** Waits (at most `periodLock.timeoutMs`) for, then holds until the transaction ends, the period's lock. */
-export async function lockPeriod(tx: Tx, payPeriodId: string): Promise<void> {
+/** Waits (at most `periodLock.timeoutMs`) for, then holds until the transaction ends, an advisory lock. */
+async function advisoryLock(tx: Tx, key: string, mode: "exclusive" | "shared"): Promise<void> {
   const ms = Math.max(1, Math.trunc(periodLock.timeoutMs));
   await tx.execute(sql.raw(`set local lock_timeout = ${ms}`));
   try {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`pay_period:${payPeriodId}`}, 0))`);
+    if (mode === "shared") await tx.execute(sql`select pg_advisory_xact_lock_shared(hashtextextended(${key}, 0))`);
+    else await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
   } catch (error) {
     if (isLockTimeout(error)) throw new PeriodBusyError();
     throw error;
   }
+}
+
+/** The period's lock: one writer per period. */
+export async function lockPeriod(tx: Tx, payPeriodId: string): Promise<void> {
+  await advisoryLock(tx, `pay_period:${payPeriodId}`, "exclusive");
+}
+
+/**
+ * The agency's job orders, assignments and rate cards. Changing them takes it exclusively; creating a
+ * period's files takes it shared, so a rate or an assignment's dates cannot change while hours are
+ * being paid with them (and the "used by a paid week" checks see every export that finished).
+ */
+export async function lockCatalog(tx: Tx, agencyId: string, mode: "exclusive" | "shared"): Promise<void> {
+  await advisoryLock(tx, `catalog:${agencyId}`, mode);
 }
 
 /**

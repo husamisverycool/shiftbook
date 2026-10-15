@@ -9,6 +9,7 @@ const MONEY_CODE = [
   "src/exports/**/*.ts",
   "src/billing/**/*.ts",
   "src/pay/**/*.ts",
+  "src/server/catalog/**/*.ts",
 ];
 const MONEY_EXEMPT = ["packages/rules/src/int.ts", "**/*.test.ts"];
 

@@ -16,7 +16,7 @@ import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
 import { documentStore } from "@/server/storage";
 
-const refresh = () => revalidatePath("/[locale]/convert", "page");
+const refresh = () => revalidatePath("/[locale]/(app)/convert", "page");
 const today = () => new Date().toISOString().slice(0, 10);
 
 export type { UploadResult } from "@/server/intake/upload";

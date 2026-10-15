@@ -8,7 +8,7 @@
 import { CircleAlertIcon, InfoIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
-import { confirmDistinctAction, skipAction } from "@/app/[locale]/convert/actions";
+import { confirmDistinctAction, skipAction } from "@/app/[locale]/(app)/convert/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";

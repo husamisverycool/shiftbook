@@ -13,7 +13,7 @@ import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { createRunFiles, RunNotReadyError, TotalsChangedError } from "../../src/server/files/service";
 import { StaleRequestError } from "../../src/server/errors";
-import { archiveDocument, NotArchivableError, readStoredDocument, receiveDocument, retryDocument, type ImageReader } from "../../src/server/intake/service";
+import { archiveDocument, NotArchivableError, queueWaitingDocuments, READ_FAILED, readStoredDocument, receiveDocument, retryDocument, type ImageReader } from "../../src/server/intake/service";
 import { receiveUploads } from "../../src/server/intake/upload";
 import { STALE_AFTER_MINUTES } from "../../src/server/jobs";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry } from "../../src/server/review/service";
@@ -504,5 +504,54 @@ describe("eighth review", () => {
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     const blocker = run.blockers.find((b) => b.code === "document_failed")!;
     expect(blocker.message).toMatch(/stopped before it finished/);
+  });
+});
+
+describe("ninth review", () => {
+  const docOf = async (filename: string) =>
+    (await inAgency((tx) => tx.select().from(sourceDocuments).where(and(eq(sourceDocuments.payPeriodId, period), eq(sourceDocuments.filename, filename)))))[0]!;
+  const late = () =>
+    inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: period, filename: "late.csv", bytes: new TextEncoder().encode("Employee ID,Employee Name\n1,x\n") }));
+  const liveJobs = async (documentId: string) =>
+    (await inAgency((tx) => tx.select().from(jobs))).filter((j) => (j.payload as { documentId?: string }).documentId === documentId && (j.status === "queued" || j.status === "running"));
+
+  it("a claim that never committed leaves the timesheet failed with a plain reason, not waiting forever (S1, N3)", async () => {
+    const { documentId } = await late();
+    let calls = 0;
+    const dropsBeforeCommit = <T>(agencyId: string, fn: Parameters<typeof app.withAgency<T>>[1]) =>
+      calls++ === 0
+        ? app.withAgency(agencyId, async (tx) => {
+            await fn(tx);
+            throw new Error("Failed query: commit (connection lost)");
+          })
+        : app.withAgency(agencyId, fn);
+    await expect(readStoredDocument({ withAgency: dropsBeforeCommit, store, imageReader: noImages }, actor, documentId)).rejects.toThrow();
+    const doc = await docOf("late.csv");
+    expect([doc.status, doc.error]).toEqual(["failed", READ_FAILED]);
+  });
+
+  it("a timesheet waiting to be read without a job gets one when the queue runs", async () => {
+    const { documentId } = await late();
+    await inAgency((tx) => tx.update(jobs).set({ status: "failed" }));
+    expect(await liveJobs(documentId)).toHaveLength(0);
+    await inAgency((tx) => queueWaitingDocuments(tx, actor));
+    await inAgency((tx) => queueWaitingDocuments(tx, actor)); // once is enough
+    expect(await liveJobs(documentId)).toHaveLength(1);
+  });
+
+  it("a live reading signals each page, so its job is not taken over (N1)", async () => {
+    const { documentId } = await inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: period, filename: "sheet.jpg", bytes: new Uint8Array([1, 2, 3]) }));
+    let beats = 0;
+    const twoPages: ImageReader = {
+      async read(input) {
+        await input.onPage?.();
+        await input.onPage?.();
+        return { parsed: { kind: "image", profileKey: null, clientHint: null, entries: [], notes: [] }, pages: [] };
+      },
+    };
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: twoPages }, actor, documentId, async () => {
+      beats += 1;
+    });
+    expect(beats).toBe(2);
   });
 });

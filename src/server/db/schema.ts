@@ -236,10 +236,14 @@ export const rateCards = pgTable(
     id: id(),
     agencyId: agencyId(),
     jobOrderId: uuid("job_order_id").notNull().references(() => jobOrders.id),
+    /** Set for a worker's own rates on one assignment; null for the job order's rates. */
+    assignmentId: uuid("assignment_id").references(() => assignments.id),
     effectiveFrom: isoDate("effective_from").notNull(),
     effectiveTo: isoDate("effective_to"),
     payRateCents: integer("pay_rate_cents").notNull(), // cents per hour
     billRateCents: integer("bill_rate_cents").notNull(), // cents per hour
+    /** When the bill rate was entered as a markup on pay: basis points (4500 = 45%). */
+    markupBp: integer("markup_bp"),
     otMultiplierNum: integer("ot_multiplier_num").notNull(),
     otMultiplierDen: integer("ot_multiplier_den").notNull(),
     dtMultiplierNum: integer("dt_multiplier_num").notNull(),
@@ -247,7 +251,11 @@ export const rateCards = pgTable(
     wcClassCode: text("wc_class_code"),
     createdAt: createdAt(),
   },
-  (t) => [index("rate_cards_job_order").on(t.agencyId, t.jobOrderId, t.effectiveFrom)],
+  (t) => [
+    index("rate_cards_job_order").on(t.agencyId, t.jobOrderId, t.effectiveFrom),
+    // One version per start date in each card (the job order's, or one assignment's own).
+    uniqueIndex("rate_cards_one_start").on(t.agencyId, t.jobOrderId, sql`coalesce(${t.assignmentId}, '00000000-0000-0000-0000-000000000000'::uuid)`, t.effectiveFrom),
+  ],
 );
 
 export const assignments = pgTable(
@@ -260,9 +268,16 @@ export const assignments = pgTable(
     startDate: isoDate("start_date").notNull(),
     endDate: isoDate("end_date"),
     status: assignmentStatus("status").notNull().default("active"),
+    /** Where an imported placement came from (bullhorn, jobadder, spott, other) and its id there. */
+    externalSource: text("external_source"),
+    externalId: text("external_id"),
     createdAt: createdAt(),
   },
-  (t) => [index("assignments_worker").on(t.agencyId, t.workerId)],
+  (t) => [
+    index("assignments_worker").on(t.agencyId, t.workerId),
+    // Importing the same placement again skips it.
+    uniqueIndex("assignments_external").on(t.agencyId, t.externalSource, t.externalId).where(sql`${t.externalId} is not null`),
+  ],
 );
 
 // ---------- periods and documents ----------
@@ -286,6 +301,27 @@ export const mappingProfiles = pgTable("mapping_profiles", {
   version: integer("version").notNull().default(1),
   definition: jsonb("definition").notNull(),
   createdAt: createdAt(),
+});
+
+export const importStatus = pgEnum("import_status", ["draft", "done"]);
+
+/** A placement import (docs/patterns/assignments/import.md): the file (SSN and birth-date columns removed), choices and results. */
+export const placementImports = pgTable("placement_imports", {
+  id: id(),
+  agencyId: agencyId(),
+  source: text("source").notNull(), // bullhorn, jobadder, spott, other
+  filename: text("filename").notNull(),
+  sha256: text("sha256").notNull(),
+  storageKey: text("storage_key").notNull(),
+  status: importStatus("status").notNull().default("draft"),
+  /** Shiftbook field → file column. */
+  mapping: jsonb("mapping").$type<Record<string, string>>().notNull().default({}),
+  /** Per field, raw value → decision (matched id, "leave_out", or a new job order's worksite). */
+  decisions: jsonb("decisions").$type<Record<string, Record<string, string>>>().notNull().default({}),
+  results: jsonb("results").$type<{ row: number; outcome: "imported" | "skipped"; reason: string | null }[] | null>(),
+  createdBy: uuid("created_by"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
 export const sourceDocuments = pgTable(
@@ -594,6 +630,7 @@ export const TENANT_TABLES = [
   "assignments",
   "pay_periods",
   "mapping_profiles",
+  "placement_imports",
   "source_documents",
   "document_pages",
   "extraction_passes",

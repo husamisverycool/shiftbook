@@ -8,7 +8,7 @@
 import { MinusIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { entryHistory, type HistoryEvent } from "@/app/[locale]/convert/actions";
+import { entryHistory, type HistoryEvent } from "@/app/[locale]/(app)/convert/actions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { clock, hoursMinutes, shortDate } from "../format";

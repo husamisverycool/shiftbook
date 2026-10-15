@@ -2,7 +2,7 @@
  * A small database-backed job queue (no extra service): uploads are recorded instantly and read in
  * the background. A job is claimed with FOR UPDATE SKIP LOCKED so two workers never take the same one.
  */
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Tx } from "./db/client";
 import { jobs } from "./db/schema";
 
@@ -58,4 +58,9 @@ export async function runPendingJobs(
     }
   }
   return ran;
+}
+
+/** A running job's sign of life: it is not taken over as stale while this keeps being called. */
+export async function touchJob(withAgency: WithAgency, agencyId: string, jobId: string): Promise<void> {
+  await withAgency(agencyId, (tx) => tx.update(jobs).set({ updatedAt: new Date() }).where(and(eq(jobs.id, jobId), eq(jobs.status, "running"))));
 }

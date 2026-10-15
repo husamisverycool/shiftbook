@@ -85,6 +85,13 @@
       "when": 1792088484307,
       "tag": "0011_archive_and_distinct",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792091600684,
+      "tag": "0012_placements_and_rate_versions",
+      "breakpoints": true
     }
   ]
 }

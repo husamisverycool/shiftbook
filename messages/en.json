@@ -382,5 +382,12 @@
       "stale": "This changed in another tab or window. The page now shows the latest.",
       "totalsChanged": "The totals changed since you looked at them. Review them again, then create the files."
     }
+  },
+  "nav": {
+    "label": "Main",
+    "convert": "Convert timesheets",
+    "jobOrders": "Job orders",
+    "assignments": "Assignments",
+    "shortcuts": "Keyboard shortcuts"
   }
 }

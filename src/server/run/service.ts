@@ -216,7 +216,10 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       issue("crosses_midnight", `${name} on ${e.workDate}: the shift runs past midnight; split it at midnight so each day carries its own minutes.`);
       continue;
     }
-    const cards = rateCards.filter((r) => r.jobOrderId === a.jobOrder.id && effective(e.workDate!, r.effectiveFrom, r.effectiveTo));
+    // A worker's own rates on this assignment apply on the dates they cover; the job order's otherwise.
+    const covering = rateCards.filter((r) => r.jobOrderId === a.jobOrder.id && effective(e.workDate!, r.effectiveFrom, r.effectiveTo));
+    const own = covering.filter((r) => r.assignmentId === a.assignment.id);
+    const cards = own.length > 0 ? own : covering.filter((r) => r.assignmentId === null);
     if (cards.length !== 1) {
       issue("missing_rate", `${name} on ${e.workDate}: ${cards.length === 0 ? "no rate card is" : `${cards.length} rate cards are`} in effect for ${a.jobOrder.position}.`);
       continue;
