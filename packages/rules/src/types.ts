@@ -49,6 +49,8 @@ export interface Shift {
   /** How the bill rate came about when the rate card worked it out (a markup rounded to the cent), for the explanation. */
   billRateExplain?: string;
   billOtMultiplier: Fraction;
+  /** The rate card's double-time bill multiplier (California double time). */
+  billDtMultiplier: Fraction;
   otBillingRule: OvertimeBillingRule;
 }
 

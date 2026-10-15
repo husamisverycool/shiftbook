@@ -31,6 +31,7 @@ function shift(date: string, minutes: number, over: Partial<Shift> = {}): Shift 
     payRateCents: 1825,
     billRateCents: 2650,
     billOtMultiplier: { num: 3, den: 2 },
+    billDtMultiplier: { num: 2, den: 1 },
     otBillingRule: "multiplier",
     ...over,
   };
@@ -124,12 +125,6 @@ ruleCase(
   },
 );
 
-ruleCase(
-  "california-blocked-until-full-rules",
-  "A California worker's 10-hour day. California daily overtime, daily double time and the two seventh-day rules are not implemented yet (they come with the full rules engine), so the week is blocked with four reasons and nothing is paid or billed — it is never computed on weekly rules alone.",
-  input([shift(WEEK[0]!, 600, { ...CA, payRateCents: 1950, billRateCents: 2875 })]),
-  { pay: [], bill: [], blockers: ["rule_not_supported_yet", "rule_not_supported_yet", "rule_not_supported_yet", "rule_not_supported_yet"] },
-);
 
 ruleCase(
   "unknown-jurisdiction-blocked",
@@ -185,6 +180,26 @@ ruleCase(
   "An Evanston worksite (Cook County, outside Chicago), rate card $15.20/h, 8 hours in October 2026. Cook County's minimum wage is $15.40/h from July 1, 2026 (Cook County Code § 42-13), above Illinois's $15.00, and no opt-out by Evanston is on file, so the county rate applies: $121.60 at the rate card plus a top-up of 8 × $0.20 = $1.60. Bill: 8 × $26.50 = $212.00.",
   input([shift(WEEK[0]!, 480, { countyFips: "17031", placeFips: "1724582", payRateCents: 1520 })]),
   { pay: [["REG", 480, 12160], ["MW_TRUEUP", 480, 160]], bill: [["REG", 480, 21200]] },
+);
+
+const caInput = (shifts: Shift[]): PayInput => ({ ...input(shifts), workweekStartsOn: 0 });
+const CA_WEEK = ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"];
+
+ruleCase(
+  "ca-daily-and-seventh-day",
+  "A California worker (Ontario, CA) at $18.00/h, billed at $26.00/h (overtime 1.5×, double time 2×), works all seven days of the workweek Sunday October 4 to Saturday October 10, 2026: 8, 10, 13, 8, 8, 6 and 10 hours (63 h). Monday's 2 and Tuesday's 4 hours over 8 are daily overtime; Tuesday's hour over 12 is double time. The 40 straight hours are reached on Thursday, so Friday's 6 hours are weekly overtime (daily-overtime hours never count toward the 40). Saturday is the seventh day worked: its first 8 hours are overtime, the last 2 double time (Cal. Lab. Code § 510(a)). Pay: 40 h × $18 = $720.00; overtime 2 h + 4 h + 6 h + 8 h = 20 h × $27 = $540.00; double time 1 h + 2 h = 3 h × $36 = $108.00; total $1,368.00 (treating Saturday as an ordinary day would pay $1,350.00). Bill: 40 h × $26 + 20 h × $39 + 3 h × $52 = $1,976.00.",
+  caInput([480, 600, 780, 480, 480, 360, 600].map((m, i) => shift(CA_WEEK[i]!, m, { ...CA, payRateCents: 1800, billRateCents: 2600 }))),
+  {
+    pay: [["REG", 2400, 72000], ["OT", 360, 16200], ["OT", 360, 16200], ["OT", 480, 21600], ["DT", 60, 3600], ["DT", 120, 7200]],
+    bill: [["REG", 2400, 104000], ["OT", 360, 23400], ["OT", 360, 23400], ["OT", 480, 31200], ["DT", 60, 5200], ["DT", 120, 10400]],
+  },
+);
+
+ruleCase(
+  "ca-seven-days-across-two-workweeks",
+  "The same California worker works seven days in a row, 8 hours each, from Wednesday October 7 to Tuesday October 13, 2026, but the workweek starts on Sunday: 4 days fall in one workweek and 3 in the next, so neither week has a seventh day of work and no hour is over 8 in a day or 40 in a week (DLSE Enforcement Manual 48.1.3.2). All straight time: 32 h × $18 = $576.00 and 24 h × $18 = $432.00.",
+  caInput(["2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13"].map((d) => shift(d, 480, { ...CA, payRateCents: 1800, billRateCents: 2600 }))),
+  { pay: [["REG", 1920, 57600], ["REG", 1440, 43200]], bill: [["REG", 1920, 83200], ["REG", 1440, 62400]] },
 );
 
 // ---------- export goldens ----------

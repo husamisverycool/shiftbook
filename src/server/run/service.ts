@@ -254,6 +254,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       billRateCents: card.billRateCents,
       ...billRateExplain(card),
       billOtMultiplier: { num: card.otMultiplierNum, den: card.otMultiplierDen },
+      billDtMultiplier: { num: card.dtMultiplierNum, den: card.dtMultiplierDen },
       otBillingRule: profile[0]!.overtimeBillingRule,
     });
   }
