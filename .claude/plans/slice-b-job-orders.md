@@ -7,6 +7,15 @@ what you think is best but … rely on inspiration from great products" (each is
 Contract: SPEC.md §4 (JobOrder, RateCard, Assignment), §8, §21, §26. Research with sources:
 pattern files below (copied from the research notes, every claim with its URL).
 
+## Progress (2026-10-15)
+- Built and tested: job orders (list, page, create/edit), rate card versions with paid-week
+  protection and markups, a worker's own rates, assignments (list, assign, end, cancel), the
+  placement import (Bullhorn, JobAdder, Spott; SSN and birth-date columns removed), the sidebar
+  frame. 289 unit/integration/golden tests and 14 browser tests pass; screens compared in
+  `docs/screens/slice-b.md`.
+- First outside review fixed (ended assignments, rate input checks, amounts, markup explanation).
+  Second review (import and fixes) running.
+
 ## Goal (what the owner can do at the end)
 From a sidebar on every page: open **Job orders**, see them as a list grouped by client, open one
 in a side panel or its own page, create and edit job orders, give a job order (or one worker's
