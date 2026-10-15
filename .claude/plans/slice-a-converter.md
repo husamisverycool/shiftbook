@@ -15,6 +15,11 @@ Contract: SPEC.md §25 slice (a). Screens: `docs/patterns/convert.md` (+ `inbox.
 - Fifth review fixed: a period is paid once (locked after its files exist; correction versions
   that pay only differences move to slice e — decision 0011), one writer per period, possible
   double-counted days held, files refused when totals changed since they were shown.
+- Sixth and seventh reviews fixed: unread, failed and cut-off timesheets hold the run until read
+  again or archived with a reason; an archived timesheet's hours are never paid; "both are real"
+  confirmations; invoice checks before "Create files"; plain messages for a busy period or a stale
+  tab; periods paid before Shiftbook stay closed. The photo path has its own end-to-end test with a
+  hand-written recorded reading (`tests/e2e/photo-path.spec.ts`). Eighth review running.
 - Waiting on the owner: the Anthropic key (D5) to record real photo readings; approval of the
   proposed goldens; the URL (D4) — the app runs only inside this cloud container, so screenshots
   are sent until the owner deploys.

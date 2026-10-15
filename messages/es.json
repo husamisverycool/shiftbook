@@ -240,7 +240,7 @@
         "several_assignments": "Ese trabajador tiene más de una asignación activa en esa fecha.",
         "worker_required": "Elige primero un trabajador.",
         "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar.",
-        "period_busy": "Otra persona está cambiando este periodo de pago en este momento. Inténtalo de nuevo en un momento."
+        "period_busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento."
       },
       "history": "Historial",
       "historyEmpty": "Aún no hay cambios.",
@@ -375,7 +375,7 @@
       }
     },
     "errors": {
-      "busy": "Otra persona está cambiando este periodo de pago en este momento. Inténtalo de nuevo en un momento.",
+      "busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento.",
       "generic": "Algo salió mal. No se cambió nada.",
       "notReady": "La nómina todavía tiene problemas por resolver.",
       "periodLocked": "Los archivos de este periodo ya se crearon, así que sus horas y totales ya no pueden cambiar.",
