@@ -143,7 +143,8 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
   };
 }
 
-async function settingOn<T>(tx: Tx, key: string, date: string): Promise<T | undefined> {
+/** The agency setting in effect on a date (one row at most). */
+export async function settingOn<T>(tx: Tx, key: string, date: string): Promise<T | undefined> {
   const rows = await tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, key));
   const inEffect = rows.filter((r) => effective(date, r.effectiveFrom, r.effectiveTo));
   if (inEffect.length > 1) throw new Error(`Agency setting ${key} has ${inEffect.length} rows in effect on ${date}.`);

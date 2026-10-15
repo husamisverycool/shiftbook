@@ -15,16 +15,16 @@ export class UnrecognisedFileError extends Error {
   }
 }
 
-type Table = { header: string[]; rows: string[][] };
+export type Table = { header: string[]; rows: string[][] };
 
-function tableFromCsv(bytes: Uint8Array): Table {
+export function tableFromCsv(bytes: Uint8Array): Table {
   const text = new TextDecoder().decode(bytes).replace(/^﻿/, "");
   const all = readCsv(text).filter((r) => r.some((c) => c.trim() !== ""));
   const [header = [], ...rows] = all;
   return { header, rows };
 }
 
-async function tableFromXlsx(bytes: Uint8Array): Promise<Table> {
+export async function tableFromXlsx(bytes: Uint8Array): Promise<Table> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(Buffer.from(bytes) as unknown as ArrayBuffer);
   const sheet = workbook.worksheets[0];

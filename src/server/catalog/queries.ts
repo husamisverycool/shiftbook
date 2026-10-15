@@ -136,14 +136,14 @@ export async function catalogOptions(tx: Tx) {
   const sites = await tx.select({ id: s.worksites.id, clientId: s.worksites.clientId, name: s.worksites.name, city: s.worksites.city, state: s.worksites.state }).from(s.worksites);
   const people = await tx.select({ id: s.workers.id, firstName: s.workers.firstName, lastName: s.workers.lastName }).from(s.workers);
   const jobs = await tx
-    .select({ id: s.jobOrders.id, position: s.jobOrders.position, shift: s.jobOrders.shift, clientName: s.clients.name })
+    .select({ id: s.jobOrders.id, position: s.jobOrders.position, shift: s.jobOrders.shift, clientId: s.clients.id, clientName: s.clients.name })
     .from(s.jobOrders)
     .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId));
   return {
     clients: clients.sort((a, b) => cmp(a.name, b.name)),
     worksites: sites.sort((a, b) => cmp(a.name, b.name)),
     workers: people.map((w) => ({ id: w.id, name: fullName(w) })).sort((a, b) => cmp(a.name, b.name)),
-    jobOrders: jobs.map((j) => ({ id: j.id, label: `${j.position}${j.shift ? ` (${j.shift})` : ""} — ${j.clientName}` })).sort((a, b) => cmp(a.label, b.label)),
+    jobOrders: jobs.map((j) => ({ id: j.id, clientId: j.clientId, label: `${j.position}${j.shift ? ` (${j.shift})` : ""} — ${j.clientName}` })).sort((a, b) => cmp(a.label, b.label)),
   };
 }
 

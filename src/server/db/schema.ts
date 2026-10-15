@@ -318,7 +318,7 @@ export const placementImports = pgTable("placement_imports", {
   mapping: jsonb("mapping").$type<Record<string, string>>().notNull().default({}),
   /** Per field, raw value → decision (matched id, "leave_out", or a new job order's worksite). */
   decisions: jsonb("decisions").$type<Record<string, Record<string, string>>>().notNull().default({}),
-  results: jsonb("results").$type<{ row: number; outcome: "imported" | "skipped"; reason: string | null }[] | null>(),
+  results: jsonb("results").$type<{ row: number; outcome: "imported" | "skipped"; reason: { code: string; value: string } | null }[] | null>(),
   createdBy: uuid("created_by"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),

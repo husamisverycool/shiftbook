@@ -380,7 +380,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                         {collapsed.has(g.key) ? <ChevronRightIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
                       </button>
                       {g.label}
-                      <span className="text-muted-foreground tabular-nums">{g.rows.length}</span>
+                      <span className="font-normal tabular-nums">{g.rows.length}</span>
                     </span>
                   </div>
                 )}

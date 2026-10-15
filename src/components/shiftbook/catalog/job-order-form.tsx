@@ -20,7 +20,7 @@ export interface CatalogOptions {
   clients: { id: string; name: string }[];
   worksites: { id: string; clientId: string; name: string; city: string; state: string }[];
   workers: { id: string; name: string }[];
-  jobOrders: { id: string; label: string }[];
+  jobOrders: { id: string; clientId: string; label: string }[];
 }
 
 interface Values {

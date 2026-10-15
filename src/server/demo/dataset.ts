@@ -165,6 +165,8 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   { key: "workweek_starts_on", value: 1 }, // Monday
   { key: "rounding_mode", value: "half_up" },
   { key: "earning_code_map.gusto_hours_csv", value: { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours" } },
+  // Bill multipliers a new rate card starts with (imported placements, a job order's first card).
+  { key: "rate_card.default_bill_multipliers", value: { ot: { num: 3, den: 2 }, dt: { num: 2, den: 1 } } },
   // A cell is accepted without review only when both passes agree, every check passes, and — for
   // handwriting — the agreement is exact. Printed values may be accepted at the same bar.
   { key: "extraction.auto_accept", value: { handwritten: "never_without_exact_agreement", printed: "exact_agreement" } },

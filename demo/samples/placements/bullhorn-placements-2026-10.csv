@@ -1,0 +1,7 @@
+ID,Candidate First Name,Candidate Last Name,SSN,Date of Birth,Company,Job Title,Shift,Start Date,End Date,Status,Pay Rate,Bill Rate
+70001,Anita,Patel,900-00-0001,01/02/1990,Prairie Line Manufacturing (demo),Assembler,Day,10/19/2026,,Approved,17.50,25.75
+70002,Marcus,Bell,900-00-0002,03/04/1988,Prairie Line Manufacturing (demo),Assembler,Second,10/19/2026,12/18/2026,Approved,18.00,26.25
+70003,Jerome,Washington,900-00-0003,05/06/1992,Prairie Line Manufacturing (demo),Forklift Operator,Night,10/26/2026,,Placed,19.25,28.00
+70004,Maria,Gomez,900-00-0004,07/08/1995,Prairie Line Manufacturing (demo),Assembler,Day,10/19/2026,,Approved,17.50,25.75
+70005,Daniel,Ruiz,900-00-0005,09/10/1991,Prairie Line Manufacturing (demo),Assembler,Day,10/19/2026,,Withdrawn,17.50,25.75
+70006,Fatima,Haddad,900-00-0006,11/12/1993,Harborview Events & Hospitality (demo),Event Server,Events,11/02/2026,11/30/2026,Approved,17.00,25.00
