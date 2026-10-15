@@ -227,3 +227,43 @@ describe("third review: headerless files, removed columns, dates and row numbers
     ]);
   });
 });
+
+describe("fourth review: time-of-day dates, empty Excel headings, birth dates in filenames", () => {
+  const start = (filename: string, data: Uint8Array | string) =>
+    inAgency((tx) => startImport(tx, actor, store, { source: "other", filename, bytes: typeof data === "string" ? new TextEncoder().encode(data) : data }, TODAY));
+
+  it("refuses a headerless file whose dates carry a time of day, keeping nothing", async () => {
+    const csv = ["70001,Anita Patel,Prairie Line Manufacturing (demo),Assembler,10/19/2026 12:00:00 AM,1/2/1990 12:00:00 AM", "70002,Marcus Bell,Prairie Line Manufacturing (demo),Assembler,10/19/2026 12:00:00 AM,3/4/1985 12:00:00 AM"].join("\n");
+    await expect(start("export.csv", csv)).rejects.toMatchObject({ reason: "no_header" });
+    expect(await inAgency((tx) => tx.select().from(placementImports))).toHaveLength(0);
+  });
+
+  it("reads start dates that carry a time of day", async () => {
+    const csv = ["Candidate,Company,Job Title,Shift,Start Date", "Anita Patel,Prairie Line Manufacturing (demo),Assembler,Day,10/19/2026 12:00:00 AM"].join("\n");
+    const { id } = await start("with-times.csv", csv);
+    const view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.plan[0]).toMatchObject({ outcome: "create", startDate: "2026-10-19" });
+  });
+
+  it("takes an Excel file with an empty heading cell (it becomes \"Column\")", async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Placements");
+    ws.getCell("A1").value = "Candidate";
+    ws.getCell("C1").value = "Company";
+    ws.getCell("D1").value = "Job Title";
+    ws.getCell("E1").value = "Start Date";
+    ws.addRow(["Anita Patel", "x", "Prairie Line Manufacturing (demo)", "Assembler", new Date(Date.UTC(2026, 9, 19))]);
+    const { id } = await start("gap.xlsx", new Uint8Array(await wb.xlsx.writeBuffer()));
+    expect((await inAgency((tx) => importView(tx, store, id)))!.header).toEqual(["Candidate", "Column", "Company", "Job Title", "Start Date"]);
+  });
+
+  it("hides a birth date in the filename everywhere it is kept", async () => {
+    const csv = ["Candidate,Company,Job Title,Start Date", "Anita Patel,Prairie Line Manufacturing (demo),Assembler,10/19/2026"].join("\n");
+    const { id } = await start("Anita Patel DOB 01-02-1990.csv", csv);
+    const [record] = await inAgency((tx) => tx.select().from(placementImports).where(eq(placementImports.id, id)));
+    expect(record!.filename).toBe("Anita Patel DOB •••.csv");
+    const logged = await inAgency((tx) => tx.select({ after: auditEvents.after }).from(auditEvents).where(eq(auditEvents.entityId, id)));
+    expect(JSON.stringify(logged)).not.toContain("1990");
+  });
+});
+

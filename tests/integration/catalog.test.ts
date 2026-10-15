@@ -17,6 +17,7 @@ import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId, worksiteId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
 import { lockCatalog, PeriodBusyError, periodLock } from "../../src/server/run/period-lock";
+import { hoursStep } from "../../src/server/convert/queries";
 import { editEntry } from "../../src/server/review/service";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
@@ -236,18 +237,33 @@ describe("assignments", () => {
     const bill = await inAgency((tx) => tx.select().from(billLines).where(eq(billLines.payRunId, run.runId)));
     expect(bill.some((l) => l.clientId === clientId("ma"))).toBe(false);
 
-    // Review names where the assignment is; a person who confirmed the client can attach it there.
+    // Review names where the assignment is, and the grid shows it on the held row.
     const [ma] = await inAgency((tx) => tx.select().from(clients).where(eq(clients.id, clientId("ma"))));
+    const [il] = await inAgency((tx) => tx.select().from(clients).where(eq(clients.id, clientId("il"))));
     const entry = late[0]!;
-    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["confirmed_worker"], ""))).toEqual({
-      ok: false,
-      error: "assignment_at_other_client",
-      client: ma!.name,
-    });
-    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["confirmed_client"], "Hours are for the Boston site"))).toEqual({ ok: true });
+    const grid = await inAgency((tx) => hoursStep(tx, week));
+    expect(grid.rows.find((r) => r.id === entry.id)!.otherClient).toEqual({ id: clientId("ma"), name: ma!.name });
+    const named = { ok: false, error: "assignment_at_other_client", client: ma!.name, clientId: clientId("ma") };
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["confirmed_worker"], ""))).toEqual(named);
+    // The everyday reason "Confirmed with the client" never moves hours to another client by itself.
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["misread_corrected", "confirmed_client"], "supervisor email"))).toEqual(named);
+    // Attaching them elsewhere is its own choice, naming the client; another client is refused.
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, {}, ["confirmed_client"], "", { attachToClientId: clientId("il") }))).toEqual(named);
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, {}, ["confirmed_client"], "Hours are for the Boston site", { attachToClientId: clientId("ma") }))).toEqual({ ok: true });
     const [moved] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, entry.id)));
     const [maAssignment] = await inAgency((tx) => tx.select().from(assignments).where(and(eq(assignments.workerId, workerId("anita-patel")), eq(assignments.jobOrderId, jobOrderId("ma-server")))));
     expect(moved!.assignmentId).toBe(maAssignment!.id);
+    const [logged] = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityId, entry.id), eq(auditEvents.action, "update"))));
+    expect(logged!.reason).toContain(`attached to ${ma!.name}, not this timesheet's client ${il!.name}`);
+  });
+
+  it("refuses a worker picked from the roster who works at another client, naming that client", async () => {
+    const [doc] = await inAgency((tx) => tx.select().from(sourceDocuments).where(eq(sourceDocuments.filename, SAMPLE)));
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "received" }).where(eq(sourceDocuments.id, doc!.id)));
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc!.id);
+    const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.sourceDocumentId, doc!.id), eq(timeEntries.workerId, workerId("anita-patel")))));
+    const r = await inAgency((tx) => editEntry(tx, actor, entry!.id, { workerId: workerId("conor-byrne") }, ["misread_corrected", "confirmed_client"], ""));
+    expect(r).toMatchObject({ ok: false, error: "assignment_at_other_client", clientId: clientId("ma") });
   });
 
   it("never moves an assignment's dates so that paid hours fall outside them", async () => {

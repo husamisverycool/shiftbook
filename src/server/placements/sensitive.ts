@@ -18,12 +18,16 @@
 import { floorDiv, mod } from "@shiftbook/rules";
 
 /** Heading words that name an SSN, a tax id or a birth date on their own. */
-const WORDS = new Set(["ssn", "ssno", "ssnum", "ssnumber", "socsec", "itin", "nss", "curp", "dob", "born", "birth", "birthdate", "birthdates", "birthday", "nacimiento", "nac", "fnac", "cumpleaños", "cumpleanos"]);
+const WORDS = new Set([
+  "ssn", "ssno", "ssnum", "ssnumber", "socsec", "last4", "itin", "nss", "curp",
+  "dob", "born", "birth", "birthdate", "birthdates", "birthday", "bday",
+  "nacimiento", "nac", "fnac", "nacido", "nacida", "cumpleaños", "cumpleanos", "naissance", "geboren",
+]);
 /** Short forms that mean an SSN or a tax id only in a heading made of them and id words ("SS #", "Employee TIN"). */
 const SHORT = new Set(["ss", "sin", "tin"]);
 const ID_WORDS = new Set(["no", "num", "nbr", "number", "numero", "número", "id", "employee", "emp", "worker", "candidate", "last", "4", "four"]);
 /** Pieces that name one anywhere in the heading once it is squeezed to letters. */
-const PIECES = ["socialsecurity", "taxid", "taxpayer", "dateofbirth", "birthdate", "segurosocial", "fechadenacimiento", "fechanac", "cumplea"];
+const PIECES = ["socialsecurity", "socialinsurance", "taxid", "taxpayer", "dateofbirth", "birthdate", "segurosocial", "fechadenacimiento", "fechanac", "cumplea", "datedenaissance", "geburt"];
 
 function sensitiveHeading(heading: string): boolean {
   const text = heading.normalize("NFKC");
@@ -36,7 +40,7 @@ function sensitiveHeading(heading: string): boolean {
   if (WORDS.has(squeezed) || SHORT.has(squeezed)) return true;
   if (words.some((w) => WORDS.has(w) || /^ssn|ssn$/.test(w))) return true;
   if (words.some((w) => SHORT.has(w)) && words.every((w) => SHORT.has(w) || ID_WORDS.has(w))) return true;
-  if (words.some((w, i) => w === "soc" && words[i + 1]?.startsWith("sec"))) return true;
+  if (words.some((w, i) => (w === "soc" || w === "social") && words[i + 1]?.startsWith("sec"))) return true;
   return PIECES.some((p) => squeezed.includes(p));
 }
 
@@ -55,18 +59,28 @@ const MONTHS = new Set(
 const DAY = String.raw`(\d{1,2})(?:st|nd|rd|th)?`;
 const YEAR = String.raw`(\d{4}|\d{2})`;
 const NAME = String.raw`([a-zñ]{3,10})\.?`;
+const DSEP = String.raw`[\s\-/.]`;
+/** An optional weekday before a date written with a month name ("Tue Jan 02 1990"). */
+const WEEKDAY = String.raw`(?:(?:mon|tue|wed|thu|fri|sat|sun|lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-zé]*\.?,?\s+)?`;
+/** An optional time of day after a date, as spreadsheets save date-time cells ("1/2/1990 12:00:00 AM"). */
+const TIME = String.raw`(?:[\sT]+\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?\s*(?:[ap]\.?\s?m\.?)?(?:z|[+-]\d{2}:?\d{2})?)?`;
+const isMonth = (name: string | undefined) => MONTHS.has((name ?? "").toLowerCase());
+const dayOk = (d: string | undefined) => Number(d) >= 1 && Number(d) <= 31;
+const monthOk = (m: string | undefined) => Number(m) >= 1 && Number(m) <= 12;
 /** The ways a date is commonly written; each gives the year (and enough to check it is a date). */
 const DATE_FORMS: { source: string; year: (m: RegExpExecArray) => string | null }[] = [
   // 01/02/1990, 1/2/90, 02.01.1990, 01-02-1990 (month or day first: only the year matters here)
-  { source: String.raw`(\d{1,2})[/.\-](\d{1,2})[/.\-]${YEAR}`, year: (m) => (Number(m[1]) >= 1 && Number(m[2]) >= 1 && Number(m[1]) <= 31 && Number(m[2]) <= 31 && Math.min(Number(m[1]), Number(m[2])) <= 12 ? m[3]! : null) },
-  // 1990/01/02, 1990-01-02, 1990-01-02 00:00:00
-  { source: String.raw`(\d{4})[/.\-](\d{1,2})[/.\-](\d{1,2})(?:[T ]\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z?)?`, year: (m) => (Number(m[2]) >= 1 && Number(m[2]) <= 12 && Number(m[3]) >= 1 && Number(m[3]) <= 31 ? m[1]! : null) },
+  { source: String.raw`(\d{1,2})[/.\-](\d{1,2})[/.\-]${YEAR}${TIME}`, year: (m) => (dayOk(m[1]) && dayOk(m[2]) && (monthOk(m[1]) || monthOk(m[2])) ? m[3]! : null) },
+  // 1990/01/02, 1990-01-02, 1990-01-02T00:00:00
+  { source: String.raw`(\d{4})[/.\-](\d{1,2})[/.\-](\d{1,2})${TIME}`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null) },
   // 19900102
-  { source: String.raw`((?:19|20)\d{2})(\d{2})(\d{2})`, year: (m) => (Number(m[2]) >= 1 && Number(m[2]) <= 12 && Number(m[3]) >= 1 && Number(m[3]) <= 31 ? m[1]! : null) },
+  { source: String.raw`((?:19|20)\d{2})(\d{2})(\d{2})`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null) },
   // 2 Jan 1990, 02-Jan-1990, 2 de enero de 1990
-  { source: String.raw`${DAY}[\s\-/.]*(?:de\s+)?${NAME}[\s\-/.,]*(?:de\s+)?${YEAR}`, year: (m) => (MONTHS.has(m[2]!) && Number(m[1]) >= 1 && Number(m[1]) <= 31 ? m[3]! : null) },
-  // Jan 2, 1990; January 2 1990
-  { source: String.raw`${NAME}\s*${DAY},?[\s\-/.]*${YEAR}`, year: (m) => (MONTHS.has(m[1]!) && Number(m[2]) >= 1 && Number(m[2]) <= 31 ? m[3]! : null) },
+  { source: String.raw`${WEEKDAY}${DAY}${DSEP}*(?:de\s+)?${NAME}[\s\-/.,]*(?:de\s+)?${YEAR}${TIME}`, year: (m) => (isMonth(m[2]) && dayOk(m[1]) ? m[3]! : null) },
+  // Jan 2, 1990; January 2 1990; Jan-02-1990; Tue Jan 02 1990 (a month and year alone is not a date)
+  { source: String.raw`${WEEKDAY}${NAME}${DSEP}*${DAY}(?:,\s*|${DSEP}+)${YEAR}${TIME}`, year: (m) => (isMonth(m[1]) && dayOk(m[2]) ? m[3]! : null) },
+  // 1990-Jan-02, 1990 Jan 2
+  { source: String.raw`(\d{4})${DSEP}+${NAME}${DSEP}*${DAY}${TIME}`, year: (m) => (isMonth(m[2]) && dayOk(m[3]) ? m[1]! : null) },
 ];
 const WHOLE = DATE_FORMS.map((f) => ({ re: new RegExp(`^${f.source}$`, "i"), year: f.year }));
 const INSIDE = DATE_FORMS.map((f) => ({ re: new RegExp(String.raw`(?<![\da-zñ])${f.source}(?![\da-zñ])`, "gi"), year: f.year }));
@@ -89,16 +103,20 @@ function dateYear(text: string, thisYear: number): number | null {
   return null;
 }
 
-function hasDateInside(text: string): boolean {
+/** The years of the dates written anywhere in a text. */
+function yearsInside(text: string, thisYear: number): number[] {
   const t = text.normalize("NFKC").toLowerCase();
-  return INSIDE.some((form) => [...t.matchAll(form.re)].some((m) => form.year(m) !== null));
+  return INSIDE.flatMap((form) => [...t.matchAll(form.re)].flatMap((m) => {
+    const y = form.year(m);
+    return y ? [fullYear(y, thisYear)] : [];
+  }));
 }
 
 /** Words that say a date nearby is a birth date. */
-const BIRTH_WORD = /(?<![a-zñ])(?:d\.?\s?o\.?\s?b|born|birth[a-z]*|f\.?\s?nac|nac(?![a-zñ])|nacimiento|naci[oó]|cumplea[a-zñ]*)/i;
+const BIRTH_WORD = /(?<![a-zñ])(?:d\.?\s?o\.?\s?b|born|birth[a-z]*|b-?day|f\.?\s?nac|nac(?![a-zñ])|nac(?:id[oa]s?|i[oó]|imiento)|cumplea[a-zñ]*|naissance|n[ée]e?\s+le|geboren|geburt[a-z]*)/i;
 
 function birthDates(values: string[], thisYear: number): boolean {
-  if (values.some((v) => BIRTH_WORD.test(v) && hasDateInside(v))) return true;
+  if (values.some((v) => BIRTH_WORD.test(v) && yearsInside(v, thisYear).length > 0)) return true;
   const years = values.map((v) => dateYear(v, thisYear)).filter((y): y is number => y !== null);
   const old = years.filter((y) => y <= thisYear - 14).length;
   return old > 0 && old * 2 > years.length;
@@ -160,7 +178,19 @@ export function dropSensitive(
   };
 }
 
-/** A filename with an SSN-shaped part in it is stored with that part hidden. */
-export function safeFilename(name: string): string {
-  return name.normalize("NFKC").replace(new RegExp(SSN_SOURCE, "g"), "•••").slice(0, 200);
+/**
+ * A filename is stored with any SSN-shaped part hidden, and any birth date: a date 14 or more years
+ * old, or any date when the name has a birth word in it. An ordinary date ("placements 2026-10-19") stays.
+ */
+export function safeFilename(name: string, today: string): string {
+  const thisYear = Number(today.slice(0, 4));
+  const birth = BIRTH_WORD.test(name);
+  let out = name.normalize("NFKC").replace(new RegExp(SSN_SOURCE, "g"), "•••");
+  for (const form of INSIDE) {
+    out = out.replace(form.re, (...m) => {
+      const y = form.year(m as unknown as RegExpExecArray);
+      return y && (birth || fullYear(y, thisYear) <= thisYear - 14) ? "•••" : m[0];
+    });
+  }
+  return out.slice(0, 200);
 }

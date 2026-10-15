@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { autoMap, PRESETS } from "./fields";
-import { dateOrderOf, dateValues, distinctValues, planRows, type Catalog } from "./plan";
+import { dateOrderOf, dateValues, distinctValues, parseDate, planRows, type Catalog } from "./plan";
 
 const catalog: Catalog = {
   workers: [
@@ -152,6 +152,17 @@ describe("planning: rates, statuses and dates are read strictly", () => {
     expect(starts(["10/05/2026", "13/12/2026", "11/02/2026"])).toEqual(["2026-10-05", "invalid_date", "2026-11-02"]);
     // Signs both ways: month first, and the day-first dates are refused.
     expect(dateOrderOf(["19/10/2026", "25/12/2026", "10/19/2026"])).toBe("month_first");
+  });
+
+  it("reads dates with a time of day, year-first dates with slashes, and dotted or dashed dates", () => {
+    expect(parseDate("10/19/2026 12:00:00 AM", "month_first")).toBe("2026-10-19");
+    expect(parseDate("2026-10-19T00:00:00", "month_first")).toBe("2026-10-19");
+    expect(parseDate("2026-10-19 00:00", "day_first")).toBe("2026-10-19");
+    expect(parseDate("2026/10/19", "month_first")).toBe("2026-10-19");
+    expect(parseDate("19.10.2026", "day_first")).toBe("2026-10-19");
+    expect(parseDate("10-19-2026 0:00", "month_first")).toBe("2026-10-19");
+    expect(parseDate("10/19/2026 25:00", "month_first")).toBeNull();
+    expect(dateOrderOf(["19.10.2026 0:00", "25.12.2026"])).toBe("day_first");
   });
 
   it("follows the order the person chose, and never re-reads an ISO date", () => {

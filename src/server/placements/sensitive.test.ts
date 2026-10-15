@@ -126,7 +126,50 @@ describe("a file whose first row is not column names", () => {
 
 describe("filenames", () => {
   it("hide an SSN-shaped part and keep the rest", () => {
-    expect(safeFilename("placements for 900-12-3456.csv")).toBe("placements for •••.csv");
-    expect(safeFilename("placements 91761-1234.csv")).toBe("placements 91761-1234.csv");
+    expect(safeFilename("placements for 900-12-3456.csv", today)).toBe("placements for •••.csv");
+    expect(safeFilename("placements 91761-1234.csv", today)).toBe("placements 91761-1234.csv");
+  });
+});
+
+describe("fourth review: dates with a time of day, more spellings, fewer false alarms", () => {
+  it.each([
+    [["70001", "Anita Patel", "10/19/2026 12:00:00 AM", "1/2/1990 12:00:00 AM"]],
+    [["70001", "1/2/1990 0:00"]],
+    [["2026-10-19T00:00:00Z"]],
+  ])("refuses a first row whose dates carry a time of day: %j", (header) => {
+    expect(headingProblem(header, today)).toBe(true);
+  });
+
+  it.each(["May 2026", "Sept 2026", "October 2026", "Q4 2026", "Rate 2026"])("takes %s as a heading (a month and year is not a date)", (heading) => {
+    expect(headingProblem(["Candidate", heading], today)).toBe(false);
+  });
+
+  it.each([
+    [["1/2/1990 12:00:00 AM", "3/4/1985 0:00"]],
+    [["Jan-02-1990", "Mar-04-1985"]],
+    [["1990-Jan-02", "1985-Mar-04"]],
+    [["Tue Jan 02 1990", "Mon Mar 04 1985"]],
+  ])("drops a column of old dates written as %j", (dates) => {
+    const out = dropSensitive(["Name", "Info"], dates.map((d, i) => [`Worker ${i}`, d]), today);
+    expect(out.removed).toEqual([{ column: "B", heading: "Info", reason: "birth_dates" }]);
+  });
+
+  it.each(["Nacido el 02/01/1990", "nacida el 2 de enero de 1990"])("drops free text that gives a birth date in Spanish: %s", (note) => {
+    expect(dropSensitive(["Name", "Notes"], [["A", note]], today).removed).toEqual([{ column: "B", heading: "Notes", reason: "birth_dates" }]);
+  });
+
+  it("hides a date written with a month name in a removed heading", () => {
+    expect(dropSensitive(["Name", "DOB Jan-02-1990"], [["A", "x"]], today).removed).toEqual([{ column: "B", heading: "DOB •••", reason: "heading" }]);
+  });
+
+  it.each(["Social Sec #", "Last4", "Social Insurance Number", "bday", "B-day", "Date de naissance", "Geburtsdatum", "Nacido el", "Nacida"])("drops a column headed %s", (heading) => {
+    expect(one(heading).removed).toEqual([{ column: "B", heading, reason: "heading" }]);
+  });
+
+  it("hides a birth date or an SSN in a filename, and keeps an ordinary date", () => {
+    expect(safeFilename("Anita Patel DOB 01-02-1990.csv", today)).toBe("Anita Patel DOB •••.csv");
+    expect(safeFilename("people born 1990-01-02.csv", today)).toBe("people born •••.csv");
+    expect(safeFilename("placements 2026-10-19.csv", today)).toBe("placements 2026-10-19.csv");
+    expect(safeFilename("placements for 900-12-3456.csv", today)).toBe("placements for •••.csv");
   });
 });

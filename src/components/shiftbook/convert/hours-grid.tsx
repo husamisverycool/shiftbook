@@ -44,8 +44,9 @@ interface Draft {
   reasons: string[];
   note: string;
   error: EditError | "period_busy" | null;
-  /** For an assignment at another client: that client's name. */
+  /** For an assignment at another client: that client's name and id (to attach the hours there). */
   errorClient?: string;
+  errorClientId?: string;
 }
 
 type AddError = EditError | "period_busy" | "worker_required";
@@ -117,7 +118,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
     });
   };
 
-  const save = (r: GridRow, d: Draft) => {
+  const save = (r: GridRow, d: Draft, attachToClientId: string | null = null) => {
     const change: EntryChange = {};
     if ((d.workerId || null) !== r.workerId) change.workerId = d.workerId || null;
     if (d.workDate !== r.workDate) change.workDate = d.workDate;
@@ -143,11 +144,11 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
       if (minutes !== r.minutes) change.minutes = minutes;
     }
     start(async () => {
-      const result = await editAction(r.id, change, d.reasons, d.note);
+      const result = await editAction(r.id, change, d.reasons, d.note, attachToClientId);
       if (result.ok) {
         setEditing(null);
         router.refresh();
-      } else setEditing({ id: r.id, draft: { ...d, error: result.error, errorClient: "client" in result ? result.client : undefined } });
+      } else setEditing({ id: r.id, draft: { ...d, error: result.error, errorClient: "client" in result ? result.client : undefined, errorClientId: "clientId" in result ? result.clientId : undefined } });
     });
   };
 
@@ -205,8 +206,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
     if (!f) return { edited: false, flagged: false, checks: [] as string[] };
     return { edited: f.edited === true, flagged: f.checks.length > 0, checks: f.checks };
   };
-  const reasonText = (code: string) => {
+  const reasonText = (code: string, r?: GridRow) => {
     const [base, field] = code.split(":");
+    if (base === "assignment_at_other_client" && r?.otherClient) return t("reasons.assignment_at_other_client_named", { client: r.otherClient.name });
     const known = ["worker_not_on_roster", "worker_ambiguous", "no_active_assignment", "several_active_assignments", "date_outside_period", "in_after_out", "crosses_midnight", "break_longer_than_shift", "total_mismatch", "over_24_hours", "unreadable", "passes_disagree", "handwriting_not_confirmed", "seen_by_one_pass", "inconsistent_reading", "row_total_mismatch", "grand_total_mismatch", "duplicate_day_in_vms", "assignment_at_other_client", "timesheet_client_unclear"];
     const reason = t(`reasons.${known.includes(base!) ? base : "other"}`);
     return field && ["worker", "date", "in", "out", "break", "total"].includes(field) ? t("reasonWithField", { reason, field: t(`fields.${field}`) }) : reason;
@@ -214,7 +216,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
   const Marked = ({ r, field, children }: { r: GridRow; field: string; children: React.ReactNode }) => {
     const f = fieldFlag(r, field);
     return (
-      <span className={`inline-flex items-center gap-1 ${f.flagged ? "text-destructive" : ""}`} title={f.checks.map(reasonText).join(" · ") || undefined}>
+      <span className={`inline-flex items-center gap-1 ${f.flagged ? "text-destructive" : ""}`} title={f.checks.map((c) => reasonText(c)).join(" · ") || undefined}>
         {children}
         {f.edited && (
           <>
@@ -346,7 +348,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                           {r.workerId === null && <Badge variant="outline">{t("unmatched")}</Badge>}
                           {r.reviewReasons.some((c) => c !== "worker_not_on_roster") && r.status === "needs_review" && (
                             <span className="max-w-52 text-xs whitespace-normal text-muted-foreground">
-                              {[...new Set(r.reviewReasons.filter((c) => c !== "worker_not_on_roster").map(reasonText))].join(" · ")}
+                              {[...new Set(r.reviewReasons.filter((c) => c !== "worker_not_on_roster").map((c) => reasonText(c, r)))].join(" · ")}
                             </span>
                           )}
                         </div>
@@ -470,6 +472,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                           pending={pending}
                           onChange={(patch) => set(patch)}
                           onSave={() => save(r, d)}
+                          onAttach={d.error === "assignment_at_other_client" && d.errorClientId ? () => save(r, d, d.errorClientId!) : undefined}
                           onCancel={() => setEditing(null)}
                         />
                         <p className="mt-1 text-xs text-muted-foreground">{t("reasonBody")}</p>
@@ -571,6 +574,8 @@ function ReasonControls(props: {
   pending: boolean;
   onChange: (patch: { reasons?: string[]; note?: string }) => void;
   onSave: () => void;
+  /** Puts the hours on the named other client's assignment (offered only after it was named). */
+  onAttach?: () => void;
   onCancel: () => void;
 }) {
   const t = useTranslations("convert.hours");
@@ -605,6 +610,11 @@ function ReasonControls(props: {
         <span role="alert" className="text-sm text-destructive">
           {t(`editErrors.${props.error}`, { client: props.errorClient ?? "" })}
         </span>
+      )}
+      {props.onAttach && (
+        <Button size="sm" variant="outline" onClick={props.onAttach} disabled={props.pending} data-testid="attach-other-client">
+          {t("attachTo", { client: props.errorClient ?? "" })}
+        </Button>
       )}
     </div>
   );

@@ -29,8 +29,8 @@ export type EditError =
   | "several_assignments"
   | "assignment_at_other_client";
 
-/** A refused change; for an assignment at another client, that client's name. */
-export type EditFailure = { ok: false; error: EditError; client?: string };
+/** A refused change; for an assignment at another client, that client's name and id. */
+export type EditFailure = { ok: false; error: EditError; client?: string; clientId?: string };
 
 export interface EntryChange {
   workerId?: string | null;
@@ -67,10 +67,17 @@ const snapshot = (e: typeof s.timeEntries.$inferSelect) => ({
 
 /**
  * The worker's assignment (not cancelled) covering a date. A timesheet belongs to one client, so its
- * entries take that client's assignments; one at another client is named, and taken only when the
- * person chose "Confirmed with the client" (a timesheet that really covers two clients).
+ * entries take that client's assignments. One at another client is named in the refusal, and taken
+ * only when the person chose to attach the hours to that very client (a timesheet that really covers
+ * two clients) — never because of an edit reason.
  */
-async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: string | null, clientConfirmed: boolean): Promise<string | Omit<EditFailure, "ok">> {
+async function assignmentFor(
+  tx: Tx,
+  workerId: string,
+  date: string,
+  clientId: string | null,
+  attachToClientId: string | null,
+): Promise<{ id: string; clientName: string; elsewhere: boolean } | Omit<EditFailure, "ok">> {
   const rows = await tx
     .select({ id: s.assignments.id, clientId: s.jobOrders.clientId, clientName: s.clients.name, start: s.assignments.startDate, end: s.assignments.endDate, status: s.assignments.status })
     .from(s.assignments)
@@ -79,13 +86,15 @@ async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: s
     .where(eq(s.assignments.workerId, workerId));
   const active = rows.filter((a) => a.status !== "cancelled" && a.start <= date && (a.end === null || date <= a.end));
   const here = clientId ? active.filter((a) => a.clientId === clientId) : active;
-  const pick = here.length === 0 && clientId && clientConfirmed ? active : here;
-  if (pick.length === 0) {
-    const elsewhere = [...new Set(active.map((a) => a.clientName))];
-    return elsewhere.length === 1 ? { error: "assignment_at_other_client", client: elsewhere[0]! } : { error: "no_assignment" };
-  }
-  if (pick.length > 1) return { error: "several_assignments" };
-  return pick[0]!.id;
+  if (here.length > 1) return { error: "several_assignments" };
+  if (here.length === 1) return { id: here[0]!.id, clientName: here[0]!.clientName, elsewhere: false };
+  const others = [...new Map(active.map((a) => [a.clientId, a.clientName])).entries()];
+  if (others.length !== 1) return { error: "no_assignment" };
+  const [otherId, otherName] = others[0]!;
+  if (attachToClientId !== otherId) return { error: "assignment_at_other_client", client: otherName, clientId: otherId };
+  const there = active.filter((a) => a.clientId === otherId);
+  if (there.length > 1) return { error: "several_assignments" };
+  return { id: there[0]!.id, clientName: otherName, elsewhere: true };
 }
 
 type Values = ReturnType<typeof snapshot>;
@@ -109,12 +118,12 @@ async function openPeriodsOf(tx: Tx, ids: string[]) {
 }
 
 /** The reasons chosen, or the error when none (or "other" without a note) was given. */
-function checkedReason(reasons: string[], note: string): { ok: true; text: string; chosen: EditReason[] } | { ok: false; error: EditError } {
+function checkedReason(reasons: string[], note: string): { ok: true; text: string } | { ok: false; error: EditError } {
   const chosen = [...new Set(reasons)].filter((r): r is EditReason => (EDIT_REASONS as readonly string[]).includes(r));
   if (chosen.length === 0) return { ok: false, error: "reason_required" };
   if (chosen.includes("other") && note.trim() === "") return { ok: false, error: "note_required" };
   const text = chosen.map((r) => (r === "other" ? `other: ${note.trim()}` : r)).join(", ") + (note.trim() && !chosen.includes("other") ? `: ${note.trim()}` : "");
-  return { ok: true, text, chosen };
+  return { ok: true, text };
 }
 
 /** Applies a change to an entry's values and checks the result the same way for edits and additions. */
@@ -124,8 +133,8 @@ async function applyChange(
   change: EntryChange,
   period: { startsOn: string; endsOn: string },
   documentClientId: string | null,
-  clientConfirmed: boolean,
-): Promise<{ ok: true; next: Values } | EditFailure> {
+  attachToClientId: string | null,
+): Promise<{ ok: true; next: Values; attachedTo: string | null } | EditFailure> {
   const next = { ...start };
   for (const key of Object.keys(change) as (keyof EntryChange)[]) {
     const value = change[key];
@@ -157,14 +166,15 @@ async function applyChange(
   }
 
   if (next.workerId) {
-    const found = await assignmentFor(tx, next.workerId, next.workDate, documentClientId, clientConfirmed);
-    if (typeof found !== "string") return { ok: false, ...found };
-    next.assignmentId = found;
-  } else {
-    next.assignmentId = null;
+    const found = await assignmentFor(tx, next.workerId, next.workDate, documentClientId, attachToClientId);
+    if ("error" in found) return { ok: false, ...found };
+    next.assignmentId = found.id;
+    next.status = "reviewed";
+    return { ok: true, next, attachedTo: found.elsewhere ? found.clientName : null };
   }
+  next.assignmentId = null;
   next.status = "reviewed";
-  return { ok: true, next };
+  return { ok: true, next, attachedTo: null };
 }
 
 /** Field provenance after a person changed values: changed fields are marked edited. */
@@ -180,7 +190,15 @@ function editedFields(fields: s.EntryFields, before: Values, next: Values): s.En
   return out;
 }
 
-export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | EditFailure> {
+export async function editEntry(
+  tx: Tx,
+  actor: Actor,
+  entryId: string,
+  change: EntryChange,
+  reasons: string[],
+  note: string,
+  opts: { attachToClientId?: string | null } = {},
+): Promise<{ ok: true } | EditFailure> {
   const reason = checkedReason(reasons, note);
   if (!reason.ok) return reason;
 
@@ -192,17 +210,25 @@ export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: E
   const [entry] = await tx.select().from(s.timeEntries).where(eq(s.timeEntries.id, entryId));
   if (!entry) return { ok: false, error: "not_found" };
   if (!EDITABLE.includes(entry.status)) return { ok: false, error: "not_editable" };
-  const [doc] = entry.sourceDocumentId ? await tx.select({ clientId: s.sourceDocuments.clientId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, entry.sourceDocumentId)) : [];
+  const [doc] = entry.sourceDocumentId
+    ? await tx
+        .select({ clientId: s.sourceDocuments.clientId, clientName: s.clients.name })
+        .from(s.sourceDocuments)
+        .leftJoin(s.clients, eq(s.clients.id, s.sourceDocuments.clientId))
+        .where(eq(s.sourceDocuments.id, entry.sourceDocumentId))
+    : [];
 
   const before = snapshot(entry);
-  const result = await applyChange(tx, before, change, period, doc?.clientId ?? null, reason.chosen.includes("confirmed_client"));
+  const result = await applyChange(tx, before, change, period, doc?.clientId ?? null, opts.attachToClientId ?? null);
   if (!result.ok) return result;
   const next = result.next;
+  // Hours attached to another client than the timesheet's say so, with both names, in the log.
+  const why = result.attachedTo ? `${reason.text}; attached to ${result.attachedTo}, not this timesheet's client ${doc?.clientName ?? "(none)"}` : reason.text;
   await tx
     .update(s.timeEntries)
     .set({ ...next, fields: editedFields(entry.fields, before, next), reviewReasons: [], distinctConfirmed: false, updatedAt: new Date() })
     .where(eq(s.timeEntries.id, entryId));
-  await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: next, reason: reason.text }]);
+  await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: next, reason: why }]);
   return { ok: true };
 }
 
@@ -220,7 +246,7 @@ export async function addEntry(
   const period = await openOrLocked(tx, payPeriodId);
   if (period === "period_locked") return { ok: false, error: period };
   const empty: Values = { workerId: null, assignmentId: null, workDate: null, inMinute: null, outMinute: null, breakMinutes: null, minutes: null, status: "needs_review" };
-  const result = await applyChange(tx, empty, input, period, null, false);
+  const result = await applyChange(tx, empty, input, period, null, null);
   if (!result.ok) return result;
   const next = result.next;
   const [worker] = await tx.select().from(s.workers).where(eq(s.workers.id, next.workerId!));

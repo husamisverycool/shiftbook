@@ -80,7 +80,7 @@ export function dateOrderOf(values: string[]): DateOrder {
   let dayFirst = 0;
   let monthFirst = 0;
   for (const v of values) {
-    const m = /^\s*(\d{1,2})\/(\d{1,2})\/\d{2,4}\s*$/.exec(v);
+    const m = NUMERIC_DATE.exec(withoutTime(v));
     if (!m) continue;
     if (Number(m[1]) > 12) dayFirst += 1;
     if (Number(m[2]) > 12) monthFirst += 1;
@@ -88,12 +88,20 @@ export function dateOrderOf(values: string[]): DateOrder {
   return dayFirst >= 2 && monthFirst === 0 ? "day_first" : "month_first";
 }
 
+/** A time of day after a date, as spreadsheets save date-time cells ("10/19/2026 12:00:00 AM"); hours must be real. */
+const TIME_OF_DAY = /[\sT]+([01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?\s*(?:[ap]\.?\s?m\.?)?(?:z|[+-]\d{2}:?\d{2})?$/i;
+const withoutTime = (text: string) => text.trim().replace(TIME_OF_DAY, "");
+const NUMERIC_DATE = /^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2}|\d{4})$/;
+const YEAR_FIRST = /^(\d{4})[/.\-](\d{1,2})[/.\-](\d{1,2})$/;
+
+/** A start or end date as written → ISO: year first as is; otherwise month or day first, as the file uses. */
 export function parseDate(text: string, order: DateOrder): string | null {
-  const iso = parseIsoDateText(text);
-  if (iso) return iso;
-  if (order === "month_first") return parseUsDate(text);
-  const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*$/.exec(text);
-  return m ? parseUsDate(`${m[2]}/${m[1]}/${m[3]}`) : null;
+  const t = withoutTime(text);
+  const y = YEAR_FIRST.exec(t);
+  if (y) return parseIsoDateText(`${y[1]}-${y[2]!.padStart(2, "0")}-${y[3]!.padStart(2, "0")}`);
+  const m = NUMERIC_DATE.exec(t);
+  if (!m) return null;
+  return order === "month_first" ? parseUsDate(`${m[1]}/${m[2]}/${m[3]}`) : parseUsDate(`${m[2]}/${m[1]}/${m[3]}`);
 }
 
 const ACTIVE = /^(|approved|placed|active|current|confirmed|started|ongoing|open|working|on assignment)$/;

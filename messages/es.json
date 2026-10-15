@@ -201,8 +201,9 @@
         "grand_total_mismatch": "El total general escrito no coincide",
         "duplicate_day_in_vms": "El día aparece en más de una hoja del VMS",
         "other": "Necesita revisión",
-        "assignment_at_other_client": "La asignación del trabajador ese día es con otro cliente; si estas horas son de ese cliente, edite y elija “Confirmado con el cliente”",
-        "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas"
+        "assignment_at_other_client": "La asignación del trabajador ese día es con otro cliente",
+        "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas",
+        "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edite para asignar estas horas allí si son de ese cliente"
       },
       "fields": {
         "worker": "trabajador",
@@ -243,7 +244,7 @@
         "worker_required": "Elige primero un trabajador.",
         "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar.",
         "period_busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento.",
-        "assignment_at_other_client": "La asignación de ese trabajador en esa fecha es con {client}, no con el cliente de esta hoja de horas. Si estas horas son para {client}, elija “Confirmado con el cliente” y guarde de nuevo."
+        "assignment_at_other_client": "La asignación de ese trabajador en esa fecha es con {client}, no con el cliente de esta hoja de horas."
       },
       "history": "Historial",
       "historyEmpty": "Aún no hay cambios.",
@@ -273,7 +274,8 @@
       "filterClient": "Cliente",
       "allClients": "Todos los clientes",
       "filterConfidence": "Confianza",
-      "allConfidence": "Cualquier confianza"
+      "allConfidence": "Cualquier confianza",
+      "attachTo": "Asignar a {client}"
     },
     "totals": {
       "edit": "Editar",

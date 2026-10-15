@@ -88,7 +88,7 @@ export async function startImport(
   const rows = kept.map((i) => clean.rows[i]!);
   const rowNumbers = kept.map((i) => table.rowNumbers[i]!);
   if (rows.length === 0) throw new ImportFileError("empty");
-  const filename = safeFilename(input.filename);
+  const filename = safeFilename(input.filename, today);
   const bytes = writeCsv([clean.header, ...rows]);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const storageKey = `${actor.agencyId}/imports/${sha256}.csv`;

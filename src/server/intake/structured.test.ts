@@ -59,3 +59,18 @@ describe("row numbers are the spreadsheet's own", () => {
     expect(t.rowNumbers).toEqual([3, 6]);
   });
 });
+
+describe("an Excel heading row with an empty cell", () => {
+  it("reads the empty heading as blank instead of failing", async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Placements");
+    ws.getCell("A1").value = "ID";
+    ws.getCell("C1").value = "Candidate";
+    ws.getCell("A2").value = 1;
+    ws.getCell("B2").value = "x";
+    ws.getCell("C2").value = "Anita Patel";
+    const t = await tableFromXlsx(new Uint8Array(await wb.xlsx.writeBuffer()), { dates: "iso" });
+    expect(t.header).toEqual(["ID", "", "Candidate"]);
+    expect(Object.keys(t.header)).toEqual(["0", "1", "2"]);
+  });
+});

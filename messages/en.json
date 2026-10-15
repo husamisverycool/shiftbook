@@ -201,8 +201,9 @@
         "grand_total_mismatch": "Sheet's written grand total does not match",
         "duplicate_day_in_vms": "Day appears on more than one VMS sheet",
         "other": "Needs a check",
-        "assignment_at_other_client": "The worker's assignment that day is at another client; if these hours are theirs, edit and choose “Confirmed with the client”",
-        "timesheet_client_unclear": "Which client this timesheet is for is unclear"
+        "assignment_at_other_client": "The worker's assignment that day is at another client",
+        "timesheet_client_unclear": "Which client this timesheet is for is unclear",
+        "assignment_at_other_client_named": "The worker's assignment that day is at {client}; edit to attach these hours there if they are theirs"
       },
       "fields": {
         "worker": "worker",
@@ -243,7 +244,7 @@
         "worker_required": "Choose a worker first.",
         "period_locked": "This period's files were already created; its hours can no longer change.",
         "period_busy": "Someone else is changing this pay period right now. Try again in a moment.",
-        "assignment_at_other_client": "That worker's assignment on that date is at {client}, not this timesheet's client. If these hours are for {client}, choose “Confirmed with the client” and save again."
+        "assignment_at_other_client": "That worker's assignment on that date is at {client}, not this timesheet's client."
       },
       "history": "History",
       "historyEmpty": "No changes yet.",
@@ -273,7 +274,8 @@
       "filterClient": "Client",
       "allClients": "All clients",
       "filterConfidence": "Confidence",
-      "allConfidence": "Any confidence"
+      "allConfidence": "Any confidence",
+      "attachTo": "Attach to {client}"
     },
     "totals": {
       "edit": "Edit",

@@ -154,10 +154,17 @@ async function edited<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: 
   }
 }
 
-export async function editAction(entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy"; client?: string }> {
+/** Edits an entry; `attachToClientId` is the person's explicit choice to put its hours on that other client's assignment. */
+export async function editAction(
+  entryId: string,
+  change: EntryChange,
+  reasons: string[],
+  note: string,
+  attachToClientId: string | null = null,
+): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy"; client?: string; clientId?: string }> {
   const actor = currentActor();
-  if (!ok(id, entryId) || !ok(ChangeSchema, change) || !ok(reasonsSchema, reasons) || !ok(text, note)) return { ok: false, error: "invalid_value" };
-  return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, entryId, change, reasons, note)));
+  if (!ok(id, entryId) || !ok(ChangeSchema, change) || !ok(reasonsSchema, reasons) || !ok(text, note) || !ok(id.nullable(), attachToClientId)) return { ok: false, error: "invalid_value" };
+  return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, entryId, change, reasons, note, { attachToClientId })));
 }
 
 export async function addAction(

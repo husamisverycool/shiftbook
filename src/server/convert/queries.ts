@@ -77,6 +77,8 @@ export interface HoursRow {
   confidence: "high" | "medium" | "low";
   status: (typeof s.timeEntryStatus.enumValues)[number];
   reviewReasons: string[];
+  /** For hours held because the worker's assignment that day is at another client: that client. */
+  otherClient: { id: string; name: string } | null;
   fields: s.EntryFields;
   document: { id: string; filename: string; kind: string; pageCount: number | null } | null;
   rowIndex: number;
@@ -95,6 +97,18 @@ export async function hoursStep(tx: Tx, payPeriodId: string) {
     .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
     .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId));
   const clientOf = new Map(assignmentClients.map((a) => [a.id, a.clientName]));
+  const coverage = await tx
+    .select({ workerId: s.assignments.workerId, start: s.assignments.startDate, end: s.assignments.endDate, status: s.assignments.status, clientId: s.clients.id, clientName: s.clients.name })
+    .from(s.assignments)
+    .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
+    .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId));
+  /** The one other client whose assignment covers that worker's day, if exactly one does. */
+  const otherClientOf = (workerId: string | null, date: string | null, docClientId: string | null) => {
+    if (!workerId || !date) return null;
+    const others = new Map(coverage.filter((a) => a.workerId === workerId && a.status !== "cancelled" && a.start <= date && (a.end === null || date <= a.end) && a.clientId !== docClientId).map((a) => [a.clientId, a.clientName]));
+    const [only] = others.size === 1 ? [...others] : [];
+    return only ? { id: only[0], name: only[1] } : null;
+  };
   const docClients = await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients);
   const rows: HoursRow[] = entries
     .map((e) => {
@@ -114,6 +128,7 @@ export async function hoursStep(tx: Tx, payPeriodId: string) {
         confidence: e.confidence,
         status: e.status,
         reviewReasons: e.reviewReasons,
+        otherClient: e.reviewReasons.includes("assignment_at_other_client") && !e.assignmentId ? otherClientOf(e.workerId, e.workDate, d?.clientId ?? null) : null,
         fields: e.fields,
         document: d ? { id: d.id, filename: d.filename, kind: d.kind, pageCount: d.pageCount } : null,
         rowIndex: e.rowIndex,

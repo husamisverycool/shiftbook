@@ -589,6 +589,17 @@ describe("computePay — a bill rate's explanation never splits a line", () => {
     expect(withNote.billLines[0]!.explain).toContain(`Bill rate from the rate card (some shifts: ${a}).`);
   });
 
+  it("explains each bill line with the shifts on that line only", () => {
+    const a = "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46";
+    // Worked out Monday and Tuesday; typed as is Wednesday to Friday, where the overtime falls.
+    const shifts = WEEK.slice(0, 5).map((d, i) => shift(d, 540, { billRateCents: 2646, billRateExplain: i < 2 ? a : undefined }));
+    const r = computePay(input(shifts));
+    expect(r.billLines.find((l) => l.type === "REG")!.explain).toContain(`(some shifts: ${a})`);
+    const ot = r.billLines.find((l) => l.type === "OT")!;
+    expect(ot.explain).not.toContain(a);
+    expect(ot.explain).toContain("bill rate from the rate card.");
+  });
+
   it("puts the explanation on the overtime bill line as well", () => {
     const a = "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46";
     const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 540, { billRateCents: 2646, billRateExplain: a }))));

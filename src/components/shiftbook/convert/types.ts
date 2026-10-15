@@ -30,6 +30,8 @@ export interface GridRow {
   confidence: "high" | "medium" | "low";
   status: "extracted" | "needs_review" | "reviewed" | "client_approved" | "disputed" | "locked" | "rejected";
   reviewReasons: string[];
+  /** For hours held because the worker's assignment that day is at another client: that client. */
+  otherClient: { id: string; name: string } | null;
   fields: Record<string, GridField | undefined>;
   document: { id: string; filename: string; kind: string; pageCount: number | null } | null;
   rowIndex: number;

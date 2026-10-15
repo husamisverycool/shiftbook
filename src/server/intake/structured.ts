@@ -75,7 +75,8 @@ export async function tableFromXlsx(bytes: Uint8Array, opts: Pick<CellOptions, "
   if (!sheet) return { header: [], rows: [], rowNumbers: [] };
   const numbered: { n: number; values: string[] }[] = [];
   sheet.eachRow({ includeEmpty: false }, (row, n) => {
-    const values = (row.values as unknown[]).slice(1).map((v, i) => cellText(v, { dates: opts.dates, numFmt: row.getCell(i + 1).numFmt }));
+    // row.values is sparse (an empty cell is a hole): Array.from fills holes so every column is there.
+    const values = Array.from((row.values as unknown[]).slice(1), (v, i) => cellText(v ?? null, { dates: opts.dates, numFmt: row.getCell(i + 1).numFmt }));
     if (!blank(values)) numbered.push({ n, values });
   });
   return table(numbered);
