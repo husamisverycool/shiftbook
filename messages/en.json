@@ -258,7 +258,11 @@
       "bulkBar": "Bulk actions",
       "approveRefused": "This entry can't be approved yet. Fix its worker, date or hours first.",
       "addEntry": "Add entry",
-      "manual": "Entered by hand"
+      "manual": "Entered by hand",
+      "filterClient": "Client",
+      "allClients": "All clients",
+      "filterConfidence": "Confidence",
+      "allConfidence": "Any confidence"
     },
     "totals": {
       "edit": "Edit",

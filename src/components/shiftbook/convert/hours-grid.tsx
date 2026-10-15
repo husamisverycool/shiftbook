@@ -64,10 +64,19 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
   const [adding, setAdding] = useState<(Omit<Draft, "error"> & { error: AddError | null }) | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
 
+  const [client, setClient] = useState("");
+  const [confidence, setConfidence] = useState("");
+  const clients = useMemo(() => [...new Set(props.rows.map((r) => r.clientName).filter((c): c is string => c !== null))].sort(), [props.rows]);
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return props.rows.filter((r) => (filter === "all" || needsAttention(r)) && (q === "" || r.workerName.toLowerCase().includes(q) || r.workerNameRaw.toLowerCase().includes(q)));
-  }, [props.rows, filter, query]);
+    return props.rows.filter(
+      (r) =>
+        (filter === "all" || needsAttention(r)) &&
+        (client === "" || r.clientName === client) &&
+        (confidence === "" || r.confidence === confidence) &&
+        (q === "" || r.workerName.toLowerCase().includes(q) || r.workerNameRaw.toLowerCase().includes(q)),
+    );
+  }, [props.rows, filter, client, confidence, query]);
   const totalMinutes = visible.reduce((sum, r) => sum + (r.status === "rejected" ? 0 : (r.minutes ?? 0)), 0);
   const selectedRows = props.rows.filter((r) => selected.has(r.id));
   const bulkReady = selectedRows.filter((r) => r.confidence === "high" && (r.status === "extracted" || r.status === "needs_review"));
@@ -94,6 +103,15 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
         note: "",
         error: null,
       },
+    });
+    // Keep the keyboard in the row being edited: focus the active column's field, else the first one.
+    const ri = visible.findIndex((x) => x.id === r.id);
+    requestAnimationFrame(() => {
+      const row = tableRef.current?.querySelector<HTMLElement>(`[data-cell="${ri}:${active.row === ri ? active.col : 0}"]`)?.closest("tr");
+      const target =
+        tableRef.current?.querySelector<HTMLElement>(`[data-cell="${ri}:${active.row === ri ? active.col : 0}"] input, [data-cell="${ri}:${active.row === ri ? active.col : 0}"] select`) ??
+        row?.querySelector<HTMLElement>("input, select");
+      target?.focus();
     });
   };
 
@@ -219,6 +237,24 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
             {t("filterAll", { count: props.rows.length })}
           </Button>
         </div>
+        {clients.length > 1 && (
+          <NativeSelect aria-label={t("filterClient")} value={client} onChange={(e) => setClient(e.target.value)} className="w-52">
+            <NativeSelectOption value="">{t("allClients")}</NativeSelectOption>
+            {clients.map((c) => (
+              <NativeSelectOption key={c} value={c}>
+                {c}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        )}
+        <NativeSelect aria-label={t("filterConfidence")} value={confidence} onChange={(e) => setConfidence(e.target.value)} className="w-40">
+          <NativeSelectOption value="">{t("allConfidence")}</NativeSelectOption>
+          {(["high", "medium", "low"] as const).map((c) => (
+            <NativeSelectOption key={c} value={c}>
+              {t(`confidence.${c}`)}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
         <div className="relative ml-auto w-full max-w-60">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} aria-label={t("search")} className="pl-7" />

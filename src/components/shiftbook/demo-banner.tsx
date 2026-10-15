@@ -26,7 +26,7 @@ export function DemoBanner() {
     <div
       role="region"
       aria-label={t("demo")}
-      className="border-b bg-muted text-muted-foreground"
+      className="border-b bg-muted text-foreground"
     >
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5 text-sm">
         <p className="mr-auto">{t("demo")}</p>

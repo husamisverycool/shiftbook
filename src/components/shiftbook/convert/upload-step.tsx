@@ -83,6 +83,8 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
             type="file"
             multiple
             className="sr-only"
+            aria-label={t("select")}
+            tabIndex={-1}
             data-testid="file-input"
             accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,.csv,.xlsx"
             onChange={(e) => {

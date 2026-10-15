@@ -258,7 +258,11 @@
       "bulkBar": "Acciones en grupo",
       "approveRefused": "Este registro aún no se puede aprobar. Corrige primero el trabajador, la fecha o las horas.",
       "addEntry": "Agregar registro",
-      "manual": "Capturado a mano"
+      "manual": "Capturado a mano",
+      "filterClient": "Cliente",
+      "allClients": "Todos los clientes",
+      "filterConfidence": "Confianza",
+      "allConfidence": "Cualquier confianza"
     },
     "totals": {
       "edit": "Editar",

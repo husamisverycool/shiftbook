@@ -58,7 +58,7 @@ Screen: `slice-a/en-4-upload-done.png`.
 ## Step 2, Review hours — `docs/patterns/review.md` (Airtable grid, Rippling timesheets, Rossum panel, Restaurant365 edits)
 Screens: `slice-a/g1-hours-flagged.png`, `slice-a/g2-hours-edit-reason.png`,
 `slice-a/g3-source-panel.png`, `slice-a/g4-bulk-bar.png`, `slice-a/m1-hours-phone.png`.
-- ✓ Filters row: needs review / all, and a search for one worker.
+- ✓ Filters row: needs review / all, client, confidence, and a search for one worker.
 - ✓ Columns Worker · Client · Date · In · Out · Break · Hours · Confidence · Status · Source.
   Flagged values are shown in the error colour with the reason under the worker's name.
 - ✓ Checkbox per row and select-all.
@@ -81,7 +81,7 @@ Screens: `slice-a/g1-hours-flagged.png`, `slice-a/g2-hours-edit-reason.png`,
   panel, Esc leaves.
 - ✓ Dates outside the period cannot be chosen.
 - Differences:
-  - Filters: no pay-period, client or confidence filters (the converter fixes the period).
+  - Filters: no pay-period filter (the converter fixes the period).
   - No Rippling hours-summary panel; the hours total is in the grid's bottom row.
   - No Airtable view bar (row height, hide fields, filter, group, sort).
   - No header-menu actions (hide, resize, reorder fields).
