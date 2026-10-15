@@ -10,7 +10,8 @@ import { runPendingJobs } from "./jobs";
 import { isDemo, type Actor } from "./session";
 import { documentStore } from "./storage";
 
-export const RECORDINGS_DIR = "demo/recordings";
+/** Where demo mode reads recorded readings (end-to-end tests point it at their own fixtures). */
+export const RECORDINGS_DIR = process.env.SHIFTBOOK_RECORDINGS_DIR ?? "demo/recordings";
 
 function transport(): ExtractionTransport {
   return isDemo() ? new RecordedTransport(RECORDINGS_DIR) : new AnthropicTransport();

@@ -20,6 +20,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}/en/convert`,
     reuseExistingServer: false,
     timeout: 600_000,
-    env: { SHIFTBOOK_MODE: "demo", NEXT_TELEMETRY_DISABLED: "1" },
+    // The photo-path test uses its own hand-written recorded reading (tests/e2e/fixtures).
+    env: { SHIFTBOOK_MODE: "demo", NEXT_TELEMETRY_DISABLED: "1", SHIFTBOOK_RECORDINGS_DIR: "tests/e2e/fixtures/recordings" },
   },
 });

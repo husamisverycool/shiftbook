@@ -59,7 +59,9 @@ Screens: `slice-a/en-4-upload-done.png`, `slice-a/en-4b-archive-dialog.png`,
 
 ## Step 2, Review hours — `docs/patterns/review.md` (Airtable grid, Rippling timesheets, Rossum panel, Restaurant365 edits)
 Screens: `slice-a/g1-hours-flagged.png`, `slice-a/g2-hours-edit-reason.png`,
-`slice-a/g3-source-panel.png`, `slice-a/g4-bulk-bar.png`, `slice-a/m1-hours-phone.png`.
+`slice-a/g3-source-panel.png`, `slice-a/g4-bulk-bar.png`, `slice-a/m1-hours-phone.png`,
+`slice-a/g5-photo-source-panel.png` (a photo: the page is shown with SSN and birth-date text
+blacked out, and boxes around the values read).
 - ✓ Filters row: needs review / all, client, confidence, and a search for one worker.
 - ✓ Columns Worker · Client · Date · In · Out · Break · Hours · Confidence · Status · Source.
   Flagged values are shown in the error colour with the reason under the worker's name.
