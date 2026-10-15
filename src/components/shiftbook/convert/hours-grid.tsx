@@ -9,11 +9,11 @@
  * - Restaurant365 Punch Edits: the row's values become editable in place, a reason is required
  *   before the checkmark saves, edited values carry a marker.
  */
-import { CheckIcon, CircleIcon, Maximize2Icon, PencilIcon, RotateCcwIcon, SearchIcon, XIcon } from "lucide-react";
+import { CheckIcon, CircleIcon, Maximize2Icon, PencilIcon, PlusIcon, RotateCcwIcon, SearchIcon, XIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { toast } from "sonner";
-import { approveAction, editAction, rejectAction, restoreAction } from "@/app/[locale]/convert/actions";
+import { addAction, approveAction, editAction, rejectAction, restoreAction } from "@/app/[locale]/convert/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,7 +46,9 @@ interface Draft {
   error: EditError | null;
 }
 
-export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: string }[]; period: { startsOn: string; endsOn: string } }) {
+type AddError = EditError | "worker_required";
+
+export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { id: string; name: string }[]; period: { startsOn: string; endsOn: string } }) {
   const t = useTranslations("convert.hours");
   const locale = useLocale();
   const router = useRouter();
@@ -58,6 +60,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
   const [active, setActive] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
   const [editing, setEditing] = useState<{ id: string; draft: Draft } | null>(null);
   const [panel, setPanel] = useState<{ id: string; field: string | null } | null>(null);
+  const [adding, setAdding] = useState<(Omit<Draft, "error"> & { error: AddError | null }) | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
 
   const visible = useMemo(() => {
@@ -124,6 +127,22 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
         setEditing(null);
         router.refresh();
       } else setEditing({ id: r.id, draft: { ...d, error: result.error } });
+    });
+  };
+
+  const saveNew = (d: NonNullable<typeof adding>) => {
+    if (!d.workerId) return setAdding({ ...d, error: "worker_required" });
+    const inMinute = parseClock(d.inText);
+    const outMinute = parseClock(d.outText);
+    const breakMinutes = d.breakText.trim() === "" ? 0 : Number(d.breakText);
+    if (inMinute === null || outMinute === null || !Number.isInteger(breakMinutes)) return setAdding({ ...d, error: "invalid_value" });
+    start(async () => {
+      const result = await addAction(props.periodId, { workerId: d.workerId, workDate: d.workDate, inMinute, outMinute, breakMinutes }, d.reasons, d.note);
+      if (result.ok) {
+        setAdding(null);
+        setFilter("all");
+        router.refresh();
+      } else setAdding({ ...d, error: result.error });
     });
   };
 
@@ -353,8 +372,8 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     {cell(8, <span className="whitespace-nowrap">{t(`status.${r.status}`)}</span>)}
                     {cell(
                       9,
-                      <button type="button" className="block max-w-28 truncate text-left text-muted-foreground underline-offset-4 hover:underline" title={r.document?.filename} onClick={() => setPanel({ id: r.id, field: null })}>
-                        {r.document?.filename ?? "—"}
+                      <button type="button" className="block max-w-28 truncate text-left text-muted-foreground underline-offset-4 hover:underline" title={r.document?.filename ?? t("manual")} onClick={() => setPanel({ id: r.id, field: null })}>
+                        {r.document?.filename ?? t("manual")}
                       </button>,
                     )}
                     <TableCell className="sticky right-0 bg-background text-right whitespace-nowrap shadow-[-8px_0_8px_-8px_var(--border)]">
@@ -402,38 +421,15 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                   isEditing && d ? (
                     <TableRow key={`${r.id}-reason`} className="bg-muted/40 hover:bg-muted/40" data-testid="reason-row">
                       <TableCell colSpan={COLUMNS.length + 2}>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-medium">{t("reasonTitle")}</span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="reason-trigger" />}>
-                              {d.reasons.length === 0 ? t("chooseReasons") : t("reasonsChosen", { count: d.reasons.length })}
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="min-w-64">
-                              {REASONS.map((code) => (
-                                <DropdownMenuCheckboxItem
-                                  key={code}
-                                  checked={d.reasons.includes(code)}
-                                  onCheckedChange={(on) => set({ reasons: on ? [...d.reasons, code] : d.reasons.filter((x) => x !== code) })}
-                                >
-                                  {t(`editReasons.${code}`)}
-                                </DropdownMenuCheckboxItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <Input aria-label={t("note")} placeholder={t("notePlaceholder")} value={d.note} onChange={(e) => set({ note: e.target.value })} className="max-w-72" />
-                          <Button size="sm" onClick={() => save(r, d)} disabled={pending || d.reasons.length === 0} data-testid="save-edit">
-                            <CheckIcon />
-                            {t("saveEdit")}
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditing(null)} disabled={pending}>
-                            {t("cancelEdit")}
-                          </Button>
-                          {d.error && (
-                            <span role="alert" className="text-sm text-destructive">
-                              {t(`editErrors.${d.error}`)}
-                            </span>
-                          )}
-                        </div>
+                        <ReasonControls
+                          reasons={d.reasons}
+                          note={d.note}
+                          error={d.error}
+                          pending={pending}
+                          onChange={(patch) => set(patch)}
+                          onSave={() => save(r, d)}
+                          onCancel={() => setEditing(null)}
+                        />
                         <p className="mt-1 text-xs text-muted-foreground">{t("reasonBody")}</p>
                       </TableCell>
                     </TableRow>
@@ -453,6 +449,46 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
             </TableFooter>
           </Table>
         </div>
+      )}
+
+      {adding ? (
+        <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-3" data-testid="add-row">
+          <div className="flex flex-wrap items-center gap-2">
+            <NativeSelect aria-label={t("colWorker")} value={adding.workerId} onChange={(e) => setAdding({ ...adding, workerId: e.target.value, error: null })} className="w-48">
+              <NativeSelectOption value="">{t("matchWorker")}</NativeSelectOption>
+              {props.roster.map((w) => (
+                <NativeSelectOption key={w.id} value={w.id}>
+                  {w.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <Input type="date" aria-label={t("colDate")} value={adding.workDate} min={props.period.startsOn} max={props.period.endsOn} onChange={(e) => setAdding({ ...adding, workDate: e.target.value, error: null })} className="w-36" />
+            <Input aria-label={t("colIn")} placeholder="7:00" value={adding.inText} onChange={(e) => setAdding({ ...adding, inText: e.target.value, error: null })} className="w-20 text-right" />
+            <Input aria-label={t("colOut")} placeholder="15:30" value={adding.outText} onChange={(e) => setAdding({ ...adding, outText: e.target.value, error: null })} className="w-20 text-right" />
+            <Input aria-label={t("colBreak")} inputMode="numeric" placeholder="30" value={adding.breakText} onChange={(e) => setAdding({ ...adding, breakText: e.target.value, error: null })} className="w-16 text-right" />
+          </div>
+          <ReasonControls
+            reasons={adding.reasons}
+            note={adding.note}
+            error={adding.error}
+            pending={pending}
+            onChange={(patch) => setAdding({ ...adding, ...patch, error: null })}
+            onSave={() => saveNew(adding)}
+            onCancel={() => setAdding(null)}
+          />
+          <p className="text-xs text-muted-foreground">{t("reasonBody")}</p>
+        </div>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-fit"
+          data-testid="add-entry"
+          onClick={() => setAdding({ workerId: "", workDate: props.period.startsOn, inText: "", outText: "", breakText: "", hoursText: "", reasons: [], note: "", error: null })}
+        >
+          <PlusIcon />
+          {t("addEntry")}
+        </Button>
       )}
 
       {selected.size > 0 && (
@@ -480,6 +516,52 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
       )}
 
       <SourcePanel row={panelRow} field={panel?.field ?? null} roster={props.roster} onClose={() => setPanel(null)} />
+    </div>
+  );
+}
+
+function ReasonControls(props: {
+  reasons: string[];
+  note: string;
+  error: AddError | null;
+  pending: boolean;
+  onChange: (patch: { reasons?: string[]; note?: string }) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("convert.hours");
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-sm font-medium">{t("reasonTitle")}</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="reason-trigger" />}>
+          {props.reasons.length === 0 ? t("chooseReasons") : t("reasonsChosen", { count: props.reasons.length })}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-64">
+          {REASONS.map((code) => (
+            <DropdownMenuCheckboxItem
+              key={code}
+              checked={props.reasons.includes(code)}
+              onCheckedChange={(on) => props.onChange({ reasons: on ? [...props.reasons, code] : props.reasons.filter((x) => x !== code) })}
+            >
+              {t(`editReasons.${code}`)}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Input aria-label={t("note")} placeholder={t("notePlaceholder")} value={props.note} onChange={(e) => props.onChange({ note: e.target.value })} className="max-w-72" />
+      <Button size="sm" onClick={props.onSave} disabled={props.pending || props.reasons.length === 0} data-testid="save-edit">
+        <CheckIcon />
+        {t("saveEdit")}
+      </Button>
+      <Button size="sm" variant="ghost" onClick={props.onCancel} disabled={props.pending}>
+        {t("cancelEdit")}
+      </Button>
+      {props.error && (
+        <span role="alert" className="text-sm text-destructive">
+          {t(`editErrors.${props.error}`)}
+        </span>
+      )}
     </div>
   );
 }

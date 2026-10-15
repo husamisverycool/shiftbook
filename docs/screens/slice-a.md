@@ -86,7 +86,8 @@ Screens: `slice-a/g1-hours-flagged.png`, `slice-a/g2-hours-edit-reason.png`,
   - No Airtable view bar (row height, hide fields, filter, group, sort).
   - No header-menu actions (hide, resize, reorder fields).
   - The expand control is always visible, not only on hover.
-  - No "+" to add an entry by hand.
+  - "+ Add entry" sits below the grid as one form row (worker, date, in, out, break, then the same
+    reason step as an edit), not as a blank grid row as in Airtable.
   - Summary bar: only the hours sum, with no choice of summary function.
   - Keyboard shortcuts not built: Shift-range selection, copy/cut/paste, undo/redo, Cmd+F,
     Shift+Enter, Cmd+/, previous/next entry in the panel.

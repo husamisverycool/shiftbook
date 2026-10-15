@@ -230,7 +230,8 @@
         "break_too_long": "El descanso dura lo mismo que el turno o más.",
         "invalid_value": "Un valor no es válido.",
         "no_assignment": "Ese trabajador no tiene una asignación activa en esa fecha.",
-        "several_assignments": "Ese trabajador tiene más de una asignación activa en esa fecha."
+        "several_assignments": "Ese trabajador tiene más de una asignación activa en esa fecha.",
+        "worker_required": "Elige primero un trabajador."
       },
       "history": "Historial",
       "historyEmpty": "Aún no hay cambios.",
@@ -254,7 +255,9 @@
       "actions": "Acciones",
       "readings": "Lecturas: {a} / {b}",
       "bulkBar": "Acciones en grupo",
-      "approveRefused": "Este registro aún no se puede aprobar. Corrige primero el trabajador, la fecha o las horas."
+      "approveRefused": "Este registro aún no se puede aprobar. Corrige primero el trabajador, la fecha o las horas.",
+      "addEntry": "Agregar registro",
+      "manual": "Capturado a mano"
     },
     "totals": {
       "edit": "Editar",

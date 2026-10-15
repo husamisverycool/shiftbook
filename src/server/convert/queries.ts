@@ -88,7 +88,6 @@ export async function hoursStep(tx: Tx, payPeriodId: string) {
   const clientOf = new Map(assignmentClients.map((a) => [a.id, a.clientName]));
   const docClients = await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients);
   const rows: HoursRow[] = entries
-    .filter((e) => e.sourceDocumentId !== null)
     .map((e) => {
       const w = e.workerId ? workersById.get(e.workerId) : undefined;
       const d = docs.find((x) => x.id === e.sourceDocumentId);

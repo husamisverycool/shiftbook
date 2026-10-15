@@ -73,17 +73,26 @@ async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: s
   return pick[0]!.id;
 }
 
-export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError }> {
+type Values = ReturnType<typeof snapshot>;
+
+/** The reasons chosen, or the error when none (or "other" without a note) was given. */
+function checkedReason(reasons: string[], note: string): { ok: true; text: string } | { ok: false; error: EditError } {
   const chosen = [...new Set(reasons)].filter((r): r is EditReason => (EDIT_REASONS as readonly string[]).includes(r));
   if (chosen.length === 0) return { ok: false, error: "reason_required" };
   if (chosen.includes("other") && note.trim() === "") return { ok: false, error: "note_required" };
+  const text = chosen.map((r) => (r === "other" ? `other: ${note.trim()}` : r)).join(", ") + (note.trim() && !chosen.includes("other") ? `: ${note.trim()}` : "");
+  return { ok: true, text };
+}
 
-  const [entry] = await tx.select().from(s.timeEntries).where(eq(s.timeEntries.id, entryId));
-  if (!entry) return { ok: false, error: "not_found" };
-  if (!EDITABLE.includes(entry.status)) return { ok: false, error: "not_editable" };
-  const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, entry.payPeriodId));
-
-  const next = { ...snapshot(entry) };
+/** Applies a change to an entry's values and checks the result the same way for edits and additions. */
+async function applyChange(
+  tx: Tx,
+  start: Values,
+  change: EntryChange,
+  period: { startsOn: string; endsOn: string },
+  documentClientId: string | null,
+): Promise<{ ok: true; next: Values } | { ok: false; error: EditError }> {
+  const next = { ...start };
   for (const key of Object.keys(change) as (keyof EntryChange)[]) {
     const value = change[key];
     if (value === undefined) continue;
@@ -98,7 +107,7 @@ export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: E
       next[key] = value as number | null;
     }
   }
-  if (!next.workDate || next.workDate < period!.startsOn || next.workDate > period!.endsOn) return { ok: false, error: "date_outside_period" };
+  if (!next.workDate || next.workDate < period.startsOn || next.workDate > period.endsOn) return { ok: false, error: "date_outside_period" };
 
   // Minutes follow the clock times when there are times; otherwise the entry carries a daily total.
   if (next.inMinute !== null || next.outMinute !== null) {
@@ -114,31 +123,85 @@ export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: E
   }
 
   if (next.workerId) {
-    const [doc] = entry.sourceDocumentId ? await tx.select({ clientId: s.sourceDocuments.clientId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, entry.sourceDocumentId)) : [];
-    const found = await assignmentFor(tx, next.workerId, next.workDate, doc?.clientId ?? null);
+    const found = await assignmentFor(tx, next.workerId, next.workDate, documentClientId);
     if (found === "no_assignment" || found === "several_assignments") return { ok: false, error: found };
     next.assignmentId = found;
   } else {
     next.assignmentId = null;
   }
+  next.status = "reviewed";
+  return { ok: true, next };
+}
 
-  const fields: s.EntryFields = { ...entry.fields };
-  const before = snapshot(entry);
+/** Field provenance after a person changed values: changed fields are marked edited. */
+function editedFields(fields: s.EntryFields, before: Values, next: Values): s.EntryFields {
+  const out: s.EntryFields = { ...fields };
   for (const key of Object.keys(FIELD_OF) as (keyof EntryChange)[]) {
     if (key === "minutes" ? next.minutes === before.minutes : next[key] === before[key]) continue;
     const name = FIELD_OF[key];
     const text = key === "workDate" || key === "workerId" ? String(next[key] ?? "") : key === "breakMinutes" ? String(next[key] ?? "") : hhmm(next[key] as number | null);
-    const base: s.FieldProvenance = fields[name] ?? { value: null, page: null, box: null, passA: null, passB: null, agree: null, handwritten: false, confidence: "high", checks: [] };
-    fields[name] = { ...base, value: text, edited: true, checks: [] };
+    const base: s.FieldProvenance = out[name] ?? { value: null, page: null, box: null, passA: null, passB: null, agree: null, handwritten: false, confidence: "high", checks: [] };
+    out[name] = { ...base, value: text, edited: true, checks: [] };
   }
-  next.status = "reviewed";
+  return out;
+}
+
+export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError }> {
+  const reason = checkedReason(reasons, note);
+  if (!reason.ok) return reason;
+
+  const [entry] = await tx.select().from(s.timeEntries).where(eq(s.timeEntries.id, entryId));
+  if (!entry) return { ok: false, error: "not_found" };
+  if (!EDITABLE.includes(entry.status)) return { ok: false, error: "not_editable" };
+  const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, entry.payPeriodId));
+  const [doc] = entry.sourceDocumentId ? await tx.select({ clientId: s.sourceDocuments.clientId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, entry.sourceDocumentId)) : [];
+
+  const before = snapshot(entry);
+  const result = await applyChange(tx, before, change, period!, doc?.clientId ?? null);
+  if (!result.ok) return result;
+  const next = result.next;
   await tx
     .update(s.timeEntries)
-    .set({ ...next, fields, reviewReasons: [], updatedAt: new Date() })
+    .set({ ...next, fields: editedFields(entry.fields, before, next), reviewReasons: [], updatedAt: new Date() })
     .where(eq(s.timeEntries.id, entryId));
-  const reason = chosen.map((r) => (r === "other" ? `other: ${note.trim()}` : r)).join(", ") + (note.trim() && !chosen.includes("other") ? `: ${note.trim()}` : "");
-  await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: next, reason }]);
+  await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: next, reason: reason.text }]);
   return { ok: true };
+}
+
+/** Adds an entry by hand (Airtable "+"; Restaurant365 "Add Shift" uses the same form and reason). */
+export async function addEntry(
+  tx: Tx,
+  actor: Actor,
+  payPeriodId: string,
+  input: EntryChange & { workerId: string; workDate: string },
+  reasons: string[],
+  note: string,
+): Promise<{ ok: true; entryId: string } | { ok: false; error: EditError }> {
+  const reason = checkedReason(reasons, note);
+  if (!reason.ok) return reason;
+  const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, payPeriodId));
+  if (!period) return { ok: false, error: "not_found" };
+  const empty: Values = { workerId: null, assignmentId: null, workDate: null, inMinute: null, outMinute: null, breakMinutes: null, minutes: null, status: "needs_review" };
+  const result = await applyChange(tx, empty, input, period, null);
+  if (!result.ok) return result;
+  const next = result.next;
+  const [worker] = await tx.select().from(s.workers).where(eq(s.workers.id, next.workerId!));
+  const [row] = await tx
+    .insert(s.timeEntries)
+    .values({
+      agencyId: actor.agencyId,
+      payPeriodId,
+      sourceDocumentId: null,
+      rowIndex: 0,
+      workerNameRaw: worker ? `${worker.firstName} ${worker.lastName}` : "",
+      ...next,
+      fields: editedFields({}, empty, next),
+      confidence: "high",
+      reviewReasons: [],
+    })
+    .returning({ id: s.timeEntries.id });
+  await audit(tx, actor, [{ action: "create", entityType: "time_entry", entityId: row!.id, after: next, reason: reason.text }]);
+  return { ok: true, entryId: row!.id };
 }
 
 /** Approves entries a person checked. In bulk, only high-confidence rows change (SPEC §7). */

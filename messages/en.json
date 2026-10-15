@@ -230,7 +230,8 @@
         "break_too_long": "The break is as long as the shift or longer.",
         "invalid_value": "A value is not valid.",
         "no_assignment": "That worker has no active assignment on that date.",
-        "several_assignments": "That worker has more than one active assignment on that date."
+        "several_assignments": "That worker has more than one active assignment on that date.",
+        "worker_required": "Choose a worker first."
       },
       "history": "History",
       "historyEmpty": "No changes yet.",
@@ -254,7 +255,9 @@
       "actions": "Actions",
       "readings": "Readings: {a} / {b}",
       "bulkBar": "Bulk actions",
-      "approveRefused": "This entry can't be approved yet. Fix its worker, date or hours first."
+      "approveRefused": "This entry can't be approved yet. Fix its worker, date or hours first.",
+      "addEntry": "Add entry",
+      "manual": "Entered by hand"
     },
     "totals": {
       "edit": "Edit",

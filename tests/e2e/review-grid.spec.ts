@@ -97,3 +97,33 @@ test("review grid keyboard: arrows, Enter to the next row needing review, F2 edi
   await page.keyboard.press(" ");
   await expect(page.getByTestId("source-panel")).toBeVisible();
 });
+
+test("review grid: add an entry by hand with a required reason", async ({ page }) => {
+  const m = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
+  const h = m.convert.hours;
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  await page.goto("/en/convert");
+  await page.getByRole("link", { name: "Start" }).first().click();
+  await page.getByTestId("file-input").setInputFiles(FIXTURE);
+  await expect(page.getByTestId("document-row")).toHaveCount(1, { timeout: 60_000 });
+  await page.getByTestId("forward").click();
+
+  await page.getByTestId("add-entry").click();
+  const row = page.getByTestId("add-row");
+  await row.getByRole("combobox", { name: h.colWorker }).selectOption({ label: "Katarzyna Nowak" });
+  await row.getByLabel(h.colDate).fill("2026-10-10");
+  await row.getByLabel(h.colIn).fill("7:00");
+  await row.getByLabel(h.colOut).fill("11:00");
+  await row.getByLabel(h.colBreak).fill("0");
+  await expect(row.getByTestId("save-edit")).toBeDisabled();
+  await row.getByTestId("reason-trigger").click();
+  await page.getByRole("menuitemcheckbox", { name: h.editReasons.confirmed_client }).click();
+  await page.keyboard.press("Escape");
+  await row.getByTestId("save-edit").click();
+  await expect(page.getByTestId("add-row")).toHaveCount(0);
+
+  const added = page.getByTestId("hours-row").filter({ hasText: "Katarzyna Nowak" });
+  await expect(added).toContainText(h.manual);
+  await expect(added).toContainText("4:00");
+  await expect(added).toContainText(h.status.reviewed);
+});

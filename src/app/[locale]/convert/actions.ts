@@ -7,7 +7,7 @@ import { withAgency } from "@/server/db";
 import { auditEvents, jobs, sourceDocuments } from "@/server/db/schema";
 import { createRunFiles, RunNotReadyError } from "@/server/files/service";
 import { classifyUpload, receiveDocument } from "@/server/intake/service";
-import { approveEntries, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
+import { addEntry, approveEntries, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { computeRun, setSkipped } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
@@ -78,6 +78,18 @@ export async function editAction(id: string, change: EntryChange, reasons: strin
   const r = await withAgency(actor.agencyId, (tx) => editEntry(tx, actor, id, change, reasons, note));
   refresh();
   return r;
+}
+
+export async function addAction(
+  payPeriodId: string,
+  input: EntryChange & { workerId: string; workDate: string },
+  reasons: string[],
+  note: string,
+): Promise<{ ok: true } | { ok: false; error: EditError }> {
+  const actor = currentActor();
+  const r = await withAgency(actor.agencyId, (tx) => addEntry(tx, actor, payPeriodId, input, reasons, note));
+  refresh();
+  return r.ok ? { ok: true } : r;
 }
 
 export async function computeTotalsAction(payPeriodId: string): Promise<void> {

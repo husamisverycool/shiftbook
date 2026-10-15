@@ -75,7 +75,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
             <h2 className="text-lg font-semibold">{t("hours.sectionTitle")}</h2>
             <p className="text-sm text-muted-foreground">{t("hours.sectionBody")}</p>
           </div>
-          <HoursGrid rows={rows as GridRow[]} roster={roster} period={{ startsOn: period.startsOn, endsOn: period.endsOn }} />
+          <HoursGrid periodId={periodId} rows={rows as GridRow[]} roster={roster} period={{ startsOn: period.startsOn, endsOn: period.endsOn }} />
         </section>
       </ConvertFrame>
     );

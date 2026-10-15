@@ -7,7 +7,7 @@ import { agencies, auditEvents, timeEntries } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
-import { approveEntries, editEntry, rejectEntry, restoreEntry } from "../../src/server/review/service";
+import { addEntry, approveEntries, editEntry, rejectEntry, restoreEntry } from "../../src/server/review/service";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -114,5 +114,26 @@ describe("the run refuses entries dated outside the pay period", () => {
     await inAgency((tx) => tx.update(timeEntries).set({ workDate: "2026-10-12", status: "reviewed" }).where(eq(timeEntries.id, e.id)));
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers.map((b) => b.code)).toContain("outside_period");
+  });
+});
+
+describe("adding an entry by hand", () => {
+  it("needs a reason, checks the values like an edit, and is audited as created", async () => {
+    const input = { workerId: workerId("katarzyna-nowak"), workDate: "2026-10-10", inMinute: 420, outMinute: 660, breakMinutes: 0 };
+    expect(await inAgency((tx) => addEntry(tx, actor, period, input, [], ""))).toEqual({ ok: false, error: "reason_required" });
+    expect(await inAgency((tx) => addEntry(tx, actor, period, { ...input, outMinute: 400 }, ["confirmed_client"], ""))).toEqual({ ok: false, error: "out_not_after_in" });
+    const r = await inAgency((tx) => addEntry(tx, actor, period, input, ["confirmed_client"], "Saturday shift missing from the clock export"));
+    expect(r.ok).toBe(true);
+    const added = await entryOf("katarzyna-nowak", "2026-10-10");
+    expect(added).toMatchObject({ minutes: 240, status: "reviewed", sourceDocumentId: null });
+    expect(added.assignmentId).not.toBeNull();
+    const events = await inAgency((tx) => tx.select().from(auditEvents).where(eq(auditEvents.entityId, added.id)));
+    expect(events.map((e) => e.action)).toEqual(["create"]);
+    expect(events[0]!.reason).toBe("confirmed_client: Saturday shift missing from the clock export");
+  });
+
+  it("refuses a worker with no assignment and a day outside the period", async () => {
+    const base = { workerId: workerId("katarzyna-nowak"), workDate: "2026-10-12", minutes: 480 };
+    expect(await inAgency((tx) => addEntry(tx, actor, period, base, ["confirmed_client"], ""))).toEqual({ ok: false, error: "date_outside_period" });
   });
 });
