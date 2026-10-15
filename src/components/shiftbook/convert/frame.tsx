@@ -13,7 +13,7 @@ import { computeTotalsAction, createFilesAction } from "@/app/[locale]/convert/a
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
-import { STEPS, type Step } from "./types";
+import { REFUSAL_MESSAGE, STEPS, type Step } from "./types";
 
 
 export type Forward =
@@ -58,7 +58,7 @@ export function ConvertFrame(props: {
       if (f.kind === "computeTotals") {
         const r = await computeTotalsAction(props.periodId);
         if ("error" in r) {
-          toast.error(t(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+          toast.error(t(`errors.${REFUSAL_MESSAGE[r.error]}`));
           setWorking(null);
           router.refresh();
         } else router.push(hrefFor(props.periodId, "totals"));
@@ -66,7 +66,7 @@ export function ConvertFrame(props: {
         const r = await createFilesAction(props.periodId, f.fingerprint ?? "");
         if (r.ok) router.push(hrefFor(props.periodId, "files"));
         else {
-          const key = { not_ready: "errors.notReady", totals_changed: "errors.totalsChanged", period_locked: "errors.periodLocked", generic: "errors.generic" } as const;
+          const key = { not_ready: "errors.notReady", totals_changed: "errors.totalsChanged", period_locked: "errors.periodLocked", busy: "errors.busy", generic: "errors.generic" } as const;
           toast.error(t(key[r.error]));
           setWorking(null);
           router.refresh();

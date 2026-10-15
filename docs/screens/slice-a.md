@@ -45,7 +45,9 @@ Screens: `slice-a/en-4-upload-done.png`, `slice-a/en-4b-archive-dialog.png`,
   too large).
 - ✓ Processing section while files are read; the list refreshes on its own.
 - ✓ Failed reading: red indicator, the message, "Try again", and "Archive" with a required reason
-  (Dext archive); archived files stay in the list marked Archived.
+  (Dext archive); archived files stay in the list marked Archived, and none of their hours are
+  paid or shown. A reading cut off by a restart is shown the same way after 10 minutes ("Reading
+  stopped before it finished") and is also picked up again on its own.
 - Differences (the converter uses the upload part of the inbox; the full `/inbox` page is a later
   slice):
   - No page header with search, filters and export.

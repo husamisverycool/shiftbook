@@ -7,12 +7,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { agencies, agencySettings, clientBillingProfiles, exports, invoices, payLines, payPeriods, payRuns, rateCards, sourceDocuments, timeEntries, workers } from "../../src/server/db/schema";
+import { listPeriods, uploadStep, hoursStep } from "../../src/server/convert/queries";
+import { agencies, agencySettings, clientBillingProfiles, exports, invoices, jobOrders, jobs, payLines, payPeriods, payRuns, rateCards, sourceDocuments, timeEntries, workers, worksites } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { createRunFiles, RunNotReadyError, TotalsChangedError } from "../../src/server/files/service";
-import { archiveDocument, readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
-import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry } from "../../src/server/review/service";
+import { StaleRequestError } from "../../src/server/errors";
+import { archiveDocument, NotArchivableError, readStoredDocument, receiveDocument, retryDocument, type ImageReader } from "../../src/server/intake/service";
+import { STALE_AFTER_MINUTES } from "../../src/server/jobs";
+import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry } from "../../src/server/review/service";
+import { lockPeriod, PeriodBusyError, periodLock, periodState } from "../../src/server/run/period-lock";
 import { computeRun, PeriodLockedError, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -226,5 +230,142 @@ describe("sixth review", () => {
       inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: periodId("w1"), filename: SAMPLE, bytes: readFileSync(`demo/samples/2026-10-05/${SAMPLE}`) })),
     ).rejects.toBeInstanceOf(PeriodLockedError);
     expect(new PeriodLockedError().permanent).toBe(true);
+  });
+});
+
+describe("seventh review", () => {
+  const docOf = async (filename: string) =>
+    (await inAgency((tx) => tx.select().from(sourceDocuments).where(and(eq(sourceDocuments.payPeriodId, period), eq(sourceDocuments.filename, filename)))))[0]!;
+  const entriesOfDoc = (documentId: string) => inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.sourceDocumentId, documentId)));
+  const codes = async () => (await inAgency((tx) => computeRun(tx, actor, period))).blockers.map((b) => b.code);
+  const failingStore = { get: () => Promise.reject(new Error("storage timeout")), put: store.put.bind(store) } as unknown as LocalDocumentStore;
+  const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000);
+  const late = () =>
+    inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: period, filename: "late.csv", bytes: new TextEncoder().encode("Employee ID,Employee Name\n1,x\n") }));
+
+  it("never pays an archived timesheet's hours, and a reading that finishes later cannot bring them back (B1)", async () => {
+    const doc = await docOf(SAMPLE);
+    await expect(inAgency((tx) => retryDocument(tx, actor, doc.id))).rejects.toBeInstanceOf(StaleRequestError); // it was read fine
+    // A second reading fails after the first one succeeded: the first reading's entries are still there.
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "received" }).where(eq(sourceDocuments.id, doc.id)));
+    await expect(readStoredDocument({ withAgency: app.withAgency, store: failingStore, imageReader: noImages }, actor, doc.id)).rejects.toThrow();
+    expect((await docOf(SAMPLE)).status).toBe("failed");
+    expect((await entriesOfDoc(doc.id)).length).toBeGreaterThan(0);
+
+    await inAgency((tx) => archiveDocument(tx, actor, doc.id, "The same hours are in the client's export"));
+    const archived = await entriesOfDoc(doc.id);
+    expect(archived.every((e) => e.status === "rejected")).toBe(true);
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.status).toBe("blocked");
+    expect(run.blockers.map((b) => b.code)).toContain("no_entries");
+    expect((await inAgency((tx) => hoursStep(tx, period))).rows).toHaveLength(0);
+
+    // A queued reading that runs after the archive changes nothing.
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc.id);
+    expect((await docOf(SAMPLE)).status).toBe("archived");
+    expect((await entriesOfDoc(doc.id)).every((e) => e.status === "rejected")).toBe(true);
+    expect(await inAgency((tx) => restoreEntry(tx, actor, archived[0]!.id))).toBe(false);
+    await expect(inAgency((tx) => retryDocument(tx, actor, doc.id))).rejects.toBeInstanceOf(StaleRequestError);
+  });
+
+  it("clears a 'both are real' confirmation when an entry is rejected or restored (S1, N4)", async () => {
+    const a = await entryOf("anita-patel", "2026-10-05");
+    const add = async () => {
+      const r = await inAgency((tx) => addEntry(tx, actor, period, { workerId: workerId("anita-patel"), workDate: "2026-10-05", minutes: 120 }, ["confirmed_client"], ""));
+      if (!r.ok) throw new Error(r.error);
+      return r.entryId;
+    };
+    const b = await add();
+    await inAgency((tx) => confirmDistinctDay(tx, actor, [a.id, b], "Evening shift, confirmed with the supervisor"));
+    await inAgency((tx) => rejectEntry(tx, actor, b));
+    const c = await add();
+    await inAgency((tx) => confirmDistinctDay(tx, actor, [a.id, c], "Evening shift, confirmed with the supervisor"));
+    expect(await codes()).not.toContain("possible_duplicate_day");
+    await inAgency((tx) => restoreEntry(tx, actor, b));
+    await inAgency((tx) => approveEntries(tx, actor, [b], { bulk: false }));
+    expect(await codes()).toContain("possible_duplicate_day");
+
+    await expect(inAgency((tx) => confirmDistinctDay(tx, actor, [a.id], "one entry"))).rejects.toBeInstanceOf(StaleRequestError);
+    await inAgency((tx) => rejectEntry(tx, actor, c));
+    await expect(inAgency((tx) => confirmDistinctDay(tx, actor, [a.id, c], "a rejected entry"))).rejects.toBeInstanceOf(StaleRequestError);
+  });
+
+  it("offers to read again, or archive, a timesheet whose reading stopped part-way (S2)", async () => {
+    const { documentId } = await late();
+    const setReading = (since: Date) => inAgency((tx) => tx.update(sourceDocuments).set({ status: "reading", updatedAt: since }).where(eq(sourceDocuments.id, documentId)));
+
+    await setReading(new Date());
+    expect((await inAgency((tx) => uploadStep(tx, period))).find((d) => d.id === documentId)!.stuck).toBe(false);
+    await expect(inAgency((tx) => retryDocument(tx, actor, documentId))).rejects.toBeInstanceOf(StaleRequestError);
+    await expect(inAgency((tx) => archiveDocument(tx, actor, documentId, "duplicate"))).rejects.toBeInstanceOf(NotArchivableError);
+
+    await setReading(minutesAgo(STALE_AFTER_MINUTES + 1));
+    expect((await inAgency((tx) => uploadStep(tx, period))).find((d) => d.id === documentId)!.stuck).toBe(true);
+    await inAgency((tx) => retryDocument(tx, actor, documentId));
+    expect((await docOf("late.csv")).status).toBe("received");
+    const queued = async () => (await inAgency((tx) => tx.select().from(jobs).where(eq(jobs.status, "queued")))).filter((j) => (j.payload as { documentId?: string }).documentId === documentId).length;
+    const before = await queued();
+    await inAgency((tx) => retryDocument(tx, actor, documentId)); // a second click
+    expect(await queued()).toBe(before);
+
+    await setReading(minutesAgo(STALE_AFTER_MINUTES + 1));
+    await inAgency((tx) => archiveDocument(tx, actor, documentId, "Uploaded twice"));
+    expect((await docOf("late.csv")).status).toBe("archived");
+  });
+
+  it("says plainly when the period is busy, and keeps the timesheet readable (S3)", async () => {
+    const usual = periodLock.timeoutMs;
+    periodLock.timeoutMs = 200;
+    let release!: () => void;
+    let locked!: () => void;
+    const isLocked = new Promise<void>((resolve) => (locked = resolve));
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const holder = inAgency(async (tx) => {
+      await lockPeriod(tx, period);
+      locked();
+      await released;
+    });
+    try {
+      await isLocked;
+      await expect(inAgency((tx) => computeRun(tx, actor, period))).rejects.toBeInstanceOf(PeriodBusyError);
+      const doc = await docOf(SAMPLE);
+      await expect(readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc.id)).rejects.toBeInstanceOf(PeriodBusyError);
+      const after = await docOf(SAMPLE);
+      expect(after.error).toBe(new PeriodBusyError().message);
+      expect(after.error).not.toMatch(/query|select|pg_/i);
+    } finally {
+      release();
+      await holder;
+      periodLock.timeoutMs = usual;
+    }
+    const failed = await docOf(SAMPLE);
+    await inAgency((tx) => retryDocument(tx, actor, failed.id));
+  });
+
+  it("answers a stale tab plainly when a timesheet or entry is gone (S4)", async () => {
+    const gone = "00000000-0000-4000-a000-0000000000ee";
+    await expect(inAgency((tx) => archiveDocument(tx, actor, gone, "x"))).rejects.toBeInstanceOf(StaleRequestError);
+    await expect(inAgency((tx) => retryDocument(tx, actor, gone))).rejects.toBeInstanceOf(StaleRequestError);
+    const a = await entryOf("anita-patel", "2026-10-05");
+    await expect(inAgency((tx) => confirmDistinctDay(tx, actor, [a.id, gone], "x"))).rejects.toBeInstanceOf(StaleRequestError);
+  });
+
+  it("keeps a period paid before Shiftbook closed even when one of its entries was rejected (N1, N2)", async () => {
+    const w1 = periodId("w1");
+    const [one] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.payPeriodId, w1)).limit(1));
+    await inAgency((tx) => tx.update(timeEntries).set({ status: "rejected" }).where(eq(timeEntries.id, one!.id)));
+    await expect(inAgency((tx) => computeRun(tx, actor, w1))).rejects.toBeInstanceOf(PeriodLockedError);
+    expect((await inAgency((tx) => listPeriods(tx))).some((p) => p.id === w1)).toBe(false);
+    expect(await inAgency((tx) => periodState(tx, w1))).toBe("history");
+    expect(await inAgency((tx) => periodState(tx, period))).toBe("open");
+  });
+
+  it("refuses files when a position or worksite name printed on the invoice changed after the totals were shown (N3)", async () => {
+    const shown = await inAgency((tx) => computeRun(tx, actor, period));
+    await inAgency((tx) => tx.update(jobOrders).set({ position: "Renamed position" }));
+    await expect(inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY, expectedFingerprint: shown.fingerprint }))).rejects.toBeInstanceOf(TotalsChangedError);
+    const again = await inAgency((tx) => computeRun(tx, actor, period));
+    await inAgency((tx) => tx.update(worksites).set({ name: "Renamed site" }));
+    await expect(inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY, expectedFingerprint: again.fingerprint }))).rejects.toBeInstanceOf(TotalsChangedError);
   });
 });

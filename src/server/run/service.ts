@@ -155,8 +155,12 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const skippedIds = new Set(run.skipped.map((x) => x.workerId));
   const workweekStartsOn = await settingOn<number>(tx, "workweek_starts_on", period.startsOn);
 
+  // Every timesheet must be read (or archived by a person) before the period's files are made.
+  const documents = (await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, payPeriodId))).sort((a, b) => cmp(a.id, b.id));
+  // An archived timesheet was set aside by a person: none of its hours are paid.
+  const archived = new Set(documents.filter((d) => d.status === "archived").map((d) => d.id));
   const entries = (await tx.select().from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, payPeriodId))).filter(
-    (e) => e.status !== "rejected" && !(e.workerId && skippedIds.has(e.workerId)),
+    (e) => e.status !== "rejected" && !(e.sourceDocumentId && archived.has(e.sourceDocumentId)) && !(e.workerId && skippedIds.has(e.workerId)),
   );
   const workerRows = await tx.select().from(s.workers);
   const workersById = new Map(workerRows.map((w) => [w.id, w]));
@@ -170,8 +174,6 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const profiles = await tx.select().from(s.clientBillingProfiles);
 
   const blockers: RunIssue[] = [];
-  // Every timesheet must be read (or archived by a person) before the period's files are made.
-  const documents = (await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, payPeriodId))).sort((a, b) => cmp(a.id, b.id));
   for (const d of documents) {
     if (d.status === "received" || d.status === "reading") {
       blockers.push({ code: "documents_pending", message: `${d.filename} is still being read; its hours are not in the totals yet.` });
@@ -310,7 +312,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     for (const problem of invoicePlan.problems) blockers.push({ code: "invoice_problem", message: problem });
   }
   // Everything the files will say, so a change after the totals were shown is caught at "Create files".
-  const textInputs = await fileTextInputs(tx, actor.agencyId, invoicePlan.plans, [...new Set(result.payLines.map((l) => l.workerId))]);
+  const textInputs = await fileTextInputs(tx, actor.agencyId, invoicePlan.plans, [...new Set(result.payLines.map((l) => l.workerId))], [...new Set(result.billLines.map((l) => l.assignmentId))]);
 
   const status = blockers.length > 0 ? "blocked" : "ready";
   const fingerprint = createHash("sha256")

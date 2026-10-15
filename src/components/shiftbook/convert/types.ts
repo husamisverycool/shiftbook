@@ -38,3 +38,7 @@ export interface GridRow {
 /** Rows a person must look at before totals: still to review, or not matched to a worker or hours. */
 export const needsAttention = (r: Pick<GridRow, "status" | "workerId" | "minutes">) =>
   r.status === "needs_review" || (r.status !== "rejected" && r.status !== "locked" && (r.workerId === null || r.minutes === null));
+
+/** A refusal from a converter action, and its message under "convert.errors". */
+export type ActionRefusal = "period_locked" | "busy" | "stale" | "generic";
+export const REFUSAL_MESSAGE = { period_locked: "periodLocked", busy: "busy", stale: "stale", generic: "generic" } as const satisfies Record<ActionRefusal, string>;

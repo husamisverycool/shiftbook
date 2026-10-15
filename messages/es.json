@@ -129,7 +129,8 @@
       "archiveTitle": "¿Archivar esta hoja de horas?",
       "archiveBody": "Sus horas no se pagan ni se facturan. Explica por qué, por ejemplo, que las mismas horas están en otro archivo.",
       "archiveReason": "Motivo",
-      "archiveConfirm": "Archivar"
+      "archiveConfirm": "Archivar",
+      "stuck": "La lectura se detuvo antes de terminar. Vuelve a leerlo, o archívalo si sus horas están en otro archivo."
     },
     "hours": {
       "sectionTitle": "Horas",
@@ -238,7 +239,8 @@
         "no_assignment": "Ese trabajador no tiene una asignación activa en esa fecha.",
         "several_assignments": "Ese trabajador tiene más de una asignación activa en esa fecha.",
         "worker_required": "Elige primero un trabajador.",
-        "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar."
+        "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar.",
+        "period_busy": "Otra persona está cambiando este periodo de pago en este momento. Inténtalo de nuevo en un momento."
       },
       "history": "Historial",
       "historyEmpty": "Aún no hay cambios.",
@@ -373,9 +375,11 @@
       }
     },
     "errors": {
+      "busy": "Otra persona está cambiando este periodo de pago en este momento. Inténtalo de nuevo en un momento.",
       "generic": "Algo salió mal. No se cambió nada.",
       "notReady": "La nómina todavía tiene problemas por resolver.",
       "periodLocked": "Los archivos de este periodo ya se crearon, así que sus horas y totales ya no pueden cambiar.",
+      "stale": "Esto cambió en otra pestaña o ventana. La página ahora muestra lo más reciente.",
       "totalsChanged": "Los totales cambiaron desde que los revisaste. Revísalos de nuevo y luego crea los archivos."
     }
   }

@@ -26,7 +26,7 @@ import { useRouter } from "@/i18n/navigation";
 import type { EntryChange, EditError } from "@/server/review/service";
 import { clock, hoursMinutes, parseClock, shortDate } from "../format";
 import { SourcePanel } from "./source-panel";
-import { needsAttention, type GridRow } from "./types";
+import { needsAttention, REFUSAL_MESSAGE, type ActionRefusal, type GridRow } from "./types";
 
 const REASONS = ["misread_corrected", "confirmed_client", "confirmed_worker", "matched_worker", "other"] as const;
 const COLUMNS = ["worker", "client", "date", "in", "out", "break", "hours", "confidence", "status", "source"] as const;
@@ -43,10 +43,10 @@ interface Draft {
   hoursText: string;
   reasons: string[];
   note: string;
-  error: EditError | null;
+  error: EditError | "period_busy" | null;
 }
 
-type AddError = EditError | "worker_required";
+type AddError = EditError | "period_busy" | "worker_required";
 
 export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { id: string; name: string }[]; period: { startsOn: string; endsOn: string } }) {
   const t = useTranslations("convert.hours");
@@ -165,10 +165,10 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
     });
   };
 
-  const act = (fn: () => Promise<{ ok: true } | { error: "period_locked" | "generic" }>) =>
+  const act = (fn: () => Promise<{ ok: true } | { error: ActionRefusal }>) =>
     start(async () => {
       const r = await fn();
-      if ("error" in r) toast.error(tc(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+      if ("error" in r) toast.error(tc(`errors.${REFUSAL_MESSAGE[r.error]}`));
       router.refresh();
     });
 
@@ -424,7 +424,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                               onClick={() =>
                                 start(async () => {
                                   const result = await approveAction([r.id], false);
-                                  if ("error" in result) toast.error(tc(result.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+                                  if ("error" in result) toast.error(tc(`errors.${REFUSAL_MESSAGE[result.error]}`));
                                   else if (result.skipped > 0) toast.error(t("approveRefused"));
                                   router.refresh();
                                 })
@@ -539,7 +539,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
             onClick={() =>
               start(async () => {
                 const r = await approveAction([...selected], true);
-                if ("error" in r) toast.error(tc(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+                if ("error" in r) toast.error(tc(`errors.${REFUSAL_MESSAGE[r.error]}`));
                 else if (r.skipped > 0) toast.message(t("approveSelectedNote", { skipped: r.skipped }));
                 setSelected(new Set());
                 router.refresh();

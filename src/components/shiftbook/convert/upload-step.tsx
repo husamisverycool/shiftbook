@@ -8,7 +8,7 @@
 import { CircleAlertIcon, FileTextIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { archiveAction, retryDocument, uploadTimesheets, type UploadResult } from "@/app/[locale]/convert/actions";
+import { archiveAction, retryAction, uploadTimesheets, type UploadResult } from "@/app/[locale]/convert/actions";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,12 +17,15 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
+import { REFUSAL_MESSAGE, type ActionRefusal } from "./types";
 
 export interface UploadDoc {
   id: string;
   filename: string;
   kind: string;
   status: "received" | "reading" | "read" | "failed" | "archived";
+  /** Its reading stopped part-way: shown like a failed reading, with Retry and Archive. */
+  stuck: boolean;
   error: string | null;
   clientName: string | null;
   entries: number;
@@ -38,14 +41,15 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
   const [dragging, setDragging] = useState(false);
   const [refused, setRefused] = useState<UploadResult["refused"]>([]);
   const [uploading, start] = useTransition();
-  const processing = documents.filter((d) => d.status === "received" || d.status === "reading");
-  const done = documents.filter((d) => d.status === "read" || d.status === "failed" || d.status === "archived");
+  const failed = (d: UploadDoc) => d.status === "failed" || d.stuck;
+  const processing = documents.filter((d) => (d.status === "received" || d.status === "reading") && !d.stuck);
+  const done = documents.filter((d) => d.status === "read" || d.status === "archived" || failed(d));
   const [archiving, setArchiving] = useState<UploadDoc | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
-  const run = (fn: () => Promise<{ ok: true } | { error: "period_locked" | "generic" }>) =>
+  const run = (fn: () => Promise<{ ok: true } | { error: ActionRefusal }>) =>
     start(async () => {
       const r = await fn();
-      if ("error" in r) toast.error(tc(r.error === "period_locked" ? "periodLocked" : "generic"));
+      if ("error" in r) toast.error(tc(REFUSAL_MESSAGE[r.error]));
       router.refresh();
     });
 
@@ -164,15 +168,15 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
                     </TableCell>
                     <TableCell>{t(`kind.${d.kind}`)}</TableCell>
                     <TableCell>
-                      {d.status === "failed" ? (
+                      {failed(d) ? (
                         <div className="flex flex-col gap-1">
                           <span className="flex items-center gap-1.5 text-destructive">
                             <CircleAlertIcon className="size-4" />
                             {t("status.failed")}
                           </span>
-                          {d.error && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.error}</span>}
+                          {(d.stuck || d.error) && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.stuck ? t("stuck") : d.error}</span>}
                           <div className="flex gap-3">
-                            <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => run(() => retryDocument(d.id))}>
+                            <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => run(() => retryAction(d.id))}>
                               {tcommon("retry")}
                             </Button>
                             <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => setArchiving(d)} data-testid="archive">

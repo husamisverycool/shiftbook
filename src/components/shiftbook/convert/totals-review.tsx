@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hoursMinutes, money } from "../format";
+import { REFUSAL_MESSAGE } from "./types";
 
 const ENTRY_LEVEL = new Set(["entry_needs_review", "unmatched_entry", "entry_incomplete", "outside_period", "outside_assignment", "crosses_midnight", "possible_duplicate_day", "no_entries"]);
 const DOCUMENT_LEVEL = new Set(["documents_pending", "document_failed"]);
@@ -61,7 +62,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
     start(async () => {
       const r = await skipAction(periodId, skipping.workerIds, true, reason);
       if ("error" in r) {
-        toast.error(tx(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+        toast.error(tx(`errors.${REFUSAL_MESSAGE[r.error]}`));
         setSkipping(null);
         router.refresh();
       } else if (r.ok) {
@@ -282,7 +283,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
                 confirming &&
                 start(async () => {
                   const r = await confirmDistinctAction(confirming, confirmReason);
-                  if ("error" in r) toast.error(tx(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+                  if ("error" in r) toast.error(tx(`errors.${REFUSAL_MESSAGE[r.error]}`));
                   setConfirming(null);
                   setConfirmReason("");
                   router.refresh();

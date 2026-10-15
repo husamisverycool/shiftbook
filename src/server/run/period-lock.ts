@@ -26,10 +26,51 @@ export class PeriodNotFoundError extends Error {
   }
 }
 
-/** Waits (at most a minute) for, then holds until the transaction ends, the period's lock. */
+/** The lock was not free within the wait: someone else is changing the period. Trying again helps. */
+export class PeriodBusyError extends Error {
+  constructor() {
+    super("Someone else is changing this pay period right now, so nothing was done. Try again in a moment.");
+    this.name = "PeriodBusyError";
+  }
+}
+
+/** How long an action waits for the period's lock (tests shorten it). */
+export const periodLock = { timeoutMs: 60_000 };
+
+/** Postgres "lock_not_available", raised when lock_timeout runs out (drizzle wraps it in `cause`). */
+function isLockTimeout(error: unknown): boolean {
+  for (let e = error; typeof e === "object" && e !== null; e = (e as { cause?: unknown }).cause) {
+    if ((e as { code?: unknown }).code === "55P03") return true;
+  }
+  return false;
+}
+
+/** Waits (at most `periodLock.timeoutMs`) for, then holds until the transaction ends, the period's lock. */
 export async function lockPeriod(tx: Tx, payPeriodId: string): Promise<void> {
-  await tx.execute(sql`set local lock_timeout = '60s'`);
-  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`pay_period:${payPeriodId}`}, 0))`);
+  const ms = Math.max(1, Math.trunc(periodLock.timeoutMs));
+  await tx.execute(sql.raw(`set local lock_timeout = ${ms}`));
+  try {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`pay_period:${payPeriodId}`}, 0))`);
+  } catch (error) {
+    if (isLockTimeout(error)) throw new PeriodBusyError();
+    throw error;
+  }
+}
+
+/**
+ * "exported": its files were created here (the latest run is exported or closed).
+ * "history": paid before Shiftbook — no run here, and hours already locked by that payment.
+ */
+export async function periodState(tx: Tx, payPeriodId: string): Promise<"open" | "exported" | "history"> {
+  const [latest] = await tx.select({ status: s.payRuns.status }).from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
+  if (latest) return latest.status === "exported" || latest.status === "closed" ? "exported" : "open";
+  // Entries are locked only by an export, so a locked entry without a run here was paid elsewhere.
+  const [locked] = await tx
+    .select({ id: s.timeEntries.id })
+    .from(s.timeEntries)
+    .where(sql`${s.timeEntries.payPeriodId} = ${payPeriodId} and ${s.timeEntries.status} = 'locked'`)
+    .limit(1);
+  return locked ? "history" : "open";
 }
 
 /** Locks the period and checks it belongs to the agency (row-level security) and is still open. */
@@ -37,12 +78,6 @@ export async function openPeriod(tx: Tx, payPeriodId: string) {
   await lockPeriod(tx, payPeriodId);
   const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, payPeriodId));
   if (!period) throw new PeriodNotFoundError();
-  const [latest] = await tx.select({ status: s.payRuns.status }).from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
-  if (latest && (latest.status === "exported" || latest.status === "closed")) throw new PeriodLockedError();
-  if (!latest) {
-    // A period paid before Shiftbook: every entry locked and no run here.
-    const entries = await tx.select({ status: s.timeEntries.status }).from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, payPeriodId));
-    if (entries.length > 0 && entries.every((e) => e.status === "locked")) throw new PeriodLockedError();
-  }
+  if ((await periodState(tx, payPeriodId)) !== "open") throw new PeriodLockedError();
   return period;
 }

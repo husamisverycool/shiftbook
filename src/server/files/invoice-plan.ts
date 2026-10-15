@@ -56,12 +56,23 @@ export async function planInvoices(
 }
 
 /** What the files will say besides money (names, addresses, PO, terms, numbers, payroll ids). */
-export async function fileTextInputs(tx: Tx, agencyId: string, plans: InvoicePlan[], workerIds: string[]) {
+export async function fileTextInputs(tx: Tx, agencyId: string, plans: InvoicePlan[], workerIds: string[], assignmentIds: string[]) {
   const [agency] = await tx.select().from(s.agencies).where(eq(s.agencies.id, agencyId));
   const people = workerIds.length > 0 ? await tx.select().from(s.workers).where(inArray(s.workers.id, workerIds)) : [];
+  // The position and worksite name are printed on invoice lines.
+  const placed =
+    assignmentIds.length > 0
+      ? await tx
+          .select({ id: s.assignments.id, position: s.jobOrders.position, worksite: s.worksites.name })
+          .from(s.assignments)
+          .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
+          .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId))
+          .where(inArray(s.assignments.id, assignmentIds))
+      : [];
   return {
     agency: agency ? [agency.name, agency.addressLines, agency.phone, agency.email] : null,
     invoices: plans.map((p) => [p.number, p.client.name, p.client.addressLines, p.client.billingEmail, p.profile.poNumber, p.profile.paymentTermsDays]),
     workers: people.map((w) => [w.id, w.firstName, w.lastName, w.payrollIds]).sort((a, b) => cmp(String(a[0]), String(b[0]))),
+    assignments: placed.map((a) => [a.id, a.position, a.worksite]).sort((a, b) => cmp(a[0]!, b[0]!)),
   };
 }

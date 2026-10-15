@@ -5,7 +5,8 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
-import { PeriodLockedError } from "../run/period-lock";
+import { isStuck } from "../intake/service";
+import { PeriodLockedError, periodState } from "../run/period-lock";
 import { computeRun, type RunIssue } from "../run/service";
 import type { Actor } from "../session";
 
@@ -21,10 +22,9 @@ export async function listPeriods(tx: Tx) {
   const periods = await tx.select().from(s.payPeriods);
   const out = [];
   for (const p of [...periods].sort((a, b) => cmp(b.startsOn, a.startsOn))) {
+    // A period paid before Shiftbook is history, not to run.
+    if ((await periodState(tx, p.id)) === "history") continue;
     const run = await latestRun(tx, p.id);
-    // A period paid before Shiftbook (all its hours locked, no run here) is history, not to run.
-    const statuses = await tx.select({ status: s.timeEntries.status }).from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, p.id));
-    if (!run && statuses.length > 0 && statuses.every((e) => e.status === "locked")) continue;
     const docs = await tx.select({ id: s.sourceDocuments.id }).from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, p.id)).limit(1);
     out.push({ id: p.id, startsOn: p.startsOn, endsOn: p.endsOn, runStatus: run?.status ?? null, started: docs.length > 0 || run !== null });
   }
@@ -43,6 +43,7 @@ export async function uploadStep(tx: Tx, payPeriodId: string) {
     .from(s.timeEntries)
     .where(eq(s.timeEntries.payPeriodId, payPeriodId));
   const clients = await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients);
+  const now = new Date();
   return docs
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || cmp(a.filename, b.filename))
     .map((d) => {
@@ -52,6 +53,8 @@ export async function uploadStep(tx: Tx, payPeriodId: string) {
         filename: d.filename,
         kind: d.kind,
         status: d.status,
+        /** Its reading stopped part-way (a crash or restart): offer to read it again or archive it. */
+        stuck: isStuck(d, now),
         error: d.error,
         clientName: clients.find((c) => c.id === d.clientId)?.name ?? null,
         entries: mine.length,
@@ -80,8 +83,10 @@ export interface HoursRow {
 }
 
 export async function hoursStep(tx: Tx, payPeriodId: string) {
-  const entries = await tx.select().from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, payPeriodId));
   const docs = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, payPeriodId));
+  // An archived timesheet's hours were set aside with it and are not paid: they are not shown.
+  const archived = new Set(docs.filter((d) => d.status === "archived").map((d) => d.id));
+  const entries = (await tx.select().from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, payPeriodId))).filter((e) => !(e.sourceDocumentId && archived.has(e.sourceDocumentId)));
   const workerRows = await tx.select().from(s.workers);
   const workersById = new Map(workerRows.map((w) => [w.id, w]));
   const assignmentClients = await tx

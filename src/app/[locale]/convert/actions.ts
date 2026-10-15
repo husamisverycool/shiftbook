@@ -4,10 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { withAgency } from "@/server/db";
-import { auditEvents, jobs, sourceDocuments } from "@/server/db/schema";
+import { auditEvents } from "@/server/db/schema";
+import { StaleRequestError } from "@/server/errors";
 import { createRunFiles, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
-import { openPeriod, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
-import { archiveDocument, classifyUpload, NotArchivableError, receiveDocument } from "@/server/intake/service";
+import { PeriodBusyError, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
+import { archiveDocument, classifyUpload, NotArchivableError, receiveDocument, retryDocument } from "@/server/intake/service";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { computeRun, setSkipped } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
@@ -19,7 +20,16 @@ const refresh = () => revalidatePath("/[locale]/convert", "page");
 const today = () => new Date().toISOString().slice(0, 10);
 
 export type UploadResult = { accepted: string[]; refused: { filename: string; reason: "unsupported" | "tooLarge" | "duplicate" }[]; locked?: true };
-export type ActionError = "period_locked" | "generic";
+export type ActionError = "period_locked" | "busy" | "stale" | "generic";
+
+/** The plain refusal for an expected error, or null for a real error. */
+function refusal(error: unknown): ActionError | null {
+  if (error instanceof PeriodLockedError) return "period_locked";
+  if (error instanceof PeriodBusyError) return "busy";
+  if (error instanceof StaleRequestError || error instanceof NotArchivableError) return "stale";
+  if (error instanceof PeriodNotFoundError) return "generic";
+  return null;
+}
 
 /** Turns the expected refusals into a plain result; anything else is a real error. */
 async function guarded<T>(fn: () => Promise<T>): Promise<T | { error: ActionError }> {
@@ -27,8 +37,8 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { error: ActionErro
     return await fn();
   } catch (error) {
     refresh();
-    if (error instanceof PeriodLockedError) return { error: "period_locked" };
-    if (error instanceof PeriodNotFoundError || error instanceof NotArchivableError) return { error: "generic" };
+    const r = refusal(error);
+    if (r) return { error: r };
     throw error;
   }
 }
@@ -68,16 +78,10 @@ export async function readQueued(): Promise<void> {
   after(() => processQueuedDocuments(actor).catch(() => undefined));
 }
 
-export async function retryDocument(documentId: string): Promise<{ ok: true } | { error: ActionError }> {
+export async function retryAction(documentId: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
   return guarded(async () => {
-    await withAgency(actor.agencyId, async (tx) => {
-      const [doc] = await tx.select({ payPeriodId: sourceDocuments.payPeriodId }).from(sourceDocuments).where(eq(sourceDocuments.id, documentId));
-      if (!doc) return;
-      await openPeriod(tx, doc.payPeriodId);
-      await tx.update(sourceDocuments).set({ status: "received", error: null, updatedAt: new Date() }).where(eq(sourceDocuments.id, documentId));
-      await tx.insert(jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: { documentId } });
-    });
+    await withAgency(actor.agencyId, (tx) => retryDocument(tx, actor, documentId));
     after(() => processQueuedDocuments(actor).catch(() => undefined));
     refresh();
     return { ok: true as const };
@@ -131,11 +135,21 @@ export async function restoreAction(id: string): Promise<{ ok: true } | { error:
   });
 }
 
-export async function editAction(id: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError }> {
+/** Edits report their own refusals; a busy period is one more. */
+async function edited<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: "period_busy" }> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (!(error instanceof PeriodBusyError)) throw error;
+    return { ok: false, error: "period_busy" };
+  } finally {
+    refresh();
+  }
+}
+
+export async function editAction(id: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy" }> {
   const actor = currentActor();
-  const r = await withAgency(actor.agencyId, (tx) => editEntry(tx, actor, id, change, reasons, note));
-  refresh();
-  return r;
+  return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, id, change, reasons, note)));
 }
 
 export async function addAction(
@@ -143,10 +157,9 @@ export async function addAction(
   input: EntryChange & { workerId: string; workDate: string },
   reasons: string[],
   note: string,
-): Promise<{ ok: true } | { ok: false; error: EditError }> {
+): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy" }> {
   const actor = currentActor();
-  const r = await withAgency(actor.agencyId, (tx) => addEntry(tx, actor, payPeriodId, input, reasons, note));
-  refresh();
+  const r = await edited(() => withAgency(actor.agencyId, (tx) => addEntry(tx, actor, payPeriodId, input, reasons, note)));
   return r.ok ? { ok: true } : r;
 }
 
@@ -175,7 +188,7 @@ export async function skipAction(payPeriodId: string, workerIds: string[], skipp
 export async function createFilesAction(
   payPeriodId: string,
   expectedFingerprint: string,
-): Promise<{ ok: true } | { ok: false; error: "not_ready" | "totals_changed" | "period_locked" | "generic" }> {
+): Promise<{ ok: true } | { ok: false; error: "not_ready" | "totals_changed" | "period_locked" | "busy" | "generic" }> {
   const actor = currentActor();
   try {
     await withAgency(actor.agencyId, (tx) => createRunFiles(tx, actor, documentStore, payPeriodId, { today: today(), expectedFingerprint }));
@@ -186,6 +199,7 @@ export async function createFilesAction(
     if (error instanceof RunNotReadyError) return { ok: false, error: "not_ready" };
     if (error instanceof TotalsChangedError) return { ok: false, error: "totals_changed" };
     if (error instanceof PeriodLockedError) return { ok: false, error: "period_locked" };
+    if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
     return { ok: false, error: "generic" };
   }
 }

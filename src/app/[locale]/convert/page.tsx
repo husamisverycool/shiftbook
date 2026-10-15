@@ -15,6 +15,7 @@ import { longDate } from "@/components/shiftbook/format";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { filesStep, getPeriod, hoursStep, latestRun, listPeriods, totalsStep, uploadStep } from "@/server/convert/queries";
 import { withAgency } from "@/server/db";
+import { periodState } from "@/server/run/period-lock";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
 
@@ -34,6 +35,8 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
   }
   const period = await inAgency((tx) => getPeriod(tx, periodId));
   if (!period) notFound();
+  // Paid before Shiftbook: nothing to convert here, so back to the list of periods.
+  if ((await inAgency((tx) => periodState(tx, periodId))) === "history") redirect(`/${locale}/convert`);
   const run = await inAgency((tx) => latestRun(tx, periodId));
   const locked = run?.status === "exported" || run?.status === "closed";
   const asked = STEPS.find((s) => s === sp.step) ?? "upload";
@@ -45,8 +48,9 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
 
   if (step === "upload") {
     const documents = await inAgency((tx) => uploadStep(tx, periodId));
-    const reading = documents.some((d) => d.status === "received" || d.status === "reading");
-    if (documents.some((d) => d.status === "received")) after(() => processQueuedDocuments(actor).catch(() => undefined));
+    const reading = documents.some((d) => (d.status === "received" || d.status === "reading") && !d.stuck);
+    // Waiting uploads are read now; a reading cut off by a restart is picked up again.
+    if (documents.some((d) => d.status === "received" || d.stuck)) after(() => processQueuedDocuments(actor).catch(() => undefined));
     return (
       <ConvertFrame {...frame} forward={{ kind: "link", step: "hours", disabled: documents.length === 0 || reading }}>
         <UploadStep periodId={periodId} documents={documents} />

@@ -7,6 +7,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { StaleRequestError } from "../errors";
 import { openPeriod, PeriodLockedError } from "../run/period-lock";
 import type { Actor } from "../session";
 
@@ -281,19 +282,25 @@ export async function rejectEntry(tx: Tx, actor: Actor, id: string): Promise<boo
   const [before] = await tx.select({ status: s.timeEntries.status }).from(s.timeEntries).where(eq(s.timeEntries.id, id));
   const done = await tx
     .update(s.timeEntries)
-    .set({ status: "rejected", updatedAt: new Date() })
+    .set({ status: "rejected", distinctConfirmed: false, updatedAt: new Date() })
     .where(and(eq(s.timeEntries.id, id), inArray(s.timeEntries.status, EDITABLE)))
     .returning({ id: s.timeEntries.id });
   if (done.length > 0) await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: id, before: { status: before?.status }, after: { status: "rejected" }, reason: "rejected in review" }]);
   return done.length > 0;
 }
 
-/** A restored entry goes back to review: a person must look at it again. */
+/**
+ * A restored entry goes back to review: a person must look at it again, and confirm again that its
+ * day is real if needed. Entries of an archived timesheet stay set aside with it.
+ */
 export async function restoreEntry(tx: Tx, actor: Actor, id: string): Promise<boolean> {
   await openPeriodsOf(tx, [id]);
+  const [entry] = await tx.select({ documentId: s.timeEntries.sourceDocumentId }).from(s.timeEntries).where(eq(s.timeEntries.id, id));
+  const [doc] = entry?.documentId ? await tx.select({ status: s.sourceDocuments.status }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, entry.documentId)) : [];
+  if (doc?.status === "archived") return false;
   const done = await tx
     .update(s.timeEntries)
-    .set({ status: "needs_review", updatedAt: new Date() })
+    .set({ status: "needs_review", distinctConfirmed: false, updatedAt: new Date() })
     .where(and(eq(s.timeEntries.id, id), eq(s.timeEntries.status, "rejected")))
     .returning({ id: s.timeEntries.id });
   if (done.length > 0) await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: id, before: { status: "rejected" }, after: { status: "needs_review" }, reason: "restored" }]);
@@ -302,16 +309,19 @@ export async function restoreEntry(tx: Tx, actor: Actor, id: string): Promise<bo
 
 /**
  * A person confirms that entries for one worker on one day are different work, not the same work
- * read twice (the run holds such days otherwise). Cleared whenever one of the entries changes.
+ * read twice (the run holds such days otherwise). Cleared whenever one of the entries is edited,
+ * rejected or restored, so a confirmation never covers entries that were not confirmed together.
  */
 export async function confirmDistinctDay(tx: Tx, actor: Actor, entryIds: string[], reason: string): Promise<void> {
   const why = reason.trim();
   if (why === "") throw new Error("A reason is required to confirm both entries are real.");
-  await openPeriodsOf(tx, entryIds);
-  const rows = await tx.select().from(s.timeEntries).where(inArray(s.timeEntries.id, entryIds));
-  if (rows.length !== entryIds.length || new Set(rows.map((r) => `${r.workerId}|${r.workDate}`)).size !== 1) {
-    throw new Error("Only entries for one worker on one day can be confirmed together.");
+  const ids = [...new Set(entryIds)];
+  await openPeriodsOf(tx, ids);
+  const rows = ids.length > 0 ? await tx.select().from(s.timeEntries).where(inArray(s.timeEntries.id, ids)) : [];
+  // What the page showed no longer holds (another tab changed it): at least two live entries of one worker-day.
+  if (ids.length < 2 || rows.length !== ids.length || rows.some((r) => r.status === "rejected") || new Set(rows.map((r) => `${r.workerId}|${r.workDate}`)).size !== 1) {
+    throw new StaleRequestError();
   }
-  await tx.update(s.timeEntries).set({ distinctConfirmed: true, updatedAt: new Date() }).where(inArray(s.timeEntries.id, entryIds));
+  await tx.update(s.timeEntries).set({ distinctConfirmed: true, updatedAt: new Date() }).where(inArray(s.timeEntries.id, ids));
   await audit(tx, actor, rows.map((r) => ({ action: "update" as const, entityType: "time_entry", entityId: r.id, before: { distinctConfirmed: r.distinctConfirmed }, after: { distinctConfirmed: true }, reason: why })));
 }

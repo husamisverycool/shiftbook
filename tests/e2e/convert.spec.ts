@@ -6,6 +6,7 @@
 import { execSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+import { demoUuid } from "../../src/server/demo/dataset";
 
 
 const SAMPLES = "demo/samples/2026-10-05";
@@ -84,3 +85,12 @@ for (const locale of ["en", "es"] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+test("a period paid before Shiftbook, opened by its link, goes back to the list of periods", async ({ page }) => {
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  for (const step of ["upload", "totals", "files"]) {
+    await page.goto(`/en/convert?period=${demoUuid("period:w1")}&step=${step}`);
+    await expect(page).toHaveURL(/\/en\/convert$/);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  }
+});

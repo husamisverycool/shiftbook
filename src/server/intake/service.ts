@@ -4,10 +4,12 @@
  * Every time entry written is audited.
  */
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { StaleRequestError } from "../errors";
+import { STALE_AFTER_MINUTES } from "../jobs";
 import { openPeriod } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
@@ -179,12 +181,14 @@ export async function readStoredDocument(
   const doc = await deps.withAgency(actor.agencyId, async (tx) => {
     const [d] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
     if (!d) throw new Error("document not found");
+    if (d.status === "archived") return null; // set aside by a person: a queued reading changes nothing
     const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
     const clients = await tx.select({ name: s.clients.name }).from(s.clients);
     await tx.update(s.sourceDocuments).set({ status: "reading", error: null, updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
     // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
     return { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() };
   });
+  if (!doc) return { entries: 0, needsReview: 0 };
 
   try {
     const bytes = await deps.store.get(doc.storageKey);
@@ -195,6 +199,9 @@ export async function readStoredDocument(
 
     return await deps.withAgency(actor.agencyId, async (tx) => {
       await openPeriod(tx, doc.payPeriodId);
+      // Archived while it was being read: keep it set aside.
+      const [now] = await tx.select({ status: s.sourceDocuments.status }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
+      if (now?.status === "archived") return { entries: 0, needsReview: 0 };
       const context = await loadAssessContext(tx, doc.payPeriodId, result.parsed.clientHint);
       const drafts = result.parsed.entries.map((raw) => assessEntry(raw, context));
       await tx.delete(s.documentPages).where(eq(s.documentPages.documentId, documentId));
@@ -212,10 +219,31 @@ export async function readStoredDocument(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await deps.withAgency(actor.agencyId, (tx) =>
-      tx.update(s.sourceDocuments).set({ status: "failed", error: message, updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId)),
+      tx
+        .update(s.sourceDocuments)
+        .set({ status: "failed", error: message, updatedAt: new Date() })
+        .where(and(eq(s.sourceDocuments.id, documentId), ne(s.sourceDocuments.status, "archived"))),
     );
     throw error;
   }
+}
+
+/** A reading that has not finished long after it started was cut off (a crash or restart). */
+export function isStuck(doc: { status: string; updatedAt: Date }, now = new Date()): boolean {
+  return doc.status === "reading" && now.getTime() - doc.updatedAt.getTime() > STALE_AFTER_MINUTES * 60_000;
+}
+
+/** Reads a timesheet again: one that could not be read, or whose reading stopped part-way. */
+export async function retryDocument(tx: Tx, actor: Actor, documentId: string): Promise<void> {
+  const [found] = await tx.select({ payPeriodId: s.sourceDocuments.payPeriodId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
+  if (!found) throw new StaleRequestError();
+  await openPeriod(tx, found.payPeriodId);
+  const [doc] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
+  if (doc!.status === "received") return; // already waiting to be read (a second click)
+  if (doc!.status !== "failed" && !isStuck(doc!)) throw new StaleRequestError();
+  await tx.update(s.sourceDocuments).set({ status: "received", error: null, updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
+  await tx.insert(s.jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: { documentId } });
+  await audit(tx, actor, [{ action: "update", entityType: "source_document", entityId: documentId, before: { status: doc!.status }, after: { status: "received" }, reason: "read again" }]);
 }
 
 export class NotArchivableError extends Error {
@@ -225,16 +253,28 @@ export class NotArchivableError extends Error {
   }
 }
 
-/** Sets a timesheet that could not be read aside, with a reason (Dext archive). Its hours are not paid. */
+/**
+ * Sets a timesheet that could not be read aside, with a reason (Dext archive). Its hours are not
+ * paid: entries an earlier reading left are rejected with the same reason, and a reading that
+ * finishes later changes nothing.
+ */
 export async function archiveDocument(tx: Tx, actor: Actor, documentId: string, reason: string): Promise<void> {
   const why = reason.trim();
   if (why === "") throw new Error("A reason is required to archive a timesheet.");
   const [found] = await tx.select({ payPeriodId: s.sourceDocuments.payPeriodId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
-  if (!found) throw new Error("document not found");
+  if (!found) throw new StaleRequestError();
   await openPeriod(tx, found.payPeriodId);
   const [doc] = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.id, documentId));
   if (doc!.status === "archived") return; // already done (a second click)
-  if (doc!.status !== "failed") throw new NotArchivableError();
+  if (doc!.status !== "failed" && !isStuck(doc!)) throw new NotArchivableError();
   await tx.update(s.sourceDocuments).set({ status: "archived", updatedAt: new Date() }).where(eq(s.sourceDocuments.id, documentId));
-  await audit(tx, actor, [{ action: "update", entityType: "source_document", entityId: documentId, before: { status: doc!.status }, after: { status: "archived" }, reason: why }]);
+  const left = await tx
+    .update(s.timeEntries)
+    .set({ status: "rejected", distinctConfirmed: false, updatedAt: new Date() })
+    .where(and(eq(s.timeEntries.sourceDocumentId, documentId), inArray(s.timeEntries.status, ["extracted", "needs_review", "reviewed", "client_approved"])))
+    .returning({ id: s.timeEntries.id, status: s.timeEntries.status });
+  await audit(tx, actor, [
+    { action: "update", entityType: "source_document", entityId: documentId, before: { status: doc!.status }, after: { status: "archived" }, reason: why },
+    ...left.map((e) => ({ action: "update" as const, entityType: "time_entry", entityId: e.id, after: { status: "rejected" }, reason: `timesheet archived: ${why}` })),
+  ]);
 }

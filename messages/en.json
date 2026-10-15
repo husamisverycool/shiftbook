@@ -129,7 +129,8 @@
       "archiveTitle": "Archive this timesheet?",
       "archiveBody": "Its hours are not paid or billed. Say why, for example that the same hours are in another file.",
       "archiveReason": "Reason",
-      "archiveConfirm": "Archive"
+      "archiveConfirm": "Archive",
+      "stuck": "Reading stopped before it finished. Read it again, or archive it if its hours are elsewhere."
     },
     "hours": {
       "sectionTitle": "Hours",
@@ -238,7 +239,8 @@
         "no_assignment": "That worker has no active assignment on that date.",
         "several_assignments": "That worker has more than one active assignment on that date.",
         "worker_required": "Choose a worker first.",
-        "period_locked": "This period's files were already created; its hours can no longer change."
+        "period_locked": "This period's files were already created; its hours can no longer change.",
+        "period_busy": "Someone else is changing this pay period right now. Try again in a moment."
       },
       "history": "History",
       "historyEmpty": "No changes yet.",
@@ -373,9 +375,11 @@
       }
     },
     "errors": {
+      "busy": "Someone else is changing this pay period right now. Try again in a moment.",
       "generic": "Something went wrong. Nothing was changed.",
       "notReady": "The run still has problems to resolve.",
       "periodLocked": "This period's files were already created, so its hours and totals can no longer change.",
+      "stale": "This changed in another tab or window. The page now shows the latest.",
       "totalsChanged": "The totals changed since you looked at them. Review them again, then create the files."
     }
   }
