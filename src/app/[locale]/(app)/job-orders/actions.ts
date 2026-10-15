@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { cancelAssignment, createAssignment, endAssignments, setAssignmentDates, type AssignmentResult } from "@/server/catalog/assignments";
 import { createJobOrder, updateJobOrder, type JobOrderInput, type JobOrderResult } from "@/server/catalog/job-orders";
 import { addRateVersion, deleteRateVersion, editRateVersion, type RateResult } from "@/server/catalog/rate-cards";
@@ -9,7 +10,38 @@ import { withAgency } from "@/server/db";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { currentActor } from "@/server/session";
 
-const today = () => new Date().toISOString().slice(0, 10);
+// Every input is checked against its shape here: a hand-made request gets the same refusal as a bad form.
+const id = z.uuid();
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const whole = z.number().int();
+const fraction = z.object({ num: whole, den: whole }).strict();
+const RateSchema = z
+  .object({
+    effectiveFrom: isoDate,
+    payRateCents: whole,
+    bill: z.union([z.object({ rateCents: whole }).strict(), z.object({ markupBp: whole }).strict()]),
+    otMultiplier: fraction,
+    dtMultiplier: fraction,
+    wcClassCode: z.string().max(12).nullable(),
+  })
+  .strict();
+const JobOrderSchema = z
+  .object({
+    clientId: id,
+    worksiteId: id,
+    position: z.string().max(200),
+    socCode: z.string().max(20).nullable(),
+    shift: z.string().max(100).nullable(),
+    headcount: whole,
+    payMinCents: whole.nullable(),
+    payMaxCents: whole.nullable(),
+    prevailingWage: z.boolean(),
+  })
+  .strict();
+const AssignmentSchema = z.object({ workerId: id, jobOrderId: id, startDate: isoDate, endDate: isoDate.nullable() }).strict();
+const DatesSchema = z.object({ startDate: isoDate, endDate: isoDate.nullable() }).strict();
+const RefSchema = z.union([z.object({ jobOrderId: id }).strict(), z.object({ assignmentId: id }).strict()]);
+const strings = z.array(z.string().max(500)).max(20);
 const refresh = () => {
   revalidatePath("/[locale]/(app)/job-orders", "page");
   revalidatePath("/[locale]/(app)/job-orders/[id]", "page");
@@ -28,47 +60,64 @@ async function run<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: "bu
   }
 }
 
-export async function createJobOrderAction(input: JobOrderInput): Promise<JobOrderResult | { ok: false; error: "busy" }> {
+export async function createJobOrderAction(raw: JobOrderInput): Promise<JobOrderResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => createJobOrder(tx, actor, input)));
+  const input = JobOrderSchema.safeParse(raw);
+  if (!input.success) return { ok: false, error: "invalid", fields: [] };
+  return run(() => withAgency(actor.agencyId, (tx) => createJobOrder(tx, actor, input.data)));
 }
 
-export async function updateJobOrderAction(id: string, input: JobOrderInput): Promise<JobOrderResult | { ok: false; error: "busy" }> {
+export async function updateJobOrderAction(jobOrderId: string, raw: JobOrderInput): Promise<JobOrderResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => updateJobOrder(tx, actor, id, input)));
+  const input = JobOrderSchema.safeParse(raw);
+  if (!input.success || !id.safeParse(jobOrderId).success) return { ok: false, error: "invalid", fields: [] };
+  return run(() => withAgency(actor.agencyId, (tx) => updateJobOrder(tx, actor, jobOrderId, input.data)));
 }
 
-export async function addRateAction(ref: { jobOrderId: string } | { assignmentId: string }, input: RateInput): Promise<RateResult | { ok: false; error: "busy" }> {
+export async function addRateAction(rawRef: { jobOrderId: string } | { assignmentId: string }, raw: RateInput): Promise<RateResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => addRateVersion(tx, actor, ref, input)));
+  const ref = RefSchema.safeParse(rawRef);
+  const input = RateSchema.safeParse(raw);
+  if (!ref.success || !input.success) return { ok: false, error: "invalid", problems: [] };
+  return run(() => withAgency(actor.agencyId, (tx) => addRateVersion(tx, actor, ref.data, input.data)));
 }
 
-export async function editRateAction(versionId: string, input: RateInput, reasons: string[], note: string): Promise<RateResult | { ok: false; error: "busy" }> {
+export async function editRateAction(versionId: string, raw: RateInput, reasons: string[], note: string): Promise<RateResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => editRateVersion(tx, actor, versionId, input, reasons, note)));
+  const input = RateSchema.safeParse(raw);
+  if (!input.success || !id.safeParse(versionId).success || !strings.safeParse(reasons).success || typeof note !== "string") return { ok: false, error: "invalid", problems: [] };
+  return run(() => withAgency(actor.agencyId, (tx) => editRateVersion(tx, actor, versionId, input.data, reasons, note.slice(0, 2000))));
 }
 
 export async function deleteRateAction(versionId: string): Promise<RateResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
+  if (!id.safeParse(versionId).success) return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => deleteRateVersion(tx, actor, versionId)));
 }
 
-export async function createAssignmentAction(input: { workerId: string; jobOrderId: string; startDate: string; endDate: string | null }): Promise<AssignmentResult | { ok: false; error: "busy" }> {
+export async function createAssignmentAction(raw: { workerId: string; jobOrderId: string; startDate: string; endDate: string | null }): Promise<AssignmentResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => createAssignment(tx, actor, input)));
+  // Only these four fields: an import's source id can never be set from here.
+  const input = AssignmentSchema.safeParse(raw);
+  if (!input.success) return { ok: false, error: "invalid_date" };
+  return run(() => withAgency(actor.agencyId, (tx) => createAssignment(tx, actor, input.data)));
 }
 
-export async function setAssignmentDatesAction(id: string, dates: { startDate: string; endDate: string | null }): Promise<AssignmentResult | { ok: false; error: "busy" }> {
+export async function setAssignmentDatesAction(assignmentId: string, raw: { startDate: string; endDate: string | null }): Promise<AssignmentResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => setAssignmentDates(tx, actor, id, dates, today())));
+  const dates = DatesSchema.safeParse(raw);
+  if (!dates.success || !id.safeParse(assignmentId).success) return { ok: false, error: "invalid_date" };
+  return run(() => withAgency(actor.agencyId, (tx) => setAssignmentDates(tx, actor, assignmentId, dates.data)));
 }
 
 export async function endAssignmentsAction(ids: string[], endDate: string): Promise<{ ended: string[]; refused: { id: string; error: string }[] } | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => endAssignments(tx, actor, ids, endDate, today())));
+  if (!z.array(id).max(1000).safeParse(ids).success || !isoDate.safeParse(endDate).success) return { ended: [], refused: [] };
+  return run(() => withAgency(actor.agencyId, (tx) => endAssignments(tx, actor, ids, endDate)));
 }
 
-export async function cancelAssignmentAction(id: string, reason: string): Promise<AssignmentResult | { ok: false; error: "busy" }> {
+export async function cancelAssignmentAction(assignmentId: string, reason: string): Promise<AssignmentResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
-  return run(() => withAgency(actor.agencyId, (tx) => cancelAssignment(tx, actor, id, reason)));
+  if (!id.safeParse(assignmentId).success || typeof reason !== "string") return { ok: false, error: "not_found" };
+  return run(() => withAgency(actor.agencyId, (tx) => cancelAssignment(tx, actor, assignmentId, reason.slice(0, 2000))));
 }

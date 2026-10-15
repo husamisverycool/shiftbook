@@ -79,4 +79,13 @@ describe("rate checks", () => {
     expect(rateProblems(rate({ dtMultiplier: { num: 2, den: 0 } }))).toContain("dt_multiplier");
     expect(rateProblems(rate({ payRateCents: 10_000_001 }))).toContain("pay_rate");
   });
+
+  it("takes the bill as exactly one of a rate or a markup, each checked the same way it is used", () => {
+    expect(rateProblems(rate({ bill: { rateCents: 2900, markupBp: -10_000 } as unknown as RateInput["bill"] }))).toContain("bill_rate");
+    expect(rateProblems(rate({ bill: {} as unknown as RateInput["bill"] }))).toContain("bill_rate");
+    expect(rateProblems(rate({ bill: { markupBp: 1.5 } }))).toContain("markup");
+    expect(rateProblems(rate({ bill: { markupBp: "45" as unknown as number } }))).toContain("markup");
+    // A markup whose bill rate would be over the cap is refused, not left for the run to block.
+    expect(rateProblems(rate({ payRateCents: 9_000_000, bill: { markupBp: 50_000 } }))).toContain("bill_rate");
+  });
 });

@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { AssignmentsView } from "@/components/shiftbook/catalog/assignments-view";
 import { catalogOptions, listAssignments } from "@/server/catalog/queries";
 import { withAgency } from "@/server/db";
+import { agencyToday } from "@/server/settings";
 import { currentActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,9 @@ export default async function AssignmentsPage(props: { params: Promise<{ locale:
   const { locale } = await props.params;
   setRequestLocale(locale);
   const actor = currentActor();
-  const today = new Date().toISOString().slice(0, 10);
-  const { rows, options } = await withAgency(actor.agencyId, async (tx) => ({ rows: await listAssignments(tx, today), options: await catalogOptions(tx) }));
+  const { rows, options, today } = await withAgency(actor.agencyId, async (tx) => {
+    const day = await agencyToday(tx);
+    return { rows: await listAssignments(tx, day), options: await catalogOptions(tx), today: day };
+  });
   return <AssignmentsView rows={rows} options={options} today={today} />;
 }

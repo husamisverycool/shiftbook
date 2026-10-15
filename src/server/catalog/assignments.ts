@@ -74,8 +74,12 @@ export async function createAssignment(
   return { ok: true, id: row!.id };
 }
 
-/** Changes an assignment's dates; paid hours must stay inside them. An end date in the past ends it. */
-export async function setAssignmentDates(tx: Tx, actor: Actor, id: string, dates: { startDate: string; endDate: string | null }, today: string): Promise<AssignmentResult> {
+/**
+ * Changes an assignment's dates; paid hours must stay inside them. Whether it has ended is worked out
+ * from the end date when shown — never stored — so timesheets that arrive after it ended, dated
+ * inside it, still match it.
+ */
+export async function setAssignmentDates(tx: Tx, actor: Actor, id: string, dates: { startDate: string; endDate: string | null }): Promise<AssignmentResult> {
   const bad = datesProblem(dates.startDate, dates.endDate);
   if (bad) return { ok: false, error: bad };
   await lockCatalog(tx, actor.agencyId, "exclusive");
@@ -85,21 +89,20 @@ export async function setAssignmentDates(tx: Tx, actor: Actor, id: string, dates
   const paid = await paidDates(tx, id);
   if (paid && (dates.startDate > paid.first || (dates.endDate !== null && dates.endDate < paid.last))) return { ok: false, error: "paid_outside", paid };
   if (await overlapping(tx, current.workerId, current.jobOrderId, { start: dates.startDate, end: dates.endDate }, id)) return { ok: false, error: "overlaps" };
-  const status = dates.endDate !== null && dates.endDate < today ? "ended" : "active";
-  await tx.update(s.assignments).set({ startDate: dates.startDate, endDate: dates.endDate, status }).where(eq(s.assignments.id, id));
+  await tx.update(s.assignments).set({ startDate: dates.startDate, endDate: dates.endDate }).where(eq(s.assignments.id, id));
   await audit(tx, actor, [
-    { action: "update", entityType: "assignment", entityId: id, before: { startDate: current.startDate, endDate: current.endDate, status: current.status }, after: { ...dates, status, jobOrderId: current.jobOrderId } },
+    { action: "update", entityType: "assignment", entityId: id, before: { startDate: current.startDate, endDate: current.endDate }, after: { ...dates, jobOrderId: current.jobOrderId } },
   ]);
   return { ok: true, id };
 }
 
 /** Ends assignments on one date (bulk bar). Each is checked on its own; returns which ended. */
-export async function endAssignments(tx: Tx, actor: Actor, ids: string[], endDate: string, today: string): Promise<{ ended: string[]; refused: { id: string; error: AssignmentError }[] }> {
+export async function endAssignments(tx: Tx, actor: Actor, ids: string[], endDate: string): Promise<{ ended: string[]; refused: { id: string; error: AssignmentError }[] }> {
   const ended: string[] = [];
   const refused: { id: string; error: AssignmentError }[] = [];
   for (const id of [...new Set(ids)].sort()) {
     const [current] = await tx.select({ startDate: s.assignments.startDate }).from(s.assignments).where(eq(s.assignments.id, id));
-    const r = current ? await setAssignmentDates(tx, actor, id, { startDate: current.startDate, endDate }, today) : { ok: false as const, error: "not_found" as const };
+    const r = current ? await setAssignmentDates(tx, actor, id, { startDate: current.startDate, endDate }) : { ok: false as const, error: "not_found" as const };
     if (r.ok) ended.push(id);
     else refused.push({ id, error: r.error });
   }

@@ -8,6 +8,7 @@ import type { Decisions } from "@/server/placements/plan";
 import { ImportFileError, runImport, saveDecision, saveMapping, startImport } from "@/server/placements/service";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { currentActor } from "@/server/session";
+import { agencyToday } from "@/server/settings";
 import { documentStore } from "@/server/storage";
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -61,9 +62,8 @@ export async function saveDecisionAction(id: string, kind: keyof Decisions, raw:
 
 export async function runImportAction(id: string): Promise<{ ok: true } | { ok: false; error: Refusal }> {
   const actor = currentActor();
-  const today = new Date().toISOString().slice(0, 10);
   return guarded(async () => {
-    await withAgency(actor.agencyId, (tx) => runImport(tx, actor, documentStore, id, today));
+    await withAgency(actor.agencyId, async (tx) => runImport(tx, actor, documentStore, id, await agencyToday(tx)));
     return { ok: true as const };
   });
 }

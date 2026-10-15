@@ -187,7 +187,8 @@ export async function listAssignments(tx: Tx, today: string, where?: { jobOrderI
         clientName: c.name,
         startDate: a.startDate,
         endDate: a.endDate,
-        status: a.status,
+        // "Ended" is worked out from the end date, never stored.
+        status: a.status === "cancelled" ? ("cancelled" as const) : a.endDate !== null && a.endDate < today ? ("ended" as const) : ("active" as const),
         ownRates: own.length > 0,
         payRateCents: card?.payRateCents ?? null,
         billRateCents: card?.billRateCents ?? null,

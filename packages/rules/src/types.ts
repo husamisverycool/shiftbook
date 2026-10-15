@@ -44,6 +44,8 @@ export interface Shift {
   minutes: number;
   payRateCents: number;
   billRateCents: number;
+  /** How the bill rate came about when the rate card worked it out (a markup rounded to the cent), for the explanation. */
+  billRateExplain?: string;
   billOtMultiplier: Fraction;
   otBillingRule: OvertimeBillingRule;
 }

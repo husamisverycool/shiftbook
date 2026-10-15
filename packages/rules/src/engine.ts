@@ -86,6 +86,7 @@ function validShift(s: Shift): string | null {
   }
   if (!Number.isSafeInteger(s.payRateCents) || s.payRateCents <= 0 || s.payRateCents > MAX_RATE_CENTS) return "pay rate must be a positive number of cents per hour, at most $100,000";
   if (!Number.isSafeInteger(s.billRateCents) || s.billRateCents <= 0 || s.billRateCents > MAX_RATE_CENTS) return "bill rate must be a positive number of cents per hour, at most $100,000";
+  if (s.billRateExplain !== undefined && (typeof s.billRateExplain !== "string" || s.billRateExplain.length > 300)) return "the bill rate's explanation must be text of at most 300 characters";
   const m = s.billOtMultiplier as Partial<Fraction> | undefined;
   if (!m || !Number.isSafeInteger(m.num) || !Number.isSafeInteger(m.den) || m.num! <= 0 || m.den! <= 0 || m.num! > MAX_FACTOR || m.den! > MAX_FACTOR) {
     return "the overtime bill multiplier must be a positive whole-number fraction";
@@ -117,7 +118,7 @@ function scopeLabel(row: JurisdictionRule): string {
 }
 
 /** Shifts on one line share assignment, client, rates and billing rule. */
-const lineKey = (s: Shift) => [s.assignmentId, s.clientId, s.payRateCents, s.billRateCents, s.billOtMultiplier.num, s.billOtMultiplier.den, s.otBillingRule].join("|");
+const lineKey = (s: Shift) => [s.assignmentId, s.clientId, s.payRateCents, s.billRateCents, s.billRateExplain ?? "", s.billOtMultiplier.num, s.billOtMultiplier.den, s.otBillingRule].join("|");
 
 interface Bucket {
   key: string;
@@ -379,7 +380,7 @@ export function computePay(input: PayInput): PayResult {
         const scope = `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}`;
         weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: uniqueSorted(b.regularEntries) });
         const bill = arithmetic("Billed regular", b.regular, billRate, "");
-        weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card.`, entryIds: uniqueSorted(b.regularEntries) });
+        weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card${b.sample.billRateExplain ? ` (${b.sample.billRateExplain})` : ""}.`, entryIds: uniqueSorted(b.regularEntries) });
       }
 
       // 5. overtime pay and its billing

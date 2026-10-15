@@ -1,23 +1,25 @@
 /**
  * What people type into amount fields, turned into integers exactly (SPEC §5: no floating point in
  * pay or billing): dollars → cents, percentages → basis points, multipliers → fractions. Text in,
- * integers out; nothing is ever parsed as a float.
+ * integers out; nothing is ever parsed as a float. A comma only separates thousands ("1,018.50"):
+ * "18,25" is refused rather than read as $1,825.
  */
+import { floorDiv, mod, mul } from "@shiftbook/rules";
 
-const digits = (s: string) => /^\d+$/.test(s);
+const AMOUNT = /^(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?$/;
 
 /** "18.25" / "$1,018.5" → cents; null when it is not a plain non-negative amount with at most 2 decimals. */
 export function parseDollars(text: string): number | null {
-  const t = text.trim().replace(/^\$/, "").replace(/,/g, "");
-  const [whole = "", frac = "", ...rest] = t.split(".");
-  if (rest.length > 0 || !digits(whole) || (frac !== "" && !digits(frac)) || frac.length > 2 || (t.includes(".") && frac === "")) return null;
-  const cents = Number(whole) * 100 + Number(frac.padEnd(2, "0") || "0");
-  return Number.isSafeInteger(cents) ? cents : null;
+  const m = AMOUNT.exec(text.trim().replace(/^\$/, ""));
+  if (!m) return null;
+  const whole = m[1]!.replace(/,/g, "");
+  if (whole.length > 13) return null;
+  return mul(Number(whole), 100) + Number((m[2] ?? "").padEnd(2, "0"));
 }
 
 export function centsToInput(cents: number | null): string {
   if (cents === null) return "";
-  return `${Math.trunc(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
+  return `${floorDiv(cents, 100)}.${String(mod(cents, 100)).padStart(2, "0")}`;
 }
 
 /** "45" / "45.5%" → basis points (4500 / 4550); at most 2 decimals. */
@@ -29,21 +31,21 @@ export function bpToInput(bp: number | null): string {
   return centsToInput(bp);
 }
 
-const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, mod(a, b)));
 
 /** "1.5" → {3, 2}; at most 2 decimals. */
 export function parseMultiplier(text: string): { num: number; den: number } | null {
   const hundredths = parseDollars(text);
   if (hundredths === null || hundredths === 0) return null;
   const g = gcd(hundredths, 100);
-  return { num: hundredths / g, den: 100 / g };
+  return { num: floorDiv(hundredths, g), den: floorDiv(100, g) };
 }
 
 /** {3, 2} → "1.5" for the form (exact for the fractions the form can produce). */
 export function multiplierToInput(m: { num: number; den: number }): string {
-  const hundredths = (m.num * 100) / m.den;
-  if (!Number.isInteger(hundredths)) return `${m.num}/${m.den}`;
-  const whole = Math.trunc(hundredths / 100);
-  const frac = String(hundredths % 100).padStart(2, "0").replace(/0+$/, "");
-  return frac ? `${whole}.${frac}` : String(whole);
+  const scaled = mul(m.num, 100);
+  if (mod(scaled, m.den) !== 0) return `${m.num}/${m.den}`;
+  const hundredths = floorDiv(scaled, m.den);
+  const frac = String(mod(hundredths, 100)).padStart(2, "0").replace(/0+$/, "");
+  return frac ? `${floorDiv(hundredths, 100)}.${frac}` : String(floorDiv(hundredths, 100));
 }

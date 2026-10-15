@@ -47,15 +47,30 @@ export function rateProblems(input: RateInput): RateProblem[] {
   const problems: RateProblem[] = [];
   if (!isIsoDate(input.effectiveFrom)) problems.push("effective_from");
   if (!wholeCents(input.payRateCents)) problems.push("pay_rate");
-  if ("rateCents" in input.bill) {
-    if (!wholeCents(input.bill.rateCents)) problems.push("bill_rate");
-  } else if (!Number.isSafeInteger(input.bill.markupBp) || input.bill.markupBp < 0 || input.bill.markupBp > MAX_MARKUP_BP) {
+  // Exactly one of a bill rate or a markup, tested the same way `billOf` uses it.
+  const bill = billOf(input);
+  if (bill === null) problems.push("bill_rate");
+  else if ("rateCents" in bill) {
+    if (!wholeCents(bill.rateCents)) problems.push("bill_rate");
+  } else if (!Number.isSafeInteger(bill.markupBp) || bill.markupBp < 0 || bill.markupBp > MAX_MARKUP_BP) {
     problems.push("markup");
+  } else if (wholeCents(input.payRateCents) && !wholeCents(billFromMarkup(input.payRateCents, bill.markupBp).rateCents)) {
+    problems.push("bill_rate");
   }
   if (!sensibleMultiplier(input.otMultiplier)) problems.push("ot_multiplier");
   if (!sensibleMultiplier(input.dtMultiplier)) problems.push("dt_multiplier");
   if (input.wcClassCode !== null && !/^[A-Za-z0-9.-]{1,12}$/.test(input.wcClassCode)) problems.push("wc_class_code");
   return problems;
+}
+
+/** The bill as given: a rate or a markup, or null when it is both, neither, or not an object. */
+export function billOf(input: Pick<RateInput, "bill">): { rateCents: number } | { markupBp: number } | null {
+  const b = input.bill as unknown;
+  if (typeof b !== "object" || b === null) return null;
+  const hasRate = "rateCents" in b;
+  const hasMarkup = "markupBp" in b;
+  if (hasRate === hasMarkup) return null;
+  return hasRate ? { rateCents: (b as { rateCents: number }).rateCents } : { markupBp: (b as { markupBp: number }).markupBp };
 }
 
 /** Bill rate = pay × (10000 + markup) / 10000 cents an hour, rounded once, half up, with the working. */

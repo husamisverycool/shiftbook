@@ -11,6 +11,10 @@ describe("typed amounts become integers exactly", () => {
     expect(parseDollars("abc")).toBeNull();
     expect(parseDollars("")).toBeNull();
     expect(parseDollars("-3")).toBeNull();
+    // A comma only separates thousands: "18,25" (cents after a comma) is refused, not read as $1,825.
+    expect(parseDollars("18,25")).toBeNull();
+    expect(parseDollars("1,018.50")).toBe(101850);
+    expect(parseDollars("1,0185")).toBeNull();
   });
 
   it("writes cents back as a plain amount for the form", () => {
@@ -24,6 +28,7 @@ describe("typed amounts become integers exactly", () => {
     expect(parsePercentBp("45.5%")).toBe(4550);
     expect(parsePercentBp("12.25")).toBe(1225);
     expect(parsePercentBp("1.234")).toBeNull();
+    expect(parsePercentBp("4,5")).toBeNull();
     expect(bpToInput(4550)).toBe("45.50");
   });
 

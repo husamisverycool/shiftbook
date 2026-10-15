@@ -12,7 +12,7 @@ import { cancelAssignment, createAssignment, setAssignmentDates } from "../../sr
 import { createJobOrder, updateJobOrder, type JobOrderInput } from "../../src/server/catalog/job-orders";
 import { addRateVersion, deleteRateVersion, editRateVersion } from "../../src/server/catalog/rate-cards";
 import type { RateInput } from "../../src/server/catalog/versions";
-import { agencies, auditEvents, payLines, rateCards, workers } from "../../src/server/db/schema";
+import { agencies, assignments, auditEvents, billLines, payLines, rateCards, sourceDocuments, timeEntries, workers } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId, worksiteId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
@@ -31,7 +31,6 @@ const inAgency = <T>(fn: Parameters<typeof app.withAgency<T>>[1]) => app.withAge
 const week = periodId("w2"); // 2026-10-05 to 2026-10-11; w1 before it was paid before Shiftbook
 const SAMPLE = "IL-prairie-line-timeclock-2026-10-05.csv";
 const OPERATOR = jobOrderId("il-operator");
-const today = "2026-10-15";
 
 const rate = (over: Partial<RateInput> = {}): RateInput => ({
   effectiveFrom: "2026-10-08",
@@ -122,13 +121,18 @@ describe("rate card versions", () => {
     expect(lines.filter((l) => others.some((w) => w.id === l.workerId)).every((l) => l.rateNum / l.rateDen !== 2200)).toBe(true);
   });
 
-  it("a bill rate entered as a markup is rounded once, and the working is kept", async () => {
+  it("a bill rate entered as a markup is rounded once, and the working is kept and shown on the bill line", async () => {
     const r = await inAgency((tx) => addRateVersion(tx, actor, { jobOrderId: OPERATOR }, rate({ payRateCents: 1825, bill: { markupBp: 4500 } })));
     if (!r.ok) throw new Error(r.error);
     const [v] = await inAgency((tx) => tx.select().from(rateCards).where(eq(rateCards.id, r.id)));
     expect([v!.billRateCents, v!.markupBp]).toEqual([2646, 4500]);
+    const working = "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46";
     const [event] = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityId, r.id), eq(auditEvents.action, "create"))));
-    expect(event!.reason).toBe("$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46");
+    expect(event!.reason).toBe(working);
+    const run = await inAgency((tx) => computeRun(tx, actor, week));
+    const bill = await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.workerId, workerId("anita-patel")))));
+    expect(bill.filter((l) => l.rateNum === 2646).every((l) => l.explain.includes(`(${working})`))).toBe(true);
+    expect(bill.some((l) => l.rateNum === 2646)).toBe(true);
   });
 
   it("refuses rates that are not sound", async () => {
@@ -202,10 +206,22 @@ describe("assignments", () => {
     expect((await inAgency((tx) => createAssignment(tx, actor, { workerId: workerId("anita-patel"), jobOrderId: jobOrderId("il-assembler-day"), startDate: "2026-10-20", endDate: null }))).ok).toBe(true);
   });
 
+  it("an ended assignment still takes the timesheets dated inside it (late timesheets are normal)", async () => {
+    expect((await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-01-01", endDate: "2026-10-09" }))).ok).toBe(true);
+    const [a] = await inAgency((tx) => tx.select().from(assignments).where(eq(assignments.id, assignmentId("anita-patel"))));
+    expect(a!.status).toBe("active"); // "ended" is worked out from the dates, never stored
+    const [doc] = await inAgency((tx) => tx.select().from(sourceDocuments).where(eq(sourceDocuments.filename, SAMPLE)));
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "received" }).where(eq(sourceDocuments.id, doc!.id)));
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc!.id);
+    const hers = await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.payPeriodId, week))));
+    expect(hers.length).toBeGreaterThan(0);
+    expect(hers.filter((e) => e.workDate! <= "2026-10-09").every((e) => e.assignmentId === assignmentId("anita-patel"))).toBe(true);
+  });
+
   it("never moves an assignment's dates so that paid hours fall outside them", async () => {
-    const r = await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-10-05", endDate: null }, today));
+    const r = await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-10-05", endDate: null }));
     expect(r).toMatchObject({ ok: false, error: "paid_outside" });
-    expect((await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-01-01", endDate: "2026-10-06" }, today))).ok).toBe(true);
+    expect((await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-01-01", endDate: "2026-10-06" }))).ok).toBe(true);
     const run = await inAgency((tx) => computeRun(tx, actor, week));
     expect(run.blockers.some((b) => b.code === "outside_assignment" && b.workerId === workerId("anita-patel"))).toBe(true);
   });

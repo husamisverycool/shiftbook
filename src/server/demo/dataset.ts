@@ -163,6 +163,7 @@ export const NICKNAMES: [string, string][] = [
 
 export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   { key: "workweek_starts_on", value: 1 }, // Monday
+  { key: "time_zone", value: "America/Chicago" }, // where "today" is for the agency
   { key: "rounding_mode", value: "half_up" },
   { key: "earning_code_map.gusto_hours_csv", value: { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours" } },
   // Bill multipliers a new rate card starts with (imported placements, a job order's first card).

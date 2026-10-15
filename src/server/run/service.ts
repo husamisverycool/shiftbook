@@ -19,12 +19,15 @@ import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { fileTextInputs, planInvoices } from "../files/invoice-plan";
+import { billFromMarkup } from "../catalog/versions";
+import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
 import { payrollFixture } from "../files/payroll-fixture";
 import type { Actor } from "../session";
 import { openPeriod, PeriodLockedError } from "./period-lock";
 
 export { PeriodLockedError } from "./period-lock";
+export { settingOn } from "../settings";
 
 /** The payroll system this slice exports to; its employee id must be on every paid worker. */
 export const TARGET_PAYROLL_SYSTEM = "gusto" as const;
@@ -143,12 +146,11 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
   };
 }
 
-/** The agency setting in effect on a date (one row at most). */
-export async function settingOn<T>(tx: Tx, key: string, date: string): Promise<T | undefined> {
-  const rows = await tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, key));
-  const inEffect = rows.filter((r) => effective(date, r.effectiveFrom, r.effectiveTo));
-  if (inEffect.length > 1) throw new Error(`Agency setting ${key} has ${inEffect.length} rows in effect on ${date}.`);
-  return inEffect[0]?.value as T | undefined;
+/** A bill rate the rate card worked out from a markup carries its working onto the bill line. */
+function billRateExplain(card: typeof s.rateCards.$inferSelect): { billRateExplain?: string } {
+  if (card.markupBp === null) return {};
+  const worked = billFromMarkup(card.payRateCents, card.markupBp);
+  return worked.rateCents === card.billRateCents ? { billRateExplain: worked.explain } : {};
 }
 
 export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Promise<RunResult> {
@@ -209,7 +211,11 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       issue("outside_period", `${name} on ${e.workDate}: the date is outside the pay period (${period.startsOn} to ${period.endsOn}).`);
       continue;
     }
-    if (!effective(e.workDate, a.assignment.startDate, a.assignment.endDate) || a.assignment.status === "cancelled") {
+    if (a.assignment.status === "cancelled") {
+      issue("outside_assignment", `${name} on ${e.workDate}: the assignment was cancelled, so these hours cannot be paid on it.`);
+      continue;
+    }
+    if (!effective(e.workDate, a.assignment.startDate, a.assignment.endDate)) {
       issue("outside_assignment", `${name} on ${e.workDate}: the date is outside the assignment (${a.assignment.startDate} to ${a.assignment.endDate ?? "open"}).`);
       continue;
     }
@@ -246,6 +252,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       minutes: e.minutes,
       payRateCents: card.payRateCents,
       billRateCents: card.billRateCents,
+      ...billRateExplain(card),
       billOtMultiplier: { num: card.otMultiplierNum, den: card.otMultiplierDen },
       otBillingRule: profile[0]!.overtimeBillingRule,
     });

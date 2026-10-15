@@ -136,6 +136,8 @@ export function planRows(source: Source, header: string[], rows: string[][], map
     const statusRaw = cell(header, r, mapping.status);
     const status = statusOf(statusRaw, decisions.status?.[statusRaw]);
     if (status === "cancelled") return skip("cancelled_in_source", statusRaw);
+    // An ended placement is imported with its end date (whether it has ended is read from the dates).
+    if (status === "ended" && !endDate) return skip("missing_value", "endDate");
 
     const payRaw = cell(header, r, mapping.payRate);
     const billRaw = cell(header, r, mapping.billRate);

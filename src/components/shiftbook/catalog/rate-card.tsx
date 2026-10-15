@@ -279,7 +279,8 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
 
   const payCents = parseDollars(pay);
   const markupBp = parsePercentBp(markup);
-  const preview = billMode === "markup" && payCents !== null && markupBp !== null ? billFromMarkup(payCents, markupBp) : null;
+  // Only within the limits the server accepts (a huge typed number never reaches the arithmetic).
+  const preview = billMode === "markup" && payCents !== null && markupBp !== null && payCents <= 10_000_000 && markupBp <= 100_000 ? billFromMarkup(payCents, markupBp) : null;
 
   const submit = () => {
     const local: Record<string, string> = {};

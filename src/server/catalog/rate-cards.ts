@@ -11,7 +11,7 @@ import * as s from "../db/schema";
 import { lockCatalog } from "../run/period-lock";
 import type { Actor } from "../session";
 import { paidThrough } from "./paid";
-import { billFromMarkup, isFrozen, planDelete, planInsert, rateProblems, type RateInput, type RateProblem } from "./versions";
+import { billFromMarkup, billOf, isFrozen, planDelete, planInsert, rateProblems, type RateInput, type RateProblem } from "./versions";
 
 export const RATE_EDIT_REASONS = ["wrong_from_start", "client_agreed", "data_entry", "other"] as const;
 
@@ -57,14 +57,16 @@ function reasonText(reasons: string[], note: string): { ok: true; text: string }
   return { ok: true, text: chosen.map((r) => (r === "other" ? `other: ${note.trim()}` : r)).join(", ") + (note.trim() && !chosen.includes("other") ? `: ${note.trim()}` : "") };
 }
 
+/** The row to store (call only after `rateProblems` found nothing, so the bill is exactly one kind). */
 function values(input: RateInput) {
-  const fromMarkup = "markupBp" in input.bill ? billFromMarkup(input.payRateCents, input.bill.markupBp) : null;
+  const bill = billOf(input)!;
+  const fromMarkup = "markupBp" in bill ? billFromMarkup(input.payRateCents, bill.markupBp) : null;
   return {
     row: {
       effectiveFrom: input.effectiveFrom,
       payRateCents: input.payRateCents,
-      billRateCents: fromMarkup ? fromMarkup.rateCents : (input.bill as { rateCents: number }).rateCents,
-      markupBp: "markupBp" in input.bill ? input.bill.markupBp : null,
+      billRateCents: fromMarkup ? fromMarkup.rateCents : (bill as { rateCents: number }).rateCents,
+      markupBp: "markupBp" in bill ? bill.markupBp : null,
       otMultiplierNum: input.otMultiplier.num,
       otMultiplierDen: input.otMultiplier.den,
       dtMultiplierNum: input.dtMultiplier.num,

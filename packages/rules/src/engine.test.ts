@@ -564,3 +564,14 @@ describe("computePay — fifth review fixes", () => {
     expect(codes(computePay(input([shift(WEEK[0]!, 480)], { overtimeRules: [...OT_RULES.filter((o) => o.jurisdiction !== "IL"), noMultiplier] })))).toEqual(["rule_data_invalid"]);
   });
 });
+
+describe("computePay — how a bill rate came about is in the bill line", () => {
+  it("adds the rate card's own working (a markup rounded to the cent) to the bill line's explanation", () => {
+    const note = "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46";
+    const r = computePay(input(WEEK.slice(0, 2).map((d) => shift(d, 480, { billRateCents: 2646, billRateExplain: note }))));
+    expect(r.billLines).toHaveLength(1);
+    expect(r.billLines[0]!.explain).toContain(`Bill rate from the rate card (${note}).`);
+    const plain = computePay(input(WEEK.slice(0, 2).map((d) => shift(d, 480))));
+    expect(plain.billLines[0]!.explain).toContain("Bill rate from the rate card.");
+  });
+});

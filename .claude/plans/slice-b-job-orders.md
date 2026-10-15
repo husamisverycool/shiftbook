@@ -37,8 +37,9 @@ The converter moves inside the app frame (its route and pattern file do not chan
 ## Rules (tests first for each)
 - **Job orders:** client, worksite, position, SOC code, shift, headcount, pay range, prevailing-wage
   flag (SPEC §4). The worksite must belong to the client. Every change audited.
-- **Rate cards** belong to a job order, or to one assignment (a worker paid differently). An
-  assignment with any card of its own uses only its own cards. Fields: effective from/to, pay rate,
+- **Rate cards** belong to a job order, or to one assignment (a worker paid differently). A
+  worker's own rates apply on the dates their versions cover; the job order's rates apply on the
+  other dates (so adding own rates later never leaves paid weeks without a card). Fields: effective from/to, pay rate,
   bill rate or markup (stored as basis points; bill rate = pay × (10000 + markup) / 10000, rounded
   once, half-up, shown in the explain string), OT and DT bill multipliers, WC class code.
   Differentials, holiday rule and minimum-hours guarantee come with the full rules engine (slice c).
@@ -48,7 +49,8 @@ The converter moves inside the app frame (its route and pattern file do not chan
   period cannot be edited or deleted — only a new version starting after the last paid day. A
   version not used by any paid week can be edited (with a required reason, Stripe/Restaurant365) or
   deleted; the earliest version cannot be deleted while later ones exist (Bullhorn).
-- **Assignments:** worker, job order, start, end, status (active / ended / cancelled). End not before
+- **Assignments:** worker, job order, start, end, cancelled or not. "Ended" is read from the end
+  date when shown, never stored, so late timesheets dated inside an ended assignment still match. End not before
   start; one worker cannot hold two overlapping assignments on the same job order; dates cannot move
   so that a paid entry falls outside them; a cancelled assignment is never payable.
 - **Import:** Bullhorn / JobAdder / Spott / other; CSV or Excel. Social Security numbers and birth

@@ -105,7 +105,7 @@ export function assessEntry(raw: RawEntry, ctx: AssessContext): EntryDraft {
     const active = ctx.assignments.filter(
       (a) =>
         a.workerId === workerId &&
-        a.status === "active" &&
+        a.status !== "cancelled" &&
         a.startDate <= workDate &&
         (a.endDate === null || workDate <= a.endDate) &&
         (clientId === null || a.clientId === clientId),

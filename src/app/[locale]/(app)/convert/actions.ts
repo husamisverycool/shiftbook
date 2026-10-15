@@ -14,10 +14,10 @@ import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, r
 import { computeRun, setSkipped } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
+import { agencyToday } from "@/server/settings";
 import { documentStore } from "@/server/storage";
 
 const refresh = () => revalidatePath("/[locale]/(app)/convert", "page");
-const today = () => new Date().toISOString().slice(0, 10);
 
 export type { UploadResult } from "@/server/intake/upload";
 export type ActionError = "period_locked" | "busy" | "stale" | "generic";
@@ -177,7 +177,7 @@ export async function createFilesAction(
 ): Promise<{ ok: true } | { ok: false; error: "not_ready" | "totals_changed" | "period_locked" | "busy" | "generic" }> {
   const actor = currentActor();
   try {
-    await withAgency(actor.agencyId, (tx) => createRunFiles(tx, actor, documentStore, payPeriodId, { today: today(), expectedFingerprint }));
+    await withAgency(actor.agencyId, async (tx) => createRunFiles(tx, actor, documentStore, payPeriodId, { today: await agencyToday(tx), expectedFingerprint }));
     refresh();
     return { ok: true };
   } catch (error) {

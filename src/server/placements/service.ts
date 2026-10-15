@@ -18,7 +18,7 @@ import { StaleRequestError } from "../errors";
 import { readCsv, writeCsv } from "../../exports/csv";
 import { tableFromCsv, tableFromXlsx } from "../intake/structured";
 import { lockCatalog } from "../run/period-lock";
-import { settingOn } from "../run/service";
+import { settingOn } from "../settings";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { autoMap, FIELDS, missingFields, SOURCES, type Field, type Mapping, type Source } from "./fields";
@@ -209,7 +209,6 @@ async function importRow(
   }
   const a = await createAssignment(tx, actor, { workerId: p.workerId, jobOrderId, startDate: p.startDate, endDate: p.endDate, external: p.externalId ? { source, id: p.externalId } : undefined });
   if (!a.ok) throw new RowRefused({ code: a.error, value: p.startDate });
-  if (p.status === "ended") await tx.update(s.assignments).set({ status: "ended" }).where(eq(s.assignments.id, a.id));
   if (p.rates) {
     // The placement's own rates, unless they are the job order's rates on its start date.
     const jobCard = inForce(await versionsOf(tx, { jobOrderId, assignmentId: null }), p.startDate);
