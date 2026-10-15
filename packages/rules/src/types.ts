@@ -28,8 +28,14 @@ export interface Shift {
   clientId: string;
   /** Worksite state (two-letter code); "US" federal rules always apply in addition. */
   jurisdiction: string;
+  /** Worksite county and city: local ordinances are matched on these. */
+  county: string;
+  city: string;
   date: IsoDate;
-  /** Minutes after midnight the shift started, for ordering within a day; null if unknown. */
+  /**
+   * Minutes after midnight the shift started, for ordering within a day; null if unknown. A shift
+   * must not run past midnight (startMinute + minutes ≤ 1440): intake splits such shifts first.
+   */
   startMinute: number | null;
   minutes: number;
   payRateCents: number;
@@ -52,7 +58,20 @@ export interface OvertimeRule {
 
 export interface JurisdictionRule {
   jurisdiction: string;
+  /** Local scope: null/absent means statewide. */
+  county?: string | null;
+  city?: string | null;
   ruleCode: string;
+  effectiveFrom: IsoDate;
+  effectiveTo: IsoDate | null;
+  citation: string;
+}
+
+export interface MinimumWageRule {
+  jurisdiction: string;
+  county?: string | null;
+  city?: string | null;
+  rateCents: number;
   effectiveFrom: IsoDate;
   effectiveTo: IsoDate | null;
   citation: string;
@@ -63,6 +82,7 @@ export interface PayInput {
   shifts: Shift[];
   overtimeRules: OvertimeRule[];
   jurisdictionRules: JurisdictionRule[];
+  minimumWageRules: MinimumWageRule[];
 }
 
 export interface Line {
@@ -85,8 +105,12 @@ export type IssueCode =
   | "invalid_input"
   | "unknown_jurisdiction"
   | "rule_not_supported_yet"
+  | "rule_data_missing"
+  | "below_minimum_wage"
   | "multiple_pay_rates_with_overtime"
-  | "zero_or_negative_pay";
+  | "zero_or_negative_pay"
+  // warnings (do not block):
+  | "allocation_order_assumed";
 
 export interface Issue {
   code: IssueCode;
@@ -95,6 +119,7 @@ export interface Issue {
   workweekStart?: IsoDate;
   jurisdiction?: string;
   ruleCode?: string;
+  date?: IsoDate;
   entryIds?: string[];
   message: string;
 }
@@ -104,4 +129,5 @@ export interface PayResult {
   payLines: Line[];
   billLines: Line[];
   blockers: Issue[];
+  warnings: Issue[];
 }

@@ -1,0 +1,373 @@
+{
+  "name": "chicago-local-ordinance-blocked",
+  "summary": "A worksite in Chicago (Cook County), Illinois. Chicago and Cook County have their own minimum wage ordinances that are not modeled yet, so the week is held with two reasons rather than paid at the state rate.",
+  "input": {
+    "workweekStartsOn": 1,
+    "shifts": [
+      {
+        "entryIds": [
+          "entry-057"
+        ],
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "jurisdiction": "IL",
+        "county": "Cook",
+        "city": "Chicago",
+        "date": "2026-10-05",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1800,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      }
+    ],
+    "overtimeRules": [
+      {
+        "jurisdiction": "US",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4a(1) — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "MA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Massachusetts Minimum Fair Wage Law, M.G.L. c. 151, § 1A — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_overtime",
+        "kind": "daily",
+        "thresholdMinutes": 480,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 8 hours in a workday at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_double_time",
+        "kind": "daily_double",
+        "thresholdMinutes": 720,
+        "multiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "earningType": "DT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 12 hours in a workday at not less than 2x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day",
+        "kind": "seventh_day",
+        "thresholdMinutes": 0,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a); IWC Wage Orders § 3(A) — first 8 hours on the seventh day of work in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day_double_time",
+        "kind": "seventh_day",
+        "thresholdMinutes": 480,
+        "multiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "earningType": "DT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a); IWC Wage Orders § 3(A) — over 8 hours on the seventh day of work in a workweek at not less than 2x the regular rate"
+      }
+    ],
+    "jurisdictionRules": [
+      {
+        "jurisdiction": "US",
+        "county": null,
+        "city": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "29 U.S.C. § 207(a)(1)"
+      },
+      {
+        "jurisdiction": "IL",
+        "county": null,
+        "city": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "820 ILCS 105/4a"
+      },
+      {
+        "jurisdiction": "MA",
+        "county": null,
+        "city": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1A"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "ruleCode": "ca_daily_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "ruleCode": "ca_daily_double_time",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "ruleCode": "ca_seventh_day",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "ruleCode": "ca_seventh_day_double_time",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "US",
+        "county": null,
+        "city": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "29 U.S.C. § 206(a)(1)"
+      },
+      {
+        "jurisdiction": "IL",
+        "county": null,
+        "city": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "820 ILCS 105/4"
+      },
+      {
+        "jurisdiction": "MA",
+        "county": null,
+        "city": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 1182.12"
+      },
+      {
+        "jurisdiction": "IL",
+        "county": "Cook",
+        "city": null,
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cook County Code § 42-13 (Ord. 16-5768); municipalities may opt out"
+      },
+      {
+        "jurisdiction": "IL",
+        "county": null,
+        "city": "Chicago",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Chicago Municipal Code ch. 6-105"
+      }
+    ],
+    "minimumWageRules": [
+      {
+        "jurisdiction": "US",
+        "county": null,
+        "city": null,
+        "rateCents": 725,
+        "effectiveFrom": "2009-07-24",
+        "effectiveTo": null,
+        "citation": "Fair Labor Standards Act, 29 U.S.C. § 206(a)(1)(C) — $7.25 per hour"
+      },
+      {
+        "jurisdiction": "IL",
+        "county": null,
+        "city": null,
+        "rateCents": 1400,
+        "effectiveFrom": "2024-01-01",
+        "effectiveTo": "2024-12-31",
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4(a)(1) — $14.00 per hour in 2024"
+      },
+      {
+        "jurisdiction": "IL",
+        "county": null,
+        "city": null,
+        "rateCents": 1500,
+        "effectiveFrom": "2025-01-01",
+        "effectiveTo": null,
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4(a)(1) — $15.00 per hour from January 1, 2025"
+      },
+      {
+        "jurisdiction": "MA",
+        "county": null,
+        "city": null,
+        "rateCents": 1425,
+        "effectiveFrom": "2022-01-01",
+        "effectiveTo": "2022-12-31",
+        "citation": "M.G.L. c. 151, § 1 (St. 2018, c. 121) — $14.25 per hour in 2022"
+      },
+      {
+        "jurisdiction": "MA",
+        "county": null,
+        "city": null,
+        "rateCents": 1500,
+        "effectiveFrom": "2023-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1 (St. 2018, c. 121) — $15.00 per hour from January 1, 2023"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "rateCents": 1650,
+        "effectiveFrom": "2025-01-01",
+        "effectiveTo": "2025-12-31",
+        "citation": "Cal. Lab. Code § 1182.12 — $16.50 per hour in 2025"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "rateCents": 1690,
+        "effectiveFrom": "2026-01-01",
+        "effectiveTo": "2026-12-31",
+        "citation": "Cal. Lab. Code § 1182.12 — $16.90 per hour in 2026"
+      },
+      {
+        "jurisdiction": "CA",
+        "county": null,
+        "city": null,
+        "rateCents": 1740,
+        "effectiveFrom": "2027-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 1182.12 — $17.40 per hour from January 1, 2027 (certified July 31, 2026)"
+      }
+    ]
+  },
+  "expected": {
+    "rulesVersion": "2026.10-a2",
+    "payLines": [],
+    "billLines": [],
+    "blockers": [
+      {
+        "code": "rule_not_supported_yet",
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "workweekStart": "2026-10-05",
+        "jurisdiction": "IL",
+        "ruleCode": "local_minimum_wage",
+        "message": "Worker One, workweek starting 2026-10-05: Cook County, IL rule local_minimum_wage (Cook County Code § 42-13 (Ord. 16-5768); municipalities may opt out) is not implemented yet, so this week cannot be computed."
+      },
+      {
+        "code": "rule_not_supported_yet",
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "workweekStart": "2026-10-05",
+        "jurisdiction": "IL",
+        "ruleCode": "local_minimum_wage",
+        "message": "Worker One, workweek starting 2026-10-05: Chicago, IL rule local_minimum_wage (Chicago Municipal Code ch. 6-105) is not implemented yet, so this week cannot be computed."
+      }
+    ],
+    "warnings": []
+  }
+}

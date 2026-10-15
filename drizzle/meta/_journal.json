@@ -22,6 +22,20 @@
       "when": 1792078304899,
       "tag": "0002_reference_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792079794165,
+      "tag": "0003_minimum_wage_and_local_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792079795158,
+      "tag": "0004_rule_data_v2",
+      "breakpoints": true
     }
   ]
 }

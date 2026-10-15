@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { computePay, type PayInput, type Shift } from "@shiftbook/rules";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
-import { REFERENCE_JURISDICTION_RULES, REFERENCE_OVERTIME_RULES } from "../src/server/rules/reference-data";
+import { REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
 const WEEK = ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"];
@@ -23,6 +23,8 @@ function shift(date: string, minutes: number, over: Partial<Shift> = {}): Shift 
     assignmentId: "assignment-1",
     clientId: "client-1",
     jurisdiction: "IL",
+    county: "Will",
+    city: "Joliet",
     date,
     startMinute: 420,
     minutes,
@@ -38,7 +40,10 @@ const input = (shifts: Shift[]): PayInput => ({
   shifts,
   overtimeRules: REFERENCE_OVERTIME_RULES,
   jurisdictionRules: REFERENCE_JURISDICTION_RULES,
+  minimumWageRules: REFERENCE_MINIMUM_WAGE_RULES,
 });
+const MA = { jurisdiction: "MA", county: "Worcester", city: "Worcester" } as const;
+const CA = { jurisdiction: "CA", county: "San Bernardino", city: "Ontario" } as const;
 
 type Expect = { pay: [string, number, number][]; bill: [string, number, number][]; blockers?: string[] };
 
@@ -73,14 +78,14 @@ ruleCase(
 ruleCase(
   "ma-exactly-40h-no-overtime",
   "Massachusetts worker, exactly 40 hours at $17.00/h, billed at $25.00/h. Overtime starts only after 40 hours, so none: pay $680.00, bill $1,000.00.",
-  input(WEEK.slice(0, 5).map((d) => shift(d, 480, { jurisdiction: "MA", payRateCents: 1700, billRateCents: 2500 }))),
+  input(WEEK.slice(0, 5).map((d) => shift(d, 480, { ...MA, payRateCents: 1700, billRateCents: 2500 }))),
   { pay: [["REG", 2400, 68000]], bill: [["REG", 2400, 100000]] },
 );
 
 ruleCase(
   "ma-overtime-rounding-shown",
   "Massachusetts worker, 40 hours 37 minutes at $18.25/h. The 37 overtime minutes at $27.375/h are exactly 1688.125 cents; rounded once, half-up, to $16.88. Billed 37 minutes at $39.75/h = 2451.25 cents, rounded to $24.51. The rounding is written in each line's explanation.",
-  input([...WEEK.slice(0, 5).map((d) => shift(d, 480, { jurisdiction: "MA" })), shift(WEEK[5]!, 37, { jurisdiction: "MA" })]),
+  input([...WEEK.slice(0, 5).map((d) => shift(d, 480, MA)), shift(WEEK[5]!, 37, MA)]),
   { pay: [["REG", 2400, 73000], ["OT", 37, 1688]], bill: [["REG", 2400, 106000], ["OT", 37, 2451]] },
 );
 
@@ -121,16 +126,44 @@ ruleCase(
 
 ruleCase(
   "california-blocked-until-full-rules",
-  "A California worker's 10-hour day. California daily overtime, daily double time and seventh-day rules are not implemented yet (they come with the full rules engine), so the week is blocked with three reasons and nothing is paid or billed — it is never computed on weekly rules alone.",
-  input([shift(WEEK[0]!, 600, { jurisdiction: "CA" })]),
-  { pay: [], bill: [], blockers: ["rule_not_supported_yet", "rule_not_supported_yet", "rule_not_supported_yet"] },
+  "A California worker's 10-hour day. California daily overtime, daily double time and the two seventh-day rules are not implemented yet (they come with the full rules engine), so the week is blocked with four reasons and nothing is paid or billed — it is never computed on weekly rules alone.",
+  input([shift(WEEK[0]!, 600, { ...CA, payRateCents: 1950, billRateCents: 2875 })]),
+  { pay: [], bill: [], blockers: ["rule_not_supported_yet", "rule_not_supported_yet", "rule_not_supported_yet", "rule_not_supported_yet"] },
 );
 
 ruleCase(
   "unknown-jurisdiction-blocked",
   "A worksite in Texas: no wage rules are on file for TX, so the week is blocked as an unknown jurisdiction and nothing is computed.",
-  input([shift(WEEK[0]!, 480, { jurisdiction: "TX" })]),
+  input([shift(WEEK[0]!, 480, { jurisdiction: "TX", county: "Harris", city: "Houston" })]),
   { pay: [], bill: [], blockers: ["unknown_jurisdiction"] },
+);
+
+ruleCase(
+  "overtime-rounding-half-cent-tie",
+  "Massachusetts worker, 40 hours 4 minutes at $18.25/h. The 4 overtime minutes at $27.375/h are exactly 182.5 cents — a tie — which rounds half-up to $1.83 (not $1.82). Billed 4 minutes at $39.75/h = 265 cents exactly, $2.65.",
+  input([...WEEK.slice(0, 5).map((d) => shift(d, 480, MA)), shift(WEEK[5]!, 4, MA)]),
+  { pay: [["REG", 2400, 73000], ["OT", 4, 183]], bill: [["REG", 2400, 106000], ["OT", 4, 265]] },
+);
+
+ruleCase(
+  "overtime-rounding-up",
+  "Massachusetts worker, 40 hours 38 minutes at $18.25/h. The 38 overtime minutes at $27.375/h are 1733.75 cents, rounded once to $17.34. Billed 38 minutes at $39.75/h = 2517.5 cents, rounded half-up to $25.18.",
+  input([...WEEK.slice(0, 5).map((d) => shift(d, 480, MA)), shift(WEEK[5]!, 38, MA)]),
+  { pay: [["REG", 2400, 73000], ["OT", 38, 1734]], bill: [["REG", 2400, 106000], ["OT", 38, 2518]] },
+);
+
+ruleCase(
+  "below-minimum-wage-blocked",
+  "Illinois worker paid $14.50/h in October 2026. The Illinois minimum wage has been $15.00/h since January 1, 2025 (820 ILCS 105/4(a)(1)), so the week is blocked and nothing is paid or billed until the rate is fixed.",
+  input([shift(WEEK[0]!, 480, { payRateCents: 1450 })]),
+  { pay: [], bill: [], blockers: ["below_minimum_wage"] },
+);
+
+ruleCase(
+  "chicago-local-ordinance-blocked",
+  "A worksite in Chicago (Cook County), Illinois. Chicago and Cook County have their own minimum wage ordinances that are not modeled yet, so the week is held with two reasons rather than paid at the state rate.",
+  input([shift(WEEK[0]!, 480, { county: "Cook", city: "Chicago", payRateCents: 1800 })]),
+  { pay: [], bill: [], blockers: ["rule_not_supported_yet", "rule_not_supported_yet"] },
 );
 
 // ---------- export goldens ----------
@@ -151,7 +184,7 @@ function exportCase(name: string, summary: string, fixture: ExportFixture, handT
 
 exportCase(
   "gusto-hours-basic",
-  "Three workers for the week of 2026-10-05: one straight-time week (38h), one with 4h overtime (44h), and one with 37 overtime minutes, which Gusto receives as 0.62 hours (the note says so). Control totals: 3 workers, 7,080 regular minutes (118h), 277 overtime minutes (4h 37m), gross $2,279.88.",
+  "Three workers for the week of 2026-10-05: one straight-time week (38h), one with 4h overtime (44h), and one with 37 overtime minutes, which Gusto receives as 0.62 hours (the note says so). Control totals: 3 workers, 7,080 regular minutes (118h), 277 overtime minutes (4h 37m), gross $2,279.88. Because 37 minutes are written as 0.62 h (rounded up), Gusto should compute $2,279.97, 9 cents more; the file's note says so.",
   {
     format: "gusto_hours_csv",
     mappingVersion: "gusto-core-v1",
@@ -170,5 +203,5 @@ exportCase(
       { workerId: "w3", type: "OT", minutes: 37, amountCents: 1688, rate: { num: 5475, den: 2 } },
     ],
   },
-  { workers: 3, minutesByType: { REG: 7080, OT: 277 }, grossCents: 227988 },
+  { workers: 3, minutesByType: { REG: 7080, OT: 277 }, grossCents: 227988, payrollSystemGrossCents: 227997, payrollSystemDifferenceCents: 9 },
 );

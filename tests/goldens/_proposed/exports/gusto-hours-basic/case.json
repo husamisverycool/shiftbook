@@ -1,5 +1,5 @@
 {
-  "summary": "Three workers for the week of 2026-10-05: one straight-time week (38h), one with 4h overtime (44h), and one with 37 overtime minutes, which Gusto receives as 0.62 hours (the note says so). Control totals: 3 workers, 7,080 regular minutes (118h), 277 overtime minutes (4h 37m), gross $2,279.88.",
+  "summary": "Three workers for the week of 2026-10-05: one straight-time week (38h), one with 4h overtime (44h), and one with 37 overtime minutes, which Gusto receives as 0.62 hours (the note says so). Control totals: 3 workers, 7,080 regular minutes (118h), 277 overtime minutes (4h 37m), gross $2,279.88. Because 37 minutes are written as 0.62 h (rounded up), Gusto should compute $2,279.97, 9 cents more; the file's note says so.",
   "fixture": {
     "format": "gusto_hours_csv",
     "mappingVersion": "gusto-core-v1",
@@ -107,9 +107,11 @@
       "REG": 7080,
       "OT": 277
     },
-    "grossCents": 227988
+    "grossCents": 227988,
+    "payrollSystemGrossCents": 227997,
+    "payrollSystemDifferenceCents": 9
   },
   "notes": [
-    "Nguyen, Tran — OT: 37 min written as 0.62 h (0.6166… h exactly). Gusto multiplies the hours it receives by its own rate."
+    "Nguyen, Tran — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Gusto pays 0.62 h × $27.375/h = $16.97; Shiftbook computed $16.88 (+$0.09)."
   ]
 }

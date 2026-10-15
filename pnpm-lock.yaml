@@ -87,6 +87,33 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@fontsource/caveat':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/gochi-hand':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/homemade-apple':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/indie-flower':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/kalam':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/nanum-pen-script':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/patrick-hand':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/reenie-beanie':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/shadows-into-light':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@playwright/test':
         specifier: 1.56.1
         version: 1.56.1
@@ -851,6 +878,33 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@fontsource/caveat@5.3.0':
+    resolution: {integrity: sha512-eHTfzQxFSW9ABERRLNruHoNJmKed2J7pqTUc5lp4a4POMgXGKpxmWj3d9Hz10kmAg6iuTTLe6UagbA4bnsmfQw==}
+
+  '@fontsource/gochi-hand@5.3.0':
+    resolution: {integrity: sha512-IW6Xo3wbZuTLyx7hZzIr7+VSQwQ3oEiLZRphBnuNVaK+dhdxwYw57/r1NVi8x1ubX4OYyCG2S04mH6tLhanIsQ==}
+
+  '@fontsource/homemade-apple@5.3.0':
+    resolution: {integrity: sha512-awJSYTbSY3SroC8nirEhDauHvERVvm0LI3FpUHsPZXl9Tht1xrqhiI8ro4yf3ROcvQ7CfFJ/2+DLcOHBOXhJKw==}
+
+  '@fontsource/indie-flower@5.3.0':
+    resolution: {integrity: sha512-Wo5eN/ruEQcyC3+ArzhlpqWQgph3VuCNbJlEkVw17LUd0uyTHOb9bTec4g9njQzjiL/ijACF27sSwy90L6kZBg==}
+
+  '@fontsource/kalam@5.3.0':
+    resolution: {integrity: sha512-FDkVoDfPDCSN/eO81FOYtUI67eMgpVBJmjBtAqSL0PmEhJyeFY2biC+CR+yEttksgXR9+swpFdYmQTyjwBq80Q==}
+
+  '@fontsource/nanum-pen-script@5.3.0':
+    resolution: {integrity: sha512-at9MFL8ga0A3Xce1+CO6/56F/SHIlf++D4vVKw3yCNRPKh6JU0UgZ3r9un0qHPVxx0Miq2bGZ35RRRlu/4BIDg==}
+
+  '@fontsource/patrick-hand@5.3.0':
+    resolution: {integrity: sha512-V8C38IlIFfdWg0Xtri3F7sLCVpm069rUwn6w4n+oyn38gt7H4arOJmuReg3tAw1Q6jHqZp89wTnAAJagq4Atxw==}
+
+  '@fontsource/reenie-beanie@5.3.0':
+    resolution: {integrity: sha512-PgEiqKdPCLlvdY2IMWMBdYyMdr1mo1zxVBRNFlo3gclnCz560iiyTTt0dU4/VIGnjhyAb3gSWIQL0qXnn5oaYw==}
+
+  '@fontsource/shadows-into-light@5.3.0':
+    resolution: {integrity: sha512-3dvv0i8/ZwLMY08AAlTLivHUdNQYB6Fxe92d7BZiGbHY2GQnCxEd8JC9CBzxTiP4iyWNa6OZn9LXF+xjc9LaGw==}
 
   '@formatjs/fast-memoize@3.1.7':
     resolution: {integrity: sha512-zXfhLpvA6T7+efdt9JLbBwZ00tT7NsBMDVnDu8rpHeNNv8KfRZAMo2gkG0k9lK/Nzc//3kJ9pImsfuJxk3KhUA==}
@@ -5323,6 +5377,24 @@ snapshots:
       react-dom: 19.3.0(react@19.3.0)
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@fontsource/caveat@5.3.0': {}
+
+  '@fontsource/gochi-hand@5.3.0': {}
+
+  '@fontsource/homemade-apple@5.3.0': {}
+
+  '@fontsource/indie-flower@5.3.0': {}
+
+  '@fontsource/kalam@5.3.0': {}
+
+  '@fontsource/nanum-pen-script@5.3.0': {}
+
+  '@fontsource/patrick-hand@5.3.0': {}
+
+  '@fontsource/reenie-beanie@5.3.0': {}
+
+  '@fontsource/shadows-into-light@5.3.0': {}
 
   '@formatjs/fast-memoize@3.1.7': {}
 

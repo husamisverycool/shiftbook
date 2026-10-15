@@ -37,16 +37,42 @@ describe("Gusto hours CSV", () => {
     );
   });
 
-  it("writes control totals that equal the pay lines", () => {
+  it("writes control totals that equal the pay lines, plus the gross Gusto should compute and the difference", () => {
     const r = renderGustoHours(base());
-    expect(r.controlTotals).toEqual({ workers: 2, minutesByType: { REG: 4680, OT: 37 }, grossCents: 144_038 });
+    expect(r.controlTotals).toEqual({
+      workers: 2,
+      minutesByType: { REG: 4680, OT: 37 },
+      grossCents: 144_038,
+      payrollSystemGrossCents: 144_047,
+      payrollSystemDifferenceCents: 9,
+    });
   });
 
-  it("lists every line whose minutes are not exact in two-decimal hours", () => {
+  it("lists every line whose minutes are not exact in two-decimal hours, with the money effect", () => {
     const r = renderGustoHours(base());
     expect(r.notes).toEqual([
-      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly). Gusto multiplies the hours it receives by its own rate.",
+      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Gusto pays 0.62 h × $27.375/h = $16.97; Shiftbook computed $16.88 (+$0.09).",
     ]);
+  });
+
+  it("rounds hours up, never down (38 minutes → 0.64 h, not 0.63 h)", () => {
+    const fixture = base({ payLines: [{ workerId: "w1", type: "REG", minutes: 38, amountCents: 1156, rate: { num: 1825, den: 1 } }] });
+    expect(text(renderGustoHours(fixture).bytes).split("\n")[1]).toBe("Álvarez,Ana,Picker (Primary),a1b2c3,0.64,0.00,0.00");
+  });
+
+  it("refuses a worker with no Gusto job title (Gusto matches rows per job)", () => {
+    const fixture = base({ workers: [{ workerId: "w1", firstName: "Ana", lastName: "Álvarez", payrollIds: { gusto: { id: "a1b2c3" } } }, base().workers[1]!] });
+    expect(() => renderGustoHours(fixture)).toThrow(/job title/);
+  });
+
+  it("refuses overtime that is not exactly 1.5× the regular rate (Gusto applies its own multiplier)", () => {
+    const fixture = base({
+      payLines: [
+        { workerId: "w1", type: "REG", minutes: 2400, amountCents: 73_000, rate: { num: 1825, den: 1 } },
+        { workerId: "w1", type: "OT", minutes: 60, amountCents: 2000, rate: { num: 2000, den: 1 } },
+      ],
+    });
+    expect(() => renderGustoHours(fixture)).toThrow(/1\.5/);
   });
 
   it("refuses an earning type the agency has not mapped for Gusto", () => {
@@ -72,11 +98,11 @@ describe("Gusto hours CSV", () => {
 
   it("quotes fields that contain commas or quotes", () => {
     const fixture = base({
-      workers: [{ workerId: "w1", firstName: 'Lee "Junior"', lastName: "Park, Jr.", payrollIds: { gusto: { id: "abc123" } } }],
+      workers: [{ workerId: "w1", firstName: 'Lee "Junior"', lastName: "Park, Jr.", payrollIds: { gusto: { id: "abc123", title: "Loader, Dock (Primary)" } } }],
       payLines: [{ workerId: "w1", type: "REG", minutes: 60, amountCents: 1825, rate: { num: 1825, den: 1 } }],
     });
     const lines = text(renderGustoHours(fixture).bytes).split("\n");
-    expect(lines[1]).toBe('"Park, Jr.","Lee ""Junior""",,abc123,1.00,0.00,0.00');
+    expect(lines[1]).toBe('"Park, Jr.","Lee ""Junior""","Loader, Dock (Primary)",abc123,1.00,0.00,0.00');
   });
 
   it("reads its own file back to the same minutes (the reconciliation check)", () => {

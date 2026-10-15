@@ -8,10 +8,18 @@
  * This format writes exactly those, one row per worker, hours as decimals with two places.
  *
  * Declared capability: REG, OT, DT only. Any other earning type in the run fails the export.
+ * Gusto applies its own multipliers to overtime_hours (1.5×) and double_overtime_hours (2×), so an
+ * OT or DT line at any other rate fails the export, as does a worker with several base rates.
+ *
+ * Hours are written with two decimals, ROUNDED UP to the next hundredth, so a worker is never paid
+ * for less time than worked. Gusto multiplies those hours by the rate stored in Gusto, so its gross
+ * can differ from Shiftbook's minute-exact gross by a few cents: every such line gets a note with the
+ * money effect, and the control totals carry the gross Gusto should compute and the difference.
+ *
  * Reconciliation: the file is read back and must give the run's workers and minutes by type exactly
- * (two-decimal hours always round back to the exact minute), or the export fails.
+ * (two-decimal hours rounded up are within 0.4 minutes, so they round back to the exact minute).
  */
-import { exactDecimal, floorDiv, mod, roundHalfUp, type EarningType } from "@shiftbook/rules";
+import { ceilDiv, exactDecimal, floorDiv, formatCents, formatRate, mod, roundHalfUp, type EarningType, type Fraction } from "@shiftbook/rules";
 import type { ControlTotals } from "../server/db/schema";
 import { readCsv, writeCsv } from "./csv";
 import { ExportError } from "./errors";
@@ -37,11 +45,19 @@ export const GUSTO_CAPABILITY: Partial<Record<EarningType, HourColumn>> = {
   DT: "double_overtime_hours",
 };
 
-/** minutes → hundredths of an hour, rounded half-up (37 → 62 = 0.62 h). */
-const toHundredths = (minutes: number) => roundHalfUp(minutes * 100, 60);
-/** hundredths → minutes; exact for every value written by toHundredths (error < 0.3 min). */
+/** minutes → hundredths of an hour, rounded up (37 → 62 = 0.62 h; 38 → 64 = 0.64 h). */
+const toHundredths = (minutes: number) => ceilDiv(minutes * 100, 60);
+/** hundredths → minutes; exact for every value written by toHundredths (error ≤ 0.4 min). */
 const toMinutes = (hundredths: number) => roundHalfUp(hundredths * 60, 100);
 const hoursText = (hundredths: number) => `${floorDiv(hundredths, 100)}.${String(mod(hundredths, 100)).padStart(2, "0")}`;
+/** Gusto's multiplier per column, applied to the employee's base rate. */
+const GUSTO_MULTIPLIER: Record<HourColumn, Fraction> = {
+  regular_hours: { num: 1, den: 1 },
+  overtime_hours: { num: 3, den: 2 },
+  double_overtime_hours: { num: 2, den: 1 },
+};
+const sameRate = (a: Fraction, b: Fraction) => a.num * b.den === b.num * a.den;
+const signedCents = (c: number) => (c >= 0 ? `+${formatCents(c)}` : `−${formatCents(-c)}`);
 
 function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): HourColumn {
   const mapped = map[type];
@@ -60,6 +76,8 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   const perWorker = new Map<string, Record<HourColumn, number>>();
   const minutesByType: Record<string, number> = {};
   const baseRates = new Map<string, Set<string>>();
+  const columnRates = new Map<string, Partial<Record<HourColumn, Fraction>>>();
+  const columnAmounts = new Map<string, Record<HourColumn, number>>();
   let grossCents = 0;
 
   for (const line of fixture.payLines) {
@@ -70,6 +88,12 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
       throw new ExportError(
         "missing_payroll_id",
         `${worker.lastName}, ${worker.firstName} has no Gusto employee id, so Gusto cannot match the row.`,
+      );
+    }
+    if (!worker.payrollIds.gusto.title) {
+      throw new ExportError(
+        "missing_payroll_id",
+        `${worker.lastName}, ${worker.firstName} has no Gusto job title; Gusto matches hours to a job, so the row could land on the wrong job.`,
       );
     }
     if (line.type === "REG") {
@@ -86,8 +110,30 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
     const row = perWorker.get(line.workerId) ?? { regular_hours: 0, overtime_hours: 0, double_overtime_hours: 0 };
     row[column] += line.minutes;
     perWorker.set(line.workerId, row);
+    const rates = columnRates.get(line.workerId) ?? {};
+    rates[column] = line.rate;
+    columnRates.set(line.workerId, rates);
+    const amounts = columnAmounts.get(line.workerId) ?? { regular_hours: 0, overtime_hours: 0, double_overtime_hours: 0 };
+    amounts[column] += line.amountCents;
+    columnAmounts.set(line.workerId, amounts);
     minutesByType[line.type] = (minutesByType[line.type] ?? 0) + line.minutes;
     grossCents += line.amountCents;
+  }
+
+  for (const [id, rates] of columnRates) {
+    const reg = rates.regular_hours;
+    if (!reg) continue;
+    for (const col of ["overtime_hours", "double_overtime_hours"] as const) {
+      const rate = rates[col];
+      const m = GUSTO_MULTIPLIER[col];
+      if (rate && !sameRate(rate, { num: reg.num * m.num, den: reg.den * m.den })) {
+        const w = workersById.get(id)!;
+        throw new ExportError(
+          "several_pay_rates",
+          `${w.lastName}, ${w.firstName}: ${col} is paid at ${formatRate(rate)}, but Gusto pays it at ${exactDecimal(m.num, m.den)} × the regular rate (${formatRate({ num: reg.num * m.num, den: reg.den * m.den })}).`,
+        );
+      }
+    }
   }
 
   const ordered = [...perWorker.keys()]
@@ -101,14 +147,21 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
 
   const notes: string[] = [];
   const rows: string[][] = [[...GUSTO_HEADER]];
+  let payrollSystemGrossCents = 0;
   for (const w of ordered) {
     const minutes = perWorker.get(w.workerId)!;
+    const rates = columnRates.get(w.workerId) ?? {};
+    const amounts = columnAmounts.get(w.workerId)!;
     const hours = HOUR_COLUMNS.map((col) => toHundredths(minutes[col]));
     HOUR_COLUMNS.forEach((col, i) => {
+      const rate = rates[col];
+      if (!rate || minutes[col] === 0) return;
+      const gustoCents = roundHalfUp(hours[i]! * rate.num, 100 * rate.den);
+      payrollSystemGrossCents += gustoCents;
       if (hours[i]! * 60 !== minutes[col] * 100) {
         const type = (Object.keys(GUSTO_CAPABILITY) as EarningType[]).find((t) => GUSTO_CAPABILITY[t] === col)!;
         notes.push(
-          `${w.lastName}, ${w.firstName} — ${type}: ${minutes[col]} min written as ${hoursText(hours[i]!)} h (${exactDecimal(minutes[col], 60)} h exactly). Gusto multiplies the hours it receives by its own rate.`,
+          `${w.lastName}, ${w.firstName} — ${type}: ${minutes[col]} min written as ${hoursText(hours[i]!)} h (${exactDecimal(minutes[col], 60)} h exactly, rounded up to the next hundredth so no worked time is lost). Gusto pays ${hoursText(hours[i]!)} h × ${formatRate(rate)} = ${formatCents(gustoCents)}; Shiftbook computed ${formatCents(amounts[col])} (${signedCents(gustoCents - amounts[col])}).`,
         );
       }
     });
@@ -116,7 +169,13 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   }
 
   const bytes = writeCsv(rows);
-  const controlTotals: ControlTotals = { workers: ordered.length, minutesByType, grossCents };
+  const controlTotals: ControlTotals = {
+    workers: ordered.length,
+    minutesByType,
+    grossCents,
+    payrollSystemGrossCents,
+    payrollSystemDifferenceCents: payrollSystemGrossCents - grossCents,
+  };
   reconcile(bytes, controlTotals);
 
   return {

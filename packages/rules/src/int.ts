@@ -39,6 +39,14 @@ export function roundHalfUp(num: number, den: number): number {
   return num < 0 ? -q : q;
 }
 
+/** ceil(num / den) for num ≥ 0, den > 0: rounds up, never down. */
+export function ceilDiv(num: number, den: number): number {
+  assertSafeInt(num, "numerator");
+  assertPositive(den, "denominator");
+  if (num < 0) throw new Error("ceilDiv is defined for non-negative numerators only");
+  return Math.floor((num + den - 1) / den);
+}
+
 /** Multiplies integers, refusing to leave the safe integer range. */
 export function mul(...factors: number[]): number {
   let product = 1;

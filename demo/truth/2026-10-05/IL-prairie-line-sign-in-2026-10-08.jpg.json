@@ -1,0 +1,382 @@
+{
+  "document": "IL-prairie-line-sign-in-2026-10-08.jpg",
+  "kind": "image",
+  "handwritten": true,
+  "client": "il",
+  "page": {
+    "number": 1,
+    "width": 1500,
+    "height": 1870,
+    "rotationDegrees": -2.36
+  },
+  "date": "2026-10-08",
+  "rows": [
+    {
+      "written": {
+        "name": "Bob Jones",
+        "in": "3:00",
+        "out": "11:30",
+        "lunch": "30",
+        "total": "8",
+        "crossedOut": null
+      },
+      "boxes": {
+        "name": {
+          "x": 138,
+          "y": 202,
+          "w": 67,
+          "h": 23
+        },
+        "in": {
+          "x": 365,
+          "y": 195,
+          "w": 30,
+          "h": 20
+        },
+        "out": {
+          "x": 446,
+          "y": 192,
+          "w": 39,
+          "h": 21
+        },
+        "lunch": {
+          "x": 539,
+          "y": 192,
+          "w": 18,
+          "h": 20
+        },
+        "total": {
+          "x": 658,
+          "y": 188,
+          "w": 9,
+          "h": 19
+        }
+      },
+      "expected": {
+        "workerKey": "robert-jones",
+        "inMinute": 900,
+        "outMinute": 1410,
+        "breakMinutes": 30,
+        "minutes": 480,
+        "date": "2026-10-08"
+      },
+      "notes": [
+        "writes name as \"Bob Jones\" (roster: Robert Jones)"
+      ]
+    },
+    {
+      "written": {
+        "name": "Maria Fernandez",
+        "in": "3:00",
+        "out": "11:30",
+        "lunch": "30",
+        "total": "8",
+        "crossedOut": null
+      },
+      "boxes": {
+        "name": {
+          "x": 135,
+          "y": 243,
+          "w": 117,
+          "h": 26
+        },
+        "in": {
+          "x": 370,
+          "y": 240,
+          "w": 30,
+          "h": 20
+        },
+        "out": {
+          "x": 445,
+          "y": 235,
+          "w": 39,
+          "h": 21
+        },
+        "lunch": {
+          "x": 538,
+          "y": 234,
+          "w": 18,
+          "h": 20
+        },
+        "total": {
+          "x": 659,
+          "y": 231,
+          "w": 10,
+          "h": 19
+        }
+      },
+      "expected": {
+        "workerKey": "maria-jose-fernandez-ruiz",
+        "inMinute": 900,
+        "outMinute": 1410,
+        "breakMinutes": 30,
+        "minutes": 480,
+        "date": "2026-10-08"
+      },
+      "notes": [
+        "writes name as \"Maria Fernandez\" (roster: María José Fernández Ruiz)"
+      ]
+    },
+    {
+      "written": {
+        "name": "Chuy Delgado",
+        "in": "3:00",
+        "out": "11:30",
+        "lunch": "30",
+        "total": "8",
+        "crossedOut": null
+      },
+      "boxes": {
+        "name": {
+          "x": 141,
+          "y": 285,
+          "w": 90,
+          "h": 25
+        },
+        "in": {
+          "x": 367,
+          "y": 283,
+          "w": 30,
+          "h": 20
+        },
+        "out": {
+          "x": 447,
+          "y": 279,
+          "w": 38,
+          "h": 20
+        },
+        "lunch": {
+          "x": 544,
+          "y": 275,
+          "w": 18,
+          "h": 20
+        },
+        "total": {
+          "x": 663,
+          "y": 273,
+          "w": 9,
+          "h": 19
+        }
+      },
+      "expected": {
+        "workerKey": "jesus-delgado",
+        "inMinute": 900,
+        "outMinute": 1410,
+        "breakMinutes": 30,
+        "minutes": 480,
+        "date": "2026-10-08"
+      },
+      "notes": [
+        "writes name as \"Chuy Delgado\" (roster: Jesús Delgado)"
+      ]
+    },
+    {
+      "written": {
+        "name": "Danny Ortiz",
+        "in": "3:00",
+        "out": "11:30",
+        "lunch": "30",
+        "total": "8",
+        "crossedOut": null
+      },
+      "boxes": {
+        "name": {
+          "x": 140,
+          "y": 327,
+          "w": 100,
+          "h": 29
+        },
+        "in": {
+          "x": 370,
+          "y": 324,
+          "w": 27,
+          "h": 23
+        },
+        "out": {
+          "x": 451,
+          "y": 320,
+          "w": 32,
+          "h": 24
+        },
+        "lunch": {
+          "x": 543,
+          "y": 320,
+          "w": 18,
+          "h": 23
+        },
+        "total": {
+          "x": 664,
+          "y": 315,
+          "w": 8,
+          "h": 22
+        }
+      },
+      "expected": {
+        "workerKey": null,
+        "inMinute": 900,
+        "outMinute": 1410,
+        "breakMinutes": 30,
+        "minutes": 480,
+        "date": "2026-10-08"
+      },
+      "notes": [
+        "not on the roster — must be flagged, never auto-created"
+      ]
+    },
+    {
+      "written": {
+        "name": "Andre Lewis",
+        "in": "3:00",
+        "out": "11:30",
+        "lunch": "30",
+        "total": "8",
+        "crossedOut": null
+      },
+      "boxes": {
+        "name": {
+          "x": 142,
+          "y": 364,
+          "w": 141,
+          "h": 39
+        },
+        "in": {
+          "x": 373,
+          "y": 361,
+          "w": 38,
+          "h": 35
+        },
+        "out": {
+          "x": 454,
+          "y": 359,
+          "w": 41,
+          "h": 34
+        },
+        "lunch": {
+          "x": 547,
+          "y": 355,
+          "w": 23,
+          "h": 34
+        },
+        "total": {
+          "x": 664,
+          "y": 354,
+          "w": 11,
+          "h": 33
+        }
+      },
+      "expected": {
+        "workerKey": "andre-lewis",
+        "inMinute": 900,
+        "outMinute": 1410,
+        "breakMinutes": 30,
+        "minutes": 480,
+        "date": "2026-10-08"
+      },
+      "notes": []
+    },
+    {
+      "written": {
+        "name": "Tran Nguyen",
+        "in": "3:00",
+        "out": "11:30",
+        "lunch": "30",
+        "total": "8",
+        "crossedOut": null
+      },
+      "boxes": {
+        "name": {
+          "x": 149,
+          "y": 419,
+          "w": 83,
+          "h": 20
+        },
+        "in": {
+          "x": 378,
+          "y": 413,
+          "w": 25,
+          "h": 17
+        },
+        "out": {
+          "x": 457,
+          "y": 410,
+          "w": 29,
+          "h": 17
+        },
+        "lunch": {
+          "x": 549,
+          "y": 409,
+          "w": 15,
+          "h": 16
+        },
+        "total": {
+          "x": 667,
+          "y": 405,
+          "w": 9,
+          "h": 16
+        }
+      },
+      "expected": {
+        "workerKey": "tran-nguyen",
+        "inMinute": 900,
+        "outMinute": 1410,
+        "breakMinutes": 30,
+        "minutes": 480,
+        "date": "2026-10-08"
+      },
+      "notes": []
+    },
+    {
+      "written": {
+        "name": "K. Bondarenko",
+        "in": "3:00",
+        "out": "11:00",
+        "lunch": "30",
+        "total": "7.5",
+        "crossedOut": null
+      },
+      "boxes": {
+        "name": {
+          "x": 151,
+          "y": 460,
+          "w": 96,
+          "h": 24
+        },
+        "in": {
+          "x": 380,
+          "y": 454,
+          "w": 26,
+          "h": 20
+        },
+        "out": {
+          "x": 456,
+          "y": 453,
+          "w": 27,
+          "h": 20
+        },
+        "lunch": {
+          "x": 553,
+          "y": 449,
+          "w": 14,
+          "h": 19
+        },
+        "total": {
+          "x": 668,
+          "y": 446,
+          "w": 19,
+          "h": 20
+        }
+      },
+      "expected": {
+        "workerKey": "kateryna-bondarenko",
+        "inMinute": 900,
+        "outMinute": 1380,
+        "breakMinutes": 30,
+        "minutes": 450,
+        "date": "2026-10-08"
+      },
+      "notes": [
+        "writes name as \"K. Bondarenko\" (roster: Kateryna Bondarenko)"
+      ]
+    }
+  ]
+}

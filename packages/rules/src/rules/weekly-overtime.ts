@@ -45,7 +45,7 @@ export function selectWeeklyRule(
     .filter((r) => r.kind === "weekly" && r.ruleCode === WEEKLY_OVERTIME)
     .filter((r) => jurisdictions.includes(r.jurisdiction))
     .filter((r) => isEffective(week, r.effectiveFrom, r.effectiveTo))
-    .sort((a, b) => a.jurisdiction.localeCompare(b.jurisdiction));
+    .sort((a, b) => (a.jurisdiction < b.jurisdiction ? -1 : a.jurisdiction > b.jurisdiction ? 1 : 0));
   if (candidates.length === 0) return null;
   let chosen = candidates[0]!;
   for (const c of candidates) if (moreProtective(c, chosen)) chosen = c;

@@ -432,6 +432,10 @@ export type ControlTotals = {
   workers: number;
   minutesByType: Record<string, number>;
   grossCents: number;
+  /** What the payroll system should compute from the file's hours at the same rates. */
+  payrollSystemGrossCents?: number;
+  /** payrollSystemGrossCents − grossCents (rounding of hours to the file's precision). */
+  payrollSystemDifferenceCents?: number;
 };
 
 export const exports = pgTable("exports", {
@@ -499,7 +503,22 @@ export const overtimeRules = pgTable("overtime_rules", {
 export const jurisdictionRules = pgTable("jurisdiction_rules", {
   id: id(),
   jurisdiction: text("jurisdiction").notNull(),
+  // Local scope: both null means statewide; a county or city row applies only there.
+  county: text("county"),
+  city: text("city"),
   ruleCode: text("rule_code").notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+  citation: text("citation").notNull(),
+});
+
+// Minimum wage per jurisdiction (federal "US", state, or a county/city inside a state).
+export const minimumWageRules = pgTable("minimum_wage_rules", {
+  id: id(),
+  jurisdiction: text("jurisdiction").notNull(),
+  county: text("county"),
+  city: text("city"),
+  rateCents: integer("rate_cents").notNull(),
   effectiveFrom: isoDate("effective_from").notNull(),
   effectiveTo: isoDate("effective_to"),
   citation: text("citation").notNull(),
