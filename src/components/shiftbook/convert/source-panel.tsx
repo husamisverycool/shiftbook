@@ -16,7 +16,9 @@ import type { GridRow } from "./types";
 
 const FIELDS = ["worker", "date", "in", "out", "break", "total"] as const;
 
-export function SourcePanel({ row, field, onClose }: { row: GridRow | null; field: string | null; onClose: () => void }) {
+const REASON_CODES = ["misread_corrected", "confirmed_client", "confirmed_worker", "matched_worker", "other"];
+
+export function SourcePanel({ row, field, roster, onClose }: { row: GridRow | null; field: string | null; roster: { id: string; name: string }[]; onClose: () => void }) {
   const t = useTranslations("convert.hours");
   const locale = useLocale();
   const [zoom, setZoom] = useState(1);
@@ -134,8 +136,8 @@ export function SourcePanel({ row, field, onClose }: { row: GridRow | null; fiel
                         <span className="text-xs text-muted-foreground">
                           {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(e.at))} · {e.actor}
                         </span>
-                        {e.reason && <span className="text-xs">{e.reason}</span>}
-                        <Changes before={e.before} after={e.after} />
+                        {e.reason && <span className="text-xs">{readableReason(e.reason, (code) => t(`editReasons.${code}` as "editReasons.other"))}</span>}
+                        <Changes before={e.before} after={e.after} roster={roster} locale={locale} />
                       </li>
                     ))}
                   </ol>
@@ -149,17 +151,41 @@ export function SourcePanel({ row, field, onClose }: { row: GridRow | null; fiel
   );
 }
 
-function Changes({ before, after }: { before: unknown; after: unknown }) {
+/** "matched_worker, other: called the site" → "Matched to the right worker · Other: called the site". */
+function readableReason(reason: string, label: (code: string) => string): string {
+  return reason
+    .split(", ")
+    .map((part) => {
+      const [code, ...rest] = part.split(": ");
+      if (!code || !REASON_CODES.includes(code)) return part;
+      return rest.length > 0 ? `${label(code)}: ${rest.join(": ")}` : label(code);
+    })
+    .join(" · ");
+}
+
+const FIELD_LABEL: Record<string, string> = { workerId: "colWorker", workDate: "colDate", inMinute: "colIn", outMinute: "colOut", breakMinutes: "colBreak", minutes: "colHours", status: "colStatus" };
+
+function Changes({ before, after, roster, locale }: { before: unknown; after: unknown; roster: { id: string; name: string }[]; locale: string }) {
+  const t = useTranslations("convert.hours");
   if (!before || !after || typeof before !== "object" || typeof after !== "object") return null;
   const b = before as Record<string, unknown>;
   const a = after as Record<string, unknown>;
-  const keys = Object.keys(a).filter((k) => k !== "assignmentId" && JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+  const keys = Object.keys(FIELD_LABEL).filter((k) => k in a && JSON.stringify(a[k]) !== JSON.stringify(b[k]));
   if (keys.length === 0) return null;
+  const show = (k: string, v: unknown): string => {
+    if (v === null || v === undefined || v === "") return "—";
+    if (k === "workerId") return roster.find((w) => w.id === v)?.name ?? "—";
+    if (k === "workDate") return shortDate(String(v), locale);
+    if (k === "inMinute" || k === "outMinute") return clock(Number(v), locale);
+    if (k === "breakMinutes" || k === "minutes") return hoursMinutes(Number(v));
+    if (k === "status") return t(`status.${String(v)}` as "status.reviewed");
+    return String(v);
+  };
   return (
     <ul className="text-xs text-muted-foreground">
       {keys.map((k) => (
         <li key={k}>
-          {k}: {String(b[k] ?? "—")} → {String(a[k] ?? "—")}
+          {t(FIELD_LABEL[k] as "colWorker")}: {show(k, b[k])} → {show(k, a[k])}
         </li>
       ))}
     </ul>

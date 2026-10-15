@@ -225,7 +225,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     {t(`col${c[0]!.toUpperCase()}${c.slice(1)}` as "colWorker")}
                   </TableHead>
                 ))}
-                <TableHead className="text-right">
+                <TableHead className="sticky right-0 bg-background text-right">
                   <span className="sr-only">{t("actions")}</span>
                 </TableHead>
               </TableRow>
@@ -265,7 +265,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     {cell(
                       0,
                       isEditing && d ? (
-                        <NativeSelect aria-label={t("colWorker")} value={d.workerId} onChange={(e) => set({ workerId: e.target.value })} className="min-w-44">
+                        <NativeSelect aria-label={t("colWorker")} value={d.workerId} onChange={(e) => set({ workerId: e.target.value })} className="w-44">
                           <NativeSelectOption value="">{t("matchWorker")}</NativeSelectOption>
                           {props.roster.map((w) => (
                             <NativeSelectOption key={w.id} value={w.id}>
@@ -279,17 +279,19 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                             <span className="font-medium">{r.workerName}</span>
                           </Marked>
                           {r.workerId === null && <Badge variant="outline">{t("unmatched")}</Badge>}
-                          {r.reviewReasons.length > 0 && r.status === "needs_review" && (
-                            <span className="text-xs whitespace-normal text-muted-foreground">{[...new Set(r.reviewReasons.map(reasonText))].join(" · ")}</span>
+                          {r.reviewReasons.some((c) => c !== "worker_not_on_roster") && r.status === "needs_review" && (
+                            <span className="max-w-52 text-xs whitespace-normal text-muted-foreground">
+                              {[...new Set(r.reviewReasons.filter((c) => c !== "worker_not_on_roster").map(reasonText))].join(" · ")}
+                            </span>
                           )}
                         </div>
                       ),
                     )}
-                    {cell(1, r.clientName ?? "—", "whitespace-nowrap")}
+                    {cell(1, <span className="block max-w-36 truncate" title={r.clientName ?? undefined}>{r.clientName ?? "—"}</span>)}
                     {cell(
                       2,
                       isEditing && d ? (
-                        <Input type="date" aria-label={t("colDate")} value={d.workDate} min={props.period.startsOn} max={props.period.endsOn} onChange={(e) => set({ workDate: e.target.value })} className="w-36" />
+                        <Input type="date" aria-label={t("colDate")} value={d.workDate} min={props.period.startsOn} max={props.period.endsOn} onChange={(e) => set({ workDate: e.target.value })} className="w-34" />
                       ) : (
                         <Marked r={r} field="date">
                           {shortDate(r.workDate, locale)}
@@ -300,7 +302,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     {cell(
                       3,
                       isEditing && d && (timed || d.inText) ? (
-                        <Input aria-label={t("colIn")} value={d.inText} onChange={(e) => set({ inText: e.target.value })} className="w-20 text-right" placeholder="7:00" />
+                        <Input aria-label={t("colIn")} value={d.inText} onChange={(e) => set({ inText: e.target.value })} className="w-16 text-right" placeholder="7:00" />
                       ) : (
                         <Marked r={r} field="in">
                           {clock(r.inMinute, locale)}
@@ -311,7 +313,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     {cell(
                       4,
                       isEditing && d && (timed || d.outText) ? (
-                        <Input aria-label={t("colOut")} value={d.outText} onChange={(e) => set({ outText: e.target.value })} className="w-20 text-right" placeholder="15:30" />
+                        <Input aria-label={t("colOut")} value={d.outText} onChange={(e) => set({ outText: e.target.value })} className="w-16 text-right" placeholder="15:30" />
                       ) : (
                         <Marked r={r} field="out">
                           {clock(r.outMinute, locale)}
@@ -322,7 +324,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     {cell(
                       5,
                       isEditing && d && timed ? (
-                        <Input aria-label={t("colBreak")} inputMode="numeric" value={d.breakText} onChange={(e) => set({ breakText: e.target.value })} className="w-16 text-right" />
+                        <Input aria-label={t("colBreak")} inputMode="numeric" value={d.breakText} onChange={(e) => set({ breakText: e.target.value })} className="w-14 text-right" />
                       ) : (
                         <Marked r={r} field="break">
                           {r.breakMinutes === null ? "—" : hoursMinutes(r.breakMinutes)}
@@ -345,11 +347,11 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     {cell(8, <span className="whitespace-nowrap">{t(`status.${r.status}`)}</span>)}
                     {cell(
                       9,
-                      <button type="button" className="max-w-40 truncate text-left text-muted-foreground underline-offset-4 hover:underline" title={r.document?.filename} onClick={() => setPanel({ id: r.id, field: null })}>
+                      <button type="button" className="block max-w-28 truncate text-left text-muted-foreground underline-offset-4 hover:underline" title={r.document?.filename} onClick={() => setPanel({ id: r.id, field: null })}>
                         {r.document?.filename ?? "—"}
                       </button>,
                     )}
-                    <TableCell className="text-right whitespace-nowrap">
+                    <TableCell className="sticky right-0 bg-background text-right whitespace-nowrap shadow-[-8px_0_8px_-8px_var(--border)]">
                       {isEditing ? null : (
                         <div className="inline-flex items-center gap-0.5">
                           {(r.status === "needs_review" || r.status === "extracted") && (
@@ -390,7 +392,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                             <DropdownMenuTrigger render={<Button variant="outline" size="sm" data-testid="reason-trigger" />}>
                               {d.reasons.length === 0 ? t("chooseReasons") : t("reasonsChosen", { count: d.reasons.length })}
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent>
+                            <DropdownMenuContent className="min-w-64">
                               {REASONS.map((code) => (
                                 <DropdownMenuCheckboxItem
                                   key={code}
@@ -461,7 +463,7 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
         </div>
       )}
 
-      <SourcePanel row={panelRow} field={panel?.field ?? null} onClose={() => setPanel(null)} />
+      <SourcePanel row={panelRow} field={panel?.field ?? null} roster={props.roster} onClose={() => setPanel(null)} />
     </div>
   );
 }

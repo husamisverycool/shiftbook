@@ -19,7 +19,7 @@ export async function Landing({ periods }: { periods: LandingPeriod[] }) {
   const t = await getTranslations("landing");
   const locale = await getLocale();
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("description")}</p>
