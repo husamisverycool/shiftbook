@@ -340,7 +340,8 @@
         "no_entries": "No hay horas que pagar",
         "documents_pending": "Hojas de horas que aún se están leyendo",
         "document_failed": "Hojas de horas que no se pudieron leer",
-        "invoice_problem": "No se puede crear una factura"
+        "invoice_problem": "No se puede crear una factura",
+        "premium_not_applicable": "Una prima confirmada que no aplica aquí"
       },
       "rules": {
         "ca_daily_overtime": "horas extra diarias",

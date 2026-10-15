@@ -23,9 +23,10 @@ import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-w
 import { overtimeRate, premiumBase, RATE_FLOOR_CITATION, REGULAR_RATE_CITATION, weightedRegularRate } from "./rules/regular-rate";
 import { CA_DAILY_DOUBLE_TIME, CA_DAILY_OVERTIME, CA_SEVENTH_DAY, CALIFORNIA_RULE_CODES, selectCaliforniaRules, splitCalifornia, type PremiumSplit } from "./rules/california-overtime";
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
-import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
+import { PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
+import type { ConfirmationKind, EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, PremiumRule, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-c3";
+export const RULES_VERSION = "2026.10-c4";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set<string>([WEEKLY_OVERTIME, MINIMUM_WAGE, ...CALIFORNIA_RULE_CODES]);
@@ -402,6 +403,14 @@ export function computePay(input: PayInput): PayResult {
     const weeklyMinutes = splits.reduce((sum, x) => sum + x.premiums.filter((p) => p.ruleCode === WEEKLY_OVERTIME).reduce((s2, p) => s2 + p.minutes, 0), 0);
     const straightEligible = splits.reduce((sum, x) => sum + x.regular, 0) + weeklyMinutes;
 
+    // Confirmed premiums must be for a day the worker worked on that assignment.
+    const confirmed = (input.confirmations ?? []).filter((c) => c.workerId === first.workerId && workweekStart(c.date, input.workweekStartsOn) === week).sort((a, b) => cmp(a.date, b.date) || cmp(a.id, b.id));
+    for (const c of confirmed) {
+      if (!PREMIUM_OF[c.kind] || !shifts.some((s) => s.assignmentId === c.assignmentId && s.date === c.date && s.minutes > 0)) {
+        weekBlockers.push({ code: "invalid_input", ...who, date: c.date, message: `${first.workerName} on ${c.date}: a confirmed ${PREMIUM_OF[c.kind]?.what ?? c.kind} is for an assignment with no hours that day, so it cannot be paid; correct the confirmation.` });
+      }
+    }
+
     if (weekBlockers.length > 0) {
       blockers.push(...weekBlockers);
       continue;
@@ -547,6 +556,39 @@ export function computePay(input: PayInput): PayResult {
         weekPay.push({ ...base, type: "MW_TRUEUP", minutes: t.minutes, rate, amountCents: pay.amountCents, ruleId: MINIMUM_WAGE, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(t.entries) });
       }
       // 6. confirmed premiums — next step of slice (c).
+    }
+
+    // 6. confirmed premiums: an hour at the week's regular rate per confirmed missed period, capped per workday.
+    const premiums = new Map<string, { assignmentId: string; clientId: string; kind: ConfirmationKind; rule: PremiumRule; minutes: number; dates: string[]; entries: string[] }>();
+    const perDay = new Map<string, number>();
+    const notApplicable = new Set<string>();
+    for (const c of confirmed) {
+      const day = shifts.filter((s) => s.assignmentId === c.assignmentId && s.date === c.date);
+      const what = PREMIUM_OF[c.kind];
+      const rule = premiumRuleFor(rules.premiumRules, day[0]!.jurisdiction, what.ruleCode, c.date);
+      if (!rule) {
+        const k = `${day[0]!.jurisdiction}|${c.kind}`;
+        if (!notApplicable.has(k)) {
+          notApplicable.add(k);
+          weekWarnings.push({ code: "premium_not_applicable", ...who, jurisdiction: day[0]!.jurisdiction, date: c.date, message: `${first.workerName} on ${c.date}: ${what.what}, but no ${what.label.toLowerCase()} applies in ${day[0]!.jurisdiction}, so nothing is paid for it.` });
+        }
+        continue;
+      }
+      const dayKey = `${c.date}|${rule.ruleCode}`;
+      if ((perDay.get(dayKey) ?? 0) >= rule.perWorkdayMax) continue;
+      perDay.set(dayKey, (perDay.get(dayKey) ?? 0) + 1);
+      const k = `${c.assignmentId}|${rule.ruleCode}`;
+      const p = premiums.get(k) ?? { assignmentId: c.assignmentId, clientId: day[0]!.clientId, kind: c.kind, rule, minutes: 0, dates: [], entries: [] };
+      p.minutes += rule.premiumMinutes;
+      if (!p.dates.includes(c.date)) p.dates.push(c.date);
+      for (const s of day) p.entries.push(...s.entryIds);
+      premiums.set(k, p);
+    }
+    for (const p of premiums.values()) {
+      const what = PREMIUM_OF[p.kind];
+      const pay = arithmetic(what.label, p.minutes, regularRate, " (the week's regular rate)");
+      const why = `Rule ${p.rule.ruleCode}: ${what.what} on ${p.dates.join(", ")}, as a person confirmed; one hour of pay at the regular rate, not hours worked, at most ${p.rule.perWorkdayMax} per workday (${p.rule.citation}).`;
+      weekPay.push({ workerId: first.workerId, assignmentId: p.assignmentId, clientId: p.clientId, workweekStart: week, type: what.type, minutes: p.minutes, rate: regularRate, amountCents: pay.amountCents, ruleId: p.rule.ruleCode, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(p.entries) });
     }
 
     const zero = weekPay.filter((l) => l.minutes > 0 && l.amountCents <= 0);

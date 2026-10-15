@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computePay } from "./engine";
 import { NO_PLACE } from "./places";
-import type { JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, Shift } from "./types";
+import type { Confirmation, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule, Shift } from "./types";
 
 // Census FIPS codes: county = state (2) + county (3); place = state (2) + place (5).
 const COOK = "17031";
@@ -749,7 +749,11 @@ describe("computePay — California daily, double-time and seventh-day overtime 
   const G1 = ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"];
   const ca = (date: string, minutes: number, over: Partial<Shift> = {}) =>
     shift(date, minutes, { ...CA_SITE, payRateCents: 1800, billRateCents: 2600, billDtMultiplier: { num: 2, den: 1 }, ...over });
-  const caInput = (shifts: Shift[]) => input(shifts, { workweekStartsOn: 0, overtimeRules: CA_OT, jurisdictionRules: CA_J });
+  const CA_PREMIUMS: PremiumRule[] = [
+    { jurisdiction: "CA", ruleCode: "ca_meal_premium", premiumMinutes: 60, perWorkdayMax: 1, effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 226.7(c); Ferra v. Loews Hollywood Hotel (2021) 11 Cal.5th 858" },
+    { jurisdiction: "CA", ruleCode: "ca_rest_premium", premiumMinutes: 60, perWorkdayMax: 1, effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 226.7(c); Ferra v. Loews Hollywood Hotel (2021) 11 Cal.5th 858" },
+  ];
+  const caInput = (shifts: Shift[]) => input(shifts, { workweekStartsOn: 0, overtimeRules: CA_OT, jurisdictionRules: CA_J, premiumRules: CA_PREMIUMS });
   const lines = (r: ReturnType<typeof computePay>, which: "payLines" | "billLines" = "payLines") => r[which].map((l) => [l.type, l.ruleId, l.minutes, l.amountCents]);
 
   it("pays daily overtime, daily double time, weekly overtime on the rest, and the seventh day", () => {
@@ -807,6 +811,39 @@ describe("computePay — California daily, double-time and seventh-day overtime 
   it("pays the first 8 hours of a seventh day at 1.5×, even in a short week", () => {
     const r = computePay(caInput(G1.map((d) => ca(d, 240))));
     expect(lines(r).slice(1)).toEqual([["OT", "ca_seventh_day", 240, 10_800]]);
+  });
+
+  it("pays a confirmed missed meal and rest period one hour each at the week's regular rate (Ferra), at most one of each per workday", () => {
+    // Research golden G8: Mon–Wed $18.00, Thu–Fri $20.00, 40 h; the regular rate is $752.00 ÷ 40 h = $18.80.
+    const shifts = [...G1.slice(1, 4).map((d) => ca(d, 480, { assignmentId: "aA" })), ...G1.slice(4, 6).map((d) => ca(d, 480, { assignmentId: "aB", payRateCents: 2000 }))];
+    const confirmations: Confirmation[] = [
+      { id: "c1", kind: "meal_period_missed", workerId: "w1", assignmentId: "aB", date: "2026-10-08" },
+      { id: "c2", kind: "meal_period_missed", workerId: "w1", assignmentId: "aB", date: "2026-10-08" },
+      { id: "c3", kind: "rest_period_missed", workerId: "w1", assignmentId: "aB", date: "2026-10-08" },
+    ];
+    const r = computePay({ ...caInput(shifts), confirmations });
+    expect(r.blockers).toEqual([]);
+    expect(lines(r)).toEqual([
+      ["REG", "straight_time", 1440, 43_200],
+      ["REG", "straight_time", 960, 32_000],
+      ["MEAL_PREMIUM", "ca_meal_premium", 60, 1880],
+      ["REST_PREMIUM", "ca_rest_premium", 60, 1880],
+    ]);
+    expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(78_960);
+    const meal = r.payLines.find((l) => l.type === "MEAL_PREMIUM")!;
+    expect(meal.explain).toContain("1h 00m (60 min) × $18.80/h (the week's regular rate)");
+    expect(meal.explain).toContain("not hours worked");
+    // Premiums are not billed unless the client's profile says so (a later step); they are not hours worked.
+    expect(r.billLines.some((l) => l.type === "MEAL_PREMIUM")).toBe(false);
+  });
+
+  it("refuses a confirmation for a day the worker did not work on that assignment, and warns where no premium applies", () => {
+    const off = computePay({ ...caInput([ca(G1[1]!, 480)]), confirmations: [{ id: "c1", kind: "meal_period_missed", workerId: "w1", assignmentId: "a1", date: G1[2]! }] });
+    expect(off.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+    const il = computePay({ ...input([shift(WEEK[0]!, 480)]), premiumRules: CA_PREMIUMS, confirmations: [{ id: "c1", kind: "meal_period_missed", workerId: "w1", assignmentId: "a1", date: WEEK[0]! }] });
+    expect(il.blockers).toEqual([]);
+    expect(il.payLines.map((l) => l.type)).toEqual(["REG"]);
+    expect(il.warnings.map((w) => w.code)).toEqual(["premium_not_applicable"]);
   });
 
   it("holds a week that mixes California with another state", () => {

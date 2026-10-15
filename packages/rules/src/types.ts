@@ -90,12 +90,41 @@ export interface MinimumWageRule {
   citation: string;
 }
 
+/**
+ * A dated premium rule paid when a person confirms its trigger: an hour of pay at the regular rate
+ * for a missed meal or rest period (Cal. Lab. Code § 226.7(c)). Not hours worked.
+ */
+export interface PremiumRule {
+  jurisdiction: string;
+  ruleCode: string;
+  /** Minutes of pay per occurrence (60: "one additional hour of pay"). */
+  premiumMinutes: number;
+  /** The most occurrences paid per workday (one meal and one rest premium a day). */
+  perWorkdayMax: number;
+  effectiveFrom: IsoDate;
+  effectiveTo: IsoDate | null;
+  citation: string;
+}
+
+export type ConfirmationKind = "meal_period_missed" | "rest_period_missed";
+
+/** Something a person confirmed about a worker's day on one assignment (the engine computes, a person confirms). */
+export interface Confirmation {
+  id: string;
+  kind: ConfirmationKind;
+  workerId: string;
+  assignmentId: string;
+  date: IsoDate;
+}
+
 export interface PayInput {
   workweekStartsOn: Weekday;
   shifts: Shift[];
   overtimeRules: OvertimeRule[];
   jurisdictionRules: JurisdictionRule[];
   minimumWageRules: MinimumWageRule[];
+  premiumRules?: PremiumRule[];
+  confirmations?: Confirmation[];
 }
 
 export interface Line {
@@ -124,7 +153,8 @@ export type IssueCode =
   | "multiple_pay_rates_with_overtime"
   | "zero_or_negative_pay"
   // warnings (do not block):
-  | "allocation_order_assumed";
+  | "allocation_order_assumed"
+  | "premium_not_applicable";
 
 export interface Issue {
   code: IssueCode;

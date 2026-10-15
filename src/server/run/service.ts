@@ -12,7 +12,7 @@
  */
 import { createHash } from "node:crypto";
 import { addDays, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
@@ -68,6 +68,8 @@ export interface RunResult {
 }
 
 const INT4_MAX = 2_147_483_647;
+/** Line types that are worked time, billed minute for minute (pay-only lines are not billed time). */
+const BILLED_TIME = new Set(["REG", "OT", "DT"]);
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const effective = (date: string, from: string, to: string | null) => from <= date && (to === null || date <= to);
 /**
@@ -101,11 +103,13 @@ export async function setSkipped(tx: Tx, actor: Actor, payPeriodId: string, work
   await audit(tx, actor, [{ action: "update", entityType: "pay_run", entityId: run.id, before: { skipped: run.skipped.map((x) => x.workerId) }, after: { skipped: next.map((x) => x.workerId) }, reason }]);
 }
 
-async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules">> {
+async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules" | "premiumRules">> {
   const ot = await tx.select().from(s.overtimeRules);
   const jr = await tx.select().from(s.jurisdictionRules);
   const mw = await tx.select().from(s.minimumWageRules);
+  const pr = await tx.select().from(s.premiumRules);
   return {
+    premiumRules: pr.map((r) => ({ jurisdiction: r.jurisdiction, ruleCode: r.ruleCode, premiumMinutes: r.premiumMinutes, perWorkdayMax: r.perWorkdayMax, effectiveFrom: r.effectiveFrom, effectiveTo: r.effectiveTo, citation: r.citation })),
     overtimeRules: ot.map(
       (r): OvertimeRule => ({
         jurisdiction: r.jurisdiction,
@@ -297,14 +301,19 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     }
   }
 
-  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, ...(await ruleTables(tx)) };
+  // Missed meal and rest periods a person confirmed for days in this period (engine computes, a person confirms).
+  const confirmations = (await tx.select().from(s.premiumConfirmations).where(and(gte(s.premiumConfirmations.workDate, period.startsOn), lte(s.premiumConfirmations.workDate, period.endsOn))))
+    .map((c) => ({ id: c.id, kind: c.kind, workerId: c.workerId, assignmentId: c.assignmentId, date: c.workDate }))
+    .sort((a, b) => cmp(a.id, b.id));
+  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, ...(await ruleTables(tx)) };
   const result = computePay(input);
   blockers.push(...result.blockers);
 
-  // Pay and bill lines must carry the same minutes for each worker, assignment, week and type.
+  // Pay and bill lines must carry the same worked minutes for each worker, assignment, week and type
+  // (a minimum-wage top-up or a premium is pay only: it is not billed time).
   const minutes = new Map<string, number>();
-  for (const l of result.payLines) minutes.set(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`, (minutes.get(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`) ?? 0) + l.minutes);
-  for (const l of result.billLines) minutes.set(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`, (minutes.get(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`) ?? 0) - l.minutes);
+  for (const l of result.payLines.filter((x) => BILLED_TIME.has(x.type))) minutes.set(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`, (minutes.get(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`) ?? 0) + l.minutes);
+  for (const l of result.billLines.filter((x) => BILLED_TIME.has(x.type))) minutes.set(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`, (minutes.get(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`) ?? 0) - l.minutes);
   for (const [key, diff] of [...minutes].sort((a, b) => cmp(a[0], b[0]))) {
     if (diff !== 0) blockers.push({ code: "pay_bill_mismatch", workerId: key.split("|")[0], message: `Pay and bill minutes differ by ${diff} for ${key}.` });
   }

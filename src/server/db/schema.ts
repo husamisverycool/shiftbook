@@ -623,6 +623,37 @@ export const minimumWageRules = pgTable(
   (t) => placeCodeChecks("minimum_wage_rules", t),
 );
 
+/** Dated premium rules paid when a person confirms their trigger (drizzle/0016). */
+export const premiumRules = pgTable("premium_rules", {
+  id: id(),
+  jurisdiction: text("jurisdiction").notNull(),
+  ruleCode: text("rule_code").notNull(),
+  premiumMinutes: integer("premium_minutes").notNull(),
+  perWorkdayMax: integer("per_workday_max").notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+  citation: text("citation").notNull(),
+});
+
+export const confirmationKind = pgEnum("confirmation_kind", ["meal_period_missed", "rest_period_missed"]);
+
+/** A person's confirmation that a worker missed a meal or rest period on one assignment and day. */
+export const premiumConfirmations = pgTable(
+  "premium_confirmations",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    assignmentId: uuid("assignment_id").notNull().references(() => assignments.id),
+    workDate: isoDate("work_date").notNull(),
+    kind: confirmationKind("kind").notNull(),
+    note: text("note"),
+    confirmedBy: uuid("confirmed_by"),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("premium_confirmations_day").on(t.agencyId, t.workerId, t.workDate)],
+);
+
 export const TENANT_TABLES = [
   "branches",
   "users",
@@ -638,6 +669,7 @@ export const TENANT_TABLES = [
   "pay_periods",
   "mapping_profiles",
   "placement_imports",
+  "premium_confirmations",
   "source_documents",
   "document_pages",
   "extraction_passes",

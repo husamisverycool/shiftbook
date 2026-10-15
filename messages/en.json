@@ -340,7 +340,8 @@
         "no_entries": "No hours to pay",
         "documents_pending": "Timesheets still being read",
         "document_failed": "Timesheets that could not be read",
-        "invoice_problem": "An invoice cannot be created"
+        "invoice_problem": "An invoice cannot be created",
+        "premium_not_applicable": "A confirmed premium that does not apply here"
       },
       "rules": {
         "ca_daily_overtime": "daily overtime",

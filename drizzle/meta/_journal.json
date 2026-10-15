@@ -113,6 +113,13 @@
       "when": 1792091600687,
       "tag": "0015_minimum_wage_top_up_and_local_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792091600688,
+      "tag": "0016_meal_rest_premiums",
+      "breakpoints": true
     }
   ]
 }

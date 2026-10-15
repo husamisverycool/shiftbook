@@ -4,7 +4,7 @@
  * so tests and goldens that use this module can never drift from what the app computes with.
  * Sources: docs/research/minimum-wage-2026.md and the citations on each row.
  */
-import type { JurisdictionRule, MinimumWageRule, OvertimeRule } from "@shiftbook/rules";
+import type { JurisdictionRule, MinimumWageRule, OvertimeRule, PremiumRule } from "@shiftbook/rules";
 
 const since = "2000-01-01";
 
@@ -75,4 +75,14 @@ export const REFERENCE_MINIMUM_WAGE_RULES: MinimumWageRule[] = [
   mw("IL", 1705, "2026-07-01", null, "Chicago Municipal Code ch. 6-105; OLS Rule MW 2.01 — $17.05 per hour from July 1, 2026 (employers with 4 or more employees)", { placeFips: "1714000", scopeName: "City of Chicago" }),
   mw("IL", 1500, "2025-07-01", "2026-06-30", "Cook County Code § 42-13 — $15.00 per hour from July 1, 2025 (held at the state rate)", { countyFips: "17031", scopeName: "Cook County" }),
   mw("IL", 1540, "2026-07-01", null, "Cook County Code § 42-13 — $15.40 per hour from July 1, 2026", { countyFips: "17031", scopeName: "Cook County" }),
+];
+
+const premium = (ruleCode: string, effectiveFrom: string, effectiveTo: string | null, citation: string): PremiumRule => ({ jurisdiction: "CA", ruleCode, premiumMinutes: 60, perWorkdayMax: 1, effectiveFrom, effectiveTo, citation });
+
+/** California meal- and rest-period premiums (drizzle/0016), two dated versions of § 226.7. */
+export const REFERENCE_PREMIUM_RULES: PremiumRule[] = [
+  premium("ca_meal_premium", "2000-01-01", "2026-12-31", "Cal. Lab. Code § 226.7(c) (version in effect through December 31, 2026) — one additional hour of pay at the regular rate for each workday a meal period is not provided; Ferra v. Loews Hollywood Hotel, LLC (2021) 11 Cal.5th 858; UPS v. Superior Court (2011) 196 Cal.App.4th 57"),
+  premium("ca_meal_premium", "2027-01-01", null, "Cal. Lab. Code § 226.7(c) (version operative January 1, 2027; Stats. 2020, ch. 343) — one additional hour of pay at the regular rate for each workday a meal period is not provided; Ferra; UPS"),
+  premium("ca_rest_premium", "2000-01-01", "2026-12-31", "Cal. Lab. Code § 226.7(c) (version in effect through December 31, 2026) — one additional hour of pay at the regular rate for each workday a rest period is not provided; Ferra v. Loews Hollywood Hotel, LLC (2021) 11 Cal.5th 858; UPS v. Superior Court (2011) 196 Cal.App.4th 57"),
+  premium("ca_rest_premium", "2027-01-01", null, "Cal. Lab. Code § 226.7(c) (version operative January 1, 2027; Stats. 2020, ch. 343) — one additional hour of pay at the regular rate for each workday a rest period is not provided; Ferra; UPS"),
 ];

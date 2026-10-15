@@ -5,7 +5,7 @@
  */
 import { isIsoDate } from "./dates";
 import { scopeProblem, STATE_FIPS } from "./places";
-import type { Issue, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput } from "./types";
+import type { Issue, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const OPEN_END = "9999-12-31";
@@ -15,6 +15,7 @@ export interface RuleTables {
   overtimeRules: OvertimeRule[];
   jurisdictionRules: JurisdictionRule[];
   minimumWageRules: MinimumWageRule[];
+  premiumRules: PremiumRule[];
 }
 
 /** Copies of the rule tables in one fixed order. */
@@ -27,6 +28,7 @@ export function canonicalRules(input: PayInput): RuleTables {
     ),
     jurisdictionRules: by(input.jurisdictionRules, (r) => key([r.jurisdiction, scopeKey(r), r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.citation, r.scopeName])),
     minimumWageRules: by(input.minimumWageRules, (r) => key([r.jurisdiction, scopeKey(r), r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.rateCents, r.citation, r.scopeName])),
+    premiumRules: by(input.premiumRules ?? [], (r) => key([r.jurisdiction, r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.premiumMinutes, r.perWorkdayMax, r.citation])),
   };
 }
 
@@ -100,12 +102,22 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
       (!positiveInt(r.rateCents) && "its rate must be a positive whole number of cents");
     if (problem) issues.push(invalid(`${where}: ${problem}`));
   }
+  for (const r of t.premiumRules) {
+    const where = `premium rule ${r.jurisdiction} ${r.ruleCode}`;
+    const problem =
+      (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
+      datesProblem(r) ||
+      ((!positiveInt(r.premiumMinutes) || r.premiumMinutes > MAX_THRESHOLD_MINUTES) && "its minutes of pay must be a positive whole number within a week") ||
+      ((!positiveInt(r.perWorkdayMax) || r.perWorkdayMax > 24) && "its per-workday limit must be a small positive whole number");
+    if (problem) issues.push(invalid(`${where}: ${problem}`));
+  }
   if (issues.length > 0) return issues;
 
   issues.push(
     ...overlapProblems(t.overtimeRules, (r) => `${r.jurisdiction}|${r.ruleCode}|${r.kind}`, (r) => `overtime rule ${r.jurisdiction} ${r.ruleCode}`),
     ...overlapProblems(t.jurisdictionRules, (r) => `${r.jurisdiction}|${scopeKey(r)}|${r.ruleCode}`, (r) => `jurisdiction rule ${r.jurisdiction} ${r.ruleCode}${r.scopeName ? ` (${r.scopeName})` : ""}`),
     ...overlapProblems(t.minimumWageRules, (r) => `${r.jurisdiction}|${scopeKey(r)}`, (r) => `minimum-wage rate ${r.jurisdiction}${r.scopeName ? ` (${r.scopeName})` : ""}`),
+    ...overlapProblems(t.premiumRules, (r) => `${r.jurisdiction}|${r.ruleCode}`, (r) => `premium rule ${r.jurisdiction} ${r.ruleCode}`),
   );
   return issues;
 }

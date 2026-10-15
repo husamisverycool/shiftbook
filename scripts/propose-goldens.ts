@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { computePay, type PayInput, type Shift } from "@shiftbook/rules";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
-import { REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES } from "../src/server/rules/reference-data";
+import { REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
 const WEEK = ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"];
@@ -42,6 +42,7 @@ const input = (shifts: Shift[]): PayInput => ({
   overtimeRules: REFERENCE_OVERTIME_RULES,
   jurisdictionRules: REFERENCE_JURISDICTION_RULES,
   minimumWageRules: REFERENCE_MINIMUM_WAGE_RULES,
+  premiumRules: REFERENCE_PREMIUM_RULES,
 });
 const MA = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const; // Worcester County; Worcester
 const CA = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const; // San Bernardino County; Ontario
@@ -200,6 +201,26 @@ ruleCase(
   "The same California worker works seven days in a row, 8 hours each, from Wednesday October 7 to Tuesday October 13, 2026, but the workweek starts on Sunday: 4 days fall in one workweek and 3 in the next, so neither week has a seventh day of work and no hour is over 8 in a day or 40 in a week (DLSE Enforcement Manual 48.1.3.2). All straight time: 32 h × $18 = $576.00 and 24 h × $18 = $432.00.",
   caInput(["2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13"].map((d) => shift(d, 480, { ...CA, payRateCents: 1800, billRateCents: 2600 }))),
   { pay: [["REG", 1920, 57600], ["REG", 1440, 43200]], bill: [["REG", 1920, 83200], ["REG", 1440, 62400]] },
+);
+
+ruleCase(
+  "ca-meal-rest-premium-at-regular-rate",
+  "A California worker works 8 hours a day Monday to Wednesday at $18.00/h (client A) and Thursday and Friday at $20.00/h (client B), 40 hours in all. The week's regular rate is the weighted average: $752.00 ÷ 40 h = $18.80/h. A person confirmed that on Thursday the worker missed both a meal period and a rest period (a second missed meal that day adds nothing: at most one of each per workday). Each premium is one hour at the regular rate, not the day's own $20.00 (Cal. Lab. Code § 226.7(c); Ferra v. Loews Hollywood Hotel (2021)): $18.80 + $18.80. Pay: $432.00 + $320.00 + $37.60 = $789.60. The premiums are not hours worked and are not billed: bill 24 h × $26.00 + 16 h × $28.75 = $1,084.00.",
+  {
+    ...caInput([
+      ...CA_WEEK.slice(1, 4).map((d) => shift(d, 480, { ...CA, assignmentId: "assignment-A", clientId: "client-A", payRateCents: 1800, billRateCents: 2600 })),
+      ...CA_WEEK.slice(4, 6).map((d) => shift(d, 480, { ...CA, assignmentId: "assignment-B", clientId: "client-B", payRateCents: 2000, billRateCents: 2875 })),
+    ]),
+    confirmations: [
+      { id: "confirmation-1", kind: "meal_period_missed", workerId: "worker-1", assignmentId: "assignment-B", date: "2026-10-08" },
+      { id: "confirmation-2", kind: "meal_period_missed", workerId: "worker-1", assignmentId: "assignment-B", date: "2026-10-08" },
+      { id: "confirmation-3", kind: "rest_period_missed", workerId: "worker-1", assignmentId: "assignment-B", date: "2026-10-08" },
+    ],
+  },
+  {
+    pay: [["REG", 1440, 43200], ["REG", 960, 32000], ["MEAL_PREMIUM", 60, 1880], ["REST_PREMIUM", 60, 1880]],
+    bill: [["REG", 1440, 62400], ["REG", 960, 46000]],
+  },
 );
 
 // ---------- export goldens ----------

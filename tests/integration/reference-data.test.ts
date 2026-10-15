@@ -1,10 +1,11 @@
 import { sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
-import { jurisdictionRules, minimumWageRules, overtimeRules } from "../../src/server/db/schema";
+import { jurisdictionRules, minimumWageRules, overtimeRules, premiumRules } from "../../src/server/db/schema";
 import {
   REFERENCE_JURISDICTION_RULES,
   REFERENCE_MINIMUM_WAGE_RULES,
   REFERENCE_OVERTIME_RULES,
+  REFERENCE_PREMIUM_RULES,
 } from "../../src/server/rules/reference-data";
 import { openAppDb, openOwnerDb } from "./helpers";
 
@@ -64,8 +65,16 @@ describe("reference wage-rule data in the database matches src/server/rules/refe
       effectiveTo,
       citation,
     }));
-    const key = (r: { jurisdiction: string; effectiveFrom: string }) => `${r.jurisdiction}:${r.effectiveFrom}`;
+    // Local rates share a state and a start date (Chicago and Cook County), so the scope is in the key.
+    const key = (r: { jurisdiction: string; countyFips?: string | null; placeFips?: string | null; effectiveFrom: string }) => `${r.jurisdiction}:${r.countyFips ?? ""}:${r.placeFips ?? ""}:${r.effectiveFrom}`;
     expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_MINIMUM_WAGE_RULES, key));
+  });
+
+  it("premium rules", async () => {
+    const rows = await app.db.select().from(premiumRules);
+    const fromDb = rows.map(({ jurisdiction, ruleCode, premiumMinutes, perWorkdayMax, effectiveFrom, effectiveTo, citation }) => ({ jurisdiction, ruleCode, premiumMinutes, perWorkdayMax, effectiveFrom, effectiveTo, citation }));
+    const key = (r: { jurisdiction: string; ruleCode: string; effectiveFrom: string }) => `${r.jurisdiction}:${r.ruleCode}:${r.effectiveFrom}`;
+    expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_PREMIUM_RULES, key));
   });
 
   it("refuses malformed place codes in the rule tables", async () => {

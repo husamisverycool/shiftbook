@@ -29,6 +29,7 @@ const SINCE = "2026-01-01";
 const CLEAR_ORDER = [
   "jobs",
   "placement_imports",
+  "premium_confirmations",
   "exports",
   "invoices",
   "bill_lines",
