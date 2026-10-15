@@ -34,6 +34,9 @@ Product contract: `SPEC.md`. Current slice plan: `.claude/plans/`. Read both bef
 ## Design (non-negotiable)
 - No design decisions of our own. Every screen copies the hierarchy and interactions of its
   reference in `docs/patterns/`; build only what the pattern file describes. Unsure → ask the owner.
+- References may be ANY excellent, publicly documented product (owner, 2026-10-15) — SPEC §26's
+  table is a starting map, not a limit. Pick the best-documented great example for each part.
+- The bar is "extremely good and slick": fast, keyboard-friendly, no dead ends, every state handled.
 - shadcn/ui + Tailwind defaults as the neutral base. Never copy logos, names, icons, wording, colors.
 - Pattern file locations (a hook enforces these; each needs `Source URL:`, `## Hierarchy`,
   `Deviations allowed: none`):
@@ -58,4 +61,10 @@ Product contract: `SPEC.md`. Current slice plan: `.claude/plans/`. Read both bef
   lets the turn end but shows the owner a failure warning).
 
 ## Commands
-(Filled in when slice (a) scaffolds the project.)
+- `scripts/dev-db.sh start` — local Postgres (also run by the session-start hook)
+- `pnpm db:migrate` / `pnpm db:seed-demo` — schema and demo agency
+- `pnpm dev` — app on http://localhost:3000 (demo mode)
+- `pnpm test` (all) · `pnpm test:unit` · `pnpm test:integration` · `pnpm test:goldens` · `pnpm test:proposed`
+- `pnpm typecheck` · `pnpm lint` · `pnpm test:e2e` (Playwright) · `pnpm hooks:test`
+- `pnpm demo:samples` — regenerate sample documents (HEIC needs HEIC_PYTHON with pillow-heif)
+- `pnpm tsx scripts/propose-goldens.ts` — rewrite proposed goldens (checked against hand arithmetic)

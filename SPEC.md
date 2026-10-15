@@ -273,6 +273,11 @@ Each slice is usable end to end before the next starts.
 
 ## 26. Design contract
 
+Owner decisions (2026-10-15): "purely rely on inspiration from great products NOT your own idea of
+what's best"; "take from ALL inspiration you can think of, not just the list I gave you". The table
+below is the starting map; any excellent, publicly documented product may be the reference for a
+screen or part of a screen, recorded in its pattern file with sources.
+
 No design decisions of our own: no colors, fonts, spacing, layouts, animations, empty states, icons
 or microcopy from taste. Every screen reproduces the information hierarchy and interactions of one
 named reference screen, documented in `docs/patterns/`. shadcn/ui components with Tailwind defaults
