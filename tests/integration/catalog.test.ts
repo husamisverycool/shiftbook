@@ -254,7 +254,34 @@ describe("assignments", () => {
     const [maAssignment] = await inAgency((tx) => tx.select().from(assignments).where(and(eq(assignments.workerId, workerId("anita-patel")), eq(assignments.jobOrderId, jobOrderId("ma-server")))));
     expect(moved!.assignmentId).toBe(maAssignment!.id);
     const [logged] = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityId, entry.id), eq(auditEvents.action, "update"))));
-    expect(logged!.reason).toContain(`attached to ${ma!.name}, not this timesheet's client ${il!.name}`);
+    // The reason stays the person's own; the move is data the history shows in the reader's language.
+    expect(logged!.reason).toBe("confirmed_client: Hours are for the Boston site");
+    expect(logged!.after).toMatchObject({ attachedToClient: ma!.name, timesheetClient: il!.name });
+    // Once attached, a later fix to the same entry keeps it there without attaching again.
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { outMinute: (moved!.outMinute ?? 900) - 15 }, ["confirmed_worker"], "left early"))).toEqual({ ok: true });
+  });
+
+  it("a timesheet whose client is unclear never sends its hours to a client nobody named", async () => {
+    expect((await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-01-01", endDate: "2026-10-07" }))).ok).toBe(true);
+    expect((await inAgency((tx) => createAssignment(tx, actor, { workerId: workerId("anita-patel"), jobOrderId: jobOrderId("ma-server"), startDate: "2026-10-08", endDate: null }))).ok).toBe(true);
+    const csv = [
+      "Employee ID,Employee Name,Department,Date,Clock In,Clock Out,Break (min),Total Hours",
+      '10413,"Patel, Anita",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.00',
+      '10416,"Ruiz, Daniel",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.00',
+    ].join("\n");
+    const { documentId } = await inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: week, filename: "two-clients.csv", bytes: new TextEncoder().encode(csv) }));
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, documentId);
+    const [doc] = await inAgency((tx) => tx.select().from(sourceDocuments).where(eq(sourceDocuments.id, documentId)));
+    expect(doc!.clientId).toBeNull();
+    const [anita] = await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.sourceDocumentId, documentId), eq(timeEntries.workerId, workerId("anita-patel")))));
+    expect(anita!.reviewReasons).toContain("timesheet_client_unclear");
+    const [ma] = await inAgency((tx) => tx.select().from(clients).where(eq(clients.id, clientId("ma"))));
+    const grid = await inAgency((tx) => hoursStep(tx, week));
+    expect(grid.rows.find((r) => r.id === anita!.id)!.otherClient).toEqual({ id: clientId("ma"), name: ma!.name });
+    expect(await inAgency((tx) => editEntry(tx, actor, anita!.id, {}, ["misread_corrected"], ""))).toEqual({ ok: false, error: "assignment_at_other_client", client: ma!.name, clientId: clientId("ma") });
+    expect(await inAgency((tx) => editEntry(tx, actor, anita!.id, {}, ["misread_corrected"], "", { attachToClientId: clientId("ma") }))).toEqual({ ok: true });
+    const [logged] = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityId, anita!.id), eq(auditEvents.action, "update"))));
+    expect(logged!.after).toMatchObject({ attachedToClient: ma!.name, timesheetClient: null });
   });
 
   it("refuses a worker picked from the roster who works at another client, naming that client", async () => {

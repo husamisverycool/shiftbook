@@ -275,7 +275,9 @@
       "allClients": "All clients",
       "filterConfidence": "Confidence",
       "allConfidence": "Any confidence",
-      "attachTo": "Attach to {client}"
+      "attachTo": "Attach to {client}",
+      "historyAttached": "Attached to {client} (this timesheet's client: {timesheet})",
+      "historyAttachedUnclear": "Attached to {client} (this timesheet's client is unclear)"
     },
     "totals": {
       "edit": "Edit",

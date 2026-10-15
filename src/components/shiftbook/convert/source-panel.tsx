@@ -138,6 +138,7 @@ export function SourcePanel({ row, field, roster, onClose }: { row: GridRow | nu
                         </span>
                         {e.reason && <span className="text-xs">{readableReason(e.reason, (code) => t(`editReasons.${code}` as "editReasons.other"))}</span>}
                         <Changes before={e.before} after={e.after} roster={roster} locale={locale} />
+                        <Attached after={e.after} />
                       </li>
                     ))}
                   </ol>
@@ -161,6 +162,20 @@ function readableReason(reason: string, label: (code: string) => string): string
       return rest.length > 0 ? `${label(code)}: ${rest.join(": ")}` : label(code);
     })
     .join(" · ");
+}
+
+/** "Attached to {client}": hours a person put on another client than the timesheet's (kept as data in the log). */
+function Attached({ after }: { after: unknown }) {
+  const t = useTranslations("convert.hours");
+  const a = after && typeof after === "object" ? (after as { attachedToClient?: unknown; timesheetClient?: unknown }) : {};
+  if (typeof a.attachedToClient !== "string") return null;
+  return (
+    <span className="text-xs">
+      {typeof a.timesheetClient === "string"
+        ? t("historyAttached", { client: a.attachedToClient, timesheet: a.timesheetClient })
+        : t("historyAttachedUnclear", { client: a.attachedToClient })}
+    </span>
+  );
 }
 
 const FIELD_LABEL: Record<string, string> = { workerId: "colWorker", workDate: "colDate", inMinute: "colIn", outMinute: "colOut", breakMinutes: "colBreak", minutes: "colHours", status: "colStatus" };

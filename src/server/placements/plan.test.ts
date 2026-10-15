@@ -165,6 +165,25 @@ describe("planning: rates, statuses and dates are read strictly", () => {
     expect(dateOrderOf(["19.10.2026 0:00", "25.12.2026"])).toBe("day_first");
   });
 
+  it("reads start dates with a time zone or a month name, and two-digit years around the century", () => {
+    expect(parseDate("10/19/2026 7:00 AM EST", "month_first")).toBe("2026-10-19");
+    expect(parseDate("2026-10-19 00:00:00 UTC", "month_first")).toBe("2026-10-19");
+    expect(parseDate("2026-10-19T07:00:00-05:00", "month_first")).toBe("2026-10-19");
+    expect(parseDate("Oct 19, 2026", "month_first")).toBe("2026-10-19");
+    expect(parseDate("19-Oct-2026", "month_first")).toBe("2026-10-19");
+    expect(parseDate("19 de octubre de 2026", "day_first")).toBe("2026-10-19");
+    expect(parseDate("05/04/98", "month_first")).toBe("1998-05-04");
+    expect(parseDate("05/04/26", "month_first")).toBe("2026-05-04");
+  });
+
+  it("stays fast on very long date cells", () => {
+    const long = `1${" ".repeat(60_000)}1`;
+    const started = Date.now();
+    expect(parseDate(long, "month_first")).toBeNull();
+    expect(dateOrderOf(Array.from({ length: 20 }, () => long))).toBe("month_first");
+    expect(Date.now() - started).toBeLessThan(200);
+  });
+
   it("follows the order the person chose, and never re-reads an ISO date", () => {
     const rows = [row({ "Start Date": "05/11/2026" }), row({ Candidate: "Robert Jones", "Start Date": "2026-10-05", "End Date": "2026-11-02" })];
     const planned = planRows("other", header, rows, mapping, {}, catalog, { dateOrder: "day_first" });

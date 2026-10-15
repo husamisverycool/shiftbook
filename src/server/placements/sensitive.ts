@@ -21,13 +21,14 @@ import { floorDiv, mod } from "@shiftbook/rules";
 const WORDS = new Set([
   "ssn", "ssno", "ssnum", "ssnumber", "socsec", "last4", "itin", "nss", "curp",
   "dob", "born", "birth", "birthdate", "birthdates", "birthday", "bday",
-  "nacimiento", "nac", "fnac", "nacido", "nacida", "cumpleaños", "cumpleanos", "naissance", "geboren",
+  "nacimiento", "nac", "fnac", "nacido", "nacida", "cumpleaños", "cumpleanos", "naissance", "naiss", "geboren",
+  "yob", "bdate", "l4", "lastfour",
 ]);
 /** Short forms that mean an SSN or a tax id only in a heading made of them and id words ("SS #", "Employee TIN"). */
 const SHORT = new Set(["ss", "sin", "tin"]);
 const ID_WORDS = new Set(["no", "num", "nbr", "number", "numero", "número", "id", "employee", "emp", "worker", "candidate", "last", "4", "four"]);
 /** Pieces that name one anywhere in the heading once it is squeezed to letters. */
-const PIECES = ["socialsecurity", "socialinsurance", "taxid", "taxpayer", "dateofbirth", "birthdate", "segurosocial", "fechadenacimiento", "fechanac", "cumplea", "datedenaissance", "geburt"];
+const PIECES = ["socialsecurity", "socialinsurance", "taxid", "taxpayer", "dateofbirth", "birthdate", "segurosoc", "fechadenacimiento", "fechanac", "cumplea", "datedenaissance", "geburt", "gebdatum"];
 
 function sensitiveHeading(heading: string): boolean {
   const text = heading.normalize("NFKC");
@@ -45,7 +46,7 @@ function sensitiveHeading(heading: string): boolean {
 }
 
 /** Nine digits as 3-2-4 with any common separator between both groups or none at all (not 5-4, a ZIP+4). */
-const SEP = String.raw`(?:\s*[.\-‐-―_/]\s*|\s+)`;
+const SEP = String.raw`(?:\s{0,3}[.\-‐-―_/]\s{0,3}|\s{1,3})`;
 const SSN_SOURCE = String.raw`(?<!\d)(?:\d{3}${SEP}\d{2}${SEP}?\d{4}|\d{9})(?!\d)`;
 const SSN_SHAPED = new RegExp(SSN_SOURCE);
 const ssnIn = (text: string) => SSN_SHAPED.test(text.normalize("NFKC"));
@@ -53,37 +54,50 @@ const ssnIn = (text: string) => SSN_SHAPED.test(text.normalize("NFKC"));
 const MONTHS = new Set(
   (
     "jan january feb february mar march apr april may jun june jul july aug august sep sept september oct october nov november dec december " +
-    "ene enero febrero marzo abr abril mayo junio julio ago agosto septiembre setiembre octubre noviembre dic diciembre"
+    "ene enero febrero marzo abr abril mayo junio julio ago agosto septiembre setiembre octubre noviembre dic diciembre " +
+    "janvier janv février fevrier févr fevr mars avril avr mai juin juillet juil août aout septembre octobre novembre décembre decembre déc " +
+    "januar jänner jaenner februar märz maerz juni juli oktober okt dezember dez"
   ).split(" "),
 );
+// Every repeat below is bounded, so a long cell can never make the search slow.
 const DAY = String.raw`(\d{1,2})(?:st|nd|rd|th)?`;
-const YEAR = String.raw`(\d{4}|\d{2})`;
-const NAME = String.raw`([a-zñ]{3,10})\.?`;
+const YEAR = String.raw`['’]?(\d{4}|\d{2})`;
+const NAME = String.raw`([a-zñéèêëàâäöüûôîïç]{3,11})\.?`;
 const DSEP = String.raw`[\s\-/.]`;
 /** An optional weekday before a date written with a month name ("Tue Jan 02 1990"). */
-const WEEKDAY = String.raw`(?:(?:mon|tue|wed|thu|fri|sat|sun|lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-zé]*\.?,?\s+)?`;
-/** An optional time of day after a date, as spreadsheets save date-time cells ("1/2/1990 12:00:00 AM"). */
-const TIME = String.raw`(?:[\sT]+\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?\s*(?:[ap]\.?\s?m\.?)?(?:z|[+-]\d{2}:?\d{2})?)?`;
+const WEEKDAY = String.raw`(?:(?:mon|tue|wed|thu|fri|sat|sun|lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-zé]{0,7}\.?,?\s{1,3})?`;
+/**
+ * An optional time of day after a date, with an optional time zone, as spreadsheets and databases
+ * write date-time cells ("1/2/1990 12:00:00 AM", "1990-01-02 00:00:00 UTC", "… GMT-0500 (Eastern
+ * Standard Time)").
+ */
+const TIME = String.raw`(?:(?:\s{1,3}|t)\d{1,2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:\s{0,3}[ap]\.?\s?m\.?)?(?:\s{0,3}(?:z|utc|gmt|[a-z]{2,5}))?(?:\s{0,3}[+-]\d{2}(?::?\d{2})?)?(?:\s{0,3}\([^)]{0,60}\))?)?`;
 const isMonth = (name: string | undefined) => MONTHS.has((name ?? "").toLowerCase());
 const dayOk = (d: string | undefined) => Number(d) >= 1 && Number(d) <= 31;
 const monthOk = (m: string | undefined) => Number(m) >= 1 && Number(m) <= 12;
 /** The ways a date is commonly written; each gives the year (and enough to check it is a date). */
 const DATE_FORMS: { source: string; year: (m: RegExpExecArray) => string | null }[] = [
-  // 01/02/1990, 1/2/90, 02.01.1990, 01-02-1990 (month or day first: only the year matters here)
-  { source: String.raw`(\d{1,2})[/.\-](\d{1,2})[/.\-]${YEAR}${TIME}`, year: (m) => (dayOk(m[1]) && dayOk(m[2]) && (monthOk(m[1]) || monthOk(m[2])) ? m[3]! : null) },
-  // 1990/01/02, 1990-01-02, 1990-01-02T00:00:00
-  { source: String.raw`(\d{4})[/.\-](\d{1,2})[/.\-](\d{1,2})${TIME}`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null) },
-  // 19900102
+  // 01/02/1990, 1/2/90, 02.01.1990, 01-02-1990, 01 02 1990 (one separator throughout; month or day first: only the year matters)
+  { source: String.raw`(\d{1,2})([/.\-]|\s{1,2})(\d{1,2})\2${YEAR}${TIME}`, year: (m) => (dayOk(m[1]) && dayOk(m[3]) && (monthOk(m[1]) || monthOk(m[3])) ? m[4]! : null) },
+  // 1990/01/02, 1990-01-02, 1990 01 02, 1990-01-02T00:00:00Z
+  { source: String.raw`(\d{4})([/.\-]|\s{1,2})(\d{1,2})\2(\d{1,2})${TIME}`, year: (m) => (monthOk(m[3]) && dayOk(m[4]) ? m[1]! : null) },
+  // 19900102, and 01021990 (month or day first)
   { source: String.raw`((?:19|20)\d{2})(\d{2})(\d{2})`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null) },
-  // 2 Jan 1990, 02-Jan-1990, 2 de enero de 1990
-  { source: String.raw`${WEEKDAY}${DAY}${DSEP}*(?:de\s+)?${NAME}[\s\-/.,]*(?:de\s+)?${YEAR}${TIME}`, year: (m) => (isMonth(m[2]) && dayOk(m[1]) ? m[3]! : null) },
-  // Jan 2, 1990; January 2 1990; Jan-02-1990; Tue Jan 02 1990 (a month and year alone is not a date)
-  { source: String.raw`${WEEKDAY}${NAME}${DSEP}*${DAY}(?:,\s*|${DSEP}+)${YEAR}${TIME}`, year: (m) => (isMonth(m[1]) && dayOk(m[2]) ? m[3]! : null) },
+  { source: String.raw`(\d{2})(\d{2})((?:19|20)\d{2})`, year: (m) => (dayOk(m[1]) && dayOk(m[2]) && (monthOk(m[1]) || monthOk(m[2])) ? m[3]! : null) },
+  // 2 Jan 1990, 02-Jan-1990, 2 de enero de 1990, 2 janvier 1990, 2. Januar 1990, Tue, 02 Jan 1990 00:00:00 GMT
+  { source: String.raw`${WEEKDAY}${DAY}${DSEP}{0,3}(?:de\s{1,3})?${NAME}[\s\-/.,]{0,3}(?:de\s{1,3})?${YEAR}${TIME}`, year: (m) => (isMonth(m[2]) && dayOk(m[1]) ? m[3]! : null) },
+  // Jan 2, 1990; January 2 1990; Jan-02-1990; Jan 2 '90; Tue Jan 02 1990 — not a month and year
+  // alone ("May 2026"), nor a range of days ("Oct 5-11")
+  { source: String.raw`${WEEKDAY}${NAME}${DSEP}{0,3}${DAY}(?:,\s{0,3}|\s{1,3}|[/.]|-(?=\d{4}))${YEAR}${TIME}`, year: (m) => (isMonth(m[1]) && dayOk(m[2]) ? m[3]! : null) },
   // 1990-Jan-02, 1990 Jan 2
-  { source: String.raw`(\d{4})${DSEP}+${NAME}${DSEP}*${DAY}${TIME}`, year: (m) => (isMonth(m[2]) && dayOk(m[3]) ? m[1]! : null) },
+  { source: String.raw`(\d{4})${DSEP}{1,3}${NAME}${DSEP}{0,3}${DAY}${TIME}`, year: (m) => (isMonth(m[2]) && dayOk(m[3]) ? m[1]! : null) },
+  // 1990年1月2日
+  { source: String.raw`(\d{4})\s{0,2}年\s{0,2}(\d{1,2})\s{0,2}月\s{0,2}(\d{1,2})\s{0,2}日`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null) },
 ];
 const WHOLE = DATE_FORMS.map((f) => ({ re: new RegExp(`^${f.source}$`, "i"), year: f.year }));
 const INSIDE = DATE_FORMS.map((f) => ({ re: new RegExp(String.raw`(?<![\da-zñ])${f.source}(?![\da-zñ])`, "gi"), year: f.year }));
+/** A cell longer than this is not a date (and is not run through the whole-cell patterns). */
+const MAX_DATE_CELL = 120;
 
 /** A two-digit year after this year's is last century ("01/02/90" is 1990), for finding birth dates only. */
 function fullYear(text: string, thisYear: number): number {
@@ -95,6 +109,7 @@ function fullYear(text: string, thisYear: number): number {
 /** The year of a cell that is a date, however it is written; null when it is not one. */
 function dateYear(text: string, thisYear: number): number | null {
   const t = text.normalize("NFKC").trim().toLowerCase();
+  if (t.length > MAX_DATE_CELL) return null;
   for (const form of WHOLE) {
     const m = form.re.exec(t);
     const y = m ? form.year(m) : null;
@@ -113,7 +128,8 @@ function yearsInside(text: string, thisYear: number): number[] {
 }
 
 /** Words that say a date nearby is a birth date. */
-const BIRTH_WORD = /(?<![a-zñ])(?:d\.?\s?o\.?\s?b|born|birth[a-z]*|b-?day|f\.?\s?nac|nac(?![a-zñ])|nac(?:id[oa]s?|i[oó]|imiento)|cumplea[a-zñ]*|naissance|n[ée]e?\s+le|geboren|geburt[a-z]*)/i;
+const BIRTH_WORD =
+  /(?<![a-zñ])(?:d\.?\s?o\.?\s?b(?![a-z])|born(?![a-z])|birth[a-z]*|b-?day(?![a-z])|f\.?\s?nac|f\.\s?n\.(?![a-z])|nac(?![a-zñ])|nac(?:id[oa]s?|i[oó]|imiento)|cumplea[a-zñ]*|naissance|naiss\.|n[ée]e?\s{1,3}le(?![a-z])|geboren|geburt[a-z]*|geb\.)/i;
 
 function birthDates(values: string[], thisYear: number): boolean {
   if (values.some((v) => BIRTH_WORD.test(v) && yearsInside(v, thisYear).length > 0)) return true;
@@ -133,11 +149,14 @@ function columnLetter(index: number): string {
   return out;
 }
 
-/** A heading with anything shaped like an SSN or a date hidden. */
+/**
+ * A removed column's heading with anything shaped like an SSN or a date hidden, and every other run
+ * of two or more digits too: the column is gone, so nothing in its heading needs its digits.
+ */
 function masked(heading: string): string {
-  let out = heading.normalize("NFKC").replace(new RegExp(SSN_SOURCE, "g"), "•••");
+  let out = heading.normalize("NFKC").slice(0, 300).replace(new RegExp(SSN_SOURCE, "g"), "•••");
   for (const form of INSIDE) out = out.replace(form.re, (...m) => (form.year(m as unknown as RegExpExecArray) ? "•••" : m[0]));
-  return out.slice(0, 100);
+  return out.replace(/\d{2,}/g, "•••").slice(0, 100);
 }
 
 export type RemovedColumn = { column: string; heading: string; reason: "heading" | "ssn_values" | "birth_dates" };
@@ -185,7 +204,7 @@ export function dropSensitive(
 export function safeFilename(name: string, today: string): string {
   const thisYear = Number(today.slice(0, 4));
   const birth = BIRTH_WORD.test(name);
-  let out = name.normalize("NFKC").replace(new RegExp(SSN_SOURCE, "g"), "•••");
+  let out = name.normalize("NFKC").slice(0, 300).replace(new RegExp(SSN_SOURCE, "g"), "•••");
   for (const form of INSIDE) {
     out = out.replace(form.re, (...m) => {
       const y = form.year(m as unknown as RegExpExecArray);

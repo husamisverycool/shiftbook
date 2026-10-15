@@ -65,19 +65,26 @@ const snapshot = (e: typeof s.timeEntries.$inferSelect) => ({
   status: e.status,
 });
 
+/** Where an entry's hours may go: the timesheet's client, and any other client only by the person's choice. */
+interface ClientScope {
+  /** The timesheet's client; null when it has none or it is unclear. */
+  documentClientId: string | null;
+  /** The entry came from a timesheet (not added by hand): its hours never go to a client nobody named. */
+  fromTimesheet: boolean;
+  /** The other client the person chose to attach the hours to ("Attach to {client}"). */
+  attachToClientId: string | null;
+  /** The client the entry is already attached to (a person chose it earlier); later fixes keep it there. */
+  keepClientId: string | null;
+}
+
 /**
  * The worker's assignment (not cancelled) covering a date. A timesheet belongs to one client, so its
- * entries take that client's assignments. One at another client is named in the refusal, and taken
- * only when the person chose to attach the hours to that very client (a timesheet that really covers
- * two clients) — never because of an edit reason.
+ * entries take that client's assignments. An assignment at another client — or at any client when
+ * the timesheet's client is unclear — is named in the refusal, and taken only when the person chose
+ * to attach the hours to that very client (or attached them there before); never because of an edit
+ * reason. Entries added by hand have no timesheet and take the worker's single assignment that day.
  */
-async function assignmentFor(
-  tx: Tx,
-  workerId: string,
-  date: string,
-  clientId: string | null,
-  attachToClientId: string | null,
-): Promise<{ id: string; clientName: string; elsewhere: boolean } | Omit<EditFailure, "ok">> {
+async function assignmentFor(tx: Tx, workerId: string, date: string, scope: ClientScope): Promise<{ id: string; clientName: string; elsewhere: boolean } | Omit<EditFailure, "ok">> {
   const rows = await tx
     .select({ id: s.assignments.id, clientId: s.jobOrders.clientId, clientName: s.clients.name, start: s.assignments.startDate, end: s.assignments.endDate, status: s.assignments.status })
     .from(s.assignments)
@@ -85,13 +92,13 @@ async function assignmentFor(
     .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId))
     .where(eq(s.assignments.workerId, workerId));
   const active = rows.filter((a) => a.status !== "cancelled" && a.start <= date && (a.end === null || date <= a.end));
-  const here = clientId ? active.filter((a) => a.clientId === clientId) : active;
+  const here = scope.documentClientId ? active.filter((a) => a.clientId === scope.documentClientId) : scope.fromTimesheet ? [] : active;
   if (here.length > 1) return { error: "several_assignments" };
   if (here.length === 1) return { id: here[0]!.id, clientName: here[0]!.clientName, elsewhere: false };
   const others = [...new Map(active.map((a) => [a.clientId, a.clientName])).entries()];
   if (others.length !== 1) return { error: "no_assignment" };
   const [otherId, otherName] = others[0]!;
-  if (attachToClientId !== otherId) return { error: "assignment_at_other_client", client: otherName, clientId: otherId };
+  if (scope.attachToClientId !== otherId && scope.keepClientId !== otherId) return { error: "assignment_at_other_client", client: otherName, clientId: otherId };
   const there = active.filter((a) => a.clientId === otherId);
   if (there.length > 1) return { error: "several_assignments" };
   return { id: there[0]!.id, clientName: otherName, elsewhere: true };
@@ -132,8 +139,7 @@ async function applyChange(
   start: Values,
   change: EntryChange,
   period: { startsOn: string; endsOn: string },
-  documentClientId: string | null,
-  attachToClientId: string | null,
+  scope: ClientScope,
 ): Promise<{ ok: true; next: Values; attachedTo: string | null } | EditFailure> {
   const next = { ...start };
   for (const key of Object.keys(change) as (keyof EntryChange)[]) {
@@ -166,7 +172,7 @@ async function applyChange(
   }
 
   if (next.workerId) {
-    const found = await assignmentFor(tx, next.workerId, next.workDate, documentClientId, attachToClientId);
+    const found = await assignmentFor(tx, next.workerId, next.workDate, scope);
     if ("error" in found) return { ok: false, ...found };
     next.assignmentId = found.id;
     next.status = "reviewed";
@@ -219,16 +225,24 @@ export async function editEntry(
     : [];
 
   const before = snapshot(entry);
-  const result = await applyChange(tx, before, change, period, doc?.clientId ?? null, opts.attachToClientId ?? null);
+  const [current] = entry.assignmentId
+    ? await tx.select({ clientId: s.jobOrders.clientId }).from(s.assignments).innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId)).where(eq(s.assignments.id, entry.assignmentId))
+    : [];
+  const result = await applyChange(tx, before, change, period, {
+    documentClientId: doc?.clientId ?? null,
+    fromTimesheet: entry.sourceDocumentId !== null,
+    attachToClientId: opts.attachToClientId ?? null,
+    keepClientId: current?.clientId ?? null,
+  });
   if (!result.ok) return result;
   const next = result.next;
-  // Hours attached to another client than the timesheet's say so, with both names, in the log.
-  const why = result.attachedTo ? `${reason.text}; attached to ${result.attachedTo}, not this timesheet's client ${doc?.clientName ?? "(none)"}` : reason.text;
+  // Hours put on another client than the timesheet's are logged with both clients (shown in the history).
+  const attached = result.attachedTo ? { attachedToClient: result.attachedTo, timesheetClient: doc?.clientName ?? null } : {};
   await tx
     .update(s.timeEntries)
     .set({ ...next, fields: editedFields(entry.fields, before, next), reviewReasons: [], distinctConfirmed: false, updatedAt: new Date() })
     .where(eq(s.timeEntries.id, entryId));
-  await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: next, reason: why }]);
+  await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: { ...next, ...attached }, reason: reason.text }]);
   return { ok: true };
 }
 
@@ -246,7 +260,7 @@ export async function addEntry(
   const period = await openOrLocked(tx, payPeriodId);
   if (period === "period_locked") return { ok: false, error: period };
   const empty: Values = { workerId: null, assignmentId: null, workDate: null, inMinute: null, outMinute: null, breakMinutes: null, minutes: null, status: "needs_review" };
-  const result = await applyChange(tx, empty, input, period, null, null);
+  const result = await applyChange(tx, empty, input, period, { documentClientId: null, fromTimesheet: false, attachToClientId: null, keepClientId: null });
   if (!result.ok) return result;
   const next = result.next;
   const [worker] = await tx.select().from(s.workers).where(eq(s.workers.id, next.workerId!));

@@ -26,7 +26,13 @@ pattern files below (copied from the research notes, every claim with its URL).
   fails; dates with times, year-first and dotted dates read; more birth-date spellings (Spanish,
   French, German, month names with dashes, weekdays); a month and year is not a date; birth
   dates hidden in filenames; each bill line explains only its own shifts. 444 tests, 16 browser
-  tests pass. Fifth review next.
+  tests pass.
+- Fifth review fixed: date reading in the import can no longer be slowed by a long cell (bounded,
+  anchored patterns; long cells skipped); dates with a time zone, month names, French and German
+  spellings, "geb.", "F.N.", 8-digit dates; names like "Dobson" no longer look like "DOB"; every
+  number in a removed heading hidden; a timesheet whose client is unclear also needs the explicit
+  "Attach to {client}"; once attached, later fixes keep the entry there; the history shows the
+  attach in the reader's language. 480 tests, 16 browser tests pass.
 
 ## Goal (what the owner can do at the end)
 From a sidebar on every page: open **Job orders**, see them as a list grouped by client, open one

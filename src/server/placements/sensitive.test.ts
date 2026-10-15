@@ -173,3 +173,62 @@ describe("fourth review: dates with a time of day, more spellings, fewer false a
     expect(safeFilename("placements for 900-12-3456.csv", today)).toBe("placements for •••.csv");
   });
 });
+
+describe("fifth review: time zones, more spellings, no false alarms on names, and speed", () => {
+  it.each([
+    [["70001", "2026-10-19 00:00:00 UTC"]],
+    [["70001", "1990-01-02 00:00:00-05"]],
+    [["Tue Jan 02 1990 00:00:00 GMT-0500 (Eastern Standard Time)"]],
+    [["Tue, 02 Jan 1990 00:00:00 GMT"]],
+    [["1/2/1990 12:00 AM EST"]],
+  ])("refuses a first row whose dates carry a time zone: %j", (header) => {
+    expect(headingProblem(header, today)).toBe(true);
+  });
+
+  it.each([
+    [["1990-01-02 00:00:00 UTC", "1985-03-04 00:00:00 UTC"]],
+    [["Tue, 02 Jan 1990 00:00:00 GMT", "Mon, 04 Mar 1985 00:00:00 GMT"]],
+    [["1/2/1990 12:00 AM EST", "3/4/1985 12:00 AM EST"]],
+    [["Jan 2 '90", "Mar 4 '85"]],
+    [["01 02 1990", "03 04 1985"]],
+    [["1990 01 02", "1985 03 04"]],
+    [["2 janvier 1990", "4 mars 1985"]],
+    [["2. Januar 1990", "4. März 1985"]],
+  ])("drops a column of old dates written as %j", (dates) => {
+    const out = dropSensitive(["Name", "Info"], dates.map((d, i) => [`Worker ${i}`, d]), today);
+    expect(out.removed).toEqual([{ column: "B", heading: "Info", reason: "birth_dates" }]);
+  });
+
+  it.each(["geb. 02.01.1990", "Née le 2 janvier 1990", "F.N. 02/01/1990", "dob 01021990"])("drops free text that gives a birth date: %s", (note) => {
+    expect(dropSensitive(["Name", "Notes"], [["A", note]], today).removed).toEqual([{ column: "B", heading: "Notes", reason: "birth_dates" }]);
+  });
+
+  it.each(["Geb.-Datum", "Date naiss.", "Naiss.", "YOB", "Bdate", "B-Date", "Seguro Soc.", "L4", "Last Four"])("drops a column headed %s", (heading) => {
+    expect(one(heading).removed).toEqual([{ column: "B", heading, reason: "heading" }]);
+  });
+
+  it.each(["DOB 01 02 1990", "DOB 1990 01 02", "Born Jan 2 '90", "Geburtsdatum 2. Januar 1990", "DOB 1990年1月2日"])("never keeps a year in a removed heading: %s", (heading) => {
+    const out = one(heading);
+    expect(out.removed).toHaveLength(1);
+    expect(out.removed[0]!.heading).not.toMatch(/\d{2}/);
+  });
+
+  it("keeps names that only start like a birth word, and ranges that look like dates", () => {
+    expect(dropSensitive(["Name", "Supervisor"], [["A", "Mike Dobson 10/19/2026"]], today).removed).toEqual([]);
+    expect(dropSensitive(["Name", "Recruiter"], [["A", "Nee Lewis 10/20/2026"]], today).removed).toEqual([]);
+    expect(safeFilename("Dobbins Staffing 2026-10-19.csv", today)).toBe("Dobbins Staffing 2026-10-19.csv");
+    expect(headingProblem(["Candidate", "Oct 5-11"], today)).toBe(false);
+    expect(dropSensitive(["Name", "Period"], [["A", "Jan 1-10"], ["B", "Feb 3-12"]], today).removed).toEqual([]);
+  });
+
+  it("stays fast on very long cells", () => {
+    const long = `1${" ".repeat(100_000)}1`;
+    const spaced = `1/2/1990${" ".repeat(50_000)}x`;
+    const started = Date.now();
+    dropSensitive(["Name", "Notes"], [["A", long], ["B", spaced], ["C", "T".repeat(100_000)]], today);
+    headingProblem([long, spaced], today);
+    safeFilename(long, today);
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+});
+

@@ -77,7 +77,7 @@ export interface HoursRow {
   confidence: "high" | "medium" | "low";
   status: (typeof s.timeEntryStatus.enumValues)[number];
   reviewReasons: string[];
-  /** For hours held because the worker's assignment that day is at another client: that client. */
+  /** For hours held because the worker's assignment that day is at another client (or the timesheet's client is unclear): that client. */
   otherClient: { id: string; name: string } | null;
   fields: s.EntryFields;
   document: { id: string; filename: string; kind: string; pageCount: number | null } | null;
@@ -128,7 +128,8 @@ export async function hoursStep(tx: Tx, payPeriodId: string) {
         confidence: e.confidence,
         status: e.status,
         reviewReasons: e.reviewReasons,
-        otherClient: e.reviewReasons.includes("assignment_at_other_client") && !e.assignmentId ? otherClientOf(e.workerId, e.workDate, d?.clientId ?? null) : null,
+        otherClient:
+          (e.reviewReasons.includes("assignment_at_other_client") || e.reviewReasons.includes("timesheet_client_unclear")) && !e.assignmentId ? otherClientOf(e.workerId, e.workDate, d?.clientId ?? null) : null,
         fields: e.fields,
         document: d ? { id: d.id, filename: d.filename, kind: d.kind, pageCount: d.pageCount } : null,
         rowIndex: e.rowIndex,

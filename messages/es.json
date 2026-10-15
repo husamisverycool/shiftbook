@@ -275,7 +275,9 @@
       "allClients": "Todos los clientes",
       "filterConfidence": "Confianza",
       "allConfidence": "Cualquier confianza",
-      "attachTo": "Asignar a {client}"
+      "attachTo": "Asignar a {client}",
+      "historyAttached": "Asignado a {client} (cliente de esta hoja de horas: {timesheet})",
+      "historyAttachedUnclear": "Asignado a {client} (el cliente de esta hoja de horas no está claro)"
     },
     "totals": {
       "edit": "Editar",
