@@ -1,13 +1,14 @@
 # Pattern: Root frame and demo banner (`src/app/[locale]/layout.tsx`)
 
-Status: PROPOSED — needs owner decision (the owner's mapping has no reference for the app frame or
-the demo banner)
-Reference product and screen: Stripe Dashboard — sandbox / test-mode banner (proposed)
+Status: approved — Stripe test-data banner adopted for the demo banner (decision D3)
+Reference product and screen: Stripe Dashboard — sandbox / test-mode banner
 Source URL: https://docs.stripe.com/sandboxes/dashboard/manage
 Source URL: https://docs.stripe.com/sandboxes
 Source URL: https://docs.stripe.com/testing-use-cases
 Researched: 2026-10-15. Confidence: high that the banner sits at the top of every Dashboard page;
 low for its wording, color and controls (not documented).
+
+Owner decision 2026-10-15: "go and do what you think is best but the BIGGEST thing is to purely rely on inspiration from great products NOT your own idea of what's best".
 
 ## Purpose in Shiftbook
 The outermost frame of every page: language from the URL (`/en/...`, `/es/...`), and in demo mode a

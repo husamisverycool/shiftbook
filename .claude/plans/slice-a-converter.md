@@ -1,6 +1,6 @@
 # Slice (a) — Scaffold, database, demo data, one-page converter
 
-Status: WAITING FOR OWNER "go" (plus the decisions listed at the end)
+Status: APPROVED — owner said "go" on 2026-10-15; D1 Dext inbox, D2 one step at a time (Gusto), D3 Stripe banner; D4 my call, D5 key when needed
 Contract: SPEC.md §25 slice (a). Screens: `docs/patterns/convert.md` (+ `inbox.md`, `review.md`,
 `documents/[documentId].md`, `exports.md`, `_documents/invoice.md`, `_layouts/root.md`,
 `_components/empty-state.md`).

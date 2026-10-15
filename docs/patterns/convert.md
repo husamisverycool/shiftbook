@@ -1,7 +1,6 @@
 # Pattern: One-page converter (`/convert`) — slice (a)
 
-Status: PROPOSED — needs owner decision (this page combines four references from the owner's
-mapping; the combination itself is a proposal)
+Status: approved — steps shown one at a time, in Gusto's sequence (decision D2)
 Reference product and screen (page frame): Gusto — "Run payroll" flow (pay-period tile → hours
 spreadsheet → review summary → confirmation with exports); Rippling — payroll run (secondary)
 Source URL: https://support.gusto.com/article/999754831000000/run-a-regular-payroll-for-admins (to verify — Gusto's help center refused automated access; details below come from search excerpts)
@@ -38,8 +37,9 @@ Top to bottom, following Gusto's run sequence; step names come from SPEC §11:
    the payroll file and the invoice PDF, each with Download and its control totals (`exports.md`).
 
 ## Interactions
-- Steps run in order; a later step opens only when the earlier one is complete (Gusto: review before
-  submit; blockers stop submission).
+- One step is visible at a time. Each step ends with a forward action naming the next step (Gusto:
+  "Review summary" from the hours spreadsheet). A later step opens only when the earlier one is
+  complete (Gusto: review before submit; blockers stop submission).
 - Editing hours after totals were computed recalculates the totals (Gusto Embedded: editing a
   calculated payroll cancels the calculation and returns it to an editable state).
 - Edit on a flagged item → scrolls to and selects that row in step 2.
@@ -50,10 +50,16 @@ Run states (Gusto Embedded, verified): editable (unprocessed) → calculated (to
 shown) → done (files produced). Shiftbook maps these to PayRun `draft` → `ready` / `blocked` →
 `exported` (SPEC §4).
 
-## Open questions for the owner
-- Gusto shows each step as its own screen. On one page, should the four steps appear stacked top to
-  bottom with only the current step open (proposal), or one at a time with Back/Next?
-- Gusto's on-screen details (step indicator, how errors look on rows) could not be verified.
+## Decision D2
+Gusto shows each step as its own screen, reached in sequence: the hours spreadsheet leads forward to
+"review summary", the summary leads forward to submission, and Edit goes back to the hours. Adopted:
+the same — one step visible at a time on `/convert`, a forward action at the end of each step that
+names the next step, and Edit links that return to the step that owns the data.
+Owner decision 2026-10-15: "go and do what you think is best but the BIGGEST thing is to purely rely on inspiration from great products NOT your own idea of what's best".
+
+## Still not known from the references
+- Gusto's on-screen details (whether a step indicator is shown, how errors look on rows) could not be
+  verified; nothing is built for them until a source is found.
 
 ## Never copy
 Logos, product names, icons, illustrations, wording or colors from Gusto, Rippling or any reference.

@@ -1,0 +1,368 @@
+{
+  "name": "ma-overtime-rounding-shown",
+  "summary": "Massachusetts worker, 40 hours 37 minutes at $18.25/h. The 37 overtime minutes at $27.375/h are exactly 1688.125 cents; rounded once, half-up, to $16.88. Billed 37 minutes at $39.75/h = 2451.25 cents, rounded to $24.51. The rounding is written in each line's explanation.",
+  "input": {
+    "workweekStartsOn": 1,
+    "shifts": [
+      {
+        "entryIds": [
+          "entry-016"
+        ],
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "date": "2026-10-05",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-017"
+        ],
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "date": "2026-10-06",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-018"
+        ],
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "date": "2026-10-07",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-019"
+        ],
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "date": "2026-10-08",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-020"
+        ],
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "date": "2026-10-09",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-021"
+        ],
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "date": "2026-10-10",
+        "startMinute": 420,
+        "minutes": 37,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      }
+    ],
+    "overtimeRules": [
+      {
+        "jurisdiction": "US",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4a — over 40 hours in a workweek at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "MA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Massachusetts Minimum Fair Wage Law, M.G.L. c. 151, § 1A — over 40 hours in a workweek at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 40 hours in a workweek at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_overtime",
+        "kind": "daily",
+        "thresholdMinutes": 480,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 8 hours in a workday at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_double_time",
+        "kind": "daily_double",
+        "thresholdMinutes": 720,
+        "multiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "earningType": "DT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 12 hours in a workday at 2x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day",
+        "kind": "seventh_day",
+        "thresholdMinutes": 0,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — first 8 hours on the seventh consecutive workday in a workweek at 1.5x; over 8 at 2x"
+      }
+    ],
+    "jurisdictionRules": [
+      {
+        "jurisdiction": "US",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "29 U.S.C. § 207(a)(1)"
+      },
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "820 ILCS 105/4a"
+      },
+      {
+        "jurisdiction": "MA",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1A"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_double_time",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      }
+    ]
+  },
+  "expected": {
+    "rulesVersion": "2026.10-a1",
+    "payLines": [
+      {
+        "workerId": "worker-1",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "amountCents": 73000,
+        "ruleId": "straight_time",
+        "explain": "Regular: 40h 00m (2400 min) × $18.25/h = 73000¢ exactly → $730.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-10-05.",
+        "entryIds": [
+          "entry-016",
+          "entry-017",
+          "entry-018",
+          "entry-019",
+          "entry-020"
+        ]
+      },
+      {
+        "workerId": "worker-1",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 37,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "amountCents": 1688,
+        "ruleId": "weekly_overtime",
+        "explain": "Overtime: 0h 37m (37 min) × $27.375/h (1.5 × $18.25) = 1688.125¢ → rounded half-up once → $16.88. Rule weekly_overtime: 40h 37m worked in the workweek starting 2026-10-05 is 0h 37m over the 40h 00m threshold (Massachusetts Minimum Fair Wage Law, M.G.L. c. 151, § 1A — over 40 hours in a workweek at 1.5x the regular rate; Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate).",
+        "entryIds": [
+          "entry-021"
+        ]
+      }
+    ],
+    "billLines": [
+      {
+        "workerId": "worker-1",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 2650,
+          "den": 1
+        },
+        "amountCents": 106000,
+        "ruleId": "bill_regular",
+        "explain": "Billed regular: 40h 00m (2400 min) × $26.50/h = 106000¢ exactly → $1,060.00. Bill rate from the rate card.",
+        "entryIds": [
+          "entry-016",
+          "entry-017",
+          "entry-018",
+          "entry-019",
+          "entry-020"
+        ]
+      },
+      {
+        "workerId": "worker-1",
+        "assignmentId": "assignment-1",
+        "clientId": "client-1",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 37,
+        "rate": {
+          "num": 3975,
+          "den": 1
+        },
+        "amountCents": 2451,
+        "ruleId": "bill_overtime_multiplier",
+        "explain": "Billed overtime: 0h 37m (37 min) × $39.75/h (1.5 × $26.50 bill rate) = 2451.25¢ → rounded half-up once → $24.51. Client bills overtime at the rate-card overtime multiplier.",
+        "entryIds": [
+          "entry-021"
+        ]
+      }
+    ],
+    "blockers": []
+  }
+}

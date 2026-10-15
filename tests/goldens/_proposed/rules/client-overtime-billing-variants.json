@@ -1,0 +1,708 @@
+{
+  "name": "client-overtime-billing-variants",
+  "summary": "Three workers each work 44 hours at $18.25/h (pay is identical: $730.00 + $109.50). Their clients bill overtime differently: client A at the 1.5x multiplier (4h × $39.75 = $159.00), client B at straight time (4h × $26.50 = $106.00), client C not at all ($0.00, the 4 hours are still listed).",
+  "input": {
+    "workweekStartsOn": 1,
+    "shifts": [
+      {
+        "entryIds": [
+          "entry-022"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "jurisdiction": "IL",
+        "date": "2026-10-05",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-023"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "jurisdiction": "IL",
+        "date": "2026-10-06",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-024"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "jurisdiction": "IL",
+        "date": "2026-10-07",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-025"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "jurisdiction": "IL",
+        "date": "2026-10-08",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-026"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "jurisdiction": "IL",
+        "date": "2026-10-09",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-027"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "jurisdiction": "IL",
+        "date": "2026-10-05",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "straight_time"
+      },
+      {
+        "entryIds": [
+          "entry-028"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "jurisdiction": "IL",
+        "date": "2026-10-06",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "straight_time"
+      },
+      {
+        "entryIds": [
+          "entry-029"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "jurisdiction": "IL",
+        "date": "2026-10-07",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "straight_time"
+      },
+      {
+        "entryIds": [
+          "entry-030"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "jurisdiction": "IL",
+        "date": "2026-10-08",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "straight_time"
+      },
+      {
+        "entryIds": [
+          "entry-031"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "jurisdiction": "IL",
+        "date": "2026-10-09",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "straight_time"
+      },
+      {
+        "entryIds": [
+          "entry-032"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "jurisdiction": "IL",
+        "date": "2026-10-05",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "not_billable"
+      },
+      {
+        "entryIds": [
+          "entry-033"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "jurisdiction": "IL",
+        "date": "2026-10-06",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "not_billable"
+      },
+      {
+        "entryIds": [
+          "entry-034"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "jurisdiction": "IL",
+        "date": "2026-10-07",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "not_billable"
+      },
+      {
+        "entryIds": [
+          "entry-035"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "jurisdiction": "IL",
+        "date": "2026-10-08",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "not_billable"
+      },
+      {
+        "entryIds": [
+          "entry-036"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "jurisdiction": "IL",
+        "date": "2026-10-09",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1825,
+        "billRateCents": 2650,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "otBillingRule": "not_billable"
+      }
+    ],
+    "overtimeRules": [
+      {
+        "jurisdiction": "US",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4a — over 40 hours in a workweek at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "MA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Massachusetts Minimum Fair Wage Law, M.G.L. c. 151, § 1A — over 40 hours in a workweek at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 40 hours in a workweek at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_overtime",
+        "kind": "daily",
+        "thresholdMinutes": 480,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 8 hours in a workday at 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_double_time",
+        "kind": "daily_double",
+        "thresholdMinutes": 720,
+        "multiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "earningType": "DT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 12 hours in a workday at 2x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day",
+        "kind": "seventh_day",
+        "thresholdMinutes": 0,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — first 8 hours on the seventh consecutive workday in a workweek at 1.5x; over 8 at 2x"
+      }
+    ],
+    "jurisdictionRules": [
+      {
+        "jurisdiction": "US",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "29 U.S.C. § 207(a)(1)"
+      },
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "820 ILCS 105/4a"
+      },
+      {
+        "jurisdiction": "MA",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1A"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_double_time",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      }
+    ]
+  },
+  "expected": {
+    "rulesVersion": "2026.10-a1",
+    "payLines": [
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "amountCents": 73000,
+        "ruleId": "straight_time",
+        "explain": "Regular: 40h 00m (2400 min) × $18.25/h = 73000¢ exactly → $730.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-10-05.",
+        "entryIds": [
+          "entry-022",
+          "entry-023",
+          "entry-024",
+          "entry-025",
+          "entry-026"
+        ]
+      },
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 240,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "amountCents": 10950,
+        "ruleId": "weekly_overtime",
+        "explain": "Overtime: 4h 00m (240 min) × $27.375/h (1.5 × $18.25) = 10950¢ exactly → $109.50. Rule weekly_overtime: 44h 00m worked in the workweek starting 2026-10-05 is 4h 00m over the 40h 00m threshold (Illinois Minimum Wage Law, 820 ILCS 105/4a — over 40 hours in a workweek at 1.5x the regular rate; Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate).",
+        "entryIds": [
+          "entry-026"
+        ]
+      },
+      {
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "amountCents": 73000,
+        "ruleId": "straight_time",
+        "explain": "Regular: 40h 00m (2400 min) × $18.25/h = 73000¢ exactly → $730.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-10-05.",
+        "entryIds": [
+          "entry-027",
+          "entry-028",
+          "entry-029",
+          "entry-030",
+          "entry-031"
+        ]
+      },
+      {
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 240,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "amountCents": 10950,
+        "ruleId": "weekly_overtime",
+        "explain": "Overtime: 4h 00m (240 min) × $27.375/h (1.5 × $18.25) = 10950¢ exactly → $109.50. Rule weekly_overtime: 44h 00m worked in the workweek starting 2026-10-05 is 4h 00m over the 40h 00m threshold (Illinois Minimum Wage Law, 820 ILCS 105/4a — over 40 hours in a workweek at 1.5x the regular rate; Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate).",
+        "entryIds": [
+          "entry-031"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "amountCents": 73000,
+        "ruleId": "straight_time",
+        "explain": "Regular: 40h 00m (2400 min) × $18.25/h = 73000¢ exactly → $730.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-10-05.",
+        "entryIds": [
+          "entry-032",
+          "entry-033",
+          "entry-034",
+          "entry-035",
+          "entry-036"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 240,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "amountCents": 10950,
+        "ruleId": "weekly_overtime",
+        "explain": "Overtime: 4h 00m (240 min) × $27.375/h (1.5 × $18.25) = 10950¢ exactly → $109.50. Rule weekly_overtime: 44h 00m worked in the workweek starting 2026-10-05 is 4h 00m over the 40h 00m threshold (Illinois Minimum Wage Law, 820 ILCS 105/4a — over 40 hours in a workweek at 1.5x the regular rate; Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate).",
+        "entryIds": [
+          "entry-036"
+        ]
+      }
+    ],
+    "billLines": [
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 2650,
+          "den": 1
+        },
+        "amountCents": 106000,
+        "ruleId": "bill_regular",
+        "explain": "Billed regular: 40h 00m (2400 min) × $26.50/h = 106000¢ exactly → $1,060.00. Bill rate from the rate card.",
+        "entryIds": [
+          "entry-022",
+          "entry-023",
+          "entry-024",
+          "entry-025",
+          "entry-026"
+        ]
+      },
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-A",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 240,
+        "rate": {
+          "num": 3975,
+          "den": 1
+        },
+        "amountCents": 15900,
+        "ruleId": "bill_overtime_multiplier",
+        "explain": "Billed overtime: 4h 00m (240 min) × $39.75/h (1.5 × $26.50 bill rate) = 15900¢ exactly → $159.00. Client bills overtime at the rate-card overtime multiplier.",
+        "entryIds": [
+          "entry-026"
+        ]
+      },
+      {
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 2650,
+          "den": 1
+        },
+        "amountCents": 106000,
+        "ruleId": "bill_regular",
+        "explain": "Billed regular: 40h 00m (2400 min) × $26.50/h = 106000¢ exactly → $1,060.00. Bill rate from the rate card.",
+        "entryIds": [
+          "entry-027",
+          "entry-028",
+          "entry-029",
+          "entry-030",
+          "entry-031"
+        ]
+      },
+      {
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-B",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 240,
+        "rate": {
+          "num": 2650,
+          "den": 1
+        },
+        "amountCents": 10600,
+        "ruleId": "bill_overtime_straight",
+        "explain": "Billed overtime at straight time: 4h 00m (240 min) × $26.50/h = 10600¢ exactly → $106.00. Client bills overtime at straight time.",
+        "entryIds": [
+          "entry-031"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "workweekStart": "2026-10-05",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 2650,
+          "den": 1
+        },
+        "amountCents": 106000,
+        "ruleId": "bill_regular",
+        "explain": "Billed regular: 40h 00m (2400 min) × $26.50/h = 106000¢ exactly → $1,060.00. Bill rate from the rate card.",
+        "entryIds": [
+          "entry-032",
+          "entry-033",
+          "entry-034",
+          "entry-035",
+          "entry-036"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-C",
+        "workweekStart": "2026-10-05",
+        "type": "OT",
+        "minutes": 240,
+        "rate": {
+          "num": 0,
+          "den": 1
+        },
+        "amountCents": 0,
+        "ruleId": "bill_overtime_not_billable",
+        "explain": "Overtime not billed: 4h 00m (240 min) → $0.00. Client profile marks overtime not billable.",
+        "entryIds": [
+          "entry-036"
+        ]
+      }
+    ],
+    "blockers": []
+  }
+}
