@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "exports_run_format" ON "exports" USING btree ("pay_run_id","format");--> statement-breakpoint
+CREATE UNIQUE INDEX "invoices_number" ON "invoices" USING btree ("agency_id","number");

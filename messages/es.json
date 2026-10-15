@@ -231,7 +231,8 @@
         "invalid_value": "Un valor no es válido.",
         "no_assignment": "Ese trabajador no tiene una asignación activa en esa fecha.",
         "several_assignments": "Ese trabajador tiene más de una asignación activa en esa fecha.",
-        "worker_required": "Elige primero un trabajador."
+        "worker_required": "Elige primero un trabajador.",
+        "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar."
       },
       "history": "Historial",
       "historyEmpty": "Aún no hay cambios.",
@@ -309,7 +310,11 @@
         "multiple_pay_rates_with_overtime": "Horas extra con más de una tarifa",
         "zero_or_negative_pay": "Pago de cero o menos",
         "allocation_order_assumed": "Se supuso el orden de turnos del mismo día",
-        "outside_period": "Fechas fuera del periodo de pago"
+        "outside_period": "Fechas fuera del periodo de pago",
+        "possible_duplicate_day": "Días que podrían contarse dos veces",
+        "export_refused": "El archivo de nómina sería rechazado",
+        "period_not_aligned": "El periodo de pago no coincide con la semana laboral",
+        "no_entries": "No hay horas que pagar"
       },
       "rules": {
         "ca_daily_overtime": "horas extra diarias",
@@ -351,7 +356,9 @@
     },
     "errors": {
       "generic": "Algo salió mal. No se cambió nada.",
-      "notReady": "La nómina todavía tiene problemas por resolver."
+      "notReady": "La nómina todavía tiene problemas por resolver.",
+      "periodLocked": "Los archivos de este periodo ya se crearon, así que sus horas y totales ya no pueden cambiar.",
+      "totalsChanged": "Los totales cambiaron desde que los revisaste. Revísalos de nuevo y luego crea los archivos."
     }
   }
 }

@@ -19,7 +19,7 @@ import { STEPS, type Step } from "./types";
 export type Forward =
   | { kind: "link"; step: Step; disabled: boolean }
   | { kind: "computeTotals"; disabled: boolean }
-  | { kind: "createFiles"; disabled: boolean }
+  | { kind: "createFiles"; disabled: boolean; fingerprint: string | null }
   | null;
 
 const Working = createContext<{ working: boolean }>({ working: false });
@@ -56,13 +56,18 @@ export function ConvertFrame(props: {
     setWorking(f.kind === "computeTotals" ? "totals" : "files");
     start(async () => {
       if (f.kind === "computeTotals") {
-        await computeTotalsAction(props.periodId);
-        router.push(hrefFor(props.periodId, "totals"));
+        const r = await computeTotalsAction(props.periodId);
+        if ("error" in r) {
+          toast.error(t(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+          setWorking(null);
+          router.refresh();
+        } else router.push(hrefFor(props.periodId, "totals"));
       } else {
-        const r = await createFilesAction(props.periodId);
+        const r = await createFilesAction(props.periodId, f.fingerprint ?? "");
         if (r.ok) router.push(hrefFor(props.periodId, "files"));
         else {
-          toast.error(t(r.error === "not_ready" ? "errors.notReady" : "errors.generic"));
+          const key = { not_ready: "errors.notReady", totals_changed: "errors.totalsChanged", period_locked: "errors.periodLocked", generic: "errors.generic" } as const;
+          toast.error(t(key[r.error]));
           setWorking(null);
           router.refresh();
         }

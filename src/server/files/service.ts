@@ -1,22 +1,25 @@
 /**
  * Creates a run's files (SPEC §12, §13): the payroll file for the agency's payroll system and one
- * invoice PDF per client billed. The run is recomputed first, so the files always match the current
- * entries; a run with any blocker gets no files. Each file is stored with its SHA-256 fingerprint and
- * audited; afterwards the run is exported (locked) and corrections start a new run version.
+ * invoice PDF per client billed. Everything happens under the period's lock: the run is recomputed,
+ * must have no blocker, and must match the totals the person reviewed (fingerprint); a run with any
+ * blocker gets no files. Each file is stored with its SHA-256 and audited; afterwards the run is
+ * exported, the paid entries are locked, and the period can no longer change (period-lock.ts).
  */
 import { createHash } from "node:crypto";
 import { addDays, formatCents, formatRate, type EarningType } from "@shiftbook/rules";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { createElement, type ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 import en from "../../../messages/en.json";
-import { renderExport, type ExportFixture } from "../../exports/registry";
+import { renderExport } from "../../exports/registry";
 import { InvoiceDocument, type InvoiceData } from "../../pdf/invoice";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { openPeriod } from "../run/period-lock";
 import { computeRun, type RunIssue } from "../run/service";
+import { payrollFixture } from "./payroll-fixture";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 
@@ -24,6 +27,14 @@ export class RunNotReadyError extends Error {
   constructor(readonly blockers: RunIssue[]) {
     super(`The run has ${blockers.length} blocking problem${blockers.length === 1 ? "" : "s"}; no files are created until they are resolved.`);
     this.name = "RunNotReadyError";
+  }
+}
+
+/** The totals changed between being shown and "Create files": the person must review them again. */
+export class TotalsChangedError extends Error {
+  constructor() {
+    super("The totals changed since they were shown. Review them again before creating the files.");
+    this.name = "TotalsChangedError";
   }
 }
 
@@ -42,14 +53,17 @@ const hoursMinutes = (minutes: number) => `${Math.trunc(minutes / 60)}:${String(
 const longDate = (iso: string) => new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 const fill = (template: string, values: Record<string, string>) => template.replace(/\{(\w+)\}/g, (_, k: string) => values[k] ?? "");
 
-async function settingOn<T>(tx: Tx, key: string, date: string): Promise<T | undefined> {
-  const rows = await tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, key));
-  return rows.find((r) => effective(date, r.effectiveFrom, r.effectiveTo))?.value as T | undefined;
-}
-
-export async function createRunFiles(tx: Tx, actor: Actor, store: DocumentStore, payPeriodId: string, opts: { today: string }): Promise<RunFiles> {
+export async function createRunFiles(
+  tx: Tx,
+  actor: Actor,
+  store: DocumentStore,
+  payPeriodId: string,
+  opts: { today: string; expectedFingerprint?: string },
+): Promise<RunFiles> {
+  await openPeriod(tx, payPeriodId);
   const computed = await computeRun(tx, actor, payPeriodId);
   if (computed.status !== "ready") throw new RunNotReadyError(computed.blockers);
+  if (opts.expectedFingerprint !== undefined && opts.expectedFingerprint !== computed.fingerprint) throw new TotalsChangedError();
   const [run] = await tx.select().from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
   const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, payPeriodId));
   const [agency] = await tx.select().from(s.agencies).where(eq(s.agencies.id, actor.agencyId));
@@ -59,18 +73,11 @@ export async function createRunFiles(tx: Tx, actor: Actor, store: DocumentStore,
   const workersById = new Map(workerRows.map((w) => [w.id, w]));
 
   // Payroll file.
-  const earningCodeMap = (await settingOn<ExportFixture["earningCodeMap"]>(tx, "earning_code_map.gusto_hours_csv", period!.startsOn)) ?? {};
-  const fixture: ExportFixture = {
-    format: "gusto_hours_csv",
-    mappingVersion: "gusto-core-v1",
-    period: { startsOn: period!.startsOn, endsOn: period!.endsOn },
-    earningCodeMap,
-    workers: [...new Set(pay.map((l) => l.workerId))].map((id) => {
-      const w = workersById.get(id)!;
-      return { workerId: w.id, firstName: w.firstName, lastName: w.lastName, payrollIds: w.payrollIds };
-    }),
-    payLines: pay.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: { num: l.rateNum, den: l.rateDen } })),
-  };
+  const fixture = await payrollFixture(
+    tx,
+    period!,
+    pay.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: { num: l.rateNum, den: l.rateDen } })),
+  );
   const file = renderExport(fixture);
   const runGross = pay.reduce((sum, l) => sum + l.amountCents, 0);
   if (file.controlTotals.grossCents !== runGross) throw new Error(`Payroll file gross ${file.controlTotals.grossCents} does not equal the run's ${runGross}.`);
@@ -157,6 +164,11 @@ export async function createRunFiles(tx: Tx, actor: Actor, store: DocumentStore,
     invoicesOut.push({ invoiceId: inv!.id, clientId, clientName: client!.name, number, totalCents, storageKey: pdfKey, sha256: pdfSha });
   }
 
+  // The paid entries are locked: they can never be paid again.
+  const paidEntryIds = [...new Set(pay.flatMap((l) => l.timeEntryIds))];
+  if (paidEntryIds.length > 0) {
+    await tx.update(s.timeEntries).set({ status: "locked", updatedAt: new Date() }).where(inArray(s.timeEntries.id, paidEntryIds));
+  }
   await tx.update(s.payRuns).set({ status: "exported", updatedAt: new Date() }).where(eq(s.payRuns.id, run!.id));
   await audit(tx, actor, [{ action: "update", entityType: "pay_run", entityId: run!.id, before: { status: "ready" }, after: { status: "exported" }, reason: "files created" }]);
   return {

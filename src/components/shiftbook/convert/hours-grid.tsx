@@ -50,6 +50,7 @@ type AddError = EditError | "worker_required";
 
 export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { id: string; name: string }[]; period: { startsOn: string; endsOn: string } }) {
   const t = useTranslations("convert.hours");
+  const tc = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -146,9 +147,10 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
     });
   };
 
-  const act = (fn: () => Promise<unknown>) =>
+  const act = (fn: () => Promise<{ ok: true } | { error: "period_locked" | "generic" }>) =>
     start(async () => {
-      await fn();
+      const r = await fn();
+      if ("error" in r) toast.error(tc(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
       router.refresh();
     });
 
@@ -386,7 +388,8 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                               onClick={() =>
                                 start(async () => {
                                   const result = await approveAction([r.id], false);
-                                  if (result.skipped > 0) toast.error(t("approveRefused"));
+                                  if ("error" in result) toast.error(tc(result.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+                                  else if (result.skipped > 0) toast.error(t("approveRefused"));
                                   router.refresh();
                                 })
                               }
@@ -500,7 +503,8 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
             onClick={() =>
               start(async () => {
                 const r = await approveAction([...selected], true);
-                if (r.skipped > 0) toast.message(t("approveSelectedNote", { skipped: r.skipped }));
+                if ("error" in r) toast.error(tc(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+                else if (r.skipped > 0) toast.message(t("approveSelectedNote", { skipped: r.skipped }));
                 setSelected(new Set());
                 router.refresh();
               })

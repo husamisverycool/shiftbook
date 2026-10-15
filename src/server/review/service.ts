@@ -7,12 +7,14 @@ import { and, eq, inArray } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { openPeriod, PeriodLockedError } from "../run/period-lock";
 import type { Actor } from "../session";
 
 export const EDIT_REASONS = ["misread_corrected", "confirmed_client", "confirmed_worker", "matched_worker", "other"] as const;
 export type EditReason = (typeof EDIT_REASONS)[number];
 
 export type EditError =
+  | "period_locked"
   | "reason_required"
   | "note_required"
   | "not_found"
@@ -74,6 +76,24 @@ async function assignmentFor(tx: Tx, workerId: string, date: string, clientId: s
 }
 
 type Values = ReturnType<typeof snapshot>;
+
+/** Takes the period's lock; a period whose files exist reports "period_locked" instead of throwing. */
+async function openOrLocked(tx: Tx, payPeriodId: string) {
+  try {
+    return await openPeriod(tx, payPeriodId);
+  } catch (error) {
+    if (error instanceof PeriodLockedError) return "period_locked" as const;
+    throw error;
+  }
+}
+
+/** Takes the lock of every period the entries belong to (throws once a period's files exist). */
+async function openPeriodsOf(tx: Tx, ids: string[]) {
+  const rows = ids.length > 0 ? await tx.select({ payPeriodId: s.timeEntries.payPeriodId }).from(s.timeEntries).where(inArray(s.timeEntries.id, ids)) : [];
+  const periods = new Map<string, Awaited<ReturnType<typeof openPeriod>>>();
+  for (const id of [...new Set(rows.map((r) => r.payPeriodId))].sort()) periods.set(id, await openPeriod(tx, id));
+  return periods;
+}
 
 /** The reasons chosen, or the error when none (or "other" without a note) was given. */
 function checkedReason(reasons: string[], note: string): { ok: true; text: string } | { ok: false; error: EditError } {
@@ -150,14 +170,18 @@ export async function editEntry(tx: Tx, actor: Actor, entryId: string, change: E
   const reason = checkedReason(reasons, note);
   if (!reason.ok) return reason;
 
+  const [found] = await tx.select({ payPeriodId: s.timeEntries.payPeriodId }).from(s.timeEntries).where(eq(s.timeEntries.id, entryId));
+  if (!found) return { ok: false, error: "not_found" };
+  const period = await openOrLocked(tx, found.payPeriodId);
+  if (period === "period_locked") return { ok: false, error: period };
+  // Read again under the period's lock.
   const [entry] = await tx.select().from(s.timeEntries).where(eq(s.timeEntries.id, entryId));
   if (!entry) return { ok: false, error: "not_found" };
   if (!EDITABLE.includes(entry.status)) return { ok: false, error: "not_editable" };
-  const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, entry.payPeriodId));
   const [doc] = entry.sourceDocumentId ? await tx.select({ clientId: s.sourceDocuments.clientId }).from(s.sourceDocuments).where(eq(s.sourceDocuments.id, entry.sourceDocumentId)) : [];
 
   const before = snapshot(entry);
-  const result = await applyChange(tx, before, change, period!, doc?.clientId ?? null);
+  const result = await applyChange(tx, before, change, period, doc?.clientId ?? null);
   if (!result.ok) return result;
   const next = result.next;
   await tx
@@ -179,8 +203,8 @@ export async function addEntry(
 ): Promise<{ ok: true; entryId: string } | { ok: false; error: EditError }> {
   const reason = checkedReason(reasons, note);
   if (!reason.ok) return reason;
-  const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, payPeriodId));
-  if (!period) return { ok: false, error: "not_found" };
+  const period = await openOrLocked(tx, payPeriodId);
+  if (period === "period_locked") return { ok: false, error: period };
   const empty: Values = { workerId: null, assignmentId: null, workDate: null, inMinute: null, outMinute: null, breakMinutes: null, minutes: null, status: "needs_review" };
   const result = await applyChange(tx, empty, input, period, null);
   if (!result.ok) return result;
@@ -207,12 +231,13 @@ export async function addEntry(
 /** Approves entries a person checked. In bulk, only high-confidence rows change (SPEC §7). */
 export async function approveEntries(tx: Tx, actor: Actor, ids: string[], opts: { bulk: boolean }): Promise<{ approved: string[]; skipped: string[] }> {
   if (ids.length === 0) return { approved: [], skipped: [] };
+  const periods = await openPeriodsOf(tx, ids);
   const rows = await tx.select().from(s.timeEntries).where(inArray(s.timeEntries.id, ids));
-  const [period] = rows[0] ? await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, rows[0].payPeriodId)) : [];
   const approved: string[] = [];
   const skipped: string[] = [];
   for (const id of ids) {
     const e = rows.find((r) => r.id === id);
+    const period = e ? periods.get(e.payPeriodId) : undefined;
     const ready =
       e &&
       (e.status === "extracted" || e.status === "needs_review") &&
@@ -232,23 +257,40 @@ export async function approveEntries(tx: Tx, actor: Actor, ids: string[], opts: 
   }
   if (approved.length > 0) {
     await tx.update(s.timeEntries).set({ status: "reviewed", reviewReasons: [], updatedAt: new Date() }).where(inArray(s.timeEntries.id, approved));
-    await audit(tx, actor, approved.map((id) => ({ action: "approve" as const, entityType: "time_entry", entityId: id, after: { status: "reviewed" }, reason: opts.bulk ? "bulk approval (high confidence)" : null })));
+    await audit(
+      tx,
+      actor,
+      approved.map((id) => {
+        const e = rows.find((r) => r.id === id)!;
+        return {
+          action: "approve" as const,
+          entityType: "time_entry",
+          entityId: id,
+          before: { status: e.status, reviewReasons: e.reviewReasons },
+          after: { status: "reviewed", reviewReasons: [] },
+          reason: opts.bulk ? "bulk approval (high confidence)" : null,
+        };
+      }),
+    );
   }
   return { approved, skipped };
 }
 
 export async function rejectEntry(tx: Tx, actor: Actor, id: string): Promise<boolean> {
+  await openPeriodsOf(tx, [id]);
+  const [before] = await tx.select({ status: s.timeEntries.status }).from(s.timeEntries).where(eq(s.timeEntries.id, id));
   const done = await tx
     .update(s.timeEntries)
     .set({ status: "rejected", updatedAt: new Date() })
     .where(and(eq(s.timeEntries.id, id), inArray(s.timeEntries.status, EDITABLE)))
     .returning({ id: s.timeEntries.id });
-  if (done.length > 0) await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: id, after: { status: "rejected" }, reason: "rejected in review" }]);
+  if (done.length > 0) await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: id, before: { status: before?.status }, after: { status: "rejected" }, reason: "rejected in review" }]);
   return done.length > 0;
 }
 
 /** A restored entry goes back to review: a person must look at it again. */
 export async function restoreEntry(tx: Tx, actor: Actor, id: string): Promise<boolean> {
+  await openPeriodsOf(tx, [id]);
   const done = await tx
     .update(s.timeEntries)
     .set({ status: "needs_review", updatedAt: new Date() })

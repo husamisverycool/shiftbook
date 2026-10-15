@@ -84,7 +84,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
   if (step === "totals") {
     const data = await inAgency((tx) => totalsStep(tx, actor, periodId));
     return (
-      <ConvertFrame {...frame} editHref forward={{ kind: "createFiles", disabled: data.run.status !== "ready" }}>
+      <ConvertFrame {...frame} editHref forward={{ kind: "createFiles", disabled: data.run.status !== "ready", fingerprint: data.run.fingerprint }}>
         <TotalsReview periodId={periodId} data={data} locked={locked} />
       </ConvertFrame>
     );

@@ -21,6 +21,9 @@ export async function listPeriods(tx: Tx) {
   const out = [];
   for (const p of [...periods].sort((a, b) => cmp(b.startsOn, a.startsOn))) {
     const run = await latestRun(tx, p.id);
+    // A period paid before Shiftbook (all its hours locked, no run here) is history, not to run.
+    const statuses = await tx.select({ status: s.timeEntries.status }).from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, p.id));
+    if (!run && statuses.length > 0 && statuses.every((e) => e.status === "locked")) continue;
     const docs = await tx.select({ id: s.sourceDocuments.id }).from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, p.id)).limit(1);
     out.push({ id: p.id, startsOn: p.startsOn, endsOn: p.endsOn, runStatus: run?.status ?? null, started: docs.length > 0 || run !== null });
   }
@@ -115,18 +118,15 @@ export async function hoursStep(tx: Tx, payPeriodId: string) {
   return { rows, roster };
 }
 
-/** Recomputes the working run when it is missing, reset to draft, or older than the latest hours. */
+/**
+ * Recomputes the working run every time totals are shown. Computing is idempotent (same inputs, same
+ * fingerprint, nothing rewritten), so any change — hours, rates, worksites, rules, settings — shows.
+ */
 export async function ensureFreshRun(tx: Tx, actor: Actor, payPeriodId: string) {
   const run = await latestRun(tx, payPeriodId);
-  if (run && (run.status === "exported" || run.status === "closed")) return run;
-  if (run && run.status !== "draft") {
-    const entries = await tx.select({ updatedAt: s.timeEntries.updatedAt }).from(s.timeEntries).where(eq(s.timeEntries.payPeriodId, payPeriodId));
-    const workers = await tx.select({ createdAt: s.workers.createdAt }).from(s.workers);
-    const newest = Math.max(0, ...entries.map((e) => e.updatedAt.getTime()), ...workers.map((w) => w.createdAt.getTime()));
-    if (newest <= run.updatedAt.getTime()) return run;
-  }
-  await computeRun(tx, actor, payPeriodId);
-  return (await latestRun(tx, payPeriodId))!;
+  if (run && (run.status === "exported" || run.status === "closed")) return { run, fingerprint: null };
+  const computed = await computeRun(tx, actor, payPeriodId);
+  return { run: (await latestRun(tx, payPeriodId))!, fingerprint: computed.fingerprint };
 }
 
 export interface BlockerGroup {
@@ -168,7 +168,7 @@ export function groupIssues(issues: RunIssue[]): BlockerGroup[] {
 }
 
 export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
-  const run = await ensureFreshRun(tx, actor, payPeriodId);
+  const { run, fingerprint } = await ensureFreshRun(tx, actor, payPeriodId);
   const pay = await tx.select().from(s.payLines).where(eq(s.payLines.payRunId, run.id));
   const bill = await tx.select().from(s.billLines).where(eq(s.billLines.payRunId, run.id));
   const ids = [...new Set([...pay.map((l) => l.workerId), ...run.skipped.map((x) => x.workerId)])];
@@ -195,7 +195,7 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
   const workers = [...perWorker.values()].sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase()));
   const sum = <T>(rows: T[], f: (r: T) => number) => rows.reduce((t, r) => t + f(r), 0);
   return {
-    run: { id: run.id, version: run.version, status: run.status },
+    run: { id: run.id, version: run.version, status: run.status, fingerprint },
     summary: {
       workers: workers.length,
       regular: sum(workers, (w) => w.regular),

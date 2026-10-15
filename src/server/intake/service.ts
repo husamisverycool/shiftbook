@@ -8,6 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { openPeriod } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { assessEntry, type AssessContext, type EntryDraft } from "./assess";
@@ -50,6 +51,8 @@ export async function receiveDocument(
   store: DocumentStore,
   input: { payPeriodId: string; filename: string; bytes: Uint8Array; receivedVia?: "upload" | "email" | "manual" },
 ): Promise<{ documentId: string; duplicate: boolean }> {
+  // The period must be the agency's own (row-level security) and still open.
+  await openPeriod(tx, input.payPeriodId);
   const type = classifyUpload(input.filename);
   if (!type) throw new UnsupportedFileError(input.filename);
   const sha256 = createHash("sha256").update(input.bytes).digest("hex");
@@ -191,6 +194,7 @@ export async function readStoredDocument(
         : { parsed: await parseStructuredUpload(doc.filename, bytes), pages: [] };
 
     return await deps.withAgency(actor.agencyId, async (tx) => {
+      await openPeriod(tx, doc.payPeriodId);
       const context = await loadAssessContext(tx, doc.payPeriodId, result.parsed.clientHint);
       const drafts = result.parsed.entries.map((raw) => assessEntry(raw, context));
       await tx.delete(s.documentPages).where(eq(s.documentPages.documentId, documentId));

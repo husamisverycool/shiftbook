@@ -6,15 +6,23 @@
  * rate card or billing profile in effect, a shift past midnight, no payroll id for the target system.
  * Workers a person skipped (Gusto "skip employee") are left out with their entries.
  *
- * One working run per period: computing again replaces its lines. Once a run is exported, the next
- * computation starts a new version (corrections create a new run version).
+ * One working run per period, computed under the period's lock: computing again with nothing
+ * changed keeps the same lines (same fingerprint); a change replaces them. Once the run is exported
+ * the period is locked (period-lock.ts) — in this slice a period is paid once.
  */
-import { computePay, NO_PLACE, RULES_VERSION, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { createHash } from "node:crypto";
+import { addDays, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { desc, eq, inArray } from "drizzle-orm";
+import { ExportError } from "../../exports/errors";
+import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { payrollFixture } from "../files/payroll-fixture";
 import type { Actor } from "../session";
+import { openPeriod, PeriodLockedError } from "./period-lock";
+
+export { PeriodLockedError } from "./period-lock";
 
 /** The payroll system this slice exports to; its employee id must be on every paid worker. */
 export const TARGET_PAYROLL_SYSTEM = "gusto" as const;
@@ -30,7 +38,11 @@ export type RunIssueCode =
   | "missing_billing_profile"
   | "crosses_midnight"
   | "missing_payroll_id"
-  | "pay_bill_mismatch";
+  | "pay_bill_mismatch"
+  | "possible_duplicate_day"
+  | "export_refused"
+  | "period_not_aligned"
+  | "no_entries";
 
 export interface RunIssue extends Omit<Issue, "code"> {
   code: RunIssueCode;
@@ -43,20 +55,27 @@ export interface RunResult {
   blockers: RunIssue[];
   warnings: RunIssue[];
   skipped: s.SkippedWorker[];
+  /** Changes whenever any line, blocker or skip changes; "Create files" must see the same one. */
+  fingerprint: string;
 }
 
+const INT4_MAX = 2_147_483_647;
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const effective = (date: string, from: string, to: string | null) => from <= date && (to === null || date <= to);
-/** Entries that may be paid: read cleanly (high confidence), reviewed, client-approved or locked. */
-const PAYABLE: (typeof s.timeEntryStatus.enumValues)[number][] = ["extracted", "reviewed", "client_approved", "locked"];
+/**
+ * Entries that may be paid: read cleanly (high confidence), reviewed or client-approved. Locked
+ * entries were already paid by an exported run and are never paid again.
+ */
+const PAYABLE: (typeof s.timeEntryStatus.enumValues)[number][] = ["extracted", "reviewed", "client_approved"];
 
-/** The period's working run (not yet exported), created as a draft if there is none. */
+/** The period's working run (not yet exported), created as a draft if there is none. Call under the lock. */
 async function workingRun(tx: Tx, actor: Actor, payPeriodId: string) {
   const [latest] = await tx.select().from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
-  if (latest && latest.status !== "exported" && latest.status !== "closed") return latest;
+  if (latest && (latest.status === "exported" || latest.status === "closed")) throw new PeriodLockedError();
+  if (latest) return latest;
   const [created] = await tx
     .insert(s.payRuns)
-    .values({ agencyId: actor.agencyId, payPeriodId, version: (latest?.version ?? 0) + 1, status: "draft", rulesVersion: RULES_VERSION, skipped: latest?.skipped ?? [] })
+    .values({ agencyId: actor.agencyId, payPeriodId, version: 1, status: "draft", rulesVersion: RULES_VERSION, skipped: [] })
     .returning();
   await audit(tx, actor, [{ action: "create", entityType: "pay_run", entityId: created!.id, after: { payPeriodId, version: created!.version } }]);
   return created!;
@@ -66,6 +85,7 @@ async function workingRun(tx: Tx, actor: Actor, payPeriodId: string) {
 export async function setSkipped(tx: Tx, actor: Actor, payPeriodId: string, workerId: string, change: { skipped: boolean; reason: string }): Promise<void> {
   const reason = change.reason.trim();
   if (reason === "") throw new Error("A reason is required to skip a worker or to bring them back.");
+  await openPeriod(tx, payPeriodId);
   const run = await workingRun(tx, actor, payPeriodId);
   const others = run.skipped.filter((x) => x.workerId !== workerId);
   const next = change.skipped ? [...others, { workerId, reason, by: actor.label, at: new Date().toISOString() }] : others;
@@ -126,8 +146,7 @@ async function settingOn<T>(tx: Tx, key: string, date: string): Promise<T | unde
 }
 
 export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Promise<RunResult> {
-  const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, payPeriodId));
-  if (!period) throw new Error("pay period not found");
+  const period = await openPeriod(tx, payPeriodId);
   const run = await workingRun(tx, actor, payPeriodId);
   const skippedIds = new Set(run.skipped.map((x) => x.workerId));
   const workweekStartsOn = await settingOn<number>(tx, "workweek_starts_on", period.startsOn);
@@ -209,6 +228,36 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       otBillingRule: profile[0]!.overtimeBillingRule,
     });
   }
+  // The same worker-day from two sources, where one has no clock times, may be the same work counted
+  // twice: a person rejects one copy or adds the times (then overlapping times are caught as usual).
+  const sourceOf = new Map(ordered.map((e) => [e.id, e.sourceDocumentId ?? `by-hand:${e.id}`]));
+  const days = new Map<string, Shift[]>();
+  for (const sh of shifts) days.set(`${sh.workerId}|${sh.date}`, [...(days.get(`${sh.workerId}|${sh.date}`) ?? []), sh]);
+  for (const [, same] of [...days].sort((a, b) => cmp(a[0], b[0]))) {
+    const sources = new Set(same.map((sh) => sourceOf.get(sh.entryIds[0]!)));
+    if (same.length > 1 && sources.size > 1 && same.some((sh) => sh.startMinute === null)) {
+      const first = same[0]!;
+      blockers.push({
+        code: "possible_duplicate_day",
+        workerId: first.workerId,
+        workerName: first.workerName,
+        date: first.date,
+        entryIds: same.flatMap((sh) => sh.entryIds),
+        message: `${first.workerName} on ${first.date}: ${same.length} entries from different timesheets, and at least one has no clock times, so the same work may be counted twice. Reject one, or add the times.`,
+      });
+    }
+  }
+
+  // A pay period must cover whole workweeks, or a week's overtime would be split between two runs.
+  const ws = workweekStartsOn as Weekday;
+  const nextStart = addDays(period.endsOn, 1);
+  if (workweekStart(period.startsOn, ws) !== period.startsOn || workweekStart(nextStart, ws) !== nextStart) {
+    blockers.push({ code: "period_not_aligned", message: `The pay period ${period.startsOn} to ${period.endsOn} does not start and end on workweek boundaries, so weekly overtime could be split between two periods.` });
+  }
+  if (shifts.length === 0 && blockers.length === 0) {
+    blockers.push({ code: "no_entries", message: "There are no hours to pay in this period." });
+  }
+
   for (const id of [...paidWorkers].sort(cmp)) {
     const w = workersById.get(id)!;
     if (!w.payrollIds[TARGET_PAYROLL_SYSTEM]?.id) {
@@ -227,8 +276,30 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   for (const [key, diff] of [...minutes].sort((a, b) => cmp(a[0], b[0]))) {
     if (diff !== 0) blockers.push({ code: "pay_bill_mismatch", workerId: key.split("|")[0], message: `Pay and bill minutes differ by ${diff} for ${key}.` });
   }
+  // Every stored amount and rate must fit the database's integer columns.
+  for (const l of [...result.payLines, ...result.billLines]) {
+    if (Math.abs(l.amountCents) > INT4_MAX || l.rate.num > INT4_MAX || l.rate.den > INT4_MAX) {
+      blockers.push({ code: "invalid_input", workerId: l.workerId, message: `A ${l.type} line for the workweek starting ${l.workweekStart} is too large to store; check the rates.` });
+    }
+  }
+  // Dry run of the payroll file: anything the file would refuse is a blocker now, not an error later.
+  if (blockers.length === 0 && result.payLines.length > 0) {
+    try {
+      renderExport(await payrollFixture(tx, period, result.payLines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate }))));
+    } catch (error) {
+      if (!(error instanceof ExportError)) throw error;
+      blockers.push({ code: "export_refused", message: error.message });
+    }
+  }
 
   const status = blockers.length > 0 ? "blocked" : "ready";
+  const fingerprint = createHash("sha256")
+    .update(JSON.stringify({ rulesVersion: result.rulesVersion, pay: result.payLines, bill: result.billLines, blockers, warnings: result.warnings, skipped: run.skipped.map((x) => x.workerId).sort(cmp) }))
+    .digest("hex");
+  const previous = (run.snapshot as { fingerprint?: string } | null)?.fingerprint;
+  if (previous === fingerprint && run.status === status) {
+    return { runId: run.id, version: run.version, status, blockers, warnings: result.warnings, skipped: run.skipped, fingerprint };
+  }
   await tx.delete(s.payLines).where(eq(s.payLines.payRunId, run.id));
   await tx.delete(s.billLines).where(eq(s.billLines.payRunId, run.id));
   if (result.payLines.length > 0) {
@@ -270,7 +341,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       })),
     );
   }
-  const snapshot = { rulesVersion: result.rulesVersion, input, entryIds: ordered.map((e) => e.id), skipped: run.skipped, blockers, warnings: result.warnings };
+  const snapshot = { rulesVersion: result.rulesVersion, fingerprint, input, entryIds: ordered.map((e) => e.id), skipped: run.skipped, blockers, warnings: result.warnings };
   await tx
     .update(s.payRuns)
     .set({ status, rulesVersion: result.rulesVersion, blockers, warnings: result.warnings, snapshot, updatedAt: new Date() })
@@ -284,7 +355,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       reason: "computed",
     },
   ]);
-  return { runId: run.id, version: run.version, status, blockers, warnings: result.warnings, skipped: run.skipped };
+  return { runId: run.id, version: run.version, status, blockers, warnings: result.warnings, skipped: run.skipped, fingerprint };
 }
 
 /** The period's latest run with its lines, for the review screens. */

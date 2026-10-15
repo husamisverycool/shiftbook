@@ -11,7 +11,7 @@ import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from ".
 import { pdfText } from "../../src/server/files/pdf-text";
 import { createRunFiles, RunNotReadyError } from "../../src/server/files/service";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
-import { computeRun } from "../../src/server/run/service";
+import { computeRun, PeriodLockedError } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { openAppDb, openOwnerDb } from "./helpers";
@@ -89,11 +89,10 @@ describe("creating the run's files", () => {
     expect(text).toMatch(/\$[\d,]+\.\d{2} due November 14, 2026/);
   });
 
-  it("locks the run once its files exist; computing again starts a new version", async () => {
+  it("locks the period once its files exist: it is paid once", async () => {
     const [run] = await inAgency((tx) => tx.select().from(payRuns).where(eq(payRuns.payPeriodId, period)));
     expect(run!.status).toBe("exported");
-    const next = await inAgency((tx) => computeRun(tx, actor, period));
-    expect(next.version).toBe(2);
+    await expect(inAgency((tx) => computeRun(tx, actor, period))).rejects.toBeInstanceOf(PeriodLockedError);
     const events = await inAgency((tx) => tx.select().from(auditEvents).where(eq(auditEvents.action, "export")));
     expect(events.length).toBeGreaterThanOrEqual(2);
   });

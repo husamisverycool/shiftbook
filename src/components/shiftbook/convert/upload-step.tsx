@@ -12,6 +12,7 @@ import { retryDocument, uploadTimesheets, type UploadResult } from "@/app/[local
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 
 export interface UploadDoc {
@@ -27,7 +28,8 @@ export interface UploadDoc {
 
 export function UploadStep({ periodId, documents }: { periodId: string; documents: UploadDoc[] }) {
   const t = useTranslations("convert.upload");
-  const tc = useTranslations("common");
+  const tcommon = useTranslations("common");
+  const tc = useTranslations("convert.errors");
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -51,6 +53,7 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
     start(async () => {
       const result = await uploadTimesheets(periodId, form);
       setRefused(result.refused);
+      if (result.locked) toast.error(tc("periodLocked"));
       router.refresh();
     });
   };
@@ -156,7 +159,7 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
                           </span>
                           {d.error && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.error}</span>}
                           <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => start(() => retryDocument(d.id))}>
-                            {tc("retry")}
+                            {tcommon("retry")}
                           </Button>
                         </div>
                       ) : (

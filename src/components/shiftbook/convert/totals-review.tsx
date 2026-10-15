@@ -17,10 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hoursMinutes, money } from "../format";
 
-const ENTRY_LEVEL = new Set(["entry_needs_review", "unmatched_entry", "entry_incomplete", "outside_period", "outside_assignment", "crosses_midnight"]);
+const ENTRY_LEVEL = new Set(["entry_needs_review", "unmatched_entry", "entry_incomplete", "outside_period", "outside_assignment", "crosses_midnight", "possible_duplicate_day", "no_entries"]);
 const PAGE = 25;
 
 export interface TotalsData {
@@ -35,6 +36,7 @@ export interface TotalsData {
 export function TotalsReview({ periodId, data, locked }: { periodId: string; data: TotalsData; locked: boolean }) {
   const t = useTranslations("convert.totals");
   const tc = useTranslations("common");
+  const tx = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -47,7 +49,11 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
     skipping &&
     start(async () => {
       const r = await skipAction(periodId, skipping.workerIds, true, reason);
-      if (r.ok) {
+      if ("error" in r) {
+        toast.error(tx(r.error === "period_locked" ? "errors.periodLocked" : "errors.generic"));
+        setSkipping(null);
+        router.refresh();
+      } else if (r.ok) {
         setSkipping(null);
         setReason("");
         router.refresh();

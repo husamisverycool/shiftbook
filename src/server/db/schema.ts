@@ -443,20 +443,25 @@ export const billLines = pgTable("bill_lines", {
   explain: text("explain").notNull(),
 });
 
-export const invoices = pgTable("invoices", {
-  id: id(),
-  agencyId: agencyId(),
-  clientId: uuid("client_id").notNull().references(() => clients.id),
-  payRunId: uuid("pay_run_id").notNull().references(() => payRuns.id),
-  number: text("number").notNull(),
-  issuedOn: isoDate("issued_on").notNull(),
-  dueOn: isoDate("due_on").notNull(),
-  status: invoiceStatus("status").notNull().default("draft"),
-  subtotalCents: integer("subtotal_cents").notNull(),
-  totalCents: integer("total_cents").notNull(),
-  pdfStorageKey: text("pdf_storage_key"),
-  createdAt: createdAt(),
-});
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    clientId: uuid("client_id").notNull().references(() => clients.id),
+    payRunId: uuid("pay_run_id").notNull().references(() => payRuns.id),
+    number: text("number").notNull(),
+    issuedOn: isoDate("issued_on").notNull(),
+    dueOn: isoDate("due_on").notNull(),
+    status: invoiceStatus("status").notNull().default("draft"),
+    subtotalCents: integer("subtotal_cents").notNull(),
+    totalCents: integer("total_cents").notNull(),
+    pdfStorageKey: text("pdf_storage_key"),
+    createdAt: createdAt(),
+  },
+  // An invoice number is issued once per agency.
+  (t) => [uniqueIndex("invoices_number").on(t.agencyId, t.number)],
+);
 
 export type ControlTotals = {
   workers: number;
@@ -468,20 +473,25 @@ export type ControlTotals = {
   payrollSystemDifferenceCents?: number;
 };
 
-export const exports = pgTable("exports", {
-  id: id(),
-  agencyId: agencyId(),
-  payRunId: uuid("pay_run_id").notNull().references(() => payRuns.id),
-  format: text("format").notNull(),
-  mappingVersion: text("mapping_version").notNull(),
-  filename: text("filename").notNull(),
-  sha256: text("sha256").notNull(),
-  controlTotals: jsonb("control_totals").$type<ControlTotals>().notNull(),
-  // Plain-English notes for the payroll clerk (e.g. hours rounded up to the file's precision).
-  notes: jsonb("notes").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-  storageKey: text("storage_key").notNull(),
-  createdAt: createdAt(),
-});
+export const exports = pgTable(
+  "exports",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    payRunId: uuid("pay_run_id").notNull().references(() => payRuns.id),
+    format: text("format").notNull(),
+    mappingVersion: text("mapping_version").notNull(),
+    filename: text("filename").notNull(),
+    sha256: text("sha256").notNull(),
+    controlTotals: jsonb("control_totals").$type<ControlTotals>().notNull(),
+    // Plain-English notes for the payroll clerk (e.g. hours rounded up to the file's precision).
+    notes: jsonb("notes").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    storageKey: text("storage_key").notNull(),
+    createdAt: createdAt(),
+  },
+  // One file per run and format: a run is exported once.
+  (t) => [uniqueIndex("exports_run_format").on(t.payRunId, t.format)],
+);
 
 // ---------- audit (append-only; a trigger rejects UPDATE and DELETE) ----------
 export const auditEvents = pgTable(

@@ -231,7 +231,8 @@
         "invalid_value": "A value is not valid.",
         "no_assignment": "That worker has no active assignment on that date.",
         "several_assignments": "That worker has more than one active assignment on that date.",
-        "worker_required": "Choose a worker first."
+        "worker_required": "Choose a worker first.",
+        "period_locked": "This period's files were already created; its hours can no longer change."
       },
       "history": "History",
       "historyEmpty": "No changes yet.",
@@ -309,7 +310,11 @@
         "multiple_pay_rates_with_overtime": "Overtime with more than one pay rate",
         "zero_or_negative_pay": "Pay of zero or less",
         "allocation_order_assumed": "Order of same-day shifts assumed",
-        "outside_period": "Dates outside the pay period"
+        "outside_period": "Dates outside the pay period",
+        "possible_duplicate_day": "Days that may be counted twice",
+        "export_refused": "The payroll file would be refused",
+        "period_not_aligned": "The pay period does not match the workweek",
+        "no_entries": "No hours to pay"
       },
       "rules": {
         "ca_daily_overtime": "daily overtime",
@@ -351,7 +356,9 @@
     },
     "errors": {
       "generic": "Something went wrong. Nothing was changed.",
-      "notReady": "The run still has problems to resolve."
+      "notReady": "The run still has problems to resolve.",
+      "periodLocked": "This period's files were already created, so its hours and totals can no longer change.",
+      "totalsChanged": "The totals changed since you looked at them. Review them again, then create the files."
     }
   }
 }

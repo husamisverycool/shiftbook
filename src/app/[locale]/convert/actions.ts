@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { withAgency } from "@/server/db";
 import { auditEvents, jobs, sourceDocuments } from "@/server/db/schema";
-import { createRunFiles, RunNotReadyError } from "@/server/files/service";
+import { createRunFiles, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
+import { openPeriod, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
 import { classifyUpload, receiveDocument } from "@/server/intake/service";
 import { addEntry, approveEntries, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { computeRun, setSkipped } from "@/server/run/service";
@@ -17,7 +18,20 @@ const MAX_BYTES = 25 * 1024 * 1024;
 const refresh = () => revalidatePath("/[locale]/convert", "page");
 const today = () => new Date().toISOString().slice(0, 10);
 
-export type UploadResult = { accepted: string[]; refused: { filename: string; reason: "unsupported" | "tooLarge" | "duplicate" }[] };
+export type UploadResult = { accepted: string[]; refused: { filename: string; reason: "unsupported" | "tooLarge" | "duplicate" }[]; locked?: true };
+export type ActionError = "period_locked" | "generic";
+
+/** Turns the expected refusals into a plain result; anything else is a real error. */
+async function guarded<T>(fn: () => Promise<T>): Promise<T | { error: ActionError }> {
+  try {
+    return await fn();
+  } catch (error) {
+    refresh();
+    if (error instanceof PeriodLockedError) return { error: "period_locked" };
+    if (error instanceof PeriodNotFoundError) return { error: "generic" };
+    throw error;
+  }
+}
 
 export async function uploadTimesheets(payPeriodId: string, form: FormData): Promise<UploadResult> {
   const actor = currentActor();
@@ -28,9 +42,15 @@ export async function uploadTimesheets(payPeriodId: string, form: FormData): Pro
     else if (entry.size > MAX_BYTES) result.refused.push({ filename: entry.name, reason: "tooLarge" });
     else {
       const bytes = new Uint8Array(await entry.arrayBuffer());
-      const { duplicate } = await withAgency(actor.agencyId, (tx) => receiveDocument(tx, actor, documentStore, { payPeriodId, filename: entry.name, bytes }));
-      if (duplicate) result.refused.push({ filename: entry.name, reason: "duplicate" });
-      else result.accepted.push(entry.name);
+      try {
+        const { duplicate } = await withAgency(actor.agencyId, (tx) => receiveDocument(tx, actor, documentStore, { payPeriodId, filename: entry.name, bytes }));
+        if (duplicate) result.refused.push({ filename: entry.name, reason: "duplicate" });
+        else result.accepted.push(entry.name);
+      } catch (error) {
+        if (!(error instanceof PeriodLockedError)) throw error;
+        result.locked = true;
+        break;
+      }
     }
   }
   if (result.accepted.length > 0) after(() => processQueuedDocuments(actor).catch(() => undefined));
@@ -47,6 +67,9 @@ export async function readQueued(): Promise<void> {
 export async function retryDocument(documentId: string): Promise<void> {
   const actor = currentActor();
   await withAgency(actor.agencyId, async (tx) => {
+    const [doc] = await tx.select({ payPeriodId: sourceDocuments.payPeriodId }).from(sourceDocuments).where(eq(sourceDocuments.id, documentId));
+    if (!doc) return;
+    await openPeriod(tx, doc.payPeriodId);
     await tx.update(sourceDocuments).set({ status: "received", error: null, updatedAt: new Date() }).where(eq(sourceDocuments.id, documentId));
     await tx.insert(jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: { documentId } });
   });
@@ -54,23 +77,31 @@ export async function retryDocument(documentId: string): Promise<void> {
   refresh();
 }
 
-export async function approveAction(ids: string[], bulk: boolean): Promise<{ approved: number; skipped: number }> {
+export async function approveAction(ids: string[], bulk: boolean): Promise<{ approved: number; skipped: number } | { error: ActionError }> {
   const actor = currentActor();
-  const r = await withAgency(actor.agencyId, (tx) => approveEntries(tx, actor, ids, { bulk }));
-  refresh();
-  return { approved: r.approved.length, skipped: r.skipped.length };
+  return guarded(async () => {
+    const r = await withAgency(actor.agencyId, (tx) => approveEntries(tx, actor, ids, { bulk }));
+    refresh();
+    return { approved: r.approved.length, skipped: r.skipped.length };
+  });
 }
 
-export async function rejectAction(id: string): Promise<void> {
+export async function rejectAction(id: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
-  await withAgency(actor.agencyId, (tx) => rejectEntry(tx, actor, id));
-  refresh();
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => rejectEntry(tx, actor, id));
+    refresh();
+    return { ok: true as const };
+  });
 }
 
-export async function restoreAction(id: string): Promise<void> {
+export async function restoreAction(id: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
-  await withAgency(actor.agencyId, (tx) => restoreEntry(tx, actor, id));
-  refresh();
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => restoreEntry(tx, actor, id));
+    refresh();
+    return { ok: true as const };
+  });
 }
 
 export async function editAction(id: string, change: EntryChange, reasons: string[], note: string): Promise<{ ok: true } | { ok: false; error: EditError }> {
@@ -92,32 +123,43 @@ export async function addAction(
   return r.ok ? { ok: true } : r;
 }
 
-export async function computeTotalsAction(payPeriodId: string): Promise<void> {
+export async function computeTotalsAction(payPeriodId: string): Promise<{ ok: true } | { error: ActionError }> {
   const actor = currentActor();
-  await withAgency(actor.agencyId, (tx) => computeRun(tx, actor, payPeriodId));
-  refresh();
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => computeRun(tx, actor, payPeriodId));
+    refresh();
+    return { ok: true as const };
+  });
 }
 
-export async function skipAction(payPeriodId: string, workerIds: string[], skipped: boolean, reason: string): Promise<{ ok: boolean }> {
+export async function skipAction(payPeriodId: string, workerIds: string[], skipped: boolean, reason: string): Promise<{ ok: boolean } | { error: ActionError }> {
   const actor = currentActor();
   if (reason.trim() === "") return { ok: false };
-  await withAgency(actor.agencyId, async (tx) => {
-    for (const id of workerIds) await setSkipped(tx, actor, payPeriodId, id, { skipped, reason });
-    await computeRun(tx, actor, payPeriodId);
+  return guarded(async () => {
+    await withAgency(actor.agencyId, async (tx) => {
+      for (const id of workerIds) await setSkipped(tx, actor, payPeriodId, id, { skipped, reason });
+      await computeRun(tx, actor, payPeriodId);
+    });
+    refresh();
+    return { ok: true };
   });
-  refresh();
-  return { ok: true };
 }
 
-export async function createFilesAction(payPeriodId: string): Promise<{ ok: true } | { ok: false; error: "not_ready" | "generic" }> {
+export async function createFilesAction(
+  payPeriodId: string,
+  expectedFingerprint: string,
+): Promise<{ ok: true } | { ok: false; error: "not_ready" | "totals_changed" | "period_locked" | "generic" }> {
   const actor = currentActor();
   try {
-    await withAgency(actor.agencyId, (tx) => createRunFiles(tx, actor, documentStore, payPeriodId, { today: today() }));
+    await withAgency(actor.agencyId, (tx) => createRunFiles(tx, actor, documentStore, payPeriodId, { today: today(), expectedFingerprint }));
     refresh();
     return { ok: true };
   } catch (error) {
     refresh();
-    return { ok: false, error: error instanceof RunNotReadyError ? "not_ready" : "generic" };
+    if (error instanceof RunNotReadyError) return { ok: false, error: "not_ready" };
+    if (error instanceof TotalsChangedError) return { ok: false, error: "totals_changed" };
+    if (error instanceof PeriodLockedError) return { ok: false, error: "period_locked" };
+    return { ok: false, error: "generic" };
   }
 }
 
