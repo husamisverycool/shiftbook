@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { computePay } from "./engine";
 import type { JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, Shift } from "./types";
 
+// Census FIPS codes: county = state (2) + county (3); place = state (2) + place (5).
+const COOK = "17031";
+const WILL = "17197";
+const DUPAGE = "17043";
+const CHICAGO = "1714000";
+const JOLIET = "1738570";
+const EVANSTON = "1724582";
+
 const OT_RULES: OvertimeRule[] = [
   { jurisdiction: "US", ruleCode: "weekly_overtime", kind: "weekly", thresholdMinutes: 2400, multiplier: { num: 3, den: 2 }, earningType: "OT", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "29 U.S.C. § 207(a)(1)" },
   { jurisdiction: "IL", ruleCode: "weekly_overtime", kind: "weekly", thresholdMinutes: 2400, multiplier: { num: 3, den: 2 }, earningType: "OT", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "820 ILCS 105/4a" },
@@ -17,8 +25,8 @@ const JURISDICTIONS: JurisdictionRule[] = [
   { jurisdiction: "US", ruleCode: "minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "29 U.S.C. § 206(a)(1)" },
   { jurisdiction: "IL", ruleCode: "minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "820 ILCS 105/4" },
   { jurisdiction: "MA", ruleCode: "minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "M.G.L. c. 151, § 1" },
-  { jurisdiction: "IL", county: "Cook", ruleCode: "local_minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cook County Code ch. 42, art. I" },
-  { jurisdiction: "IL", city: "Chicago", ruleCode: "local_minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Chicago Municipal Code ch. 6-105" },
+  { jurisdiction: "IL", countyFips: COOK, scopeName: "Cook County", ruleCode: "local_minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cook County Code ch. 42, art. I" },
+  { jurisdiction: "IL", placeFips: CHICAGO, scopeName: "City of Chicago", ruleCode: "local_minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Chicago Municipal Code ch. 6-105" },
 ];
 const MIN_WAGE: MinimumWageRule[] = [
   { jurisdiction: "US", rateCents: 725, effectiveFrom: "2009-07-24", effectiveTo: null, citation: "29 U.S.C. § 206(a)(1)(C)" },
@@ -37,8 +45,8 @@ function shift(date: string, minutes: number, over: Partial<Shift> = {}): Shift 
     assignmentId: "a1",
     clientId: "c1",
     jurisdiction: "IL",
-    county: "Will",
-    city: "Joliet",
+    countyFips: WILL,
+    placeFips: JOLIET,
     date,
     startMinute: 420,
     minutes,
@@ -161,7 +169,7 @@ describe("computePay — workweeks and allocation", () => {
 
 describe("computePay — blocking (never guess)", () => {
   it("blocks California weeks until the California rules are implemented", () => {
-    const r = computePay(input([shift(WEEK[0]!, 600, { jurisdiction: "CA" })]));
+    const r = computePay(input([shift(WEEK[0]!, 600, { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" })]));
     expect(r.payLines).toEqual([]);
     expect(r.blockers).toEqual([
       expect.objectContaining({ code: "rule_not_supported_yet", jurisdiction: "CA", ruleCode: "ca_daily_overtime", workerId: "w1" }),
@@ -169,7 +177,7 @@ describe("computePay — blocking (never guess)", () => {
   });
 
   it("blocks an unknown jurisdiction", () => {
-    const r = computePay(input([shift(WEEK[0]!, 480, { jurisdiction: "TX" })]));
+    const r = computePay(input([shift(WEEK[0]!, 480, { jurisdiction: "TX", countyFips: "48201", placeFips: "4835000" })]));
     expect(r.payLines).toEqual([]);
     expect(r.blockers).toEqual([expect.objectContaining({ code: "unknown_jurisdiction", jurisdiction: "TX" })]);
   });
@@ -265,7 +273,7 @@ describe("computePay — second-opinion review fixes", () => {
   });
 
   it("blocks worksites covered by a local ordinance the engine does not implement yet", () => {
-    const r = computePay(input([shift(WEEK[0]!, 480, { county: "Cook", city: "Chicago" })]));
+    const r = computePay(input([shift(WEEK[0]!, 480, { countyFips: COOK, placeFips: CHICAGO })]));
     expect(r.payLines).toEqual([]);
     expect(r.blockers.map((b) => [b.code, b.ruleCode])).toEqual([
       ["rule_not_supported_yet", "local_minimum_wage"],
@@ -294,16 +302,8 @@ describe("computePay — second-opinion review fixes", () => {
 });
 
 describe("computePay — third review fixes", () => {
-  it("recognises local ordinances however the county and city are written", () => {
-    for (const [county, city] of [["Cook County", "CHICAGO"], [" cook ", "City of Chicago"], ["COOK", "Evanston"]] as const) {
-      const r = computePay(input([shift(WEEK[0]!, 480, { county, city })]));
-      expect(r.payLines).toEqual([]);
-      expect(r.blockers.some((b) => b.ruleCode === "local_minimum_wage")).toBe(true);
-    }
-  });
-
-  it("blocks a worksite with no county or city (local ordinances cannot be checked)", () => {
-    const r = computePay(input([shift(WEEK[0]!, 480, { county: " ", city: "Joliet" })]));
+  it("blocks a worksite with no county code (local ordinances cannot be checked)", () => {
+    const r = computePay(input([shift(WEEK[0]!, 480, { countyFips: " " })]));
     expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
   });
 
@@ -314,7 +314,7 @@ describe("computePay — third review fixes", () => {
   });
 
   it("applies a jurisdiction rule that takes effect in the middle of the week", () => {
-    const local = { jurisdiction: "IL", county: "Will", ruleCode: "local_minimum_wage", effectiveFrom: "2026-10-07", effectiveTo: null, citation: "hypothetical Will County ordinance" };
+    const local = { jurisdiction: "IL", countyFips: WILL, scopeName: "Will County", ruleCode: "local_minimum_wage", effectiveFrom: "2026-10-07", effectiveTo: null, citation: "hypothetical Will County ordinance" };
     const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 480)), { jurisdictionRules: [...JURISDICTIONS, local] }));
     expect(r.payLines).toEqual([]);
     expect(r.blockers.some((b) => b.ruleCode === "local_minimum_wage")).toBe(true);
@@ -373,5 +373,155 @@ describe("computePay — effective dating", () => {
       ["REG", 2100],
       ["OT", 300],
     ]);
+  });
+});
+
+describe("computePay — fourth review fixes", () => {
+  /** Deterministic shuffle (mulberry32) so order-independence tests are repeatable. */
+  function shuffled<T>(items: T[], seed: number): T[] {
+    let a = seed;
+    const rand = () => {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const out = [...items];
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [out[i], out[j]] = [out[j]!, out[i]!];
+    }
+    return out;
+  }
+  const codes = (r: ReturnType<typeof computePay>) => r.blockers.map((b) => [b.code, b.ruleCode ?? null]);
+
+  it("matches local ordinances by official county and place code, never by spelling", () => {
+    // Evanston is in Cook County: the county ordinance applies.
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { countyFips: COOK, placeFips: EVANSTON })])))).toEqual([["rule_not_supported_yet", "local_minimum_wage"]]);
+    // The part of Chicago in DuPage County: the city ordinance applies.
+    expect(codes(computePay(input([shift(WEEK[0]!, 480, { countyFips: DUPAGE, placeFips: CHICAGO })])))).toEqual([["rule_not_supported_yet", "local_minimum_wage"]]);
+    // Unincorporated Will County: no place, nothing local applies.
+    expect(computePay(input([shift(WEEK[0]!, 480, { placeFips: null })])).blockers).toEqual([]);
+  });
+
+  it("refuses a worksite whose codes are not well-formed codes inside its state", () => {
+    for (const over of [{ countyFips: "Cook" }, { countyFips: "06071" }, { placeFips: "17140" }, { placeFips: "0614000" }, { jurisdiction: "XX" }] as Partial<Shift>[]) {
+      const r = computePay(input([shift(WEEK[0]!, 480, over)]));
+      expect(r.payLines).toEqual([]);
+      expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+    }
+  });
+
+  it("holds every worker who shares a time entry id, whatever the input order", () => {
+    const a = shift(WEEK[0]!, 480, { workerId: "w1", workerName: "One", entryIds: ["shared"] });
+    const b = shift(WEEK[0]!, 480, { workerId: "w2", workerName: "Two", entryIds: ["shared"] });
+    const forward = computePay(input([a, b]));
+    const reversed = computePay(input([b, a]));
+    expect(forward.payLines).toEqual([]);
+    expect(forward.blockers.map((x) => [x.code, x.workerId])).toEqual([
+      ["invalid_input", "w1"],
+      ["invalid_input", "w2"],
+    ]);
+    expect(reversed).toEqual(forward);
+  });
+
+  it("refuses a shift with no time entry id, or an empty one", () => {
+    for (const entryIds of [[], [""]]) {
+      const r = computePay(input([shift(WEEK[0]!, 480, { entryIds })]));
+      expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+    }
+  });
+
+  it("never pays without the federal minimum-wage rate row", () => {
+    const minimumWageRules = [...MIN_WAGE.filter((m) => m.jurisdiction !== "US" && m.jurisdiction !== "IL"), { ...MIN_WAGE[1]!, rateCents: 515 }];
+    const r = computePay(input([shift(WEEK[0]!, 480, { payRateCents: 600 })], { minimumWageRules }));
+    expect(r.payLines).toEqual([]);
+    expect(codes(r)).toEqual([["rule_data_missing", "minimum_wage"]]);
+  });
+
+  it("never computes overtime without the federal overtime row", () => {
+    const overtimeRules = [...OT_RULES.filter((o) => o.jurisdiction !== "US" && o.jurisdiction !== "IL"), { ...OT_RULES[1]!, thresholdMinutes: 2880 }];
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 528)), { overtimeRules })); // 44h
+    expect(r.payLines).toEqual([]);
+    expect(codes(r)).toEqual([["rule_data_missing", "weekly_overtime"]]);
+  });
+
+  it("blocks a federal rule this version does not implement", () => {
+    const extra: JurisdictionRule = { jurisdiction: "US", ruleCode: "federal_contractor_min_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Exec. Order (hypothetical)" };
+    const r = computePay(input([shift(WEEK[0]!, 480)], { jurisdictionRules: [...JURISDICTIONS, extra] }));
+    expect(codes(r)).toEqual([["rule_not_supported_yet", "federal_contractor_min_wage"]]);
+  });
+
+  it("needs a local minimum-wage rate for a local minimum-wage rule, and then applies it", () => {
+    const willRule: JurisdictionRule = { jurisdiction: "IL", countyFips: WILL, scopeName: "Will County", ruleCode: "minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "hypothetical Will County ordinance" };
+    const jurisdictionRules = [...JURISDICTIONS, willRule];
+    const missing = computePay(input([shift(WEEK[0]!, 480)], { jurisdictionRules }));
+    expect(codes(missing)).toEqual([["rule_data_missing", "minimum_wage"]]);
+
+    const willRate: MinimumWageRule = { jurisdiction: "IL", countyFips: WILL, scopeName: "Will County", rateCents: 1900, effectiveFrom: "2026-01-01", effectiveTo: null, citation: "hypothetical Will County ordinance — $19.00" };
+    const below = computePay(input([shift(WEEK[0]!, 480)], { jurisdictionRules, minimumWageRules: [...MIN_WAGE, willRate] }));
+    expect(codes(below)).toEqual([["below_minimum_wage", "minimum_wage"]]);
+    expect(below.blockers[0]!.message).toContain("$19.00/h");
+  });
+
+  it("blocks local overtime rules (not implemented in this version)", () => {
+    const jolietOt: JurisdictionRule = { jurisdiction: "IL", placeFips: JOLIET, scopeName: "City of Joliet", ruleCode: "weekly_overtime", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "hypothetical Joliet ordinance" };
+    const r = computePay(input([shift(WEEK[0]!, 480)], { jurisdictionRules: [...JURISDICTIONS, jolietOt] }));
+    expect(codes(r)).toEqual([["rule_not_supported_yet", "weekly_overtime"]]);
+    expect(r.blockers[0]!.message).toContain("City of Joliet");
+  });
+
+  it("blocks a week in which an overtime rule changes", () => {
+    const il = OT_RULES[1]!;
+    const overtimeRules = [...OT_RULES.filter((o) => o.jurisdiction !== "IL"), { ...il, effectiveTo: "2026-10-06" }, { ...il, thresholdMinutes: 2100, effectiveFrom: "2026-10-07" }];
+    const r = computePay(input(WEEK.slice(0, 5).map((d) => shift(d, 456)), { overtimeRules })); // 38h
+    expect(r.payLines).toEqual([]);
+    expect(codes(r)).toEqual([["rule_not_supported_yet", "weekly_overtime"]]);
+  });
+
+  it("refuses overlapping rule rows for the same rule (the answer would depend on row order)", () => {
+    const overtimeRules = [...OT_RULES, { ...OT_RULES[1]!, thresholdMinutes: 2100, citation: "duplicate row" }];
+    const r = computePay(input([shift(WEEK[0]!, 480)], { overtimeRules }));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.map((b) => b.code)).toEqual(["rule_data_invalid"]);
+  });
+
+  it("refuses rule rows with malformed local codes", () => {
+    const bad: JurisdictionRule = { jurisdiction: "IL", countyFips: "Cook", ruleCode: "local_minimum_wage", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "x" };
+    const r = computePay(input([shift(WEEK[0]!, 480)], { jurisdictionRules: [...JURISDICTIONS, bad] }));
+    expect(r.blockers.map((b) => b.code)).toEqual(["rule_data_invalid"]);
+  });
+
+  it("blocks an assignment that is linked to two clients", () => {
+    const r = computePay(input([shift(WEEK[0]!, 480, { clientId: "c1" }), shift(WEEK[1]!, 480, { clientId: "c9" })]));
+    expect(r.payLines).toEqual([]);
+    expect(r.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+  });
+
+  it("gives the same answer whatever the order of shifts and rule rows", () => {
+    const scenarios: PayInput[] = [
+      input([shift(WEEK[0]!, 480, { countyFips: COOK, placeFips: CHICAGO })]),
+      input([shift(WEEK[0]!, 480, { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" })]),
+      input([shift("2026-10-32", 480), shift(WEEK[1]!, 480, { minutes: -5 }), shift(WEEK[2]!, 480, { payRateCents: 0 })]),
+      input([
+        ...WEEK.slice(0, 4).map((d) => shift(d, 540)),
+        shift(WEEK[4]!, 300, { assignmentId: "aB", clientId: "cB", startMinute: null, entryIds: [] }),
+        shift(WEEK[4]!, 300, { assignmentId: "aC", clientId: "cC", startMinute: null }),
+      ]),
+      input([...WEEK.slice(0, 4).map((d) => shift(d, 540)), shift(WEEK[4]!, 300, { assignmentId: "aB", clientId: "cB", startMinute: null }), shift(WEEK[4]!, 300, { assignmentId: "aC", clientId: "cC", startMinute: null })]),
+    ];
+    for (const base of scenarios) {
+      const expected = computePay(base);
+      for (let seed = 1; seed <= 40; seed++) {
+        const r = computePay({
+          ...base,
+          shifts: shuffled(base.shifts, seed),
+          overtimeRules: shuffled(base.overtimeRules, seed + 1000),
+          jurisdictionRules: shuffled(base.jurisdictionRules, seed + 2000),
+          minimumWageRules: shuffled(base.minimumWageRules, seed + 3000),
+        });
+        expect(r).toEqual(expected);
+      }
+    }
   });
 });

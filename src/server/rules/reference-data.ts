@@ -1,6 +1,6 @@
 /**
- * The reference wage-rule rows, mirrored from migrations drizzle/0002_reference_rules.sql and
- * drizzle/0004_rule_data_v2.sql. An integration test proves the database holds exactly these rows,
+ * The reference wage-rule rows, mirrored from migrations drizzle/0002_reference_rules.sql,
+ * drizzle/0004_rule_data_v2.sql and drizzle/0005_place_codes.sql. An integration test proves the database holds exactly these rows,
  * so tests and goldens that use this module can never drift from what the app computes with.
  * Sources: docs/research/minimum-wage-2026.md and the citations on each row.
  */
@@ -19,10 +19,13 @@ export const REFERENCE_OVERTIME_RULES: OvertimeRule[] = [
   { jurisdiction: "CA", ruleCode: "ca_seventh_day_double_time", kind: "seventh_day", thresholdMinutes: 480, multiplier: { num: 2, den: 1 }, earningType: "DT", effectiveFrom: since, effectiveTo: null, citation: "Cal. Lab. Code § 510(a); IWC Wage Orders § 3(A) — over 8 hours on the seventh day of work in a workweek at not less than 2x the regular rate" },
 ];
 
-const j = (jurisdiction: string, ruleCode: string, citation: string, scope: { county?: string; city?: string } = {}): JurisdictionRule => ({
+type Scope = { countyFips?: string; placeFips?: string; scopeName: string };
+
+const j = (jurisdiction: string, ruleCode: string, citation: string, scope?: Scope): JurisdictionRule => ({
   jurisdiction,
-  county: scope.county ?? null,
-  city: scope.city ?? null,
+  countyFips: scope?.countyFips ?? null,
+  placeFips: scope?.placeFips ?? null,
+  scopeName: scope?.scopeName ?? null,
   ruleCode,
   effectiveFrom: since,
   effectiveTo: null,
@@ -42,14 +45,16 @@ export const REFERENCE_JURISDICTION_RULES: JurisdictionRule[] = [
   j("IL", "minimum_wage", "820 ILCS 105/4"),
   j("MA", "minimum_wage", "M.G.L. c. 151, § 1"),
   j("CA", "minimum_wage", "Cal. Lab. Code § 1182.12"),
-  j("IL", "local_minimum_wage", "Cook County Code § 42-13 (Ord. 16-5768); municipalities may opt out", { county: "Cook" }),
-  j("IL", "local_minimum_wage", "Chicago Municipal Code ch. 6-105", { city: "Chicago" }),
+  // Census FIPS codes: Cook County, IL = 17031; City of Chicago = 1714000.
+  j("IL", "local_minimum_wage", "Cook County Code § 42-13 (Ord. 16-5768); municipalities may opt out", { countyFips: "17031", scopeName: "Cook County" }),
+  j("IL", "local_minimum_wage", "Chicago Municipal Code ch. 6-105", { placeFips: "1714000", scopeName: "City of Chicago" }),
 ];
 
 const mw = (jurisdiction: string, rateCents: number, effectiveFrom: string, effectiveTo: string | null, citation: string): MinimumWageRule => ({
   jurisdiction,
-  county: null,
-  city: null,
+  countyFips: null,
+  placeFips: null,
+  scopeName: null,
   rateCents,
   effectiveFrom,
   effectiveTo,

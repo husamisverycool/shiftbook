@@ -23,8 +23,8 @@ function shift(date: string, minutes: number, over: Partial<Shift> = {}): Shift 
     assignmentId: "assignment-1",
     clientId: "client-1",
     jurisdiction: "IL",
-    county: "Will",
-    city: "Joliet",
+    countyFips: "17197", // Will County, IL
+    placeFips: "1738570", // Joliet
     date,
     startMinute: 420,
     minutes,
@@ -42,8 +42,8 @@ const input = (shifts: Shift[]): PayInput => ({
   jurisdictionRules: REFERENCE_JURISDICTION_RULES,
   minimumWageRules: REFERENCE_MINIMUM_WAGE_RULES,
 });
-const MA = { jurisdiction: "MA", county: "Worcester", city: "Worcester" } as const;
-const CA = { jurisdiction: "CA", county: "San Bernardino", city: "Ontario" } as const;
+const MA = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const; // Worcester County; Worcester
+const CA = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const; // San Bernardino County; Ontario
 
 type Expect = { pay: [string, number, number][]; bill: [string, number, number][]; blockers?: string[] };
 
@@ -134,7 +134,7 @@ ruleCase(
 ruleCase(
   "unknown-jurisdiction-blocked",
   "A worksite in Texas: no wage rules are on file for TX, so the week is blocked as an unknown jurisdiction and nothing is computed.",
-  input([shift(WEEK[0]!, 480, { jurisdiction: "TX", county: "Harris", city: "Houston" })]),
+  input([shift(WEEK[0]!, 480, { jurisdiction: "TX", countyFips: "48201", placeFips: "4835000" })]),
   { pay: [], bill: [], blockers: ["unknown_jurisdiction"] },
 );
 
@@ -162,7 +162,7 @@ ruleCase(
 ruleCase(
   "chicago-local-ordinance-blocked",
   "A worksite in Chicago (Cook County), Illinois. Chicago and Cook County have their own minimum wage ordinances that are not modeled yet, so the week is held with two reasons rather than paid at the state rate.",
-  input([shift(WEEK[0]!, 480, { county: "Cook", city: "Chicago", payRateCents: 1800 })]),
+  input([shift(WEEK[0]!, 480, { countyFips: "17031", placeFips: "1714000", payRateCents: 1800 })]),
   { pay: [], bill: [], blockers: ["rule_not_supported_yet", "rule_not_supported_yet"] },
 );
 

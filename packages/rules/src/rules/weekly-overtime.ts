@@ -12,13 +12,14 @@
  * - California, Cal. Lab. Code § 510(a) (weekly component; daily rules are separate rule codes).
  *
  * Where several jurisdictions' weekly rules apply to the same workweek, the most protective one is
- * used once (lowest threshold, then highest multiplier): overtime is never counted twice.
+ * used once (lowest threshold, then highest multiplier): overtime is never counted twice. The federal
+ * row is always required; a state's row is required when the state lists weekly overtime.
  *
  * Slice (a) limit: the regular rate is the single pay rate of the workweek. A workweek with several
  * pay rates and overtime is blocked by the engine until the weighted-average regular rate
  * (29 C.F.R. § 778.115) arrives in slice (c).
  */
-import { isEffective } from "../dates";
+import { addDays } from "../dates";
 import type { Fraction, IsoDate, OvertimeRule, Shift } from "../types";
 
 export const WEEKLY_OVERTIME = "weekly_overtime";
@@ -29,31 +30,50 @@ export interface WeeklyRule {
   citations: string[];
 }
 
+export type WeeklySelection =
+  | { ok: true; rule: WeeklyRule }
+  /** A required jurisdiction has no weekly row covering the workweek. */
+  | { ok: false; reason: "missing"; jurisdiction: string }
+  /** A jurisdiction's weekly row starts or ends inside the workweek. */
+  | { ok: false; reason: "changes_mid_week"; jurisdiction: string; date: IsoDate };
+
+const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
 function moreProtective(a: OvertimeRule, b: OvertimeRule): boolean {
   if (a.thresholdMinutes !== b.thresholdMinutes) return a.thresholdMinutes < b.thresholdMinutes;
   // Compare multipliers exactly: a.num/a.den > b.num/b.den  ⇔  a.num·b.den > b.num·a.den
   return a.multiplier.num * b.multiplier.den > b.multiplier.num * a.multiplier.den;
 }
 
-/** The weekly overtime rule in effect for a workweek across the given jurisdictions, if any. */
+/**
+ * The weekly overtime rule for a workweek across the given jurisdictions. Each jurisdiction's row
+ * must cover the whole workweek (a threshold that changes mid-week is not handled in this version);
+ * every jurisdiction in `required` must have one. Rule rows never overlap (checked by the engine).
+ */
 export function selectWeeklyRule(
   rules: OvertimeRule[],
   jurisdictions: string[],
+  required: string[],
   week: IsoDate,
-): WeeklyRule | null {
-  const candidates = rules
-    .filter((r) => r.kind === "weekly" && r.ruleCode === WEEKLY_OVERTIME)
-    .filter((r) => jurisdictions.includes(r.jurisdiction))
-    .filter((r) => isEffective(week, r.effectiveFrom, r.effectiveTo))
-    .sort((a, b) => (a.jurisdiction < b.jurisdiction ? -1 : a.jurisdiction > b.jurisdiction ? 1 : 0));
-  if (candidates.length === 0) return null;
-  let chosen = candidates[0]!;
-  for (const c of candidates) if (moreProtective(c, chosen)) chosen = c;
-  return {
-    thresholdMinutes: chosen.thresholdMinutes,
-    multiplier: chosen.multiplier,
-    citations: candidates.map((c) => c.citation),
-  };
+): WeeklySelection {
+  const weekEnd = addDays(week, 6);
+  const covering: OvertimeRule[] = [];
+  for (const jurisdiction of [...new Set(jurisdictions)].sort(cmp)) {
+    const rows = rules.filter((r) => r.kind === "weekly" && r.ruleCode === WEEKLY_OVERTIME && r.jurisdiction === jurisdiction);
+    const touching = rows.filter((r) => r.effectiveFrom <= weekEnd && (r.effectiveTo === null || r.effectiveTo >= week));
+    const changes = touching
+      .flatMap((r) => [r.effectiveFrom > week ? r.effectiveFrom : null, r.effectiveTo !== null && r.effectiveTo < weekEnd ? addDays(r.effectiveTo, 1) : null])
+      .filter((d): d is IsoDate => d !== null)
+      .sort(cmp);
+    if (changes.length > 0) return { ok: false, reason: "changes_mid_week", jurisdiction, date: changes[0]! };
+    const row = touching[0];
+    if (row) covering.push(row);
+    else if (required.includes(jurisdiction)) return { ok: false, reason: "missing", jurisdiction };
+  }
+  if (covering.length === 0) return { ok: false, reason: "missing", jurisdiction: "US" };
+  let chosen = covering[0]!;
+  for (const c of covering) if (moreProtective(c, chosen)) chosen = c;
+  return { ok: true, rule: { thresholdMinutes: chosen.thresholdMinutes, multiplier: chosen.multiplier, citations: covering.map((c) => c.citation) } };
 }
 
 export interface ShiftSplit {

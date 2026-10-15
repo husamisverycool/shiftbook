@@ -12,31 +12,50 @@
  * - California, Cal. Lab. Code § 1182.12.
  *
  * Slice (a): a pay rate below the floor BLOCKS the run (SPEC §11 blocking check). The minimum-wage
- * true-up line (SPEC §23 golden) and local ordinances (each a rule code that blocks until modeled)
- * come with the full rules engine.
+ * true-up line (SPEC §23 golden) comes with the full rules engine. A local ordinance that is a plain
+ * hourly floor is a local `minimum_wage` row plus a local rate row; ordinances with more to them
+ * (opt-outs, employer-size tiers) carry their own rule code and block until modeled.
  */
 import { isEffective } from "../dates";
-import { placeMatches } from "../places";
+import { isLocal, sameScope, scopeMatches } from "../places";
 import type { IsoDate, MinimumWageRule } from "../types";
 
 export const MINIMUM_WAGE = "minimum_wage";
 
+const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+export type MinimumWageSelection =
+  | { ok: true; rateCents: number; citations: string[] }
+  /** The federal or the state statewide rate is not on file for that date. */
+  | { ok: false; missing: string };
+
+/**
+ * The minimum wage for a worksite on a date: the highest of the federal rate, the state's statewide
+ * rate and any county or place rate for the worksite. Both the federal and the statewide rate must be
+ * on file; otherwise the data is missing and nothing is paid.
+ */
 export function selectMinimumWage(
   rules: MinimumWageRule[],
-  state: string,
-  county: string,
-  city: string,
+  site: { jurisdiction: string; countyFips: string; placeFips: string | null },
   date: IsoDate,
-): { rateCents: number; citations: string[] } | null {
-  const matches = rules.filter(
-    (r) =>
-      (r.jurisdiction === "US" || r.jurisdiction === state) &&
-      (r.county == null || (r.jurisdiction === state && placeMatches(r.county, county))) &&
-      (r.city == null || (r.jurisdiction === state && placeMatches(r.city, city))) &&
-      isEffective(date, r.effectiveFrom, r.effectiveTo),
-  );
-  // A state with no statewide row of its own is missing data, even if the federal floor exists.
-  if (!matches.some((r) => r.jurisdiction === state && r.county == null && r.city == null)) return null;
+): MinimumWageSelection {
+  const inEffect = rules.filter((r) => isEffective(date, r.effectiveFrom, r.effectiveTo));
+  const federal = inEffect.filter((r) => r.jurisdiction === "US" && !isLocal(r));
+  const state = inEffect.filter((r) => r.jurisdiction === site.jurisdiction && !isLocal(r));
+  if (federal.length === 0) return { ok: false, missing: "US" };
+  if (state.length === 0) return { ok: false, missing: site.jurisdiction };
+  const local = inEffect.filter((r) => r.jurisdiction === site.jurisdiction && isLocal(r) && scopeMatches(r, site));
+  const matches = [...federal, ...state, ...local];
   const top = Math.max(...matches.map((r) => r.rateCents));
-  return { rateCents: top, citations: matches.filter((r) => r.rateCents === top).map((r) => r.citation) };
+  return { ok: true, rateCents: top, citations: matches.filter((r) => r.rateCents === top).map((r) => r.citation).sort(cmp) };
+}
+
+/** True when a local rate row exists for exactly this local scope on that date. */
+export function hasLocalRate(
+  rules: MinimumWageRule[],
+  jurisdiction: string,
+  scope: { countyFips?: string | null; placeFips?: string | null },
+  date: IsoDate,
+): boolean {
+  return rules.some((r) => r.jurisdiction === jurisdiction && isLocal(r) && sameScope(r, scope) && isEffective(date, r.effectiveFrom, r.effectiveTo));
 }

@@ -74,8 +74,42 @@ function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): Hou
   return allowed;
 }
 
+/** Each worker once, and each Gusto employee id on one worker only (Gusto would merge their hours). */
+function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
+  const byId = new Map<string, ExportWorker>();
+  const byGustoId = new Map<string, ExportWorker>();
+  for (const w of workers) {
+    if (byId.has(w.workerId)) {
+      throw new ExportError("duplicate_payroll_id", `${w.lastName}, ${w.firstName} is listed twice in the run's workers, so which Gusto id to use would be a guess.`);
+    }
+    byId.set(w.workerId, w);
+    const gid = w.payrollIds.gusto?.id;
+    if (!gid) continue;
+    const other = byGustoId.get(gid);
+    if (other) {
+      throw new ExportError(
+        "duplicate_payroll_id",
+        `${other.lastName}, ${other.firstName} and ${w.lastName}, ${w.firstName} both have Gusto employee id ${gid}; Gusto would put both workers' hours on one person.`,
+      );
+    }
+    byGustoId.set(gid, w);
+  }
+  return byId;
+}
+
+/** A pay line must be whole minutes ≥ 0 at a positive rate, with amount = minutes × rate ÷ 60 rounded once. */
+function checkLine(line: ExportFixture["payLines"][number], who: string): void {
+  const problem =
+    (!Number.isSafeInteger(line.minutes) || line.minutes < 0) ? `${line.minutes} minutes is not a whole number ≥ 0`
+    : (!Number.isSafeInteger(line.rate.num) || !Number.isSafeInteger(line.rate.den) || line.rate.num <= 0 || line.rate.den <= 0) ? "its rate is not a positive amount"
+    : roundHalfUp(line.minutes * line.rate.num, 60 * line.rate.den) !== line.amountCents
+      ? `${formatCents(line.amountCents)} is not ${line.minutes} min × ${formatRate(line.rate)} rounded once (${formatCents(roundHalfUp(line.minutes * line.rate.num, 60 * line.rate.den))})`
+      : null;
+  if (problem) throw new ExportError("invalid_pay_line", `${who}: the ${line.type} pay line cannot be exported because ${problem}.`);
+}
+
 export function renderGustoHours(fixture: ExportFixture): ExportResult {
-  const workersById = new Map<string, ExportWorker>(fixture.workers.map((w) => [w.workerId, w]));
+  const workersById = indexWorkers(fixture.workers);
   const perWorker = new Map<string, Record<HourColumn, number>>();
   const minutesByType: Record<string, number> = {};
   const baseRates = new Map<string, Set<string>>();
@@ -100,6 +134,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
         `${worker.lastName}, ${worker.firstName} has no Gusto job title; Gusto matches hours to a job, so the row could land on the wrong job.`,
       );
     }
+    checkLine(line, `${worker.lastName}, ${worker.firstName}`);
     if (line.type === "REG") {
       const rates = baseRates.get(line.workerId) ?? new Set<string>();
       rates.add(`${line.rate.num}/${line.rate.den}`);

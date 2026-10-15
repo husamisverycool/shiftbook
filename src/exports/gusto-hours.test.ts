@@ -142,3 +142,42 @@ describe("Gusto hours CSV", () => {
     expect(parsed.hundredthsByColumn).toEqual({ regular_hours: 7800, overtime_hours: 62, double_overtime_hours: 0 });
   });
 });
+
+describe("Gusto hours CSV — fourth review fixes", () => {
+  const code = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (e) {
+      return e instanceof ExportError ? e.code : "not an export error";
+    }
+    return "no error";
+  };
+
+  it("refuses two workers with the same Gusto employee id (Gusto would merge their hours)", () => {
+    const [ana, ben] = base().workers;
+    const fixture = base({ workers: [ana!, { ...ben!, payrollIds: { gusto: { id: "a1b2c3", title: "Loader (Primary)" } } }] });
+    expect(code(() => renderGustoHours(fixture))).toBe("duplicate_payroll_id");
+  });
+
+  it("refuses a worker listed twice, in either order", () => {
+    const [ana, ben] = base().workers;
+    const again = { ...ana!, payrollIds: { gusto: { id: "zz9", title: "Picker (Primary)" } } };
+    expect(code(() => renderGustoHours(base({ workers: [ana!, ben!, again] })))).toBe("duplicate_payroll_id");
+    expect(code(() => renderGustoHours(base({ workers: [again, ben!, ana!] })))).toBe("duplicate_payroll_id");
+  });
+
+  it("refuses a pay line with negative minutes", () => {
+    const fixture = base({ payLines: [{ workerId: "w1", type: "REG", minutes: -60, amountCents: -1825, rate: { num: 1825, den: 1 } }] });
+    expect(code(() => renderGustoHours(fixture))).toBe("invalid_pay_line");
+  });
+
+  it("refuses a pay line whose amount is not its minutes × rate rounded once", () => {
+    const fixture = base({ payLines: [{ workerId: "w1", type: "REG", minutes: 60, amountCents: 1900, rate: { num: 1825, den: 1 } }] });
+    expect(code(() => renderGustoHours(fixture))).toBe("invalid_pay_line");
+  });
+
+  it("refuses a pay line with a zero or negative rate", () => {
+    const fixture = base({ payLines: [{ workerId: "w1", type: "REG", minutes: 60, amountCents: 0, rate: { num: 0, den: 1 } }] });
+    expect(code(() => renderGustoHours(fixture))).toBe("invalid_pay_line");
+  });
+});

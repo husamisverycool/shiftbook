@@ -10,6 +10,7 @@ import { sql } from "drizzle-orm";
 import {
   bigserial,
   boolean,
+  check,
   date,
   index,
   integer,
@@ -27,6 +28,13 @@ const agencyId = () => uuid("agency_id").notNull().references(() => agencies.id)
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
 const isoDate = (name: string) => date(name, { mode: "string" });
+// Census FIPS codes (see packages/rules/src/places.ts): local wage rules match on these, never names.
+const countyFips = () => text("county_fips");
+const placeFips = () => text("place_fips");
+const placeCodeChecks = (name: string, t: { countyFips: unknown; placeFips: unknown }) => [
+  check(`${name}_county_fips_format`, sql`${t.countyFips} ~ '^[0-9]{5}$'`),
+  check(`${name}_place_fips_format`, sql`${t.placeFips} ~ '^[0-9]{7}$'`),
+];
 
 // ---------- enums ----------
 export const userRole = pgEnum("user_role", ["owner", "coordinator", "billing", "accountant"]);
@@ -131,18 +139,26 @@ export const clients = pgTable("clients", {
   createdAt: createdAt(),
 });
 
-export const worksites = pgTable("worksites", {
-  id: id(),
-  agencyId: agencyId(),
-  clientId: uuid("client_id").notNull().references(() => clients.id),
-  name: text("name").notNull(),
-  addressLine: text("address_line").notNull(),
-  city: text("city").notNull(),
-  county: text("county").notNull(),
-  state: text("state").notNull(), // two-letter USPS code; drives jurisdiction
-  postalCode: text("postal_code").notNull(),
-  createdAt: createdAt(),
-});
+export const worksites = pgTable(
+  "worksites",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    clientId: uuid("client_id").notNull().references(() => clients.id),
+    name: text("name").notNull(),
+    addressLine: text("address_line").notNull(),
+    city: text("city").notNull(),
+    county: text("county").notNull(),
+    state: text("state").notNull(), // two-letter USPS code; drives jurisdiction
+    postalCode: text("postal_code").notNull(),
+    // The address's county and incorporated place as Census codes. A worksite without a county code
+    // is held by the pay engine (local ordinances cannot be checked); place is null outside any.
+    countyFips: countyFips(),
+    placeFips: placeFips(),
+    createdAt: createdAt(),
+  },
+  (t) => placeCodeChecks("worksites", t),
+);
 
 export const clientBillingProfiles = pgTable(
   "client_billing_profiles",
@@ -500,29 +516,39 @@ export const overtimeRules = pgTable("overtime_rules", {
 
 // Which rule codes apply in each jurisdiction. A worksite state with no rows is an unknown
 // jurisdiction and blocks the run (SPEC §9).
-export const jurisdictionRules = pgTable("jurisdiction_rules", {
-  id: id(),
-  jurisdiction: text("jurisdiction").notNull(),
-  // Local scope: both null means statewide; a county or city row applies only there.
-  county: text("county"),
-  city: text("city"),
-  ruleCode: text("rule_code").notNull(),
-  effectiveFrom: isoDate("effective_from").notNull(),
-  effectiveTo: isoDate("effective_to"),
-  citation: text("citation").notNull(),
-});
+export const jurisdictionRules = pgTable(
+  "jurisdiction_rules",
+  {
+    id: id(),
+    jurisdiction: text("jurisdiction").notNull(),
+    // Local scope by Census code: both null means statewide; a county or place row applies only there.
+    countyFips: countyFips(),
+    placeFips: placeFips(),
+    scopeName: text("scope_name"),
+    ruleCode: text("rule_code").notNull(),
+    effectiveFrom: isoDate("effective_from").notNull(),
+    effectiveTo: isoDate("effective_to"),
+    citation: text("citation").notNull(),
+  },
+  (t) => placeCodeChecks("jurisdiction_rules", t),
+);
 
 // Minimum wage per jurisdiction (federal "US", state, or a county/city inside a state).
-export const minimumWageRules = pgTable("minimum_wage_rules", {
-  id: id(),
-  jurisdiction: text("jurisdiction").notNull(),
-  county: text("county"),
-  city: text("city"),
-  rateCents: integer("rate_cents").notNull(),
-  effectiveFrom: isoDate("effective_from").notNull(),
-  effectiveTo: isoDate("effective_to"),
-  citation: text("citation").notNull(),
-});
+export const minimumWageRules = pgTable(
+  "minimum_wage_rules",
+  {
+    id: id(),
+    jurisdiction: text("jurisdiction").notNull(),
+    countyFips: countyFips(),
+    placeFips: placeFips(),
+    scopeName: text("scope_name"),
+    rateCents: integer("rate_cents").notNull(),
+    effectiveFrom: isoDate("effective_from").notNull(),
+    effectiveTo: isoDate("effective_to"),
+    citation: text("citation").notNull(),
+  },
+  (t) => placeCodeChecks("minimum_wage_rules", t),
+);
 
 export const TENANT_TABLES = [
   "branches",

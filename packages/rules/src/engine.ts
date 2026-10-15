@@ -16,12 +16,13 @@
 import { addDays, isEffective, isIsoDate, toDayNumber, workweekStart } from "./dates";
 import { formatCents, formatDuration, formatMultiplier, formatRate } from "./format";
 import { exactDecimal, mul, reduceFraction as reduce, roundHalfUp } from "./int";
-import { placeKey, placeMatches } from "./places";
-import { MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-wage";
+import { isLocal, placeProblem, scopeMatches } from "./places";
+import { canonicalRules, ruleDataProblems } from "./rule-data";
+import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-wage";
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import type { EarningType, Fraction, Issue, JurisdictionRule, Line, PayInput, PayResult, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-a3";
+export const RULES_VERSION = "2026.10-a4";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set([WEEKLY_OVERTIME, MINIMUM_WAGE]);
@@ -30,7 +31,6 @@ const REQUIRED_FEDERAL_RULES = [WEEKLY_OVERTIME, MINIMUM_WAGE];
 
 const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
 const MINUTES_PER_DAY = 1440;
-const STATE = /^[A-Z]{2}$/;
 
 /** Plain code-unit comparison: deterministic on every machine, unlike locale collation. */
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -50,10 +50,28 @@ function arithmetic(label: string, minutes: number, rate: Fraction, rateNote: st
   return { text, amountCents };
 }
 
+const hasEntryIds = (s: Shift) => Array.isArray(s.entryIds) && s.entryIds.length > 0 && s.entryIds.every((id) => typeof id === "string" && id.trim() !== "");
+const entryKey = (s: Shift) => (Array.isArray(s.entryIds) ? [...s.entryIds].map(String).sort(cmp).join("\u0000") : "");
+const startOrMinus = (s: Shift) => (typeof s.startMinute === "number" && Number.isFinite(s.startMinute) ? s.startMinute : -1);
+
+/** One fixed order for all shifts, so nothing downstream depends on the order they arrived in. */
+function totalOrder(a: Shift, b: Shift): number {
+  return (
+    cmp(a.workerId, b.workerId) ||
+    cmp(a.date, b.date) ||
+    startOrMinus(a) - startOrMinus(b) ||
+    cmp(entryKey(a), entryKey(b)) ||
+    cmp(a.assignmentId, b.assignmentId) ||
+    cmp(a.clientId, b.clientId) ||
+    cmp(JSON.stringify([a.minutes, a.payRateCents, a.billRateCents, a.billOtMultiplier, a.otBillingRule, a.jurisdiction, a.countyFips, a.placeFips]), JSON.stringify([b.minutes, b.payRateCents, b.billRateCents, b.billOtMultiplier, b.otBillingRule, b.jurisdiction, b.countyFips, b.placeFips]))
+  );
+}
+
 function validShift(s: Shift): string | null {
+  if (!hasEntryIds(s)) return "the shift has no time entry id, so it cannot be traced to a timesheet";
   if (!isIsoDate(s.date)) return `"${s.date}" is not a real calendar date`;
-  if (!STATE.test(s.jurisdiction) || s.jurisdiction === "US") return `worksite state "${s.jurisdiction}" is not a two-letter state code`;
-  if (placeKey(s.county) === "" || placeKey(s.city) === "") return "the worksite's county and city are needed to check local ordinances";
+  const place = placeProblem(s.jurisdiction, s.countyFips, s.placeFips);
+  if (place) return place;
   if (!Number.isSafeInteger(s.minutes) || s.minutes < 0) return `minutes must be a whole number ≥ 0 (got ${s.minutes})`;
   if (s.minutes > MINUTES_PER_DAY) return `${s.minutes} minutes is more than one day`;
   if (s.startMinute !== null) {
@@ -72,21 +90,25 @@ function chronological(a: Shift, b: Shift): number {
   const sa = a.startMinute ?? 0;
   const sb = b.startMinute ?? 0;
   if (sa !== sb) return sa - sb;
-  return cmp(a.entryIds[0] ?? "", b.entryIds[0] ?? "");
+  return cmp(entryKey(a), entryKey(b));
 }
 
-/** Jurisdiction rows for a worksite on a date: statewide rows plus rows for its county or city. */
-function rowsFor(rules: JurisdictionRule[], state: string, county: string, city: string, date: string) {
-  return rules.filter(
-    (r) =>
-      r.jurisdiction === state &&
-      (state === "US" || (placeMatches(r.county, county) && placeMatches(r.city, city))) &&
-      isEffective(date, r.effectiveFrom, r.effectiveTo),
-  );
+type Site = { jurisdiction: string; countyFips: string; placeFips: string | null };
+const siteKey = (s: Site) => `${s.jurisdiction}|${s.countyFips}|${s.placeFips ?? ""}`;
+
+/** Jurisdiction rows for a worksite on a date: statewide rows plus rows for its county or place. */
+function rowsFor(rules: JurisdictionRule[], site: Site, date: string) {
+  return rules.filter((r) => r.jurisdiction === site.jurisdiction && scopeMatches(r, site) && isEffective(date, r.effectiveFrom, r.effectiveTo));
 }
 
-/** Shifts on one line share assignment, rates and billing rule. */
-const lineKey = (s: Shift) => [s.assignmentId, s.payRateCents, s.billRateCents, s.billOtMultiplier.num, s.billOtMultiplier.den, s.otBillingRule].join("|");
+function scopeLabel(row: JurisdictionRule): string {
+  if (row.jurisdiction === "US") return "Federal";
+  const local = row.scopeName ?? (row.countyFips ? `county ${row.countyFips}` : row.placeFips ? `place ${row.placeFips}` : null);
+  return local ? `${local}, ${row.jurisdiction}` : row.jurisdiction;
+}
+
+/** Shifts on one line share assignment, client, rates and billing rule. */
+const lineKey = (s: Shift) => [s.assignmentId, s.clientId, s.payRateCents, s.billRateCents, s.billOtMultiplier.num, s.billOtMultiplier.den, s.otBillingRule].join("|");
 
 interface Bucket {
   key: string;
@@ -109,33 +131,55 @@ export function computePay(input: PayInput): PayResult {
     return emptyResult([{ code: "invalid_input", message: `The workweek start day must be 0 (Sunday) to 6 (Saturday); got ${String(input.workweekStartsOn)}.` }]);
   }
 
+  const rules = canonicalRules(input);
+  const ruleProblems = ruleDataProblems(rules);
+  if (ruleProblems.length > 0) return emptyResult(ruleProblems);
+
   const blockers: Issue[] = [];
   const warnings: Issue[] = [];
   const payLines: Line[] = [];
   const billLines: Line[] = [];
+  const shiftsInOrder = [...input.shifts].sort(totalOrder);
 
   // A worker with a shift that cannot be placed in any week is held entirely.
   const heldWorkers = new Set<string>();
-  const seenEntries = new Map<string, string>();
-  for (const shift of input.shifts) {
+  for (const shift of shiftsInOrder) {
     if (!isIsoDate(shift.date)) {
       heldWorkers.add(shift.workerId);
       blockers.push({ code: "invalid_input", workerId: shift.workerId, workerName: shift.workerName, entryIds: shift.entryIds, message: `${shift.workerName}: "${shift.date}" is not a real calendar date. All of this worker's weeks are held until it is fixed.` });
     }
-    for (const id of shift.entryIds) {
-      const other = seenEntries.get(id);
-      if (other !== undefined && !heldWorkers.has(shift.workerId)) {
-        heldWorkers.add(shift.workerId);
-        blockers.push({ code: "invalid_input", workerId: shift.workerId, workerName: shift.workerName, entryIds: [id], message: `${shift.workerName}: time entry ${id} appears in more than one shift, so it would be paid twice. All of this worker's weeks are held.` });
-      }
-      seenEntries.set(id, shift.workerId);
+  }
+  // A time entry used by more than one shift would be paid twice: every worker involved is held.
+  const uses = new Map<string, Shift[]>();
+  for (const shift of shiftsInOrder) {
+    if (!Array.isArray(shift.entryIds)) continue;
+    for (const id of new Set(shift.entryIds)) uses.set(id, [...(uses.get(id) ?? []), shift]);
+  }
+  const shared = new Map<string, { name: string; ids: Set<string>; others: Set<string> }>();
+  for (const [id, list] of uses) {
+    if (list.length < 2) continue;
+    for (const s of list) {
+      const entry = shared.get(s.workerId) ?? { name: s.workerName, ids: new Set<string>(), others: new Set<string>() };
+      entry.ids.add(id);
+      for (const o of list) if (o.workerId !== s.workerId) entry.others.add(o.workerName);
+      shared.set(s.workerId, entry);
     }
   }
+  for (const [workerId, { name, ids, others }] of [...shared].sort((a, b) => cmp(a[0], b[0]))) {
+    if (heldWorkers.has(workerId)) continue;
+    heldWorkers.add(workerId);
+    const list = [...ids].sort(cmp);
+    const also = others.size > 0 ? ` (also used for ${[...others].sort(cmp).join(", ")})` : "";
+    blockers.push({ code: "invalid_input", workerId, workerName: name, entryIds: list, message: `${name}: time entry ${list.join(", ")} appears in more than one shift${also}, so it would be paid twice. All of this worker's weeks are held.` });
+  }
+  // An assignment belongs to one client; one linked to several cannot be billed correctly.
+  const clientsOf = new Map<string, Set<string>>();
+  for (const s of shiftsInOrder) clientsOf.set(s.assignmentId, (clientsOf.get(s.assignmentId) ?? new Set<string>()).add(s.clientId));
 
   // 1. classify minutes: group by worker and fixed workweek; remember invalid shifts per week.
   const weeks = new Map<string, Shift[]>();
   const invalid = new Map<string, Issue[]>();
-  for (const shift of input.shifts) {
+  for (const shift of shiftsInOrder) {
     if (heldWorkers.has(shift.workerId)) continue;
     const problem = validShift(shift);
     const week = workweekStart(shift.date, input.workweekStartsOn);
@@ -162,6 +206,13 @@ export function computePay(input: PayInput): PayResult {
       continue;
     }
 
+    for (const assignmentId of [...new Set(shifts.map((s) => s.assignmentId))].sort(cmp)) {
+      const clients = [...(clientsOf.get(assignmentId) ?? [])].sort(cmp);
+      if (clients.length > 1) {
+        weekBlockers.push({ code: "invalid_input", ...who, message: `${first.workerName}, workweek starting ${week}: assignment ${assignmentId} is linked to ${clients.length} clients (${clients.join(", ")}); an assignment belongs to one client, so its hours cannot be billed.` });
+      }
+    }
+
     // A day can hold at most 24 hours, and shifts with known start times must not overlap.
     const byDay = new Map<string, Shift[]>();
     for (const s of shifts) byDay.set(s.date, [...(byDay.get(s.date) ?? []), s]);
@@ -171,7 +222,7 @@ export function computePay(input: PayInput): PayResult {
         weekBlockers.push({ code: "invalid_input", ...who, date, message: `${first.workerName} on ${date}: ${formatDuration(minutes)} recorded in one day, more than 24 hours.` });
         continue;
       }
-      const timed = dayShifts.filter((s) => s.startMinute !== null).sort((a, b) => a.startMinute! - b.startMinute!);
+      const timed = dayShifts.filter((s) => s.startMinute !== null).sort((a, b) => a.startMinute! - b.startMinute! || cmp(entryKey(a), entryKey(b)));
       for (let i = 1; i < timed.length; i++) {
         const prev = timed[i - 1]!;
         if (timed[i]!.startMinute! < prev.startMinute! + prev.minutes) {
@@ -181,35 +232,49 @@ export function computePay(input: PayInput): PayResult {
       }
     }
 
-    // Jurisdiction gate, checked on every day worked: every worksite state must be known, and every
-    // rule that applies there (statewide or local) must be implemented by this version.
-    const applicable = new Set<string>();
-    const federal = new Set<string>();
+    // Jurisdiction gate, checked on every day worked. Every federal rule and every rule of each
+    // worksite's state, county and place must be implemented by this version; a local minimum-wage
+    // rule also needs its local rate on file.
     const dates = [...byDay.keys()].sort(cmp);
-    for (const date of dates) for (const row of rowsFor(input.jurisdictionRules, "US", "", "", date)) federal.add(row.ruleCode);
-    for (const code of federal) applicable.add(code);
+    const reported = new Set<string>();
+    const gate = (row: JurisdictionRule, date: string) => {
+      const k = `${row.jurisdiction}|${row.countyFips ?? ""}|${row.placeFips ?? ""}|${row.ruleCode}`;
+      if (reported.has(k)) return;
+      if (isLocal(row) && row.ruleCode === MINIMUM_WAGE) {
+        if (hasLocalRate(rules.minimumWageRules, row.jurisdiction, row, date)) return;
+        reported.add(k);
+        weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: row.jurisdiction, ruleCode: row.ruleCode, date, message: `${first.workerName}, workweek starting ${week}: ${scopeLabel(row)} has its own minimum wage (${row.citation}), but its rate for ${date} is not on file, so this week cannot be computed.` });
+        return;
+      }
+      if (IMPLEMENTED_RULE_CODES.has(row.ruleCode) && !isLocal(row)) return;
+      reported.add(k);
+      weekBlockers.push({ code: "rule_not_supported_yet", ...who, jurisdiction: row.jurisdiction, ruleCode: row.ruleCode, date, message: `${first.workerName}, workweek starting ${week}: ${scopeLabel(row)} rule ${row.ruleCode} (${row.citation}) is not implemented yet, so this week cannot be computed.` });
+    };
+
+    const federal = new Set<string>();
+    for (const date of dates) {
+      for (const row of rules.jurisdictionRules.filter((r) => r.jurisdiction === "US" && isEffective(date, r.effectiveFrom, r.effectiveTo))) {
+        federal.add(row.ruleCode);
+        gate(row, date);
+      }
+    }
     const missingFederal = REQUIRED_FEDERAL_RULES.filter((c) => !federal.has(c));
     if (missingFederal.length > 0) {
       weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: "US", message: `${first.workerName}, workweek starting ${week}: the federal rule data (${missingFederal.join(", ")}) is missing, so nothing can be computed.` });
     }
-    const reported = new Set<string>();
-    const sites = [...new Map(shifts.map((s) => [`${s.jurisdiction}|${placeKey(s.county)}|${placeKey(s.city)}`, s])).values()];
-    for (const site of sites.sort((a, b) => cmp(`${a.jurisdiction}${a.county}${a.city}`, `${b.jurisdiction}${b.county}${b.city}`))) {
-      const siteDates = [...new Set(shifts.filter((s) => s.jurisdiction === site.jurisdiction && placeKey(s.county) === placeKey(site.county) && placeKey(s.city) === placeKey(site.city)).map((s) => s.date))].sort(cmp);
-      const known = siteDates.some((d) => input.jurisdictionRules.some((r) => r.jurisdiction === site.jurisdiction && isEffective(d, r.effectiveFrom, r.effectiveTo)));
+    const sites = [...new Map(shifts.map((s) => [siteKey(s), { jurisdiction: s.jurisdiction, countyFips: s.countyFips, placeFips: s.placeFips }])).values()].sort((a, b) => cmp(siteKey(a), siteKey(b)));
+    const statesListingWeekly = new Set<string>();
+    for (const site of sites) {
+      const siteDates = [...new Set(shifts.filter((s) => siteKey(s) === siteKey(site)).map((s) => s.date))].sort(cmp);
+      const known = siteDates.some((d) => rules.jurisdictionRules.some((r) => r.jurisdiction === site.jurisdiction && isEffective(d, r.effectiveFrom, r.effectiveTo)));
       if (!known) {
         weekBlockers.push({ code: "unknown_jurisdiction", ...who, jurisdiction: site.jurisdiction, message: `${first.workerName}, workweek starting ${week}: no wage rules are on file for ${site.jurisdiction}, so this week cannot be computed.` });
         continue;
       }
       for (const date of siteDates) {
-        for (const row of rowsFor(input.jurisdictionRules, site.jurisdiction, site.county, site.city, date)) {
-          applicable.add(row.ruleCode);
-          const k = `${site.jurisdiction}|${row.county ?? ""}|${row.city ?? ""}|${row.ruleCode}`;
-          if (!IMPLEMENTED_RULE_CODES.has(row.ruleCode) && !reported.has(k)) {
-            reported.add(k);
-            const scope = row.city ? `${row.city}, ${site.jurisdiction}` : row.county ? `${row.county} County, ${site.jurisdiction}` : site.jurisdiction;
-            weekBlockers.push({ code: "rule_not_supported_yet", ...who, jurisdiction: site.jurisdiction, ruleCode: row.ruleCode, date, message: `${first.workerName}, workweek starting ${week}: ${scope} rule ${row.ruleCode} (${row.citation}) is not implemented yet, so this week cannot be computed.` });
-          }
+        for (const row of rowsFor(rules.jurisdictionRules, site, date)) {
+          if (row.ruleCode === WEEKLY_OVERTIME && !isLocal(row)) statesListingWeekly.add(row.jurisdiction);
+          gate(row, date);
         }
       }
     }
@@ -219,39 +284,42 @@ export function computePay(input: PayInput): PayResult {
       continue;
     }
 
-    // 2. wage floor: the highest applicable minimum wage on each day worked.
-    if (applicable.has(MINIMUM_WAGE)) {
-      const seen = new Set<string>();
-      for (const s of shifts) {
-        const floor = selectMinimumWage(input.minimumWageRules, s.jurisdiction, s.county, s.city, s.date);
-        if (!floor) {
-          weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: s.jurisdiction, ruleCode: MINIMUM_WAGE, date: s.date, message: `${first.workerName} on ${s.date}: no minimum-wage rate is on file for ${s.jurisdiction} on that date.` });
-          continue;
-        }
-        const k = `${s.payRateCents}|${floor.rateCents}`;
-        if (s.payRateCents < floor.rateCents && !seen.has(k)) {
+    // 2. wage floor: the highest of the federal, state and local minimum wage on each day worked.
+    const seen = new Set<string>();
+    for (const s of shifts) {
+      const floor = selectMinimumWage(rules.minimumWageRules, s, s.date);
+      if (!floor.ok) {
+        const k = `missing|${floor.missing}`;
+        if (!seen.has(k)) {
           seen.add(k);
-          weekBlockers.push({ code: "below_minimum_wage", ...who, jurisdiction: s.jurisdiction, ruleCode: MINIMUM_WAGE, date: s.date, entryIds: s.entryIds, message: `${first.workerName} on ${s.date}: pay rate ${formatRate({ num: s.payRateCents, den: 1 })} is below the minimum wage of ${formatRate({ num: floor.rateCents, den: 1 })} (${floor.citations.join("; ")}).` });
+          const whose = floor.missing === "US" ? "federal" : floor.missing;
+          weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: floor.missing, ruleCode: MINIMUM_WAGE, date: s.date, message: `${first.workerName} on ${s.date}: no ${whose} minimum-wage rate is on file for that date, so the wage floor cannot be checked.` });
         }
+        continue;
+      }
+      const k = `${s.payRateCents}|${floor.rateCents}`;
+      if (s.payRateCents < floor.rateCents && !seen.has(k)) {
+        seen.add(k);
+        weekBlockers.push({ code: "below_minimum_wage", ...who, jurisdiction: s.jurisdiction, ruleCode: MINIMUM_WAGE, date: s.date, entryIds: s.entryIds, message: `${first.workerName} on ${s.date}: pay rate ${formatRate({ num: s.payRateCents, den: 1 })} is below the minimum wage of ${formatRate({ num: floor.rateCents, den: 1 })} (${floor.citations.join("; ")}).` });
       }
     }
 
-    // 5. overtime: each state that lists weekly overtime must have its own rule row; then the most
-    // protective weekly rule across federal and state rows is applied once.
-    for (const state of states) {
-      const listsWeekly = dates.some((d) => rowsFor(input.jurisdictionRules, state, "", "", d).some((r) => r.ruleCode === WEEKLY_OVERTIME && r.county == null && r.city == null));
-      const hasRow = input.overtimeRules.some((r) => r.jurisdiction === state && r.ruleCode === WEEKLY_OVERTIME && r.kind === "weekly" && isEffective(week, r.effectiveFrom, r.effectiveTo));
-      if (listsWeekly && !hasRow) {
-        weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: state, ruleCode: WEEKLY_OVERTIME, message: `${first.workerName}, workweek starting ${week}: ${state} weekly overtime applies but its rule row is missing, so this week cannot be computed.` });
+    // 5. overtime: the federal row and each listing state's row must cover the whole workweek; then
+    // the most protective weekly rule across them is applied once.
+    const selection = selectWeeklyRule(rules.overtimeRules, ["US", ...states], ["US", ...statesListingWeekly], week);
+    if (!selection.ok) {
+      const whose = selection.jurisdiction === "US" ? "federal" : selection.jurisdiction;
+      if (selection.reason === "missing") {
+        weekBlockers.push({ code: "rule_data_missing", ...who, jurisdiction: selection.jurisdiction, ruleCode: WEEKLY_OVERTIME, message: `${first.workerName}, workweek starting ${week}: ${whose} weekly overtime applies but its rule row for this workweek is missing, so this week cannot be computed.` });
+      } else {
+        weekBlockers.push({ code: "rule_not_supported_yet", ...who, jurisdiction: selection.jurisdiction, ruleCode: WEEKLY_OVERTIME, date: selection.date, message: `${first.workerName}, workweek starting ${week}: the ${whose} weekly overtime rule changes on ${selection.date}, inside this workweek; a mid-week rule change is not handled yet, so this week cannot be computed.` });
       }
+      blockers.push(...weekBlockers);
+      continue;
     }
-    const stateRowMissing = weekBlockers.some((b) => b.code === "rule_data_missing" && b.ruleCode === WEEKLY_OVERTIME);
-    const weekly = applicable.has(WEEKLY_OVERTIME) ? selectWeeklyRule(input.overtimeRules, ["US", ...states], week) : null;
-    if (applicable.has(WEEKLY_OVERTIME) && !weekly && !stateRowMissing) {
-      weekBlockers.push({ code: "rule_data_missing", ...who, ruleCode: WEEKLY_OVERTIME, message: `${first.workerName}, workweek starting ${week}: weekly overtime applies but no overtime rule row is in effect, so this week cannot be computed.` });
-    }
+    const weekly = selection.rule;
 
-    const threshold = weekly?.thresholdMinutes ?? Number.MAX_SAFE_INTEGER;
+    const threshold = weekly.thresholdMinutes;
     const splits = splitAtThreshold(shifts, threshold);
     const totalMinutes = shifts.reduce((sum, s) => sum + s.minutes, 0);
     const overtimeMinutes = splits.reduce((sum, s) => sum + s.overtime, 0);
@@ -290,7 +358,7 @@ export function computePay(input: PayInput): PayResult {
 
     const weekPay: Line[] = [];
     const weekBill: Line[] = [];
-    const citations = weekly ? weekly.citations.join("; ") : "";
+    const citations = weekly.citations.join("; ");
     for (const b of [...buckets.values()].sort((x, y) => x.firstIndex - y.firstIndex)) {
       const base = { workerId: first.workerId, assignmentId: b.assignmentId, clientId: b.clientId, workweekStart: week };
       const payRate: Fraction = { num: b.sample.payRateCents, den: 1 };
@@ -299,14 +367,14 @@ export function computePay(input: PayInput): PayResult {
       // 3. straight pay
       if (b.regular > 0) {
         const pay = arithmetic("Regular", b.regular, payRate, "");
-        const scope = weekly ? `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}` : `all hours in the workweek starting ${week}`;
+        const scope = `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}`;
         weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: b.regularEntries });
         const bill = arithmetic("Billed regular", b.regular, billRate, "");
         weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card.`, entryIds: b.regularEntries });
       }
 
       // 5. overtime pay and its billing
-      if (b.overtime > 0 && weekly) {
+      if (b.overtime > 0) {
         const elsewhere = splits.filter((x) => x.shift.assignmentId !== b.assignmentId).reduce((sum, x) => sum + x.regular, 0);
         const elsewhereNote = elsewhere > 0 ? ` ${formatDuration(elsewhere)} of the first ${formatDuration(weekly.thresholdMinutes)} were worked on other assignments.` : "";
         const otRate = reduce({ num: mul(b.sample.payRateCents, weekly.multiplier.num), den: weekly.multiplier.den });

@@ -28,9 +28,10 @@ export interface Shift {
   clientId: string;
   /** Worksite state (two-letter code); "US" federal rules always apply in addition. */
   jurisdiction: string;
-  /** Worksite county and city: local ordinances are matched on these. */
-  county: string;
-  city: string;
+  /** Worksite county as its 5-digit Census FIPS code ("17031" = Cook County, IL). */
+  countyFips: string;
+  /** Worksite city or town as its 7-digit Census place code ("1714000" = Chicago); null outside any. */
+  placeFips: string | null;
   date: IsoDate;
   /**
    * Minutes after midnight the shift started, for ordering within a day; null if unknown. A shift
@@ -58,9 +59,11 @@ export interface OvertimeRule {
 
 export interface JurisdictionRule {
   jurisdiction: string;
-  /** Local scope: null/absent means statewide. */
-  county?: string | null;
-  city?: string | null;
+  /** Local scope by Census code (see places.ts); both null/absent means statewide (or federal). */
+  countyFips?: string | null;
+  placeFips?: string | null;
+  /** The local scope's name, for messages only ("Cook County", "City of Chicago"). */
+  scopeName?: string | null;
   ruleCode: string;
   effectiveFrom: IsoDate;
   effectiveTo: IsoDate | null;
@@ -69,8 +72,9 @@ export interface JurisdictionRule {
 
 export interface MinimumWageRule {
   jurisdiction: string;
-  county?: string | null;
-  city?: string | null;
+  countyFips?: string | null;
+  placeFips?: string | null;
+  scopeName?: string | null;
   rateCents: number;
   effectiveFrom: IsoDate;
   effectiveTo: IsoDate | null;
@@ -106,6 +110,7 @@ export type IssueCode =
   | "unknown_jurisdiction"
   | "rule_not_supported_yet"
   | "rule_data_missing"
+  | "rule_data_invalid"
   | "below_minimum_wage"
   | "multiple_pay_rates_with_overtime"
   | "zero_or_negative_pay"

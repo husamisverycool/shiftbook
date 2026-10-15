@@ -36,6 +36,20 @@
       "when": 1792079795158,
       "tag": "0004_rule_data_v2",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792083437565,
+      "tag": "0005_place_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792083447506,
+      "tag": "0006_drop_place_names",
+      "breakpoints": true
     }
   ]
 }

@@ -6,10 +6,14 @@ import {
   REFERENCE_MINIMUM_WAGE_RULES,
   REFERENCE_OVERTIME_RULES,
 } from "../../src/server/rules/reference-data";
-import { openAppDb } from "./helpers";
+import { openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
-afterAll(() => app.close());
+const owner = openOwnerDb();
+afterAll(async () => {
+  await app.close();
+  await owner.close();
+});
 
 const sortBy = <T>(rows: T[], key: (r: T) => string) => [...rows].sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0));
 
@@ -31,28 +35,30 @@ describe("reference wage-rule data in the database matches src/server/rules/refe
     expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_OVERTIME_RULES, key));
   });
 
-  it("jurisdiction rules (with local scope)", async () => {
+  it("jurisdiction rules (with local scope by Census code)", async () => {
     const rows = await app.db.select().from(jurisdictionRules);
-    const fromDb = rows.map(({ jurisdiction, county, city, ruleCode, effectiveFrom, effectiveTo, citation }) => ({
+    const fromDb = rows.map(({ jurisdiction, countyFips, placeFips, scopeName, ruleCode, effectiveFrom, effectiveTo, citation }) => ({
       jurisdiction,
-      county,
-      city,
+      countyFips,
+      placeFips,
+      scopeName,
       ruleCode,
       effectiveFrom,
       effectiveTo,
       citation,
     }));
-    const key = (r: { jurisdiction: string; county?: string | null; city?: string | null; ruleCode: string }) =>
-      `${r.jurisdiction}:${r.county ?? ""}:${r.city ?? ""}:${r.ruleCode}`;
+    const key = (r: { jurisdiction: string; countyFips?: string | null; placeFips?: string | null; ruleCode: string }) =>
+      `${r.jurisdiction}:${r.countyFips ?? ""}:${r.placeFips ?? ""}:${r.ruleCode}`;
     expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_JURISDICTION_RULES, key));
   });
 
   it("minimum wage rules", async () => {
     const rows = await app.db.select().from(minimumWageRules);
-    const fromDb = rows.map(({ jurisdiction, county, city, rateCents, effectiveFrom, effectiveTo, citation }) => ({
+    const fromDb = rows.map(({ jurisdiction, countyFips, placeFips, scopeName, rateCents, effectiveFrom, effectiveTo, citation }) => ({
       jurisdiction,
-      county,
-      city,
+      countyFips,
+      placeFips,
+      scopeName,
       rateCents,
       effectiveFrom,
       effectiveTo,
@@ -60,6 +66,15 @@ describe("reference wage-rule data in the database matches src/server/rules/refe
     }));
     const key = (r: { jurisdiction: string; effectiveFrom: string }) => `${r.jurisdiction}:${r.effectiveFrom}`;
     expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_MINIMUM_WAGE_RULES, key));
+  });
+
+  it("refuses malformed place codes in the rule tables", async () => {
+    await expect(
+      owner.db.insert(jurisdictionRules).values({ jurisdiction: "IL", countyFips: "Cook", ruleCode: "x", effectiveFrom: "2000-01-01", citation: "x" }),
+    ).rejects.toThrow();
+    await expect(
+      owner.db.insert(minimumWageRules).values({ jurisdiction: "IL", placeFips: "17140", rateCents: 1500, effectiveFrom: "2000-01-01", citation: "x" }),
+    ).rejects.toThrow();
   });
 });
 

@@ -40,7 +40,7 @@ export const CLIENTS: Record<
     code: string;
     addressLines: string[];
     billingEmail: string;
-    worksite: { name: string; addressLine: string; city: string; county: string; state: string; postalCode: string };
+    worksite: { name: string; addressLine: string; city: string; county: string; state: string; postalCode: string; countyFips: string; placeFips: string | null };
     billing: { overtimeBillingRule: "multiplier" | "straight_time" | "not_billable"; poNumber: string | null; vmsName: string | null; paymentTermsDays: number };
   }
 > = {
@@ -49,7 +49,7 @@ export const CLIENTS: Record<
     code: "PCD",
     addressLines: ["2200 Example Logistics Way", "Ontario, CA 91761"],
     billingEmail: "ap@pacificcrest.example.com",
-    worksite: { name: "Ontario DC", addressLine: "2200 Example Logistics Way", city: "Ontario", county: "San Bernardino", state: "CA", postalCode: "91761" },
+    worksite: { name: "Ontario DC", addressLine: "2200 Example Logistics Way", city: "Ontario", county: "San Bernardino", state: "CA", postalCode: "91761", countyFips: "06071", placeFips: "0653896" },
     billing: { overtimeBillingRule: "multiplier", poNumber: null, vmsName: "SAP Fieldglass", paymentTermsDays: 45 },
   },
   il: {
@@ -57,7 +57,7 @@ export const CLIENTS: Record<
     code: "PLM",
     addressLines: ["75 Example Industrial Drive", "Joliet, IL 60431"],
     billingEmail: "payables@prairieline.example.com",
-    worksite: { name: "Joliet Plant 2", addressLine: "75 Example Industrial Drive", city: "Joliet", county: "Will", state: "IL", postalCode: "60431" },
+    worksite: { name: "Joliet Plant 2", addressLine: "75 Example Industrial Drive", city: "Joliet", county: "Will", state: "IL", postalCode: "60431", countyFips: "17197", placeFips: "1738570" },
     billing: { overtimeBillingRule: "multiplier", poNumber: "PO-48213", vmsName: null, paymentTermsDays: 30 },
   },
   ma: {
@@ -65,7 +65,7 @@ export const CLIENTS: Record<
     code: "HEH",
     addressLines: ["18 Example Harbor Street", "Worcester, MA 01608"],
     billingEmail: "accounts@harborview.example.com",
-    worksite: { name: "Harborview Hall", addressLine: "18 Example Harbor Street", city: "Worcester", county: "Worcester", state: "MA", postalCode: "01608" },
+    worksite: { name: "Harborview Hall", addressLine: "18 Example Harbor Street", city: "Worcester", county: "Worcester", state: "MA", postalCode: "01608", countyFips: "25027", placeFips: "2582000" },
     billing: { overtimeBillingRule: "straight_time", poNumber: null, vmsName: null, paymentTermsDays: 30 },
   },
 };
