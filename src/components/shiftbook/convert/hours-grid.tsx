@@ -360,8 +360,18 @@ export function HoursGrid(props: { rows: GridRow[]; roster: { id: string; name: 
                     <TableCell className="sticky right-0 bg-background text-right whitespace-nowrap shadow-[-8px_0_8px_-8px_var(--border)]">
                       {isEditing ? null : (
                         <div className="inline-flex items-center gap-0.5">
-                          {(r.status === "needs_review" || r.status === "extracted") && (
-                            <IconAction label={t("approve")} onClick={() => act(() => approveAction([r.id], false))} disabled={pending}>
+                          {(r.status === "needs_review" || r.status === "extracted") && r.workerId !== null && r.minutes !== null && (
+                            <IconAction
+                              label={t("approve")}
+                              disabled={pending}
+                              onClick={() =>
+                                start(async () => {
+                                  const result = await approveAction([r.id], false);
+                                  if (result.skipped > 0) toast.error(t("approveRefused"));
+                                  router.refresh();
+                                })
+                              }
+                            >
                               <CheckIcon />
                             </IconAction>
                           )}

@@ -253,7 +253,8 @@
       "selectRow": "Select row",
       "actions": "Actions",
       "readings": "Readings: {a} / {b}",
-      "bulkBar": "Bulk actions"
+      "bulkBar": "Bulk actions",
+      "approveRefused": "This entry can't be approved yet. Fix its worker, date or hours first."
     },
     "totals": {
       "edit": "Edit",

@@ -253,7 +253,8 @@
       "selectRow": "Seleccionar fila",
       "actions": "Acciones",
       "readings": "Lecturas: {a} / {b}",
-      "bulkBar": "Acciones en grupo"
+      "bulkBar": "Acciones en grupo",
+      "approveRefused": "Este registro aún no se puede aprobar. Corrige primero el trabajador, la fecha o las horas."
     },
     "totals": {
       "edit": "Editar",
