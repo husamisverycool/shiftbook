@@ -177,13 +177,20 @@ export const worksites = pgTable(
   ],
 );
 
+export const INVOICE_TEMPLATES = ["standard", "per_worker_detail", "po_header"] as const;
+export type InvoiceTemplate = (typeof INVOICE_TEMPLATES)[number];
+export const SEPARATE_BY = ["po", "worksite"] as const;
+export type SeparateBy = (typeof SEPARATE_BY)[number];
+export const VMS_FORMATS = ["fieldglass_time_sheet_invoice"] as const;
+export type VmsFormat = (typeof VMS_FORMATS)[number];
+
 export const clientBillingProfiles = pgTable(
   "client_billing_profiles",
   {
     id: id(),
     agencyId: agencyId(),
     clientId: uuid("client_id").notNull().references(() => clients.id),
-    invoiceTemplate: text("invoice_template").notNull().default("standard"),
+    invoiceTemplate: text("invoice_template").$type<InvoiceTemplate>().notNull().default("standard"),
     poRequired: boolean("po_required").notNull().default(false),
     poNumber: text("po_number"),
     consolidate: boolean("consolidate").notNull().default(false),
@@ -194,6 +201,13 @@ export const clientBillingProfiles = pgTable(
     /** Bill minimum pay for a short day at the bill rate (drizzle/0020). */
     billGuarantees: boolean("bill_guarantees").notNull().default(false),
     paymentTermsDays: integer("payment_terms_days").notNull().default(30),
+    /** Slice g (drizzle/0025): separate invoices by PO and/or worksite (decision G3). */
+    separateBy: text("separate_by").array().$type<SeparateBy[]>().notNull().default(sql`'{}'::text[]`),
+    /** The backup in the invoice PDF (decision G6): line detail pages; timesheet pictures. */
+    backupDetail: boolean("backup_detail").notNull().default(false),
+    backupImages: boolean("backup_images").notNull().default(false),
+    /** The VMS invoice-upload file made with each invoice (decision G9). */
+    vmsFormat: text("vms_format").$type<VmsFormat>(),
     effectiveFrom: isoDate("effective_from").notNull(),
     effectiveTo: isoDate("effective_to"),
     createdAt: createdAt(),
@@ -286,6 +300,8 @@ export const assignments = pgTable(
     /** Where an imported placement came from (bullhorn, jobadder, spott, other) and its id there. */
     externalSource: text("external_source"),
     externalId: text("external_id"),
+    /** The client's PO for this placement; none means the client's own PO (slice g, decision G4). */
+    poNumber: text("po_number"),
     createdAt: createdAt(),
   },
   (t) => [
@@ -418,6 +434,11 @@ export type FieldProvenance = {
 };
 export type EntryFields = Partial<Record<"worker" | "date" | "in" | "out" | "break" | "total", FieldProvenance>>;
 
+export interface VmsRefs {
+  timeSheetIds?: string[];
+  workerId?: string;
+}
+
 export const timeEntries = pgTable(
   "time_entries",
   {
@@ -443,6 +464,8 @@ export const timeEntries = pgTable(
     // A person confirmed this entry is not the same work as another entry for the worker that day
     // (cleared whenever the entry changes).
     distinctConfirmed: boolean("distinct_confirmed").notNull().default(false),
+    /** Ids a VMS gave these hours (slice g, decision G9): Fieldglass time sheet ids and the worker's id there. */
+    vmsRefs: jsonb("vms_refs").$type<VmsRefs>().notNull().default(sql`'{}'::jsonb`),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -541,11 +564,40 @@ export const invoices = pgTable(
     /** A correction's documents (drizzle/0024): a supplemental invoice or a credit note (negative total), naming the original. */
     kind: text("kind").$type<InvoiceKind>().notNull().default("invoice"),
     originalInvoiceId: uuid("original_invoice_id"),
+    /** Slice g (drizzle/0025): the part of the client's hours it covers ("" when not separated). */
+    splitKey: text("split_key").notNull().default(""),
+    template: text("template").$type<InvoiceTemplate>().notNull().default("standard"),
+    poNumber: text("po_number"),
+    worksiteId: uuid("worksite_id").references(() => worksites.id),
+    /** The document as issued: what the invoice page and a statement show. */
+    document: jsonb("document").$type<IssuedInvoice>(),
+    csvStorageKey: text("csv_storage_key"),
+    vmsStorageKey: text("vms_storage_key"),
     createdAt: createdAt(),
   },
-  // An invoice number is issued once per agency.
-  (t) => [uniqueIndex("invoices_number").on(t.agencyId, t.number)],
+  // An invoice number is issued once per agency; a run makes one invoice per client and part.
+  (t) => [uniqueIndex("invoices_number").on(t.agencyId, t.number), uniqueIndex("invoices_run_part").on(t.payRunId, t.clientId, t.splitKey)],
 );
+
+/** An invoice as issued (slice g): the strings the PDF printed, and the lines with their numbers. */
+export interface IssuedInvoice {
+  /** The PDF's text, as rendered (labels without the page function). */
+  pdf: Record<string, unknown>;
+  lines: IssuedLine[];
+  backup: { detail: boolean; images: { documentId: string; filename: string; pages: number }[] };
+}
+export interface IssuedLine {
+  workerId: string;
+  workerName: string;
+  assignmentId: string | null;
+  poNumber: string | null;
+  worksite: string | null;
+  workweekStart: string;
+  type: string;
+  minutes: number;
+  rate: { num: number; den: number };
+  amountCents: number;
+}
 
 export type InvoiceKind = "invoice" | "supplemental" | "credit_note";
 

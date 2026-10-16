@@ -1,0 +1,103 @@
+{
+  "summary": "SAP Fieldglass Time Sheet Invoice Upload for invoice PLM-20261005 (decision G9; research §4.2): the header rows Type and Transaction, one blank line, the column headings, then one row per approved time sheet, sorted by time sheet id. Each time sheet's billing total is the sum of the invoice lines from it: 9TS0000001 Marcus $1,060.00 + $159.00 = $1,219.00; 9TS0000002 Tran $1,060.00 + $24.51 = $1,084.51; 9TS0000003 Lucía $1,007.00. Paid amount is 0.00 (nothing is paid when the invoice is uploaded). Total $3,310.51, the invoice's total.",
+  "fixture": null,
+  "invoiceFile": {
+    "format": "fieldglass_time_sheet_invoice",
+    "input": {
+      "number": "PLM-20261005",
+      "issuedOn": "2026-10-13",
+      "period": {
+        "startsOn": "2026-10-05",
+        "endsOn": "2026-10-11"
+      },
+      "lines": [
+        {
+          "workerName": "Marcus Bell",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-1001",
+          "workweekStart": "2026-10-05",
+          "type": "REG",
+          "minutes": 2400,
+          "rate": {
+            "num": 2650,
+            "den": 1
+          },
+          "amountCents": 106000,
+          "timeSheetIds": [
+            "9TS0000001"
+          ],
+          "vmsWorkerId": "9JS0000001"
+        },
+        {
+          "workerName": "Marcus Bell",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-1001",
+          "workweekStart": "2026-10-05",
+          "type": "OT",
+          "minutes": 240,
+          "rate": {
+            "num": 3975,
+            "den": 1
+          },
+          "amountCents": 15900,
+          "timeSheetIds": [
+            "9TS0000001"
+          ],
+          "vmsWorkerId": "9JS0000001"
+        },
+        {
+          "workerName": "Tran Nguyen",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-1001",
+          "workweekStart": "2026-10-05",
+          "type": "REG",
+          "minutes": 2400,
+          "rate": {
+            "num": 2650,
+            "den": 1
+          },
+          "amountCents": 106000,
+          "timeSheetIds": [
+            "9TS0000002"
+          ],
+          "vmsWorkerId": "9JS0000002"
+        },
+        {
+          "workerName": "Tran Nguyen",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-1001",
+          "workweekStart": "2026-10-05",
+          "type": "OT",
+          "minutes": 37,
+          "rate": {
+            "num": 3975,
+            "den": 1
+          },
+          "amountCents": 2451,
+          "timeSheetIds": [
+            "9TS0000002"
+          ],
+          "vmsWorkerId": "9JS0000002"
+        },
+        {
+          "workerName": "Lucía Fernández Ruiz",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-48213",
+          "workweekStart": "2026-10-05",
+          "type": "REG",
+          "minutes": 2280,
+          "rate": {
+            "num": 2650,
+            "den": 1
+          },
+          "amountCents": 100700,
+          "timeSheetIds": [
+            "9TS0000003"
+          ],
+          "vmsWorkerId": "9JS0000003"
+        }
+      ]
+    }
+  },
+  "expectedFile": "fieldglass-PLM-20261005.csv"
+}

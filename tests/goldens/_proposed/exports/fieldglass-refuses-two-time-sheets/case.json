@@ -1,0 +1,56 @@
+{
+  "summary": "Tran's 37 overtime minutes came from two Fieldglass time sheets (one per half of the week): the line's $24.51 cannot be split between them without inventing a rounding, so the upload is refused, naming Tran and both time sheets. The run shows it as a blocker before any file is made.",
+  "fixture": null,
+  "invoiceFile": {
+    "format": "fieldglass_time_sheet_invoice",
+    "input": {
+      "number": "PLM-20261005",
+      "issuedOn": "2026-10-13",
+      "period": {
+        "startsOn": "2026-10-05",
+        "endsOn": "2026-10-11"
+      },
+      "lines": [
+        {
+          "workerName": "Tran Nguyen",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-1001",
+          "workweekStart": "2026-10-05",
+          "type": "REG",
+          "minutes": 2400,
+          "rate": {
+            "num": 2650,
+            "den": 1
+          },
+          "amountCents": 106000,
+          "timeSheetIds": [
+            "9TS0000002"
+          ],
+          "vmsWorkerId": "9JS0000002"
+        },
+        {
+          "workerName": "Tran Nguyen",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-1001",
+          "workweekStart": "2026-10-05",
+          "type": "OT",
+          "minutes": 37,
+          "rate": {
+            "num": 3975,
+            "den": 1
+          },
+          "amountCents": 2451,
+          "timeSheetIds": [
+            "9TS0000002",
+            "9TS0000004"
+          ],
+          "vmsWorkerId": "9JS0000002"
+        }
+      ]
+    }
+  },
+  "expectedError": {
+    "code": "unsupported_earning_type",
+    "message": "Tran Nguyen: the OT line for the week ending 2026-10-11 has hours from two SAP Fieldglass time sheets (9TS0000002, 9TS0000004), and its amount cannot be split between them."
+  }
+}

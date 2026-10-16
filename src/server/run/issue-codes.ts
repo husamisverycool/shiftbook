@@ -27,5 +27,7 @@ export const RUN_ISSUE_CODES = [
   "documents_pending",
   "document_failed",
   "invoice_problem",
+  "po_missing",
+  "vms_refused",
 ] as const;
 export type RunIssueCode = (typeof RUN_ISSUE_CODES)[number];

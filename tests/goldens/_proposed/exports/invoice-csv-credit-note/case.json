@@ -1,0 +1,35 @@
+{
+  "summary": "Credit note PLM-20261005-CN-01 issued 2026-10-20 (slice e, decision E11, with G8): Marcus's Monday was 2 hours shorter, so 2 overtime hours at $39.75 are credited: −120 minutes, −2.00 hours, −$79.50, written with a minus sign. A week of 2026-10-05 in a period that ends 2026-10-11.",
+  "fixture": null,
+  "invoiceFile": {
+    "format": "invoice_csv",
+    "input": {
+      "number": "PLM-20261005-CN-01",
+      "issuedOn": "2026-10-20",
+      "period": {
+        "startsOn": "2026-10-05",
+        "endsOn": "2026-10-11"
+      },
+      "lines": [
+        {
+          "workerName": "Marcus Bell",
+          "worksite": "Joliet Plant 2",
+          "poNumber": "PO-1001",
+          "workweekStart": "2026-10-05",
+          "type": "OT",
+          "minutes": -120,
+          "rate": {
+            "num": 3975,
+            "den": 1
+          },
+          "amountCents": -7950,
+          "timeSheetIds": [
+            "9TS0000001"
+          ],
+          "vmsWorkerId": "9JS0000001"
+        }
+      ]
+    }
+  },
+  "expectedFile": "invoice-PLM-20261005-CN-01.csv"
+}

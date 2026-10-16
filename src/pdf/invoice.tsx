@@ -1,8 +1,10 @@
 /**
  * Invoice PDF — hierarchy from docs/patterns/_documents/invoice.md (Stripe invoice PDF; QuickBooks
- * Online template sections). Receives fully formatted strings: no money arithmetic happens here.
+ * Online template sections), its templates (Bullhorn One group by candidate; Avionté PO at the top of
+ * each page) and its backup pages (Avionté merged invoice and timecards; Bullhorn `[APPROVE_LOG]`).
+ * Receives fully formatted strings: no money arithmetic happens here.
  */
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 export interface InvoiceLine {
   description: string;
@@ -41,6 +43,25 @@ export interface InvoiceData {
   total: string;
   amountDue: string;
   footer: string;
+  /** Per-worker detail template: the lines grouped under a heading, each group with its subtotal. */
+  groups?: { title: string; subtotalLabel: string; subtotal: string; lines: InvoiceLine[] }[];
+  /** PO header template: printed at the top of every page. */
+  poHeader?: string | null;
+  /** Backup: hours detail pages after the invoice. */
+  detail?: InvoiceDetail | null;
+  /** Backup: one timesheet picture per page (redacted copies). */
+  images?: InvoiceImage[];
+}
+
+export interface InvoiceDetail {
+  title: string;
+  columns: { date: string; in: string; out: string; break: string; hours: string };
+  weeks: { heading: string; rows: { date: string; in: string; out: string; break: string; hours: string }[]; totalLabel: string; total: string; approvals: string[] }[];
+}
+
+export interface InvoiceImage {
+  data: Buffer;
+  format: "jpg" | "png";
 }
 
 const styles = StyleSheet.create({
@@ -65,13 +86,52 @@ const styles = StyleSheet.create({
   amountDueRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2, fontFamily: "Helvetica-Bold" },
   footer: { position: "absolute", bottom: 32, left: 48, right: 48, flexDirection: "row", justifyContent: "space-between", color: "#555555" },
   footerText: { width: "75%" },
+  poHeader: { position: "absolute", top: 20, left: 48, right: 48, fontFamily: "Helvetica-Bold", color: "#111111" },
+  groupHead: { fontFamily: "Helvetica-Bold", paddingTop: 8, paddingBottom: 2 },
+  groupTotal: { flexDirection: "row", justifyContent: "flex-end", paddingVertical: 4, borderBottomWidth: 0.5, borderBottomColor: "#cccccc" },
+  groupTotalLabel: { width: "30%", textAlign: "right", color: "#555555", marginRight: 8 },
+  groupTotalValue: { width: "18%", textAlign: "right", fontFamily: "Helvetica-Bold" },
+  detailTitle: { fontSize: 14, fontFamily: "Helvetica-Bold", marginBottom: 12 },
+  weekHead: { fontFamily: "Helvetica-Bold", marginTop: 10, marginBottom: 4 },
+  dRow: { flexDirection: "row", paddingVertical: 2, borderBottomWidth: 0.5, borderBottomColor: "#e5e5e5" },
+  dHead: { flexDirection: "row", paddingBottom: 3, borderBottomWidth: 1, borderBottomColor: "#cccccc", color: "#555555" },
+  dDate: { width: "36%" },
+  dCell: { width: "16%", textAlign: "right" },
+  dTotal: { flexDirection: "row", justifyContent: "flex-end", paddingVertical: 3, fontFamily: "Helvetica-Bold" },
+  approval: { color: "#555555", marginTop: 3 },
+  imagePage: { padding: 32 },
+  image: { width: "100%", height: "92%", objectFit: "contain" },
 });
 
-export function InvoiceDocument({ data }: { data: InvoiceData }) {
+/** The invoice's pages (and its backup), for one document or for a statement. */
+export function InvoicePages({ data }: { data: InvoiceData }) {
   const l = data.labels;
+  const footer = (
+    <View style={styles.footer} fixed>
+      <Text style={styles.footerText}>{data.footer}</Text>
+      <Text render={({ pageNumber, totalPages }) => l.page(pageNumber, totalPages)} />
+    </View>
+  );
+  const poHeader = data.poHeader ? (
+    <Text style={styles.poHeader} fixed>
+      {data.poHeader}
+    </Text>
+  ) : null;
+  const row = (line: InvoiceLine, key: string | number) => (
+    <View key={key} style={styles.row} wrap={false}>
+      <View style={styles.colDescription}>
+        <Text>{line.description}</Text>
+        <Text style={styles.detail}>{line.detail}</Text>
+      </View>
+      <Text style={styles.colHours}>{line.hours}</Text>
+      <Text style={styles.colRate}>{line.rate}</Text>
+      <Text style={styles.colAmount}>{line.amount}</Text>
+    </View>
+  );
   return (
-    <Document title={`${l.title} ${data.number}`}>
+    <>
       <Page size="LETTER" style={styles.page}>
+        {poHeader}
         <Text style={styles.title}>{l.title}</Text>
         <View style={styles.meta}>
           {[
@@ -108,17 +168,18 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
           <Text style={styles.colRate}>{l.rate}</Text>
           <Text style={styles.colAmount}>{l.amount}</Text>
         </View>
-        {data.lines.map((line, i) => (
-          <View key={i} style={styles.row} wrap={false}>
-            <View style={styles.colDescription}>
-              <Text>{line.description}</Text>
-              <Text style={styles.detail}>{line.detail}</Text>
-            </View>
-            <Text style={styles.colHours}>{line.hours}</Text>
-            <Text style={styles.colRate}>{line.rate}</Text>
-            <Text style={styles.colAmount}>{line.amount}</Text>
-          </View>
-        ))}
+        {data.groups
+          ? data.groups.map((g, gi) => (
+              <View key={gi}>
+                <Text style={styles.groupHead}>{g.title}</Text>
+                {g.lines.map((line, i) => row(line, i))}
+                <View style={styles.groupTotal} wrap={false}>
+                  <Text style={styles.groupTotalLabel}>{g.subtotalLabel}</Text>
+                  <Text style={styles.groupTotalValue}>{g.subtotal}</Text>
+                </View>
+              </View>
+            ))
+          : data.lines.map((line, i) => row(line, i))}
         <View style={styles.totals} wrap={false}>
           <View style={styles.totalRow}>
             <Text>{l.subtotal}</Text>
@@ -133,11 +194,60 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             <Text>{data.amountDue}</Text>
           </View>
         </View>
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{data.footer}</Text>
-          <Text render={({ pageNumber, totalPages }) => l.page(pageNumber, totalPages)} />
-        </View>
+        {footer}
       </Page>
+      {data.detail && (
+        <Page size="LETTER" style={styles.page}>
+          {poHeader}
+          <Text style={styles.detailTitle}>{data.detail.title}</Text>
+          {data.detail.weeks.map((w, wi) => (
+            <View key={wi} wrap={false}>
+              <Text style={styles.weekHead}>{w.heading}</Text>
+              <View style={styles.dHead}>
+                <Text style={styles.dDate}>{data.detail!.columns.date}</Text>
+                <Text style={styles.dCell}>{data.detail!.columns.in}</Text>
+                <Text style={styles.dCell}>{data.detail!.columns.out}</Text>
+                <Text style={styles.dCell}>{data.detail!.columns.break}</Text>
+                <Text style={styles.dCell}>{data.detail!.columns.hours}</Text>
+              </View>
+              {w.rows.map((r, ri) => (
+                <View key={ri} style={styles.dRow}>
+                  <Text style={styles.dDate}>{r.date}</Text>
+                  <Text style={styles.dCell}>{r.in}</Text>
+                  <Text style={styles.dCell}>{r.out}</Text>
+                  <Text style={styles.dCell}>{r.break}</Text>
+                  <Text style={styles.dCell}>{r.hours}</Text>
+                </View>
+              ))}
+              <View style={styles.dTotal}>
+                <Text style={styles.groupTotalLabel}>{w.totalLabel}</Text>
+                <Text style={styles.dCell}>{w.total}</Text>
+              </View>
+              {w.approvals.map((a, ai) => (
+                <Text key={ai} style={styles.approval}>
+                  {a}
+                </Text>
+              ))}
+            </View>
+          ))}
+          {footer}
+        </Page>
+      )}
+      {(data.images ?? []).map((img, i) => (
+        <Page key={`img-${i}`} size="LETTER" style={styles.imagePage}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- a PDF page image: react-pdf has no alt text */}
+          <Image src={{ data: img.data, format: img.format }} style={styles.image} />
+          {footer}
+        </Page>
+      ))}
+    </>
+  );
+}
+
+export function InvoiceDocument({ data }: { data: InvoiceData }) {
+  return (
+    <Document title={`${data.labels.title} ${data.number}`}>
+      <InvoicePages data={data} />
     </Document>
   );
 }

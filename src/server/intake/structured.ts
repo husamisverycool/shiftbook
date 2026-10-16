@@ -185,6 +185,7 @@ function readVms(table: Table, profile: VmsProfile): ParsedDocument {
       break: null,
       total: reading(g.texts.join(" + "), g.unreadable ? null : g.minutes, src(c.hours)),
       externalId: g.externalId || null,
+      ...(g.externalId ? { vmsRefs: { timeSheetIds: [...g.sheets].filter(Boolean).sort(), workerId: g.externalId } } : {}),
       checks,
     });
   }

@@ -143,6 +143,7 @@ export async function saveEntries(tx: Tx, actor: Actor, documentId: string, payP
         confidence: d.confidence,
         status: d.status,
         reviewReasons: d.reviewReasons,
+        vmsRefs: d.vmsRefs ?? {},
       })),
     )
     .returning();

@@ -42,7 +42,23 @@
     },
     "notBillable": "no facturable",
     "footer": "Las horas provienen de las hojas de horas aprobadas del periodo de servicio. Los importes se calculan con minutos enteros y se redondean una sola vez por línea.",
-    "weekOf": "semana del {date}"
+    "weekOf": "semana del {date}",
+    "poLine": "OC {po}",
+    "noPo": "sin OC",
+    "poHeader": "Orden de compra {po}",
+    "workerSubtotal": "Subtotal",
+    "detailTitle": "Detalle de horas",
+    "detailTitleCorrected": "Detalle de horas, corregido",
+    "detailWeek": "{worker} · semana del {date}",
+    "detailDate": "Fecha",
+    "detailIn": "Entrada",
+    "detailOut": "Salida",
+    "detailBreak": "Descanso",
+    "weekTotal": "Total de la semana",
+    "nextDay": "{time} (día siguiente)",
+    "approvedBy": "Aprobado por {name} ({email}) el {date} a las {time}",
+    "proposedBy": "Horarios propuestos por {name} ({email}) el {date} a las {time}, aceptados por {agency}",
+    "reviewedBy": "Revisado por {agency}"
   },
   "approvalEmail": {
     "subject": {
@@ -393,6 +409,8 @@
         "documents_pending": "Hojas de horas que aún se están leyendo",
         "document_failed": "Hojas de horas que no se pudieron leer",
         "invoice_problem": "No se puede crear una factura",
+        "po_missing": "Horas sin la orden de compra que el cliente exige",
+        "vms_refused": "Horas que la carga al VMS del cliente no puede llevar",
         "premium_not_applicable": "Una prima confirmada que no aplica aquí",
         "bonus_kind_check": "Un bono de California por revisar",
         "approaching_equal_pay_hours": "Cerca de 720 horas con un cliente de Illinois",

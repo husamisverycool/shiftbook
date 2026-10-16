@@ -43,6 +43,8 @@ export const CLIENTS: Record<
     billingEmail: string;
     worksite: { name: string; addressLine: string; city: string; county: string; state: string; postalCode: string; countyFips: string; placeFips: string | null };
     billing: { overtimeBillingRule: "multiplier" | "straight_time" | "not_billable" | "own_sites_only"; poNumber: string | null; vmsName: string | null; paymentTermsDays: number };
+    /** Invoice settings (slice g): each client shows a different part of what invoices can carry. */
+    invoices: { template: "standard" | "per_worker_detail" | "po_header"; backupDetail: boolean; backupImages: boolean; vmsFormat: "fieldglass_time_sheet_invoice" | null };
   }
 > = {
   ca: {
@@ -52,6 +54,7 @@ export const CLIENTS: Record<
     billingEmail: "ap@pacificcrest.example.com",
     worksite: { name: "Ontario DC", addressLine: "2200 Example Logistics Way", city: "Ontario", county: "San Bernardino", state: "CA", postalCode: "91761", countyFips: "06071", placeFips: "0653896" },
     billing: { overtimeBillingRule: "multiplier", poNumber: null, vmsName: "SAP Fieldglass", paymentTermsDays: 45 },
+    invoices: { template: "standard", backupDetail: false, backupImages: false, vmsFormat: "fieldglass_time_sheet_invoice" },
   },
   il: {
     name: "Prairie Line Manufacturing (demo)",
@@ -60,6 +63,7 @@ export const CLIENTS: Record<
     billingEmail: "payables@prairieline.example.com",
     worksite: { name: "Joliet Plant 2", addressLine: "75 Example Industrial Drive", city: "Joliet", county: "Will", state: "IL", postalCode: "60431", countyFips: "17197", placeFips: "1738570" },
     billing: { overtimeBillingRule: "multiplier", poNumber: "PO-48213", vmsName: null, paymentTermsDays: 30 },
+    invoices: { template: "standard", backupDetail: true, backupImages: true, vmsFormat: null },
   },
   ma: {
     name: "Harborview Events & Hospitality (demo)",
@@ -68,6 +72,7 @@ export const CLIENTS: Record<
     billingEmail: "accounts@harborview.example.com",
     worksite: { name: "Harborview Hall", addressLine: "18 Example Harbor Street", city: "Worcester", county: "Worcester", state: "MA", postalCode: "01608", countyFips: "25027", placeFips: "2582000" },
     billing: { overtimeBillingRule: "straight_time", poNumber: null, vmsName: null, paymentTermsDays: 30 },
+    invoices: { template: "per_worker_detail", backupDetail: true, backupImages: false, vmsFormat: null },
   },
 };
 

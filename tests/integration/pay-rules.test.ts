@@ -152,6 +152,8 @@ describe("pay rules through the weekly run", () => {
     if (!added.ok) throw new Error(added.error);
     const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, added.entryId)));
     await inAgency((tx) => tx.insert(bonuses).values({ agencyId: actor.agencyId, workerId: luis, assignmentId: entry!.assignmentId!, workweekStart: p!.startsOn, amountCents: 2500, kind: "nondiscretionary", enteredBy: actor.userId }));
+    // Hours typed in by hand are on no SAP Fieldglass time sheet: the client's upload is off for this test.
+    await inAgency((tx) => tx.update(clientBillingProfiles).set({ vmsFormat: null }).where(eq(clientBillingProfiles.clientId, clientId("ca"))));
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers).toEqual([]);
     await inAgency((tx) => approveAsOwner(tx, actor, period));

@@ -8,7 +8,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addDays, computePay, type PayInput, type Shift } from "@shiftbook/rules";
 import { ExportError } from "../src/exports/errors";
+import type { InvoiceFileInput } from "../src/exports/invoice-files";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
+import { INVOICE_FILES, type InvoiceFileFormat } from "../tests/golden-runners/exports";
 import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_REGULAR_RATE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
@@ -716,4 +718,86 @@ exportRefusal(
     payLines: [WEEK_LINES[1]!, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 }, workweekStart: "2026-10-05" }],
   },
   { code: "unsupported_earning_type", workerId: "w2", message: "Bell, Marcus: the spreadsheet has no amount column, so it cannot carry a bonus. Add an amount column, or skip this worker and pay it by hand." },
+);
+
+// ---------- slice g: the files made with each invoice ----------
+
+/** An invoice file's case: the file must equal the hand-written rows, byte for byte. */
+function invoiceFileCase(name: string, summary: string, format: InvoiceFileFormat, input: InvoiceFileInput, handText: string) {
+  const kind = INVOICE_FILES[format];
+  const got = new TextDecoder().decode(kind.make(input));
+  if (got !== handText) throw new Error(`${name}: file\n${JSON.stringify(got)}\n≠ hand\n${JSON.stringify(handText)}`);
+  const dir = join(OUT, "exports", name);
+  mkdirSync(dir, { recursive: true });
+  const filename = kind.filename(input.number);
+  writeFileSync(join(dir, filename), got);
+  writeFileSync(join(dir, "case.json"), JSON.stringify({ summary, fixture: null, invoiceFile: { format, input }, expectedFile: filename }, null, 2) + "\n");
+  console.log(`proposed exports/${name}`);
+}
+
+function invoiceFileRefusal(name: string, summary: string, format: InvoiceFileFormat, input: InvoiceFileInput, hand: { code: string; message: string }) {
+  let error: unknown = null;
+  try {
+    INVOICE_FILES[format].make(input);
+  } catch (e) {
+    error = e;
+  }
+  if (!(error instanceof ExportError) || error.code !== hand.code || error.workerId !== undefined || error.message !== hand.message) {
+    throw new Error(`${name}: expected refusal ${JSON.stringify(hand)}, got ${error instanceof Error ? `${(error as ExportError).code}: ${error.message}` : "a file"}`);
+  }
+  const dir = join(OUT, "exports", name);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "case.json"), JSON.stringify({ summary, fixture: null, invoiceFile: { format, input }, expectedError: hand }, null, 2) + "\n");
+  console.log(`proposed exports/${name}`);
+}
+
+const BILL_REG = { num: 2650, den: 1 };
+const BILL_OT = { num: 3975, den: 1 };
+const INVOICE_LINES: InvoiceFileInput["lines"] = [
+  { workerName: "Marcus Bell", worksite: "Joliet Plant 2", poNumber: "PO-1001", workweekStart: "2026-10-05", type: "REG", minutes: 2400, rate: BILL_REG, amountCents: 106_000, timeSheetIds: ["9TS0000001"], vmsWorkerId: "9JS0000001" },
+  { workerName: "Marcus Bell", worksite: "Joliet Plant 2", poNumber: "PO-1001", workweekStart: "2026-10-05", type: "OT", minutes: 240, rate: BILL_OT, amountCents: 15_900, timeSheetIds: ["9TS0000001"], vmsWorkerId: "9JS0000001" },
+  { workerName: "Tran Nguyen", worksite: "Joliet Plant 2", poNumber: "PO-1001", workweekStart: "2026-10-05", type: "REG", minutes: 2400, rate: BILL_REG, amountCents: 106_000, timeSheetIds: ["9TS0000002"], vmsWorkerId: "9JS0000002" },
+  { workerName: "Tran Nguyen", worksite: "Joliet Plant 2", poNumber: "PO-1001", workweekStart: "2026-10-05", type: "OT", minutes: 37, rate: BILL_OT, amountCents: 2451, timeSheetIds: ["9TS0000002"], vmsWorkerId: "9JS0000002" },
+  { workerName: "Lucía Fernández Ruiz", worksite: "Joliet Plant 2", poNumber: "PO-48213", workweekStart: "2026-10-05", type: "REG", minutes: 2280, rate: BILL_REG, amountCents: 100_700, timeSheetIds: ["9TS0000003"], vmsWorkerId: "9JS0000003" },
+];
+const INVOICE_HEAD = "Invoice Number,Invoice Date,Period Start,Period End,Worker,Worksite,PO Number,Week Ending,Earning Type,Hours,Minutes,Rate,Amount\r\n";
+
+invoiceFileCase(
+  "invoice-csv-basic",
+  "Invoice PLM-20261005 issued 2026-10-13 for the week of 2026-10-05 (decision G8): one row per invoice line, in the invoice's order. Marcus 40 h at $26.50 = $1,060.00 and 4 h overtime at $39.75 = $159.00; Tran 40 h = $1,060.00 and 37 overtime minutes = 37 × $39.75 ÷ 60 = $24.5125, billed $24.51 (rounded once on the invoice; the CSV repeats the invoice's cents, never recomputes); Lucía 38 h = $1,007.00 under the client's PO PO-48213. Hours are shown to two decimals, 37 minutes as 0.62 (0.6167 rounded half up), with the exact minutes beside them; rates to four decimals. The week ends 2026-10-11. Total $3,310.51.",
+  "invoice_csv",
+  { number: "PLM-20261005", issuedOn: "2026-10-13", period: PERIOD, lines: INVOICE_LINES },
+  INVOICE_HEAD +
+    "PLM-20261005,2026-10-13,2026-10-05,2026-10-11,Marcus Bell,Joliet Plant 2,PO-1001,2026-10-11,REG,40.00,2400,26.5000,1060.00\r\n" +
+    "PLM-20261005,2026-10-13,2026-10-05,2026-10-11,Marcus Bell,Joliet Plant 2,PO-1001,2026-10-11,OT,4.00,240,39.7500,159.00\r\n" +
+    "PLM-20261005,2026-10-13,2026-10-05,2026-10-11,Tran Nguyen,Joliet Plant 2,PO-1001,2026-10-11,REG,40.00,2400,26.5000,1060.00\r\n" +
+    "PLM-20261005,2026-10-13,2026-10-05,2026-10-11,Tran Nguyen,Joliet Plant 2,PO-1001,2026-10-11,OT,0.62,37,39.7500,24.51\r\n" +
+    "PLM-20261005,2026-10-13,2026-10-05,2026-10-11,Lucía Fernández Ruiz,Joliet Plant 2,PO-48213,2026-10-11,REG,38.00,2280,26.5000,1007.00\r\n",
+);
+
+invoiceFileCase(
+  "invoice-csv-credit-note",
+  "Credit note PLM-20261005-CN-01 issued 2026-10-20 (slice e, decision E11, with G8): Marcus's Monday was 2 hours shorter, so 2 overtime hours at $39.75 are credited: −120 minutes, −2.00 hours, −$79.50, written with a minus sign. A week of 2026-10-05 in a period that ends 2026-10-11.",
+  "invoice_csv",
+  { number: "PLM-20261005-CN-01", issuedOn: "2026-10-20", period: PERIOD, lines: [{ ...INVOICE_LINES[1]!, minutes: -120, amountCents: -7950 }] },
+  INVOICE_HEAD + "PLM-20261005-CN-01,2026-10-20,2026-10-05,2026-10-11,Marcus Bell,Joliet Plant 2,PO-1001,2026-10-11,OT,-2.00,-120,39.7500,-79.50\r\n",
+);
+
+invoiceFileCase(
+  "fieldglass-time-sheet-invoice-basic",
+  "SAP Fieldglass Time Sheet Invoice Upload for invoice PLM-20261005 (decision G9; research §4.2): the header rows Type and Transaction, one blank line, the column headings, then one row per approved time sheet, sorted by time sheet id. Each time sheet's billing total is the sum of the invoice lines from it: 9TS0000001 Marcus $1,060.00 + $159.00 = $1,219.00; 9TS0000002 Tran $1,060.00 + $24.51 = $1,084.51; 9TS0000003 Lucía $1,007.00. Paid amount is 0.00 (nothing is paid when the invoice is uploaded). Total $3,310.51, the invoice's total.",
+  "fieldglass_time_sheet_invoice",
+  { number: "PLM-20261005", issuedOn: "2026-10-13", period: PERIOD, lines: INVOICE_LINES },
+  "Type,Time Sheet Invoice Upload\r\nTransaction,True\r\n\r\nInvoice Code,TIMESHEET ID,Job Seeker ID,Paid Amount,Total Billing Amount\r\n" +
+    "PLM-20261005,9TS0000001,9JS0000001,0.00,1219.00\r\n" +
+    "PLM-20261005,9TS0000002,9JS0000002,0.00,1084.51\r\n" +
+    "PLM-20261005,9TS0000003,9JS0000003,0.00,1007.00\r\n",
+);
+
+invoiceFileRefusal(
+  "fieldglass-refuses-two-time-sheets",
+  "Tran's 37 overtime minutes came from two Fieldglass time sheets (one per half of the week): the line's $24.51 cannot be split between them without inventing a rounding, so the upload is refused, naming Tran and both time sheets. The run shows it as a blocker before any file is made.",
+  "fieldglass_time_sheet_invoice",
+  { number: "PLM-20261005", issuedOn: "2026-10-13", period: PERIOD, lines: [INVOICE_LINES[2]!, { ...INVOICE_LINES[3]!, timeSheetIds: ["9TS0000002", "9TS0000004"] }] },
+  { code: "unsupported_earning_type", message: "Tran Nguyen: the OT line for the week ending 2026-10-11 has hours from two SAP Fieldglass time sheets (9TS0000002, 9TS0000004), and its amount cannot be split between them." },
 );

@@ -37,6 +37,8 @@ export interface EntryDraft {
   confidence: "high" | "medium" | "low";
   status: "extracted" | "needs_review";
   reviewReasons: string[];
+  /** Ids a VMS gave these hours (slice g): kept for the client's VMS invoice upload. */
+  vmsRefs?: { timeSheetIds: string[]; workerId: string };
 }
 
 type FieldName = keyof EntryFields;
@@ -176,6 +178,7 @@ export function assessEntry(raw: RawEntry, ctx: AssessContext): EntryDraft {
     confidence,
     status: reasons.length > 0 ? "needs_review" : "extracted",
     reviewReasons: reasons,
+    ...(raw.vmsRefs ? { vmsRefs: raw.vmsRefs } : {}),
   };
 }
 

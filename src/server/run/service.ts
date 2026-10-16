@@ -17,12 +17,14 @@ import { hoursMinutes } from "../../components/shiftbook/format";
 import { addDays, addMonths, computePay, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
+import { fieldglassUpload } from "../../exports/invoice-files";
 import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { ExportPayLine } from "../../exports/registry";
-import { fileTextInputs, planCorrectionInvoices, planInvoices } from "../files/invoice-plan";
+import { makesVms, planEntries, vmsInput } from "../files/invoice-documents";
+import { billDifferences, fileTextInputs, planCorrectionInvoices, planInvoices } from "../files/invoice-plan";
 import { billFromMarkup } from "../catalog/versions";
 import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
@@ -568,8 +570,12 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   // Dry run of the files: anything the payroll file or an invoice would refuse is a blocker now,
   // not an error after "Create files".
   const invoicePlan = correction
-    ? await planCorrectionInvoices(tx, period, correction.bill)
-    : await planInvoices(tx, period, result.billLines.map((l) => ({ clientId: l.clientId, amountCents: l.amountCents })));
+    ? await planCorrectionInvoices(tx, period, billDifferences(correction.bill))
+    : await planInvoices(
+        tx,
+        period,
+        result.billLines.map((l) => ({ clientId: l.clientId, workerId: l.workerId, assignmentId: l.assignmentId, workweekStart: l.workweekStart, type: l.type, minutes: l.minutes, rate: l.rate, amountCents: l.amountCents, ruleId: l.ruleId, entryIds: l.entryIds })),
+      );
   // A correction's file carries the additions of the workers it settles (decision E9).
   const fileLines: ExportPayLine[] = correction
     ? fileWorkers(correction).flatMap((w) => w.weekLines.map((l) => ({ workerId: w.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, parts: l.parts, workweekStart: l.workweekStart })))
@@ -595,7 +601,20 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         lines = lines.filter((l) => l.workerId !== workerId);
       }
     }
-    for (const problem of invoicePlan.problems) blockers.push({ code: "invoice_problem", message: problem });
+    for (const problem of invoicePlan.problems) blockers.push({ code: problem.code, clientId: problem.clientId, message: problem.message });
+    // The VMS upload refuses hours it cannot place on a time sheet: said now, not at "Create files".
+    const vmsPlans = invoicePlan.plans.filter(makesVms);
+    if (vmsPlans.length > 0) {
+      const entries = await planEntries(tx, vmsPlans);
+      for (const p of vmsPlans) {
+        try {
+          fieldglassUpload(vmsInput(p, { workersById, period }, entries));
+        } catch (error) {
+          if (!(error instanceof ExportError)) throw error;
+          blockers.push({ code: "vms_refused", clientId: p.clientId, message: `${p.client.name}, invoice ${p.number}: ${error.message}` });
+        }
+      }
+    }
   }
   // Everything the files will say, so a change after the totals were shown is caught at "Create files".
   const textInputs = await fileTextInputs(tx, actor.agencyId, invoicePlan.plans, [...new Set(result.payLines.map((l) => l.workerId))], [...new Set(result.billLines.map((l) => l.assignmentId))]);

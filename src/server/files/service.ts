@@ -10,21 +10,21 @@
  * invoice or a credit note naming the original. Earlier versions' files never change.
  */
 import { createHash } from "node:crypto";
-import { addDays, formatCents, formatRate, type EarningType } from "@shiftbook/rules";
+import { formatCents } from "@shiftbook/rules";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import { createElement, type ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
-import en from "../../../messages/en.json";
 import { renderExport } from "../../exports/registry";
-import { InvoiceDocument, type InvoiceData } from "../../pdf/invoice";
+import { InvoiceDocument } from "../../pdf/invoice";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { correctionPlanFor, decisionText, fileWorkers as correctionFileWorkers } from "../run/corrections";
 import { lockCatalog, lockPayrollSettings, openPeriod } from "../run/period-lock";
 import { computeRun, regularRates, type RunIssue } from "../run/service";
-import { planCorrectionInvoices, planInvoices } from "./invoice-plan";
+import { invoiceDocuments, planEntries } from "./invoice-documents";
+import { billDifferences, planCorrectionInvoices, planInvoices, planLineOf } from "./invoice-plan";
 import { payrollFixture } from "./payroll-fixture";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
@@ -59,13 +59,7 @@ export interface RunFiles {
   invoices: { invoiceId: string; clientId: string; clientName: string; number: string; kind: s.InvoiceKind; originalNumber: string | null; totalCents: number; storageKey: string; sha256: string }[];
 }
 
-const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "MW_TRUEUP", "REPORTING_PAY", "HOL", "HOL_NOT_WORKED", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE", "BONUS", "BONUS_OT"];
-const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const sha = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
-/** 2400 → "40:00"; 37 → "0:37"; −120 → "-2:00" (a plain hyphen: the PDF's standard font has no minus sign). */
-const hoursMinutes = (minutes: number) => `${minutes < 0 ? "-" : ""}${Math.trunc(Math.abs(minutes) / 60)}:${String(Math.abs(minutes) % 60).padStart(2, "0")}`;
-const longDate = (iso: string) => new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
-const fill = (template: string, values: Record<string, string>) => template.replace(/\{(\w+)\}/g, (_, k: string) => values[k] ?? "");
 
 export async function createRunFiles(
   tx: Tx,
@@ -130,92 +124,60 @@ export async function createRunFiles(
     payroll = { exportId: exportRow!.id, filename: file.filename, storageKey: payrollKey, sha256: payrollSha, controlTotals: file.controlTotals, notes };
   }
 
-  // One invoice per client billed.
-  const assignmentRows = await tx
-    .select({ id: s.assignments.id, position: s.jobOrders.position, worksite: s.worksites.name })
-    .from(s.assignments)
-    .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
-    .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId));
-  const assignmentsById = new Map(assignmentRows.map((a) => [a.id, a]));
+  // The invoices the client's settings call for (slice g), each with its CSV and VMS file.
+  const assignmentRows = await tx.select({ id: s.assignments.id, position: s.jobOrders.position }).from(s.assignments).innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId));
+  const positions = new Map(assignmentRows.map((a) => [a.id, a.position]));
   const invoicesOut: RunFiles["invoices"] = [];
-  const t = en.invoice;
   // Exactly the invoices the run checked (the run would have been blocked by any problem).
-  const plan = correction
-    ? await planCorrectionInvoices(tx, period!, correction.bill)
-    : await planInvoices(tx, period!, bill.map((l) => ({ clientId: l.clientId, amountCents: l.amountCents })));
-  if (plan.problems.length > 0) throw new Error(`Invoice problems: ${plan.problems.join(" ")}`);
-  // A run's bill lines; a correction's differences (with what each was and is now).
-  type Row = { workerId: string; assignmentId: string | null; workweekStart: string; type: EarningType; ruleId: string | null; minutes: number; rate: { num: number; den: number }; amountCents: number; was: { minutes: number } | null; now: { minutes: number } | null };
-  const rowsOf = (clientId: string): Row[] =>
-    correction
-      ? correction.bill.filter((d) => d.clientId === clientId).map((d) => ({ workerId: d.workerId, assignmentId: d.assignmentId, workweekStart: d.workweekStart, type: d.type, ruleId: d.ruleId ?? null, minutes: d.minutes, rate: d.rate, amountCents: d.amountCents, was: d.was, now: d.now }))
-      : bill.filter((l) => l.clientId === clientId).map((l) => ({ workerId: l.workerId, assignmentId: l.assignmentId, workweekStart: l.workweekStart, type: l.type, ruleId: l.ruleId, minutes: l.minutes, rate: { num: l.rateNum, den: l.rateDen }, amountCents: l.amountCents, was: null, now: null }));
-  for (const { clientId, client: c, profile, number, totalCents: planned, kind, original } of plan.plans) {
-    const client = c;
-    const lines = rowsOf(clientId)
-      .map((l) => ({ l, w: workersById.get(l.workerId)!, a: l.assignmentId ? assignmentsById.get(l.assignmentId) : undefined }))
-      .sort((x, y) => cmp(x.w.lastName, y.w.lastName) || cmp(x.w.firstName, y.w.firstName) || cmp(x.l.workweekStart, y.l.workweekStart) || TYPE_ORDER.indexOf(x.l.type) - TYPE_ORDER.indexOf(y.l.type));
-    const totalCents = lines.reduce((sum, x) => sum + x.l.amountCents, 0);
-    if (totalCents !== planned) throw new Error(`Invoice ${number} total ${totalCents} does not equal the planned ${planned}.`);
-    // A credit note is not due: it reduces what the original asks for (Stripe credit notes).
-    const credit = kind === "credit_note";
-    const dueOn = credit ? opts.today : addDays(opts.today, profile.paymentTermsDays);
-    const periodText = `${longDate(period!.startsOn)} – ${longDate(period!.endsOn)}`;
-    const worksites = [...new Set(lines.map((x) => x.a?.worksite).filter((x): x is string => Boolean(x)))];
-    const data: InvoiceData = {
-      labels: {
-        title: kind === "supplemental" ? t.supplementalTitle : credit ? t.creditNoteTitle : t.title,
-        number: credit ? t.creditNoteNumber : t.number,
-        issued: t.issued,
-        due: t.due,
-        billTo: t.billTo,
-        description: t.description,
-        hours: t.hours,
-        rate: t.rate,
-        amount: t.amount,
-        subtotal: t.subtotal,
-        total: t.total,
-        amountDueLabel: credit ? t.totalCredited : t.amountDueLabel,
-        page: (page, pages) => fill(t.page, { page: String(page), pages: String(pages) }),
-      },
-      number,
-      issuedOn: longDate(opts.today),
-      dueOn: credit ? null : longDate(dueOn),
-      fields: [
-        ...(original ? [{ label: credit ? t.credits : t.addsTo, value: original.number }] : []),
-        ...(profile.poNumber ? [{ label: t.po, value: profile.poNumber }] : []),
-        { label: t.period, value: periodText },
-        ...(worksites.length > 0 ? [{ label: t.worksite, value: worksites.join("; ") }] : []),
-      ],
-      from: { name: agency!.name, lines: [...agency!.addressLines, agency!.phone ?? "", agency!.email ?? ""].filter(Boolean) },
-      billTo: { name: client.name, lines: [...client.addressLines, client.billingEmail ?? ""].filter(Boolean) },
-      amountDueLine: credit ? fill(t.creditedLine, { amount: formatCents(-totalCents), number: original!.number }) : fill(t.amountDue, { amount: formatCents(totalCents), date: longDate(dueOn) }),
-      lines: lines.map(({ l, w, a }) => ({
-        description: `${w.firstName} ${w.lastName}${a ? ` — ${a.position}` : ""}`,
-        detail: [
-          `${t.earning[l.type]}${l.ruleId === "bill_overtime_not_billable" ? ` (${t.notBillable})` : ""}`,
-          fill(t.weekOf, { date: longDate(l.workweekStart) }),
-          ...(l.was && l.now ? [fill(t.wasNow, { was: hoursMinutes(l.was.minutes), now: hoursMinutes(l.now.minutes) })] : []),
-        ].join(" · "),
-        hours: hoursMinutes(l.minutes),
-        rate: formatRate(l.rate),
-        amount: formatCents(l.amountCents),
-      })),
-      subtotal: formatCents(totalCents),
-      total: formatCents(totalCents),
-      amountDue: formatCents(credit ? -totalCents : totalCents),
-      footer: t.footer,
-    };
-    const pdf = new Uint8Array(await renderToBuffer(createElement(InvoiceDocument, { data }) as unknown as ReactElement<DocumentProps>));
-    const pdfKey = `${actor.agencyId}/runs/${run!.id}/invoice-${number}.pdf`;
+  const plan = correction ? await planCorrectionInvoices(tx, period!, billDifferences(correction.bill)) : await planInvoices(tx, period!, bill.map(planLineOf));
+  if (plan.problems.length > 0) throw new Error(`Invoice problems: ${plan.problems.map((p) => p.message).join(" ")}`);
+  const entries = await planEntries(tx, plan.plans);
+  const ctx = { agency: agency!, period: period!, today: opts.today, workersById };
+  for (const p of plan.plans) {
+    const { clientId, client, number, kind, original } = p;
+    const docs = await invoiceDocuments(tx, store, ctx, p, positions, entries);
+    const pdf = new Uint8Array(await renderToBuffer(createElement(InvoiceDocument, { data: docs.data }) as unknown as ReactElement<DocumentProps>));
+    const prefix = `${actor.agencyId}/runs/${run!.id}`;
+    const pdfKey = `${prefix}/invoice-${number}.pdf`;
+    const csvKey = `${prefix}/invoice-${number}.csv`;
+    const vmsKey = docs.vms ? `${prefix}/fieldglass-${number}.csv` : null;
     await store.put(pdfKey, pdf);
+    await store.put(csvKey, docs.csv);
+    if (docs.vms && vmsKey) await store.put(vmsKey, docs.vms.bytes);
     const pdfSha = sha(pdf);
     const [inv] = await tx
       .insert(s.invoices)
-      .values({ agencyId: actor.agencyId, clientId, payRunId: run!.id, number, issuedOn: opts.today, dueOn, status: "issued", subtotalCents: totalCents, totalCents, pdfStorageKey: pdfKey, kind, originalInvoiceId: original?.id ?? null })
+      .values({
+        agencyId: actor.agencyId,
+        clientId,
+        payRunId: run!.id,
+        number,
+        issuedOn: opts.today,
+        dueOn: docs.dueOn,
+        status: "issued",
+        subtotalCents: p.totalCents,
+        totalCents: p.totalCents,
+        pdfStorageKey: pdfKey,
+        kind,
+        originalInvoiceId: original?.id ?? null,
+        splitKey: p.splitKey,
+        template: p.profile.invoiceTemplate,
+        poNumber: p.poNumber,
+        worksiteId: p.worksite?.id ?? null,
+        document: docs.issued,
+        csvStorageKey: csvKey,
+        vmsStorageKey: vmsKey,
+      })
       .returning();
-    await audit(tx, actor, [{ action: "export", entityType: "invoice", entityId: inv!.id, after: { number, kind, original: original?.number ?? null, totalCents, sha256: pdfSha, lines: lines.length } }]);
-    invoicesOut.push({ invoiceId: inv!.id, clientId, clientName: client.name, number, kind, originalNumber: original?.number ?? null, totalCents, storageKey: pdfKey, sha256: pdfSha });
+    await audit(tx, actor, [
+      {
+        action: "export",
+        entityType: "invoice",
+        entityId: inv!.id,
+        after: { number, kind, original: original?.number ?? null, totalCents: p.totalCents, sha256: pdfSha, lines: p.lines.length, csvSha256: sha(docs.csv), ...(docs.vms ? { vms: docs.vms.format, vmsSha256: sha(docs.vms.bytes) } : {}), backup: { detail: docs.issued.backup.detail, pictures: docs.issued.backup.images.reduce((n, x) => n + x.pages, 0) } },
+      },
+    ]);
+    invoicesOut.push({ invoiceId: inv!.id, clientId, clientName: client.name, number, kind, originalNumber: original?.number ?? null, totalCents: p.totalCents, storageKey: pdfKey, sha256: pdfSha });
   }
 
   // The paid entries are locked: they can never be paid again. The status they had is kept, so a

@@ -32,6 +32,8 @@ export interface RawEntry {
   break: FieldReading<number> | null;
   total: FieldReading<number> | null;
   externalId: string | null;
+  /** Ids a VMS gave these hours (slice g): the time sheets they came from and the worker's id there. */
+  vmsRefs?: { timeSheetIds: string[]; workerId: string };
   /** Problems already known while reading (unreadable value, duplicate day, totals that don't add up). */
   checks: string[];
 }

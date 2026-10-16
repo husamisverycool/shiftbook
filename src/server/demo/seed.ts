@@ -96,6 +96,10 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
       poNumber: c.billing.poNumber,
       vmsName: c.billing.vmsName,
       paymentTermsDays: c.billing.paymentTermsDays,
+      invoiceTemplate: c.invoices.template,
+      backupDetail: c.invoices.backupDetail,
+      backupImages: c.invoices.backupImages,
+      vmsFormat: c.invoices.vmsFormat,
       effectiveFrom: SINCE,
     });
   }

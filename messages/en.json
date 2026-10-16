@@ -42,7 +42,23 @@
     },
     "notBillable": "not billable",
     "footer": "Hours are from the approved timesheets for the service period. Amounts are computed from whole minutes and rounded once per line.",
-    "weekOf": "week of {date}"
+    "weekOf": "week of {date}",
+    "poLine": "PO {po}",
+    "noPo": "no PO",
+    "poHeader": "PO number {po}",
+    "workerSubtotal": "Subtotal",
+    "detailTitle": "Hours detail",
+    "detailTitleCorrected": "Hours detail, as corrected",
+    "detailWeek": "{worker} · week of {date}",
+    "detailDate": "Date",
+    "detailIn": "In",
+    "detailOut": "Out",
+    "detailBreak": "Break",
+    "weekTotal": "Week total",
+    "nextDay": "{time} (next day)",
+    "approvedBy": "Approved by {name} ({email}) on {date} at {time}",
+    "proposedBy": "Times proposed by {name} ({email}) on {date} at {time}, accepted by {agency}",
+    "reviewedBy": "Reviewed by {agency}"
   },
   "approvalEmail": {
     "subject": {
@@ -393,6 +409,8 @@
         "documents_pending": "Timesheets still being read",
         "document_failed": "Timesheets that could not be read",
         "invoice_problem": "An invoice cannot be created",
+        "po_missing": "Hours without the PO the client requires",
+        "vms_refused": "Hours the client's VMS upload cannot carry",
         "premium_not_applicable": "A confirmed premium that does not apply here",
         "bonus_kind_check": "A California bonus to check",
         "approaching_equal_pay_hours": "Nearing 720 hours at one Illinois client",
