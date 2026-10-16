@@ -102,4 +102,36 @@ for (const locale of ["en", "es"] as const) {
     expect(csv[1]).toMatch(/^Patel,Anita,.*,24\.00,0\.00,0\.00$/);
     expect(errors).toEqual([]);
   });
+
+  test(`a rate card below the minimum wage: the engine's warning and line in the reader's language (${locale})`, async ({ page }) => {
+    const m = MESSAGES[locale];
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    // The machine operator rate drops to $14.50 from Monday October 5, below Illinois's $15.00.
+    await page.goto(`/${locale}/job-orders/${demoUuid("job:il-operator")}`);
+    await page.getByRole("tab", { name: m.jobOrder.tabs.rates }).click();
+    await page.getByTestId("new-version").click();
+    const rate = page.getByRole("dialog");
+    await rate.getByLabel(m.rates.effectiveFrom).fill("2026-10-05");
+    await rate.getByLabel(m.rates.payPerHour).fill("14.50");
+    await rate.getByLabel(m.rates.markup, { exact: true }).check();
+    await rate.getByLabel(m.rates.markupPercent).fill("45");
+    // The markup's working, said the reader's way (decision 0030).
+    await expect(rate.getByTestId("markup-preview")).toContainText(locale === "en" ? "2102.5¢, rounded half up to $21.03" : "2102.5¢, redondeado hacia arriba en la mitad a $21.03");
+    await rate.getByRole("button", { name: m.rates.addVersion }).click();
+    await expect(rate).toBeHidden();
+
+    // Anita: 8 h on Monday at the new rate.
+    await uploadClock(page, locale, "prairie-monday.csv", [`10413,"Patel, Anita",Molding,10/05/2026,7:00 AM,3:00 PM,0,8.00`]);
+    // Exceptions: the engine's warning in the reader's language, the day the reader's way (decision 0030).
+    const warning = page.getByTestId("warning").filter({ hasText: m.convert.totals.blockers.below_minimum_wage });
+    await expect(warning).toContainText(
+      locale === "en" ? "Anita Patel on October 5, 2026: pay rate $14.50/h is below the minimum wage of $15.00/h" : "Anita Patel el 5 de octubre de 2026: la tarifa de pago de $14.50/h está por debajo del salario mínimo de $15.00/h",
+    );
+    await expect(warning).toContainText(locale === "en" ? "A top-up line pays the difference; fix the rate card." : "Una línea de complemento paga la diferencia; corrija la tarjeta de tarifas.");
+    // (The Gusto hours file cannot carry the top-up, so the run stops there until the rate card is fixed.)
+    await expect(page.getByTestId("blocker").filter({ hasText: m.convert.totals.blockers.export_refused })).toContainText("Anita Patel");
+    expect(errors).toEqual([]);
+  });
 }

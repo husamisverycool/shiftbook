@@ -10,6 +10,7 @@
  * apart and left out of the totals (Patriot's Workers' Comp Wages report). Pure.
  */
 import { formatCents, formatMoney, lowestTermsBig, roundHalfUpBig } from "@shiftbook/rules";
+import { explained, nest, pluses, say, semicolons, type Said, type SaidValue } from "../said";
 
 export interface PacketLine {
   workerId: string;
@@ -38,6 +39,8 @@ export interface PacketRow extends PacketFigures {
   workerId: string;
   workerName: string;
   explain: string;
+  /** The working as message keys for the reader's language (decision 0030). */
+  said: Said;
 }
 
 export interface PacketClass extends PacketFigures {
@@ -112,21 +115,28 @@ export function packet(lines: PacketLine[], order: PacketOrder) {
     const dtPremiumCents = roundHalfUpBig(dtExact.num, dtExact.den);
     const otherCents = [...a.other.values()].reduce((s, v) => s + v, 0);
     const straightCents = a.total - otherCents - otPremiumCents - dtPremiumCents;
-    const parts: string[] = [];
-    if (a.reg !== 0) parts.push(`Regular ${formatCents(a.reg)}`);
-    const premiumText = (label: string, b: { amount: number; m: { num: number; den: number } }) => {
+    // The row's working as message keys (decision 0030): its parts, then the sum, joined with "; ".
+    const parts: SaidValue[] = [];
+    if (a.reg !== 0) parts.push(nest(say("packetRegular", { amount: formatCents(a.reg) })));
+    const premiumText = (dt: boolean, b: { amount: number; m: { num: number; den: number } }) => {
       const share = `${b.m.num - b.m.den}/${b.m.num}`;
       const premium = premiumOf(b);
       const exact = money(premium);
       const rounded = formatCents(roundHalfUpBig(premium.num, premium.den));
-      return `${label} ${formatCents(b.amount)} at ${b.m.num}/${b.m.den}, its premium (${share}) ${exact}${exact === rounded ? "" : ` → ${rounded}`}`;
+      const values = { amount: formatCents(b.amount), multiplier: `${b.m.num}/${b.m.den}`, share, premium: rounded };
+      return nest(exact === rounded ? say(dt ? "packetDoubleTime" : "packetOvertime", values) : say(dt ? "packetDoubleTimeRounded" : "packetOvertimeRounded", { ...values, exact }));
     };
-    for (const b of a.ot.values()) parts.push(premiumText("overtime", b));
-    for (const b of a.dt.values()) parts.push(premiumText("double time", b));
-    if (a.unknown !== 0) parts.push(`overtime ${formatCents(a.unknown)} with no overtime multiplier on file: counted as straight time`);
-    if (a.bonusOt !== 0) parts.push(`overtime premium on bonuses ${formatCents(a.bonusOt)}`);
-    if (otherCents !== 0) parts.push(`other pay ${formatCents(otherCents)} (${[...a.other.keys()].sort().join(", ")})`);
-    const sumText = [`straight time ${formatCents(straightCents)}`, otPremiumCents !== 0 ? `overtime premium ${formatCents(otPremiumCents)}` : null, dtPremiumCents !== 0 ? `double-time premium ${formatCents(dtPremiumCents)}` : null, otherCents !== 0 ? `other pay ${formatCents(otherCents)}` : null].filter(Boolean).join(" + ");
+    for (const b of a.ot.values()) parts.push(premiumText(false, b));
+    for (const b of a.dt.values()) parts.push(premiumText(true, b));
+    if (a.unknown !== 0) parts.push(nest(say("packetUnknown", { amount: formatCents(a.unknown) })));
+    if (a.bonusOt !== 0) parts.push(nest(say("packetBonusOt", { amount: formatCents(a.bonusOt) })));
+    if (otherCents !== 0) parts.push(nest(say("packetOther", { amount: formatCents(otherCents), types: [...a.other.keys()].sort().join(", ") })));
+    const summed = pluses([
+      nest(say("packetStraight", { amount: formatCents(straightCents) })),
+      ...(otPremiumCents !== 0 ? [nest(say("packetOtPremium", { amount: formatCents(otPremiumCents) }))] : []),
+      ...(dtPremiumCents !== 0 ? [nest(say("packetDtPremium", { amount: formatCents(dtPremiumCents) }))] : []),
+      ...(otherCents !== 0 ? [nest(say("packetOtherPay", { amount: formatCents(otherCents) }))] : []),
+    ]);
     rows.push({
       state: a.state,
       classCode: a.classCode,
@@ -138,7 +148,7 @@ export function packet(lines: PacketLine[], order: PacketOrder) {
       dtPremiumCents,
       otherCents,
       totalCents: a.total,
-      explain: `${[...parts, `${sumText} = ${formatCents(a.total)}, each premium rounded half up once`].join("; ")}.`,
+      ...explained([say("packetExplain", { parts: semicolons([...parts, nest(say("packetSum", { sum: summed, total: formatCents(a.total) }))]) })]),
     });
   }
   const first = (r: { state: string; classCode: string }) => (order === "state" ? [r.state, r.classCode] : [r.classCode, r.state]);

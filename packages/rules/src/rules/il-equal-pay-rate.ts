@@ -23,6 +23,7 @@
  */
 import { isIsoDate } from "../dates";
 import { formatCents } from "../format";
+import { english, nested, part, type EngineKey, type SayPart } from "../say";
 import type { IsoDate, Shift } from "../types";
 
 export type EqualPayMethod = "comparator" | "closest_seniority" | "survey_median" | "survey_75th";
@@ -43,25 +44,32 @@ export interface EqualPayRate {
 /** Highest rate a person may enter, the rate and the benefits together: $100,000 an hour, as for rate cards. */
 const MAX_CENTS = 10_000_000;
 
-const METHOD_TEXT: Record<EqualPayMethod, string> = {
-  comparator: "the comparable direct hire's rate",
-  closest_seniority: "the rate of the direct hire with the closest seniority",
-  survey_median: "the area's median wage for the job (BLS OEWS)",
-  survey_75th: "the area's 75th-percentile wage for the job (BLS OEWS)",
+/** How the client's figures were set, as message keys (decision 0030). */
+const METHOD_KEY: Record<EqualPayMethod, EngineKey> = {
+  comparator: "methodComparator",
+  closest_seniority: "methodClosestSeniority",
+  survey_median: "methodSurveyMedian",
+  survey_75th: "methodSurvey75th",
 };
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
+/** What is wrong with a row, as message keys, or null. */
+export function equalPayRateProblemSay(r: EqualPayRate): SayPart | null {
+  if (typeof r.effectiveFrom !== "string" || !isIsoDate(r.effectiveFrom)) return part("problemEqualPayDate");
+  if (r.kind !== "rate" && r.kind !== "asked") return part("problemEqualPayKind");
+  if (r.kind === "asked") return r.rateCents === null && r.benefitsCents === null && r.method === null ? null : part("problemEqualPayRequestFigures");
+  if (!Number.isSafeInteger(r.rateCents) || r.rateCents! <= 0) return part("problemEqualPayRate");
+  if (!Number.isSafeInteger(r.benefitsCents) || r.benefitsCents! < 0) return part("problemEqualPayBenefits");
+  if (r.rateCents! + r.benefitsCents! > MAX_CENTS) return part("problemEqualPayMax");
+  if (r.method === null || !Object.hasOwn(METHOD_KEY, r.method)) return part("problemEqualPayMethod");
+  return null;
+}
+
 /** What is wrong with a row, or null. */
 export function equalPayRateProblem(r: EqualPayRate): string | null {
-  if (typeof r.effectiveFrom !== "string" || !isIsoDate(r.effectiveFrom)) return "the date is not a real calendar date";
-  if (r.kind !== "rate" && r.kind !== "asked") return "kind must be rate or asked";
-  if (r.kind === "asked") return r.rateCents === null && r.benefitsCents === null && r.method === null ? null : "a request has no figures";
-  if (!Number.isSafeInteger(r.rateCents) || r.rateCents! <= 0) return "the rate must be a positive number of cents";
-  if (!Number.isSafeInteger(r.benefitsCents) || r.benefitsCents! < 0) return "the benefits' cash value must be zero or more cents";
-  if (r.rateCents! + r.benefitsCents! > MAX_CENTS) return "the rate and the benefits together must be at most $100,000 an hour";
-  if (r.method === null || !(r.method in METHOD_TEXT)) return "the method must be named";
-  return null;
+  const problem = equalPayRateProblemSay(r);
+  return problem && english([problem]);
 }
 
 /** Two rows for the same worker, client and date: which to use would be a guess. */
@@ -103,7 +111,8 @@ export function applyEqualPayRates(shifts: Shift[], rates: EqualPayRate[], cover
     const benefits = r.benefitsCents ?? 0;
     const floor = r.rateCents + benefits;
     if (floor <= s.payRateCents) return s;
-    const sum = benefits > 0 ? `${formatCents(r.rateCents)} + the benefits' hourly cash value ${formatCents(benefits)} = ${formatCents(floor)}` : formatCents(floor);
-    return { ...s, payRateCents: floor, payRateExplain: `Illinois equal pay from ${r.effectiveFrom} (820 ILCS 175/42(a)${benefits > 0 ? ", (b)" : ""}): ${METHOD_TEXT[r.method]} ${sum}, above the rate card's ${formatCents(s.payRateCents)}.` };
+    const sum = benefits > 0 ? nested(part("equalPayRateWithBenefits", { rate: formatCents(r.rateCents), benefits: formatCents(benefits), total: formatCents(floor) })) : formatCents(floor);
+    const say = [part("equalPayRateApplied", { date: { date: r.effectiveFrom }, citation: `820 ILCS 175/42(a)${benefits > 0 ? ", (b)" : ""}`, method: nested(part(METHOD_KEY[r.method])), amount: sum, card: formatCents(s.payRateCents) })];
+    return { ...s, payRateCents: floor, payRateExplain: english(say), payRateSay: say };
   });
 }

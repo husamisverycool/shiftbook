@@ -21,6 +21,8 @@ describe("overtime not billed (decision I7)", () => {
         premiumNotBilledCents: 7950,
         reasons: ["bill_overtime_straight"],
         explain: "Overtime paid this week: 6h 00m for $238.50; its premium (the part above straight time) $79.50. 6h 00m billed at straight time: premium not billed $79.50 × 360/360 min = $79.50.",
+        // The working as message keys for the reader's language (decision 0030); the said tests check it says the explain.
+        said: expect.any(Array),
       },
     ]);
     expect(overtimeRows([pay("OT", 360, 23_850)], [bill("plm", "OT", 360, "bill_overtime_multiplier")])[0]).toMatchObject({ multiplierMinutes: 360, premiumNotBilledCents: 0, reasons: [] });

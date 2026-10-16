@@ -15,6 +15,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { settlement, type DiffLine } from "../run/differences";
+import { dated, message, say, type Said } from "../said";
 
 const INT4_MAX = 2_147_483_647;
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -104,6 +105,8 @@ export interface InvoiceProblem {
   /** The invoice number the problem is about, when it is one number. */
   number?: string;
   message: string;
+  /** The message as keys for the reader's language (decision 0030). */
+  said?: Said;
 }
 
 interface Place {
@@ -158,7 +161,7 @@ async function poMissing(tx: Tx, client: typeof s.clients.$inferSelect, lines: {
     clientId: client.id,
     clientName: client.name,
     workerIds: ids,
-    message: `${client.name} requires a PO on every invoice, but the hours of ${names.join(", ")} have none (no PO on their assignment, and none for the client).`,
+    ...message([say("poMissing", { client: client.name, names: names.join(", ") })]),
   };
 }
 
@@ -173,7 +176,8 @@ export async function planInvoices(tx: Tx, period: { startsOn: string; endsOn: s
     const client = clients.find((c) => c.id === clientId)!;
     const profile = inEffect(clientId);
     if (profile.length !== 1) {
-      problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect on ${period.endsOn}, the invoice date basis, so its PO and payment terms are unknown.` });
+      const on = { client: client.name, date: dated(period.endsOn) };
+      problems.push({ code: "invoice_problem", clientId, clientName: client.name, ...message([profile.length === 0 ? say("invoiceNoProfile", on) : say("invoiceSeveralProfiles", { ...on, count: String(profile.length) })]) });
       continue;
     }
     const p = profile[0]!;
@@ -200,7 +204,7 @@ export async function planInvoices(tx: Tx, period: { startsOn: string; endsOn: s
       const totalCents = part.reduce((sum, m) => sum + m.line.amountCents, 0);
       const number = ordered.length === 1 ? base : `${base}-${i + 1}`;
       if (totalCents < 0 || totalCents > INT4_MAX) {
-        problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: the invoice total is too large to store; check the bill rates.` });
+        problems.push({ code: "invoice_problem", clientId, clientName: client.name, ...message([say("invoiceTooLarge", { client: client.name })]) });
         return;
       }
       plans.push({
@@ -227,8 +231,10 @@ async function numbersTaken(tx: Tx, plans: InvoicePlan[]): Promise<InvoiceProble
   const taken = numbers.length > 0 ? await tx.select({ number: s.invoices.number }).from(s.invoices).where(inArray(s.invoices.number, numbers)) : [];
   const problems: InvoiceProblem[] = [];
   for (const p of plans) {
-    if (taken.some((t) => t.number === p.number)) problems.push({ code: "invoice_problem", clientId: p.clientId, clientName: p.client.name, number: p.number, message: `${p.client.name}: invoice number ${p.number} was already issued.` });
-    else if (plans.filter((x) => x.number === p.number).length > 1) problems.push({ code: "invoice_problem", clientId: p.clientId, clientName: p.client.name, number: p.number, message: `${p.client.name}: another client billed in this run has the same client code (${p.client.code}), so two invoices would be numbered ${p.number}.` });
+    if (taken.some((t) => t.number === p.number)) problems.push({ code: "invoice_problem", clientId: p.clientId, clientName: p.client.name, number: p.number, ...message([say("invoiceNumberTaken", { client: p.client.name, number: p.number })]) });
+    else if (plans.filter((x) => x.number === p.number).length > 1) {
+      problems.push({ code: "invoice_problem", clientId: p.clientId, clientName: p.client.name, number: p.number, ...message([say("invoiceNumberTwice", { client: p.client.name, code: p.client.code, number: p.number })]) });
+    }
   }
   return problems;
 }
@@ -283,7 +289,8 @@ export async function planCorrectionInvoices(
     const client = clients.find((c) => c.id === clientId)!;
     const profile = inEffect(clientId);
     if (profile.length !== 1) {
-      problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect on ${period.endsOn}, so the correction's payment terms are unknown.` });
+      const on = { client: client.name, date: dated(period.endsOn) };
+      problems.push({ code: "invoice_problem", clientId, clientName: client.name, ...message([profile.length === 0 ? say("correctionNoProfile", on) : say("correctionSeveralProfiles", { ...on, count: String(profile.length) })]) });
       continue;
     }
     const p = profile[0]!;
@@ -325,7 +332,7 @@ export async function planCorrectionInvoices(
         continue;
       }
       if (Math.abs(net.netCents) > INT4_MAX) {
-        problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: the correction's total is too large to store; check the bill rates.` });
+        problems.push({ code: "invoice_problem", clientId, clientName: client.name, ...message([say("correctionTooLarge", { client: client.name })]) });
         continue;
       }
       // More billed must carry a PO when the client requires one (decision G5), as a regular run would.
@@ -340,7 +347,7 @@ export async function planCorrectionInvoices(
       const common = { clientId, client, profile: p, totalCents: net.netCents, splitKey: g.key, ...po, worksite: p.separateBy.includes("worksite") ? (g.lines[0]!.worksite ?? null) : null, lines: g.lines.map((x) => ({ ...x.line, po: x.po, worksite: x.worksite })) };
       if (!g.original) {
         if (net.netCents < 0) {
-          problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: ${formatCents(-net.netCents)} less would be credited on hours this period never invoiced; check the bill rates.` });
+          problems.push({ code: "invoice_problem", clientId, clientName: client.name, ...message([say("creditNeverInvoiced", { client: client.name, amount: formatCents(-net.netCents) })]) });
           continue;
         }
         fresh.push({ g, common });

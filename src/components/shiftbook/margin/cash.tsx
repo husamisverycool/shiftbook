@@ -10,11 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "@/i18n/navigation";
 import type { CashView } from "@/server/margin/queries";
+import { useEngineSay } from "../engine-say";
 import { longDate, money } from "../format";
 
 export function MarginCash({ view }: { view: CashView }) {
   const t = useTranslations("margin.cash");
   const tm = useTranslations("margin");
+  // Days to pay's working in the reader's language (decision 0030).
+  const say = useEngineSay();
   const locale = useLocale();
   const [open, setOpen] = useState<string | null>(null);
   const n = view.next;
@@ -95,7 +98,7 @@ export function MarginCash({ view }: { view: CashView }) {
                     <TableCell className="text-right tabular-nums">{money(c.paidCents, locale)}</TableCell>
                     <TableCell className="text-right tabular-nums">{money(c.collectedCents, locale)}</TableCell>
                     <TableCell className="text-right font-medium tabular-nums">{money(c.floatingCents, locale)}</TableCell>
-                    <TableCell className="text-right tabular-nums" title={c.daysToPay?.explain}>
+                    <TableCell className="text-right tabular-nums" title={c.daysToPay ? say(c.daysToPay) : undefined}>
                       {c.daysToPay?.averageDays == null ? "—" : t("days", { days: c.daysToPay.averageDays, count: c.daysToPay.invoices })}
                     </TableCell>
                   </TableRow>

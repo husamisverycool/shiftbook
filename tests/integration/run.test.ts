@@ -1,4 +1,4 @@
-import { RULES_VERSION } from "@shiftbook/rules";
+import { english, RULES_VERSION } from "@shiftbook/rules";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +8,8 @@ import { agencies, auditEvents, billLines, payLines, payRuns, sourceDocuments, t
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
-import { computeRun, setSkipped } from "../../src/server/run/service";
+import { computeRun, setSkipped, type RunIssue } from "../../src/server/run/service";
+import { saidEnglish } from "../../src/server/said";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { inLineOrder, openAppDb, openOwnerDb } from "./helpers";
@@ -71,6 +72,11 @@ describe("computing a pay run from the period's time entries", () => {
     const pedro = await lines(run.runId, "pedro-alcantara");
     expect(brief(pedro.pay)).toEqual([["REG", 2400, 70_000], ["OT", 120, 5250]]);
     expect(pedro.pay.every((l) => l.explain.length > 0 && l.timeEntryIds.length > 0)).toBe(true);
+    // Each line keeps its explanation as message keys beside the English (decision 0030), saying exactly it.
+    const stored = await inAgency(async (tx) => [...(await tx.select().from(payLines).where(eq(payLines.payRunId, run.runId))), ...(await tx.select().from(billLines).where(eq(billLines.payRunId, run.runId)))]);
+    expect(stored.length).toBeGreaterThan(0);
+    for (const l of stored) expect(english(l.say!)).toBe(l.explain);
+    expect(daniel.pay[1]!.say![0]).toMatchObject({ key: "arithmeticRounded", values: { exact: "1688.125", amount: "$16.88" } });
   });
 
   it("keeps one working run per period: computing again replaces its lines", async () => {
@@ -140,5 +146,12 @@ describe("computing a pay run from the period's time entries", () => {
     );
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers.map((b) => b.code)).toContain("unmatched_entry");
+    // Each stored blocker carries its message as keys (decision 0030) — the engine's `say` or the run's
+    // own `said` — saying exactly its English.
+    const [stored] = await inAgency((tx) => tx.select().from(payRuns).where(eq(payRuns.id, run.runId)));
+    const issues = [...(stored!.blockers as RunIssue[]), ...(stored!.warnings as RunIssue[])];
+    expect(issues.length).toBeGreaterThan(0);
+    for (const i of issues) expect(i.say ? english(i.say) : saidEnglish(i.said!), i.code).toBe(i.message);
+    expect(issues.find((i) => i.code === "unmatched_entry")!.said).toEqual([{ key: "unmatchedOn", values: { name: "Unknown Person", date: { date: "2026-10-08" } } }]);
   });
 });

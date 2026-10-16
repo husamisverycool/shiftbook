@@ -21,6 +21,7 @@ import * as s from "../db/schema";
 import type { Actor } from "../session";
 import { billDifferences, planCorrectionInvoices, type CorrectionDocuments } from "../files/invoice-plan";
 import { differences, settlement, type DiffLine, type FileLine, type LineForDiff, type WeekLine } from "./differences";
+import { nest, say, saidEnglish, type SaidKey, type SaidPart } from "../said";
 import { lockPeriod, openPeriod, periodState } from "./period-lock";
 import { computeRun } from "./service";
 import { can } from "../permissions";
@@ -199,6 +200,11 @@ export function describeMoves(lines: FileLine[]): string {
   return lines.map((l) => `${en.invoice.earning[l.type]} at ${formatRate(l.rate)} ${l.minutes < 0 ? "−" : "+"}${formatDuration(Math.abs(l.minutes))}`).join("; ");
 }
 
+/** The same moves as message keys (decision 0030), one part a line; describeMoves joins their English with "; ". */
+export function movesSaid(lines: FileLine[]): SaidPart[] {
+  return lines.map((l) => say("moveLine", { kind: nest(say(`earning${l.type}` as SaidKey)), rate: formatRate(l.rate), sign: l.minutes < 0 ? "−" : "+", duration: { duration: Math.abs(l.minutes) } }));
+}
+
 /** The plan for a stored correction run: its lines against the latest paid version before it. */
 export async function correctionPlanFor(tx: Tx, run: { id: string; payPeriodId: string; version: number }): Promise<CorrectionPlan> {
   const base = await paidBase(tx, run.payPeriodId, run.version);
@@ -342,17 +348,18 @@ export async function removeCorrectionDecision(tx: Tx, actor: Actor, payPeriodId
 
 /** Plain words for a decision, for the files and notes. */
 export function decisionText(d: { decision: s.CorrectionDecisionKind; differenceCents: number }): string {
+  return saidEnglish([decisionSaid(d)]);
+}
+
+/** A recorded decision as message keys (decision 0030). */
+export function decisionSaid(d: { decision: s.CorrectionDecisionKind; differenceCents: number }): SaidPart {
   const amount = formatCents(Math.abs(d.differenceCents));
-  switch (d.decision) {
-    case "paid_by_hand":
-      return `${amount} more pay, paid by hand`;
-    case "offset_earlier_overpayment":
-      return `${amount} more pay, covered by pay the worker kept from an earlier correction of this period`;
-    case "repaid_outside_payroll":
-      return `${amount} less pay, repaid outside payroll`;
-    case "consent_to_deduct":
-      return `${amount} less pay, to be recovered under the worker's state rules (written consent or repayment schedule on file)`;
-    case "written_off":
-      return `${amount} less pay, written off`;
-  }
+  const key: Record<s.CorrectionDecisionKind, SaidKey> = {
+    paid_by_hand: "decisionPaidByHand",
+    offset_earlier_overpayment: "decisionOffset",
+    repaid_outside_payroll: "decisionRepaid",
+    consent_to_deduct: "decisionConsent",
+    written_off: "decisionWrittenOff",
+  };
+  return say(key[d.decision], { amount });
 }

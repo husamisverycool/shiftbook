@@ -5,7 +5,7 @@
  * week's first day when the page is drawn (I2, I3), so a rate corrected back in time changes the
  * weeks it covers.
  */
-import { addDays, isEffective, isIsoDate, roundHalfUp, workweekStart, type Weekday } from "@shiftbook/rules";
+import { addDays, isEffective, isIsoDate, roundHalfUp, workweekStart, type Say, type Weekday } from "@shiftbook/rules";
 import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
@@ -165,12 +165,12 @@ export async function marginLines(tx: Tx, from: string, to: string): Promise<Mar
     l.burdenCents += b.cents;
     if (TIME.has(p.type)) l.minutesPaid += p.minutes;
     if (b.incomplete) l.incomplete += 1;
-    l.details.push({ kind: "pay", type: p.type, minutes: p.minutes, amountCents: p.amountCents, burdenCents: b.cents, explain: p.explain, burdenExplain: b.explain });
+    l.details.push({ kind: "pay", type: p.type, minutes: p.minutes, amountCents: p.amountCents, burdenCents: b.cents, explain: p.explain, say: p.say, burdenExplain: b.explain, burdenSaid: b.said });
   }
   for (const b of bills) {
     const l = lineFor(b.assignmentId, b.workerId, b.workweekStart, b.clientId);
     l.billedCents += b.amountCents;
-    l.details.push({ kind: "bill", type: b.type, minutes: b.minutes, amountCents: b.amountCents, burdenCents: 0, explain: b.explain, burdenExplain: null } satisfies MarginDetail);
+    l.details.push({ kind: "bill", type: b.type, minutes: b.minutes, amountCents: b.amountCents, burdenCents: 0, explain: b.explain, say: b.say, burdenExplain: null, burdenSaid: null } satisfies MarginDetail);
   }
   return [...lines.values()];
 }
@@ -196,6 +196,8 @@ export interface OvertimeLine {
   minutes: number;
   amountCents: number;
   explain: string;
+  /** The run's explanation as message keys (decision 0030); null on lines written before. */
+  say: Say | null;
 }
 
 /** Overtime paid but not billed at the multiplier, with names and the run's lines (I7). */
@@ -219,8 +221,8 @@ export async function overtimeView(tx: Tx, q: { from: string; to: string }) {
     clientName: dir.clientName(r.clientId),
     workerName: dir.worker(r.workerId).name,
     lines: [
-      ...pays.filter((p) => p.workerId === r.workerId && p.workweekStart === r.week).map((p): OvertimeLine => ({ kind: "pay", type: p.type as "OT" | "DT", minutes: p.minutes, amountCents: p.amountCents, explain: p.explain })),
-      ...bills.filter((b) => b.workerId === r.workerId && b.workweekStart === r.week && b.clientId === r.clientId).map((b): OvertimeLine => ({ kind: "bill", type: b.type as "OT" | "DT", minutes: b.minutes, amountCents: b.amountCents, explain: b.explain })),
+      ...pays.filter((p) => p.workerId === r.workerId && p.workweekStart === r.week).map((p): OvertimeLine => ({ kind: "pay", type: p.type as "OT" | "DT", minutes: p.minutes, amountCents: p.amountCents, explain: p.explain, say: p.say })),
+      ...bills.filter((b) => b.workerId === r.workerId && b.workweekStart === r.week && b.clientId === r.clientId).map((b): OvertimeLine => ({ kind: "bill", type: b.type as "OT" | "DT", minutes: b.minutes, amountCents: b.amountCents, explain: b.explain, say: b.say })),
     ],
   }));
   return {

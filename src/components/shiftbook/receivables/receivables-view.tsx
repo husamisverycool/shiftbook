@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ReceivablesView as View } from "@/server/receivables/queries";
 import { EmptyState } from "../empty-state";
+import { useEngineSay } from "../engine-say";
 import { longDate, money } from "../format";
 import { KeyFigure, KeyFigures } from "../key-figures";
 import { Page, PageHeader, PageTabs, TableFrame } from "../page";
@@ -23,6 +24,8 @@ type Bucket = (typeof BUCKETS)[number];
 
 export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging" | "short"; today: string }) {
   const t = useTranslations("receivables");
+  // Days to pay's working in the reader's language (decision 0030).
+  const say = useEngineSay();
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -135,7 +138,7 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                             </TableCell>
                           ))}
                           <TableCell className="text-right font-semibold">{amount(c.clientId, "total", c.totalCents)}</TableCell>
-                          <TableCell className="text-right tabular-nums" title={c.daysToPay.explain}>
+                          <TableCell className="text-right tabular-nums" title={say(c.daysToPay)}>
                             {c.daysToPay.averageDays === null ? "—" : t("days", { days: c.daysToPay.averageDays, count: c.daysToPay.invoices })}
                           </TableCell>
                         </TableRow>

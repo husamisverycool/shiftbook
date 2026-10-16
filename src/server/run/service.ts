@@ -16,7 +16,7 @@ import { equalPayExplain, sayInEnglish } from "../compliance/explain-keys";
 import type { Explain } from "../../lib/explain";
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
-import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Say, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, or } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { fieldglassUpload } from "../../exports/invoice-files";
@@ -35,10 +35,12 @@ import { billFromMarkup } from "../catalog/versions";
 import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
 import { payrollFixture, payrollSettings } from "../files/payroll-fixture";
-import { FILE_OF, SYSTEM_OF, WORKER_ID_NAME } from "../../exports/targets";
+import { SYSTEM_OF } from "../../exports/targets";
 import type { Actor } from "../session";
-import { billForDiff, decisionText, describeMoves, fileWorkers, hasRealDifferences, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
+import { billForDiff, decisionSaid, movesSaid, fileWorkers, hasRealDifferences, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
 import type { RunIssueCode } from "./issue-codes";
+import { dated, message as said, nest, say, semicolons, type Said, type SaidKey } from "../said";
+import type { PayrollSystem } from "../../exports/targets";
 import { lockCompliance, openPeriod, PeriodLockedError } from "./period-lock";
 
 export { PeriodLockedError } from "./period-lock";
@@ -56,6 +58,8 @@ export interface RunIssue extends Omit<Issue, "code"> {
   heldCents?: number;
   /** An invoice problem's client (slice g): the fix opens the client's invoice settings. */
   clientName?: string;
+  /** The run's own message as keys for the reader's language (decision 0030); the engine's issues carry `say`. */
+  said?: Said;
 }
 
 export interface RunResult {
@@ -82,6 +86,17 @@ const equalPayRows = (rows: (typeof s.obligations.$inferSelect)[]): EqualPayRow[
   rows.filter((o): o is EqualPayRow => (EQUAL_PAY_KINDS as readonly string[]).includes(o.kind) && o.workerId !== null && o.clientId !== null && o.crossedOn !== null);
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+/** JSON.stringify's replacer leaving out every `say` and `said` (decision 0030). */
+const withoutSay = (key: string, value: unknown) => (key === "say" || key === "said" ? undefined : value);
+/** "<name> has no <the system's id>, so <its file> could not match them." for each payroll system. */
+const NO_PAYROLL_ID: Record<PayrollSystem, SaidKey> = {
+  gusto: "noPayrollIdGusto",
+  qbd: "noPayrollIdQbd",
+  qbo: "noPayrollIdQbo",
+  adp_wfn: "noPayrollIdAdpWfn",
+  adp_run: "noPayrollIdAdpRun",
+  spreadsheet: "noPayrollIdSpreadsheet",
+};
 const effective = (date: string, from: string, to: string | null) => from <= date && (to === null || date <= to);
 /**
  * Entries that may be paid: read cleanly (high confidence), reviewed or client-approved. Locked
@@ -212,11 +227,11 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
   };
 }
 
-/** A bill rate the rate card worked out from a markup carries its working onto the bill line. */
-function billRateExplain(card: typeof s.rateCards.$inferSelect): { billRateExplain?: string } {
+/** A bill rate the rate card worked out from a markup carries its working onto the bill line (with its keys: decision 0030). */
+function billRateExplain(card: typeof s.rateCards.$inferSelect): { billRateExplain?: string; billRateSay?: Say } {
   if (card.markupBp === null) return {};
   const worked = billFromMarkup(card.payRateCents, card.markupBp);
-  return worked.rateCents === card.billRateCents ? { billRateExplain: worked.explain } : {};
+  return worked.rateCents === card.billRateCents ? { billRateExplain: worked.explain, billRateSay: worked.say } : {};
 }
 
 export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Promise<RunResult> {
@@ -276,14 +291,15 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     a: (typeof assignmentRows)[number],
     date: string,
     base: Pick<Shift, "entryIds" | "workerId" | "workerName" | "startMinute" | "minutes"> & { reportedOnly?: true },
-  ): Shift | { code: RunIssueCode; message: string } => {
+  ): Shift | { code: RunIssueCode; message: string; said: Said } => {
     // A worker's own rates on this assignment apply on the dates they cover; the job order's otherwise.
     const covering = rateCards.filter((r) => r.jobOrderId === a.jobOrder.id && effective(date, r.effectiveFrom, r.effectiveTo));
     const own = covering.filter((r) => r.assignmentId === a.assignment.id);
     const cards = own.length > 0 ? own : covering.filter((r) => r.assignmentId === null);
-    if (cards.length !== 1) return { code: "missing_rate", message: `${base.workerName} on ${date}: ${cards.length === 0 ? "no rate card is" : `${cards.length} rate cards are`} in effect for ${a.jobOrder.position}.` };
+    const on = { name: String(base.workerName), date: dated(date) };
+    if (cards.length !== 1) return { code: "missing_rate", ...said([cards.length === 0 ? say("noRateCard", { ...on, position: a.jobOrder.position }) : say("severalRateCards", { ...on, count: String(cards.length), position: a.jobOrder.position })]) };
     const profile = profiles.filter((p) => p.clientId === a.jobOrder.clientId && effective(date, p.effectiveFrom, p.effectiveTo));
-    if (profile.length !== 1) return { code: "missing_billing_profile", message: `${base.workerName} on ${date}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect for the client.` };
+    if (profile.length !== 1) return { code: "missing_billing_profile", ...said([profile.length === 0 ? say("noBillingProfile", on) : say("severalBillingProfiles", { ...on, count: String(profile.length) })]) };
     const card = cards[0]!;
     return {
       ...base,
@@ -309,11 +325,11 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const blockers: RunIssue[] = [];
   for (const d of documents) {
     if (isStuck(d)) {
-      blockers.push({ code: "document_failed", message: `${d.filename}: reading stopped before it finished. Read it again, or archive it with a reason if its hours are elsewhere.` });
+      blockers.push({ code: "document_failed", ...said([say("documentStopped", { file: d.filename })]) });
     } else if (d.status === "received" || d.status === "reading") {
-      blockers.push({ code: "documents_pending", message: `${d.filename} is still being read; its hours are not in the totals yet.` });
+      blockers.push({ code: "documents_pending", ...said([say("documentPending", { file: d.filename })]) });
     } else if (d.status === "failed") {
-      blockers.push({ code: "document_failed", message: `${d.filename} could not be read${d.error ? ` (${d.error})` : ""}. Read it again, or archive it with a reason if its hours are elsewhere.` });
+      blockers.push({ code: "document_failed", ...said([d.error ? say("documentFailedWhy", { file: d.filename, error: d.error }) : say("documentFailed", { file: d.filename })]) });
     }
   }
   const disputedIds = entries.filter((e) => e.status === "disputed").map((e) => e.id);
@@ -326,44 +342,48 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   for (const e of ordered) {
     const worker = e.workerId ? workersById.get(e.workerId) : undefined;
     const name = worker ? `${worker.firstName} ${worker.lastName}` : e.workerNameRaw;
-    const issue = (code: RunIssueCode, message: string) => blockers.push({ code, workerId: worker?.id, workerName: name, date: e.workDate ?? undefined, entryIds: [e.id], message });
+    const issue = (code: RunIssueCode, message: Said) => blockers.push({ code, workerId: worker?.id, workerName: name, date: e.workDate ?? undefined, entryIds: [e.id], ...said(message) });
+    // "<name>" or "<name> on <date>", as the entry has a date.
+    const who = e.workDate ? nest(say("nameOnDate", { name, date: dated(e.workDate) })) : name;
     if (e.status === "disputed") {
       // A shift the client disputed is neither paid nor billed until the agency settles it (slice d).
-      issue("client_dispute_open", `${name}${e.workDate ? ` on ${e.workDate}` : ""}: the client disputed this shift${disputeReasons.has(e.id) ? ` ("${disputeReasons.get(e.id)}")` : ""}; settle it in Client approvals.`);
+      issue("client_dispute_open", [disputeReasons.has(e.id) ? say("disputedWhy", { who, reason: String(disputeReasons.get(e.id)) }) : say("disputed", { who })]);
       continue;
     }
     if (!PAYABLE.includes(e.status)) {
-      issue("entry_needs_review", `${name}${e.workDate ? ` on ${e.workDate}` : ""}: this entry still needs review (${e.reviewReasons.join(", ") || e.status}).`);
+      issue("entry_needs_review", [say("needsReview", { who, reasons: e.reviewReasons.join(", ") || e.status })]);
       continue;
     }
     const a = e.assignmentId ? assignmentsById.get(e.assignmentId) : undefined;
     if (!worker || !a || a.assignment.workerId !== worker.id) {
-      issue("unmatched_entry", `"${e.workerNameRaw}"${e.workDate ? ` on ${e.workDate}` : ""} is not matched to a worker and an assignment, so it cannot be paid or billed.`);
+      issue("unmatched_entry", [e.workDate ? say("unmatchedOn", { name: e.workerNameRaw, date: dated(e.workDate) }) : say("unmatched", { name: e.workerNameRaw })]);
       continue;
     }
     if (!e.workDate || e.minutes === null) {
-      issue("entry_incomplete", `${name}: the entry has no ${!e.workDate ? "date" : "worked minutes"}.`);
+      issue("entry_incomplete", [say(!e.workDate ? "noDate" : "noMinutes", { name })]);
       continue;
     }
+    const on = { name, date: dated(e.workDate) };
     if (!effective(e.workDate, period.startsOn, period.endsOn)) {
-      issue("outside_period", `${name} on ${e.workDate}: the date is outside the pay period (${period.startsOn} to ${period.endsOn}).`);
+      issue("outside_period", [say("outsidePeriod", { ...on, from: dated(period.startsOn), to: dated(period.endsOn) })]);
       continue;
     }
     if (a.assignment.status === "cancelled") {
-      issue("outside_assignment", `${name} on ${e.workDate}: the assignment was cancelled, so these hours cannot be paid on it.`);
+      issue("outside_assignment", [say("assignmentCancelled", on)]);
       continue;
     }
     if (!effective(e.workDate, a.assignment.startDate, a.assignment.endDate)) {
-      issue("outside_assignment", `${name} on ${e.workDate}: the date is outside the assignment (${a.assignment.startDate} to ${a.assignment.endDate ?? "open"}).`);
+      const from = dated(a.assignment.startDate);
+      issue("outside_assignment", [a.assignment.endDate === null ? say("outsideAssignmentOpen", { ...on, from }) : say("outsideAssignment", { ...on, from, to: dated(a.assignment.endDate) })]);
       continue;
     }
     if (e.outMinute !== null && e.outMinute > 1440) {
-      issue("crosses_midnight", `${name} on ${e.workDate}: the shift runs past midnight; split it at midnight so each day carries its own minutes.`);
+      issue("crosses_midnight", [say("crossesMidnight", on)]);
       continue;
     }
     const built = shiftOn(a, e.workDate, { entryIds: [e.id], workerId: worker.id, workerName: name, startMinute: e.inMinute, minutes: e.minutes });
     if ("code" in built) {
-      issue(built.code, built.message);
+      issue(built.code, built.said);
       continue;
     }
     paidWorkers.add(worker.id);
@@ -378,15 +398,15 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     const worker = workersById.get(c.workerId);
     const a = assignmentsById.get(c.assignmentId);
     const name = worker ? `${worker.firstName} ${worker.lastName}` : c.workerId;
-    const issue = (code: RunIssueCode, message: string) => blockers.push({ code, workerId: c.workerId, workerName: name, date: c.date, message });
+    const issue = (code: RunIssueCode, message: Said) => blockers.push({ code, workerId: c.workerId, workerName: name, date: c.date, ...said(message) });
     if (skippedIds.has(c.workerId)) continue;
     if (!worker || !a || a.assignment.workerId !== worker.id || a.assignment.status === "cancelled" || !effective(c.date, a.assignment.startDate, a.assignment.endDate)) {
-      issue("outside_assignment", `${name} on ${c.date}: a confirmed ${c.kind === "holiday_not_worked" ? "holiday not worked" : "short day"} is not on an assignment the worker has that day.`);
+      issue("outside_assignment", [say(c.kind === "holiday_not_worked" ? "holidayNotOnAssignment" : "shortDayNotOnAssignment", { name, date: dated(c.date) })]);
       continue;
     }
     const built = shiftOn(a, c.date, { entryIds: [], workerId: worker.id, workerName: name, startMinute: null, minutes: 0, reportedOnly: true });
     if ("code" in built) {
-      issue(built.code, built.message);
+      issue(built.code, built.said);
       continue;
     }
     paidWorkers.add(worker.id);
@@ -410,7 +430,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         workerName: first.workerName,
         date: first.date,
         entryIds: same.flatMap((sh) => sh.entryIds),
-        message: `${first.workerName} on ${first.date}: ${same.length} entries from different timesheets, and at least one has no clock times, so the same work may be counted twice. Reject one, or confirm both are real.`,
+        ...said([say("possibleDuplicate", { name: first.workerName, date: dated(first.date), count: String(same.length) })]),
       });
     }
   }
@@ -419,10 +439,10 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const ws = workweekStartsOn as Weekday;
   const nextStart = addDays(period.endsOn, 1);
   if (workweekStart(period.startsOn, ws) !== period.startsOn || workweekStart(nextStart, ws) !== nextStart) {
-    blockers.push({ code: "period_not_aligned", message: `The pay period ${period.startsOn} to ${period.endsOn} does not start and end on workweek boundaries, so weekly overtime could be split between two periods.` });
+    blockers.push({ code: "period_not_aligned", ...said([say("periodNotAligned", { from: dated(period.startsOn), to: dated(period.endsOn) })]) });
   }
   if (shifts.length === 0 && blockers.length === 0) {
-    blockers.push({ code: "no_entries", message: "There are no hours to pay in this period." });
+    blockers.push({ code: "no_entries", ...said([say("noEntries")]) });
   }
 
   // A client that requires approval: every shift of its that would be paid must be approved by it
@@ -440,13 +460,13 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       blockers.push({
         code: "client_approval_missing",
         entryIds: unique,
-        message: `${mustApprove.get(clientId)}: ${unique.length === 1 ? "1 shift is" : `${unique.length} shifts are`} not approved by the client yet.`,
+        ...said([unique.length === 1 ? say("notApprovedOne", { client: String(mustApprove.get(clientId)) }) : say("notApprovedMany", { client: String(mustApprove.get(clientId)), count: String(unique.length) })]),
       });
     }
   }
   // The payroll file goes to the system in the agency's payroll file settings (slice f, F1).
   const payroll = await payrollSettings(tx);
-  if (!payroll) blockers.push({ code: "no_payroll_target", message: "No payroll system is chosen yet, so there is no payroll file to make. Choose it in the payroll file settings." });
+  if (!payroll) blockers.push({ code: "no_payroll_target", ...said([say("noPayrollTarget")]) });
   // (A correction checks only the workers its file will carry: the file's dry run below names them.)
   const system = payroll ? SYSTEM_OF[payroll.target.format] : null;
   for (const id of run.kind === "correction" || !system ? [] : [...paidWorkers].sort(cmp)) {
@@ -456,7 +476,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         code: "missing_payroll_id",
         workerId: id,
         workerName: `${w.firstName} ${w.lastName}`,
-        message: `${w.firstName} ${w.lastName} has no ${WORKER_ID_NAME[system!]}, so ${FILE_OF[system!]} could not match them.`,
+        ...said([say(NO_PAYROLL_ID[system!], { name: `${w.firstName} ${w.lastName}` })]),
       });
     }
   }
@@ -525,13 +545,13 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     const who = { code: "equal_pay_rate_needed" as const, workerId: sh.workerId, workerName: sh.workerName, clientId: sh.clientId, date: sh.date };
     if (!inForce && !asked) {
       rateNeeded.add(k);
-      blockers.push({ ...who, message: `${sh.workerName} passed 720 hours at ${client} on ${c.at720}, before this pay period began (${period.startsOn}), so the client's equal-pay figures are due now (820 ILCS 175/42; 56 Ill. Adm. Code 260.505(b)). On the equal-pay duty in Compliance, enter the rate, or record that the client was asked: the rate card is then paid and a correction trues it up.` });
+      blockers.push({ ...who, ...said([say("equalPayRateDue720", { name: sh.workerName, client, date: dated(c.at720), start: dated(period.startsOn) })]) });
       continue;
     }
     const tier = c.at4160;
     if (tier !== null && tier < period.startsOn && inForce?.method === "survey_median" && inForce.effectiveFrom < tier && !(asked && asked.effectiveFrom >= tier)) {
       rateNeeded.add(k);
-      blockers.push({ ...who, message: `${sh.workerName} passed 4,160 hours at ${client} on ${tier}. The rate on file from ${inForce.effectiveFrom} is the wage survey's median; from then on the survey method asks for at least the 75th percentile (820 ILCS 175/42(a)(2)(B)). On the 4,160-hour duty in Compliance, enter the new rate, or record that the client was asked.` });
+      blockers.push({ ...who, ...said([say("equalPayRateDue4160", { name: sh.workerName, client, date: dated(tier), from: dated(inForce.effectiveFrom) })]) });
     }
   }
   const warnings: RunIssue[] = [...result.warnings, ...(await overtimeSpikes(tx, period, result.payLines, workerNameOf))];
@@ -542,12 +562,12 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   for (const l of result.payLines.filter((x) => BILLED_TIME.has(x.type))) minutes.set(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`, (minutes.get(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`) ?? 0) + l.minutes);
   for (const l of result.billLines.filter((x) => BILLED_TIME.has(x.type))) minutes.set(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`, (minutes.get(`${l.workerId}|${l.assignmentId}|${l.workweekStart}|${l.type}`) ?? 0) - l.minutes);
   for (const [key, diff] of [...minutes].sort((a, b) => cmp(a[0], b[0]))) {
-    if (diff !== 0) blockers.push({ code: "pay_bill_mismatch", workerId: key.split("|")[0], message: `Pay and bill minutes differ by ${diff} for ${key}.` });
+    if (diff !== 0) blockers.push({ code: "pay_bill_mismatch", workerId: key.split("|")[0], ...said([say("payBillMismatch", { diff: String(diff), key })]) });
   }
   // Every stored amount and rate must fit the database's integer columns.
   for (const l of [...result.payLines, ...result.billLines]) {
     if (Math.abs(l.amountCents) > INT4_MAX || l.rate.num > INT4_MAX || l.rate.den > INT4_MAX) {
-      blockers.push({ code: "invalid_input", workerId: l.workerId, message: `A ${l.type} line for the workweek starting ${l.workweekStart} is too large to store; check the rates.` });
+      blockers.push({ code: "invalid_input", workerId: l.workerId, ...said([say("lineTooLarge", { type: l.type, week: dated(l.workweekStart) })]) });
     }
   }
   // A correction: what differs, and how each worker's difference is settled.
@@ -573,26 +593,27 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
           workerId: w.workerId,
           workerName: name,
           grossCents: due,
-          message: `${name}: ${formatCents(due)} more pay is due than has been paid for this period. Pay it as soon as possible, no later than the next regular payday: pay that was missed is already late. Overtime that could not be computed in time is due no later than the next payday after it can be computed (29 C.F.R. § 778.106). State pay-day laws also apply.`,
+          ...said([say("correctionPayDue", { name, amount: formatCents(due) })]),
         });
       }
       if (!w.needsDecision) continue;
       const base = correction.baseVersion;
-      const amount = (cents: number) => `${formatCents(Math.abs(cents))} ${cents < 0 ? "less" : "more"}`;
-      const settled = w.decisions.filter((d) => !w.stale.includes(d)).map((d) => decisionText(d)).join("; ");
-      const already = settled ? ` Already settled outside the files: ${settled}.` : "";
-      const kept = w.heldCents > 0 ? ` ${formatCents(w.heldCents)} of pay an earlier correction of this period left with them (written off, or not yet recovered) may cover it; if it was recovered, pay it by hand.` : "";
+      const amount = (cents: number) => nest(say(cents < 0 ? "amountLess" : "amountMore", { amount: formatCents(Math.abs(cents)) }));
+      const settled = w.decisions.filter((d) => !w.stale.includes(d)).map((d) => nest(decisionSaid(d)));
+      const already: Said = settled.length > 0 ? [say("alreadySettled", { decisions: semicolons(settled) })] : [];
+      const kept: Said = w.heldCents > 0 ? [say("heldMayCover", { amount: formatCents(w.heldCents) })] : [];
       const left = w.remainingCents;
-      const message =
+      const version = String(base);
+      const message: Said =
         w.stale.length > 0
-          ? `${name}: ${w.stale.map((d) => decisionText(d)).join("; ")} — no longer fits the difference (${amount(w.netCents - w.leftoverCents)} than version ${base} paid). Remove it, then record what is left.`
+          ? [say("correctionStale", { name, decisions: semicolons(w.stale.map((d) => nest(decisionSaid(d)))), difference: amount(w.netCents - w.leftoverCents), version })]
           : w.decisions.length > 0
-            ? `${name}: ${amount(w.netCents - w.leftoverCents)} than version ${base} paid.${already} ${amount(left)} left to settle: record how.${left > 0 ? kept : ""}`
+            ? [say("correctionDiffers", { name, difference: amount(w.netCents - w.leftoverCents), version }), ...already, say("leftToSettle", { left: amount(left) }), ...(left > 0 ? kept : [])]
             : left < 0
-              ? `${name}: ${formatCents(-left)} less pay than version ${base} paid. The payroll file never takes pay back: record how it is settled (repaid outside payroll, recovered under the worker's state rules, or written off).`
+              ? [say("correctionLess", { name, amount: formatCents(-left), version })]
               : !w.additionsOnly
-                ? `${name}: ${formatCents(left)} more pay, but it moves pay between rates, kinds of hours or workweeks (${describeMoves(w.fileLines)}), which the payroll file cannot carry as additions. Pay it by hand and record that here.`
-                : `${name}: ${formatCents(left)} more pay than version ${base} paid.${kept} Record whether that covers it, or that it is paid by hand.`;
+                ? [say("correctionMoves", { name, amount: formatCents(left), moves: semicolons(movesSaid(w.fileLines).map((m) => nest(m))) })]
+                : [say("correctionMore", { name, amount: formatCents(left), version }), ...kept, say("recordWhether")];
       blockers.push({
         code: "correction_decision_needed",
         workerId: w.workerId,
@@ -600,7 +621,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         // What is left to settle (what a decision recorded now would settle); a stale agreement: what is owed.
         grossCents: w.stale.length > 0 ? w.netCents - w.leftoverCents - w.decisions.filter((d) => !w.stale.includes(d)).reduce((sum, d) => sum + d.differenceCents, 0) : left,
         ...(w.heldCents > 0 ? { heldCents: w.heldCents } : {}),
-        message,
+        ...said(message),
       });
     }
   }
@@ -615,7 +636,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         result.billLines.map((l) => ({ clientId: l.clientId, workerId: l.workerId, assignmentId: l.assignmentId, workweekStart: l.workweekStart, type: l.type, minutes: l.minutes, rate: l.rate, amountCents: l.amountCents, ruleId: l.ruleId, entryIds: l.entryIds })),
       );
   if (correction && !hasRealDifferences(correction, { quiet: [], ...invoicePlan }) && blockers.length === 0) {
-    blockers.push({ code: "correction_no_differences", message: `Nothing differs from version ${correction.baseVersion}, so there is nothing to correct. Change the hours or rates, or discard this correction.` });
+    blockers.push({ code: "correction_no_differences", ...said([say("correctionNothingDiffers", { version: String(correction.baseVersion) })]) });
   }
   // A VMS invoices each time sheet once: a correction of a client on one is recorded there by hand.
   for (const p of invoicePlan.plans.filter((x) => x.profile.vmsFormat !== null && x.kind !== "invoice")) {
@@ -623,7 +644,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       code: "vms_correction_by_hand",
       clientId: p.clientId,
       clientName: p.client.name,
-      message: `${p.client.name}: ${p.number} ${p.kind === "credit_note" ? "credits" : "adds to"} invoice ${p.original!.number}. SAP Fieldglass takes each time sheet's invoice once, so this correction is not in an upload file: record it in SAP Fieldglass.`,
+      ...said([say(p.kind === "credit_note" ? "vmsCreditByHand" : "vmsAddByHand", { client: p.client.name, number: p.number, original: p.original!.number })]),
     });
   }
   // A correction's file carries the additions of the workers it settles (decision E9).
@@ -651,7 +672,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         lines = lines.filter((l) => l.workerId !== workerId);
       }
     }
-    for (const problem of invoicePlan.problems) blockers.push({ code: problem.code, clientId: problem.clientId, clientName: problem.clientName, message: problem.message });
+    for (const problem of invoicePlan.problems) blockers.push({ code: problem.code, clientId: problem.clientId, clientName: problem.clientName, message: problem.message, said: problem.said });
     // The VMS upload refuses hours it cannot place on a time sheet: said now, not at "Create files".
     // A refusal names the worker (who can be skipped and paid by hand); the file is tried again
     // without them, so every such worker is named at once.
@@ -669,7 +690,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
           } catch (error) {
             if (!(error instanceof ExportError)) throw error;
             const w = error.workerId ? workersById.get(error.workerId) : undefined;
-            blockers.push({ code: "vms_refused", clientId: p.clientId, clientName: p.client.name, workerId: error.workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, message: `${p.client.name}, invoice ${p.number}: ${error.message}` });
+            blockers.push({ code: "vms_refused", clientId: p.clientId, clientName: p.client.name, workerId: error.workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, ...said([say("vmsRefused", { client: p.client.name, number: p.number, problem: error.message })]) });
             if (!error.workerId) break;
             refused.add(error.workerId);
           }
@@ -682,6 +703,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const decided = decisions.map((d) => [d.workerId, d.decision, d.differenceCents, d.note]).sort((a, b) => cmp(String(a[0]), String(b[0])));
 
   const status = blockers.length > 0 ? "blocked" : "ready";
+  // The message keys beside the English (decision 0030) are left out: they say exactly the English, so
+  // a run computed before them keeps its fingerprint, and an approval of it stands.
   const fingerprint = createHash("sha256")
     .update(
       JSON.stringify({
@@ -696,7 +719,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         text: textInputs,
         correction: base ? { base: base.run.id, decisions: decided } : null,
         payroll,
-      }),
+      }, withoutSay),
     )
     .digest("hex");
   const previous = (run.snapshot as { fingerprint?: string } | null)?.fingerprint;
@@ -722,6 +745,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         amountCents: l.amountCents,
         ruleId: l.ruleId,
         explain: l.explain,
+        say: l.say ?? null,
       })),
     );
   }
@@ -742,6 +766,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         amountCents: l.amountCents,
         ruleId: l.ruleId,
         explain: l.explain,
+        say: l.say ?? null,
       })),
     );
   }
@@ -889,7 +914,7 @@ async function overtimeSpikes(
     const rise = minutes - was;
     if (rise < floor || rise * 100 < percent * was) continue;
     const name = nameOf(workerId) ?? "";
-    out.push({ code: "overtime_spike", workerId, workerName: name, message: `${name}: ${hoursMinutes(minutes)} of overtime this period against ${hoursMinutes(was)} in the period before.` });
+    out.push({ code: "overtime_spike", workerId, workerName: name, ...said([say("overtimeSpike", { name, now: hoursMinutes(minutes), before: hoursMinutes(was) })]) });
   }
   return out;
 }

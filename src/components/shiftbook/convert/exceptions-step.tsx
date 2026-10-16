@@ -20,10 +20,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useCan } from "../abilities";
+import { useEngineSay } from "../engine-say";
 import { money } from "../format";
 import { DecisionButton, DiscardCorrectionButton, RemoveDecisionButton } from "./correction-actions";
 import type { TotalsData } from "./totals-review";
 import { REFUSAL_MESSAGE } from "./types";
+import type { Spoken } from "@/lib/engine-say";
 
 const ENTRY_LEVEL = new Set(["entry_needs_review", "unmatched_entry", "entry_incomplete", "outside_period", "outside_assignment", "crosses_midnight", "possible_duplicate_day", "no_entries"]);
 const DOCUMENT_LEVEL = new Set(["documents_pending", "document_failed"]);
@@ -43,6 +45,8 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
   const tx = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
+  // The engine's messages in the reader's language (decision 0030); the English is the record.
+  const say = useEngineSay();
   // Decision 0026: confirming, skipping and bringing back are the Owner's and coordinators' (hours).
   const mayChange = useCan()("hours");
   const [pending, start] = useTransition();
@@ -96,7 +100,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
       <ul className="flex flex-col gap-2">
         {g.issues.map((i, n) => (
           <li key={n} className="flex flex-col gap-1">
-            <span>{i.message}</span>
+            <span>{say(i)}</span>
             {!locked && mayChange && i.entryIds && (
               <Button size="sm" variant="outline" className="w-fit" onClick={() => setConfirming(i.entryIds!)} data-testid="both-real">
                 {t("bothReal")}
@@ -110,7 +114,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
       <ul className="flex flex-col gap-2">
         {g.issues.map((i, n) => (
           <li key={n} className="flex flex-col gap-1">
-            <span>{i.message}</span>
+            <span>{say(i)}</span>
             <span className="w-fit">{decide(i)}</span>
           </li>
         ))}
@@ -120,7 +124,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
       <ul className="flex flex-col gap-2">
         {g.issues.map((i, n) => (
           <li key={n} className="flex flex-col gap-1">
-            <span>{i.message}</span>
+            <span>{say(i)}</span>
             {i.grossCents !== undefined && i.workerName && <span className="text-foreground" data-testid="gross-by-hand">{t("grossByHand", { name: i.workerName, amount: money(i.grossCents, locale) })}</span>}
           </li>
         ))}
@@ -369,13 +373,14 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
   );
 }
 
-function Issues({ issues }: { issues: { message: string }[] }) {
+function Issues({ issues }: { issues: Spoken[] }) {
   const [all, setAll] = useState(false);
+  const say = useEngineSay();
   const shown = all ? issues : issues.slice(0, 5);
   return (
     <ul className="list-disc pl-4">
       {shown.map((i, n) => (
-        <li key={n}>{i.message}</li>
+        <li key={n}>{say(i)}</li>
       ))}
       {issues.length > shown.length && (
         <li className="list-none">

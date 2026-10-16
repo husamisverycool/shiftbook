@@ -5,6 +5,7 @@
  */
 import { isIsoDate } from "./dates";
 import { scopeProblem, STATE_FIPS } from "./places";
+import { english, nested, part, type SayPart } from "./say";
 import type { EqualPayRule, GuaranteeRule, HolidayPolicy, Issue, RegularRateRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -53,136 +54,141 @@ const MAX_THRESHOLD_MINUTES = 10_080; // one week
 const MAX_MINIMUM_WAGE_CENTS = 100_000;
 const MINUTES_PER_DAY = 1440;
 
-function multiplierProblem(m: { num?: unknown; den?: unknown } | undefined): string | null {
+/** Why a row cannot be used, as message keys (decision 0030); false or null when it can. */
+type Problem = SayPart | false | null;
+const unknownJurisdiction = (j: string): Problem => !knownJurisdiction(j) && part("problemJurisdictionUnknown", { jurisdiction: String(j) });
+
+function multiplierProblem(m: { num?: unknown; den?: unknown } | undefined): SayPart | null {
   if (!m || !positiveInt(m.num) || !positiveInt(m.den) || (m.num as number) > MAX_FACTOR || (m.den as number) > MAX_FACTOR) {
-    return "its multiplier must be a positive whole-number fraction";
+    return part("problemMultiplierFraction");
   }
-  if ((m.num as number) < (m.den as number)) return "its multiplier is below 1, which would pay overtime at less than the regular rate";
+  if ((m.num as number) < (m.den as number)) return part("problemMultiplierBelowOne");
   return null;
 }
 
-function datesProblem(r: { effectiveFrom: string; effectiveTo: string | null }): string | null {
-  if (!isIsoDate(r.effectiveFrom)) return `effective-from "${r.effectiveFrom}" is not a date`;
-  if (r.effectiveTo !== null && !isIsoDate(r.effectiveTo)) return `effective-to "${r.effectiveTo}" is not a date`;
-  if (r.effectiveTo !== null && r.effectiveTo < r.effectiveFrom) return "it ends before it starts";
+function datesProblem(r: { effectiveFrom: string; effectiveTo: string | null }): SayPart | null {
+  if (!isIsoDate(r.effectiveFrom)) return part("problemEffectiveFrom", { value: String(r.effectiveFrom) });
+  if (r.effectiveTo !== null && !isIsoDate(r.effectiveTo)) return part("problemEffectiveTo", { value: String(r.effectiveTo) });
+  if (r.effectiveTo !== null && r.effectiveTo < r.effectiveFrom) return part("problemEndsBeforeStarts");
   return null;
 }
 
 const overlaps = (a: { effectiveFrom: string; effectiveTo: string | null }, b: { effectiveFrom: string; effectiveTo: string | null }) =>
   a.effectiveFrom <= (b.effectiveTo ?? OPEN_END) && b.effectiveFrom <= (a.effectiveTo ?? OPEN_END);
 
-function overlapProblems<T extends { effectiveFrom: string; effectiveTo: string | null; citation: string }>(rows: T[], group: (r: T) => string, label: (r: T) => string): Issue[] {
+function overlapProblems<T extends { effectiveFrom: string; effectiveTo: string | null; citation: string }>(rows: T[], group: (r: T) => string, label: (r: T) => SayPart): Issue[] {
   const issues: Issue[] = [];
   for (let i = 0; i < rows.length; i++) {
     for (let k = i + 1; k < rows.length; k++) {
       const a = rows[i]!;
       const b = rows[k]!;
       if (group(a) === group(b) && overlaps(a, b)) {
-        issues.push(invalid(`${label(a)}: two rows are in effect at the same time (from ${a.effectiveFrom} and from ${b.effectiveFrom}: "${a.citation}" and "${b.citation}"), so which one applies would be a guess`));
+        const problem = part("problemOverlap", { fromA: { date: a.effectiveFrom }, fromB: { date: b.effectiveFrom }, citationA: String(a.citation), citationB: String(b.citation) });
+        issues.push(invalid(part("ruleDataWhere", { where: nested(label(a)), problem: nested(problem) })));
       }
     }
   }
   return issues;
 }
 
-const invalid = (problem: string): Issue => ({
-  code: "rule_data_invalid",
-  message: `Rule data problem — ${problem}. Nothing is computed until the rule data is fixed.`,
-});
+const invalid = (problem: SayPart): Issue => {
+  const say = [part("ruleDataProblem", { problem: nested(problem) })];
+  return { code: "rule_data_invalid", message: english(say), say };
+};
+/** "<where>: <problem>" for a row. */
+const at = (where: SayPart, problem: SayPart): Issue => invalid(part("ruleDataWhere", { where: nested(where), problem: nested(problem) }));
+const rule = (key: "whereOvertimeRule" | "whereJurisdictionRule" | "wherePremiumRule" | "whereMinimumPayRule" | "whereRegularRateRule" | "whereEqualPayCounterRule", r: { jurisdiction: string; ruleCode: string }) =>
+  part(key, { jurisdiction: String(r.jurisdiction), rule: String(r.ruleCode) });
+/** The row's label with its local scope's name, when it has one. */
+const scoped = (where: SayPart, scopeName: string | null | undefined): SayPart => (scopeName ? part("whereScoped", { where: nested(where), scope: scopeName }) : where);
 
 /** Every problem with the rule tables; an empty list means they can be used. */
 export function ruleDataProblems(t: RuleTables): Issue[] {
   const issues: Issue[] = [];
   for (const r of t.overtimeRules) {
-    const where = `overtime rule ${r.jurisdiction} ${r.ruleCode}`;
     const problem =
-      (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
+      unknownJurisdiction(r.jurisdiction) ||
       datesProblem(r) ||
-      ((!Number.isSafeInteger(r.thresholdMinutes) || r.thresholdMinutes < 0 || r.thresholdMinutes > MAX_THRESHOLD_MINUTES) && "its threshold must be a whole number of minutes within a week") ||
+      ((!Number.isSafeInteger(r.thresholdMinutes) || r.thresholdMinutes < 0 || r.thresholdMinutes > MAX_THRESHOLD_MINUTES) && part("problemThreshold")) ||
       multiplierProblem(r.multiplier) ||
-      (r.kind === "weekly" && r.earningType !== "OT" && `a weekly overtime row must pay earning type OT, not ${String(r.earningType)}`);
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+      (r.kind === "weekly" && r.earningType !== "OT" && part("problemWeeklyEarningType", { type: String(r.earningType) }));
+    if (problem) issues.push(at(rule("whereOvertimeRule", r), problem));
   }
   for (const r of t.jurisdictionRules) {
-    const where = `jurisdiction rule ${r.jurisdiction} ${r.ruleCode}`;
-    const problem = (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) || datesProblem(r) || scopeProblem(r.jurisdiction, r.countyFips, r.placeFips);
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+    const problem = unknownJurisdiction(r.jurisdiction) || datesProblem(r) || scopeProblem(r.jurisdiction, r.countyFips, r.placeFips);
+    if (problem) issues.push(at(rule("whereJurisdictionRule", r), problem));
   }
   for (const r of t.minimumWageRules) {
-    const where = `minimum-wage rate ${r.jurisdiction}`;
+    const where = part("whereMinimumWageRate", { jurisdiction: String(r.jurisdiction) });
     const problem =
-      (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
+      unknownJurisdiction(r.jurisdiction) ||
       datesProblem(r) ||
       scopeProblem(r.jurisdiction, r.countyFips, r.placeFips) ||
-      ((!positiveInt(r.rateCents) || r.rateCents > MAX_MINIMUM_WAGE_CENTS) && "its rate must be a positive whole number of cents, at most $1,000 an hour");
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+      ((!positiveInt(r.rateCents) || r.rateCents > MAX_MINIMUM_WAGE_CENTS) && part("problemMinimumWageRate"));
+    if (problem) issues.push(at(where, problem));
   }
   for (const r of t.premiumRules) {
-    const where = `premium rule ${r.jurisdiction} ${r.ruleCode}`;
     const problem =
-      (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
+      unknownJurisdiction(r.jurisdiction) ||
       datesProblem(r) ||
-      ((!positiveInt(r.premiumMinutes) || r.premiumMinutes > MAX_THRESHOLD_MINUTES) && "its minutes of pay must be a positive whole number within a week") ||
-      ((!positiveInt(r.perWorkdayMax) || r.perWorkdayMax > 24) && "its per-workday limit must be a small positive whole number");
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+      ((!positiveInt(r.premiumMinutes) || r.premiumMinutes > MAX_THRESHOLD_MINUTES) && part("problemPremiumMinutes")) ||
+      ((!positiveInt(r.perWorkdayMax) || r.perWorkdayMax > 24) && part("problemPerWorkdayMax"));
+    if (problem) issues.push(at(rule("wherePremiumRule", r), problem));
   }
   for (const r of t.guaranteeRules) {
-    const where = `minimum-pay rule ${r.jurisdiction} ${r.ruleCode}`;
     const minutes = (n: number | null) => n === null || (Number.isSafeInteger(n) && n >= 0 && n <= MAX_THRESHOLD_MINUTES);
     const f = r.scheduledFraction;
     const problem =
-      (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
+      unknownJurisdiction(r.jurisdiction) ||
       datesProblem(r) ||
-      (![r.dueMinutes, r.reassignedDueMinutes, r.minMinutes, r.maxMinutes, r.minScheduledMinutes].every(minutes) && "its minutes must be whole numbers within a week") ||
-      (f !== null && (!positiveInt(f.num) || !positiveInt(f.den) || f.num > f.den) && "its share of the scheduled day must be a fraction from 0 to 1") ||
-      (r.minMinutes !== null && r.maxMinutes !== null && r.minMinutes > r.maxMinutes && "its least minutes are more than its most") ||
-      (r.basis !== "regular_rate" && r.basis !== "pay_rate" && "its rate basis must be the regular rate or the pay rate");
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+      (![r.dueMinutes, r.reassignedDueMinutes, r.minMinutes, r.maxMinutes, r.minScheduledMinutes].every(minutes) && part("problemGuaranteeMinutes")) ||
+      (f !== null && (!positiveInt(f.num) || !positiveInt(f.den) || f.num > f.den) && part("problemScheduledFraction")) ||
+      (r.minMinutes !== null && r.maxMinutes !== null && r.minMinutes > r.maxMinutes && part("problemLeastMoreThanMost")) ||
+      (r.basis !== "regular_rate" && r.basis !== "pay_rate" && part("problemRateBasis"));
+    if (problem) issues.push(at(rule("whereMinimumPayRule", r), problem));
   }
   for (const p of t.holidayPolicies) {
-    const where = `holiday policy "${typeof p.name === "string" ? p.name.slice(0, 100) : String(p.name)}"`;
+    const where = part("whereHolidayPolicy", { name: typeof p.name === "string" ? p.name.slice(0, 100) : String(p.name) });
     const dates = Array.isArray(p.dates) ? p.dates : null;
     const problem =
-      ((typeof p.name !== "string" || p.name.trim() === "" || p.name.length > 100) && "its name must be text of 1 to 100 characters") ||
-      (p.clientId !== null && (typeof p.clientId !== "string" || p.clientId.trim() === "") && "its client must be a client id, or none for the agency's default") ||
-      ((!dates || dates.length === 0 || dates.length > 366) && "it must list from 1 to 366 holiday dates") ||
-      (dates && !dates.every((d) => typeof d === "string" && isIsoDate(d)) && "one of its holiday dates is not a real calendar date") ||
-      (dates && new Set(dates).size !== dates.length && "it lists the same date twice") ||
-      (multiplierProblem(p.workedMultiplier) && "its pay for hours worked on a holiday must be a whole-number fraction of at least 1× the pay rate") ||
-      ((!Number.isSafeInteger(p.notWorkedMinutes) || p.notWorkedMinutes < 0 || p.notWorkedMinutes > MINUTES_PER_DAY) && "its pay for a holiday not worked must be a whole number of minutes, at most a day") ||
-      (p.billWorkedMultiplier !== null && multiplierProblem(p.billWorkedMultiplier) && "its bill for hours worked on a holiday must be a whole-number fraction of at least 1× the bill rate, or none") ||
-      (typeof p.billNotWorked !== "boolean" && "whether a holiday not worked is billed must be yes or no");
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+      ((typeof p.name !== "string" || p.name.trim() === "" || p.name.length > 100) && part("problemHolidayName")) ||
+      (p.clientId !== null && (typeof p.clientId !== "string" || p.clientId.trim() === "") && part("problemHolidayClient")) ||
+      ((!dates || dates.length === 0 || dates.length > 366) && part("problemHolidayDateCount")) ||
+      (dates && !dates.every((d) => typeof d === "string" && isIsoDate(d)) && part("problemHolidayDateInvalid")) ||
+      (dates && new Set(dates).size !== dates.length && part("problemHolidayDateTwice")) ||
+      (multiplierProblem(p.workedMultiplier) && part("problemHolidayWorkedMultiplier")) ||
+      ((!Number.isSafeInteger(p.notWorkedMinutes) || p.notWorkedMinutes < 0 || p.notWorkedMinutes > MINUTES_PER_DAY) && part("problemHolidayNotWorkedMinutes")) ||
+      (p.billWorkedMultiplier !== null && multiplierProblem(p.billWorkedMultiplier) && part("problemHolidayBillMultiplier")) ||
+      (typeof p.billNotWorked !== "boolean" && part("problemHolidayBillNotWorked"));
+    if (problem) issues.push(at(where, problem));
   }
   for (const r of t.regularRateRules) {
-    const where = `regular-rate rule ${r.jurisdiction} ${r.ruleCode}`;
-    const problem = (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) || datesProblem(r) || multiplierProblem(r.multiplier);
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+    const problem = unknownJurisdiction(r.jurisdiction) || datesProblem(r) || multiplierProblem(r.multiplier);
+    if (problem) issues.push(at(rule("whereRegularRateRule", r), problem));
   }
   for (const r of t.equalPayRules) {
-    const where = `equal-pay counter rule ${r.jurisdiction} ${r.ruleCode}`;
     const months = (n: number) => Number.isSafeInteger(n) && n >= 1 && n <= 120;
     const problem =
-      (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) ||
+      unknownJurisdiction(r.jurisdiction) ||
       datesProblem(r) ||
-      (!isIsoDate(r.countsFrom) && `its counting start "${r.countsFrom}" is not a date`) ||
-      (!months(r.windowMonths) || !months(r.longWindowMonths) || r.longWindowMonths < r.windowMonths ? "its windows must be whole numbers of months from 1 to 120, the long one at least as long" : null) ||
-      (![r.warnMinutes, r.triggerMinutes, r.longTriggerMinutes].every(positiveInt) && "its thresholds must be positive whole numbers of minutes") ||
-      ((r.warnMinutes >= r.triggerMinutes || r.longTriggerMinutes <= r.triggerMinutes) && "its heads-up must come before its trigger, and its long trigger after it");
-    if (problem) issues.push(invalid(`${where}: ${problem}`));
+      (!isIsoDate(r.countsFrom) && part("problemCountsFrom", { value: String(r.countsFrom) })) ||
+      (!months(r.windowMonths) || !months(r.longWindowMonths) || r.longWindowMonths < r.windowMonths ? part("problemWindows") : null) ||
+      (![r.warnMinutes, r.triggerMinutes, r.longTriggerMinutes].every(positiveInt) && part("problemThresholds")) ||
+      ((r.warnMinutes >= r.triggerMinutes || r.longTriggerMinutes <= r.triggerMinutes) && part("problemThresholdOrder"));
+    if (problem) issues.push(at(rule("whereEqualPayCounterRule", r), problem));
   }
   if (issues.length > 0) return issues;
 
   issues.push(
-    ...overlapProblems(t.overtimeRules, (r) => `${r.jurisdiction}|${r.ruleCode}|${r.kind}`, (r) => `overtime rule ${r.jurisdiction} ${r.ruleCode}`),
-    ...overlapProblems(t.jurisdictionRules, (r) => `${r.jurisdiction}|${scopeKey(r)}|${r.ruleCode}`, (r) => `jurisdiction rule ${r.jurisdiction} ${r.ruleCode}${r.scopeName ? ` (${r.scopeName})` : ""}`),
-    ...overlapProblems(t.minimumWageRules, (r) => `${r.jurisdiction}|${scopeKey(r)}`, (r) => `minimum-wage rate ${r.jurisdiction}${r.scopeName ? ` (${r.scopeName})` : ""}`),
-    ...overlapProblems(t.premiumRules, (r) => `${r.jurisdiction}|${r.ruleCode}`, (r) => `premium rule ${r.jurisdiction} ${r.ruleCode}`),
+    ...overlapProblems(t.overtimeRules, (r) => `${r.jurisdiction}|${r.ruleCode}|${r.kind}`, (r) => rule("whereOvertimeRule", r)),
+    ...overlapProblems(t.jurisdictionRules, (r) => `${r.jurisdiction}|${scopeKey(r)}|${r.ruleCode}`, (r) => scoped(rule("whereJurisdictionRule", r), r.scopeName)),
+    ...overlapProblems(t.minimumWageRules, (r) => `${r.jurisdiction}|${scopeKey(r)}`, (r) => scoped(part("whereMinimumWageRate", { jurisdiction: String(r.jurisdiction) }), r.scopeName)),
+    ...overlapProblems(t.premiumRules, (r) => `${r.jurisdiction}|${r.ruleCode}`, (r) => rule("wherePremiumRule", r)),
     // One minimum-pay rule per state at a time: which one applies would otherwise be a guess.
-    ...overlapProblems(t.guaranteeRules, (r) => r.jurisdiction, (r) => `minimum-pay rule ${r.jurisdiction} ${r.ruleCode}`),
+    ...overlapProblems(t.guaranteeRules, (r) => r.jurisdiction, (r) => rule("whereMinimumPayRule", r)),
   );
-  issues.push(...overlapProblems(t.equalPayRules, (r) => r.jurisdiction, (r) => `equal-pay counter rule ${r.jurisdiction} ${r.ruleCode}`));
-  issues.push(...overlapProblems(t.regularRateRules, (r) => `${r.jurisdiction}|${r.ruleCode}`, (r) => `regular-rate rule ${r.jurisdiction} ${r.ruleCode}`));
+  issues.push(...overlapProblems(t.equalPayRules, (r) => r.jurisdiction, (r) => rule("whereEqualPayCounterRule", r)));
+  issues.push(...overlapProblems(t.regularRateRules, (r) => `${r.jurisdiction}|${r.ruleCode}`, (r) => rule("whereRegularRateRule", r)));
   // One holiday policy per client (or for the agency) on a date: which one pays would otherwise be a guess.
   for (let i = 0; i < t.holidayPolicies.length; i++) {
     for (let k = i + 1; k < t.holidayPolicies.length; k++) {
@@ -190,7 +196,7 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
       const b = t.holidayPolicies[k]!;
       const both = a.clientId === b.clientId ? a.dates.filter((d) => b.dates.includes(d)) : [];
       if (both.length > 0) {
-        issues.push(invalid(`holiday policies "${a.name}" and "${b.name}" both list ${both[0]} for ${a.clientId === null ? "the agency" : "the same client"}, so which one pays would be a guess`));
+        issues.push(invalid(part(a.clientId === null ? "problemHolidayPoliciesAgency" : "problemHolidayPoliciesClient", { a: a.name, b: b.name, date: { date: both[0]! } })));
       }
     }
   }

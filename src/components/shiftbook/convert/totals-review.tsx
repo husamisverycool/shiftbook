@@ -21,6 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
+import type { Say } from "@shiftbook/rules";
+import type { Spoken } from "@/lib/engine-say";
+import { useEngineSay } from "../engine-say";
 import { hoursMinutes, money, signedHours, signedMoney } from "../format";
 
 const PAGE = 25;
@@ -34,7 +37,7 @@ export interface TotalsData {
     ruleCode: string | null;
     jurisdiction: string | null;
     ruleCodes: string[];
-    issues: { message: string; workerId?: string; workerName?: string; entryIds?: string[]; grossCents?: number; heldCents?: number; clientId?: string; clientName?: string }[];
+    issues: { message: string; say?: Say | null; workerId?: string; workerName?: string; entryIds?: string[]; grossCents?: number; heldCents?: number; clientId?: string; clientName?: string }[];
     workerIds: string[];
     workerNames: string[];
   }[];
@@ -312,13 +315,15 @@ function CorrectionTotals({ c }: { c: CorrectionData }) {
   );
 }
 
-function Issues({ issues }: { issues: { message: string }[] }) {
+function Issues({ issues }: { issues: Spoken[] }) {
   const [all, setAll] = useState(false);
+  // The engine's messages in the reader's language (decision 0030); the English is the record.
+  const say = useEngineSay();
   const shown = all ? issues : issues.slice(0, 5);
   return (
     <ul className="list-disc pl-4">
       {shown.map((i, n) => (
-        <li key={n}>{i.message}</li>
+        <li key={n}>{say(i)}</li>
       ))}
       {issues.length > shown.length && (
         <li className="list-none">

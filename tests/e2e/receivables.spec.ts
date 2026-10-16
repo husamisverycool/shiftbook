@@ -111,6 +111,8 @@ for (const locale of ["en", "es"] as const) {
     await expect(review).toHaveCount(3);
     const exact = review.filter({ hasText: `PAYMENT INV ${FIRST}` });
     await expect(exact.getByTestId("confidence")).toHaveText(m.bank.confidence.high);
+    // Why, in the reader's language (decision 0030).
+    await expect(exact).toContainText(locale === "en" ? `invoice number ${FIRST} on the deposit;` : `el número de factura ${FIRST} en el depósito;`);
     await check(page, "bank, for review");
     await exact.getByTestId("post-line").click();
     await expect(review).toHaveCount(2);

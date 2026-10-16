@@ -7,6 +7,7 @@
  * negative amount in Current, so a client's total is what it owes net (Xero's detail includes them).
  */
 import { roundHalfUpBig } from "@shiftbook/rules";
+import { explained, say, type Said } from "../said";
 
 export const BUCKETS = ["current", "d1_30", "d31_60", "d61_90", "d91_plus"] as const;
 export type Bucket = (typeof BUCKETS)[number];
@@ -89,6 +90,8 @@ export interface DaysToPay {
   averageDays: number | null;
   averageDaysLate: number | null;
   explain: string;
+  /** The working as message keys for the reader's language (decision 0030). */
+  said: Said;
 }
 
 /**
@@ -96,7 +99,7 @@ export interface DaysToPay {
  * QuickBooks Desktop), and the average days late against the due date (Workday; on-time counts 0).
  */
 export function daysToPay(paid: PaidInvoice[]): DaysToPay {
-  if (paid.length === 0) return { invoices: 0, totalDays: 0, averageDays: null, averageDaysLate: null, explain: "No invoice paid in full in the window." };
+  if (paid.length === 0) return { invoices: 0, totalDays: 0, averageDays: null, averageDaysLate: null, ...explained([say("daysToPayNone")]) };
   const totalDays = paid.reduce((sum, p) => sum + Math.max(0, daysFrom(p.issuedOn, p.paidOn)), 0);
   const totalLate = paid.reduce((sum, p) => sum + Math.max(0, daysFrom(p.dueOn, p.paidOn)), 0);
   const n = BigInt(paid.length);
@@ -107,6 +110,6 @@ export function daysToPay(paid: PaidInvoice[]): DaysToPay {
     totalDays,
     averageDays,
     averageDaysLate,
-    explain: `${paid.length} invoice${paid.length === 1 ? "" : "s"} paid in full, ${totalDays} days from issue to payment in total → ${averageDays} days on average (rounded half up); ${totalLate} days past due in total → ${averageDaysLate} days late on average.`,
+    ...explained([say(paid.length === 1 ? "daysToPayOne" : "daysToPayMany", { count: String(paid.length), total: String(totalDays), average: String(averageDays), late: String(totalLate), averageLate: String(averageDaysLate) })]),
   };
 }
