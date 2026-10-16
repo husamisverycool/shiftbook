@@ -19,6 +19,6 @@ export function signInMethods(): SignInMethods {
     sso: false,
     emailCode: false,
     // Set by decision 0032 (passkeys).
-    passkey: false,
+    passkey: true,
   };
 }

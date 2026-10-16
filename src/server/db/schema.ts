@@ -12,6 +12,7 @@ import {
   bigserial,
   boolean,
   check,
+  customType,
   date,
   index,
   integer,
@@ -1587,6 +1588,8 @@ export const TENANT_TABLES = [
   "user_logins",
   "sessions",
   "auth_tokens",
+  "passkeys",
+  "webauthn_challenges",
   "agency_settings",
   "clients",
   "worksites",
@@ -1641,3 +1644,59 @@ export const TENANT_TABLES = [
   "equal_pay_rates",
   "aca_monthly_hours",
 ] as const;
+
+// ---------- passkeys (decision 0032) ----------
+
+/** Raw bytes (a passkey's public key, as COSE). */
+const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
+  dataType: () => "bytea",
+  toDriver: (value) => Buffer.from(value),
+  fromDriver: (value) => new Uint8Array(value),
+});
+
+/**
+ * A person's passkey (WebAuthn, decision 0032): found by its credential id before the agency is known,
+ * so readable across agencies only in sign-in mode (app.auth), as user_logins is.
+ */
+export const passkeys = pgTable(
+  "passkeys",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    // With agency_id, a foreign key to the person in that agency (drizzle/0038).
+    userId: uuid("user_id").notNull(),
+    /** The credential's id, base64url. */
+    credentialId: text("credential_id").notNull(),
+    /** The credential's public key (COSE). */
+    publicKey: bytea("public_key").notNull(),
+    /** The signature counter last seen (0 for passkeys that do not count, as synced ones). */
+    counter: bigint("counter", { mode: "number" }).notNull().default(0),
+    transports: text("transports").array().notNull().default(sql`'{}'::text[]`),
+    deviceType: text("device_type").$type<"singleDevice" | "multiDevice">().notNull(),
+    backedUp: boolean("backed_up").notNull().default(false),
+    /** The person's label for it (by default from the device type). */
+    name: text("name").notNull(),
+    createdAt: createdAt(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("passkeys_credential_id_unique").on(t.credentialId), index("passkeys_user").on(t.userId)],
+);
+
+/**
+ * A WebAuthn challenge, single use, for five minutes (digests only): to add a passkey (for one person)
+ * or to sign in with one (anyone; no agency yet).
+ */
+export const webauthnChallenges = pgTable("webauthn_challenges", {
+  id: id(),
+  /** Null for a sign-in challenge: the person is not known yet. */
+  agencyId: uuid("agency_id").references(() => agencies.id),
+  userId: uuid("user_id"),
+  purpose: text("purpose").$type<"register" | "sign_in">().notNull(),
+  challengeHash: text("challenge_hash").notNull(),
+  /** A sign-in challenge: the digest of the visitor's address, to cap the open ones per address. */
+  addressHash: text("address_hash"),
+  createdAt: createdAt(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+});

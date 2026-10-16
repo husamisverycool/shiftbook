@@ -1,6 +1,7 @@
 # Pattern: Your account (`/settings/account`)
 
-Status: adopted — slice (k) plan, decisions K1 and K7 (2026-10-16, under the owner's "just keep going")
+Status: adopted — slice (k) plan, decisions K1 and K7 (2026-10-16, under the owner's "just keep going");
+Passkeys added by decision 0032 (2026-10-16)
 Reference product and screen: GitHub — "Password and authentication" settings (Change password: old
 password, new password, confirm, "Update password"; two-factor authentication: turn it on with the
 three-part setup, see and regenerate recovery codes — a new set invalidates the old); Slack —
@@ -12,12 +13,16 @@ Source URL: https://docs.github.com/en/authentication/securing-your-account-with
 Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/sudo-mode
 Source URL: https://slack.com/help/articles/215058658-Manage-your-language-preferences
 Source URL: https://squareup.com/help/us/en/article/5234
+Source URL: https://docs.github.com/en/authentication/authenticating-with-a-passkey/managing-your-passkeys
+Source URL: https://docs.github.com/en/authentication/authenticating-with-a-passkey/signing-in-with-a-passkey
+Source URL: https://passkeys.dev/docs/use-cases/bootstrapping/
 Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3a, §4). Confidence: high
 for the sections and their actions; the page's spacing is not documented.
 
 ## Purpose in Shiftbook
 Each person's own settings, whatever their role (the read-only accountant too: these change only
-their own account): their language, their password, their authenticator and recovery codes.
+their own account): their language, their password, their authenticator and recovery codes, their
+passkeys.
 
 ## Hierarchy
 1. **Page header:** "Settings" above, H1 "Your account"; under it the person's name, email and role.
@@ -35,21 +40,40 @@ their own account): their language, their password, their authenticator and reco
      confirmation says the old ones stop working; then the new ten with Download, Print, Copy and
      **I have saved my recovery codes**); **Set up again** for a new phone (the same three-part
      setup; the old authenticator works until the new one is verified).
-5. **Sign out** (a secondary button at the bottom).
+5. **Passkeys** section (GitHub "Passkeys" under "Password and authentication"; passkeys.dev
+   "Bootstrapping": the account's settings, once signed in, are where a passkey is added):
+   - One muted line: what a passkey is (the device's fingerprint, face or screen lock instead of the
+     password and code) and that it counts as both steps.
+   - **The list** (GitHub's list of registered passkeys, each with a delete control beside it): one row
+     per passkey — its name (from its device type: synced, or on one device — GitHub's "Synced"
+     label), when it was added and when it was last used (or not yet), and **Remove** at the right.
+     None yet: one line saying so.
+   - **Add a passkey** (GitHub: "Add a passkey" under "Passkeys").
+6. **Sign out** (a secondary button at the bottom).
 
 ## Interactions
 - Set up authenticator, Set up again and Make new recovery codes first ask the person to confirm it's
   them when they have not given their password or a code in the last 15 minutes (GitHub's sudo mode;
   `_components/confirm-access.md`).
 - Language → saved at once; the page reloads in that language.
+- Add a passkey → "confirm it's you" when due (GitHub: "If prompted, authenticate with your password
+  or another existing method"), then the browser's own passkey prompt; then a confirmation that the
+  passkey was added, with its name, and **Done** (GitHub: "review the information confirming that a
+  passkey was successfully registered, then click Done"); the list shows it.
+- Remove → a confirmation naming the passkey (GitHub's "Delete confirmation" pop-up), then "confirm
+  it's you" when due; the row goes and a toast says so. A removed passkey never signs in again.
 - Update password → saved; the other places they were signed in are signed out; a toast says so.
 
 ## States
 - Wrong current password, the passwords differ, or the rule is broken: a message under the field.
 - Demo person: the authenticator and password can be tried; nothing is sent anywhere.
 - Saving: the button shows it is working.
+- Passkeys: the person closes the browser's prompt — nothing is said; this device already holds one of
+  their passkeys, the browser cannot make passkeys, or the passkey is refused — one line under
+  Add a passkey; adding — the button says so.
 
 ## Never copy
-GitHub's, Slack's or Square's wording, icons, colors or logos.
+GitHub's, Slack's, Square's or passkeys.dev's wording, icons, colors or logos (the key is lucide's
+icon).
 
 Deviations allowed: none

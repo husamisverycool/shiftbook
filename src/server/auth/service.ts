@@ -77,7 +77,7 @@ export function withAuth<T>(deps: AuthDeps, fn: (tx: Tx) => Promise<T>): Promise
   });
 }
 /** From here on in this transaction, the agency's own tables are visible too. */
-const enterAgency = (tx: Tx, agencyId: string) => tx.execute(sql`select set_config('app.agency_id', ${agencyId}, true)`);
+export const enterAgency = (tx: Tx, agencyId: string) => tx.execute(sql`select set_config('app.agency_id', ${agencyId}, true)`);
 
 const linkToken = () => `sbau_${randomToken()}`;
 export const hideAuthLinks = (text: string) => text.replace(LINK_TOKEN, HIDDEN_AUTH_LINK);
@@ -135,7 +135,7 @@ export function nextStep(info: Pick<SessionInfo, "role" | "secondStepAt" | "hasA
 }
 
 /** A new session, confirmed now (the person just gave a password, a code or a link); a half one lasts minutes. */
-async function startSession(tx: Tx, user: { id: string; agencyId: string }, opts: { demo: boolean; next: "done" | "code" | "setup"; userAgent: string | null; now: Date }): Promise<string> {
+export async function startSession(tx: Tx, user: { id: string; agencyId: string }, opts: { demo: boolean; next: "done" | "code" | "setup"; userAgent: string | null; now: Date }): Promise<string> {
   const token = randomToken();
   const lasts = opts.next === "done" ? MAX_SESSION_MS : opts.next === "code" ? HALF_FOR_CODE_MS : HALF_FOR_SETUP_MS;
   await tx.insert(s.sessions).values({
@@ -154,7 +154,7 @@ async function startSession(tx: Tx, user: { id: string; agencyId: string }, opts
 }
 
 const who = (user: { id: string; agencyId: string; name: string }, demo = false) => ({ agencyId: user.agencyId, userId: user.id, label: demo && !user.name.endsWith("(demo)") ? `${user.name} (demo)` : user.name });
-const log = (tx: Tx, user: { id: string; agencyId: string; name: string }, events: AuditInput[], demo = false) => auditBy(tx, who(user, demo), events);
+export const log = (tx: Tx, user: { id: string; agencyId: string; name: string }, events: AuditInput[], demo = false) => auditBy(tx, who(user, demo), events);
 
 // ---------- wrong tries ----------
 
@@ -166,7 +166,7 @@ const log = (tx: Tx, user: { id: string; agencyId: string; name: string }, event
  */
 const throttleKeys = (email: string, address: string | null): readonly string[] => (address ? [digest(`password|${normalEmail(email)}|${address}`), digest(`address|${address}`)] : []);
 
-async function throttled(tx: Tx, keys: readonly string[], now: Date): Promise<boolean> {
+export async function throttled(tx: Tx, keys: readonly string[], now: Date): Promise<boolean> {
   if (keys.length === 0) return false;
   const rows = await tx
     .select({ key: s.signInFailures.keyHash, n: sql<number>`count(*)::int` })
@@ -176,7 +176,7 @@ async function throttled(tx: Tx, keys: readonly string[], now: Date): Promise<bo
   const n = (key: string) => rows.find((r) => r.key === key)?.n ?? 0;
   return n(keys[0]!) >= PER_EMAIL_AND_ADDRESS || (keys[1] !== undefined && n(keys[1]) >= PER_ADDRESS);
 }
-const noteThrottle = async (tx: Tx, keys: readonly string[], now: Date) => {
+export const noteThrottle = async (tx: Tx, keys: readonly string[], now: Date) => {
   if (keys.length > 0) await tx.insert(s.signInFailures).values(keys.map((keyHash) => ({ keyHash, at: now })));
 };
 

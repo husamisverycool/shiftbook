@@ -3746,7 +3746,9 @@
       "refuse": "Refused",
       "ssn_viewed": "SSN viewed",
       "file_opened": "File opened",
-      "ssn_changed": "SSN changed"
+      "ssn_changed": "SSN changed",
+      "passkey_added": "Passkey added",
+      "passkey_removed": "Passkey removed"
     },
     "types": {
       "aca_monthly_hours": "ACA hours",
@@ -4310,5 +4312,38 @@
     "whatPoMany": "PO {po} on the deposit (invoices {invoices})",
     "whyNamed": "; the client is named on the deposit",
     "whyOnlyClient": "; the only client with invoices adding up to it"
+  },
+  "passkeys": {
+    "title": "Passkeys",
+    "intro": "Sign in with your device's fingerprint, face or screen lock instead of your password and code. A passkey counts as both steps.",
+    "listLabel": "Your passkeys",
+    "none": "No passkeys yet.",
+    "added": "Added {date}",
+    "lastUsed": "Last used {date}",
+    "neverUsed": "Not used yet",
+    "add": "Add a passkey",
+    "adding": "Adding…",
+    "unsupported": "This browser cannot make passkeys.",
+    "addFailed": "The passkey was not added. Try again.",
+    "alreadyAdded": "This device already has a passkey for your account.",
+    "addedTitle": "Passkey added",
+    "addedBody": "“{name}” is ready. Next time, choose Passkey on the sign-in page and unlock your device.",
+    "done": "Done",
+    "remove": "Remove",
+    "removeLabel": "Remove {name}",
+    "removeTitle": "Remove this passkey?",
+    "removeBody": "“{name}” will no longer sign you in. You can also delete it from your device's password manager.",
+    "removed": "Passkey removed.",
+    "cancel": "Cancel",
+    "defaultName": {
+      "singleDevice": "Passkey on one device",
+      "multiDevice": "Synced passkey"
+    },
+    "signIn": {
+      "working": "Waiting for your passkey…",
+      "invalid": "That passkey did not work. Try another way to sign in.",
+      "locked": "Too many tries from here. Wait 15 minutes and try again.",
+      "unsupported": "This browser cannot use passkeys. Sign in another way."
+    }
   }
 }

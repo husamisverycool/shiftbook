@@ -3746,7 +3746,9 @@
       "refuse": "Rechazado",
       "ssn_viewed": "Número de Seguro Social consultado",
       "file_opened": "Archivo abierto",
-      "ssn_changed": "Número de Seguro Social cambiado"
+      "ssn_changed": "Número de Seguro Social cambiado",
+      "passkey_added": "Llave de acceso agregada",
+      "passkey_removed": "Llave de acceso quitada"
     },
     "types": {
       "aca_monthly_hours": "Horas ACA",
@@ -4310,5 +4312,38 @@
     "whatPoMany": "la orden de compra {po} en el depósito (facturas {invoices})",
     "whyNamed": "; el cliente aparece en el depósito",
     "whyOnlyClient": "; es el único cliente con facturas que suman eso"
+  },
+  "passkeys": {
+    "title": "Llaves de acceso",
+    "intro": "Inicie sesión con la huella, el rostro o el bloqueo de pantalla de su dispositivo en lugar de su contraseña y su código. Una llave de acceso cuenta como los dos pasos.",
+    "listLabel": "Sus llaves de acceso",
+    "none": "Aún no tiene llaves de acceso.",
+    "added": "Agregada el {date}",
+    "lastUsed": "Último uso: {date}",
+    "neverUsed": "Aún sin usar",
+    "add": "Agregar una llave de acceso",
+    "adding": "Agregando…",
+    "unsupported": "Este navegador no puede crear llaves de acceso.",
+    "addFailed": "No se agregó la llave de acceso. Inténtelo de nuevo.",
+    "alreadyAdded": "Este dispositivo ya tiene una llave de acceso para su cuenta.",
+    "addedTitle": "Llave de acceso agregada",
+    "addedBody": "«{name}» está lista. La próxima vez, elija Llave de acceso en la página de inicio de sesión y desbloquee su dispositivo.",
+    "done": "Listo",
+    "remove": "Quitar",
+    "removeLabel": "Quitar {name}",
+    "removeTitle": "¿Quitar esta llave de acceso?",
+    "removeBody": "«{name}» ya no le permitirá iniciar sesión. También puede borrarla del administrador de contraseñas de su dispositivo.",
+    "removed": "Llave de acceso quitada.",
+    "cancel": "Cancelar",
+    "defaultName": {
+      "singleDevice": "Llave de acceso en un solo dispositivo",
+      "multiDevice": "Llave de acceso sincronizada"
+    },
+    "signIn": {
+      "working": "Esperando su llave de acceso…",
+      "invalid": "Esa llave de acceso no funcionó. Inicie sesión de otra forma.",
+      "locked": "Demasiados intentos desde aquí. Espere 15 minutos y vuelva a intentarlo.",
+      "unsupported": "Este navegador no puede usar llaves de acceso. Inicie sesión de otra forma."
+    }
   }
 }
