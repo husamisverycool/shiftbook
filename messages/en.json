@@ -638,6 +638,8 @@
     "collapseGroup": "Hide {name}",
     "selectRow": "Select {name}",
     "preview": "Preview {name}",
+    "payRate": "Pay {rate}",
+    "billRate": "Bill {rate}",
     "panel": "Preview",
     "position": "{n} of {total}",
     "previous": "Previous",

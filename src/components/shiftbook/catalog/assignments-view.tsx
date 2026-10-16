@@ -30,13 +30,15 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
   const [endDate, setEndDate] = useState(today);
   const [pending, run] = useTransition();
   const date = (d: string | null) => (d ? longDate(d, locale) : "—");
+  const tl = useTranslations("list");
   const rate = (c: number | null) => (c === null ? "—" : money(c, locale));
 
   const columns: Column<AssignmentRow>[] = [
     { key: "start", label: t("col.start"), cell: (r) => date(r.startDate), className: "w-36" },
     { key: "end", label: t("col.end"), cell: (r) => date(r.endDate), className: "w-36" },
-    { key: "pay", label: t("col.pay"), cell: (r) => rate(r.payRateCents), className: "w-20 text-right tabular-nums" },
-    { key: "bill", label: t("col.bill"), cell: (r) => rate(r.billRateCents), className: "w-20 text-right tabular-nums" },
+    // Two amounts side by side say which is which (the pattern's rates: pay and bill).
+    { key: "pay", label: t("col.pay"), cell: (r) => tl("payRate", { rate: rate(r.payRateCents) }), className: "w-28 text-right tabular-nums" },
+    { key: "bill", label: t("col.bill"), cell: (r) => tl("billRate", { rate: rate(r.billRateCents) }), className: "w-28 text-right tabular-nums" },
     { key: "rates", label: t("col.rates"), cell: (r) => (r.ownRates ? <Badge variant="outline">{t("ownRates")}</Badge> : null), className: "w-24" },
     { key: "source", label: t("col.source"), cell: (r) => r.source ?? "—", className: "w-24" },
   ];
@@ -65,7 +67,7 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
         title={t("title")}
         rows={rows}
         primary={(r) => r.workerName}
-        secondary={(r) => `${r.position}${r.shift ? ` · ${r.shift}` : ""} · ${r.clientName}`}
+        secondary={(r, grouping) => (grouping === "jobOrder" ? null : grouping === "client" ? `${r.position}${r.shift ? ` · ${r.shift}` : ""}` : `${r.position}${r.shift ? ` · ${r.shift}` : ""} · ${r.clientName}`)}
         hrefFor={(r) => `/job-orders/${r.jobOrderId}?tab=assignments`}
         columns={columns}
         defaultColumns={["start", "end", "pay", "bill", "rates"]}

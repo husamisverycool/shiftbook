@@ -67,7 +67,8 @@ interface Props<R extends { id: string }> {
   figures?: ReactNode;
   rows: R[];
   primary: (r: R) => string;
-  secondary?: (r: R) => string | null;
+  /** The row's second line; `grouping` is the group the rows are in, so a property its band names is left out. */
+  secondary?: (r: R, grouping: string) => string | null;
   hrefFor: (r: R) => string;
   columns: Column<R>[];
   defaultColumns: string[];
@@ -434,7 +435,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                           <Link href={p.hrefFor(r)} className="block truncate font-medium hover:underline">
                             {p.primary(r)}
                           </Link>
-                          {p.secondary?.(r) && <span className="block truncate text-xs text-muted-foreground">{p.secondary(r)}</span>}
+                          {p.secondary?.(r, grouping.key) && <span className="block truncate text-xs text-muted-foreground">{p.secondary(r, grouping.key)}</span>}
                         </span>
                         {visibleColumns.map((c) => (
                           <span key={c.key} role="gridcell" className={cn("hidden shrink-0 text-muted-foreground md:block", c.className)}>

@@ -62,7 +62,15 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
     [t("shift"), job.shift ?? "—"],
     [t("socCode"), job.socCode ?? "—"],
     [t("headcount"), t("assignedOf", { assigned: active.length, wanted: job.headcount })],
-    [t("payRange"), job.payMinCents !== null || job.payMaxCents !== null ? `${job.payMinCents !== null ? money(job.payMinCents, locale) : "—"} – ${job.payMaxCents !== null ? money(job.payMaxCents, locale) : "—"}` : "—"],
+    // One figure when the range is one amount.
+    [
+      t("payRange"),
+      job.payMinCents === null && job.payMaxCents === null
+        ? "—"
+        : job.payMinCents === job.payMaxCents
+          ? money(job.payMinCents!, locale)
+          : `${job.payMinCents !== null ? money(job.payMinCents, locale) : "—"} – ${job.payMaxCents !== null ? money(job.payMaxCents, locale) : "—"}`,
+    ],
     [t("prevailingWage"), job.prevailingWage ? t("yes") : t("no")],
     [t("branch"), job.branchName ?? "—"],
     [t("created"), longDate(job.createdAt.slice(0, 10), locale)],
