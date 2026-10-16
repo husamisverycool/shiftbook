@@ -38,7 +38,8 @@ CREATE TRIGGER invoices_original_check
 -- How a worker's differences in a correction were settled when the payroll file cannot carry them
 -- (decision E9): for more pay, paid by hand or covered by an overpayment the worker kept from an
 -- earlier correction of the period; for less pay, repaid outside payroll, to be recovered under the
--- worker's state rules, or written off. The difference it was made for is kept: a new one asks again.
+-- worker's state rules, or written off. Each row is what one decision settled: a worker may have several
+-- (what moved stays on record; what is left is asked for again).
 CREATE TABLE "correction_decisions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"agency_id" uuid NOT NULL REFERENCES "agencies"("id"),
@@ -50,11 +51,12 @@ CREATE TABLE "correction_decisions" (
 	"decided_by" uuid,
 	"decided_by_label" text NOT NULL,
 	"decided_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "correction_decisions_one" UNIQUE ("pay_run_id", "worker_id"),
 	CONSTRAINT "correction_decisions_kind" CHECK (decision IN ('paid_by_hand', 'offset_earlier_overpayment', 'repaid_outside_payroll', 'consent_to_deduct', 'written_off')),
-	CONSTRAINT "correction_decisions_sign" CHECK ((decision = 'paid_by_hand' AND difference_cents >= 0) OR (decision = 'offset_earlier_overpayment' AND difference_cents > 0) OR (decision IN ('repaid_outside_payroll', 'consent_to_deduct', 'written_off') AND difference_cents < 0)),
+	CONSTRAINT "correction_decisions_sign" CHECK ((decision IN ('paid_by_hand', 'offset_earlier_overpayment') AND difference_cents > 0) OR (decision IN ('repaid_outside_payroll', 'consent_to_deduct', 'written_off') AND difference_cents < 0)),
 	CONSTRAINT "correction_decisions_note" CHECK (length(btrim(note)) > 0)
 );
+--> statement-breakpoint
+CREATE INDEX "correction_decisions_run_worker" ON "correction_decisions" ("agency_id", "pay_run_id", "worker_id");
 --> statement-breakpoint
 ALTER TABLE "correction_decisions" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint

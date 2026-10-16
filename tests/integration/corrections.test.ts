@@ -264,51 +264,85 @@ describe("a correction that lowers pay", () => {
     }
   });
 
-  it("asks again when the difference changes after the decision", async () => {
+  it("asks only for what is left to settle when the overpayment grows", async () => {
     await start("Marcus left at 3 pm on Wednesday");
     await edit(shifts[2]!.id, { outMinute: 900 });
     await compute();
     await inAgency((tx) => recordCorrectionDecision(tx, theOwner, w2, marcus, "written_off", "Small amount, written off"));
     expect((await compute()).blockers).toEqual([]);
-    // One more hour off: 3 h of overtime now, 3 h × $27.375 = $82.125 → $82.13, against $164.25 paid: −$82.12.
+    // One more hour off: 3 h of overtime now, 3 h × $27.375 = $82.125 → $82.13, against $164.25 paid: −$82.12,
+    // of which $54.75 is already written off: −$27.37 left to settle.
     await edit(shifts[2]!.id, { outMinute: 840 });
     const run = await compute();
-    expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: -8212 })]);
-    expect(run.blockers[0]!.message).toContain("changed since the decision");
+    expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: -2737 })]);
+    expect(run.blockers[0]!.message).toContain("left to settle");
   });
 });
 
-describe("decisions stay true to the money (second opinion, findings 1 and 3)", () => {
+describe("decisions are a record of what was settled (second opinion, findings 1 and 3)", () => {
   beforeEach(paidWeek);
+  const decisionsOf = () => inAgency((tx) => tx.select().from(s.correctionDecisions).orderBy(asc(s.correctionDecisions.decidedAt)));
 
-  it("a decision that no longer fits asks again, even when the difference is now all additions; removing it lets the file carry them", async () => {
+  it("money repaid stays on record: when the difference turns to more pay, the refund and the new pay are left to settle", async () => {
     await start("Marcus left at 3 pm on Wednesday");
     await edit(shifts[2]!.id, { outMinute: 900 });
     await compute();
     expect(await record(marcus, "repaid_outside_payroll", "Repaid by check 1042")).toEqual({ ok: true });
-    // He stayed until 6 pm after all (11 h): 7 h of overtime, 420 min × $27.375/h = $191.625 → $191.63, against $164.25 paid: +$27.38.
+    // He stayed until 6 pm after all (11 h): 7 h of overtime, 420 min × $27.375/h = $191.625 → $191.63, against
+    // $164.25 paid: +$27.38 owed, and the $54.75 he repaid is owed back: $82.13 left to settle.
     await edit(shifts[2]!.id, { outMinute: 1080 });
     const run = await compute();
-    expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 2738 })]);
-    expect(run.blockers[0]!.message).toContain("changed since the decision");
-    expect(await inAgency((tx) => removeCorrectionDecision(tx, coordinator, w2, marcus))).toEqual({ ok: false, error: "not_allowed" });
-    expect(await inAgency((tx) => removeCorrectionDecision(tx, theOwner, w2, marcus))).toEqual({ ok: true });
+    expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 8213 })]);
+    expect(run.blockers[0]!.message).toContain("repaid outside payroll");
+    expect(await record(marcus, "paid_by_hand", "Refund $54.75 and $27.38 more, check 1050")).toEqual({ ok: true });
+    expect((await compute()).blockers).toEqual([]);
+    expect((await decisionsOf()).map((d) => [d.decision, d.differenceCents])).toEqual([
+      ["repaid_outside_payroll", -5475],
+      ["paid_by_hand", 8213],
+    ]);
+  });
+
+  it("a decision recorded by mistake is removed (Owner); then the file carries the additions", async () => {
+    await start("Marcus left at 3 pm on Wednesday");
+    await edit(shifts[2]!.id, { outMinute: 900 });
+    await compute();
+    await record(marcus, "repaid_outside_payroll", "Repaid by check 1042");
+    await edit(shifts[2]!.id, { outMinute: 1080 });
+    const [repaid] = await decisionsOf();
+    expect(await inAgency((tx) => removeCorrectionDecision(tx, coordinator, w2, repaid!.id))).toEqual({ ok: false, error: "not_allowed" });
+    expect(await inAgency((tx) => removeCorrectionDecision(tx, theOwner, w2, repaid!.id))).toEqual({ ok: true });
     expect((await compute()).blockers).toEqual([]);
     const out = await approveAndFile();
     expect(out.payroll!.controlTotals).toMatchObject({ minutesByType: { OT: 60 }, grossCents: 2738 });
   });
 
-  it("a decision for a difference that is gone asks to be removed, and holds the correction from being discarded", async () => {
+  it("an agreement that no longer fits (a write-off of an overpayment that is gone) must be removed, and holds the correction from being discarded", async () => {
     await start("Marcus left at 3 pm on Wednesday");
     await edit(shifts[2]!.id, { outMinute: 900 });
     await compute();
     await record(marcus, "written_off", "Small amount, written off");
     await edit(shifts[2]!.id, { outMinute: 1020 });
-    expect((await compute()).blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 0 })]);
+    const run = await compute();
+    expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 0 })]);
+    expect(run.blockers[0]!.message).toContain("no longer fits");
+    expect(await record(marcus, "paid_by_hand", "x")).toEqual({ ok: false, error: "wrong_kind" });
     expect(await inAgency((tx) => discardCorrection(tx, theOwner, w2))).toEqual({ ok: false, error: "has_decisions" });
-    await inAgency((tx) => removeCorrectionDecision(tx, theOwner, w2, marcus));
+    const [writeOff] = await decisionsOf();
+    await inAgency((tx) => removeCorrectionDecision(tx, theOwner, w2, writeOff!.id));
     expect((await compute()).blockers.map((b) => b.code)).toEqual(["correction_no_differences"]);
     expect(await inAgency((tx) => discardCorrection(tx, theOwner, w2))).toEqual({ ok: true });
+  });
+
+  it("money repaid for an overpayment that is gone is owed back", async () => {
+    await start("Marcus left at 3 pm on Wednesday");
+    await edit(shifts[2]!.id, { outMinute: 900 });
+    await compute();
+    await record(marcus, "repaid_outside_payroll", "Repaid by check 1042");
+    await edit(shifts[2]!.id, { outMinute: 1020 });
+    const run = await compute();
+    expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 5475 })]);
+    expect(await record(marcus, "paid_by_hand", "Refunded by check 1051")).toEqual({ ok: true });
+    expect((await compute()).blockers).toEqual([]);
   });
 
   it("pay written off in an earlier correction is not paid again when the hours come back", async () => {
@@ -329,7 +363,7 @@ describe("decisions stay true to the money (second opinion, findings 1 and 3)", 
     expect(out.payroll).toBeNull();
   });
 
-  it("an offset cannot cover more than the worker kept", async () => {
+  it("more pay than the worker kept: the offset covers what was kept, the rest is paid by hand, and what was kept is used up", async () => {
     await start("Marcus left at 3 pm on Wednesday");
     await edit(shifts[2]!.id, { outMinute: 900 });
     await compute();
@@ -338,10 +372,21 @@ describe("decisions stay true to the money (second opinion, findings 1 and 3)", 
     await start("He stayed until 6 pm");
     // 11 h now: +$82.13 against version 2 ($191.63 − $109.50), of which $54.75 was kept.
     await edit(shifts[2]!.id, { outMinute: 1080 });
-    const run = await compute();
-    expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 8213, heldCents: 5475 })]);
+    expect((await compute()).blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 8213, heldCents: 5475 })]);
+    expect(await record(marcus, "offset_earlier_overpayment", "Covered by the $54.75 he kept")).toEqual({ ok: true });
+    expect((await compute()).blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 2738 })]);
     expect(await record(marcus, "offset_earlier_overpayment", "x")).toEqual({ ok: false, error: "wrong_kind" });
-    expect(await record(marcus, "paid_by_hand", "Paid $27.38 by hand; $54.75 covered by what he kept")).toEqual({ ok: true });
+    expect(await record(marcus, "paid_by_hand", "Paid $27.38 by hand")).toEqual({ ok: true });
+    expect((await compute()).blockers).toEqual([]);
+    expect((await decisionsOf()).filter((d) => d.decision !== "written_off").map((d) => [d.decision, d.differenceCents])).toEqual([
+      ["offset_earlier_overpayment", 5475],
+      ["paid_by_hand", 2738],
+    ]);
+    await approveAndFile();
+    // Version 4 takes the extra hour off again: −$27.37. Nothing is kept any more, so it is an ordinary overpayment.
+    await start("He left at 5 pm after all");
+    await edit(shifts[2]!.id, { outMinute: 1020 });
+    expect((await compute()).blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: -2738 })]);
   });
 });
 

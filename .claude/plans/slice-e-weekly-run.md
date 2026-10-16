@@ -98,9 +98,11 @@ only the differences, and the original files and invoices never change.
     worker → "paid by hand" (the amount is shown);
   - pay goes **up** for a worker who kept pay from an earlier correction of the period (written off,
     or to be recovered) → "covered by what they kept" (up to that amount) or "paid by hand".
-  A decision holds the amount it was made for; if the difference changes or disappears, the run asks
-  again (record a new one, or remove it when nothing was done outside the files). A correction holding
-  decisions cannot be discarded. A cent left over from rounding when hours move at one rate is not a
+  Decisions are a record of what was settled, several per worker if need be: money that moved (paid
+  by hand, repaid) always stays on record; agreements (written off, to be recovered, covered by what
+  was kept) must keep fitting what is owed after it, or be removed. Only what is left is asked for, so
+  a refund owed after a repayment is never lost and kept pay is never paid twice. A decision recorded
+  by mistake is removed by the Owner. A correction holding decisions cannot be discarded. A cent left over from rounding when hours move at one rate is not a
   difference (noted with the file; no invoice for it).
 - New blocking checks on a correction: nothing differs (Fix: discard the correction); a decision
   needed (Fix: record it). New warning: more pay is due — pay it by the next regular payday
@@ -129,6 +131,10 @@ only the differences, and the original files and invoices never change.
 ## Known limits (2026-10-16)
 - An Illinois equal-pay obligation found by an earlier version stays open when a correction removes
   the hours that crossed the threshold; a person closes it on the obligations list.
+- A cent of rounding left over in one correction is not billed; a later correction's credit note can
+  therefore differ by that cent from what the client was invoiced in total.
+- "To be recovered under the worker's state rules" stays counted as kept pay until it is offset; when
+  it has been recovered, the person pays any later increase by hand (the run says so).
 - A client-approved shift cannot be edited in a correction (slice d): withdraw the client's approval
   in Client approvals, edit, and send it again; or add the missing hours as a new entry.
 

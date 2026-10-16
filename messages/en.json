@@ -490,8 +490,8 @@
       "discardConfirm": "Discard",
       "decide": "Record decision",
       "decideTitle": "How is {name}'s difference settled?",
-      "decideLess": "{amount} less pay than version {base} paid. The payroll file never takes pay back.",
-      "decideMore": "{amount} more pay that the payroll file cannot carry as additions.",
+      "decideLess": "{amount} less pay left to settle (version {base} paid more). The payroll file never takes pay back.",
+      "decideMore": "{amount} more pay left to settle outside the payroll file.",
       "consentHint": "Rules on recovering an overpayment differ by state: some need the worker's written consent at the time of each deduction or an agreed repayment schedule, cap the amount, or do not allow deducting it from wages.",
       "options": {
         "paid_by_hand": "Paid by hand",
@@ -504,7 +504,7 @@
       "notePlaceholder": "What was done: check number, consent date, who approved",
       "decideConfirm": "Record decision",
       "decisionOnFile": "Decided: {decision} — {note} ({by})",
-      "decisionStale": "The difference changed since this decision; decide again.",
+      "decisionStale": "No longer fits the difference: remove it, then record what is left.",
       "colWas": "Was",
       "colNow": "Now",
       "colDifference": "Difference",
@@ -534,7 +534,10 @@
       "netZero": "No invoice for {clients}: the billed differences net to {zero}.",
       "decideHeld": "{amount} of pay an earlier correction left with them may cover it.",
       "decideNone": "Their difference is gone. Remove the decision if nothing was done outside the files.",
-      "removeDecision": "Remove decision"
+      "removeDecision": "Remove decision",
+      "roundingTitle": "Rounding left over",
+      "roundingMore": "{name}: {amount} more from rounding each line once when hours moved between days or assignments at one rate; not paid.",
+      "roundingLess": "{name}: {amount} less from rounding each line once when hours moved between days or assignments at one rate; not taken back."
     }
   },
   "nav": {

@@ -299,11 +299,11 @@ export async function recordDecisionAction(payPeriodId: string, workerId: string
   return corrected(() => withAgency(actor.agencyId, (tx) => recordCorrectionDecision(tx, actor, payPeriodId, workerId, decision as (typeof CORRECTION_DECISIONS)[number], note)));
 }
 
-/** The Owner removes a decision when nothing was done outside the files after all. */
-export async function removeDecisionAction(payPeriodId: string, workerId: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
+/** The Owner removes a decision recorded by mistake, or an agreement that no longer fits. */
+export async function removeDecisionAction(payPeriodId: string, decisionId: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
   const actor = currentActor();
-  if (!ok(id, payPeriodId) || !ok(id, workerId)) return { ok: false, error: "generic" };
-  return corrected(() => withAgency(actor.agencyId, (tx) => removeCorrectionDecision(tx, actor, payPeriodId, workerId)));
+  if (!ok(id, payPeriodId) || !ok(id, decisionId)) return { ok: false, error: "generic" };
+  return corrected(() => withAgency(actor.agencyId, (tx) => removeCorrectionDecision(tx, actor, payPeriodId, decisionId)));
 }
 
 export interface HistoryEvent {

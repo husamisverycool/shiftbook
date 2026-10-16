@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import { money } from "../format";
-import { DecisionButton, DiscardCorrectionButton } from "./correction-actions";
+import { DecisionButton, DiscardCorrectionButton, RemoveDecisionButton } from "./correction-actions";
 import type { TotalsData } from "./totals-review";
 import { REFUSAL_MESSAGE } from "./types";
 
@@ -55,7 +55,6 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
         name={i.workerName ?? ""}
         netCents={i.grossCents}
         heldCents={i.heldCents ?? 0}
-        hasDecision={correction.decisions.some((d) => d.workerId === i.workerId)}
         baseVersion={correction.baseVersion}
       />
     ) : null;
@@ -203,9 +202,13 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
           <AlertDescription>
             <ul className="flex flex-col gap-1">
               {correction.decisions.map((d) => (
-                <li key={d.workerId}>
-                  <span className="text-foreground">{d.name}</span>: {tr("decisionOnFile", { decision: tr(`options.${d.decision}` as "options.paid_by_hand"), note: d.note, by: d.by })}
-                  {!d.fits && <span className="text-destructive"> {tr("decisionStale")}</span>}
+                <li key={d.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>
+                    <span className="text-foreground">{d.name}</span>: {money(Math.abs(d.differenceCents), locale)} ·{" "}
+                    {tr("decisionOnFile", { decision: tr(`options.${d.decision}` as "options.paid_by_hand"), note: d.note, by: d.by })}
+                    {!d.fits && <span className="text-destructive"> {tr("decisionStale")}</span>}
+                  </span>
+                  {!locked && data.canApprove && <RemoveDecisionButton periodId={periodId} decisionId={d.id} label={`${d.name}, ${tr(`options.${d.decision}` as "options.paid_by_hand")}`} />}
                 </li>
               ))}
             </ul>

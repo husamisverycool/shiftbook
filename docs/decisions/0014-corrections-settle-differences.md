@@ -28,9 +28,10 @@ original). Plan: `.claude/plans/slice-e-weekly-run.md`, decisions E8–E13.
   for more pay; for less pay "repaid outside payroll", "to be recovered under the worker's state
   rules" or "written off". Pay a worker kept from an earlier correction (written off, or to be
   recovered) is remembered for the period: more pay later is "covered by what they kept" (up to that
-  amount) or "paid by hand", never paid again on its own. A decision keeps the amount it was made
-  for; a changed or vanished difference asks again (a new decision, or removing it when nothing was
-  done outside the files), and a correction holding decisions cannot be discarded. The payroll file
+  amount) or "paid by hand", never paid again on its own. Decisions are a record of what was settled
+  (several per worker if need be): money that moved (paid by hand, repaid) always stands, agreements
+  must keep fitting what is owed after it or be removed, and only what is left is asked for; a
+  correction holding decisions cannot be discarded. The payroll file
   never carries a negative line. A cent left over from rounding each line once, when hours move at
   one rate, is not a difference.
 - Billing: per client whose billed difference is not zero, a supplemental invoice

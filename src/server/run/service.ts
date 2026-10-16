@@ -15,7 +15,7 @@
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
 import { addDays, addMonths, computePay, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
@@ -28,7 +28,7 @@ import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
 import { payrollFixture } from "../files/payroll-fixture";
 import type { Actor } from "../session";
-import { billForDiff, describeMoves, fileWorkers, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
+import { billForDiff, decisionText, describeMoves, fileWorkers, hasRealDifferences, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
 import type { RunIssueCode } from "./issue-codes";
 import { openPeriod, PeriodLockedError } from "./period-lock";
 
@@ -439,7 +439,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   // A correction settles only its differences against the latest paid version (decisions E8, E9).
   const base = run.kind === "correction" ? await paidBase(tx, payPeriodId, run.version) : null;
   if (run.kind === "correction" && !base) throw new Error(`Run ${run.id} is a correction with no paid version before it.`);
-  const decisions = base ? await tx.select().from(s.correctionDecisions).where(eq(s.correctionDecisions.payRunId, run.id)) : [];
+  const decisions = base ? await tx.select().from(s.correctionDecisions).where(eq(s.correctionDecisions.payRunId, run.id)).orderBy(asc(s.correctionDecisions.decidedAt), asc(s.correctionDecisions.id)) : [];
   const held = base ? await heldFor(tx, payPeriodId, run.version) : new Map<string, number>();
 
   const tables = await ruleTables(tx);
@@ -523,31 +523,34 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
           message: `${name}: ${formatCents(paidNet)} more pay is due than version ${correction.baseVersion} paid. Pay it as soon as possible, no later than the next regular payday: pay that was missed is already late. Overtime that could not be computed in time is due no later than the next payday after it can be computed (29 C.F.R. § 778.106). State pay-day laws also apply.`,
         });
       }
-      if (w.decisionFits) continue;
-      if (!w.decision && !w.needsDecision) continue;
-      // A decision stands for money moved outside the files: when the difference changed, ask again.
-      const stale = w.decision
-        ? `The difference changed since the decision (${formatCents(w.decision.differenceCents)} then, ${formatCents(w.netCents)} now); record a new decision, or remove it if nothing was done outside the files. `
-        : "";
-      const kept = w.heldCents > 0 ? ` ${formatCents(w.heldCents)} of pay an earlier correction of this period left with them (written off, or to be recovered) may already cover it.` : "";
+      if (!w.needsDecision) continue;
+      const base = correction.baseVersion;
+      const amount = (cents: number) => `${formatCents(Math.abs(cents))} ${cents < 0 ? "less" : "more"}`;
+      const settled = w.decisions.filter((d) => !w.stale.includes(d)).map((d) => decisionText(d)).join("; ");
+      const already = settled ? ` Already settled outside the files: ${settled}.` : "";
+      const kept = w.heldCents > 0 ? ` ${formatCents(w.heldCents)} of pay an earlier correction of this period left with them (written off, or not yet recovered) may cover it; if it was recovered, pay it by hand.` : "";
+      const left = w.remainingCents;
+      const message =
+        w.stale.length > 0
+          ? `${name}: ${w.stale.map((d) => decisionText(d)).join("; ")} — no longer fits the difference (${amount(w.netCents - w.leftoverCents)} than version ${base} paid). Remove it, then record what is left.`
+          : w.decisions.length > 0
+            ? `${name}: ${amount(w.netCents - w.leftoverCents)} than version ${base} paid.${already} ${amount(left)} left to settle: record how.${left > 0 ? kept : ""}`
+            : left < 0
+              ? `${name}: ${formatCents(-left)} less pay than version ${base} paid. The payroll file never takes pay back: record how it is settled (repaid outside payroll, recovered under the worker's state rules, or written off).`
+              : !w.additionsOnly
+                ? `${name}: ${formatCents(left)} more pay, but it moves pay between rates, kinds of hours or workweeks (${describeMoves(w.fileLines)}), which the payroll file cannot carry as additions. Pay it by hand and record that here.`
+                : `${name}: ${formatCents(left)} more pay than version ${base} paid.${kept} Record whether that covers it, or that it is paid by hand.`;
       blockers.push({
         code: "correction_decision_needed",
         workerId: w.workerId,
         workerName: name,
-        grossCents: w.netCents,
+        // What is left to settle (what a decision recorded now would settle); a stale agreement: what is owed.
+        grossCents: w.stale.length > 0 ? w.netCents - w.leftoverCents - w.decisions.filter((d) => !w.stale.includes(d)).reduce((sum, d) => sum + d.differenceCents, 0) : left,
         ...(w.heldCents > 0 ? { heldCents: w.heldCents } : {}),
-        message:
-          stale +
-          (w.netCents < 0
-            ? `${name}: ${formatCents(-w.netCents)} less pay than version ${correction.baseVersion} paid. The payroll file never takes pay back: record how it is settled (repaid outside payroll, recovered under the worker's state rules, or written off).`
-            : !w.additionsOnly
-              ? `${name}: ${formatCents(w.netCents)} more pay, but it moves pay between rates, kinds of hours or workweeks (${describeMoves(w.fileLines)}), which the payroll file cannot carry as additions. Pay it by hand and record that here.`
-              : w.netCents > 0
-                ? `${name}: ${formatCents(w.netCents)} more pay than version ${correction.baseVersion} paid.${kept} Record whether that covers it, or that it is paid by hand.`
-                : `${name}: no difference any more.`),
+        message,
       });
     }
-    if (correction.pay.length === 0 && correction.bill.length === 0 && blockers.length === 0) {
+    if (!hasRealDifferences(correction) && blockers.length === 0) {
       blockers.push({ code: "correction_no_differences", message: `Nothing differs from version ${correction.baseVersion}, so there is nothing to correct. Change the hours or rates, or discard this correction.` });
     }
   }

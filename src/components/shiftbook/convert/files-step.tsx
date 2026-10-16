@@ -22,6 +22,8 @@ export interface FilesVersion {
   decisions: { name: string; text: string; note: string; by: string }[];
   /** A correction's clients whose differences net to zero: no document (decision E11). */
   netZero: string[];
+  /** A correction's cents left over from rounding when hours moved at one rate: neither paid nor taken back. */
+  roundings: { name: string; cents: number }[];
 }
 
 export interface FilesData {
@@ -127,6 +129,17 @@ async function Version({ v }: { v: FilesVersion }) {
               <li key={d.name}>
                 {d.name}: {d.text} — {d.note} ({d.by})
               </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {v.roundings.length > 0 && (
+        <section className="flex flex-col gap-1 text-sm" data-testid="roundings">
+          <h4 className="font-medium">{tr("roundingTitle")}</h4>
+          <ul className="list-disc pl-5 text-muted-foreground">
+            {v.roundings.map((r) => (
+              <li key={r.name}>{tr(r.cents > 0 ? "roundingMore" : "roundingLess", { name: r.name, amount: money(Math.abs(r.cents), locale) })}</li>
             ))}
           </ul>
         </section>

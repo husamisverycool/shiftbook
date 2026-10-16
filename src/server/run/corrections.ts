@@ -13,12 +13,13 @@
  * is remembered for the period, so hours that come back are not paid twice.
  */
 import { formatCents, formatDuration, formatRate, RULES_VERSION } from "@shiftbook/rules";
-import { and, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import en from "../../../messages/en.json";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
+import { clientNets } from "../files/invoice-plan";
 import { differences, settlement, type DiffLine, type FileLine, type LineForDiff } from "./differences";
 import { lockPeriod, openPeriod, periodState } from "./period-lock";
 import { computeRun } from "./service";
@@ -63,6 +64,7 @@ export async function paidBase(tx: Tx, payPeriodId: string, beforeVersion: numbe
 }
 
 export interface DecisionOnFile {
+  id: string;
   workerId: string;
   decision: s.CorrectionDecisionKind;
   differenceCents: number;
@@ -79,34 +81,53 @@ export interface WorkerSettlement {
   fileLines: FileLine[];
   /** Cents rounding left over when hours moved at one rate: not settled (noted with the file). */
   leftoverCents: number;
-  /** Pay an earlier correction of the period left with the worker (written off, or to be recovered). */
+  /** Something besides rounding differs for this worker. */
+  changed: boolean;
+  /** Pay earlier corrections of the period left with the worker and not yet offset (written off, or to be recovered). */
   heldCents: number;
-  /** The file cannot settle this worker's difference on its own: a decision is needed. */
+  /** What this correction's decisions settle, in recording order. */
+  decisions: DecisionOnFile[];
+  /** Agreements (written off, to be recovered, offset) that no longer fit what is owed: to be removed. */
+  stale: DecisionOnFile[];
+  /** What is still to settle outside the files: the difference less the decisions recorded. */
+  remainingCents: number;
+  /** The payroll file settles this worker's difference (all additions, nothing recorded, nothing kept). */
+  inFile: boolean;
+  /** A decision is needed: something is left to settle, or an agreement no longer fits. */
   needsDecision: boolean;
-  /** The decision on file for this worker, and whether it still fits their difference. */
-  decision: DecisionOnFile | null;
-  decisionFits: boolean;
 }
 
 export interface CorrectionPlan {
   baseVersion: number;
   pay: DiffLine[];
   bill: DiffLine[];
-  /** One per worker whose pay differs, in worker id order. */
+  /** One per worker whose pay differs, who has decisions, or who has a rounding leftover; in worker id order. */
   workers: WorkerSettlement[];
 }
 
+/** Money that moved: paid by hand, repaid. The rest are agreements (written off, to be recovered, offset). */
+export const MONEY_MOVED = new Set<s.CorrectionDecisionKind>(["paid_by_hand", "repaid_outside_payroll"]);
+
 /**
- * Less pay is never "paid by hand"; more pay is never repaid or written off; an offset covers at most
- * what the worker kept from an earlier correction.
+ * The amount a decision of this kind settles, given what is left to settle and the pay the worker kept
+ * from earlier corrections; or null when the kind does not fit. More pay is paid by hand, or covered by
+ * what the worker kept (up to that); less pay is repaid, recovered under state rules, or written off.
  */
-export function decisionFitsDifference(decision: s.CorrectionDecisionKind, netCents: number, heldCents = 0): boolean {
-  if (decision === "paid_by_hand") return netCents >= 0;
-  if (decision === "offset_earlier_overpayment") return netCents > 0 && netCents <= heldCents;
-  return netCents < 0;
+export function decisionAmount(decision: s.CorrectionDecisionKind, remainingCents: number, heldCents: number): number | null {
+  if (decision === "paid_by_hand") return remainingCents > 0 ? remainingCents : null;
+  if (decision === "offset_earlier_overpayment") return remainingCents > 0 && heldCents > 0 ? Math.min(remainingCents, heldCents) : null;
+  return remainingCents < 0 ? remainingCents : null;
 }
 
-/** The differences and how each worker's can be settled. Pure (decisions E8, E9). */
+const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
+
+/**
+ * The differences and how each worker's can be settled. Pure (decisions E8, E9).
+ *
+ * Decisions are a record of what was settled outside the files. Money that moved (paid by hand,
+ * repaid) always stands; agreements must keep fitting what is owed after it, or be removed. What is
+ * left after both is asked for again, so nothing is paid twice and no refund is forgotten.
+ */
 export function planCorrection(input: {
   baseVersion: number;
   basePay: LineForDiff[];
@@ -123,20 +144,30 @@ export function planCorrection(input: {
   const ids = new Set([...pay.map((l) => l.workerId), ...input.decisions.map((d) => d.workerId)]);
   for (const workerId of [...ids].sort(cmp)) {
     const mine = settlement(pay.filter((l) => l.workerId === workerId));
-    const decision = input.decisions.find((d) => d.workerId === workerId) ?? null;
+    const decisions = input.decisions.filter((d) => d.workerId === workerId);
     const changed = mine.fileLines.length > 0 || !mine.additionsOnly;
-    if (!changed && !decision) continue;
-    const heldCents = input.held?.get(workerId) ?? 0;
+    if (!changed && decisions.length === 0 && mine.leftoverCents === 0) continue;
+    const kept = input.held?.get(workerId) ?? 0;
+    const offsets = decisions.filter((d) => d.decision === "offset_earlier_overpayment").reduce((sum, d) => sum + d.differenceCents, 0);
+    const heldCents = Math.max(0, kept - offsets);
+    const payable = mine.netCents - mine.leftoverCents;
+    // What is owed once the money that moved is counted; agreements must fit it.
+    const owed = payable - decisions.filter((d) => MONEY_MOVED.has(d.decision)).reduce((sum, d) => sum + d.differenceCents, 0);
+    const agreements = decisions.filter((d) => !MONEY_MOVED.has(d.decision));
+    const agreed = agreements.reduce((sum, d) => sum + d.differenceCents, 0);
+    const fits = agreements.every((d) => sign(d.differenceCents) === sign(owed)) && Math.abs(agreed) <= Math.abs(owed) && offsets <= kept;
+    const stale = fits ? [] : agreements;
+    const remainingCents = owed - (fits ? agreed : 0);
     // More pay for a worker who kept pay from an earlier correction is never paid again on its own.
-    const needsDecision = changed && (!mine.additionsOnly || (heldCents > 0 && mine.netCents > 0));
-    const decisionFits = decision !== null && changed && decision.differenceCents === mine.netCents && decisionFitsDifference(decision.decision, mine.netCents, heldCents);
-    workers.push({ workerId, ...mine, heldCents, needsDecision, decision, decisionFits });
+    const inFile = decisions.length === 0 && changed && mine.additionsOnly && !(kept > 0 && payable > 0);
+    const needsDecision = !inFile && (changed || decisions.length > 0) && (stale.length > 0 || remainingCents !== 0);
+    workers.push({ workerId, ...mine, changed, heldCents, decisions, stale, remainingCents, inFile, needsDecision });
   }
   return { baseVersion: input.baseVersion, pay, bill, workers };
 }
 
 /** The workers whose differences the correction's payroll file carries: all additions, nothing to decide. */
-export const fileWorkers = (plan: CorrectionPlan) => plan.workers.filter((w) => !w.decision && !w.needsDecision && w.fileLines.length > 0);
+export const fileWorkers = (plan: CorrectionPlan) => plan.workers.filter((w) => w.inFile && w.fileLines.length > 0);
 
 /**
  * Per worker, the pay earlier paid versions of the period left with them: written off, or to be
@@ -169,7 +200,7 @@ export async function correctionPlanFor(tx: Tx, run: { id: string; payPeriodId: 
   if (!base) throw new Error(`Run ${run.id} is a correction with no paid version before it.`);
   const pay = await tx.select().from(s.payLines).where(eq(s.payLines.payRunId, run.id));
   const bill = await tx.select().from(s.billLines).where(eq(s.billLines.payRunId, run.id));
-  const decisions = await tx.select().from(s.correctionDecisions).where(eq(s.correctionDecisions.payRunId, run.id));
+  const decisions = await tx.select().from(s.correctionDecisions).where(eq(s.correctionDecisions.payRunId, run.id)).orderBy(asc(s.correctionDecisions.decidedAt), asc(s.correctionDecisions.id));
   const held = await heldFor(tx, run.payPeriodId, run.version);
   return planCorrection({ baseVersion: base.run.version, basePay: base.pay.map(payForDiff), baseBill: base.bill.map(billForDiff), nowPay: pay.map(payForDiff), nowBill: bill.map(billForDiff), decisions, held });
 }
@@ -213,10 +244,10 @@ export async function discardCorrection(tx: Tx, actor: Actor, payPeriodId: strin
   await computeRun(tx, actor, payPeriodId);
   const run = (await openCorrection(tx, payPeriodId))!;
   const plan = await correctionPlanFor(tx, run);
-  // A decision stands for money moved outside the files: it is removed on purpose, not with a discard.
-  if (plan.workers.some((w) => w.decision)) return { ok: false, error: "has_decisions" };
+  // A decision is a record of what was settled outside the files: removed on purpose, not with a discard.
+  if (plan.workers.some((w) => w.decisions.length > 0)) return { ok: false, error: "has_decisions" };
   const obligations = await tx.select({ id: s.obligations.id }).from(s.obligations).where(eq(s.obligations.payRunId, run.id));
-  if (plan.pay.length > 0 || plan.bill.length > 0 || obligations.length > 0) return { ok: false, error: "has_differences" };
+  if (hasRealDifferences(plan) || obligations.length > 0) return { ok: false, error: "has_differences" };
   const base = (await paidBase(tx, payPeriodId, run.version))!;
   await tx.delete(s.correctionDecisions).where(eq(s.correctionDecisions.payRunId, run.id));
   await tx.delete(s.payLines).where(eq(s.payLines.payRunId, run.id));
@@ -234,8 +265,9 @@ export async function discardCorrection(tx: Tx, actor: Actor, payPeriodId: strin
 }
 
 /**
- * Records how a worker's difference in the open correction is settled when the payroll file cannot
- * carry it (Owner, with a note; decision E9). It replaces an earlier decision for the worker.
+ * Records how part or all of what is left of a worker's difference in the open correction was settled
+ * outside the files (Owner, with a note; decision E9). The amount follows from the kind: what is left,
+ * or for an offset up to what the worker kept. Earlier decisions stay; one recorded by mistake is removed.
  */
 export async function recordCorrectionDecision(
   tx: Tx,
@@ -253,41 +285,37 @@ export async function recordCorrectionDecision(
   if (!(await openCorrection(tx, payPeriodId))) return { ok: false, error: "not_correction" };
   const computed = await computeRun(tx, actor, payPeriodId);
   const run = (await openCorrection(tx, payPeriodId))!;
-  const [onFile] = await tx.select().from(s.correctionDecisions).where(and(eq(s.correctionDecisions.payRunId, run.id), eq(s.correctionDecisions.workerId, workerId)));
-  // A worker the run holds for a decision, or whom the file refuses; or one whose decision is replaced.
-  const asking = computed.blockers.some((b) => b.workerId === workerId && (b.code === "correction_decision_needed" || b.code === "export_refused"));
+  // A worker the run holds for a decision, or whom the file refuses (then all of it is settled by hand).
+  const refused = computed.blockers.some((b) => b.workerId === workerId && b.code === "export_refused");
   const mine = (await correctionPlanFor(tx, run)).workers.find((w) => w.workerId === workerId);
-  if (!mine || (!asking && !onFile)) return { ok: false, error: "not_needed" };
-  // Always the difference as it is now, never the one an earlier decision was made for; a difference
-  // that is gone has nothing to decide (the decision is removed instead).
-  const netCents = mine.netCents;
-  const changed = mine.fileLines.length > 0 || !mine.additionsOnly;
-  if (!changed || !decisionFitsDifference(decision, netCents, mine.heldCents)) return { ok: false, error: "wrong_kind" };
-  if (onFile) await tx.delete(s.correctionDecisions).where(eq(s.correctionDecisions.id, onFile.id));
+  if (!mine || !(mine.needsDecision || refused)) return { ok: false, error: "not_needed" };
+  // An agreement that no longer fits is removed first; then what is left is decided.
+  if (mine.stale.length > 0) return { ok: false, error: "wrong_kind" };
+  if (mine.remainingCents === 0) return { ok: false, error: "not_needed" };
+  const amount = decisionAmount(decision, mine.remainingCents, mine.heldCents);
+  if (amount === null) return { ok: false, error: "wrong_kind" };
   const [row] = await tx
     .insert(s.correctionDecisions)
-    .values({ agencyId: actor.agencyId, payRunId: run.id, workerId, decision, differenceCents: netCents, note: text, decidedBy: actor.userId, decidedByLabel: actor.label })
+    .values({ agencyId: actor.agencyId, payRunId: run.id, workerId, decision, differenceCents: amount, note: text, decidedBy: actor.userId, decidedByLabel: actor.label })
     .returning();
-  await audit(tx, actor, [
-    {
-      action: onFile ? "update" : "create",
-      entityType: "correction_decision",
-      entityId: row!.id,
-      ...(onFile ? { before: { decision: onFile.decision, differenceCents: onFile.differenceCents, note: onFile.note } } : {}),
-      after: { payRunId: run.id, workerId, decision, differenceCents: netCents, note: text },
-    },
-  ]);
+  await audit(tx, actor, [{ action: "create", entityType: "correction_decision", entityId: row!.id, after: { payRunId: run.id, workerId, decision, differenceCents: amount, note: text } }]);
   return { ok: true };
 }
 
-/** Removes a decision recorded in the open correction (Owner): when nothing was done outside the files after all. */
-export async function removeCorrectionDecision(tx: Tx, actor: Actor, payPeriodId: string, workerId: string): Promise<{ ok: true } | { ok: false; error: CorrectionError }> {
+/** Something besides rounding differs: a worker's pay, a decision on file, or a client's bill. */
+export function hasRealDifferences(plan: CorrectionPlan): boolean {
+  return plan.workers.some((w) => w.changed || w.decisions.length > 0) || [...clientNets(plan.bill).values()].some((c) => c.real);
+}
+
+/** Removes a decision recorded by mistake in the open correction (Owner): nothing was done outside the files after all. */
+export async function removeCorrectionDecision(tx: Tx, actor: Actor, payPeriodId: string, decisionId: string): Promise<{ ok: true } | { ok: false; error: CorrectionError }> {
   if (!mayCorrect(actor)) return { ok: false, error: "not_allowed" };
   await openPeriod(tx, payPeriodId);
   const run = await openCorrection(tx, payPeriodId);
   if (!run) return { ok: false, error: "not_correction" };
-  const [onFile] = await tx.select().from(s.correctionDecisions).where(and(eq(s.correctionDecisions.payRunId, run.id), eq(s.correctionDecisions.workerId, workerId)));
+  const [onFile] = await tx.select().from(s.correctionDecisions).where(and(eq(s.correctionDecisions.payRunId, run.id), eq(s.correctionDecisions.id, decisionId)));
   if (!onFile) return { ok: false, error: "not_needed" };
+  const workerId = onFile.workerId;
   await tx.delete(s.correctionDecisions).where(eq(s.correctionDecisions.id, onFile.id));
   await audit(tx, actor, [
     {

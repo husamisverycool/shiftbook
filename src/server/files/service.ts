@@ -111,7 +111,7 @@ export async function createRunFiles(
     const fileGross = fileLines.reduce((sum, l) => sum + l.amountCents, 0);
     if (file.controlTotals.grossCents !== fileGross) throw new Error(`Payroll file gross ${file.controlTotals.grossCents} does not equal the run's ${fileGross}.`);
     // The payroll clerk also needs the differences settled outside the file (decision E9).
-    const decided = (correction?.workers ?? []).filter((w) => w.decisionFits && w.decision).map((w) => `${nameOf(w.workerId)}: ${decisionText(w.decision!)} — "${w.decision!.note}" (${w.decision!.decidedByLabel}). Not in this file.`);
+    const decided = (correction?.workers ?? []).flatMap((w) => w.decisions.map((d) => `${nameOf(w.workerId)}: ${decisionText(d)} — "${d.note}" (${d.decidedByLabel}). Not in this file.`));
     // A cent rounding left over when hours moved at one rate is not paid or taken back: said here.
     const leftovers = (correction?.workers ?? [])
       .filter((w) => w.leftoverCents !== 0)

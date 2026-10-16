@@ -23,6 +23,32 @@ function useRefusal() {
   return (error: CorrectionActionError) => toast.error(tx(`errors.${CORRECTION_MESSAGE[error]}`));
 }
 
+/** Removes a decision recorded by mistake, or an agreement that no longer fits (Owner). */
+export function RemoveDecisionButton({ periodId, decisionId, label }: { periodId: string; decisionId: string; label: string }) {
+  const t = useTranslations("convert.correction");
+  const router = useRouter();
+  const refuse = useRefusal();
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      size="xs"
+      variant="outline"
+      disabled={pending}
+      aria-label={`${t("removeDecision")}: ${label}`}
+      data-testid="remove-decision"
+      onClick={() =>
+        start(async () => {
+          const r = await removeDecisionAction(periodId, decisionId);
+          if (!r.ok) refuse(r.error);
+          router.refresh();
+        })
+      }
+    >
+      {t("removeDecision")}
+    </Button>
+  );
+}
+
 export function StartCorrectionButton({ periodId, nextVersion }: { periodId: string; nextVersion: number }) {
   const t = useTranslations("convert.correction");
   const tc = useTranslations("common");
@@ -121,15 +147,15 @@ const LESS = ["repaid_outside_payroll", "consent_to_deduct", "written_off"] as c
  * or covered by pay the worker kept from an earlier correction (up to what they kept). A decision whose
  * difference changed can be replaced, or removed when nothing was done outside the files.
  */
-export function DecisionButton(props: { periodId: string; workerId: string; name: string; netCents: number; heldCents: number; hasDecision: boolean; baseVersion: number }) {
-  const { periodId, workerId, name, netCents, heldCents, hasDecision, baseVersion } = props;
+export function DecisionButton(props: { periodId: string; workerId: string; name: string; netCents: number; heldCents: number; baseVersion: number }) {
+  const { periodId, workerId, name, netCents, heldCents, baseVersion } = props;
   const t = useTranslations("convert.correction");
   const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const refuse = useRefusal();
   const less = netCents < 0;
-  const choices: readonly string[] = less ? LESS : netCents === 0 ? [] : heldCents > 0 && netCents <= heldCents ? ["offset_earlier_overpayment", "paid_by_hand"] : ["paid_by_hand"];
+  const choices: readonly string[] = less ? LESS : netCents === 0 ? [] : heldCents > 0 ? ["offset_earlier_overpayment", "paid_by_hand"] : ["paid_by_hand"];
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState<string>(choices.length === 1 ? choices[0]! : "");
   const [note, setNote] = useState("");
@@ -143,7 +169,6 @@ export function DecisionButton(props: { periodId: string; workerId: string; name
     router.refresh();
   };
   const confirm = () => start(async () => done(await recordDecisionAction(periodId, workerId, choice, note)));
-  const remove = () => start(async () => done(await removeDecisionAction(periodId, workerId)));
   return (
     <>
       <Button size="sm" variant="outline" onClick={() => setOpen(true)} data-testid="record-decision">
@@ -166,7 +191,10 @@ export function DecisionButton(props: { periodId: string; workerId: string; name
                   <label key={c} className="flex items-start gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary">
                     <input type="radio" name="decision" value={c} checked={choice === c} onChange={() => setChoice(c)} className="mt-0.5 accent-primary" />
                     <span className="flex flex-col gap-0.5">
-                      <span className="font-medium">{t(`options.${c}` as "options.paid_by_hand")}</span>
+                      <span className="font-medium">
+                        {t(`options.${c}` as "options.paid_by_hand")}
+                        {c === "offset_earlier_overpayment" && ` (${money(Math.min(netCents, heldCents), locale)})`}
+                      </span>
                       {c === "consent_to_deduct" && <span className="text-muted-foreground">{t("consentHint")}</span>}
                     </span>
                   </label>
@@ -179,11 +207,6 @@ export function DecisionButton(props: { periodId: string; workerId: string; name
             </>
           )}
           <DialogFooter>
-            {hasDecision && (
-              <Button variant="outline" onClick={remove} disabled={pending} className="sm:mr-auto" data-testid="remove-decision">
-                {t("removeDecision")}
-              </Button>
-            )}
             <Button variant="outline" onClick={() => setOpen(false)}>
               {tc("cancel")}
             </Button>

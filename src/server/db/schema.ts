@@ -593,14 +593,14 @@ export const correctionDecisions = pgTable(
     payRunId: uuid("pay_run_id").notNull().references(() => payRuns.id),
     workerId: uuid("worker_id").notNull().references(() => workers.id),
     decision: text("decision").$type<CorrectionDecisionKind>().notNull(),
-    /** The worker's net pay difference the decision was made for; a different one asks again. */
+    /** What this decision settled, in cents (more pay positive, less pay negative). */
     differenceCents: integer("difference_cents").notNull(),
     note: text("note").notNull(),
     decidedBy: uuid("decided_by"),
     decidedByLabel: text("decided_by_label").notNull(),
     decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("correction_decisions_one").on(t.payRunId, t.workerId)],
+  (t) => [index("correction_decisions_run_worker").on(t.agencyId, t.payRunId, t.workerId)],
 );
 
 // ---------- audit (append-only; a trigger rejects UPDATE and DELETE) ----------

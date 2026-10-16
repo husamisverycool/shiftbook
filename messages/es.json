@@ -490,8 +490,8 @@
       "discardConfirm": "Descartar",
       "decide": "Registrar decisión",
       "decideTitle": "¿Cómo se resuelve la diferencia de {name}?",
-      "decideLess": "{amount} menos de pago que lo que pagó la versión {base}. El archivo de nómina nunca descuenta pago.",
-      "decideMore": "{amount} más de pago que el archivo de nómina no puede llevar como adiciones.",
+      "decideLess": "Quedan {amount} de pago de menos por resolver (la versión {base} pagó más). El archivo de nómina nunca descuenta pago.",
+      "decideMore": "Quedan {amount} de pago de más por resolver fuera del archivo de nómina.",
       "consentHint": "Las reglas para recuperar un pago de más cambian según el estado: algunos exigen el consentimiento escrito del trabajador en cada descuento o un plan de pagos acordado, limitan el monto o no permiten descontarlo del salario.",
       "options": {
         "paid_by_hand": "Pagado a mano",
@@ -504,7 +504,7 @@
       "notePlaceholder": "Qué se hizo: número de cheque, fecha del consentimiento, quién lo aprobó",
       "decideConfirm": "Registrar decisión",
       "decisionOnFile": "Decidido: {decision} — {note} ({by})",
-      "decisionStale": "La diferencia cambió desde esta decisión; decide de nuevo.",
+      "decisionStale": "Ya no corresponde a la diferencia: quítala y luego registra lo que falta.",
       "colWas": "Antes",
       "colNow": "Ahora",
       "colDifference": "Diferencia",
@@ -534,7 +534,10 @@
       "netZero": "Sin factura para {clients}: las diferencias facturadas suman {zero}.",
       "decideHeld": "{amount} de pago que una corrección anterior le dejó puede cubrirlo.",
       "decideNone": "Su diferencia ya no existe. Quita la decisión si no se hizo nada fuera de los archivos.",
-      "removeDecision": "Quitar decisión"
+      "removeDecision": "Quitar decisión",
+      "roundingTitle": "Redondeo sobrante",
+      "roundingMore": "{name}: {amount} más por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se paga.",
+      "roundingLess": "{name}: {amount} menos por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se descuenta."
     }
   },
   "nav": {

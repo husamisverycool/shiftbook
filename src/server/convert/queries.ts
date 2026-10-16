@@ -293,9 +293,9 @@ async function correctionView(tx: Tx, run: typeof s.payRuns.$inferSelect, client
     if (WORKED_TIME.includes(l.type)) row.minutes += l.minutes;
     byClient.set(l.clientId!, row);
   }
-  const decisions = plan.workers
-    .filter((w) => w.decision)
-    .map((w) => ({ workerId: w.workerId, name: nameOf.get(w.workerId) ?? "", decision: w.decision!.decision, differenceCents: w.decision!.differenceCents, note: w.decision!.note, by: w.decision!.decidedByLabel, fits: w.decisionFits }));
+  const decisions = plan.workers.flatMap((w) =>
+    w.decisions.map((d) => ({ id: d.id, workerId: w.workerId, name: nameOf.get(w.workerId) ?? "", decision: d.decision, differenceCents: d.differenceCents, note: d.note, by: d.decidedByLabel, fits: !w.stale.includes(d) })),
+  );
   const workers = [...byWorker.values()].sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase()));
   const clientRows = [...byClient.values()].sort((a, b) => cmp(a.name, b.name));
   return {
@@ -348,8 +348,15 @@ export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
       : [];
     // A correction: clients whose differences net to zero get no document (decision E11); say so.
     const netZero: string[] = [];
+    // A cent rounding left over when hours moved at one rate: neither paid nor taken back, said here.
+    const roundings: { name: string; cents: number }[] = [];
     if (v.kind === "correction") {
       const plan = await correctionPlanFor(tx, v);
+      const left = plan.workers.filter((w) => w.leftoverCents !== 0);
+      if (left.length > 0) {
+        const people = await tx.select().from(s.workers).where(inArray(s.workers.id, left.map((w) => w.workerId)));
+        roundings.push(...left.map((w) => ({ name: fullName(people.find((p) => p.id === w.workerId)!), cents: w.leftoverCents })).sort((a, b) => cmp(a.name, b.name)));
+      }
       const zero = [...clientNets(plan.bill)].filter(([, c]) => c.real && c.netCents === 0).map(([id]) => id);
       if (zero.length > 0) netZero.push(...(await tx.select({ name: s.clients.name }).from(s.clients).where(inArray(s.clients.id, zero))).map((c) => c.name).sort(cmp));
     }
@@ -371,6 +378,7 @@ export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
         .map((d) => ({ name: fullName(d), text: decisionText(d), note: d.note, by: d.by }))
         .sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase())),
       netZero,
+      roundings,
     });
   }
   return { run: { id: run.id, version: run.version }, versions, canCorrect: actor.role === "owner" };

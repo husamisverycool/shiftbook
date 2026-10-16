@@ -53,7 +53,7 @@ export interface CorrectionData {
   reason: string;
   workers: { workerId: string; name: string; wasCents: number; nowCents: number; diffCents: number; regular: number; overtime: number; double: number }[];
   clients: { clientId: string; name: string; wasCents: number; nowCents: number; diffCents: number; minutes: number }[];
-  decisions: { workerId: string; name: string; decision: string; differenceCents: number; note: string; by: string; fits: boolean }[];
+  decisions: { id: string; workerId: string; name: string; decision: string; differenceCents: number; note: string; by: string; fits: boolean }[];
   summary: { workers: number; regular: number; overtime: number; double: number; payDiffCents: number; billDiffCents: number };
   noSkip: string[];
   /** Skipped in the version it corrects (paid separately): they cannot be brought back. */
