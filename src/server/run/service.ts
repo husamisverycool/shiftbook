@@ -14,13 +14,14 @@
  */
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
-import { addDays, addMonths, computePay, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, addMonths, computePay, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { fieldglassUpload } from "../../exports/invoice-files";
 import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
+import { EQUAL_PAY_KINDS } from "../compliance/kinds";
 import * as s from "../db/schema";
 import type { ExportPayLine } from "../../exports/registry";
 import { makesVms, planEntries, vmsInput } from "../files/invoice-documents";
@@ -69,6 +70,10 @@ export interface RunResult {
 const INT4_MAX = 2_147_483_647;
 /** Line types that are worked time, billed minute for minute (pay-only lines are not billed time). */
 const BILLED_TIME = new Set<string>(WORKED_TIME);
+type EqualPayRow = typeof s.obligations.$inferSelect & { kind: ObligationKind; workerId: string; clientId: string; crossedOn: string };
+const equalPayRows = (rows: (typeof s.obligations.$inferSelect)[]): EqualPayRow[] =>
+  rows.filter((o): o is EqualPayRow => (EQUAL_PAY_KINDS as readonly string[]).includes(o.kind) && o.workerId !== null && o.clientId !== null && o.crossedOn !== null);
+
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const effective = (date: string, from: string, to: string | null) => from <= date && (to === null || date <= to);
 /**
@@ -489,7 +494,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.date, b.date));
   }
   // This run's own obligations are recomputed, except one a person already marked done.
-  const obligationsOnFile = (await tx.select().from(s.obligations).where(or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), eq(s.obligations.status, "done"))))
+  const obligationsOnFile = equalPayRows(await tx.select().from(s.obligations).where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), ne(s.obligations.status, "open")))))
     .map((o) => ({ kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn }))
     .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.kind, b.kind));
   const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, hoursWorked, obligationsOnFile, ...tables };
@@ -709,7 +714,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   // The obligations this run's hours create (Illinois equal pay), kept in step with the run and audited.
   // Due before the next pay period begins: by this period's last day (56 Ill. Adm. Code 260.505(b));
   // a crossing found in earlier periods' hours is already overdue.
-  const mine = await tx.select().from(s.obligations).where(eq(s.obligations.payRunId, run.id));
+  const mine = equalPayRows(await tx.select().from(s.obligations).where(and(eq(s.obligations.payRunId, run.id), inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]))));
   const keyOf = (o: { kind: string; workerId: string; clientId: string; crossedOn: string }) => `${o.kind}|${o.workerId}|${o.clientId}|${o.crossedOn}`;
   const wanted = new Set(result.obligations.map(keyOf));
   const gone = mine.filter((m) => m.status === "open" && !wanted.has(keyOf(m)));
@@ -720,24 +725,24 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   for (const o of result.obligations) {
     const overdue = o.crossedOn < period.startsOn;
     const dueOn = overdue ? period.startsOn : period.endsOn;
-    const evidence: s.ObligationEvidence = { ruleCode: o.ruleCode, citation: o.citation, crossedAtMinute: o.crossedAtMinute, windowStart: o.windowStart, thresholdMinutes: o.thresholdMinutes, minutesAfter: o.minutesAfter, earlierMinutesAfter: o.earlierMinutesAfter, overdue, entryIds: o.entryIds };
+    const facts: s.ObligationEvidence = { ruleCode: o.ruleCode, citation: o.citation, crossedAtMinute: o.crossedAtMinute, windowStart: o.windowStart, thresholdMinutes: o.thresholdMinutes, minutesAfter: o.minutesAfter, earlierMinutesAfter: o.earlierMinutesAfter, overdue, entryIds: o.entryIds };
     const same = mine.find((m) => keyOf(m) === keyOf(o));
     if (same) {
-      await tx.update(s.obligations).set({ evidence, message: o.message, dueOn }).where(eq(s.obligations.id, same.id));
+      await tx.update(s.obligations).set({ facts, message: o.message, dueOn }).where(eq(s.obligations.id, same.id));
       continue;
     }
     // One obligation per worker, client and kind: the engine records one only when it crosses earlier
     // than the one on file (a late timesheet), and then the row moves to this run's earlier crossing.
-    const [held] = await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, o.kind), eq(s.obligations.workerId, o.workerId), eq(s.obligations.clientId, o.clientId)));
+    const [held] = equalPayRows(await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, o.kind), eq(s.obligations.workerId, o.workerId), eq(s.obligations.clientId, o.clientId))));
     if (held) {
       if (o.crossedOn >= held.crossedOn) throw new Error(`Obligation ${held.id} is already on file from ${held.crossedOn}; the run found ${o.crossedOn}.`);
-      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, evidence, message: o.message }).where(eq(s.obligations.id, held.id));
+      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message }).where(eq(s.obligations.id, held.id));
       await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: held.id, before: { crossedOn: held.crossedOn }, after: { crossedOn: o.crossedOn }, reason: "hours in an earlier week cross first" }]);
       continue;
     }
     const [row] = await tx
       .insert(s.obligations)
-      .values({ agencyId: actor.agencyId, kind: o.kind, jurisdiction: o.jurisdiction, workerId: o.workerId, clientId: o.clientId, payRunId: run.id, crossedOn: o.crossedOn, dueOn, evidence, message: o.message })
+      .values({ agencyId: actor.agencyId, kind: o.kind, jurisdiction: o.jurisdiction, subjectKind: "worker_client", workerId: o.workerId, clientId: o.clientId, payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message })
       .returning();
     await audit(tx, actor, [{ action: "create", entityType: "obligation", entityId: row!.id, after: { kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn, dueOn } }]);
   }

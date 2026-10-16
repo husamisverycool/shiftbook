@@ -594,7 +594,10 @@
     "payments": "Pagos",
     "bank": "Banco",
     "margin": "Margen",
-    "marginSettings": "Configuración de margen"
+    "marginSettings": "Configuración de margen",
+    "compliance": "Cumplimiento",
+    "complianceSettings": "Ajustes de cumplimiento",
+    "complianceBadge": "{count} vencidas o por vencer"
   },
   "list": {
     "filter": "Filtrar",
@@ -2354,5 +2357,315 @@
       "generic": "No funcionó. Intente de nuevo.",
       "invalid": "Hay algo que corregir."
     }
+  },
+  "compliance": {
+    "title": "Cumplimiento",
+    "settings": "Ajustes de cumplimiento",
+    "tabsLabel": "Vistas de cumplimiento",
+    "tabs": {
+      "list": "Lista",
+      "calendar": "Calendario"
+    },
+    "areasLabel": "Áreas",
+    "areas": {
+      "all": "Todas",
+      "registrations": "Registros",
+      "clients": "Clientes",
+      "placements": "Colocaciones",
+      "workers": "Trabajadores",
+      "equal_pay": "Pago igual",
+      "workers_comp": "Compensación laboral",
+      "aca": "ACA"
+    },
+    "search": "Buscar",
+    "searchPlaceholder": "Buscar por nombre",
+    "statusFilter": "Estado",
+    "statusOptions": {
+      "open": "Abiertas",
+      "overdue": "Vencidas",
+      "due_soon": "Por vencer",
+      "upcoming": "Próximas",
+      "done": "Hechas",
+      "not_applicable": "No aplica",
+      "all": "Todas"
+    },
+    "statuses": {
+      "overdue": "Vencida",
+      "due_soon": "Por vencer",
+      "upcoming": "Próxima",
+      "done": "Hecha",
+      "not_applicable": "No aplica"
+    },
+    "stateFilter": "Estado (EE. UU.)",
+    "anyState": "Cualquier estado",
+    "states": {
+      "IL": "Illinois",
+      "MA": "Massachusetts",
+      "NJ": "Nueva Jersey",
+      "US": "Federal"
+    },
+    "ownerFilter": "Responsable",
+    "owners": {
+      "any": "Cualquiera",
+      "me": "Yo",
+      "none": "Sin responsable"
+    },
+    "cols": {
+      "duty": "Obligación",
+      "state": "Estado",
+      "due": "Vence",
+      "owner": "Responsable",
+      "status": "Situación"
+    },
+    "due": {
+      "today": "hoy",
+      "in": "en {count, plural, one {# día} other {# días}}",
+      "late": "{count, plural, one {# día} other {# días}} de retraso"
+    },
+    "noOwner": "Sin responsable",
+    "ownerLabel": "Responsable de {duty}",
+    "ownerSaved": "Responsable guardado.",
+    "kinds": {
+      "il_registration_renewal": "Renovación del registro de Illinois",
+      "ma_registration_renewal": "Renovación del registro de Massachusetts",
+      "nj_certification_renewal": "Renovación de la certificación de Nueva Jersey",
+      "il_client_proof": "Prueba de registro de Illinois",
+      "il_client_proof_contract": "Prueba de registro de Illinois antes del contrato",
+      "il_equal_pay_720h": "Pago igual de Illinois tras 720 horas",
+      "il_equal_pay_4160h": "Pago igual de Illinois tras 4,160 horas",
+      "ma_job_order": "Orden de trabajo de Massachusetts",
+      "nj_language_notice": "Aviso de Nueva Jersey en el idioma del trabajador",
+      "i9_section1": "Formulario I-9, Sección 1",
+      "i9_section2": "Formulario I-9, Sección 2",
+      "i9_reverify": "Reverificación del Formulario I-9",
+      "wc_policy_renewal": "Renovación de la póliza de compensación laboral",
+      "wc_audit": "Auditoría de prima de compensación laboral"
+    },
+    "asks": {
+      "il_registration_renewal": "Solicite la renovación del registro de mano de obra temporal de Illinois al menos {days} días antes de que venza. Se registran la agencia y cada sucursal; si la compensación laboral se interrumpe, el registro se suspende.",
+      "ma_registration_renewal": "Renueve el registro de agencia de colocación de Massachusetts (o la licencia de agencia de empleo) a más tardar {days} días antes de que venza. Se registra cada local y cada nombre comercial.",
+      "nj_certification_renewal": "Vuelva a certificar la agencia ante Asuntos del Consumidor de Nueva Jersey antes de que venza la certificación ({days} días antes es la fecha segura: las reglas no fijan ninguna).",
+      "il_client_proof": "Entregue al cliente la prueba del registro de la agencia en Illinois. El cliente debe verificar el registro antes de contratar y cada 1 de marzo y 1 de septiembre.",
+      "il_client_proof_contract": "Entregue al cliente la prueba del registro de la agencia en Illinois antes de que empiece el contrato.",
+      "il_equal_pay_720h": "Después de más de 720 horas con un mismo cliente en 12 meses, al trabajador se le paga al menos lo que el cliente paga a empleados comparables, con beneficios iguales o su valor en efectivo por hora. Pida la comparación al cliente antes del siguiente periodo de pago.",
+      "il_equal_pay_4160h": "Después de más de 4,160 horas con un mismo cliente en 48 meses, aplica la medida de pago igual más alta.",
+      "ma_job_order": "Entregue al trabajador la orden de trabajo por escrito, por el medio que el trabajador eligió, antes de que termine el primer periodo de pago: los datos de contacto de la agencia, de su aseguradora de compensación laboral, del cliente y del Departamento; el trabajo y lo que requiere; día de pago, tarifa por hora y si puede haber horas extra; horarios de inicio y fin; comidas y transporte. No hace falta para trabajo profesional, de secretaría ni de asistente administrativo.",
+      "nj_language_notice": "Entregue el aviso de asignación en inglés y en el idioma principal del trabajador al empezar la colocación, en el formulario del Departamento de Trabajo.",
+      "i9_section1": "El trabajador completa la Sección 1 del Formulario I-9 a más tardar el primer día de trabajo.",
+      "i9_section2": "La agencia examina los documentos del trabajador y completa la Sección 2 dentro de {days} días hábiles del primer día.",
+      "i9_reverify": "Reverifique la autorización de empleo del trabajador a más tardar el día en que vence (Suplemento B).",
+      "wc_policy_renewal": "Mantenga vigente la compensación laboral: la siguiente póliza empieza a más tardar el día en que termina esta.",
+      "wc_audit": "Entregue al auditor de primas de la aseguradora la nómina por clase, con la prima de horas extra aparte por trabajador y por clase."
+    },
+    "emptyOpen": "No hay ninguna obligación de cumplimiento abierta.",
+    "nextUpcoming": "La siguiente vence el {date}.",
+    "noMatch": "Nada coincide con la búsqueda y los filtros.",
+    "clear": "Quitar filtros",
+    "listLabel": "Obligaciones de cumplimiento",
+    "detail": {
+      "back": "Cumplimiento",
+      "markDone": "Marcar hecha",
+      "notApplicable": "No aplica",
+      "reopen": "Reabrir",
+      "doneTitle": "Marcar esta obligación como hecha",
+      "doneNote": "Nota (opcional)",
+      "naTitle": "Esta obligación no aplica",
+      "reason": "Motivo",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "tabs": {
+        "overview": "Resumen",
+        "evidence": "Evidencia",
+        "history": "Historial",
+        "notes": "Notas"
+      },
+      "cards": {
+        "due": "Vence",
+        "owner": "Responsable",
+        "evidence": "Evidencia",
+        "status": "Situación"
+      },
+      "files": "{count, plural, =0 {Sin archivos} one {# archivo} other {# archivos}}",
+      "whatLaw": "Lo que pide la ley",
+      "citation": "Cita",
+      "source": "Fuente oficial",
+      "about": "Datos",
+      "workedOut": "Cómo se calculó",
+      "subject": "Para",
+      "client": "Cliente",
+      "worker": "Trabajador",
+      "placement": "Colocación",
+      "openPlacement": "Abrir la orden de trabajo",
+      "doneBy": "Hecha por {by} el {date}.",
+      "naBy": "Descartada por {by} el {date}.",
+      "byShiftbook": "Shiftbook",
+      "note": "Nota: {note}",
+      "addFile": "Agregar archivo",
+      "file": "Archivo",
+      "effectiveOn": "Fecha de vigencia",
+      "upload": "Agregar",
+      "noFiles": "Aún no hay archivos. Agregue el archivo que muestra que se hizo.",
+      "pastFiles": "Archivos anteriores",
+      "unlink": "Desvincular",
+      "download": "Descargar",
+      "uploaded": "Subido",
+      "generated": "Hecho por Shiftbook",
+      "addedBy": "Agregado por {by} el {date}",
+      "unlinkedBy": "Desvinculado por {by} el {date}",
+      "fileTypes": "PDF, imágenes, hojas de cálculo, documentos o texto, hasta 20 MB.",
+      "noHistory": "Todavía no ha pasado nada.",
+      "history": {
+        "created": "Creada",
+        "status": "Situación: {to}",
+        "owner": "Cambió el responsable",
+        "fileAdded": "Archivo agregado",
+        "fileUnlinked": "Archivo desvinculado",
+        "due": "Vencimiento movido al {date}",
+        "other": "Cambio"
+      },
+      "addNote": "Agregar una nota",
+      "notePlaceholder": "Qué pasó, qué sigue",
+      "saveNote": "Agregar nota",
+      "noNotes": "Aún no hay notas.",
+      "i9": {
+        "title": "Fechas del Formulario I-9",
+        "hireDate": "Primer día de trabajo",
+        "section1": "Sección 1 completada",
+        "section2": "Sección 2 completada",
+        "workAuth": "La autorización de trabajo vence (si vence)",
+        "save": "Guardar fechas",
+        "saved": "Guardado.",
+        "datesOnly": "Shiftbook guarda solo fechas, nunca copias del formulario ni de los documentos."
+      },
+      "reverify": {
+        "title": "Registrar la reverificación",
+        "reverifiedOn": "Reverificado el",
+        "nextExpires": "La nueva autorización vence (vacío si no vence)",
+        "save": "Registrar"
+      },
+      "settingsLink": "Cámbielo en Ajustes de cumplimiento",
+      "readOnly": "Puede consultar esta obligación; cambiarla corresponde a {who}.",
+      "system": {
+        "renewed": "Renovada con {number}, vigente hasta el {date}.",
+        "completed": "Completada el {date}.",
+        "noLonger": "Ya no aplica: cambiaron los datos con que se calculó."
+      }
+    },
+    "who": {
+      "owner": "el Propietario",
+      "coordinator": "el Propietario y los coordinadores",
+      "billing": "el Propietario y facturación"
+    },
+    "errors": {
+      "not_allowed": "No puede cambiar esta obligación.",
+      "not_found": "No se encontró esta obligación. Vuelva a cargar la página.",
+      "not_open": "Esta obligación ya está cerrada.",
+      "already_open": "Esta obligación ya está abierta.",
+      "busy": "Otra persona está cambiando el cumplimiento. Intente de nuevo en un momento.",
+      "generic": "No funcionó. Revise los campos e intente de nuevo.",
+      "fields": {
+        "file_type": "Ese tipo de archivo no se puede guardar: use PDF, una imagen, una hoja de cálculo, un documento o texto.",
+        "file_size": "El archivo está vacío o pesa más de 20 MB.",
+        "effective_on": "Escriba la fecha en que el archivo entró en vigor.",
+        "section1On": "Una fecha de finalización no puede ser posterior a hoy.",
+        "section2On": "La Sección 2 no puede ser antes del primer día ni después de hoy.",
+        "reverifiedOn": "La fecha de reverificación no puede ser posterior a hoy.",
+        "nextExpiresOn": "La nueva fecha de vencimiento debe ser posterior a la reverificación.",
+        "reason": "Diga por qué no aplica.",
+        "note": "La nota debe tener menos de 500 caracteres.",
+        "body": "Escriba la nota (hasta 2,000 caracteres).",
+        "hireDate": "Escriba una fecha.",
+        "workAuthExpiresOn": "Escriba una fecha."
+      }
+    },
+    "calendar": {
+      "today": "Hoy",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "goTo": "Ir a la fecha",
+      "view": "Vista",
+      "views": {
+        "month": "Mes",
+        "week": "Semana",
+        "agenda": "Agenda"
+      },
+      "more": "+{count} más",
+      "nothing": "No vence nada en este rango.",
+      "nextDue": "La siguiente obligación vence el {date}.",
+      "dayLabel": "{date}: {count, plural, one {# obligación} other {# obligaciones}}",
+      "keys": "Teclas: M mes · W semana · A agenda · T hoy · J o N siguiente · Mayús+← anterior · G ir a una fecha"
+    }
+  },
+  "complianceSettings": {
+    "title": "Ajustes de cumplimiento",
+    "settings": "Ajustes",
+    "description": "Las obligaciones de cumplimiento se calculan con estos datos y con los clientes, colocaciones y trabajadores de la agencia.",
+    "readOnly": "Solo el Propietario cambia estos datos.",
+    "changed": "Último cambio el {date} por {by}",
+    "saved": "Guardado. Las obligaciones se calcularon de nuevo.",
+    "registrations": {
+      "title": "Registros",
+      "intro": "Los registros y la certificación estatales de la agencia, para la agencia o una sucursal.",
+      "cols": {
+        "state": "Estado",
+        "for": "Para",
+        "number": "Número",
+        "issued": "Emitido",
+        "expires": "Vence",
+        "certificate": "Certificado",
+        "renewal": "Renovación"
+      },
+      "agency": "La agencia",
+      "add": "Agregar registro",
+      "addTitle": "Agregar un registro",
+      "addBody": "Renovar es agregar el registro nuevo; el anterior sigue en la lista.",
+      "replaced": "Reemplazado",
+      "none": "Aún no hay registros: no se pueden fechar las renovaciones ni las pruebas de registro de Illinois.",
+      "fields": {
+        "jurisdiction": "Estado",
+        "branchId": "Para",
+        "number": "Número",
+        "issuedOn": "Emitido",
+        "expiresOn": "Vence",
+        "file": "Certificado (opcional)"
+      }
+    },
+    "policy": {
+      "title": "Póliza de compensación laboral",
+      "intro": "Las pólizas de compensación laboral de la agencia: su renovación y su auditoría de prima.",
+      "cols": {
+        "carrier": "Aseguradora",
+        "number": "Póliza",
+        "states": "Estados",
+        "starts": "Inicia",
+        "ends": "Termina",
+        "audit": "Auditoría",
+        "file": "Archivo",
+        "renewal": "Renovación"
+      },
+      "add": "Agregar póliza",
+      "addTitle": "Agregar una póliza de compensación laboral",
+      "addBody": "Una póliza que empieza a más tardar el día en que termina la anterior la renueva.",
+      "none": "Aún no hay pólizas: no se pueden fechar su renovación ni su auditoría.",
+      "fields": {
+        "carrier": "Aseguradora",
+        "policyNumber": "Número de póliza",
+        "states": "Estados (dos letras, separados por comas)",
+        "startsOn": "Inicia",
+        "endsOn": "Termina",
+        "auditDueOn": "Auditoría de prima (opcional)",
+        "file": "Archivo de la póliza (opcional)"
+      }
+    },
+    "statement": {
+      "title": "Órdenes de trabajo de Massachusetts",
+      "intro": "La declaración multilingüe de la División de Normas Laborales, que se envía con cada orden de trabajo de Massachusetts.",
+      "none": "Aún no hay declaración: suba la declaración de la División para que acompañe cada orden de trabajo.",
+      "upload": "Subir declaración",
+      "current": "<file>{name}</file>, agregada el {date} por {by}",
+      "file": "Archivo de la declaración"
+    },
+    "renewalStatus": "{status}, {date}",
+    "noRenewal": "—"
   }
 }

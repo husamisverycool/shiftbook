@@ -73,6 +73,11 @@ export async function lockCatalog(tx: Tx, agencyId: string, mode: "exclusive" | 
   await advisoryLock(tx, `catalog:${agencyId}`, mode);
 }
 
+/** The agency's compliance duties (slice j): worked out and changed one writer at a time. */
+export async function lockCompliance(tx: Tx, agencyId: string): Promise<void> {
+  await advisoryLock(tx, `compliance:${agencyId}`, "exclusive");
+}
+
 /**
  * The payroll file settings (slice f): changed under the exclusive lock, so two saves cannot both
  * start a row; read under the shared lock while files are made, so the file uses the settings the

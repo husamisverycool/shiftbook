@@ -59,6 +59,23 @@ export const WC_RATES: { state: string; classCode: string; description: string; 
   { state: "MA", classCode: "9079", description: "Restaurant and events (example rate)", ratePpm: 25_000 },
 ];
 
+/**
+ * Slice j (decision J11): the agency's state registrations and workers' comp policy, every number
+ * invented. The Illinois registration's renewal (60 days before it expires) and the Massachusetts
+ * one (30 days before) are due soon in October 2026.
+ */
+export const REGISTRATIONS: { key: string; jurisdiction: "IL" | "MA"; number: string; issuedOn: string; expiresOn: string }[] = [
+  { key: "il", jurisdiction: "IL", number: "IL-DTLSA-0000-DEMO", issuedOn: "2026-01-01", expiresOn: "2026-12-31" },
+  { key: "ma", jurisdiction: "MA", number: "MA-PA-0000-DEMO", issuedOn: "2025-11-21", expiresOn: "2026-11-20" },
+];
+export const WC_POLICY = { carrier: "Example Mutual Insurance (demo)", policyNumber: "WC-0000-DEMO", states: ["CA", "IL", "MA"], startsOn: "2026-01-01", endsOn: "2026-12-31", auditDueOn: "2027-02-15" };
+/** Everyone was hired when their placement started, and their I-9 was done on time (dates only). */
+export const I9_DATES = { hireDate: "2026-08-03", section1On: "2026-08-03", section2On: "2026-08-05" };
+/** One worker's work authorization ends within 90 days: reverification is due soon. */
+export const WORK_AUTH_ENDS: Record<string, string> = { "kateryna-bondarenko": "2026-12-20" };
+/** Massachusetts placements whose job order is not on file as sent: one overdue duty to show. */
+export const MA_JOB_ORDER_OPEN = ["kwame-boateng"];
+
 export const PERIODS = [
   { key: "w1", startsOn: "2026-09-28", endsOn: "2026-10-04" },
   { key: "w2", startsOn: "2026-10-05", endsOn: "2026-10-11" },

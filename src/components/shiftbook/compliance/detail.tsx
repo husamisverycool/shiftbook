@@ -1,0 +1,489 @@
+"use client";
+
+// Pattern: docs/patterns/compliance/[id].md — Drata control detail (Overview cards and owners;
+// Evidence: link, unlink, create, download), Vanta test detail tabs (Evidence, History, Notes) and
+// documents (a new file; expired files move to History; Mark as complete).
+import { ArrowLeftIcon, DownloadIcon, ExternalLinkIcon, PaperclipIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { addFileAction, addNoteAction, closeAction, recordI9Action, reopenAction, reverifyAction, unlinkFileAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Link, useRouter } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
+import type { ObligationDetail } from "@/server/compliance/queries";
+import { longDate } from "../format";
+import { dueIn, OwnerPicker } from "./list";
+import { StatusBadge } from "./status-badge";
+
+export type DetailTab = "overview" | "evidence" | "history" | "notes";
+const TABS: DetailTab[] = ["overview", "evidence", "history", "notes"];
+
+function useAct() {
+  const te = useTranslations("compliance.errors");
+  const router = useRouter();
+  const [pending, run] = useTransition();
+  const act = (fn: () => Promise<ComplianceActionResult>, onOk?: () => void) =>
+    run(async () => {
+      const r = await fn();
+      if (r.ok) {
+        onOk?.();
+        router.refresh();
+        return;
+      }
+      if (r.error === "invalid" && "field" in r && r.field) toast.error(te.has(`fields.${r.field}`) ? te(`fields.${r.field}` as "fields.reason") : te("generic"));
+      else toast.error(te(r.error === "invalid" ? "generic" : r.error));
+    });
+  return { pending, act };
+}
+
+export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: DetailTab; today: string }) {
+  const t = useTranslations("compliance");
+  const td = useTranslations("compliance.detail");
+  const locale = useLocale();
+  const i = d.item;
+  const open = i.status === "overdue" || i.status === "due_soon" || i.status === "upcoming";
+  const [closing, setClosing] = useState<"done" | "not_applicable" | null>(null);
+  const { pending, act } = useAct();
+
+  return (
+    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-4 px-4 py-6">
+      <Link href="/compliance" className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground" data-testid="back-to-compliance">
+        <ArrowLeftIcon className="size-4" />
+        {td("back")}
+      </Link>
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="mr-auto flex min-w-0 flex-col gap-1">
+          <h1 className="text-2xl font-semibold">{t(`kinds.${i.kind}` as "kinds.ma_job_order")}</h1>
+          <p className="text-sm text-muted-foreground">{i.subject}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={i.status} />
+            <Badge variant="outline">{t(`states.${i.jurisdiction}` as "states.IL")}</Badge>
+          </div>
+        </div>
+        {i.mayAct && open && (
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={pending} onClick={() => setClosing("not_applicable")} data-testid="not-applicable">
+              {td("notApplicable")}
+            </Button>
+            <Button disabled={pending} onClick={() => setClosing("done")} data-testid="mark-done">
+              {td("markDone")}
+            </Button>
+          </div>
+        )}
+        {d.mayReopen && (
+          <Button variant="outline" disabled={pending} onClick={() => act(() => reopenAction(i.id))} data-testid="reopen">
+            {td("reopen")}
+          </Button>
+        )}
+      </div>
+      {!open && (
+        <p className="text-sm" data-testid="closed-note">
+          {(i.status === "done" ? td("doneBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" }) : td("naBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" })) +
+            (d.closedBySystem ? ` ${systemNote(td, d, locale)}` : d.statusNote ? ` ${td("note", { note: d.statusNote })}` : "")}
+        </p>
+      )}
+      {!i.mayAct && <p className="text-sm text-muted-foreground">{td("readOnly", { who: t(`who.${whoFor(d)}`) })}</p>}
+      <nav aria-label={td("tabs.overview")} className="flex w-fit gap-1 rounded-lg bg-muted p-[3px]">
+        {TABS.map((x) => (
+          <Link
+            key={x}
+            href={x === "overview" ? `/compliance/${i.id}` : `/compliance/${i.id}?tab=${x}`}
+            aria-current={x === tab ? "page" : undefined}
+            className={cn("rounded-md px-3 py-1 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground dark:text-muted-foreground", x === tab && "bg-background text-foreground shadow-sm dark:text-foreground")}
+            data-testid={`obligation-tab-${x}`}
+          >
+            {td(`tabs.${x}`)}
+            {x === "evidence" && d.files.length > 0 ? ` (${d.files.length})` : x === "notes" && d.notes.length > 0 ? ` (${d.notes.length})` : ""}
+          </Link>
+        ))}
+      </nav>
+      {tab === "overview" && <Overview d={d} today={today} />}
+      {tab === "evidence" && <Evidence d={d} today={today} />}
+      {tab === "history" && <History d={d} />}
+      {tab === "notes" && <Notes d={d} />}
+      <CloseDialog id={i.id} status={closing} onClose={() => setClosing(null)} />
+    </div>
+  );
+}
+
+/** What Shiftbook closed a duty for, in the reader's language (the stored note is the English record). */
+function systemNote(td: ReturnType<typeof useTranslations<"compliance.detail">>, d: ObligationDetail, locale: string): string {
+  const f = d.facts as Record<string, string | null | undefined>;
+  const date = (v: string | null | undefined) => (v ? longDate(v, locale) : "");
+  if (d.item.status === "not_applicable") return td("system.noLonger");
+  if (f.renewedBy) return td("system.renewed", { number: f.renewedBy, date: date(f.renewedUntil) });
+  if (f.completedOn) return td("system.completed", { date: date(f.completedOn) });
+  return d.statusNote ? td("note", { note: d.statusNote }) : "";
+}
+
+const whoFor = (d: ObligationDetail): "owner" | "coordinator" | "billing" => (["placements", "workers"].includes(d.item.area) ? "coordinator" : d.item.area === "clients" ? "billing" : "owner");
+
+function Overview({ d, today }: { d: ObligationDetail; today: string }) {
+  const t = useTranslations("compliance");
+  const td = useTranslations("compliance.detail");
+  const locale = useLocale();
+  const i = d.item;
+  const open = i.status === "overdue" || i.status === "due_soon" || i.status === "upcoming";
+  const days = d.rule ? Math.abs(d.rule.offsetDays) || d.rule.businessDays : 0;
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="obligation-cards">
+        <Card label={td("cards.due")}>
+          <span className="text-base font-semibold">{longDate(i.dueOn, locale)}</span>
+          {open && <span className={`text-xs ${i.status === "overdue" ? "text-destructive" : "text-muted-foreground"}`}>{dueIn(t, i.dueInDays)}</span>}
+        </Card>
+        <Card label={td("cards.owner")}>
+          <OwnerPicker item={i} users={d.users} />
+        </Card>
+        <Card label={td("cards.evidence")}>
+          <Link href={`/compliance/${i.id}?tab=evidence`} className="text-base font-semibold underline-offset-4 hover:underline">
+            {td("files", { count: d.files.length })}
+          </Link>
+        </Card>
+        <Card label={td("cards.status")}>
+          <StatusBadge status={i.status} />
+        </Card>
+      </div>
+      <section className="flex flex-col gap-2" aria-labelledby="law">
+        <h2 id="law" className="text-base font-semibold">
+          {td("whatLaw")}
+        </h2>
+        <p className="max-w-3xl text-sm">{t(`asks.${i.kind}` as "asks.ma_job_order", { days })}</p>
+        {d.rule && (
+          <p className="text-xs text-muted-foreground">
+            {td("citation")}: {d.rule.citation}.{" "}
+            <a href={d.rule.sourceUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-0.5 underline underline-offset-4">
+              {td("source")}
+              <ExternalLinkIcon className="size-3" />
+            </a>
+          </p>
+        )}
+      </section>
+      <section className="flex flex-col gap-2" aria-labelledby="about">
+        <h2 id="about" className="text-base font-semibold">
+          {td("about")}
+        </h2>
+        <dl className="grid max-w-3xl grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+          <dt className="text-muted-foreground">{td("subject")}</dt>
+          <dd>{i.subject}</dd>
+          {d.names.client && i.links.clientId && (
+            <>
+              <dt className="text-muted-foreground">{td("client")}</dt>
+              <dd>
+                <Link href={`/clients/${i.links.clientId}`} className="underline underline-offset-4">
+                  {d.names.client}
+                </Link>
+              </dd>
+            </>
+          )}
+          {d.names.jobOrderId && (
+            <>
+              <dt className="text-muted-foreground">{td("placement")}</dt>
+              <dd>
+                <Link href={`/job-orders/${d.names.jobOrderId}`} className="underline underline-offset-4">
+                  {td("openPlacement")}
+                </Link>
+              </dd>
+            </>
+          )}
+          <dt className="text-muted-foreground">{td("workedOut")}</dt>
+          <dd className="text-muted-foreground" data-testid="obligation-message">
+            {d.message}
+          </dd>
+        </dl>
+        {(i.subjectKind === "registration" || i.subjectKind === "policy") && (
+          <Link href="/settings/compliance" className="w-fit text-sm underline underline-offset-4">
+            {td("settingsLink")}
+          </Link>
+        )}
+      </section>
+      {d.i9 && (i.kind === "i9_section1" || i.kind === "i9_section2") && <I9Form d={d} today={today} />}
+      {d.i9 && i.kind === "i9_reverify" && open && i.mayAct && <ReverifyForm d={d} today={today} />}
+    </div>
+  );
+}
+
+function Card({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border p-3">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function I9Form({ d, today }: { d: ObligationDetail; today: string }) {
+  const td = useTranslations("compliance.detail.i9");
+  const i9 = d.i9!;
+  const [v, setV] = useState({ hireDate: i9.hireDate ?? "", section1On: i9.section1On ?? "", section2On: i9.section2On ?? "", workAuthExpiresOn: i9.workAuthExpiresOn ?? "" });
+  const { pending, act } = useAct();
+  const field = (key: keyof typeof v, label: string, max?: string) => (
+    <div className="flex flex-col gap-1">
+      <Label htmlFor={`i9-${key}`} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Input id={`i9-${key}`} type="date" className="w-44" value={v[key]} max={max} disabled={!d.item.mayAct} onChange={(e) => setV({ ...v, [key]: e.target.value })} data-testid={`i9-${key}`} />
+    </div>
+  );
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="i9">
+      <h2 id="i9" className="text-base font-semibold">
+        {td("title")}
+      </h2>
+      <div className="flex flex-wrap items-end gap-3">
+        {field("hireDate", td("hireDate"))}
+        {field("section1On", td("section1"), today)}
+        {field("section2On", td("section2"), today)}
+        {field("workAuthExpiresOn", td("workAuth"))}
+        {d.item.mayAct && (
+          <Button
+            size="sm"
+            disabled={pending}
+            onClick={() => act(() => recordI9Action(i9.workerId, { hireDate: v.hireDate || null, section1On: v.section1On || null, section2On: v.section2On || null, workAuthExpiresOn: v.workAuthExpiresOn || null }), () => toast.success(td("saved")))}
+            data-testid="save-i9"
+          >
+            {td("save")}
+          </Button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">{td("datesOnly")}</p>
+    </section>
+  );
+}
+
+function ReverifyForm({ d, today }: { d: ObligationDetail; today: string }) {
+  const td = useTranslations("compliance.detail.reverify");
+  const [on, setOn] = useState(today);
+  const [next, setNext] = useState("");
+  const { pending, act } = useAct();
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="reverify">
+      <h2 id="reverify" className="text-base font-semibold">
+        {td("title")}
+      </h2>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="reverified-on" className="text-xs text-muted-foreground">
+            {td("reverifiedOn")}
+          </Label>
+          <Input id="reverified-on" type="date" className="w-44" max={today} value={on} onChange={(e) => setOn(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="next-expires" className="text-xs text-muted-foreground">
+            {td("nextExpires")}
+          </Label>
+          <Input id="next-expires" type="date" className="w-44" min={on} value={next} onChange={(e) => setNext(e.target.value)} />
+        </div>
+        <Button size="sm" disabled={pending || !on} onClick={() => act(() => reverifyAction(d.item.id, on, next || null))} data-testid="save-reverify">
+          {td("save")}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
+  const td = useTranslations("compliance.detail");
+  const locale = useLocale();
+  const [effectiveOn, setEffectiveOn] = useState(today);
+  const [file, setFile] = useState<File | null>(null);
+  const [key, setKey] = useState(0);
+  const { pending, act } = useAct();
+  const row = (f: ObligationDetail["files"][number], past: boolean) => (
+    <li key={`${f.id}-${String(f.addedAt)}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-2 last:border-b-0" data-testid={past ? "past-file" : "evidence-file"}>
+      <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-sm font-medium">{f.filename}</span>
+        <span className="text-xs text-muted-foreground">
+          {[
+            `${td("effectiveOn")}: ${longDate(f.effectiveOn, locale)}`,
+            f.source === "generated" ? td("generated") : td("uploaded"),
+            past && f.unlinkedAt ? td("unlinkedBy", { by: f.unlinkedBy ?? "", date: longDate(new Date(f.unlinkedAt).toISOString().slice(0, 10), locale) }) : td("addedBy", { by: f.addedBy, date: longDate(new Date(f.addedAt).toISOString().slice(0, 10), locale) }),
+          ].join(" · ")}
+        </span>
+      </span>
+      <a href={`/api/files/compliance/${f.id}`} download className={buttonVariants({ variant: "ghost", size: "sm" })} aria-label={`${td("download")} ${f.filename}`}>
+        <DownloadIcon />
+        {td("download")}
+      </a>
+      {!past && d.item.mayAct && (
+        <Button variant="ghost" size="sm" disabled={pending} onClick={() => act(() => unlinkFileAction(d.item.id, f.id))} data-testid="unlink-file">
+          {td("unlink")}
+        </Button>
+      )}
+    </li>
+  );
+  return (
+    <div className="flex flex-col gap-4">
+      {d.item.mayAct && (
+        <form
+          className="flex flex-wrap items-end gap-3 rounded-lg border p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!file) return;
+            const form = new FormData();
+            form.set("file", file);
+            form.set("effectiveOn", effectiveOn);
+            act(
+              () => addFileAction(d.item.id, form),
+              () => {
+                setFile(null);
+                setKey((k) => k + 1);
+              },
+            );
+          }}
+        >
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="evidence-file" className="text-xs text-muted-foreground">
+              {td("addFile")}
+            </Label>
+            <Input key={key} id="evidence-file" type="file" className="w-72" accept=".pdf,.png,.jpg,.jpeg,.csv,.txt,.xlsx,.docx" onChange={(e) => setFile(e.target.files?.[0] ?? null)} data-testid="evidence-input" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="evidence-date" className="text-xs text-muted-foreground">
+              {td("effectiveOn")}
+            </Label>
+            <Input id="evidence-date" type="date" className="w-44" value={effectiveOn} onChange={(e) => setEffectiveOn(e.target.value)} />
+          </div>
+          <Button type="submit" size="sm" disabled={pending || !file || !effectiveOn} data-testid="add-evidence">
+            {td("upload")}
+          </Button>
+          <p className="w-full text-xs text-muted-foreground">{td("fileTypes")}</p>
+        </form>
+      )}
+      {d.files.length === 0 ? (
+        <p className="rounded-lg border py-10 text-center text-sm text-muted-foreground" data-testid="no-files">
+          {td("noFiles")}
+        </p>
+      ) : (
+        <ul className="rounded-lg border">{d.files.map((f) => row(f, false))}</ul>
+      )}
+      {d.pastFiles.length > 0 && (
+        <section aria-labelledby="past-files" className="flex flex-col gap-2">
+          <h2 id="past-files" className="text-sm font-semibold">
+            {td("pastFiles")}
+          </h2>
+          <ul className="rounded-lg border">{d.pastFiles.map((f) => row(f, true))}</ul>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function History({ d }: { d: ObligationDetail }) {
+  const td = useTranslations("compliance.detail");
+  const ts = useTranslations("compliance.statuses");
+  const locale = useLocale();
+  if (d.history.length === 0) return <p className="text-sm text-muted-foreground">{td("noHistory")}</p>;
+  const what = (h: ObligationDetail["history"][number]) => {
+    const after = h.after ?? {};
+    if (h.action === "create") return td("history.created");
+    if (typeof after.status === "string") return td("history.status", { to: after.status === "open" ? td("reopen") : ts(after.status === "done" ? "done" : "not_applicable") }) + (typeof after.note === "string" && after.note ? ` — ${after.note}` : "");
+    if ("ownerUserId" in after) return td("history.owner");
+    if ("linkedDocumentId" in after) return after.linkedDocumentId ? td("history.fileAdded") : td("history.fileUnlinked");
+    if (typeof after.dueOn === "string") return td("history.due", { date: longDate(after.dueOn, locale) });
+    return td("history.other");
+  };
+  return (
+    <ol className="flex flex-col rounded-lg border" data-testid="obligation-history">
+      {d.history.map((h, n) => (
+        <li key={n} className="flex flex-wrap items-baseline gap-x-4 border-b px-3 py-2 text-sm last:border-b-0">
+          <span className="w-56 text-xs text-muted-foreground tabular-nums">{new Date(h.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+          <span className="flex-1">{what(h)}</span>
+          <span className="text-xs text-muted-foreground">{h.by}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Notes({ d }: { d: ObligationDetail }) {
+  const td = useTranslations("compliance.detail");
+  const locale = useLocale();
+  const [body, setBody] = useState("");
+  const { pending, act } = useAct();
+  return (
+    <div className="flex flex-col gap-4">
+      {d.item.mayAct && (
+        <form
+          className="flex flex-col gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            act(
+              () => addNoteAction(d.item.id, body),
+              () => setBody(""),
+            );
+          }}
+        >
+          <Label htmlFor="note-body">{td("addNote")}</Label>
+          <Textarea id="note-body" value={body} maxLength={2000} placeholder={td("notePlaceholder")} onChange={(e) => setBody(e.target.value)} data-testid="note-body" />
+          <Button type="submit" size="sm" className="w-fit" disabled={pending || body.trim() === ""} data-testid="add-note">
+            {td("saveNote")}
+          </Button>
+        </form>
+      )}
+      {d.notes.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{td("noNotes")}</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {d.notes.map((n) => (
+            <li key={n.id} className="rounded-lg border p-3" data-testid="obligation-note">
+              <p className="text-sm whitespace-pre-wrap">{n.body}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {n.by} · {new Date(n.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function CloseDialog({ id, status, onClose }: { id: string; status: "done" | "not_applicable" | null; onClose: () => void }) {
+  const td = useTranslations("compliance.detail");
+  const [note, setNote] = useState("");
+  const { pending, act } = useAct();
+  const na = status === "not_applicable";
+  return (
+    <Dialog open={status !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{na ? td("naTitle") : td("doneTitle")}</DialogTitle>
+          <DialogDescription className="sr-only">{na ? td("reason") : td("doneNote")}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="close-note">{na ? td("reason") : td("doneNote")}</Label>
+          <Textarea id="close-note" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} data-testid="close-note-input" />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {td("cancel")}
+          </Button>
+          <Button
+            disabled={pending || (na && note.trim() === "")}
+            onClick={() =>
+              status &&
+              act(
+                () => closeAction(id, status, note.trim() || null),
+                () => {
+                  setNote("");
+                  onClose();
+                },
+              )
+            }
+            data-testid="confirm-close"
+          >
+            {td("save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

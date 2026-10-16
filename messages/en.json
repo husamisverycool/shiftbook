@@ -594,7 +594,10 @@
     "payments": "Payments",
     "bank": "Bank",
     "margin": "Margin",
-    "marginSettings": "Margin settings"
+    "marginSettings": "Margin settings",
+    "compliance": "Compliance",
+    "complianceSettings": "Compliance settings",
+    "complianceBadge": "{count} overdue or due soon"
   },
   "list": {
     "filter": "Filter",
@@ -2354,5 +2357,315 @@
       "generic": "That didn't work. Try again.",
       "invalid": "Something needs fixing."
     }
+  },
+  "compliance": {
+    "title": "Compliance",
+    "settings": "Compliance settings",
+    "tabsLabel": "Compliance views",
+    "tabs": {
+      "list": "List",
+      "calendar": "Calendar"
+    },
+    "areasLabel": "Areas",
+    "areas": {
+      "all": "All",
+      "registrations": "Registrations",
+      "clients": "Clients",
+      "placements": "Placements",
+      "workers": "Workers",
+      "equal_pay": "Equal pay",
+      "workers_comp": "Workers' comp",
+      "aca": "ACA"
+    },
+    "search": "Search",
+    "searchPlaceholder": "Search by name",
+    "statusFilter": "Status",
+    "statusOptions": {
+      "open": "Open",
+      "overdue": "Overdue",
+      "due_soon": "Due soon",
+      "upcoming": "Upcoming",
+      "done": "Done",
+      "not_applicable": "Not applicable",
+      "all": "All"
+    },
+    "statuses": {
+      "overdue": "Overdue",
+      "due_soon": "Due soon",
+      "upcoming": "Upcoming",
+      "done": "Done",
+      "not_applicable": "Not applicable"
+    },
+    "stateFilter": "State",
+    "anyState": "Any state",
+    "states": {
+      "IL": "Illinois",
+      "MA": "Massachusetts",
+      "NJ": "New Jersey",
+      "US": "Federal"
+    },
+    "ownerFilter": "Owner",
+    "owners": {
+      "any": "Anyone",
+      "me": "Me",
+      "none": "No owner"
+    },
+    "cols": {
+      "duty": "Duty",
+      "state": "State",
+      "due": "Due",
+      "owner": "Owner",
+      "status": "Status"
+    },
+    "due": {
+      "today": "today",
+      "in": "in {count, plural, one {# day} other {# days}}",
+      "late": "{count, plural, one {# day} other {# days}} late"
+    },
+    "noOwner": "No owner",
+    "ownerLabel": "Owner of {duty}",
+    "ownerSaved": "Owner saved.",
+    "kinds": {
+      "il_registration_renewal": "Illinois registration renewal",
+      "ma_registration_renewal": "Massachusetts registration renewal",
+      "nj_certification_renewal": "New Jersey certification renewal",
+      "il_client_proof": "Illinois proof of registration",
+      "il_client_proof_contract": "Illinois proof of registration before the contract",
+      "il_equal_pay_720h": "Illinois equal pay after 720 hours",
+      "il_equal_pay_4160h": "Illinois equal pay after 4,160 hours",
+      "ma_job_order": "Massachusetts job order",
+      "nj_language_notice": "New Jersey notice in the worker's language",
+      "i9_section1": "Form I-9 Section 1",
+      "i9_section2": "Form I-9 Section 2",
+      "i9_reverify": "Form I-9 reverification",
+      "wc_policy_renewal": "Workers' comp policy renewal",
+      "wc_audit": "Workers' comp premium audit"
+    },
+    "asks": {
+      "il_registration_renewal": "Apply to renew the agency's Illinois day and temporary labor registration at least {days} days before it expires. The agency and each branch office register; a lapse in workers' comp suspends the registration.",
+      "ma_registration_renewal": "Renew the Massachusetts placement agency registration (or employment agency license) no later than {days} days before it expires. Each location and business name registers.",
+      "nj_certification_renewal": "Certify the agency with New Jersey Consumer Affairs again before the certification ends ({days} days before is the safe date: the rules name none).",
+      "il_client_proof": "Give the client proof of the agency's Illinois registration. The client must check the registration before contracting and on March 1 and September 1 each year.",
+      "il_client_proof_contract": "Give the client proof of the agency's Illinois registration before the contract starts.",
+      "il_equal_pay_720h": "After more than 720 hours at one client within 12 months, the worker is paid at least what the client pays comparable employees, with equal benefits or their hourly cash value. Ask the client for the comparison before the next pay period.",
+      "il_equal_pay_4160h": "After more than 4,160 hours at one client within 48 months, the higher equal-pay measure applies.",
+      "ma_job_order": "Give the worker the job order in writing, by the way the worker chose, before the end of the first pay period: the agency's, its workers' comp insurer's, the client's and the Department's contact details; the job and anything it requires; pay day, hourly rate and whether overtime may occur; start and end times; meals and transportation. Not needed for professional, secretarial or administrative assistant work.",
+      "nj_language_notice": "Give the assignment notice in English and in the worker's primary language when the placement starts, on the Department of Labor's form.",
+      "i9_section1": "The worker completes Section 1 of Form I-9 no later than the first day of work.",
+      "i9_section2": "The agency examines the worker's documents and completes Section 2 within {days} business days of the first day.",
+      "i9_reverify": "Reverify the worker's employment authorization by the day it ends (Supplement B).",
+      "wc_policy_renewal": "Keep workers' comp in force: the next policy starts by the day this one ends.",
+      "wc_audit": "Give the insurer's premium auditor the payroll by class, with the overtime premium shown apart by worker and by class."
+    },
+    "emptyOpen": "No compliance duty is open.",
+    "nextUpcoming": "The next one is due {date}.",
+    "noMatch": "Nothing matches the search and filters.",
+    "clear": "Clear filters",
+    "listLabel": "Compliance duties",
+    "detail": {
+      "back": "Compliance",
+      "markDone": "Mark done",
+      "notApplicable": "Not applicable",
+      "reopen": "Reopen",
+      "doneTitle": "Mark this duty done",
+      "doneNote": "Note (optional)",
+      "naTitle": "This duty does not apply",
+      "reason": "Reason",
+      "save": "Save",
+      "cancel": "Cancel",
+      "tabs": {
+        "overview": "Overview",
+        "evidence": "Evidence",
+        "history": "History",
+        "notes": "Notes"
+      },
+      "cards": {
+        "due": "Due",
+        "owner": "Owner",
+        "evidence": "Evidence",
+        "status": "Status"
+      },
+      "files": "{count, plural, =0 {No files} one {# file} other {# files}}",
+      "whatLaw": "What the law asks",
+      "citation": "Citation",
+      "source": "Official source",
+      "about": "About",
+      "workedOut": "How it was worked out",
+      "subject": "For",
+      "client": "Client",
+      "worker": "Worker",
+      "placement": "Placement",
+      "openPlacement": "Open the job order",
+      "doneBy": "Done by {by} on {date}.",
+      "naBy": "Set aside by {by} on {date}.",
+      "byShiftbook": "Shiftbook",
+      "note": "Note: {note}",
+      "addFile": "Add file",
+      "file": "File",
+      "effectiveOn": "Effective date",
+      "upload": "Add",
+      "noFiles": "No files yet. Add the file that shows this was done.",
+      "pastFiles": "Past files",
+      "unlink": "Unlink",
+      "download": "Download",
+      "uploaded": "Uploaded",
+      "generated": "Made by Shiftbook",
+      "addedBy": "Added by {by} on {date}",
+      "unlinkedBy": "Unlinked by {by} on {date}",
+      "fileTypes": "PDF, images, spreadsheets, documents or text, up to 20 MB.",
+      "noHistory": "Nothing has happened yet.",
+      "history": {
+        "created": "Created",
+        "status": "Status: {to}",
+        "owner": "Owner changed",
+        "fileAdded": "File added",
+        "fileUnlinked": "File unlinked",
+        "due": "Due date moved to {date}",
+        "other": "Changed"
+      },
+      "addNote": "Add a note",
+      "notePlaceholder": "What happened, what is next",
+      "saveNote": "Add note",
+      "noNotes": "No notes yet.",
+      "i9": {
+        "title": "Form I-9 dates",
+        "hireDate": "First day of work",
+        "section1": "Section 1 completed",
+        "section2": "Section 2 completed",
+        "workAuth": "Work authorization ends (if it does)",
+        "save": "Save dates",
+        "saved": "Saved.",
+        "datesOnly": "Shiftbook keeps dates only, never copies of the form or the documents."
+      },
+      "reverify": {
+        "title": "Record the reverification",
+        "reverifiedOn": "Reverified on",
+        "nextExpires": "The new authorization ends (empty if it does not)",
+        "save": "Record"
+      },
+      "settingsLink": "Change it in Compliance settings",
+      "readOnly": "You can read this duty; changing it is for {who}.",
+      "system": {
+        "renewed": "Renewed by {number}, which runs to {date}.",
+        "completed": "Completed on {date}.",
+        "noLonger": "It no longer applies: what it was worked out from has changed."
+      }
+    },
+    "who": {
+      "owner": "the Owner",
+      "coordinator": "the Owner and coordinators",
+      "billing": "the Owner and billing"
+    },
+    "errors": {
+      "not_allowed": "You can't change this duty.",
+      "not_found": "This duty was not found. Reload the page.",
+      "not_open": "This duty is already closed.",
+      "already_open": "This duty is already open.",
+      "busy": "Someone else is changing compliance. Try again in a moment.",
+      "generic": "That didn't work. Check the fields and try again.",
+      "fields": {
+        "file_type": "That kind of file can't be kept: use PDF, an image, a spreadsheet, a document or text.",
+        "file_size": "The file is empty or larger than 20 MB.",
+        "effective_on": "Enter the date the file took effect.",
+        "section1On": "A completed date can't be later than today.",
+        "section2On": "Section 2 can't be before the first day or later than today.",
+        "reverifiedOn": "The reverification date can't be later than today.",
+        "nextExpiresOn": "The new end date must be after the reverification.",
+        "reason": "Say why it does not apply.",
+        "note": "Keep the note under 500 characters.",
+        "body": "Write the note (up to 2,000 characters).",
+        "hireDate": "Enter a date.",
+        "workAuthExpiresOn": "Enter a date."
+      }
+    },
+    "calendar": {
+      "today": "Today",
+      "previous": "Previous",
+      "next": "Next",
+      "goTo": "Go to date",
+      "view": "View",
+      "views": {
+        "month": "Month",
+        "week": "Week",
+        "agenda": "Agenda"
+      },
+      "more": "+{count} more",
+      "nothing": "Nothing is due in this range.",
+      "nextDue": "The next duty is due {date}.",
+      "dayLabel": "{date}: {count, plural, one {# duty} other {# duties}}",
+      "keys": "Keys: M month · W week · A agenda · T today · J or N next · Shift+← previous · G go to a date"
+    }
+  },
+  "complianceSettings": {
+    "title": "Compliance settings",
+    "settings": "Settings",
+    "description": "The compliance duties are worked out from these and from the agency's clients, placements and workers.",
+    "readOnly": "Only the Owner changes these.",
+    "changed": "Last changed {date} by {by}",
+    "saved": "Saved. The duties were worked out again.",
+    "registrations": {
+      "title": "Registrations",
+      "intro": "The agency's state registrations and certification, for the agency or one branch.",
+      "cols": {
+        "state": "State",
+        "for": "For",
+        "number": "Number",
+        "issued": "Issued",
+        "expires": "Expires",
+        "certificate": "Certificate",
+        "renewal": "Renewal"
+      },
+      "agency": "The agency",
+      "add": "Add registration",
+      "addTitle": "Add a registration",
+      "addBody": "Renewing is adding the new registration; the one before stays listed.",
+      "replaced": "Replaced",
+      "none": "No registration yet: renewals and the Illinois proof pages cannot be dated.",
+      "fields": {
+        "jurisdiction": "State",
+        "branchId": "For",
+        "number": "Number",
+        "issuedOn": "Issued",
+        "expiresOn": "Expires",
+        "file": "Certificate (optional)"
+      }
+    },
+    "policy": {
+      "title": "Workers' comp policy",
+      "intro": "The agency's workers' comp policies: their renewal and premium audit.",
+      "cols": {
+        "carrier": "Insurer",
+        "number": "Policy",
+        "states": "States",
+        "starts": "Starts",
+        "ends": "Ends",
+        "audit": "Audit due",
+        "file": "File",
+        "renewal": "Renewal"
+      },
+      "add": "Add policy",
+      "addTitle": "Add a workers' comp policy",
+      "addBody": "A policy that starts by the day the last one ends renews it.",
+      "none": "No policy yet: its renewal and audit cannot be dated.",
+      "fields": {
+        "carrier": "Insurer",
+        "policyNumber": "Policy number",
+        "states": "States (two letters, separated by commas)",
+        "startsOn": "Starts",
+        "endsOn": "Ends",
+        "auditDueOn": "Premium audit due (optional)",
+        "file": "Policy file (optional)"
+      }
+    },
+    "statement": {
+      "title": "Massachusetts job orders",
+      "intro": "The Department of Labor Standards' multilingual statement, sent with every Massachusetts job order.",
+      "none": "No statement yet: upload the Department's statement so it can go with each job order.",
+      "upload": "Upload statement",
+      "current": "<file>{name}</file>, added {date} by {by}",
+      "file": "Statement file"
+    },
+    "renewalStatus": "{status}, {date}",
+    "noRenewal": "—"
   }
 }

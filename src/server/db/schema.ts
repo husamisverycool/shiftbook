@@ -19,7 +19,6 @@ import {
   pgTable,
   text,
   timestamp,
-  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -222,6 +221,11 @@ export const workers = pgTable("workers", {
   preferredLanguage: text("preferred_language").notNull().default("en"),
   payrollIds: jsonb("payroll_ids").$type<PayrollIds>().notNull().default(sql`'{}'::jsonb`),
   wcState: text("wc_state"),
+  /** Form I-9 as dates only (slice j, decision J4). */
+  hireDate: isoDate("hire_date"),
+  i9Section1On: isoDate("i9_section1_on"),
+  i9Section2On: isoDate("i9_section2_on"),
+  workAuthExpiresOn: isoDate("work_auth_expires_on"),
   createdAt: createdAt(),
 });
 
@@ -864,9 +868,7 @@ export const equalPayRules = pgTable("equal_pay_rules", {
   citation: text("citation").notNull(),
 });
 
-export const obligationKind = pgEnum("obligation_kind", ["il_equal_pay_720h", "il_equal_pay_4160h"]);
-
-/** What the evidence of an obligation holds (the engine's Obligation, less what has its own column). */
+/** The engine's facts about an Illinois equal-pay crossing (the engine's Obligation, less what has its own column). */
 export interface ObligationEvidence {
   ruleCode: string;
   citation: string;
@@ -881,28 +883,142 @@ export interface ObligationEvidence {
   entryIds: string[];
 }
 
-/** Something the agency must do because of the hours worked (SPEC §4; drizzle/0019): one per worker, client and kind. */
+/** What a duty was worked out from (an equal-pay crossing's evidence, or a generator's facts). */
+export type ObligationFacts = ObligationEvidence | Record<string, string | number | boolean | null>;
+
+export type ObligationSubject = "registration" | "policy" | "client" | "assignment" | "worker" | "worker_client";
+export type ObligationStatus = "open" | "done" | "not_applicable";
+
+/**
+ * A compliance duty (SPEC §4 Obligation, §16; drizzle/0019, 0029): its kind is a compliance rule's
+ * code; once per kind, subject and occurrence. Due soon and overdue are worked out when shown.
+ */
 export const obligations = pgTable(
   "obligations",
   {
     id: id(),
     agencyId: agencyId(),
-    kind: obligationKind("kind").notNull(),
+    kind: text("kind").notNull(),
     jurisdiction: text("jurisdiction").notNull(),
-    workerId: uuid("worker_id").notNull().references(() => workers.id),
-    clientId: uuid("client_id").notNull().references(() => clients.id),
+    subjectKind: text("subject_kind").$type<ObligationSubject>().notNull().default("worker_client"),
+    workerId: uuid("worker_id").references(() => workers.id),
+    clientId: uuid("client_id").references(() => clients.id),
+    assignmentId: uuid("assignment_id").references(() => assignments.id),
+    registrationId: uuid("registration_id").references(() => agencyRegistrations.id),
+    policyId: uuid("policy_id").references(() => wcPolicies.id),
+    occurrence: text("occurrence").notNull().default(""),
     payRunId: uuid("pay_run_id").references(() => payRuns.id),
-    crossedOn: isoDate("crossed_on").notNull(),
+    crossedOn: isoDate("crossed_on"),
     dueOn: isoDate("due_on").notNull(),
-    status: text("status").$type<"open" | "done">().notNull().default("open"),
-    evidence: jsonb("evidence").$type<ObligationEvidence>().notNull(),
+    remindOn: isoDate("remind_on"),
+    ownerUserId: uuid("owner_user_id").references(() => users.id),
+    status: text("status").$type<ObligationStatus>().notNull().default("open"),
+    statusNote: text("status_note"),
+    facts: jsonb("facts").$type<ObligationFacts>().notNull(),
     message: text("message").notNull(),
     createdAt: createdAt(),
     doneAt: timestamp("done_at", { withTimezone: true }),
     doneBy: uuid("done_by"),
+    doneByLabel: text("done_by_label"),
+    /** Closed by Shiftbook (renewed, dates entered, no longer applies), so Shiftbook may reopen it. */
+    closedBySystem: boolean("closed_by_system").notNull().default(false),
   },
-  (t) => [index("obligations_due").on(t.agencyId, t.status, t.dueOn), unique("obligations_once").on(t.agencyId, t.kind, t.workerId, t.clientId)],
+  (t) => [index("obligations_due").on(t.agencyId, t.status, t.dueOn)],
 );
+
+/** When a kind of duty falls due, who may complete it, its citation and source (drizzle/0029; reference data). */
+export const complianceRules = pgTable("compliance_rules", {
+  id: id(),
+  code: text("code").notNull(),
+  jurisdiction: text("jurisdiction").notNull(),
+  area: text("area").$type<"registrations" | "clients" | "placements" | "workers" | "equal_pay" | "workers_comp" | "aca">().notNull(),
+  subjectKind: text("subject_kind").$type<ObligationSubject>().notNull(),
+  anchor: text("anchor").$type<"expiry" | "fixed_dates" | "start" | "hire" | "crossing" | "first_pay_period_end" | "date">().notNull(),
+  offsetDays: integer("offset_days").notNull(),
+  businessDays: integer("business_days").notNull(),
+  remindDays: integer("remind_days").notNull(),
+  fixedDates: text("fixed_dates").array().notNull(),
+  lookbackDays: integer("lookback_days").notNull(),
+  socGroups: text("soc_groups").array().notNull(),
+  roles: text("roles").array().notNull(),
+  citation: text("citation").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+});
+
+/** Files that prove a duty was done; never deleted (Drata evidence, Vanta documents). */
+export const complianceDocuments = pgTable("compliance_documents", {
+  id: id(),
+  agencyId: agencyId(),
+  filename: text("filename").notNull(),
+  mediaType: text("media_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  sha256: text("sha256").notNull(),
+  storageKey: text("storage_key").notNull(),
+  source: text("source").$type<"upload" | "generated">().notNull(),
+  effectiveOn: isoDate("effective_on").notNull(),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
+
+/** The agency's Illinois and Massachusetts registrations and New Jersey certification; renewing adds a row. */
+export const agencyRegistrations = pgTable("agency_registrations", {
+  id: id(),
+  agencyId: agencyId(),
+  jurisdiction: text("jurisdiction").$type<"IL" | "MA" | "NJ">().notNull(),
+  branchId: uuid("branch_id").references(() => branches.id),
+  number: text("number").notNull(),
+  issuedOn: isoDate("issued_on"),
+  expiresOn: isoDate("expires_on").notNull(),
+  documentId: uuid("document_id").references(() => complianceDocuments.id),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
+
+export const wcPolicies = pgTable("wc_policies", {
+  id: id(),
+  agencyId: agencyId(),
+  carrier: text("carrier").notNull(),
+  policyNumber: text("policy_number").notNull(),
+  states: text("states").array().notNull(),
+  startsOn: isoDate("starts_on").notNull(),
+  endsOn: isoDate("ends_on").notNull(),
+  auditDueOn: isoDate("audit_due_on"),
+  documentId: uuid("document_id").references(() => complianceDocuments.id),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
+
+export const obligationDocuments = pgTable("obligation_documents", {
+  id: id(),
+  agencyId: agencyId(),
+  obligationId: uuid("obligation_id")
+    .notNull()
+    .references(() => obligations.id, { onDelete: "cascade" }),
+  documentId: uuid("document_id")
+    .notNull()
+    .references(() => complianceDocuments.id),
+  linkedAt: timestamp("linked_at", { withTimezone: true }).notNull().defaultNow(),
+  linkedByLabel: text("linked_by_label").notNull(),
+  unlinkedAt: timestamp("unlinked_at", { withTimezone: true }),
+  unlinkedByLabel: text("unlinked_by_label"),
+});
+
+export const obligationNotes = pgTable("obligation_notes", {
+  id: id(),
+  agencyId: agencyId(),
+  obligationId: uuid("obligation_id")
+    .notNull()
+    .references(() => obligations.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
 
 // ---------- client approval (SPEC §10; drizzle/0022; decisions 0012, 0013) ----------
 export type ApprovalLocale = "en" | "es";
@@ -1285,4 +1401,9 @@ export const TENANT_TABLES = [
   "credit_applications",
   "burden_tax_rates",
   "wc_rates",
+  "compliance_documents",
+  "agency_registrations",
+  "wc_policies",
+  "obligation_documents",
+  "obligation_notes",
 ] as const;

@@ -3,10 +3,11 @@
  * hours worked in earlier periods, records the 720-hour crossing as an obligation due before the next
  * pay period, keeps it in step when the run's hours change, and never records it twice.
  */
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, lt } from "drizzle-orm";
+import { EQUAL_PAY_KINDS } from "../../src/server/compliance/kinds";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { addDays } from "@shiftbook/rules";
-import { agencies, assignments, auditEvents, obligations, payPeriods, timeEntries } from "../../src/server/db/schema";
+import { agencies, assignments, auditEvents, obligations, payPeriods, timeEntries, type ObligationEvidence } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { addEntry } from "../../src/server/review/service";
@@ -66,16 +67,16 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     const codes = run.warnings.filter((w) => w.workerId === marcus).map((w) => w.code);
     expect(codes).toContain("equal_pay_obligation");
     expect(codes).toContain("equal_pay_rate_missing");
-    const rows = await inAgency((tx) => tx.select().from(obligations));
+    const rows = await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])));
     expect(rows).toHaveLength(1);
     // Due before the next pay period begins: by the last day of this one.
     expect(rows[0]).toMatchObject({ kind: "il_equal_pay_720h", jurisdiction: "IL", workerId: marcus, clientId: clientId("il"), payRunId: run.runId, crossedOn: "2026-10-07", dueOn: "2026-10-11", status: "open" });
-    expect(rows[0]!.evidence).toMatchObject({ crossedAtMinute: 660, windowStart: "2025-10-08", thresholdMinutes: 43_200, minutesAfter: 1200, entryIds: ids.slice(2).sort() });
+    expect(rows[0]!.facts).toMatchObject({ crossedAtMinute: 660, windowStart: "2025-10-08", thresholdMinutes: 43_200, minutesAfter: 1200, entryIds: ids.slice(2).sort() });
     expect(rows[0]!.message).toContain("Prairie Line");
 
     // Computing again changes nothing and logs nothing new.
     await inAgency((tx) => computeRun(tx, actor, period));
-    expect(await inAgency((tx) => tx.select().from(obligations))).toHaveLength(1);
+    expect(await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])))).toHaveLength(1);
     const logged = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "obligation"), eq(auditEvents.action, "create"), gte(auditEvents.occurredAt, since))));
     expect(logged).toHaveLength(1);
   });
@@ -87,8 +88,8 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     await inAgency((tx) => computeRun(tx, actor, period));
     await inAgency((tx) => tx.update(timeEntries).set({ status: "rejected" }).where(eq(timeEntries.id, ids[2]!)));
     await inAgency((tx) => computeRun(tx, actor, period));
-    const rows = await inAgency((tx) => tx.select().from(obligations));
-    expect(rows.map((r) => [r.crossedOn, r.evidence.crossedAtMinute, r.evidence.minutesAfter])).toEqual([["2026-10-08", 660, 720]]);
+    const rows = await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])));
+    expect(rows.map((r) => [r.crossedOn, (r.facts as ObligationEvidence).crossedAtMinute, (r.facts as ObligationEvidence).minutesAfter])).toEqual([["2026-10-08", 660, 720]]);
     const actions = (await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "obligation"), gte(auditEvents.occurredAt, since))))).map((e) => e.action).sort();
     expect(actions).toEqual(["create", "create", "delete"]);
   });
@@ -102,17 +103,17 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
       if (!added.ok) throw new Error(added.error);
     }
     await inAgency((tx) => computeRun(tx, actor, later!.id));
-    expect((await inAgency((tx) => tx.select().from(obligations))).map((r) => r.crossedOn)).toEqual(["2026-10-14"]);
+    expect((await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])))).map((r) => r.crossedOn)).toEqual(["2026-10-14"]);
     // The earlier week's timesheet arrives late: the hours cross on October 7 at 11:00.
     await weekOfWork();
     const run = await inAgency((tx) => computeRun(tx, actor, period));
-    const rows = await inAgency((tx) => tx.select().from(obligations));
-    expect(rows.map((r) => [r.crossedOn, r.payRunId, r.evidence.crossedAtMinute, r.evidence.minutesAfter])).toEqual([["2026-10-07", run.runId, 660, 1200]]);
+    const rows = await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])));
+    expect(rows.map((r) => [r.crossedOn, r.payRunId, (r.facts as ObligationEvidence).crossedAtMinute, (r.facts as ObligationEvidence).minutesAfter])).toEqual([["2026-10-07", run.runId, 660, 1200]]);
     const moved = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "obligation"), eq(auditEvents.action, "update"), gte(auditEvents.occurredAt, since))));
     expect(moved.map((e) => [e.before, e.after])).toEqual([[{ crossedOn: "2026-10-14" }, { crossedOn: "2026-10-07" }]]);
     // The later week, computed again, keeps the earlier crossing and flags all its hours.
     const again = await inAgency((tx) => computeRun(tx, actor, later!.id));
-    expect(await inAgency((tx) => tx.select().from(obligations))).toHaveLength(1);
+    expect(await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])))).toHaveLength(1);
     expect(again.warnings.filter((w) => w.code === "equal_pay_rate_missing").map((w) => w.message).join(" ")).toContain("40h 00m");
   });
 
@@ -123,6 +124,6 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     await weekOfWork();
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.warnings.filter((w) => w.workerId === marcus && w.code.includes("equal_pay"))).toEqual([]);
-    expect(await inAgency((tx) => tx.select().from(obligations))).toEqual([]);
+    expect(await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])))).toEqual([]);
   });
 });

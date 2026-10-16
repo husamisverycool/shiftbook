@@ -2,10 +2,12 @@
  * Loads the fictional demo agency (SPEC §18). Runs inside withAgency(DEMO_AGENCY.id), so row-level
  * security keeps every write inside the demo agency — the same code path as any real agency.
  */
-import { sql } from "drizzle-orm";
+import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { syncObligations } from "../compliance/sync";
 import { BUILT_IN_PROFILES } from "../intake/profiles";
+import { agencyToday } from "../settings";
 import {
   AGENCY_SETTINGS,
   BRANCHES,
@@ -19,7 +21,12 @@ import {
   NICKNAMES,
   PERIODS,
   RECRUITERS,
+  I9_DATES,
+  MA_JOB_ORDER_OPEN,
+  REGISTRATIONS,
+  WC_POLICY,
   WC_RATES,
+  WORK_AUTH_ENDS,
   WORKERS,
   type ClientKey,
   type JobKey,
@@ -52,7 +59,12 @@ const CLEAR_ORDER = [
   "premium_confirmations",
   "bonuses",
   "holiday_policies",
+  "obligation_notes",
+  "obligation_documents",
   "obligations",
+  "agency_registrations",
+  "wc_policies",
+  "compliance_documents",
   "correction_decisions",
   "exports",
   "invoices",
@@ -159,6 +171,10 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
       preferredLanguage: w.preferredLanguage,
       payrollIds: demoPayrollIds(w.key, `${job.position} (Primary)`),
       wcState: CLIENTS[job.client].worksite.state,
+      hireDate: I9_DATES.hireDate,
+      i9Section1On: I9_DATES.section1On,
+      i9Section2On: I9_DATES.section2On,
+      workAuthExpiresOn: WORK_AUTH_ENDS[w.key] ?? null,
     });
     await tx.insert(s.assignments).values({
       id: assignmentId(w.key),
@@ -198,4 +214,19 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
       })),
     );
   }
+
+  // Compliance (slice j): registrations, the workers' comp policy, then the duties they call for; the
+  // proof pages and Massachusetts job orders already done, except one job order (an overdue duty).
+  await tx.insert(s.agencyRegistrations).values(REGISTRATIONS.map((r) => ({ id: demoUuid(`registration:${r.key}`), agencyId, jurisdiction: r.jurisdiction, number: r.number, issuedOn: r.issuedOn, expiresOn: r.expiresOn, createdByLabel: SETUP })));
+  await tx.insert(s.wcPolicies).values({ id: demoUuid("policy:2026"), agencyId, ...WC_POLICY, createdByLabel: SETUP });
+  await syncObligations(tx, agencyId, await agencyToday(tx));
+  const done = { status: "done" as const, doneAt: new Date(), doneByLabel: SETUP };
+  await tx
+    .update(s.obligations)
+    .set({ ...done, statusNote: "Proof of registration given to the client (demo)." })
+    .where(and(eq(s.obligations.clientId, clientId("il")), inArray(s.obligations.kind, ["il_client_proof_contract", "il_client_proof"]), lte(s.obligations.dueOn, "2026-09-01")));
+  const sent = WORKERS.filter((w) => JOB_ORDERS[w.job].client === "ma" && !MA_JOB_ORDER_OPEN.includes(w.key)).map((w) => assignmentId(w.key));
+  await tx.update(s.obligations).set({ ...done, statusNote: "Job order sent by email the day the placement started (demo)." }).where(and(eq(s.obligations.kind, "ma_job_order"), inArray(s.obligations.assignmentId, sent)));
 }
+
+const SETUP = "Demo setup";

@@ -6,6 +6,7 @@ Source URL: https://linear.app/enablement/guide/navigating-linear
 Source URL: https://linear.app/docs/custom-views
 Source URL: https://linear.app/docs/display-options
 Source URL: https://linear.app/docs/workspaces
+Source URL: https://linear.app/docs/inbox
 Researched: 2026-10-15. Confidence: high for the sidebar's role, its sections and the navigation
 shortcuts; low for widths, icons and collapse behavior on narrow screens (not documented).
 
@@ -19,18 +20,21 @@ between areas, the same on every page, inside the root frame (demo banner above 
       the agency's name, a button that opens a menu with **Settings** (Linear: "Click your workspace
       name in the upper-left corner and select Settings"). Settings opens the payroll file settings
       (slice f), the first settings page; Margin settings (slice i) is the next item, for the Owner
-      and the accountant.
+      and the accountant; Compliance settings (slice j) after it, for everyone (only the Owner
+      changes them).
    2. The personal and workspace areas as a vertical list of links (Linear: Inbox, My issues, then
       the workspace's views). In Shiftbook, in build order: Convert timesheets, Job orders,
       Assignments, Client approvals (slice d), Invoices, Clients (slice g), Receivables, Payments,
-      Bank (slice h), Margin (slice i; shown to the Owner and the accountant only, SPEC §2).
+      Bank (slice h), Margin (slice i; shown to the Owner and the accountant only, SPEC §2),
+      Compliance (slice j) with a badge count of the duties overdue or due soon (Linear's Inbox
+      "badge count").
    3. The current area's link is highlighted.
 2. **Page** to the right of the sidebar: the route's own pattern.
 
 ## Interactions
 - Click a sidebar link → that area.
 - Keyboard (Linear "G then a letter" to jump): G then C → Convert timesheets, G then J → Job orders,
-  G then A → Assignments, G then P → Client approvals (A is taken; P as in "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R → Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M → Margin. Not
+  G then A → Assignments, G then P → Client approvals (A is taken; P as in "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R → Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M → Margin, G then O → Compliance (C is taken; O as in "Obligations"). Not
   active while typing in a field.
 - `?` opens the list of keyboard shortcuts (Linear).
 

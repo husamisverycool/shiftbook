@@ -1,12 +1,12 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, ReceiptTextIcon, SettingsIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 
 const AREAS = [
@@ -21,6 +21,8 @@ const AREAS = [
   { href: "/bank", key: "bank", jump: "b", icon: LandmarkIcon },
   // Slice i: the Owner and the accountant only (SPEC §2).
   { href: "/margin", key: "margin", jump: "m", icon: ChartColumnIcon },
+  // Slice j: everyone reads compliance; the badge counts what is overdue or due soon.
+  { href: "/compliance", key: "compliance", jump: "o", icon: ShieldCheckIcon },
 ] as const;
 
 /** True while the person is typing, so single-letter shortcuts stay out of the way. */
@@ -29,7 +31,7 @@ export function typing(target: EventTarget | null): boolean {
   return !!el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.getAttribute("role") === "combobox");
 }
 
-export function AppSidebar({ agencyName, showMargin = false }: { agencyName: string; showMargin?: boolean }) {
+export function AppSidebar({ agencyName, showMargin = false, complianceCount = 0 }: { agencyName: string; showMargin?: boolean; complianceCount?: number }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
@@ -91,6 +93,10 @@ export function AppSidebar({ agencyName, showMargin = false }: { agencyName: str
                   {t("marginSettings")}
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem render={<Link href="/settings/compliance" />} data-testid="menu-compliance-settings">
+                <ShieldCheckIcon />
+                {t("complianceSettings")}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarHeader>
@@ -105,6 +111,11 @@ export function AppSidebar({ agencyName, showMargin = false }: { agencyName: str
                         <a.icon />
                         <span>{t(a.key)}</span>
                       </SidebarMenuButton>
+                      {a.key === "compliance" && complianceCount > 0 && (
+                        <SidebarMenuBadge data-testid="compliance-badge" aria-label={t("complianceBadge", { count: complianceCount })}>
+                          {complianceCount}
+                        </SidebarMenuBadge>
+                      )}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
