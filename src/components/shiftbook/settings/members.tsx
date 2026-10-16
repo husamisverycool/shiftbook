@@ -10,7 +10,6 @@ import { useId, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { cancelInviteAction, changeRoleAction, inviteAction, resendInviteAction, setSuspendedAction, type MemberResult } from "@/app/[locale]/(app)/settings/members/actions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -22,6 +21,7 @@ import { useRouter } from "@/i18n/navigation";
 import { ROLES, type Role } from "@/server/permissions";
 import { useConfirmed } from "../auth/confirm-access";
 import { LinkedText } from "../linked-text";
+import { Status, type Tone } from "../status";
 import { useDateTime } from "../agency-zone";
 
 export interface MemberRow {
@@ -38,6 +38,8 @@ export interface MemberRow {
 
 type Pending = { kind: "role" | "suspend" | "cancel" | "copy"; member: MemberRow } | null;
 const NEEDS_APP: Role[] = ["owner", "coordinator"];
+/** One status language (_components/status.md): active is in good standing, an invite waits on the person, suspended has lost access. */
+const STATUS_TONE: Record<MemberRow["status"], Tone> = { active: "success", invited: "info", suspended: "critical" };
 
 export function MembersView({ members, me, canManage, now }: { members: MemberRow[]; me: string; canManage: boolean; now: string }) {
   const t = useTranslations("members");
@@ -178,13 +180,13 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
                     <TableCell>{tr(`${m.role}.name`)}</TableCell>
                     <TableCell>
                       <span className="flex flex-wrap items-center gap-2">
-                        <Badge variant={m.status === "active" ? "secondary" : m.status === "suspended" ? "destructive" : "outline"} data-testid="member-status">
+                        <Status tone={STATUS_TONE[m.status]} data-testid="member-status">
                           {t(`statusLabels.${m.status}`)}
-                        </Badge>
+                        </Status>
                         {m.status === "invited" && <span className="text-xs text-muted-foreground">{lapsed ? t("inviteLapsed") : t("expires", { date: date(m.inviteExpiresAt!) })}</span>}
                       </span>
                     </TableCell>
-                    <TableCell>{m.hasAuthenticator ? t("auth.on") : needed && m.status !== "invited" ? <span className="text-destructive">{t("auth.needed")}</span> : <span className="text-muted-foreground">{t("auth.off")}</span>}</TableCell>
+                    <TableCell>{m.hasAuthenticator ? t("auth.on") : needed && m.status !== "invited" ? <Status tone="warning">{t("auth.needed")}</Status> : <span className="text-muted-foreground">{t("auth.off")}</span>}</TableCell>
                     <TableCell className="whitespace-nowrap text-muted-foreground">{m.lastSeenAt ? dateTime(m.lastSeenAt) : t("never")}</TableCell>
                     {canManage && (
                       <TableCell>
