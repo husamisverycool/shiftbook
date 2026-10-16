@@ -111,11 +111,12 @@ export async function invoiceDetail(tx: Tx, id: string): Promise<InvoiceDetail |
     .orderBy(s.invoices.issuedOn, s.invoices.number);
   const doc = inv!.document;
   const pdf = doc ? printedInvoice(doc) : null;
-  // The printed lines are the issued lines in the same order; a group's lines follow them in turn.
+  // The printed lines are the issued lines in the same order, and so are a template's groups, one
+  // after the other; a line whose parts do not say exactly what was printed keeps its English.
   const issued = doc?.lines ?? [];
-  let at = 0;
-  const withParts = (l: Omit<PrintedLine, "parts">, n = at++): PrintedLine => ({ ...l, parts: issued[n] ? lineDetailParts(l.detail, issued[n]!) : null });
-  // The worksite the PDF names: the invoice's own when split by worksite, or its lines' (decision G4).
+  const withParts = (l: Omit<PrintedLine, "parts">, n: number): PrintedLine => ({ ...l, parts: issued[n] ? lineDetailParts(l.detail, issued[n]!) : null });
+  let grouped = 0;
+  // The worksite the PDF names: the invoice's own when split by worksite, else its lines' worksites.
   const worksites = [...new Set(issued.map((l) => l.worksite).filter((w): w is string => Boolean(w)))].sort();
   return {
     row,
@@ -127,7 +128,7 @@ export async function invoiceDetail(tx: Tx, id: string): Promise<InvoiceDetail |
     printed: pdf
       ? {
           lines: pdf.lines.map((l, n) => withParts(l, n)),
-          groups: pdf.groups?.map((g) => ({ title: g.title, subtotal: g.subtotal, lines: g.lines.map((l) => withParts(l)) })) ?? null,
+          groups: pdf.groups?.map((g) => ({ title: g.title, subtotal: g.subtotal, lines: g.lines.map((l) => withParts(l, grouped++)) })) ?? null,
           subtotal: pdf.subtotal,
           total: pdf.total,
         }

@@ -36,8 +36,8 @@ async function fitsFrame(page: Page) {
     return { wider: document.documentElement.scrollWidth - window.innerWidth, below: document.documentElement.scrollHeight - (sheet.bottom + window.scrollY) };
   });
   expect(room.wider).toBe(0);
-  // The sheet's own margin (8px) is all there is under it.
-  expect(room.below).toBeLessThanOrEqual(8);
+  // The sheet's own margin (8px, and the part of a pixel where the sheet ends) is all there is under it.
+  expect(room.below).toBeLessThan(9);
 }
 
 /** A test photo with a hand-written recorded reading (fixtures/make-photo-fixture.ts): the photo path, until the demo's own photos have recorded readings. */
