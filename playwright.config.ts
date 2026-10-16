@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+/** Another checkout (a worktree) can run its own copy side by side: SHIFTBOOK_E2E_PORT=3200 with its own DATABASE_URL. */
+const PORT = Number(process.env.SHIFTBOOK_E2E_PORT ?? 3100);
 
 export default defineConfig({
   testDir: "tests/e2e",
