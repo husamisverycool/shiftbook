@@ -537,7 +537,8 @@
       "removeDecision": "Remove decision",
       "roundingTitle": "Rounding left over",
       "roundingMore": "{name}: {amount} more from rounding each line once when hours moved between days or assignments at one rate; not paid.",
-      "roundingLess": "{name}: {amount} less from rounding each line once when hours moved between days or assignments at one rate; not taken back."
+      "roundingLess": "{name}: {amount} less from rounding each line once when hours moved between days or assignments at one rate; not taken back.",
+      "paidByHandWithKept": "All of it, including the {amount} they kept: choose this only if what they kept was recovered. Otherwise choose the cover first, then pay the rest by hand."
     }
   },
   "nav": {

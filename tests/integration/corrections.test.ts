@@ -341,6 +341,8 @@ describe("decisions are a record of what was settled (second opinion, findings 1
     await edit(shifts[2]!.id, { outMinute: 1020 });
     const run = await compute();
     expect(run.blockers).toEqual([expect.objectContaining({ code: "correction_decision_needed", workerId: marcus, grossCents: 5475 })]);
+    // The refund is pay due (29 C.F.R. § 778.106 warning), though the hours now match what was paid.
+    expect(run.warnings.filter((w) => w.code === "correction_pay_due")).toEqual([expect.objectContaining({ workerId: marcus, grossCents: 5475 })]);
     expect(await record(marcus, "paid_by_hand", "Refunded by check 1051")).toEqual({ ok: true });
     expect((await compute()).blockers).toEqual([]);
   });

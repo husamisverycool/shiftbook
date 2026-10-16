@@ -194,7 +194,9 @@ export function DecisionButton(props: { periodId: string; workerId: string; name
                       <span className="font-medium">
                         {t(`options.${c}` as "options.paid_by_hand")}
                         {c === "offset_earlier_overpayment" && ` (${money(Math.min(netCents, heldCents), locale)})`}
+                        {c === "paid_by_hand" && netCents > 0 && ` (${money(netCents, locale)})`}
                       </span>
+                      {c === "paid_by_hand" && heldCents > 0 && <span className="text-muted-foreground">{t("paidByHandWithKept", { amount: money(heldCents, locale) })}</span>}
                       {c === "consent_to_deduct" && <span className="text-muted-foreground">{t("consentHint")}</span>}
                     </span>
                   </label>

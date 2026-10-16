@@ -91,6 +91,8 @@ export interface WorkerSettlement {
   stale: DecisionOnFile[];
   /** What is still to settle outside the files: the difference less the decisions recorded. */
   remainingCents: number;
+  /** What the period owes the worker once money already moved outside the files is counted (more pay due when positive). */
+  owedCents: number;
   /** The payroll file settles this worker's difference (all additions, nothing recorded, nothing kept). */
   inFile: boolean;
   /** A decision is needed: something is left to settle, or an agreement no longer fits. */
@@ -161,7 +163,7 @@ export function planCorrection(input: {
     // More pay for a worker who kept pay from an earlier correction is never paid again on its own.
     const inFile = decisions.length === 0 && changed && mine.additionsOnly && !(kept > 0 && payable > 0);
     const needsDecision = !inFile && (changed || decisions.length > 0) && (stale.length > 0 || remainingCents !== 0);
-    workers.push({ workerId, ...mine, changed, heldCents, decisions, stale, remainingCents, inFile, needsDecision });
+    workers.push({ workerId, ...mine, changed, heldCents, decisions, stale, remainingCents, owedCents: owed, inFile, needsDecision });
   }
   return { baseVersion: input.baseVersion, pay, bill, workers };
 }

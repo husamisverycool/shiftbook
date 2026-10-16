@@ -537,7 +537,8 @@
       "removeDecision": "Quitar decisión",
       "roundingTitle": "Redondeo sobrante",
       "roundingMore": "{name}: {amount} más por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se paga.",
-      "roundingLess": "{name}: {amount} menos por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se descuenta."
+      "roundingLess": "{name}: {amount} menos por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se descuenta.",
+      "paidByHandWithKept": "Todo, incluidos los {amount} que conservó: elige esto solo si lo que conservó se recuperó. Si no, elige primero la cobertura y luego paga el resto a mano."
     }
   },
   "nav": {

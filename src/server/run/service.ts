@@ -513,14 +513,15 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   if (correction) {
     for (const w of correction.workers) {
       const name = workerNameOf(w.workerId) ?? w.workerId;
-      const paidNet = w.netCents - w.leftoverCents;
-      if (paidNet > 0) {
+      // Due: the difference less rounding, less money already moved (a refund owed after a repayment counts).
+      const due = w.owedCents;
+      if (due > 0) {
         warnings.push({
           code: "correction_pay_due",
           workerId: w.workerId,
           workerName: name,
-          grossCents: paidNet,
-          message: `${name}: ${formatCents(paidNet)} more pay is due than version ${correction.baseVersion} paid. Pay it as soon as possible, no later than the next regular payday: pay that was missed is already late. Overtime that could not be computed in time is due no later than the next payday after it can be computed (29 C.F.R. § 778.106). State pay-day laws also apply.`,
+          grossCents: due,
+          message: `${name}: ${formatCents(due)} more pay is due than has been paid for this period. Pay it as soon as possible, no later than the next regular payday: pay that was missed is already late. Overtime that could not be computed in time is due no later than the next payday after it can be computed (29 C.F.R. § 778.106). State pay-day laws also apply.`,
         });
       }
       if (!w.needsDecision) continue;
