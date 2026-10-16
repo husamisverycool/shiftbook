@@ -137,15 +137,16 @@ function Active({ view, token }: { view: ActiveView; token: string }) {
   const drafts = waiting.filter((x) => x.draft !== null);
   const toApprove = waiting.filter((x) => x.draft === null);
   const latest = view.decisions[0];
+  const decided = latest ? t("status.approved", { when: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(latest.decidedAt)), name: latest.typedName }) : null;
+  // What the page says about itself (Stripe's hosted page shows its own state): the latest decision,
+  // then what waits — on the approver, or on the agency for disputed shifts.
   const status = closed
-    ? null
-    : view.shifts.some((x) => x.state === "disputed")
-      ? t("status.disputed", { agency })
-      : waiting.length === 0 && latest
-        ? t("status.approved", { when: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(latest.decidedAt)), name: latest.typedName })
-        : latest
-          ? t("status.newHours")
-          : t("status.waiting");
+    ? []
+    : [
+        ...(decided && latest!.approved > 0 ? [decided] : []),
+        ...(view.shifts.some((x) => x.state === "disputed") ? [t("status.disputed", { agency })] : []),
+        ...(waiting.length > 0 ? [latest ? t("status.newHours") : t("status.waiting")] : []),
+      ];
 
   const run = (fn: () => Promise<{ ok: true } | { ok: false; error: string }>, done?: () => void) =>
     start(async () => {
@@ -191,14 +192,16 @@ function Active({ view, token }: { view: ActiveView; token: string }) {
       {closed ? (
         <Notice title={t("closed.title")} body={t("closed.body", { agency })} />
       ) : (
-        status && (
-          <p role="status" className="font-medium" data-testid="portal-status">
-            {status}
-          </p>
+        status.length > 0 && (
+          <div role="status" className="flex flex-col gap-1 font-medium" data-testid="portal-status">
+            {status.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
         )
       )}
 
-      <HoursTable shifts={view.shifts} period={view.period} shiftActions={closed ? undefined : shiftActions} shiftNote={shiftNote} initiallyOpen={[...new Set(view.shifts.filter((x) => x.draft || x.keptReply).map((x) => x.workerId))]} />
+      <HoursTable shifts={view.shifts} period={view.period} shiftActions={closed ? undefined : shiftActions} shiftNote={shiftNote} initiallyOpen={[...new Set(view.shifts.filter((x) => x.draft || x.keptReply || x.dispute).map((x) => x.workerId))]} />
 
       {!closed &&
         (waiting.length === 0 ? (

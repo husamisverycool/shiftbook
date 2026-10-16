@@ -74,7 +74,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
         <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
         <label className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">{t("period")}</span>
-          <NativeSelect value={props.periodId} onChange={(e) => router.replace(`${pathname}?period=${e.target.value}`)} className="w-64" aria-label={t("period")}>
+          <NativeSelect value={props.periodId} onChange={(e) => router.replace(`${pathname}?period=${e.target.value}`)} className="w-80" aria-label={t("period")}>
             {props.periods.map((p) => (
               <NativeSelectOption key={p.id} value={p.id}>
                 {t("periodOption", { start: longDate(p.startsOn, locale), end: longDate(p.endsOn, locale) })}

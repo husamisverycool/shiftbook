@@ -492,3 +492,33 @@ describe("the agency's view of a request", () => {
     expect(plain!.emails.every((e) => e.demoCopy === null)).toBe(true);
   });
 });
+
+describe("another agency", () => {
+  beforeEach(fresh);
+
+  it("cannot see or act on this agency's requests, disputes or emails, even by id", async () => {
+    const x = await fresh();
+    const sent = await send();
+    if (!sent.ok) throw new Error("not sent");
+    const token = await latestToken();
+    await saveDraftDispute(deps, token, { entryId: x.marcusWed.id, reason: "Left early", proposed: { inMinute: 420, outMinute: 900, breakMinutes: 0 } });
+    await decide(token);
+    const [dispute] = await inAgency((tx) => tx.select().from(s.clientDisputes));
+
+    const [other] = await owner.db.insert(s.agencies).values({ name: "Other agency (test)" }).returning();
+    const intruder: Actor = { agencyId: other!.id, userId: "00000000-0000-4000-a000-000000000002", label: "Other agency user", role: "owner" };
+    const inOther = <T>(fn: Parameters<typeof app.withAgency<T>>[1]) => app.withAgency(other!.id, fn);
+    expect(await inOther((tx) => approvalDetail(tx, sent.requestId, { demoCopies: true, now: clock }))).toBeNull();
+    expect(await inOther((tx) => listApprovals(tx, period, clock))).toEqual([]);
+    expect(await inOther((tx) => tx.select().from(s.emailMessages))).toEqual([]);
+    expect(await inOther((tx) => tx.select().from(s.demoMailbox))).toEqual([]);
+    expect(await sendReminder(deps, intruder, sent.requestId)).toEqual({ ok: false, error: "not_found" });
+    expect(await withdrawApproval(deps, intruder, sent.requestId, "nope")).toEqual({ ok: false, error: "not_found" });
+    expect(await settleDispute(deps, intruder, dispute!.id, "keep", "nope", async () => ({ ok: true }))).toEqual({ ok: false, error: "not_found" });
+    expect(await sendApprovalRequest(deps, intruder, { clientId: IL, payPeriodId: period, approverName: "X Y", approverEmail: "x@y.example", locale: "en", agencyLocale: "en" })).toEqual({ ok: false, error: "not_found" });
+    // Nothing changed for the agency that owns them.
+    expect(await statusOf(x.marcusWed.id)).toBe("disputed");
+    const [still] = await inAgency((tx) => tx.select().from(s.clientDisputes).where(eq(s.clientDisputes.id, dispute!.id)));
+    expect(still!.status).toBe("open");
+  });
+});

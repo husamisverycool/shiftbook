@@ -81,7 +81,8 @@ for (const locale of ["en", "es"] as const) {
     await page.getByLabel(m.portal.fullName).fill("Dana Approver");
     await page.getByRole("checkbox").check();
     await page.getByTestId("approve-hours").click();
-    await expect(page.getByTestId("portal-status")).toHaveText(m.portal.status.disputed.replace("{agency}", "Cedar Row Staffing (demo)"));
+    await expect(page.getByTestId("portal-status")).toContainText(m.portal.status.disputed.replace("{agency}", "Cedar Row Staffing (demo)"));
+    await expect(page.getByTestId("portal-status")).toContainText("Dana Approver");
     await expect(page.getByTestId("approve-bar")).toHaveCount(0);
 
     // The agency sees the dispute and accepts the client's times.
