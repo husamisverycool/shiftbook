@@ -5,6 +5,7 @@ Reference product and screen: Linear — sidebar and keyboard navigation
 Source URL: https://linear.app/enablement/guide/navigating-linear
 Source URL: https://linear.app/docs/custom-views
 Source URL: https://linear.app/docs/display-options
+Source URL: https://linear.app/docs/workspaces
 Researched: 2026-10-15. Confidence: high for the sidebar's role, its sections and the navigation
 shortcuts; low for widths, icons and collapse behavior on narrow screens (not documented).
 
@@ -15,7 +16,9 @@ between areas, the same on every page, inside the root frame (demo banner above 
 ## Hierarchy
 1. **Sidebar** on the left, full height under the demo banner:
    1. Workspace name at the top (Linear: the workspace menu at the top of the sidebar). In Shiftbook:
-      the agency's name.
+      the agency's name, a button that opens a menu with **Settings** (Linear: "Click your workspace
+      name in the upper-left corner and select Settings"). Settings opens the payroll file settings
+      (slice f), the first settings page.
    2. The personal and workspace areas as a vertical list of links (Linear: Inbox, My issues, then
       the workspace's views). In Shiftbook, in build order: Convert timesheets, Job orders,
       Assignments, Client approvals (slice d).

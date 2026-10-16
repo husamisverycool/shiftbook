@@ -35,6 +35,8 @@ Source URL: https://support.risepeople.com/portal/kb/articles/how-to-finish-appr
 Source URL: https://help.staffology.co.uk/payroll/payrun/step-by-step/step-9-warnings.htm
 Source URL: https://help.powerpay.ca/en/pphelp/Content/Procedures/PayrollPreviewDashboard.htm
 Source URL: https://docs.stripe.com/invoicing/dashboard/credit-notes
+Source URL: https://help.workyard.com/en/articles/15467712-how-to-map-pay-types-for-quickbooks-online-payroll-exports
+Source URL: https://support.clicktime.com/hc/en-us/articles/41018977335565-Export-Payroll-Data-to-ADP
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/settingRebillInvoiceNumber.htm
 
 ## Purpose in Shiftbook
@@ -70,7 +72,9 @@ period is the first row.
    - H2 "Blocking", then one row per kind of problem: title (the kind) and description (the people
      or entries, the count), and the row's action at the right — the Fix that applies (back to
      Review hours, skip the workers for this run with a reason, both are real, open Client
-     approvals, back to Upload).
+     approvals, open the payroll file settings on the missing worker ids — Workyard maps missing
+     pay types inside the export and ClickTime names the missing ids (`settings/payroll.md`) —
+     back to Upload).
    - H2 "Warnings", the same rows without blocking (they never stop the run; Rise: "warnings do not
      block approval").
    - Forward action "Review totals", disabled while any blocking row remains (Gusto: calculate is
