@@ -139,9 +139,11 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
                 {t("sendAgain")}
               </Button>
             )}
-            <Button variant="outline" disabled={pending} onClick={() => setSending(target(null))}>
-              {td("changeApprover")}
-            </Button>
+            {waiting.length > 0 && (
+              <Button variant="outline" disabled={pending} onClick={() => setSending(target(null))}>
+                {td("changeApprover")}
+              </Button>
+            )}
             {approved.length > 0 && (
               <Button variant="outline" disabled={pending} onClick={() => setWithdrawing(true)}>
                 {td("withdraw")}

@@ -31,9 +31,10 @@ export class MailSendError extends Error {
   }
 }
 
-/** A display name that cannot break out of the address (no quotes, brackets or line breaks). */
-const displayName = (name: string) => name.replace(/["<>\r\n]+/g, " ").replace(/\s+/g, " ").trim();
-const address = (email: string, name?: string | null) => (name && displayName(name) ? `${displayName(name)} <${email}>` : email);
+/** A display name that cannot break out of the address (no quotes, backslashes, brackets or line breaks). */
+const displayName = (name: string) => name.replace(/["\\<>\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+/** "Name" <email>: quoted, so a comma ("Acme Staffing, LLC") or parentheses stay part of the name (RFC 5322). */
+const address = (email: string, name?: string | null) => (name && displayName(name) ? `"${displayName(name)}" <${email}>` : email);
 
 export class ResendTransport implements MailTransport {
   private readonly apiKey: string;
@@ -50,7 +51,7 @@ export class ResendTransport implements MailTransport {
 
   async send(mail: OutgoingMail): Promise<{ providerId: string | null }> {
     const body: Record<string, unknown> = {
-      from: `${displayName(`${mail.fromName} via Shiftbook`)} <${this.fromAddress}>`,
+      from: address(this.fromAddress, `${mail.fromName} via Shiftbook`),
       to: [address(mail.to.email, mail.to.name)],
       ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
       subject: mail.subject,

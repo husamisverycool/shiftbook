@@ -16,6 +16,11 @@ export const env = {
    * mode: links are never built from a request's Host header, which a caller could forge.
    */
   appUrl: process.env.SHIFTBOOK_APP_URL?.replace(/\/+$/, "") || null,
+  /**
+   * How many proxies in front of the app append to X-Forwarded-For (the host's own; usually 1). The
+   * address kept with an approval is the one the outermost of them recorded (src/server/sender.ts).
+   */
+  trustedProxyHops: Number(process.env.SHIFTBOOK_TRUSTED_PROXY_HOPS ?? "1"),
   /** The scheduled reminder route answers only to this secret (decision 0013). */
   cronSecret: process.env.CRON_SECRET || null,
 };

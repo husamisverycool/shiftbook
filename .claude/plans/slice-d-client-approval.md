@@ -133,4 +133,13 @@ email setup); bill amounts on the page.
   unit tests for the token, emails and transport, and browser tests in English and Spanish with
   accessibility checks. All 26 browser tests, 509 unit and 163 integration tests pass.
 - Screens compared in `docs/screens/slice-d.md`.
-- Next: the second-opinion review (security and the run change), fixes, then screenshots again.
+- Second opinion (no blocking findings; the money path and cross-agency access checked sound)
+  fixed: an open dispute stays on the request page after the approver changes, and is settled there;
+  after a withdrawal or a dispute settled by keeping or editing the hours the request is "to send
+  again" and automatic reminders wait for the agency; "email me a new link" only from an expired
+  link, not one long expired, three a day, only while shifts wait; the app's role can no longer mark
+  an agency as the demo, and a sent dispute cannot be rewritten or removed; the internet address is
+  the one the app's own proxy recorded; email names are quoted ("Acme Staffing, LLC"); a late
+  sweep sends one reminder; the approval covers what each dispute says; each link's first opening
+  is in the history; a pasted link is never stored; a failed send is in the history; buttons that
+  cannot work are hidden; the dispute dialog takes a midnight end and disputes daily totals by reason.

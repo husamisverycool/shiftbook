@@ -17,12 +17,17 @@ export default async function ApprovalsPage(props: { params: Promise<{ locale: s
   setRequestLocale(locale);
   const sp = await props.searchParams;
   const actor = currentActor();
-  const { periods, periodId, rows } = await withAgency(actor.agencyId, async (tx) => {
+  const { periods, periodId, periodOpen, rows } = await withAgency(actor.agencyId, async (tx) => {
     const periods = await listPeriods(tx);
     const asked = typeof sp.period === "string" ? periods.find((p) => p.id === sp.period) : undefined;
     // The newest period with hours, unless one is chosen.
     const period = asked ?? periods.find((p) => p.started) ?? periods[0];
-    return { periods: periods.map((p) => ({ id: p.id, startsOn: p.startsOn, endsOn: p.endsOn })), periodId: period?.id ?? "", rows: period ? await listApprovals(tx, period.id) : [] };
+    return {
+      periods: periods.map((p) => ({ id: p.id, startsOn: p.startsOn, endsOn: p.endsOn })),
+      periodId: period?.id ?? "",
+      periodOpen: period ? period.runStatus !== "exported" && period.runStatus !== "closed" : false,
+      rows: period ? await listApprovals(tx, period.id) : [],
+    };
   });
   // Reminders that are due go out after the page is sent (the scheduled route does the same).
   const origin = await requestOrigin();
@@ -33,5 +38,5 @@ export default async function ApprovalsPage(props: { params: Promise<{ locale: s
       console.error("reminder sweep failed:", error instanceof Error ? error.message : String(error));
     }
   });
-  return <ApprovalsView rows={rows} periods={periods} periodId={periodId} />;
+  return <ApprovalsView rows={rows} periods={periods} periodId={periodId} periodOpen={periodOpen} />;
 }

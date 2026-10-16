@@ -35,8 +35,8 @@ describe("Resend transport (decision 0012)", () => {
     expect(headers.get("content-type")).toBe("application/json");
     expect(headers.get("idempotency-key")).toBe("6f1e2c1a-1111-4222-8333-944455556666");
     expect(JSON.parse(String(call!.init.body))).toEqual({
-      from: "Cedar Row Staffing (demo) via Shiftbook <approvals@shiftbook.example>",
-      to: ["Dana Approver <approver@client.example>"],
+      from: '"Cedar Row Staffing (demo) via Shiftbook" <approvals@shiftbook.example>',
+      to: ['"Dana Approver" <approver@client.example>'],
       reply_to: "office@cedar-row.example",
       subject: "Hours to approve",
       text: "Hello",
@@ -44,13 +44,22 @@ describe("Resend transport (decision 0012)", () => {
     });
   });
 
-  it("keeps display names from breaking the address (quotes, angle brackets, line breaks)", async () => {
+  it("keeps display names from breaking the address (quotes, backslashes, angle brackets, line breaks)", async () => {
     const f = fakeFetch({ status: 200, body: { id: "x" } });
     const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@shiftbook.example", fetch: f.fn });
-    await transport.send({ ...mail(), fromName: 'Evil "Agency" <x@y.z>\nBcc: z', to: { email: "c@d.example", name: "A <b>" } });
+    await transport.send({ ...mail(), fromName: 'Evil "Agency" \\ <x@y.z>\nBcc: z', to: { email: "c@d.example", name: "A <b>" } });
     const body = JSON.parse(String(f.calls[0]!.init.body)) as { from: string; to: string[] };
-    expect(body.from).toBe("Evil Agency x@y.z Bcc: z via Shiftbook <a@shiftbook.example>");
-    expect(body.to).toEqual(["A b <c@d.example>"]);
+    expect(body.from).toBe('"Evil Agency x@y.z Bcc: z via Shiftbook" <a@shiftbook.example>');
+    expect(body.to).toEqual(['"A b" <c@d.example>']);
+  });
+
+  it("quotes names with commas, so an agency like \"Acme Staffing, LLC\" is one name, not two addresses", async () => {
+    const f = fakeFetch({ status: 200, body: { id: "x" } });
+    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@shiftbook.example", fetch: f.fn });
+    await transport.send({ ...mail(), fromName: "Acme Staffing, LLC", to: { email: "c@d.example", name: "Smith, Dana" } });
+    const body = JSON.parse(String(f.calls[0]!.init.body)) as { from: string; to: string[] };
+    expect(body.from).toBe('"Acme Staffing, LLC via Shiftbook" <a@shiftbook.example>');
+    expect(body.to).toEqual(['"Smith, Dana" <c@d.example>']);
   });
 
   it("fails with Resend's message, never repeating a link that was in the email", async () => {

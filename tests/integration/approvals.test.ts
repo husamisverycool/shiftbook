@@ -522,3 +522,153 @@ describe("another agency", () => {
     expect(still!.status).toBe("open");
   });
 });
+
+describe("second opinion on slice (d)", () => {
+  let x: Awaited<ReturnType<typeof fresh>>;
+  beforeEach(async () => {
+    x = await fresh();
+  });
+  const disputeAndDecide = async (reason = "Left at 3 pm") => {
+    const token = await latestToken();
+    await saveDraftDispute(deps, token, { entryId: x.marcusWed.id, reason, proposed: { inMinute: 420, outMinute: 900, breakMinutes: 0 } });
+    await decide(token);
+    return token;
+  };
+  const rowState = async () => (await inAgency((tx) => listApprovals(tx, period, clock))).find((r) => r.clientId === IL)!.state;
+
+  it("an open dispute stays on the request page after the approver is changed, and can be settled there", async () => {
+    const first = await send();
+    if (!first.ok) throw new Error(first.error);
+    await disputeAndDecide();
+    // The wrong person approved: the agency withdraws and asks someone else.
+    await withdrawApproval(deps, actor, first.requestId, "Wrong person approved");
+    const sent = await send({ approverName: "Lee Supervisor", approverEmail: "lee@prairie.example" });
+    if (!sent.ok) throw new Error(sent.error);
+    const detail = await inAgency((tx) => approvalDetail(tx, sent.requestId, { demoCopies: false, now: clock }));
+    expect(detail!.disputes.filter((d) => d.status === "open").map((d) => d.timeEntryId)).toEqual([x.marcusWed.id]);
+    const disputeId = detail!.disputes[0]!.id;
+    expect(await settleDispute(deps, actor, disputeId, "keep", "The clock shows 5 pm.", async () => ({ ok: true }))).toEqual({ ok: true });
+    const after = await inAgency((tx) => approvalDetail(tx, sent.requestId, { demoCopies: false, now: clock }));
+    expect(after!.history.map((h) => h.event)).toContain("dispute_kept");
+  });
+
+  it("withdrawing an approval stops the automatic reminders until the agency sends again", async () => {
+    const sent = await send();
+    if (!sent.ok) throw new Error(sent.error);
+    await decide(await latestToken());
+    clock = later(2);
+    await withdrawApproval(deps, actor, sent.requestId, "Fixing hours first");
+    expect(await rowState()).toBe("send_again");
+    clock = later(30);
+    expect(await sweepReminders(deps, actor.agencyId)).toEqual({ sent: 0, failed: 0 });
+    expect((await send()).ok).toBe(true);
+    expect(await rowState()).toBe("waiting");
+    clock = later(25);
+    expect((await sweepReminders(deps, actor.agencyId)).sent).toBe(1);
+  });
+
+  it("after the agency keeps the hours, the request is to send again (the client has not been told)", async () => {
+    await send();
+    clock = later(60);
+    await sweepReminders(deps, actor.agencyId);
+    await disputeAndDecide();
+    const [d] = await inAgency((tx) => tx.select().from(s.clientDisputes));
+    await settleDispute(deps, actor, d!.id, "keep", "The clock shows 5 pm.", async () => ({ ok: true }));
+    expect(await rowState()).toBe("send_again");
+    expect((await send()).ok).toBe(true);
+    expect(await rowState()).toBe("waiting");
+  });
+
+  it("a new link is sent only for an expired link, at most three a day, not for a long-expired link, and only when shifts wait", async () => {
+    await send();
+    const token = await latestToken();
+    expect(await requestNewLink(deps, token)).toEqual({ ok: false, error: "link_active" });
+    clock = later(14 * 24 + 1);
+    for (let i = 0; i < 3; i++) {
+      expect(await requestNewLink(deps, token)).toEqual({ ok: true });
+      clock = new Date(clock.getTime() + 6 * 60_000);
+    }
+    expect(await requestNewLink(deps, token)).toEqual({ ok: false, error: "too_soon" });
+    clock = later(31 * 24);
+    expect(await requestNewLink(deps, token)).toEqual({ ok: false, error: "link_too_old" });
+  });
+
+  it("no new link when nothing waits any more", async () => {
+    await send();
+    const token = await latestToken();
+    await decide(token);
+    clock = later(14 * 24 + 1);
+    expect(await requestNewLink(deps, token)).toEqual({ ok: false, error: "nothing_to_approve" });
+  });
+
+  it("the app's role cannot mark an agency as the demo, nor change or remove a sent dispute of a real agency", async () => {
+    expect(await databaseError(inAgency((tx) => tx.update(s.agencies).set({ isDemo: false }).where(eq(s.agencies.id, actor.agencyId))))).toMatch(/permission denied/);
+    // Its name and contact details can still be kept up to date.
+    await inAgency((tx) => tx.update(s.agencies).set({ phone: "(630) 555-0142" }).where(eq(s.agencies.id, actor.agencyId)));
+    await send();
+    await disputeAndDecide();
+    const [d] = await inAgency((tx) => tx.select().from(s.clientDisputes));
+    expect(await databaseError(inAgency((tx) => tx.update(s.clientDisputes).set({ reason: "rewritten" }).where(eq(s.clientDisputes.id, d!.id))))).toMatch(/permission denied/);
+    const [real] = await owner.db.insert(s.agencies).values({ name: "Real agency (disputes)" }).returning();
+    const [c] = await owner.db.insert(s.clients).values({ agencyId: real!.id, name: "C", code: "C" }).returning();
+    const [p] = await owner.db.insert(s.payPeriods).values({ agencyId: real!.id, startsOn: "2026-10-05", endsOn: "2026-10-11" }).returning();
+    const [e] = await owner.db.insert(s.timeEntries).values({ agencyId: real!.id, payPeriodId: p!.id, workerNameRaw: "W", minutes: 60, status: "disputed" }).returning();
+    const [r] = await owner.db.insert(s.approvalRequests).values({ agencyId: real!.id, clientId: c!.id, payPeriodId: p!.id, approverName: "A B", approverEmail: "a@b.example", locale: "en", agencyLocale: "en", cycleStartedAt: clock, createdByLabel: "t" }).returning();
+    const [l] = await owner.db.insert(s.approvalLinks).values({ agencyId: real!.id, requestId: r!.id, tokenHash: sha256("t2"), purpose: "request", expiresAt: clock }).returning();
+    const [dec] = await owner.db.insert(s.approvalDecisions).values({ agencyId: real!.id, requestId: r!.id, linkId: l!.id, approverEmail: "a@b.example", typedName: "A B", attestation: "x", attestationVersion: "v", locale: "en", snapshotSha256: sha256("s2"), approved: [], disputed: [] }).returning();
+    const shift = { entryId: e!.id, workerId: e!.id, workerName: "W", workDate: "2026-10-05", inMinute: null, outMinute: null, breakMinutes: null, minutes: 60 };
+    await owner.db.insert(s.clientDisputes).values({ agencyId: real!.id, requestId: r!.id, decisionId: dec!.id, timeEntryId: e!.id, shift, reason: "r", status: "open" });
+    expect(await databaseError(app.withAgency(real!.id, (tx) => tx.delete(s.clientDisputes)))).toMatch(/append-only|sent dispute/);
+  });
+
+  it("a late sweep sends one reminder for the steps it missed", async () => {
+    await send();
+    clock = later(60);
+    expect((await sweepReminders(deps, actor.agencyId)).sent).toBe(1);
+    expect((await sweepReminders(deps, actor.agencyId)).sent).toBe(0);
+    const [r] = await inAgency((tx) => tx.select().from(s.approvalRequests));
+    expect(r!.remindersSent).toBe(2);
+  });
+
+  it("the approval covers what each dispute says: a draft changed after the page was shown refuses it", async () => {
+    await send();
+    const token = await latestToken();
+    await saveDraftDispute(deps, token, { entryId: x.marcusWed.id, reason: "Left at 3 pm", proposed: { inMinute: 420, outMinute: 900, breakMinutes: 0 } });
+    const view = await loadPortal(deps, token);
+    if (view.state !== "active") throw new Error("inactive");
+    await saveDraftDispute(deps, token, { entryId: x.marcusWed.id, reason: "Left at 1 pm", proposed: { inMinute: 420, outMinute: 780, breakMinutes: 0 } });
+    expect(await submitDecision(deps, token, { typedName: "Dana Approver", confirmed: true, snapshot: view.snapshot, locale: "en", ipAddress: null, userAgent: null })).toEqual({ ok: false, error: "changed" });
+  });
+
+  it("each link's first opening is in the request's history, marked as possibly automatic", async () => {
+    const sent = await send();
+    if (!sent.ok) throw new Error(sent.error);
+    const token = await latestToken();
+    await loadPortal(deps, token);
+    await loadPortal(deps, token);
+    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "approval_request"), eq(s.auditEvents.entityId, sent.requestId))));
+    expect(events.filter((e) => (e.after as { event: string }).event === "link_opened")).toHaveLength(1);
+  });
+
+  it("a link pasted into free text is never stored", async () => {
+    await send();
+    const token = await latestToken();
+    await saveDraftDispute(deps, token, { entryId: x.marcusWed.id, reason: `see https://shiftbook.test/en/approve/${token}`, proposed: null });
+    await decide(token, { typedName: `Dana ${token}` });
+    const [d] = await inAgency((tx) => tx.select().from(s.clientDisputes));
+    expect(d!.reason).not.toContain(token);
+    const [dec] = await inAgency((tx) => tx.select().from(s.approvalDecisions));
+    expect(dec!.typedName).not.toContain(token);
+    const hits = await owner.db.execute<{ hit: number }>(sql`select count(*)::int as hit from audit_events where coalesce(after::text, '') || coalesce(reason, '') like ${`%${token}%`}`);
+    expect(hits[0]!.hit).toBe(0);
+  });
+
+  it("a failed send is in the request's history", async () => {
+    await send();
+    transport = () => ({ send: () => Promise.reject(new Error("service down")) });
+    const sent = await send({ approverName: "Lee Supervisor", approverEmail: "lee@prairie.example" });
+    expect(sent).toMatchObject({ ok: false, error: "send_failed" });
+    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(eq(s.auditEvents.entityType, "approval_request")));
+    expect(events.map((e) => (e.after as { event: string }).event)).toContain("send_failed");
+  });
+});

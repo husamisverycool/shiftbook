@@ -18,6 +18,9 @@ CREATE TABLE "approval_requests" (
 	-- The latest send (first request, or sending again); automatic reminders count from it.
 	"cycle_started_at" timestamp with time zone NOT NULL,
 	"reminders_sent" integer DEFAULT 0 NOT NULL,
+	-- Shifts need the client's approval again after the agency withdrew an approval or settled a
+	-- dispute: no automatic reminders until the agency sends the request again.
+	"needs_sending" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_by" uuid,
 	"created_by_label" text NOT NULL,
@@ -169,6 +172,30 @@ BEGIN
 END $$;
 --> statement-breakpoint
 REVOKE UPDATE, TRUNCATE ON approval_decisions FROM shiftbook_app;
+--> statement-breakpoint
+-- Whether an agency is the demo decides what its reset may erase, so the app may change only an
+-- agency's name and contact details (second opinion on slice d).
+REVOKE UPDATE ON agencies FROM shiftbook_app;
+--> statement-breakpoint
+GRANT UPDATE (name, address_lines, phone, email) ON agencies TO shiftbook_app;
+--> statement-breakpoint
+-- A sent dispute is the client's evidence too: only its settlement can change, and it is removed only
+-- with the demo agency. Drafts (not yet sent) are the approver's to change or remove.
+REVOKE UPDATE, TRUNCATE ON client_disputes FROM shiftbook_app;
+--> statement-breakpoint
+GRANT UPDATE (status, decision_id, reply, resolved_at, resolved_by, resolved_by_label) ON client_disputes TO shiftbook_app;
+--> statement-breakpoint
+CREATE FUNCTION client_disputes_keep_sent() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.status = 'draft' OR coalesce((SELECT a.is_demo FROM agencies a WHERE a.id = OLD.agency_id), false) THEN
+    RETURN OLD;
+  END IF;
+  RAISE EXCEPTION 'a sent dispute is append-only (% rejected)', TG_OP;
+END $$;
+--> statement-breakpoint
+CREATE TRIGGER client_disputes_no_delete_sent
+  BEFORE DELETE ON client_disputes
+  FOR EACH ROW EXECUTE FUNCTION client_disputes_keep_sent();
 --> statement-breakpoint
 -- The one way across agencies (decision 0013): a link's hash gives its id and agency, nothing else.
 -- SECURITY DEFINER runs as the schema owner (BYPASSRLS); the app role may only execute it.

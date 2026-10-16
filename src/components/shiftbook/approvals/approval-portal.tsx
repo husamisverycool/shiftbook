@@ -261,9 +261,12 @@ function Active({ view, token }: { view: ActiveView; token: string }) {
 }
 
 const toInput = (minute: number | null) => (minute === null ? "" : `${String(Math.trunc(minute / 60) % 24).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`);
-const fromInput = (value: string) => {
+/** "HH:MM" → minutes; an end at 00:00 after a later start is midnight at the end of the day (1440). */
+const fromInput = (value: string, asEndAfter?: number) => {
   const m = /^(\d{2}):(\d{2})$/.exec(value);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+  if (!m) return null;
+  const minute = Number(m[1]) * 60 + Number(m[2]);
+  return asEndAfter !== undefined && minute === 0 && asEndAfter > 0 ? 1440 : minute;
 };
 
 function DisputeDialog(props: { shift: ShiftView; agency: string; pending: boolean; onClose: () => void; onSave: (reason: string, proposed: { inMinute: number; outMinute: number; breakMinutes: number } | null) => void }) {
@@ -274,14 +277,17 @@ function DisputeDialog(props: { shift: ShiftView; agency: string; pending: boole
   const [end, setEnd] = useState(props.shift.draft?.proposed ? toInput(props.shift.draft.proposed.outMinute) : "");
   const [brk, setBrk] = useState(props.shift.draft?.proposed ? String(props.shift.draft.proposed.breakMinutes) : "");
   const [reason, setReason] = useState(props.shift.draft?.reason ?? "");
+  // A shift recorded as a day's total (no clock times) is disputed with a reason only.
+  const clocked = x.inMinute !== null && x.outMinute !== null;
 
   const save = () => {
     // A field left empty keeps what is recorded; nothing filled in means no corrected times.
-    const any = start !== "" || end !== "" || brk !== "";
+    const any = clocked && (start !== "" || end !== "" || brk !== "");
+    const inMinute = start !== "" ? (fromInput(start) ?? -1) : (x.inMinute ?? -1);
     const proposed = any
       ? {
-          inMinute: start !== "" ? (fromInput(start) ?? -1) : (x.inMinute ?? -1),
-          outMinute: end !== "" ? (fromInput(end) ?? -1) : (x.outMinute ?? -1),
+          inMinute,
+          outMinute: end !== "" ? (fromInput(end, inMinute) ?? -1) : (x.outMinute ?? -1),
           breakMinutes: brk !== "" ? (/^\d{1,3}$/.test(brk) ? Number(brk) : -1) : (x.breakMinutes ?? 0),
         }
       : null;
@@ -297,24 +303,26 @@ function DisputeDialog(props: { shift: ShiftView; agency: string; pending: boole
             {t("disputeShift", { worker: x.workerName, day: shortDate(x.workDate, locale), start: clock(x.inMinute, locale), end: clock(x.outMinute, locale), break: x.breakMinutes ?? 0, hours: hoursMinutes(x.minutes) })}
           </DialogDescription>
         </DialogHeader>
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-medium">{t("correctedTimes")}</legend>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="dispute-start">{t("start")}</Label>
-              <Input id="dispute-start" type="time" value={start} placeholder={toInput(x.inMinute)} onChange={(e) => setStart(e.target.value)} />
+        {clocked && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm font-medium">{t("correctedTimes")}</legend>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="dispute-start">{t("start")}</Label>
+                <Input id="dispute-start" type="time" value={start} placeholder={toInput(x.inMinute)} onChange={(e) => setStart(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="dispute-end">{t("end")}</Label>
+                <Input id="dispute-end" type="time" value={end} placeholder={toInput(x.outMinute)} onChange={(e) => setEnd(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="dispute-break">{t("breakMinutes")}</Label>
+                <Input id="dispute-break" inputMode="numeric" value={brk} placeholder={String(x.breakMinutes ?? 0)} onChange={(e) => setBrk(e.target.value)} />
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="dispute-end">{t("end")}</Label>
-              <Input id="dispute-end" type="time" value={end} placeholder={toInput(x.outMinute)} onChange={(e) => setEnd(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="dispute-break">{t("breakMinutes")}</Label>
-              <Input id="dispute-break" inputMode="numeric" value={brk} placeholder={String(x.breakMinutes ?? 0)} onChange={(e) => setBrk(e.target.value)} />
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">{t("currentTimesHint")}</p>
-        </fieldset>
+            <p className="text-sm text-muted-foreground">{t("currentTimesHint")}</p>
+          </fieldset>
+        )}
         <div className="flex flex-col gap-2">
           <Label htmlFor="dispute-reason">{t("reason")}</Label>
           <Textarea id="dispute-reason" value={reason} onChange={(e) => setReason(e.target.value)} aria-describedby="dispute-reason-hint" />

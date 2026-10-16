@@ -1126,7 +1126,7 @@
     "final": "Once sent, this cannot be changed here. To change it, contact {agency}.",
     "nothingWaiting": "Nothing is waiting for your approval.",
     "keptReply": "{agency} kept these hours: {reply}",
-    "clientDispute": "Your dispute: {reason}",
+    "clientDispute": "Disputed: {reason}",
     "done": "Thank you. Your answer was sent.",
     "expired": {
       "title": "This link has expired",
@@ -1164,10 +1164,13 @@
       "name_required": "Type your full name.",
       "confirm_required": "Tick the confirmation to approve.",
       "nothing_to_approve": "Nothing is waiting for your approval.",
-      "too_soon": "A new link was sent a moment ago. Check your inbox.",
+      "too_soon": "A new link was sent recently. Check your inbox, or contact the agency.",
       "send_failed": "The email could not be sent. Try again in a moment.",
       "settings_missing": "Something is missing on the agency's side. Contact them.",
-      "generic": "Something went wrong. Nothing was changed."
+      "generic": "Something went wrong. Nothing was changed.",
+      "link_active": "This link still works. Reload the page.",
+      "link_too_old": "This link expired too long ago. Contact the agency for a new one.",
+      "reason_too_long": "The reason is too long; keep it under 2,000 characters."
     },
     "currentTimesHint": "Leave a field empty to keep what is recorded."
   },

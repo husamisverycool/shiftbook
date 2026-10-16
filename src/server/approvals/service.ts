@@ -40,7 +40,10 @@ export type ApprovalError =
   | "link_invalid"
   | "link_expired"
   | "link_replaced"
+  | "link_active"
+  | "link_too_old"
   | "too_soon"
+  | "reason_too_long"
   | "not_waiting"
   | "invalid_times"
   | "confirm_required"
@@ -63,6 +66,12 @@ export interface ApprovalDeps {
 export const ATTESTATION_VERSION = "2026-10-16";
 /** "Email me a new link" from the same link: at most once per this many minutes (decision 0013). */
 export const RENEWAL_WAIT_MINUTES = 5;
+/** …and at most this many new links per request in 24 hours, so a leaked link cannot flood the approver. */
+export const RENEWALS_PER_DAY = 3;
+/** A link that expired longer ago than this cannot ask for a new one (contact the agency instead). */
+export const RENEWAL_MAX_DAYS_AFTER_EXPIRY = 30;
+/** The longest free text kept from a client (a dispute's reason). */
+const REASON_MAX = 2000;
 
 const MESSAGES = { en, es } as const;
 const LOCALES = ["en", "es"] as const;
@@ -176,6 +185,23 @@ const requestEvent = (requestId: string, event: string, details: Record<string, 
   reason: reason ?? null,
 });
 
+/** Free text kept from anyone: a pasted approval link is never stored (decision 0013). */
+const clean = (text: string) => redactApprovalLinks(text.trim());
+
+/** The open request for a client and period (where the agency now works on it), if any. */
+async function openRequestFor(tx: Tx, clientId: string, payPeriodId: string) {
+  const [open] = await tx.select().from(s.approvalRequests).where(and(eq(s.approvalRequests.clientId, clientId), eq(s.approvalRequests.payPeriodId, payPeriodId), eq(s.approvalRequests.status, "open")));
+  return open ?? null;
+}
+
+/**
+ * Shifts need the client's approval again and the client has not been asked: the request is to send
+ * again, and automatic reminders wait until the agency sends it (second opinion on slice d).
+ */
+async function markNeedsSending(tx: Tx, clientId: string, payPeriodId: string) {
+  await tx.update(s.approvalRequests).set({ needsSending: true }).where(and(eq(s.approvalRequests.clientId, clientId), eq(s.approvalRequests.payPeriodId, payPeriodId), eq(s.approvalRequests.status, "open")));
+}
+
 // ---------------------------------------------------------------------------------------------
 // The agency's side
 // ---------------------------------------------------------------------------------------------
@@ -225,7 +251,7 @@ export async function sendApprovalRequest(deps: ApprovalDeps, actor: Actor, inpu
     if (existing && existing.approverEmail.toLowerCase() === email.toLowerCase()) {
       [request] = (await tx
         .update(s.approvalRequests)
-        .set({ approverName: name, approverEmail: email, locale, agencyLocale, cycleStartedAt: now, remindersSent: 0 })
+        .set({ approverName: name, approverEmail: email, locale, agencyLocale, cycleStartedAt: now, remindersSent: 0, needsSending: false })
         .where(eq(s.approvalRequests.id, existing.id))
         .returning()) as [s.ApprovalRequestRow];
       events.push(requestEvent(request.id, "sent_again", { approverName: name, approverEmail: email, locale }));
@@ -261,7 +287,11 @@ export async function sendApprovalRequest(deps: ApprovalDeps, actor: Actor, inpu
   });
   if (!result.ok) return result;
   const failures = await deliver(deps, result.pending);
-  return failures.length > 0 ? { ok: false, error: "send_failed", requestId: result.requestId } : { ok: true, requestId: result.requestId };
+  if (failures.length > 0) {
+    await deps.withAgency(actor.agencyId, (tx) => audit(tx, actor, [requestEvent(result.requestId, "send_failed", { approverEmail: email, emailId: failures[0] })]));
+    return { ok: false, error: "send_failed", requestId: result.requestId };
+  }
+  return { ok: true, requestId: result.requestId };
 }
 
 /** A reminder now (Harvest, Bullhorn One: only to a client that still has shifts waiting). */
@@ -292,7 +322,7 @@ async function remind(
   period: s.PayPeriodRow,
   settings: Settings,
   now: Date,
-  how: { automatic: true } | { automatic: false; actor: Actor },
+  how: { automatic: true; number: number } | { automatic: false; actor: Actor },
 ): Promise<Pending | null> {
   const client = await clientOf(tx, request.clientId);
   if (!client) return null;
@@ -312,7 +342,7 @@ async function remind(
     expiresAt: link.expiresAt,
   });
   const mail = await queueEmail(tx, agency, request.id, "approval_reminder", { email: request.approverEmail, name: request.approverName }, rendered, now);
-  const event = requestEvent(request.id, "reminder_sent", { automatic: how.automatic, number: how.automatic ? request.remindersSent + 1 : null });
+  const event = requestEvent(request.id, "reminder_sent", { automatic: how.automatic, number: how.automatic ? how.number : null });
   if (how.automatic) await auditBy(tx, { agencyId: request.agencyId, userId: null, label: "Shiftbook (automatic reminder)" }, [event]);
   else await audit(tx, how.actor, [event]);
   return { agencyId: request.agencyId, mail, linkId: link.linkId };
@@ -328,17 +358,23 @@ export async function sweepReminders(deps: ApprovalDeps, agencyId: string): Prom
   const pending = await deps.withAgency(agencyId, async (tx) => {
     const settings = await settingsOf(tx, now);
     if (!settings) return [];
-    const open = await tx.select().from(s.approvalRequests).where(eq(s.approvalRequests.status, "open")).for("update", { skipLocked: true });
+    // NO KEY UPDATE: enough to claim the row, without blocking a client's action that refers to it.
+    const open = await tx
+      .select()
+      .from(s.approvalRequests)
+      .where(and(eq(s.approvalRequests.status, "open"), eq(s.approvalRequests.needsSending, false)))
+      .for("no key update", { skipLocked: true });
     const out: Pending[] = [];
     for (const request of open) {
-      const hours = settings.reminderHours[request.remindersSent];
-      if (hours === undefined || now.getTime() < request.cycleStartedAt.getTime() + hours * HOUR_MS) continue;
+      // Every step whose time has come; a late sweep sends one reminder for all it missed.
+      const due = settings.reminderHours.filter((h) => now.getTime() >= request.cycleStartedAt.getTime() + h * HOUR_MS).length;
+      if (due <= request.remindersSent) continue;
       if ((await periodState(tx, request.payPeriodId)) !== "open") continue;
       const period = await periodOf(tx, request.payPeriodId);
       if (!period) continue;
-      // Counted even when nothing waits, so a finished request is not looked at again for this step.
-      await tx.update(s.approvalRequests).set({ remindersSent: request.remindersSent + 1 }).where(eq(s.approvalRequests.id, request.id));
-      const p = await remind(tx, deps, request, period, settings, now, { automatic: true });
+      // Counted even when nothing waits, so a finished request is not looked at again for these steps.
+      await tx.update(s.approvalRequests).set({ remindersSent: due }).where(eq(s.approvalRequests.id, request.id));
+      const p = await remind(tx, deps, request, period, settings, now, { automatic: true, number: due });
       if (p) out.push(p);
     }
     return out;
@@ -357,8 +393,9 @@ export async function agenciesWithOpenRequests(db: Db): Promise<string[]> {
  * Withdraws the client's approval of the period (Harvest "withdraw approval"): the approved shifts
  * can be changed again and need approval again; every earlier link stops working.
  */
-export async function withdrawApproval(deps: ApprovalDeps, actor: Actor, requestId: string, reason: string): Promise<{ ok: true; count: number } | ApprovalFailure> {
-  if (reason.trim() === "") return { ok: false, error: "reason_required" };
+export async function withdrawApproval(deps: ApprovalDeps, actor: Actor, requestId: string, rawReason: string): Promise<{ ok: true; count: number } | ApprovalFailure> {
+  const reason = clean(rawReason);
+  if (reason === "") return { ok: false, error: "reason_required" };
   const now = nowOf(deps);
   return deps.withAgency(actor.agencyId, async (tx) => {
     const [request] = await tx.select().from(s.approvalRequests).where(eq(s.approvalRequests.id, requestId));
@@ -373,9 +410,12 @@ export async function withdrawApproval(deps: ApprovalDeps, actor: Actor, request
       .update(s.approvalLinks)
       .set({ revokedAt: now })
       .where(and(inArray(s.approvalLinks.requestId, requests.map((r) => r.id)), isNull(s.approvalLinks.revokedAt)));
+    // The agency asks again when its fix is done: no automatic reminder before.
+    await markNeedsSending(tx, request.clientId, request.payPeriodId);
+    const current = (await openRequestFor(tx, request.clientId, request.payPeriodId)) ?? request;
     await audit(tx, actor, [
-      requestEvent(request.id, "approval_withdrawn", { shifts: ids.length }, "update", reason.trim()),
-      ...ids.map((id) => ({ action: "update" as const, entityType: "time_entry", entityId: id, before: { status: "client_approved" }, after: { status: "reviewed" }, reason: `client approval withdrawn: ${reason.trim()}` })),
+      requestEvent(current.id, "approval_withdrawn", { shifts: ids.length }, "update", reason),
+      ...ids.map((id) => ({ action: "update" as const, entityType: "time_entry", entityId: id, before: { status: "client_approved" }, after: { status: "reviewed" }, reason: `client approval withdrawn: ${reason}` })),
     ]);
     return { ok: true as const, count: ids.length };
   });
@@ -403,27 +443,30 @@ export async function settleDispute(
     if (failed(period)) return period;
     const [current] = await tx.select().from(s.clientDisputes).where(eq(s.clientDisputes.id, disputeId));
     if (current!.status !== "open") return { ok: false as const, error: "dispute_not_open" as const };
+    // Recorded on the request the agency works on now (the approver may have changed since the dispute).
+    const onRequest = (await openRequestFor(tx, request!.clientId, request!.payPeriodId))?.id ?? dispute.requestId;
 
     if (action === "accept") {
       if (dispute.proposedInMinute === null || dispute.proposedOutMinute === null || dispute.proposedBreakMinutes === null) return { ok: false as const, error: "no_proposal" as const };
       const result = await edit(tx, dispute.timeEntryId, { inMinute: dispute.proposedInMinute, outMinute: dispute.proposedOutMinute, breakMinutes: dispute.proposedBreakMinutes }, `client dispute: ${dispute.reason}`);
       if (!result.ok) return { ok: false as const, error: "edit_refused" as const, detail: result.error };
-      // The edit settled the dispute as "edited"; the client proposed these times, so it is the client's approval.
+      // The client proposed these times, so the shift counts as approved by the client.
       await tx.update(s.clientDisputes).set({ status: "accepted", resolvedAt: now, resolvedBy: actor.userId, resolvedByLabel: actor.label }).where(eq(s.clientDisputes.id, disputeId));
       await tx.update(s.timeEntries).set({ status: "client_approved", updatedAt: now }).where(eq(s.timeEntries.id, dispute.timeEntryId));
       await audit(tx, actor, [
-        requestEvent(dispute.requestId, "dispute_accepted", { disputeId, entryId: dispute.timeEntryId }),
+        requestEvent(onRequest, "dispute_accepted", { disputeId, entryId: dispute.timeEntryId }),
         { action: "update", entityType: "time_entry", entityId: dispute.timeEntryId, before: { status: "reviewed" }, after: { status: "client_approved" }, reason: "the client's own times, accepted" },
       ]);
       return { ok: true as const };
     }
 
-    const text = reply.trim();
+    const text = clean(reply);
     if (text === "") return { ok: false as const, error: "reply_required" as const };
     await tx.update(s.clientDisputes).set({ status: "kept", reply: text, resolvedAt: now, resolvedBy: actor.userId, resolvedByLabel: actor.label }).where(eq(s.clientDisputes.id, disputeId));
     await tx.update(s.timeEntries).set({ status: "reviewed", updatedAt: now }).where(and(eq(s.timeEntries.id, dispute.timeEntryId), eq(s.timeEntries.status, "disputed")));
+    await markNeedsSending(tx, request!.clientId, request!.payPeriodId);
     await audit(tx, actor, [
-      requestEvent(dispute.requestId, "dispute_kept", { disputeId, entryId: dispute.timeEntryId }, "update", text),
+      requestEvent(onRequest, "dispute_kept", { disputeId, entryId: dispute.timeEntryId }, "update", text),
       { action: "update", entityType: "time_entry", entityId: dispute.timeEntryId, before: { status: "disputed" }, after: { status: "reviewed" }, reason: `hours kept after a client dispute: ${text}` },
     ]);
     return { ok: true as const };
@@ -441,11 +484,14 @@ export async function settleDisputesByEdit(tx: Tx, actor: Actor, entryIds: strin
     .set({ status: "edited", resolvedAt: new Date(), resolvedBy: actor.userId, resolvedByLabel: actor.label })
     .where(and(inArray(s.clientDisputes.timeEntryId, entryIds), eq(s.clientDisputes.status, "open")))
     .returning({ id: s.clientDisputes.id, requestId: s.clientDisputes.requestId, entryId: s.clientDisputes.timeEntryId });
-  await audit(
-    tx,
-    actor,
-    settled.map((d) => requestEvent(d.requestId, "dispute_edited", { disputeId: d.id, entryId: d.entryId })),
-  );
+  const events: AuditInput[] = [];
+  for (const d of settled) {
+    const [request] = await tx.select().from(s.approvalRequests).where(eq(s.approvalRequests.id, d.requestId));
+    await markNeedsSending(tx, request!.clientId, request!.payPeriodId);
+    const onRequest = (await openRequestFor(tx, request!.clientId, request!.payPeriodId))?.id ?? d.requestId;
+    events.push(requestEvent(onRequest, "dispute_edited", { disputeId: d.id, entryId: d.entryId }));
+  }
+  await audit(tx, actor, events);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -533,7 +579,7 @@ async function portalShifts(tx: Tx, request: s.ApprovalRequestRow) {
     };
   });
   const waiting = shifts.filter((x) => x.state === "waiting");
-  return { view, waiting, drafts: validDrafts, snapshot: snapshotSha256(waiting, validDrafts.map((d) => d.timeEntryId)) };
+  return { view, waiting, drafts: validDrafts, snapshot: snapshotSha256(waiting, validDrafts.map((d) => ({ entryId: d.timeEntryId, reason: d.reason, proposed: proposalOf(d) }))) };
 }
 
 /** What the page shows for a link. Opening only reads (and notes the first opening of the link). */
@@ -550,7 +596,11 @@ export async function loadPortal(deps: ApprovalDeps, token: string): Promise<Por
     if (state === "replaced") return { state: "replaced" as const, agency: who };
     const closed = (await periodState(tx, c.request.payPeriodId)) !== "open";
     if (state === "expired") return { state: "expired" as const, agency: who, canRenew: !closed };
-    if (c.link.firstOpenedAt === null) await tx.update(s.approvalLinks).set({ firstOpenedAt: now }).where(and(eq(s.approvalLinks.id, c.link.id), isNull(s.approvalLinks.firstOpenedAt)));
+    if (c.link.firstOpenedAt === null) {
+      const first = await tx.update(s.approvalLinks).set({ firstOpenedAt: now }).where(and(eq(s.approvalLinks.id, c.link.id), isNull(s.approvalLinks.firstOpenedAt))).returning({ id: s.approvalLinks.id });
+      // Mail systems open links on their own, so an opening is never taken as the approver's (decision 0013).
+      if (first.length > 0) await auditBy(tx, { agencyId: c.agencyId, userId: null, label: "Link opened (may be an automatic link check)" }, [requestEvent(c.request.id, "link_opened", { linkId: c.link.id, purpose: c.link.purpose })]);
+    }
     const client = await clientOf(tx, c.request.clientId);
     const period = await periodOf(tx, c.request.payPeriodId);
     const { view, snapshot } = await portalShifts(tx, c.request);
@@ -605,9 +655,9 @@ export function validProposal(p: ProposedTimes): boolean {
 
 /** Saves (or replaces) the approver's unsent dispute of one waiting shift. */
 export async function saveDraftDispute(deps: ApprovalDeps, token: string, input: { entryId: string; reason: string; proposed: ProposedTimes | null }): Promise<{ ok: true } | ApprovalFailure> {
-  const reason = input.reason.trim();
+  const reason = clean(input.reason);
   if (reason === "") return { ok: false, error: "reason_required" };
-  if (reason.length > 2000) return { ok: false, error: "reason_required" };
+  if (reason.length > REASON_MAX) return { ok: false, error: "reason_too_long" };
   if (input.proposed && !validProposal(input.proposed)) return { ok: false, error: "invalid_times" };
   return withActiveLink(deps, token, async (tx, c, now) => {
     const shift = (await clientShifts(tx, c.request.clientId, c.request.payPeriodId)).find((x) => x.entryId === input.entryId);
@@ -651,8 +701,8 @@ export interface DecisionInput {
  * sent — at once, and only if the shifts are exactly as shown. Final on the page (Bullhorn, Beeline).
  */
 export async function submitDecision(deps: ApprovalDeps, token: string, input: DecisionInput): Promise<{ ok: true; approved: number; disputed: number } | ApprovalFailure> {
-  const typedName = input.typedName.trim();
-  if (typedName.length < 2) return { ok: false, error: "name_required" };
+  const typedName = clean(input.typedName);
+  if (typedName.length < 2 || typedName.length > 200) return { ok: false, error: "name_required" };
   if (!input.confirmed) return { ok: false, error: "confirm_required" };
   const locale = isLocale(input.locale) ? input.locale : "en";
   const result = await withActiveLink(deps, token, async (tx, c, now) => {
@@ -737,8 +787,21 @@ export async function requestNewLink(deps: ApprovalDeps, token: string): Promise
   const result = await deps.withAgency(found.agencyId, async (tx) => {
     const c = await linkContext(tx, found.agencyId, found.linkId);
     if (!c) return { ok: false as const, error: "link_invalid" as const };
-    if (linkState(c, now) === "replaced") return { ok: false as const, error: "link_replaced" as const };
+    const state = linkState(c, now);
+    if (state === "replaced") return { ok: false as const, error: "link_replaced" as const };
+    // Only an expired link asks for a new one, and not one long expired (second opinion on slice d).
+    if (state === "active") return { ok: false as const, error: "link_active" as const };
+    if (now.getTime() - c.link.expiresAt.getTime() > RENEWAL_MAX_DAYS_AFTER_EXPIRY * DAY_MS) return { ok: false as const, error: "link_too_old" as const };
     if ((await periodState(tx, c.request.payPeriodId)) !== "open") return { ok: false as const, error: "period_locked" as const };
+    // Serializes renewals of one request: the count below sees every earlier one.
+    await tx.select({ id: s.approvalRequests.id }).from(s.approvalRequests).where(eq(s.approvalRequests.id, c.request.id)).for("no key update");
+    const waitingNow = (await clientShifts(tx, c.request.clientId, c.request.payPeriodId)).filter((x) => x.state === "waiting");
+    if (waitingNow.length === 0) return { ok: false as const, error: "nothing_to_approve" as const };
+    const recent = await tx
+      .select({ id: s.emailMessages.id })
+      .from(s.emailMessages)
+      .where(and(eq(s.emailMessages.requestId, c.request.id), eq(s.emailMessages.kind, "approval_renewal"), gt(s.emailMessages.createdAt, new Date(now.getTime() - DAY_MS))));
+    if (recent.length >= RENEWALS_PER_DAY) return { ok: false as const, error: "too_soon" as const };
     const claimed = await tx
       .update(s.approvalLinks)
       .set({ renewalRequestedAt: now })
@@ -802,11 +865,12 @@ async function validLinkExists(tx: Tx, requestId: string, now: Date) {
   return Boolean(link);
 }
 
-function stateOf(counts: ClientApprovalRow["counts"], request: { id: string } | null, linkValid: boolean): ClientApprovalState {
+function stateOf(counts: ClientApprovalRow["counts"], request: { id: string; needsSending: boolean } | null, linkValid: boolean): ClientApprovalState {
   if (counts.disputed > 0) return "disputed";
   if (counts.waiting === 0 && counts.needsReview === 0 && counts.approved > 0) return "approved";
   if (!request) return "not_sent";
-  return linkValid && counts.waiting > 0 ? "waiting" : "send_again";
+  // After a withdrawal or a settled dispute the client has not been asked about those shifts yet.
+  return linkValid && counts.waiting > 0 && !request.needsSending ? "waiting" : "send_again";
 }
 
 /** Every client with shifts in the period (or a request for it), with its approval state. */
@@ -872,6 +936,7 @@ export interface ApprovalDetail {
   clientName: string;
   period: { id: string; startsOn: string; endsOn: string };
   state: ClientApprovalState;
+  needsSending: boolean;
   periodOpen: boolean;
   shifts: PortalShift[];
   needsReview: number;
@@ -896,23 +961,25 @@ export async function approvalDetail(tx: Tx, requestId: string, opts: { demoCopi
     needsReview: all.filter((x) => x.state === "needs_review").length + (await unmatchedOnClientTimesheets(tx, request.clientId, request.payPeriodId)),
   };
   const linkValid = request.status === "open" && (await validLinkExists(tx, request.id, now));
-  const disputes = await tx.select().from(s.clientDisputes).where(and(eq(s.clientDisputes.requestId, request.id), sql`${s.clientDisputes.status} <> 'draft'`)).orderBy(desc(s.clientDisputes.createdAt));
-  const events = await tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "approval_request"), eq(s.auditEvents.entityId, request.id))).orderBy(desc(s.auditEvents.occurredAt), desc(s.auditEvents.id));
-  const emails = await tx.select().from(s.emailMessages).where(eq(s.emailMessages.requestId, request.id)).orderBy(desc(s.emailMessages.createdAt));
+  // The client's period as a whole: disputes, history and emails of every request for it (the
+  // approver may have changed since a dispute was filed).
+  const siblings = (await tx.select({ id: s.approvalRequests.id }).from(s.approvalRequests).where(and(eq(s.approvalRequests.clientId, request.clientId), eq(s.approvalRequests.payPeriodId, request.payPeriodId)))).map((r) => r.id);
+  const disputes = await tx.select().from(s.clientDisputes).where(and(inArray(s.clientDisputes.requestId, siblings), sql`${s.clientDisputes.status} <> 'draft'`)).orderBy(desc(s.clientDisputes.createdAt));
+  const events = await tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "approval_request"), inArray(s.auditEvents.entityId, siblings))).orderBy(desc(s.auditEvents.occurredAt), desc(s.auditEvents.id));
+  const emails = await tx.select().from(s.emailMessages).where(inArray(s.emailMessages.requestId, siblings)).orderBy(desc(s.emailMessages.createdAt));
   const copies = opts.demoCopies && emails.length > 0 ? await tx.select().from(s.demoMailbox).where(inArray(s.demoMailbox.emailMessageId, emails.map((e) => e.id))) : [];
-  const [opened] = await tx.select({ at: s.approvalLinks.firstOpenedAt }).from(s.approvalLinks).where(and(eq(s.approvalLinks.requestId, request.id), sql`${s.approvalLinks.firstOpenedAt} is not null`)).orderBy(s.approvalLinks.firstOpenedAt).limit(1);
   const history = events.map((e) => {
     const after = (e.after ?? {}) as Record<string, unknown>;
     const { event, ...details } = after;
     return { at: e.occurredAt, actor: e.actorLabel, event: String(event ?? e.action), reason: e.reason, details };
   });
-  if (opened?.at) history.push({ at: opened.at, actor: "", event: "link_opened", reason: null, details: {} });
-  history.sort((a, b) => b.at.getTime() - a.at.getTime());
+
   return {
     request,
     clientName: client.name,
     period: { id: period.id, startsOn: period.startsOn, endsOn: period.endsOn },
     state: request.status === "open" ? stateOf(counts, request, linkValid) : "send_again",
+    needsSending: request.needsSending,
     periodOpen: (await periodState(tx, request.payPeriodId)) === "open",
     shifts: view,
     needsReview: counts.needsReview,

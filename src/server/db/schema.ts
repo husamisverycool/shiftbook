@@ -819,6 +819,7 @@ export const approvalRequests = pgTable(
     status: text("status").$type<"open" | "replaced">().notNull().default("open"),
     cycleStartedAt: timestamp("cycle_started_at", { withTimezone: true }).notNull(),
     remindersSent: integer("reminders_sent").notNull().default(0),
+    needsSending: boolean("needs_sending").notNull().default(false),
     createdAt: createdAt(),
     createdBy: uuid("created_by"),
     createdByLabel: text("created_by_label").notNull(),

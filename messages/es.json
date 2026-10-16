@@ -1126,7 +1126,7 @@
     "final": "Una vez enviado, no se puede cambiar aquí. Para cambiarlo, comunícate con {agency}.",
     "nothingWaiting": "Nada espera tu aprobación.",
     "keptReply": "{agency} mantuvo estas horas: {reply}",
-    "clientDispute": "Tu disputa: {reason}",
+    "clientDispute": "Disputado: {reason}",
     "done": "Gracias. Tu respuesta se envió.",
     "expired": {
       "title": "Este enlace venció",
@@ -1164,10 +1164,13 @@
       "name_required": "Escribe tu nombre completo.",
       "confirm_required": "Marca la confirmación para aprobar.",
       "nothing_to_approve": "Nada espera tu aprobación.",
-      "too_soon": "Se envió un nuevo enlace hace un momento. Revisa tu correo.",
+      "too_soon": "Se envió un nuevo enlace hace poco. Revisa tu correo o comunícate con la agencia.",
       "send_failed": "No se pudo enviar el correo. Inténtalo de nuevo en un momento.",
       "settings_missing": "Falta algo del lado de la agencia. Comunícate con ella.",
-      "generic": "Algo salió mal. No se cambió nada."
+      "generic": "Algo salió mal. No se cambió nada.",
+      "link_active": "Este enlace todavía funciona. Vuelve a cargar la página.",
+      "link_too_old": "Este enlace venció hace demasiado tiempo. Pide uno nuevo a la agencia.",
+      "reason_too_long": "El motivo es demasiado largo; usa menos de 2000 caracteres."
     },
     "currentTimesHint": "Deja un campo vacío para mantener lo registrado."
   },

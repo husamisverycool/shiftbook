@@ -21,8 +21,17 @@ A client's approver opens their hours from an email, without an account (SPEC §
   agency. Everything after runs inside that agency's fence as usual.
 - A link lasts the agency's `approval_link_days` setting and stops working for decisions once the
   period's files exist. Each reminder makes a new link; changing the approver or withdrawing an
-  approval revokes earlier ones. "Email me a new link" sends only to the address on file, at most
-  once per five minutes per link.
+  approval revokes earlier ones. "Email me a new link" works only from an expired link (not one
+  expired more than 30 days ago), only while shifts wait, sends only to the address on file, at most
+  once per five minutes per link and three times a day per request.
+- The internet address kept with a decision is the one the app's own proxy recorded: the entry
+  `SHIFTBOOK_TRUSTED_PROXY_HOPS` places from the end of X-Forwarded-For (default 1). With no trusted
+  proxy it is not recorded; it is never taken from what the sender wrote.
+- Free text from anyone (a dispute's reason, a typed name, a reply) has any link hidden before it is
+  stored.
+- The app's database role cannot mark an agency as the demo (it may change only an agency's name and
+  contact details), so the demo reset's right to remove decisions and sent disputes cannot be
+  turned on for a real agency.
 - An approval records the typed name, the confirmation text and its version, the time, internet
   address, browser, and a SHA-256 of what was shown (ESIGN § 7006(5): a process adopted with the
   intent to sign).
@@ -33,6 +42,8 @@ token in the fragment (needs client-side code, and mail gateways rewrite whole l
 single-use links (mail scanners would use them up).
 
 ## Consequences
-The host's own request logs can see links; expiry limits that. Anyone holding a forwarded link can
+The host's own request logs can see links; expiry limits that. In demo mode without
+`SHIFTBOOK_APP_URL`, links in the demo mailbox use the address the page was opened at (no real email
+leaves the demo); a hosted demo should set `SHIFTBOOK_APP_URL`. Anyone holding a forwarded link can
 act until it expires; the confirmation email to the approver and the notice to the agency make that
 visible.

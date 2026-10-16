@@ -6,7 +6,12 @@ import { approvalDeps } from "@/server/services";
 
 export const dynamic = "force-dynamic";
 
-const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+/** Compares bytes, so a header with characters of other lengths is simply not equal (never an error). */
+function same(a: string, b: string): boolean {
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
+}
 
 /**
  * The host's scheduler calls this every 15 minutes (research part 2 §6) with
@@ -19,10 +24,17 @@ export async function GET(request: Request): Promise<Response> {
   const deps = approvalDeps(env.appUrl);
   let sent = 0;
   let failed = 0;
+  let agencyErrors = 0;
   for (const agencyId of await agenciesWithOpenRequests(db)) {
-    const r = await sweepReminders(deps, agencyId);
-    sent += r.sent;
-    failed += r.failed;
+    // One agency's problem never stops the others' reminders.
+    try {
+      const r = await sweepReminders(deps, agencyId);
+      sent += r.sent;
+      failed += r.failed;
+    } catch (error) {
+      agencyErrors += 1;
+      console.error(`reminder sweep failed for agency ${agencyId}:`, error instanceof Error ? error.message : String(error));
+    }
   }
-  return Response.json({ sent, failed });
+  return Response.json({ sent, failed, agencyErrors });
 }

@@ -40,7 +40,7 @@ export function sendTargetOf(row: ClientApprovalRow, payPeriodId: string): SendT
   return { clientId: row.clientId, clientName: row.clientName, payPeriodId, waiting: row.counts.waiting, waitingMinutes: row.waitingMinutes, needsReview: row.counts.needsReview, prefill: row.lastApprover };
 }
 
-export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id: string; startsOn: string; endsOn: string }[]; periodId: string }) {
+export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id: string; startsOn: string; endsOn: string }[]; periodId: string; periodOpen: boolean }) {
   const t = useTranslations("approvals");
   const locale = useLocale();
   const router = useRouter();
@@ -173,10 +173,12 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                             <Link href={`/approvals/${r.request.id}`} className="underline-offset-4 hover:underline">
                               {r.clientName}
                             </Link>
-                          ) : (
+                          ) : props.periodOpen ? (
                             <button type="button" className="text-left underline-offset-4 hover:underline" onClick={() => setSending(sendTargetOf(r, props.periodId))}>
                               {r.clientName}
                             </button>
+                          ) : (
+                            r.clientName
                           )}
                         </TableCell>
                         <TableCell>
@@ -200,11 +202,12 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">{r.lastActivity ? t(`activity.${r.lastActivity.kind}` as "activity.decided", { when: when(r.lastActivity.at) }) : ""}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          {r.state === "not_sent" || r.state === "send_again" ? (
+                          {/* A period whose files exist cannot be asked about any more: only Open. */}
+                          {props.periodOpen && (r.state === "not_sent" || r.state === "send_again") ? (
                             <Button size="sm" variant="outline" disabled={pending} onClick={() => setSending(sendTargetOf(r, props.periodId))} data-testid="row-send">
                               {r.state === "not_sent" ? t("send") : t("sendAgain")}
                             </Button>
-                          ) : r.state === "waiting" && r.request ? (
+                          ) : props.periodOpen && r.state === "waiting" && r.request ? (
                             <Button size="sm" variant="outline" disabled={pending} onClick={() => remind(r.request!.id)}>
                               {t("remind")}
                             </Button>

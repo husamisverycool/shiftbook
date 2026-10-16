@@ -100,12 +100,14 @@ export const approvedShift = (x: ClientShift): s.ApprovedShift => ({
 });
 
 /**
- * SHA-256 of exactly what an approval would cover: the shifts waiting (values and order) and which
- * of them carry a dispute. A change anywhere in between refuses the approval.
+ * SHA-256 of exactly what an approval would cover: the shifts waiting (their values) and the disputes
+ * drafted on them (what each says). A change anywhere in between refuses the approval.
  */
-export function snapshotSha256(waiting: ClientShift[], disputedEntryIds: string[]): string {
-  const shifts = [...waiting].sort((a, b) => (a.entryId < b.entryId ? -1 : a.entryId > b.entryId ? 1 : 0)).map(approvedShift);
-  const disputes = [...new Set(disputedEntryIds)].sort();
+export function snapshotSha256(waiting: ClientShift[], drafts: { entryId: string; reason: string; proposed: { inMinute: number; outMinute: number; breakMinutes: number } | null }[]): string {
+  const byId = <T extends { entryId: string }>(a: T, b: T) => (a.entryId < b.entryId ? -1 : a.entryId > b.entryId ? 1 : 0);
+  const shifts = [...waiting].sort(byId).map(approvedShift);
+  // What each dispute says is part of what is sent, so a change to it refuses the decision too.
+  const disputes = [...drafts].sort(byId).map((d) => [d.entryId, d.reason, d.proposed?.inMinute ?? null, d.proposed?.outMinute ?? null, d.proposed?.breakMinutes ?? null]);
   return createHash("sha256").update(JSON.stringify({ shifts, disputes })).digest("hex");
 }
 
