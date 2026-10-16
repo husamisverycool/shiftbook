@@ -76,9 +76,9 @@ describe("Gusto hours CSV", () => {
   });
 
   it("refuses an earning type the agency has not mapped for Gusto", () => {
-    const fixture = base({ payLines: [{ workerId: "w1", type: "HOL", minutes: 480, amountCents: 14_600, rate: { num: 1825, den: 1 } }] });
+    const fixture = base({ payLines: [{ workerId: "w1", type: "DIFF", minutes: 480, amountCents: 14_600, rate: { num: 1825, den: 1 } }] });
     expect(() => renderGustoHours(fixture)).toThrow(ExportError);
-    expect(() => renderGustoHours(fixture)).toThrow(/HOL/);
+    expect(() => renderGustoHours(fixture)).toThrow(/DIFF/);
   });
 
   it("refuses a worker with no Gusto employee id (missing payroll file number)", () => {
@@ -220,6 +220,21 @@ describe("Gusto hours CSV — pay the engine now computes but this file cannot c
     });
     expect(() => renderGustoHours(fixture)).toThrowError(ExportError);
     expect(() => renderGustoHours(fixture)).toThrowError("cannot carry a minimum-wage top-up (the rate card is below the minimum wage); fix the rate card");
+  });
+
+  it("refuses holiday pay and bonuses plainly, before checking their arithmetic (a bonus is a lump sum, not hours)", () => {
+    const reg = { workerId: "w1", type: "REG" as const, minutes: 480, amountCents: 15_200, rate: { num: 1900, den: 1 } };
+    const cases = [
+      [{ workerId: "w1", type: "HOL" as const, minutes: 480, amountCents: 7600, rate: { num: 950, den: 1 } }, "cannot carry a holiday premium for hours worked on a holiday"],
+      [{ workerId: "w1", type: "HOL_NOT_WORKED" as const, minutes: 480, amountCents: 15_200, rate: { num: 1900, den: 1 } }, "cannot carry holiday pay for a holiday not worked; enter it in Gusto as holiday pay"],
+      [{ workerId: "w1", type: "BONUS" as const, minutes: 0, amountCents: 5000, rate: { num: 0, den: 1 } }, "cannot carry a bonus; enter it in Gusto as a bonus"],
+      [{ workerId: "w1", type: "BONUS_OT" as const, minutes: 1380, amountCents: 4500, rate: { num: 4500, den: 23 } }, "cannot carry overtime on a flat-sum bonus"],
+    ] as const;
+    for (const [line, message] of cases) {
+      const fixture = base({ payLines: [reg, line] });
+      expect(() => renderGustoHours(fixture)).toThrowError(expect.objectContaining({ code: "unsupported_earning_type" }));
+      expect(() => renderGustoHours(fixture)).toThrowError(message);
+    }
   });
 
   it("refuses overtime on a weighted regular rate plainly, even when its fraction is large", () => {

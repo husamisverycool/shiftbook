@@ -126,3 +126,14 @@ export function exactDecimalBig(num: bigint, den: bigint, places = 4): string {
   const text = digits.length > 0 ? `${whole}.${digits}` : String(whole);
   return `${negative ? "-" : ""}${text}${remainder !== 0n ? "…" : ""}`;
 }
+
+/** num/den (den > 0) in lowest terms as safe integers, or null when it does not fit: the caller holds the work. */
+export function reduceFractionBig(num: bigint, den: bigint): { num: number; den: number } | null {
+  if (den <= 0n) throw new Error("denominator must be positive");
+  let x = num < 0n ? -num : num;
+  let y = den;
+  while (y !== 0n) [x, y] = [y, x % y];
+  const g = x === 0n ? 1n : x;
+  const out = { num: Number(num / g), den: Number(den / g) };
+  return Number.isSafeInteger(out.num) && Number.isSafeInteger(out.den) ? out : null;
+}

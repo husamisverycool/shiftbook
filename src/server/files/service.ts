@@ -45,7 +45,7 @@ export interface RunFiles {
   invoices: { invoiceId: string; clientId: string; clientName: string; number: string; totalCents: number; storageKey: string; sha256: string }[];
 }
 
-const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "MW_TRUEUP", "HOL", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE"];
+const TYPE_ORDER: EarningType[] = ["REG", "OT", "DT", "MW_TRUEUP", "REPORTING_PAY", "HOL", "HOL_NOT_WORKED", "DIFF", "MEAL_PREMIUM", "REST_PREMIUM", "MIN_GUARANTEE", "BONUS", "BONUS_OT"];
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const sha = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 /** 2400 → "40:00"; 37 → "0:37". */

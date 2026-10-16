@@ -15,7 +15,7 @@
  * The regular rate is an exact fraction of cents per hour and is never rounded; only line amounts
  * are rounded, once. The multiplier comes from the overtime rule data.
  */
-import { mul, reduceFraction as reduce } from "../int";
+import { mul, reduceFraction as reduce, reduceFractionBig } from "../int";
 import type { Fraction, Shift } from "../types";
 
 export const REGULAR_RATE_CITATION = "29 C.F.R. § 778.115; § 778.111(a)";
@@ -32,6 +32,29 @@ export function weightedRegularRate(shifts: { minutes: number; payRateCents: num
     minutes += s.minutes;
   }
   return reduce({ num: earned, den: minutes });
+}
+
+/**
+ * The regular rate when pay other than the hourly rates counts in it — a nondiscretionary bonus
+ * (29 C.F.R. §§ 778.208–778.211), a holiday premium below 1.5× (§ 778.203): straight-time earnings
+ * plus that pay, divided by the hours worked (§ 778.109), exact. Each extra is an exact amount of
+ * cents. Null when the exact rate does not fit in safe integers (the week is then held).
+ */
+export function regularRateWith(shifts: { minutes: number; payRateCents: number }[], extraCents: Fraction[]): Fraction | null {
+  // num/den is 60 × the cents earned: Σ minutes × cents per hour.
+  let num = 0n;
+  let den = 1n;
+  let minutes = 0n;
+  for (const s of shifts) {
+    num += BigInt(s.minutes) * BigInt(s.payRateCents);
+    minutes += BigInt(s.minutes);
+  }
+  if (minutes <= 0n) throw new Error("the regular rate needs hours worked");
+  for (const e of extraCents) {
+    num = num * BigInt(e.den) + 60n * BigInt(e.num) * den;
+    den *= BigInt(e.den);
+  }
+  return reduceFractionBig(num, den * minutes);
 }
 
 /** The premium's base on a day: the regular rate, or that day's minimum wage when it is higher. */

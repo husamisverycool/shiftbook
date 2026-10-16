@@ -97,3 +97,23 @@ files unchanged). Screens to confirm premiums, enter bonuses and holiday policy 
 ## Out of this slice
 Screens to confirm premiums and enter bonuses or holiday policy (e, j); retro corrections to paid
 weeks (e); other states; alternative workweek schedules; split-shift premiums (flag only).
+
+## Progress
+- Steps 1–3 (regular rate, minimum-wage floor and top-ups, California hours with the federal
+  floor, local minimums held unless on file): built, reviewed, fixed.
+- Step 4 (confirmed premiums and guarantees): California meal and rest premiums; California
+  reporting time, Massachusetts reporting pay, Illinois day-labor minimum; holiday policy (worked
+  premium, holiday not worked, billing) and bonuses (nondiscretionary in the regular rate;
+  California flat-sum per Alvarado, the federal result as a floor; California's own premiums use
+  its regular rate with the flat-sum share). Proposed goldens G5, G6, G8, G9 checked by hand.
+- Notes from building step 4 (safe readings, reversible):
+  - A bonus or a confirmation for a week with no hours on file holds that week with a plain
+    message; it is never dropped.
+  - A holiday not worked is paid once a day, at the day's rate card (raised to the minimum wage if
+    the card is below it); a day with any hours worked cannot also be a holiday not worked.
+  - Bonuses are not billed in this slice (billing per client profile is step 6).
+  - The flat-sum divisor is a method (hours not paid at a premium), not a number, so it has no
+    data row; the multiples come from the overtime rows.
+  - Integration tests can run per checkout: `SHIFTBOOK_TEST_DB=shiftbook_test_<x>`.
+- Next: step 5 (Illinois § 42 counter), step 6 (billing per client), step 7 (lines and exports),
+  the random-week property test, the second-opinion review, Playwright.

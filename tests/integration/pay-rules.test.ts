@@ -1,14 +1,15 @@
 /**
  * Slice (c) through the weekly run: a rate card below the minimum wage is topped up (not held, and
  * not mistaken for unbilled hours), and a confirmed missed meal period in California is paid one
- * hour at the week's regular rate (docs/research/pay-rules-slice-c.md).
+ * hour at the week's regular rate; holiday pay follows the agency's policy and bonuses are paid with
+ * the week (docs/research/pay-rules-slice-c.md).
  */
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { agencies, jobOrders, payLines, premiumConfirmations, rateCards, timeEntries } from "../../src/server/db/schema";
+import { agencies, assignments, billLines, bonuses, holidayPolicies, jobOrders, payLines, payPeriods, premiumConfirmations, rateCards, timeEntries } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
@@ -85,5 +86,44 @@ describe("pay rules through the weekly run", () => {
       ["REPORTING_PAY", 120, 3900],
       ["REPORTING_PAY", 240, 7800],
     ]);
+  });
+
+  it("pays a holiday premium, a confirmed holiday not worked and a bonus, from stored policy and bonus rows", async () => {
+    const luis = workerId("luis-hernandez");
+    const [p] = await inAgency((tx) => tx.select().from(payPeriods).where(eq(payPeriods.id, period)));
+    const added = await inAgency((tx) => addEntry(tx, actor, period, { workerId: luis, workDate: "2026-10-08", inMinute: 420, outMinute: 930, breakMinutes: 30 }, ["other"], "holiday shift"));
+    if (!added.ok) throw new Error(added.error);
+    const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, added.entryId)));
+    const assignmentId = entry!.assignmentId!;
+    await inAgency(async (tx) => {
+      await tx.insert(holidayPolicies).values({ agencyId: actor.agencyId, name: "Agency holidays", holidayDates: ["2026-10-08", "2026-10-09"], workedMultiplierNum: 3, workedMultiplierDen: 2, notWorkedMinutes: 480, billWorkedMultiplierNum: 3, billWorkedMultiplierDen: 2 });
+      await tx.insert(premiumConfirmations).values({ agencyId: actor.agencyId, workerId: luis, assignmentId, workDate: "2026-10-09", kind: "holiday_not_worked", confirmedBy: actor.userId });
+      await tx.insert(bonuses).values({ agencyId: actor.agencyId, workerId: luis, assignmentId, workweekStart: p!.startsOn, amountCents: 2500, kind: "nondiscretionary", enteredBy: actor.userId });
+    });
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.blockers.filter((b) => b.workerId === luis || b.code === "pay_bill_mismatch")).toEqual([]);
+    const pay = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, luis))));
+    // $19.50: the worked holiday adds 0.5 × $19.50 for 8 h; the holiday not worked pays 8 h; the bonus as entered.
+    expect(pay.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
+      ["REG", 480, 15_600],
+      ["HOL", 480, 7800],
+      ["HOL_NOT_WORKED", 480, 15_600],
+      ["BONUS", 0, 2500],
+    ]);
+    const bill = await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.workerId, luis))));
+    expect(bill.map((l) => [l.type, l.minutes])).toEqual([
+      ["REG", 480],
+      ["HOL", 480],
+    ]);
+  });
+
+  it("holds a bonus entered for a week with no hours instead of dropping it", async () => {
+    const luis = workerId("luis-hernandez");
+    const [p] = await inAgency((tx) => tx.select().from(payPeriods).where(eq(payPeriods.id, period)));
+    const [assignment] = await inAgency((tx) => tx.select({ id: assignments.id }).from(assignments).where(eq(assignments.workerId, luis)));
+    await inAgency((tx) => tx.insert(bonuses).values({ agencyId: actor.agencyId, workerId: luis, assignmentId: assignment!.id, workweekStart: p!.startsOn, amountCents: 2500, kind: "nondiscretionary" }));
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    const held = run.blockers.filter((b) => b.workerId === luis);
+    expect(held.map((b) => b.message).join(" ")).toContain("a bonus of $25.00 is entered for a week with no hours or reported days on file");
   });
 });

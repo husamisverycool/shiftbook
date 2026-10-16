@@ -24,10 +24,13 @@
       "MW_TRUEUP": "Complemento al salario mínimo",
       "REPORTING_PAY": "Pago por presentarse",
       "HOL": "Feriado",
+      "HOL_NOT_WORKED": "Feriado no trabajado",
       "DIFF": "Diferencial",
       "MEAL_PREMIUM": "Prima por comida",
       "REST_PREMIUM": "Prima por descanso",
-      "MIN_GUARANTEE": "Mínimo garantizado"
+      "MIN_GUARANTEE": "Mínimo garantizado",
+      "BONUS": "Bono",
+      "BONUS_OT": "Horas extra sobre bono"
     },
     "notBillable": "no facturable",
     "footer": "Las horas provienen de las hojas de horas aprobadas del periodo de servicio. Los importes se calculan con minutos enteros y se redondean una sola vez por línea.",

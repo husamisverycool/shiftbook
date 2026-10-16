@@ -11,7 +11,7 @@
  * the period is locked (period-lock.ts) — in this slice a period is paid once.
  */
 import { createHash } from "node:crypto";
-import { addDays, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Confirmation, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { renderExport } from "../../exports/registry";
@@ -201,6 +201,23 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     .filter((c) => !skippedIds.has(c.workerId))
     .map((c) => ({ id: c.id, kind: c.kind, workerId: c.workerId, assignmentId: c.assignmentId, date: c.workDate, scheduledMinutes: c.scheduledMinutes, reassigned: c.reassigned }))
     .sort((a, b) => cmp(a.id, b.id));
+  // The agency's holiday policies (a client's own wins on its work), and bonuses entered for the
+  // workweeks of this period. A bonus whose week is not a workweek of the period holds its worker.
+  const holidayPolicies: HolidayPolicy[] = (await tx.select().from(s.holidayPolicies))
+    .map((p) => ({
+      clientId: p.clientId,
+      name: p.name,
+      dates: p.holidayDates,
+      workedMultiplier: { num: p.workedMultiplierNum, den: p.workedMultiplierDen },
+      notWorkedMinutes: p.notWorkedMinutes,
+      billWorkedMultiplier: p.billWorkedMultiplierNum !== null && p.billWorkedMultiplierDen !== null ? { num: p.billWorkedMultiplierNum, den: p.billWorkedMultiplierDen } : null,
+      billNotWorked: p.billNotWorked,
+    }))
+    .sort((a, b) => cmp(a.clientId ?? "", b.clientId ?? "") || cmp(a.name, b.name));
+  const bonuses: Bonus[] = (await tx.select().from(s.bonuses).where(and(gte(s.bonuses.workweekStart, period.startsOn), lte(s.bonuses.workweekStart, period.endsOn))))
+    .filter((b) => !skippedIds.has(b.workerId))
+    .map((b) => ({ id: b.id, workerId: b.workerId, assignmentId: b.assignmentId, workweekStart: b.workweekStart, amountCents: b.amountCents, kind: b.kind }))
+    .sort((a, b) => cmp(a.id, b.id));
 
   /** The shift for an assignment on a date with that day's rate card, billing profile and worksite; or why there is none. */
   const shiftOn = (
@@ -289,16 +306,18 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     shifts.push(built);
   }
 
-  // A day a worker reported (or was sent) and did no work at all, confirmed by a person, is a
-  // 0-minute day on its assignment: only reporting or day-labor minimum pay can follow from it.
-  for (const c of confirmations.filter((x) => x.kind === "reported_short" && !shifts.some((sh) => sh.workerId === x.workerId && sh.assignmentId === x.assignmentId && sh.date === x.date))) {
+  // A day a worker reported (or was sent) and did no work at all, or a holiday not worked, confirmed
+  // by a person, is a 0-minute day on its assignment: only reporting, day-labor minimum or holiday
+  // pay can follow from it. One such day per worker, assignment and date.
+  for (const c of confirmations.filter((x) => x.kind === "reported_short" || x.kind === "holiday_not_worked")) {
+    if (shifts.some((sh) => sh.workerId === c.workerId && sh.assignmentId === c.assignmentId && sh.date === c.date)) continue;
     const worker = workersById.get(c.workerId);
     const a = assignmentsById.get(c.assignmentId);
     const name = worker ? `${worker.firstName} ${worker.lastName}` : c.workerId;
     const issue = (code: RunIssueCode, message: string) => blockers.push({ code, workerId: c.workerId, workerName: name, date: c.date, message });
     if (skippedIds.has(c.workerId)) continue;
     if (!worker || !a || a.assignment.workerId !== worker.id || a.assignment.status === "cancelled" || !effective(c.date, a.assignment.startDate, a.assignment.endDate)) {
-      issue("outside_assignment", `${name} on ${c.date}: a confirmed short day is not on an assignment the worker has that day.`);
+      issue("outside_assignment", `${name} on ${c.date}: a confirmed ${c.kind === "holiday_not_worked" ? "holiday not worked" : "short day"} is not on an assignment the worker has that day.`);
       continue;
     }
     const built = shiftOn(a, c.date, { entryIds: [], workerId: worker.id, workerName: name, startMinute: null, minutes: 0, reportedOnly: true });
@@ -349,7 +368,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     }
   }
 
-  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, ...(await ruleTables(tx)) };
+  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, ...(await ruleTables(tx)) };
   const result = computePay(input);
   blockers.push(...result.blockers);
 

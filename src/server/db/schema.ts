@@ -77,10 +77,13 @@ export const earningType = pgEnum("earning_type", [
   "MW_TRUEUP",
   "REPORTING_PAY",
   "HOL",
+  "HOL_NOT_WORKED",
   "DIFF",
   "MEAL_PREMIUM",
   "REST_PREMIUM",
   "MIN_GUARANTEE",
+  "BONUS",
+  "BONUS_OT",
 ]);
 export const overtimeKind = pgEnum("overtime_kind", ["weekly", "daily", "daily_double", "seventh_day"]);
 export const invoiceStatus = pgEnum("invoice_status", ["draft", "issued", "paid", "void"]);
@@ -638,7 +641,7 @@ export const premiumRules = pgTable("premium_rules", {
   citation: text("citation").notNull(),
 });
 
-export const confirmationKind = pgEnum("confirmation_kind", ["meal_period_missed", "rest_period_missed", "reported_short"]);
+export const confirmationKind = pgEnum("confirmation_kind", ["meal_period_missed", "rest_period_missed", "reported_short", "holiday_not_worked"]);
 
 /** Minimum pay for a short day, one dated rule per state (drizzle/0016). */
 export const guaranteeRules = pgTable("guarantee_rules", {
@@ -679,6 +682,50 @@ export const premiumConfirmations = pgTable(
   (t) => [index("premium_confirmations_day").on(t.agencyId, t.workerId, t.workDate)],
 );
 
+/**
+ * A holiday policy (drizzle/0018): agency data, not law. client null is the agency's default; a
+ * client's own policy wins on that client's work. Multipliers are whole-number fractions.
+ */
+export const holidayPolicies = pgTable(
+  "holiday_policies",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    clientId: uuid("client_id").references(() => clients.id),
+    name: text("name").notNull(),
+    holidayDates: isoDate("holiday_dates").array().notNull(),
+    workedMultiplierNum: integer("worked_multiplier_num").notNull(),
+    workedMultiplierDen: integer("worked_multiplier_den").notNull(),
+    notWorkedMinutes: integer("not_worked_minutes").notNull().default(0),
+    billWorkedMultiplierNum: integer("bill_worked_multiplier_num"),
+    billWorkedMultiplierDen: integer("bill_worked_multiplier_den"),
+    billNotWorked: boolean("bill_not_worked").notNull().default(false),
+    createdBy: uuid("created_by"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("holiday_policies_client").on(t.agencyId, t.clientId)],
+);
+
+export const bonusKind = pgEnum("bonus_kind", ["nondiscretionary", "flat_sum"]);
+
+/** A bonus for one workweek, entered and classified by a person (drizzle/0018). */
+export const bonuses = pgTable(
+  "bonuses",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    assignmentId: uuid("assignment_id").notNull().references(() => assignments.id),
+    workweekStart: isoDate("workweek_start").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    kind: bonusKind("kind").notNull(),
+    note: text("note"),
+    enteredBy: uuid("entered_by"),
+    enteredAt: timestamp("entered_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("bonuses_week").on(t.agencyId, t.workerId, t.workweekStart)],
+);
+
 export const TENANT_TABLES = [
   "branches",
   "users",
@@ -695,6 +742,8 @@ export const TENANT_TABLES = [
   "mapping_profiles",
   "placement_imports",
   "premium_confirmations",
+  "holiday_policies",
+  "bonuses",
   "source_documents",
   "document_pages",
   "extraction_passes",

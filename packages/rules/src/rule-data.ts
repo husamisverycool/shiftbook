@@ -5,7 +5,7 @@
  */
 import { isIsoDate } from "./dates";
 import { scopeProblem, STATE_FIPS } from "./places";
-import type { GuaranteeRule, Issue, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
+import type { GuaranteeRule, HolidayPolicy, Issue, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const OPEN_END = "9999-12-31";
@@ -17,6 +17,8 @@ export interface RuleTables {
   minimumWageRules: MinimumWageRule[];
   premiumRules: PremiumRule[];
   guaranteeRules: GuaranteeRule[];
+  /** Agency data, not law: which days are holidays and what the agency (or a client) pays for them. */
+  holidayPolicies: HolidayPolicy[];
 }
 
 /** Copies of the rule tables in one fixed order. */
@@ -31,6 +33,10 @@ export function canonicalRules(input: PayInput): RuleTables {
     minimumWageRules: by(input.minimumWageRules, (r) => key([r.jurisdiction, scopeKey(r), r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.rateCents, r.citation, r.scopeName])),
     premiumRules: by(input.premiumRules ?? [], (r) => key([r.jurisdiction, r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, r.premiumMinutes, r.perWorkdayMax, r.citation])),
     guaranteeRules: by(input.guaranteeRules ?? [], (r) => key([r.jurisdiction, r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, JSON.stringify(r), r.citation])),
+    holidayPolicies: by(
+      (input.holidayPolicies ?? []).map((p) => ({ ...p, dates: Array.isArray(p.dates) ? [...p.dates].sort(cmp) : p.dates })),
+      (p) => key([p.clientId, p.name, JSON.stringify(p)]),
+    ),
   };
 }
 
@@ -41,6 +47,7 @@ const MAX_FACTOR = 1000;
 const MAX_THRESHOLD_MINUTES = 10_080; // one week
 /** No minimum wage is anywhere near $1,000 an hour: a larger row is a typo, not a rate to pay. */
 const MAX_MINIMUM_WAGE_CENTS = 100_000;
+const MINUTES_PER_DAY = 1440;
 
 function multiplierProblem(m: { num?: unknown; den?: unknown } | undefined): string | null {
   if (!m || !positiveInt(m.num) || !positiveInt(m.den) || (m.num as number) > MAX_FACTOR || (m.den as number) > MAX_FACTOR) {
@@ -128,6 +135,21 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
       (r.basis !== "regular_rate" && r.basis !== "pay_rate" && "its rate basis must be the regular rate or the pay rate");
     if (problem) issues.push(invalid(`${where}: ${problem}`));
   }
+  for (const p of t.holidayPolicies) {
+    const where = `holiday policy "${typeof p.name === "string" ? p.name.slice(0, 100) : String(p.name)}"`;
+    const dates = Array.isArray(p.dates) ? p.dates : null;
+    const problem =
+      ((typeof p.name !== "string" || p.name.trim() === "" || p.name.length > 100) && "its name must be text of 1 to 100 characters") ||
+      (p.clientId !== null && (typeof p.clientId !== "string" || p.clientId.trim() === "") && "its client must be a client id, or none for the agency's default") ||
+      ((!dates || dates.length === 0 || dates.length > 366) && "it must list from 1 to 366 holiday dates") ||
+      (dates && !dates.every((d) => typeof d === "string" && isIsoDate(d)) && "one of its holiday dates is not a real calendar date") ||
+      (dates && new Set(dates).size !== dates.length && "it lists the same date twice") ||
+      (multiplierProblem(p.workedMultiplier) && "its pay for hours worked on a holiday must be a whole-number fraction of at least 1× the pay rate") ||
+      ((!Number.isSafeInteger(p.notWorkedMinutes) || p.notWorkedMinutes < 0 || p.notWorkedMinutes > MINUTES_PER_DAY) && "its pay for a holiday not worked must be a whole number of minutes, at most a day") ||
+      (p.billWorkedMultiplier !== null && multiplierProblem(p.billWorkedMultiplier) && "its bill for hours worked on a holiday must be a whole-number fraction of at least 1× the bill rate, or none") ||
+      (typeof p.billNotWorked !== "boolean" && "whether a holiday not worked is billed must be yes or no");
+    if (problem) issues.push(invalid(`${where}: ${problem}`));
+  }
   if (issues.length > 0) return issues;
 
   issues.push(
@@ -138,5 +160,16 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
     // One minimum-pay rule per state at a time: which one applies would otherwise be a guess.
     ...overlapProblems(t.guaranteeRules, (r) => r.jurisdiction, (r) => `minimum-pay rule ${r.jurisdiction} ${r.ruleCode}`),
   );
+  // One holiday policy per client (or for the agency) on a date: which one pays would otherwise be a guess.
+  for (let i = 0; i < t.holidayPolicies.length; i++) {
+    for (let k = i + 1; k < t.holidayPolicies.length; k++) {
+      const a = t.holidayPolicies[i]!;
+      const b = t.holidayPolicies[k]!;
+      const both = a.clientId === b.clientId ? a.dates.filter((d) => b.dates.includes(d)) : [];
+      if (both.length > 0) {
+        issues.push(invalid(`holiday policies "${a.name}" and "${b.name}" both list ${both[0]} for ${a.clientId === null ? "the agency" : "the same client"}, so which one pays would be a guess`));
+      }
+    }
+  }
   return issues;
 }

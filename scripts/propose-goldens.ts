@@ -280,6 +280,51 @@ ruleCase(
   },
 );
 
+const THANKSGIVING = ["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"];
+const maWorker = (letter: string) => ({ ...MA, workerId: `worker-${letter}`, workerName: `Worker ${letter}`, assignmentId: `assignment-${letter}`, payRateCents: 1900, billRateCents: 2700 });
+
+ruleCase(
+  "ma-thanksgiving-holiday-policy",
+  "Three Worcester, Massachusetts workers at $19.00/h, billed at $27.00/h, in Thanksgiving week 2026 (Thursday November 26). The agency's holiday policy (agency data: no law here requires holiday pay) pays 1.5× for hours worked on the holiday and 8 hours for a holiday not worked when a person confirms the worker is eligible; it bills worked holiday hours at 1.5× and does not bill a holiday not worked. Worker A works 8 hours Monday to Friday: 40 h × $19 = $760.00 plus the holiday premium 8 h × 0.5 × $19 = $76.00 = $836.00; billed 40 h × $27 + 8 h × $13.50 = $1,188.00. Worker B works 8 hours on the four other days and is confirmed eligible for the holiday: 32 h × $19 = $608.00 plus 8 h of holiday pay × $19 = $152.00 = $760.00, which is not hours worked (no overtime from it); billed 32 h × $27 = $864.00. Worker C works 9 hours a day (45 h): 40 h × $19 = $760.00, overtime 5 h × $28.50 = $142.50, and the holiday premium on Thursday's 9 hours, 9 h × $9.50 = $85.50, paid on top of the overtime (a 1.5× holiday premium stays out of the regular rate: 29 U.S.C. § 207(e)(6)) = $988.00; billed 40 h × $27 + 5 h × $40.50 + 9 h × $13.50 = $1,404.00.",
+  {
+    ...input([
+      ...THANKSGIVING.map((d) => shift(d, 480, maWorker("A"))),
+      ...THANKSGIVING.filter((d) => d !== "2026-11-26").map((d) => shift(d, 480, maWorker("B"))),
+      shift("2026-11-26", 0, { ...maWorker("B"), entryIds: [], reportedOnly: true, startMinute: null }),
+      ...THANKSGIVING.map((d) => shift(d, 540, maWorker("C"))),
+    ]),
+    holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: ["2026-11-26"], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: { num: 3, den: 2 }, billNotWorked: false }],
+    confirmations: [{ id: "confirmation-1", kind: "holiday_not_worked", workerId: "worker-B", assignmentId: "assignment-B", date: "2026-11-26" }],
+  },
+  {
+    pay: [["REG", 2400, 76000], ["HOL", 480, 7600], ["REG", 1920, 60800], ["HOL_NOT_WORKED", 480, 15200], ["REG", 2400, 76000], ["OT", 300, 14250], ["HOL", 540, 8550]],
+    bill: [["REG", 2400, 108000], ["HOL", 480, 10800], ["REG", 1920, 86400], ["REG", 2400, 108000], ["OT", 300, 20250], ["HOL", 540, 12150]],
+  },
+);
+
+ruleCase(
+  "il-nondiscretionary-bonus-in-regular-rate",
+  "An Illinois worker at $18.25/h works 9 hours Monday to Thursday and 8 on Friday (44 h) and earns a $50.00 bonus for meeting the week's output target, which a person classified as nondiscretionary (promised for the work). The bonus is part of the week's pay, so it goes into the regular rate (29 C.F.R. §§ 778.208–778.211): ($803.00 straight time + $50.00) ÷ 44 h = $19.3863…/h. Overtime: 4 h × ($18.25 + 0.5 × $19.3863…) = $111.7727… → $111.77 (without the bonus it would be $109.50). Pay: 40 h × $18.25 = $730.00 + $111.77 + $50.00 = $891.77. Bill: 40 h × $26.50 + 4 h × $39.75 = $1,219.00 (the bonus is not billed).",
+  {
+    ...input([...WEEK.slice(0, 4).map((d) => shift(d, 540)), shift(WEEK[4]!, 480)]),
+    bonuses: [{ id: "bonus-1", workerId: "worker-1", assignmentId: "assignment-1", workweekStart: WEEK[0]!, amountCents: 5000, kind: "nondiscretionary" }],
+  },
+  { pay: [["REG", 2400, 73000], ["OT", 240, 11177], ["BONUS", 0, 5000]], bill: [["REG", 2400, 106000], ["OT", 240, 15900]] },
+);
+
+ruleCase(
+  "ca-flat-sum-bonus-overtime",
+  "The California seven-day week of ca-daily-and-seventh-day ($1,368.00 of pay: 40 straight hours, 20 h of overtime, 3 h of double time) with a $50.00 flat-sum bonus for the week (a fixed amount for showing up, not tied to output). In California the overtime on a flat-sum bonus is the bonus divided by the hours not paid at a premium, times the full overtime or double-time multiple (Alvarado v. Dart Container (2018) 4 Cal.5th 542): $50 ÷ 40 h = $1.25/h; 20 h × 1.5 × $1.25 + 3 h × 2 × $1.25 = $37.50 + $7.50 = $45.00. The bonus does not also go into the regular rate used for the other overtime ($18.00). Federal law (the bonus in the regular rate over all 63 hours) would add less: 23 h × 0.5 × $0.7936… = $9.13. Pay: $1,368.00 + $50.00 + $45.00 = $1,463.00. Bill unchanged: $1,976.00.",
+  {
+    ...caInput([480, 600, 780, 480, 480, 360, 600].map((m, i) => shift(CA_WEEK[i]!, m, { ...CA, payRateCents: 1800, billRateCents: 2600 }))),
+    bonuses: [{ id: "bonus-1", workerId: "worker-1", assignmentId: "assignment-1", workweekStart: CA_WEEK[0]!, amountCents: 5000, kind: "flat_sum" }],
+  },
+  {
+    pay: [["REG", 2400, 72000], ["OT", 360, 16200], ["OT", 360, 16200], ["OT", 480, 21600], ["DT", 60, 3600], ["DT", 120, 7200], ["BONUS", 0, 5000], ["BONUS_OT", 1380, 4500]],
+    bill: [["REG", 2400, 104000], ["OT", 360, 23400], ["OT", 360, 23400], ["OT", 480, 31200], ["DT", 60, 5200], ["DT", 120, 10400]],
+  },
+);
+
 // ---------- export goldens ----------
 function exportCase(name: string, summary: string, fixture: ExportFixture, handTotals: unknown) {
   const result = renderExport(fixture);

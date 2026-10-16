@@ -30,6 +30,8 @@ const CLEAR_ORDER = [
   "jobs",
   "placement_imports",
   "premium_confirmations",
+  "bonuses",
+  "holiday_policies",
   "exports",
   "invoices",
   "bill_lines",

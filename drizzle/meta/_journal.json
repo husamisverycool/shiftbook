@@ -127,6 +127,13 @@
       "when": 1792091600689,
       "tag": "0017_california_local_minimum_wages",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792091600690,
+      "tag": "0018_holiday_policies_and_bonuses",
+      "breakpoints": true
     }
   ]
 }

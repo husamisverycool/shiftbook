@@ -1,10 +1,11 @@
 import { createDatabase } from "../../src/server/db/client";
 
 const PORT = process.env.SHIFTBOOK_PG_PORT ?? "54329";
+const TEST_DB = process.env.SHIFTBOOK_TEST_DB ?? "shiftbook_test";
 
-export const appUrl = () => process.env.TEST_APP_URL ?? `postgres://shiftbook_app@127.0.0.1:${PORT}/shiftbook_test`;
+export const appUrl = () => process.env.TEST_APP_URL ?? `postgres://shiftbook_app@127.0.0.1:${PORT}/${TEST_DB}`;
 export const ownerUrl = () =>
-  process.env.TEST_OWNER_URL ?? `postgres://shiftbook_owner@127.0.0.1:${PORT}/shiftbook_test`;
+  process.env.TEST_OWNER_URL ?? `postgres://shiftbook_owner@127.0.0.1:${PORT}/${TEST_DB}`;
 
 /** The app's view of the database: the shiftbook_app role, fenced by row-level security. */
 export const openAppDb = () => createDatabase(appUrl(), { max: 2 });

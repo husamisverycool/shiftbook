@@ -24,10 +24,13 @@
       "MW_TRUEUP": "Minimum-wage top-up",
       "REPORTING_PAY": "Reporting-time pay",
       "HOL": "Holiday",
+      "HOL_NOT_WORKED": "Holiday not worked",
       "DIFF": "Differential",
       "MEAL_PREMIUM": "Meal premium",
       "REST_PREMIUM": "Rest premium",
-      "MIN_GUARANTEE": "Minimum guarantee"
+      "MIN_GUARANTEE": "Minimum guarantee",
+      "BONUS": "Bonus",
+      "BONUS_OT": "Overtime on bonus"
     },
     "notBillable": "not billable",
     "footer": "Hours are from the approved timesheets for the service period. Amounts are computed from whole minutes and rounded once per line.",

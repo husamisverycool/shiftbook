@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computePay } from "./engine";
 import { NO_PLACE } from "./places";
-import type { Confirmation, GuaranteeRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule, Shift } from "./types";
+import type { Confirmation, GuaranteeRule, HolidayPolicy, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule, Shift } from "./types";
 
 // Census FIPS codes: county = state (2) + county (3); place = state (2) + place (5).
 const COOK = "17031";
@@ -1003,3 +1003,234 @@ describe("computePay — pay when a worker reports or is sent and gets less work
   });
 });
 
+describe("computePay — holidays (agency policy) and bonuses, with the regular-rate rules the law sets for them", () => {
+  const MA_SITE = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const;
+  // Research golden G6: Worcester MA, $19.00, bill $27.00; Thanksgiving Thursday 2026-11-26.
+  const THANKS = ["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"];
+  const policy = (over: Partial<HolidayPolicy> = {}): HolidayPolicy => ({ clientId: null, name: "Agency holidays", dates: ["2026-11-26"], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: { num: 3, den: 2 }, billNotWorked: false, ...over });
+  const ma = (date: string, minutes: number, over: Partial<Shift> = {}) => shift(date, minutes, { ...MA_SITE, payRateCents: 1900, billRateCents: 2700, ...over });
+  const lines = (r: ReturnType<typeof computePay>, which: "payLines" | "billLines" = "payLines") => r[which].map((l) => [l.type, l.minutes, l.amountCents]);
+  const total = (r: ReturnType<typeof computePay>) => r.payLines.reduce((sum, l) => sum + l.amountCents, 0);
+
+  it("pays the policy's premium for hours worked on a holiday, and bills its own multiplier (worker A)", () => {
+    const r = computePay({ ...input(THANKS.map((d) => ma(d, 480))), holidayPolicies: [policy()] });
+    expect(r.blockers).toEqual([]);
+    expect(lines(r)).toEqual([
+      ["REG", 2400, 76_000],
+      ["HOL", 480, 7600],
+    ]);
+    expect(total(r)).toBe(83_600);
+    expect(lines(r, "billLines")).toEqual([
+      ["REG", 2400, 108_000],
+      ["HOL", 480, 10_800],
+    ]);
+    expect(r.payLines[1]!.explain).toContain("0.5 × $19.00");
+    expect(r.payLines[1]!.explain).toContain("not counted in the regular rate");
+  });
+
+  it("pays a holiday not worked when a person confirmed the worker is eligible (worker B), not as hours worked", () => {
+    const shifts = [...THANKS.filter((d) => d !== "2026-11-26").map((d) => ma(d, 480)), ma("2026-11-26", 0, { entryIds: [], reportedOnly: true })];
+    const r = computePay({ ...input(shifts), holidayPolicies: [policy()], confirmations: [{ id: "h1", kind: "holiday_not_worked", workerId: "w1", assignmentId: "a1", date: "2026-11-26" }] });
+    expect(r.blockers).toEqual([]);
+    expect(lines(r)).toEqual([
+      ["REG", 1920, 60_800],
+      ["HOL_NOT_WORKED", 480, 15_200],
+    ]);
+    expect(lines(r, "billLines")).toEqual([["REG", 1920, 86_400]]);
+  });
+
+  it("adds the holiday premium on top of overtime (worker C, 45 h)", () => {
+    const r = computePay({ ...input(THANKS.map((d) => ma(d, 540))), holidayPolicies: [policy()] });
+    expect(lines(r)).toEqual([
+      ["REG", 2400, 76_000],
+      ["OT", 300, 14_250],
+      ["HOL", 540, 8550],
+    ]);
+    expect(total(r)).toBe(98_800);
+  });
+
+  it("counts a holiday premium below 1.5× in the regular rate (29 C.F.R. § 778.203)", () => {
+    const r = computePay({ ...input(THANKS.map((d) => ma(d, 540))), holidayPolicies: [policy({ workedMultiplier: { num: 5, den: 4 } })] });
+    // Regular rate ($855.00 + $42.75) ÷ 45 h = $19.95; overtime 5 h × ($19.00 + $9.975) = $144.875.
+    expect(lines(r)).toEqual([
+      ["REG", 2400, 76_000],
+      ["OT", 300, 14_488],
+      ["HOL", 540, 4275],
+    ]);
+    expect(total(r)).toBe(94_763);
+    expect(r.payLines[2]!.explain).toContain("is counted in the regular rate");
+    expect(r.payLines[2]!.explain).not.toContain("not counted");
+    expect(r.payLines[1]!.explain).toContain("($855.00 earned at straight time + $42.75 holiday premium below 1.5×) ÷ 45h 00m worked = $19.95/h");
+  });
+
+  it("pays a nondiscretionary bonus, and overtime on the regular rate that includes it", () => {
+    const shifts = [...WEEK.slice(0, 4).map((d) => shift(d, 540)), shift(WEEK[4]!, 480)];
+    const r = computePay({ ...input(shifts), bonuses: [{ id: "b1", workerId: "w1", assignmentId: "a1", workweekStart: WEEK[0]!, amountCents: 5000, kind: "nondiscretionary" }] });
+    expect(r.blockers).toEqual([]);
+    // ($803.00 + $50.00) ÷ 44 h = $19.3863…; overtime 4 h × ($18.25 + ½ × that) = $111.77.
+    expect(lines(r)).toEqual([
+      ["REG", 2400, 73_000],
+      ["OT", 240, 11_177],
+      ["BONUS", 0, 5000],
+    ]);
+  });
+
+  it("California flat-sum bonus: overtime on it at 1.5× and 2× of the bonus over the non-overtime hours (Alvarado)", () => {
+    const CA_SITE = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const;
+    const caJ: JurisdictionRule[] = [
+      ...JURISDICTIONS.filter((j) => j.jurisdiction !== "CA"),
+      ...["weekly_overtime", "ca_daily_overtime", "ca_daily_double_time", "ca_seventh_day", "ca_seventh_day_double_time"].map((ruleCode) => ({ jurisdiction: "CA", ruleCode, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" })),
+    ];
+    const row = (ruleCode: string, kind: OvertimeRule["kind"], thresholdMinutes: number, num: number, den: number, earningType: "OT" | "DT"): OvertimeRule => ({ jurisdiction: "CA", ruleCode, kind, thresholdMinutes, multiplier: { num, den }, earningType, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" });
+    const caOt = [...OT_RULES.filter((o) => o.jurisdiction !== "CA"), row("weekly_overtime", "weekly", 2400, 3, 2, "OT"), row("ca_daily_overtime", "daily", 480, 3, 2, "OT"), row("ca_daily_double_time", "daily_double", 720, 2, 1, "DT"), row("ca_seventh_day", "seventh_day", 0, 3, 2, "OT"), row("ca_seventh_day_double_time", "seventh_day", 480, 2, 1, "DT")];
+    const G1 = ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"];
+    const shifts = [480, 600, 780, 480, 480, 360, 600].map((m, i) => shift(G1[i]!, m, { ...CA_SITE, payRateCents: 1800, billRateCents: 2600 }));
+    const r = computePay({ ...input(shifts, { workweekStartsOn: 0, overtimeRules: caOt, jurisdictionRules: caJ }), bonuses: [{ id: "b1", workerId: "w1", assignmentId: "a1", workweekStart: G1[0]!, amountCents: 5000, kind: "flat_sum" }] });
+    expect(r.blockers).toEqual([]);
+    // $50 ÷ 40 non-overtime hours = $1.25; 20 h × 1.5 × $1.25 + 3 h × 2 × $1.25 = $45.00.
+    expect(r.payLines.filter((l) => l.type === "BONUS" || l.type === "BONUS_OT").map((l) => [l.type, l.amountCents])).toEqual([
+      ["BONUS", 5000],
+      ["BONUS_OT", 4500],
+    ]);
+    expect(total(r)).toBe(136_800 + 5000 + 4500);
+  });
+});
+
+
+describe("computePay — holidays and bonuses: what is refused, and which policy wins", () => {
+  const MA_SITE = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const;
+  const THANKS = ["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"];
+  const policy = (over: Partial<HolidayPolicy> = {}): HolidayPolicy => ({ clientId: null, name: "Agency holidays", dates: ["2026-11-26"], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: { num: 3, den: 2 }, billNotWorked: false, ...over });
+  const ma = (date: string, minutes: number, over: Partial<Shift> = {}) => shift(date, minutes, { ...MA_SITE, payRateCents: 1900, billRateCents: 2700, ...over });
+  const presence = (over: Partial<Shift> = {}) => ma("2026-11-26", 0, { entryIds: [], reportedOnly: true, ...over });
+  const notWorked = (over: Partial<Confirmation> = {}): Confirmation => ({ id: "h1", kind: "holiday_not_worked", workerId: "w1", assignmentId: "a1", date: "2026-11-26", ...over });
+  const fourDays = () => THANKS.filter((d) => d !== "2026-11-26").map((d) => ma(d, 480));
+  const lines = (r: ReturnType<typeof computePay>, which: "payLines" | "billLines" = "payLines") => r[which].map((l) => [l.type, l.minutes, l.amountCents]);
+  const messages = (r: ReturnType<typeof computePay>) => r.blockers.map((b) => b.message).join(" ");
+
+  it("refuses a holiday not worked on a day the worker worked", () => {
+    const r = computePay({ ...input(THANKS.map((d) => ma(d, 480))), holidayPolicies: [policy()], confirmations: [notWorked()] });
+    expect(r.payLines).toEqual([]);
+    expect(messages(r)).toContain("8h 00m were worked that day");
+  });
+
+  it("refuses a holiday not worked that no policy pays", () => {
+    for (const holidayPolicies of [[], [policy({ notWorkedMinutes: 0 })], [policy({ dates: ["2026-12-25"] })]]) {
+      const r = computePay({ ...input([...fourDays(), presence()]), holidayPolicies, confirmations: [notWorked()] });
+      expect(r.payLines).toEqual([]);
+      expect(messages(r)).toContain("no holiday policy for this client pays 2026-11-26 as a holiday not worked");
+    }
+  });
+
+  it("pays a holiday not worked once a day: twice for one assignment pays once; on two assignments is refused", () => {
+    const once = computePay({ ...input([...fourDays(), presence()]), holidayPolicies: [policy()], confirmations: [notWorked(), notWorked({ id: "h2" })] });
+    expect(once.blockers).toEqual([]);
+    expect(lines(once).filter(([t]) => t === "HOL_NOT_WORKED")).toEqual([["HOL_NOT_WORKED", 480, 15_200]]);
+    const two = computePay({ ...input([...fourDays(), presence(), presence({ assignmentId: "a2" })]), holidayPolicies: [policy()], confirmations: [notWorked(), notWorked({ id: "h2", assignmentId: "a2" })] });
+    expect(two.payLines).toEqual([]);
+    expect(messages(two)).toContain("confirmed on two assignments for the same day");
+  });
+
+  it("uses the client's own policy over the agency's", () => {
+    const r = computePay({ ...input(THANKS.map((d) => ma(d, 480))), holidayPolicies: [policy(), policy({ clientId: "c1", name: "Client holidays", workedMultiplier: { num: 2, den: 1 } })] });
+    expect(lines(r)).toEqual([
+      ["REG", 2400, 76_000],
+      ["HOL", 480, 15_200],
+    ]);
+    expect(r.payLines[1]!.explain).toContain('"Client holidays"');
+  });
+
+  it("bills what the policy bills, even when it pays no premium", () => {
+    const worked = computePay({ ...input(THANKS.map((d) => ma(d, 480))), holidayPolicies: [policy({ workedMultiplier: { num: 1, den: 1 }, billWorkedMultiplier: { num: 2, den: 1 } })] });
+    expect(lines(worked)).toEqual([["REG", 2400, 76_000]]);
+    expect(lines(worked, "billLines")).toEqual([
+      ["REG", 2400, 108_000],
+      ["HOL", 480, 21_600],
+    ]);
+    const off = computePay({ ...input([...fourDays(), presence()]), holidayPolicies: [policy({ billNotWorked: true })], confirmations: [notWorked()] });
+    expect(lines(off, "billLines")).toEqual([
+      ["REG", 1920, 86_400],
+      ["HOL_NOT_WORKED", 480, 21_600],
+    ]);
+  });
+
+  it("stops on bad or conflicting holiday policies instead of picking one", () => {
+    const twice = computePay({ ...input(THANKS.map((d) => ma(d, 480))), holidayPolicies: [policy(), policy({ name: "Again" })] });
+    expect(twice.payLines).toEqual([]);
+    expect(twice.blockers.map((b) => b.code)).toEqual(["rule_data_invalid"]);
+    expect(messages(twice)).toContain("both list 2026-11-26");
+    const below = computePay({ ...input(THANKS.map((d) => ma(d, 480))), holidayPolicies: [policy({ workedMultiplier: { num: 1, den: 2 } })] });
+    expect(below.blockers.map((b) => b.code)).toEqual(["rule_data_invalid"]);
+  });
+
+  it("refuses a bonus or a confirmation for a week with no hours, instead of dropping it", () => {
+    const r = computePay({
+      ...input([shift(WEEK[0]!, 480)]),
+      bonuses: [{ id: "b1", workerId: "w1", assignmentId: "a1", workweekStart: "2026-10-12", amountCents: 5000, kind: "nondiscretionary" }],
+      confirmations: [{ id: "c1", kind: "meal_period_missed", workerId: "w1", assignmentId: "a1", date: "2026-10-13" }],
+    });
+    expect(lines(r)).toEqual([["REG", 480, 14_600]]);
+    expect(r.blockers).toHaveLength(1);
+    expect(r.blockers[0]).toMatchObject({ code: "invalid_input", workerId: "w1", workweekStart: "2026-10-12" });
+    expect(r.blockers[0]!.message).toContain("a bonus of $50.00 and a confirmed missed meal period on 2026-10-13 are entered for a week with no hours");
+  });
+
+  it("refuses a bonus whose week does not start the workweek, entered twice, or for an assignment with no hours", () => {
+    const b = { id: "b1", workerId: "w1", assignmentId: "a1", workweekStart: WEEK[0]!, amountCents: 5000, kind: "nondiscretionary" as const };
+    const week = WEEK.slice(0, 5).map((d) => shift(d, 480));
+    const tuesday = computePay({ ...input(week), bonuses: [{ ...b, workweekStart: WEEK[1]! }] });
+    expect(tuesday.payLines).toEqual([]);
+    expect(messages(tuesday)).toContain("not the first day of a workweek");
+    const twice = computePay({ ...input(week), bonuses: [b, { ...b, amountCents: 100 }] });
+    expect(twice.payLines).toEqual([]);
+    expect(messages(twice)).toContain("entered twice");
+    const elsewhere = computePay({ ...input(week), bonuses: [{ ...b, assignmentId: "a9" }] });
+    expect(elsewhere.payLines).toEqual([]);
+    expect(messages(elsewhere)).toContain("for an assignment with no hours this week");
+    const zero = computePay({ ...input(week), bonuses: [{ ...b, amountCents: 0 }] });
+    expect(messages(zero)).toContain("positive whole number of cents");
+  });
+
+  it("explains the regular rate with the bonus in it", () => {
+    const shifts = [...WEEK.slice(0, 4).map((d) => shift(d, 540)), shift(WEEK[4]!, 480)];
+    const r = computePay({ ...input(shifts), bonuses: [{ id: "b1", workerId: "w1", assignmentId: "a1", workweekStart: WEEK[0]!, amountCents: 5000, kind: "nondiscretionary" }] });
+    expect(r.payLines[1]!.explain).toContain("($803.00 earned at straight time + $50.00 nondiscretionary bonus) ÷ 44h 00m worked = $19.3863…/h");
+    expect(r.payLines[2]!.explain).toContain("counted in the regular rate, on which this week's overtime is paid");
+  });
+
+  it("outside California a flat-sum bonus counts like any nondiscretionary bonus", () => {
+    const shifts = [...WEEK.slice(0, 4).map((d) => shift(d, 540)), shift(WEEK[4]!, 480)];
+    const r = computePay({ ...input(shifts), bonuses: [{ id: "b1", workerId: "w1", assignmentId: "a1", workweekStart: WEEK[0]!, amountCents: 5000, kind: "flat_sum" }] });
+    expect(lines(r)).toEqual([
+      ["REG", 2400, 73_000],
+      ["OT", 240, 11_177],
+      ["BONUS", 0, 5000],
+    ]);
+  });
+
+  it("California: a flat-sum bonus week explains its own overtime, and pays a missed meal period at the regular rate with the bonus's share (Ferra; Alvarado)", () => {
+    const CA_SITE = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const;
+    const caJ: JurisdictionRule[] = [
+      ...JURISDICTIONS.filter((j) => j.jurisdiction !== "CA"),
+      ...["weekly_overtime", "ca_daily_overtime", "ca_daily_double_time", "ca_seventh_day", "ca_seventh_day_double_time"].map((ruleCode) => ({ jurisdiction: "CA", ruleCode, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" })),
+    ];
+    const row = (ruleCode: string, kind: OvertimeRule["kind"], thresholdMinutes: number, num: number, den: number, earningType: "OT" | "DT"): OvertimeRule => ({ jurisdiction: "CA", ruleCode, kind, thresholdMinutes, multiplier: { num, den }, earningType, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" });
+    const caOt = [...OT_RULES.filter((o) => o.jurisdiction !== "CA"), row("weekly_overtime", "weekly", 2400, 3, 2, "OT"), row("ca_daily_overtime", "daily", 480, 3, 2, "OT"), row("ca_daily_double_time", "daily_double", 720, 2, 1, "DT"), row("ca_seventh_day", "seventh_day", 0, 3, 2, "OT"), row("ca_seventh_day_double_time", "seventh_day", 480, 2, 1, "DT")];
+    const premiums: PremiumRule[] = [{ jurisdiction: "CA", ruleCode: "ca_meal_premium", premiumMinutes: 60, perWorkdayMax: 1, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 226.7(c)" }];
+    const G1 = ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"];
+    const shifts = [480, 600, 780, 480, 480, 360, 600].map((m, i) => shift(G1[i]!, m, { ...CA_SITE, payRateCents: 1800, billRateCents: 2600 }));
+    const r = computePay({
+      ...input(shifts, { workweekStartsOn: 0, overtimeRules: caOt, jurisdictionRules: caJ, premiumRules: premiums }),
+      bonuses: [{ id: "b1", workerId: "w1", assignmentId: "a1", workweekStart: G1[0]!, amountCents: 5000, kind: "flat_sum" }],
+      confirmations: [{ id: "m1", kind: "meal_period_missed", workerId: "w1", assignmentId: "a1", date: G1[1]! }],
+    });
+    expect(r.blockers).toEqual([]);
+    const byType = Object.fromEntries(r.payLines.filter((l) => ["MEAL_PREMIUM", "BONUS", "BONUS_OT"].includes(l.type)).map((l) => [l.type, l]));
+    expect(byType.MEAL_PREMIUM).toMatchObject({ minutes: 60, amountCents: 1925 });
+    expect(byType.MEAL_PREMIUM!.explain).toContain("with the $50.00 flat-sum bonus spread over the 40h 00m not paid at a premium");
+    expect(byType.BONUS).toMatchObject({ ruleId: "ca_flat_sum_bonus", amountCents: 5000 });
+    expect(byType.BONUS_OT).toMatchObject({ ruleId: "ca_flat_sum_bonus", minutes: 1380, amountCents: 4500 });
+    expect(byType.BONUS_OT!.explain).toContain("$50.00 ÷ 40h 00m not paid at a premium = $1.25/h; 20h 00m × 1.5 × $1.25 + 3h 00m × 2 × $1.25 = 4500¢ exactly → $45.00");
+    expect(r.payLines.find((l) => l.type === "OT")!.explain).toContain("The flat-sum bonus is not in this rate");
+  });
+});

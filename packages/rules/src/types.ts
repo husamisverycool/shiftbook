@@ -12,11 +12,18 @@ export type EarningType =
   | "MW_TRUEUP"
   /** Pay for reporting to work and being given less than the scheduled work (California, Massachusetts). */
   | "REPORTING_PAY"
+  /** The premium on hours worked on a holiday, under the agency's (or client's) holiday policy. */
   | "HOL"
+  /** Pay for a holiday not worked, when a person confirmed the worker is eligible. Not hours worked. */
+  | "HOL_NOT_WORKED"
   | "DIFF"
   | "MEAL_PREMIUM"
   | "REST_PREMIUM"
-  | "MIN_GUARANTEE";
+  | "MIN_GUARANTEE"
+  /** A nondiscretionary bonus (a lump sum: minutes 0). */
+  | "BONUS"
+  /** California: overtime on a flat-sum bonus (Alvarado v. Dart Container). */
+  | "BONUS_OT";
 
 /** 0 = Sunday … 6 = Saturday. */
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -112,7 +119,7 @@ export interface PremiumRule {
   citation: string;
 }
 
-export type ConfirmationKind = "meal_period_missed" | "rest_period_missed" | "reported_short";
+export type ConfirmationKind = "meal_period_missed" | "rest_period_missed" | "reported_short" | "holiday_not_worked";
 
 /** Something a person confirmed about a worker's day on one assignment (the engine computes, a person confirms). */
 export interface Confirmation {
@@ -153,6 +160,41 @@ export interface GuaranteeRule {
   citation: string;
 }
 
+/**
+ * A holiday policy: agency data, not law (no law here requires holiday pay). A client's own policy
+ * wins over the agency's default (clientId null). The law still decides how its pay counts: a worked
+ * holiday premium of 1.5× or more stays out of the regular rate, a smaller one goes in, and pay for a
+ * holiday not worked is not hours worked (29 U.S.C. § 207(e); 29 C.F.R. §§ 778.203, 778.218, 778.219).
+ */
+export interface HolidayPolicy {
+  clientId: string | null;
+  name: string;
+  dates: IsoDate[];
+  /** Pay for hours worked on a holiday, as a multiple of the pay rate (1/1: no premium). */
+  workedMultiplier: Fraction;
+  /** Minutes paid for a holiday not worked, when a person confirms the worker is eligible (0: none). */
+  notWorkedMinutes: number;
+  /** Bill for hours worked on a holiday, as a multiple of the bill rate; null bills them like any hours. */
+  billWorkedMultiplier: Fraction | null;
+  /** Whether a holiday not worked is billed (at the bill rate). */
+  billNotWorked: boolean;
+}
+
+/**
+ * A bonus for one workweek, entered and classified by a person. Nondiscretionary bonuses count in
+ * the regular rate (29 C.F.R. §§ 778.208–778.211); a flat-sum bonus in California has its own
+ * overtime (Alvarado v. Dart Container Corp. (2018) 4 Cal.5th 542), and elsewhere counts like any
+ * nondiscretionary bonus. A bonus for a longer period (apportioned back) is not handled here.
+ */
+export interface Bonus {
+  id: string;
+  workerId: string;
+  assignmentId: string;
+  workweekStart: IsoDate;
+  amountCents: number;
+  kind: "nondiscretionary" | "flat_sum";
+}
+
 export interface PayInput {
   workweekStartsOn: Weekday;
   shifts: Shift[];
@@ -162,6 +204,8 @@ export interface PayInput {
   premiumRules?: PremiumRule[];
   guaranteeRules?: GuaranteeRule[];
   confirmations?: Confirmation[];
+  holidayPolicies?: HolidayPolicy[];
+  bonuses?: Bonus[];
 }
 
 export interface Line {

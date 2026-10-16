@@ -71,6 +71,10 @@ const NOT_CARRIED: Partial<Record<EarningType, string>> = {
   REST_PREMIUM: "a rest-period premium; pay it in Gusto as a separate amount",
   REPORTING_PAY: "reporting-time pay for a short day; pay it in Gusto as a separate amount",
   MIN_GUARANTEE: "a day-labor minimum for a short day; pay it in Gusto as a separate amount",
+  HOL: "a holiday premium for hours worked on a holiday; pay it in Gusto as a separate amount",
+  HOL_NOT_WORKED: "holiday pay for a holiday not worked; enter it in Gusto as holiday pay",
+  BONUS: "a bonus; enter it in Gusto as a bonus",
+  BONUS_OT: "overtime on a flat-sum bonus; pay it in Gusto as a separate amount",
 };
 
 function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): HourColumn {
