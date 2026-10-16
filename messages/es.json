@@ -3563,6 +3563,10 @@
       "cancel": "Cancelar",
       "saved": "Guardado.",
       "readOnly": "Puede ver este perfil; el Propietario y los coordinadores lo cambian.",
+      "facts": {
+        "payroll": "Número de nómina {number} en {system}",
+        "hired": "Contratación: {date}"
+      },
       "personal": {
         "title": "Datos personales",
         "firstName": "Nombre",

@@ -3563,6 +3563,10 @@
       "cancel": "Cancel",
       "saved": "Saved.",
       "readOnly": "You can look at this profile; the Owner and coordinators change it.",
+      "facts": {
+        "payroll": "Payroll number {number} in {system}",
+        "hired": "Hired {date}"
+      },
       "personal": {
         "title": "Personal",
         "firstName": "First name",

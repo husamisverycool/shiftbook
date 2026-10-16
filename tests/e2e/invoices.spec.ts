@@ -59,6 +59,8 @@ for (const locale of ["en", "es"] as const) {
     await check(page, "clients list");
     await page.getByRole("link", { name: PRAIRIE }).click();
     await expect(page.getByRole("heading", { level: 1 })).toContainText(PRAIRIE);
+    // Its facts under the title: the bill-to its invoices carry.
+    await expect(page.getByTestId("client-facts")).toContainText("payables@prairieline.example.com");
     const settings = page.getByTestId("invoice-settings");
     await expect(settings).toContainText(m.clients.notSeparated);
     await check(page, "client page");

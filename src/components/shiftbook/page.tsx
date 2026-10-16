@@ -133,6 +133,9 @@ export function Crumbs({ items, label }: { items: { label: ReactNode; href: Href
   );
 }
 
+/** A link inside a record page's facts line and details, underlined so it reads as one (as the compliance duty's links). */
+export const RECORD_LINK = "underline underline-offset-4 hover:text-foreground";
+
 /**
  * A detail page's body (Stripe detail page: "line items on the left and a summary on the right"; "a
  * main activity feed and a sidebar of metadata"): the record's sections, then its details beside

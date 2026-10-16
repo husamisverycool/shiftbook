@@ -14,14 +14,11 @@ import { Link } from "@/i18n/navigation";
 import type { InvoiceDetail } from "@/server/invoices/queries";
 import type { InvoiceReceivables, PaymentClients } from "@/server/receivables/queries";
 import { dateRange, longDate, money } from "../format";
-import { Crumbs, Facts, Page, PageHeader, RecordLayout, Section } from "../page";
+import { Crumbs, Facts, Page, PageHeader, RECORD_LINK, RecordLayout, Section } from "../page";
 import { InvoicePayments } from "../receivables/invoice-payments";
 import { downloadHref, InvoiceStatusBadge } from "./invoices-table";
 
 type Line = NonNullable<InvoiceDetail["printed"]>["lines"][number];
-
-/** A link inside a record's text and details, underlined so it reads as one (as the compliance duty's). */
-const RECORD_LINK = "underline underline-offset-4 hover:text-foreground";
 
 export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { detail: InvoiceDetail; back: string; ar: InvoiceReceivables | null; clients: PaymentClients; today: string; canCollect: boolean }) {
   const t = useTranslations("invoices");
