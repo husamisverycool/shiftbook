@@ -1776,5 +1776,19 @@
       "busy": "Files are being created right now. Try again in a moment.",
       "generic": "Something went wrong. Nothing was saved."
     }
+  },
+  "reminderTemplate": {
+    "before_due": {
+      "subject": "Invoice {number} is due on {due}",
+      "body": "Hello,\n\nA friendly note that invoice {number} for {amount} is due on {due}.\n\nIf payment is already on its way, thank you. If anything on the invoice needs a second look, just reply to this email.\n\nThank you,\n{agency}\n{phone}\n{email}"
+    },
+    "overdue": {
+      "subject": "Reminder: invoice {number} is {days} days past due",
+      "body": "Hello,\n\nOur records show {amount} still open on invoice {number}, which was due on {due} ({days} days ago).\n\nCould you let us know when we can expect payment? If there is a question about the hours or the rates, reply and we will sort it out.\n\nThank you,\n{agency}\n{phone}\n{email}"
+    },
+    "final": {
+      "subject": "Final reminder: invoice {number} is {days} days past due",
+      "body": "Hello,\n\nInvoice {number} still has {amount} open and is now {days} days past its due date of {due}.\n\nPlease arrange payment this week, or reply to tell us what is holding it up so we can resolve it together.\n\nThank you,\n{agency}\n{phone}\n{email}"
+    }
   }
 }

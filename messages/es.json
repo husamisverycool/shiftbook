@@ -1776,5 +1776,19 @@
       "busy": "Se están creando los archivos en este momento. Inténtelo de nuevo en un momento.",
       "generic": "Algo salió mal. No se guardó nada."
     }
+  },
+  "reminderTemplate": {
+    "before_due": {
+      "subject": "La factura {number} vence el {due}",
+      "body": "Hola:\n\nLe recordamos que la factura {number} por {amount} vence el {due}.\n\nSi el pago ya está en camino, muchas gracias. Si algo de la factura necesita revisarse, responda a este correo.\n\nGracias,\n{agency}\n{phone}\n{email}"
+    },
+    "overdue": {
+      "subject": "Recordatorio: la factura {number} lleva {days} días vencida",
+      "body": "Hola:\n\nSegún nuestros registros, la factura {number} tiene {amount} pendientes y venció el {due} (hace {days} días).\n\n¿Podría indicarnos cuándo podemos esperar el pago? Si tiene alguna pregunta sobre las horas o las tarifas, responda y lo resolveremos.\n\nGracias,\n{agency}\n{phone}\n{email}"
+    },
+    "final": {
+      "subject": "Último recordatorio: la factura {number} lleva {days} días vencida",
+      "body": "Hola:\n\nLa factura {number} todavía tiene {amount} pendientes y lleva {days} días vencida desde el {due}.\n\nLe pedimos que organice el pago esta semana, o que nos responda para contarnos qué lo está demorando y resolverlo juntos.\n\nGracias,\n{agency}\n{phone}\n{email}"
+    }
   }
 }

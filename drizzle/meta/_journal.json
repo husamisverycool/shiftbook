@@ -183,6 +183,13 @@
       "when": 1792091600697,
       "tag": "0025_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792091700000,
+      "tag": "0026_receivables",
+      "breakpoints": true
     }
   ]
 }

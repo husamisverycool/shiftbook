@@ -26,6 +26,7 @@ import { computeRun, regularRates, type RunIssue } from "../run/service";
 import { invoiceDocuments, planEntries } from "./invoice-documents";
 import { billDifferences, planCorrectionInvoices, planInvoices, planLineOf } from "./invoice-plan";
 import { payrollFixture } from "./payroll-fixture";
+import { settleStatuses } from "../receivables/balances";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 
@@ -179,6 +180,9 @@ export async function createRunFiles(
     ]);
     invoicesOut.push({ invoiceId: inv!.id, clientId, clientName: client.name, number, kind, originalNumber: original?.number ?? null, totalCents: p.totalCents, storageKey: pdfKey, sha256: pdfSha });
   }
+
+  // A credit note lowers what its original asks for: the original is paid once nothing is left (slice h).
+  await settleStatuses(tx, plan.plans.filter((p) => p.kind === "credit_note" && p.original).map((p) => p.original!.id));
 
   // The paid entries are locked: they can never be paid again. The status they had is kept, so a
   // correction can open them again as they were (decision E13).

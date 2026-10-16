@@ -190,6 +190,9 @@ export const NICKNAMES: [string, string][] = [
 export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   { key: "workweek_starts_on", value: 1 }, // Monday
   { key: "time_zone", value: "America/Chicago" }, // where "today" is for the agency
+  // Slice h: a deposit matched on its amount alone looks at invoices issued from 90 days before to
+  // 20 days after it (QuickBooks Online's documented window).
+  { key: "receivables.match_window", value: { daysBefore: 90, daysAfter: 20 } },
   { key: "rounding_mode", value: "half_up" },
   // The payroll file (slice f, decision F1): Gusto in the demo; every system's codes ready to switch to.
   { key: "payroll.target", value: { format: "gusto_hours_csv" } },

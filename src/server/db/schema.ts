@@ -1052,6 +1052,138 @@ export type ApprovalLinkRow = typeof approvalLinks.$inferSelect;
 export type ClientDisputeRow = typeof clientDisputes.$inferSelect;
 export type EmailMessageRow = typeof emailMessages.$inferSelect;
 
+// ---------- receivables and cash application (SPEC §14; drizzle/0026; plan slice h) ----------
+export const PAYMENT_METHODS = ["check", "ach", "wire", "card", "bank_deposit", "other"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+export const WRITE_OFF_REASONS = ["small_balance", "disputed_hours", "rate_difference", "bank_fee", "bad_debt", "other"] as const;
+export type WriteOffReason = (typeof WRITE_OFF_REASONS)[number];
+export const SHORT_PAY_REASONS = ["disputed_hours", "rate_difference", "bank_fee", "client_deduction", "unknown", "other"] as const;
+export type ShortPayReason = (typeof SHORT_PAY_REASONS)[number];
+export const REMINDER_STAGES = ["before_due", "overdue", "final"] as const;
+export type ReminderStage = (typeof REMINDER_STAGES)[number];
+export type BankLineStatus = "review" | "posted" | "excluded";
+
+/** How a bank file's columns are read (decision H5). Columns are zero-based positions. */
+export interface BankMapping {
+  headerRow: number | null;
+  date: number;
+  description: number;
+  reference: number | null;
+  amounts: { kind: "signed"; amount: number } | { kind: "split"; deposits: number; withdrawals: number } | { kind: "typed"; amount: number; type: number };
+  dateFormat: "MM/DD/YYYY" | "YYYY-MM-DD" | "DD/MM/YYYY";
+}
+
+export const bankImports = pgTable("bank_imports", {
+  id: id(),
+  agencyId: agencyId(),
+  filename: text("filename").notNull(),
+  sha256: text("sha256").notNull(),
+  mapping: jsonb("mapping").$type<BankMapping>().notNull(),
+  lineCount: integer("line_count").notNull(),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
+
+export const bankLines = pgTable(
+  "bank_lines",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    importId: uuid("import_id").notNull().references(() => bankImports.id),
+    rowNumber: integer("row_number").notNull(),
+    postedOn: isoDate("posted_on").notNull(),
+    description: text("description").notNull(),
+    reference: text("reference"),
+    amountCents: integer("amount_cents").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    status: text("status").$type<BankLineStatus>().notNull().default("review"),
+    excludedReason: text("excluded_reason"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("bank_lines_fingerprint").on(t.agencyId, t.fingerprint)],
+);
+
+export const payments = pgTable(
+  "payments",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    clientId: uuid("client_id").notNull().references(() => clients.id),
+    receivedOn: isoDate("received_on").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    method: text("method").$type<PaymentMethod>().notNull(),
+    reference: text("reference"),
+    memo: text("memo"),
+    bankLineId: uuid("bank_line_id").references(() => bankLines.id),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [index("payments_client").on(t.agencyId, t.clientId)],
+);
+
+export const paymentMatches = pgTable(
+  "payment_matches",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    paymentId: uuid("payment_id").notNull().references(() => payments.id),
+    invoiceId: uuid("invoice_id").notNull().references(() => invoices.id),
+    amountCents: integer("amount_cents").notNull(),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [index("payment_matches_invoice").on(t.agencyId, t.invoiceId), index("payment_matches_payment").on(t.agencyId, t.paymentId)],
+);
+
+export const writeOffs = pgTable(
+  "write_offs",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    invoiceId: uuid("invoice_id").notNull().references(() => invoices.id),
+    writtenOn: isoDate("written_on").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    reason: text("reason").$type<WriteOffReason>().notNull(),
+    note: text("note"),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [index("write_offs_invoice").on(t.agencyId, t.invoiceId)],
+);
+
+export const shortPays = pgTable("short_pays", {
+  id: id(),
+  agencyId: agencyId(),
+  invoiceId: uuid("invoice_id").notNull().unique("short_pays_one").references(() => invoices.id),
+  reason: text("reason").$type<ShortPayReason>().notNull(),
+  note: text("note"),
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+  recordedBy: uuid("recorded_by"),
+  recordedByLabel: text("recorded_by_label").notNull(),
+});
+
+export const reminders = pgTable(
+  "reminders",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    invoiceId: uuid("invoice_id").notNull().references(() => invoices.id),
+    stage: text("stage").$type<ReminderStage>().notNull(),
+    locale: text("locale").$type<"en" | "es">().notNull(),
+    how: text("how").$type<"copied" | "email_app">().notNull(),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [index("reminders_invoice").on(t.agencyId, t.invoiceId)],
+);
+
 export const TENANT_TABLES = [
   "branches",
   "users",
@@ -1089,4 +1221,11 @@ export const TENANT_TABLES = [
   "email_messages",
   "demo_mailbox",
   "correction_decisions",
+  "bank_imports",
+  "bank_lines",
+  "payments",
+  "payment_matches",
+  "write_offs",
+  "short_pays",
+  "reminders",
 ] as const;

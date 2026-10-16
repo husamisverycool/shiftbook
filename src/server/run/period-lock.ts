@@ -83,6 +83,14 @@ export async function lockPayrollSettings(tx: Tx, agencyId: string, mode: "exclu
 }
 
 /**
+ * The agency's receivables (slice h): payments, applications and write-offs change one at a time,
+ * so two people can never apply the same balance twice.
+ */
+export async function lockReceivables(tx: Tx, agencyId: string): Promise<void> {
+  await advisoryLock(tx, `receivables:${agencyId}`, "exclusive");
+}
+
+/**
  * "exported": its files were created here (the latest run is exported or closed).
  * "history": paid before Shiftbook — no exported run here, and hours already locked by that payment.
  * A correction in progress (an earlier version exported, the latest not yet) is "open".
