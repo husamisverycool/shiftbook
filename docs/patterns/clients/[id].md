@@ -13,6 +13,7 @@ Source URL: https://docs.stripe.com/invoicing/invoice-rendering-template
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/AddInvoiceTerms.htm
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/understandingInvoiceTerms.htm
 Source URL: https://support.avionte.com/hc/en-us/articles/56451748020243-BOLD-Front-Office-Billing-Preferences
+Source URL: https://support.freshbooks.com/hc/en-us/articles/217181797-What-are-clients
 Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §5.3). Confidence: high for the
 sections and the dated versions; the page layout follows Stripe's documented Details → Edit flow.
 
@@ -29,7 +30,11 @@ and the client's invoices.
    - Billing: payment terms (days); overtime billing; bill premiums; bill guarantees.
    - "In effect from {date}" and the earlier versions as a list (Bullhorn Invoice Term versions):
      each with its dates.
-3. **Invoices** (Stripe customer page): this client's invoices, newest first, the same rows as the
+3. **What the client owes** (slice h; FreshBooks client profile: outstanding split into overdue
+   and not yet due, credit available): total owed, overdue, not yet due, credit (payments not yet
+   applied), and days to pay (Xero contact: the average days from issue to paid, with how many
+   invoices it counts); **Record payment**.
+4. **Invoices** (Stripe customer page): this client's invoices, newest first, the same rows as the
    invoices list, linking to each.
 
 ## Interactions
