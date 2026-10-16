@@ -9,6 +9,8 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
 import type { ComplianceRule } from "./generate";
+import { ratesForDuty, weeksToTrueUp } from "./equal-pay-rates";
+import { EQUAL_PAY_KINDS } from "./kinds";
 import { keepsNoFiles, MA_CONTACT_KEY, MA_STATEMENT_KEY } from "./service";
 import { displayStatus, STATUS_ORDER, type DisplayStatus } from "./status";
 import { complianceRules, OPEN_DAYS_KEY, syncIfFree, syncObligations } from "./sync";
@@ -230,6 +232,8 @@ export async function obligationDetail(tx: Tx, actor: Actor, id: string, today: 
     mayReopen: actor.role === "owner" && o.status !== "open" && !o.closedBySystem,
     notice,
     proof,
+    /** The Illinois equal-pay rates for the crossing's worker at its client (slice j, J6). */
+    equalPay: (EQUAL_PAY_KINDS as readonly string[]).includes(o.kind) && o.workerId && o.clientId ? { rates: await ratesForDuty(tx, o.workerId, o.clientId), trueUps: await weeksToTrueUp(tx, o.workerId, o.clientId) } : null,
     /** Form I-9 copies are never kept here (dates only). */
     keepsNoFiles: keepsNoFiles(o.kind),
     /** Duties Shiftbook can make a document for. */

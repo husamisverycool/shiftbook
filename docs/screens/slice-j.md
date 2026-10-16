@@ -163,3 +163,65 @@ Screens: `j30-counters.png`, `j31-counter-balances.png`, `j32-add-balance.png`, 
 
 ### Differences found and what was done
 - The intro and limits read "720:00 hours"; thresholds are now whole hours ("720 h", "4,160 h").
+
+## Step 3b — the Illinois equal-pay rate
+
+### The run waits for the rate — `docs/patterns/convert.md` (Exceptions: the fix that applies)
+Screen: `j34-equal-pay-blocker.png`.
+- ✓ From the first pay period that begins after a crossing, covered hours at that client with no
+  rate in force and no request on file stop the run: "Equal-pay rate due for hours after 720 at one
+  client", with Open the equal-pay duties.
+
+### The rate on the crossing's duty — `docs/patterns/compliance/[id].md` (Overview: the duty's form)
+Screens: `j35-equal-pay-form.png`, `j36-equal-pay-true-up.png`, `j37-equal-pay-remove.png`,
+`j38-equal-pay-removed.png`, `es-j35-equal-pay-form.png`.
+- ✓ From a date (the crossing day for the first rate, today once one is on file); how the client
+  compared (a comparable direct hire, the closest seniority, the wage survey's median or 75th
+  percentile); the hourly rate; the benefits' hourly cash value; who it was compared with; a note —
+  Save rate marks the duty done.
+- ✓ Or "The client was asked" on a date, never in the future: the rate card is paid and a correction
+  trues it up.
+- ✓ Paid weeks to true up (`j36`): the client's figures came after the week of 2026-10-05 was paid at
+  the rate card, so the week is listed, linking to its files where a correction starts.
+- ✓ The rows on file, newest first, each with who and when, and Remove: a reason is required
+  (`j37`); the row stays listed, struck through, with who removed it and why, and with no rate left
+  the duty is open again — here overdue (`j38`).
+
+### The run pays it
+- ✓ Marcus Bell's week of 46 hours at $20.00: 40 h × $20.00 + 6 h × $30.00 = $980.00 (at the card's
+  $18.25 it was $894.25); with Anita Patel's $438.00, gross $1,418.00 (browser test). Each pay line
+  says why its rate is above the card's; billing stays on the rate card.
+- ✓ A proposed answer key, `tests/goldens/_proposed/rules/il-s42-equal-pay-rate-paid.json`, checked
+  against hand arithmetic, waits for the owner's approval.
+
+### Second opinion, fixed (decision 0023)
+1. A request recorded after a rate cancelled the rate: the rate in force is now the latest rate row
+   on or before the day; a request never undoes one.
+2. A request made today never cleared the hold: any recorded request clears it.
+3. Work the Act does not cover (Indiana, clerical) at the same client was raised and held: only
+   covered, otherwise valid shifts are.
+4. The hold was by workweek, not by pay period: it now starts with the first pay period that begins
+   after the crossing.
+5. The 4,160-hour step to the survey's 75th percentile was not enforced: a median dated before it
+   holds the run until a newer rate or a request.
+6. A crossing a person set aside as not applicable still held the run: it no longer does.
+7. Only regular and overtime lines said why: the minimum-wage top-up, holiday, reporting-pay and
+   holiday-not-worked lines do too.
+8. Bill lines split by pay-rate group when two pay rates meet in a week (a cent of rounding per
+   group): accepted and asserted in the engine test.
+9. A missing figure slipped past the database check, and one bad row emptied the whole run: the check
+   requires every figure, and a bad row holds only its worker.
+10. A wrong row could not be taken back: Remove with a reason, kept on file; the form's date defaults
+    sensibly; a note says when a new rate replaces one.
+11. The raise ran before the shift was checked, and rate plus benefits had no cap: both fixed.
+12. Weeks paid before the figures arrived were not shown: they are listed on the duty.
+13. Smaller items: field lengths match the database; the benefits field is checked.
+
+### Differences found and what was done
+- Removing a row left the earlier "Saved" message on screen; removal now says "Removed. It stays
+  listed with your reason."
+- The struck-through row also struck through who removed it and why; only the row itself is struck
+  through now.
+- On Spanish screens, the "How it was worked out" text and the note after each citation are in
+  English (stored when the duty is made). This is true of every duty since step 1; it is listed for
+  the Spanish/English slice (k).

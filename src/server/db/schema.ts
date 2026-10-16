@@ -1071,6 +1071,39 @@ export const equalPayRates = pgTable("equal_pay_rates", {
   createdByLabel: text("created_by_label").notNull(),
   removedAt: timestamp("removed_at", { withTimezone: true }),
   removedByLabel: text("removed_by_label"),
+  /** Why a person removed it (null when a rate from the same date replaced it). */
+  removedReason: text("removed_reason"),
+});
+
+/** The ACA look-back's limits (26 C.F.R. § 54.4980H), dated reference data (slice j, J8). */
+export const acaRules = pgTable("aca_rules", {
+  id: id(),
+  minMeasurementMonths: integer("min_measurement_months").notNull(),
+  maxMeasurementMonths: integer("max_measurement_months").notNull(),
+  maxAdminDays: integer("max_admin_days").notNull(),
+  minStabilityMonths: integer("min_stability_months").notNull(),
+  fullTimeMinutesPerWeek: integer("full_time_minutes_per_week").notNull(),
+  breakWeeks: integer("break_weeks").notNull(),
+  citation: text("citation").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+});
+
+/** Hours of service before Shiftbook, per worker and month (an import; slice j, J8). */
+export const acaMonthlyHours = pgTable("aca_monthly_hours", {
+  id: id(),
+  agencyId: agencyId(),
+  workerId: uuid("worker_id")
+    .notNull()
+    .references(() => workers.id),
+  month: isoDate("month").notNull(),
+  minutes: integer("minutes").notNull(),
+  source: text("source").notNull(),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+  replacedAt: timestamp("replaced_at", { withTimezone: true }),
 });
 
 export const obligationNotes = pgTable("obligation_notes", {
@@ -1473,4 +1506,5 @@ export const TENANT_TABLES = [
   "obligation_notes",
   "hours_opening_balances",
   "equal_pay_rates",
+  "aca_monthly_hours",
 ] as const;

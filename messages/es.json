@@ -416,7 +416,8 @@
         "bonus_kind_check": "Un bono de California por revisar",
         "approaching_equal_pay_hours": "Cerca de 720 horas con un cliente de Illinois",
         "equal_pay_obligation": "Ahora aplica la igualdad salarial de Illinois",
-        "equal_pay_rate_missing": "Horas después de 720 con un cliente sin tarifa de igualdad salarial"
+        "equal_pay_rate_missing": "Horas después de 720 con un cliente sin tarifa de igualdad salarial",
+        "equal_pay_rate_needed": "Tarifa de igualdad salarial pendiente para horas después de 720 en un cliente"
       },
       "rules": {
         "ca_daily_overtime": "horas extra diarias",
@@ -437,7 +438,8 @@
       "bothRealConfirm": "Confirmar",
       "goToUpload": "Ir a las hojas de horas",
       "openApprovals": "Abrir Aprobaciones de clientes",
-      "openPayrollSettings": "Abrir la configuración del archivo de nómina"
+      "openPayrollSettings": "Abrir la configuración del archivo de nómina",
+      "openEqualPay": "Abrir las obligaciones de igualdad salarial"
     },
     "files": {
       "successTitle": "Archivos creados",
@@ -2585,7 +2587,43 @@
       },
       "missingRegistration": "No hay registro de Illinois vigente: primero agréguelo en Ajustes de cumplimiento.",
       "noI9Files": "Las copias del Formulario I-9 no se guardan en Shiftbook (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
-      "proofNoRegistration": "No hay registro de Illinois vigente el {date}, el día en que el cliente verifica: primero agregue el registro renovado."
+      "proofNoRegistration": "No hay registro de Illinois vigente el {date}, el día en que el cliente verifica: primero agregue el registro renovado.",
+      "equalPay": {
+        "title": "Tarifa de igualdad salarial",
+        "intro": "Los datos del cliente, desde la fecha en que aplican: la nómina paga entonces al menos la tarifa más el valor en efectivo por hora de los beneficios, y las horas extra sobre ella. Mientras no lleguen, registre que se los pidió al cliente: se paga la tarifa de la tarjeta y una corrección lo ajusta.",
+        "from": "Desde",
+        "method": "Cómo comparó el cliente",
+        "methods": {
+          "comparator": "La tarifa de un empleado directo comparable",
+          "closest_seniority": "El empleado directo con la antigüedad más cercana",
+          "survey_median": "Encuesta salarial: la mediana del área para el puesto (720 horas)",
+          "survey_75th": "Encuesta salarial: el percentil 75 (4,160 horas)"
+        },
+        "rate": "Tarifa por hora",
+        "benefits": "Valor en efectivo por hora de los beneficios",
+        "comparator": "Comparado con (puesto y antigüedad, o código SOC y área)",
+        "note": "Nota",
+        "save": "Guardar tarifa",
+        "saved": "Guardado. La obligación está cumplida y la próxima nómina paga la tarifa.",
+        "or": "o",
+        "askedOn": "Se pidió al cliente el",
+        "asked": "Se pidió al cliente",
+        "askedSaved": "Guardado. Se paga la tarifa de la tarjeta hasta que lleguen los datos del cliente.",
+        "none": "Aún no hay tarifa registrada.",
+        "rateRow": "Desde el {date}: {total} por hora ({rate} + beneficios {benefits}) — {method}; comparado con {comparator}.",
+        "askedRow": "Desde el {date}: se pidieron los datos al cliente.",
+        "by": "por {by}, {date}",
+        "replaces": "Guardar reemplaza la tarifa desde el {date} (queda en la lista como reemplazada).",
+        "trueUpTitle": "Semanas pagadas que hay que ajustar",
+        "trueUpBody": "Estas semanas se pagaron sin la tarifa de igualdad salarial vigente entonces. Inicie una corrección para cada una, para pagar la diferencia lo antes posible.",
+        "week": "Del {from} al {to}",
+        "remove": "Quitar",
+        "removeTitle": "Quitar esta fila",
+        "removeBody": "Queda en la lista como quitada, con su motivo; la próxima nómina ya no la usa. Si no queda ninguna tarifa, esta obligación vuelve a quedar abierta.",
+        "removed": "quitada por {by}: {reason}",
+        "removedSaved": "Quitada. Queda en la lista con su motivo.",
+        "replaced": "reemplazada"
+      }
     },
     "who": {
       "owner": "el Propietario",
@@ -2629,7 +2667,13 @@
         "minutes": "Escriba horas como 620 o 620:30.",
         "throughOn": "Escriba una fecha que no sea posterior a hoy.",
         "workerId": "Elija el trabajador y el cliente.",
-        "clientId": "Elija el trabajador y el cliente."
+        "clientId": "Elija el trabajador y el cliente.",
+        "effectiveFrom": "Escriba la fecha desde la que aplica (una solicitud: no posterior a hoy).",
+        "method": "Elija cómo comparó el cliente.",
+        "rateCents": "Escriba la tarifa por hora, como 18.50.",
+        "benefitsCents": "Escriba el valor en efectivo por hora de los beneficios, o 0.",
+        "comparator": "Diga con quién se comparó (hasta 300 caracteres).",
+        "askedOverRate": "Hay una tarifa registrada desde esa fecha; una solicitud no la cambiaría. Elija otra fecha."
       },
       "closed_by_data": "Shiftbook cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
     },

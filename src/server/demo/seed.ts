@@ -65,6 +65,7 @@ const CLEAR_ORDER = [
   "obligation_notes",
   "hours_opening_balances",
   "equal_pay_rates",
+  "aca_monthly_hours",
   "obligation_documents",
   "obligations",
   "agency_registrations",

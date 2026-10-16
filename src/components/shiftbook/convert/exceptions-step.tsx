@@ -139,6 +139,11 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
       <Link href={{ pathname: "/approvals", query: { period: periodId, ...(g.code === "client_dispute_open" ? { status: "disputed" } : {}) } }} className={buttonVariants({ size: "sm", variant: "outline" })}>
         {t("openApprovals")}
       </Link>
+    ) : g.code === "equal_pay_rate_needed" ? (
+      // The Illinois equal-pay rate is entered on its duty in Compliance (slice j).
+      <Link href={{ pathname: "/compliance", query: { area: "equal_pay" } }} className={buttonVariants({ size: "sm", variant: "outline" })} data-testid="open-equal-pay">
+        {t("openEqualPay")}
+      </Link>
     ) : g.code === "missing_payroll_id" || g.code === "no_payroll_target" ? (
       // Workyard maps missing ids inside the export; ClickTime names them: open the settings on them.
       <div className="flex flex-wrap gap-2 sm:justify-end">

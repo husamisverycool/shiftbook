@@ -68,7 +68,7 @@ describe("hours counters (J5)", () => {
     expect(await inAgency((tx) => removeOpeningBalance(tx, theOwner, b!.id, "Entered for the wrong worker"))).toEqual({ ok: true });
     row = (await view()).rows.find((r) => r.workerId === marcus)!;
     expect([row.balanceMinutes, row.balances.map((x) => [x.removedBy, x.removedReason])]).toEqual([0, [["Test owner", "Entered for the wrong worker"]]]);
-    const events = await owner.db.select().from(s.auditEvents).where(eq(s.auditEvents.entityType, "hours_opening_balance"));
+    const events = await owner.db.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "hours_opening_balance"), eq(s.auditEvents.entityId, b!.id)));
     expect(events.map((e) => e.action).sort()).toEqual(["create", "update"]);
     expect((await inAgency((tx) => balanceChoices(tx))).some((c) => c.workerId === marcus && c.clientId === prairie)).toBe(true);
   });

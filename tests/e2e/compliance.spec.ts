@@ -12,6 +12,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { toExceptions, toTotals, uploadPrairieWeek } from "./flow";
 
 const en = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
 const es = JSON.parse(readFileSync("messages/es.json", "utf8")) as typeof import("../../messages/en.json");
@@ -250,6 +251,69 @@ for (const locale of ["en", "es"] as const) {
     await expect(dialog).toBeHidden();
     await expect(page.getByTestId("balance")).toContainText(locale === "en" ? "Wrong worker" : "Trabajador equivocado");
     await expect(marcus.locator("td").nth(5)).toHaveText("—");
+    expect(errors).toEqual([]);
+  });
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`compliance equal pay: hours before Shiftbook cross 720, the run waits for the rate, the rate is entered and paid (${locale})`, async ({ page }) => {
+    test.setTimeout(300_000);
+    const m = MESSAGES[locale];
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (msg) => msg.type() === "error" && /MISSING_MESSAGE|FORMATTING_ERROR/.test(msg.text()) && errors.push(msg.text()));
+    const dialog = page.getByRole("dialog");
+
+    // Marcus Bell's 720 hours at Prairie Line before Shiftbook, up to 2026-09-27: his next hour crosses.
+    await page.goto(`/${locale}/compliance/counters`);
+    await page.getByTestId("add-balance").click();
+    await dialog.getByTestId("balance-pair").selectOption({ label: "Marcus Bell · Prairie Line Manufacturing (demo)" });
+    await dialog.getByTestId("balance-hours").fill("720");
+    await dialog.getByTestId("balance-through").fill("2026-09-27");
+    await dialog.getByTestId("balance-note").fill("Old system");
+    await dialog.getByTestId("save-balance").click();
+    await expect(dialog).toBeHidden();
+
+    // The week of 2026-10-05: his hours in the week before cross 720, so this week needs the rate.
+    const period = await uploadPrairieWeek(page, locale);
+    await page.goto(`/${locale}/convert?period=${period}&step=hours`);
+    await toExceptions(page, m);
+    const blocker = page.getByTestId("blocker").filter({ hasText: m.convert.totals.blockers.equal_pay_rate_needed });
+    await expect(blocker).toHaveCount(1);
+    await blocker.getByTestId("open-equal-pay").click();
+    await expect(page).toHaveURL(/area=equal_pay/);
+    await page.getByTestId("obligation-row").first().getByRole("link").click();
+    await expect(page.getByTestId("equal-pay-form")).toBeVisible();
+    const duty = page.url();
+    await check(page, "equal-pay rate");
+    // The client's figures: $20.00 an hour from 2026-10-05, benefits given.
+    await page.getByTestId("ep-from").fill("2026-10-05");
+    await page.getByTestId("ep-rate").fill("20.00");
+    await page.getByTestId("ep-comparator").fill(locale === "en" ? "Molding operator, 2 years" : "Operador de moldeo, 2 años");
+    await page.getByTestId("save-equal-pay").click();
+    await expect(page.getByTestId("equal-pay-rate")).toHaveCount(1);
+    await expect(page.getByTestId("status-done").first()).toBeVisible();
+
+    // Back to the week: nothing blocks. Marcus 40 h × $20.00 + 6 h × $30.00 = $980.00 (at the card's
+    // $18.25 it was $894.25); Anita 24 h × $18.25 = $438.00; gross $1,418.00.
+    await page.goto(`/${locale}/convert?period=${period}&step=hours`);
+    await toExceptions(page, m);
+    await toTotals(page, m);
+    await expect(page.getByTestId("summary")).toContainText(locale === "en" ? "$1,418.00" : "1418,00");
+
+    // A wrong rate is removed with a reason: it stays listed, and with no rate left the duty is open again.
+    await page.goto(duty);
+    await page.getByTestId("remove-equal-pay").click();
+    await expect(dialog.getByTestId("confirm-remove-equal-pay")).toBeDisabled();
+    await dialog.getByTestId("ep-remove-reason").fill(locale === "en" ? "Entered for the wrong client" : "Ingresada para el cliente equivocado");
+    await dialog.getByTestId("confirm-remove-equal-pay").click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId("equal-pay-rate")).toContainText(locale === "en" ? "Entered for the wrong client" : "Ingresada para el cliente equivocado");
+    await expect(page.getByTestId("remove-equal-pay")).toHaveCount(0);
+    // Open again (past its due date, so overdue); the form starts again from the crossing day.
+    await expect(page.getByTestId("status-overdue").first()).toBeVisible();
+    await expect(page.getByTestId("ep-from")).toHaveValue("2026-09-28");
     expect(errors).toEqual([]);
   });
 }

@@ -33,8 +33,21 @@ attachments").
    from (for example "Contract started 2026-03-02"; "Hired 2026-10-12; Section 2 due 2026-10-15,
    three business days later"). Where the duty needs data, its form is here: the I-9 dates; the
    Massachusetts job order's details (the worksite employer's phone, times, overtime, requirements,
-   meals, transportation, strike; kept on the job order); the Illinois equal-pay rate; for a
+   meals, transportation, strike; kept on the job order); the Illinois equal-pay rate (below); for a
    registration or policy, a link to Compliance settings.
+   **Illinois equal-pay rate** (an equal-pay crossing's duty; Drata's control form): from a date (the
+   crossing day for the first rate, today once one is on file); how the client compared (a comparable
+   direct hire, the direct hire with the closest seniority, or the wage survey's median or 75th
+   percentile); the rate; the hourly cash value of benefits paid in lieu of them (0 when the benefits
+   are given); who it was compared with; a note — **Save rate**, which marks the duty done. Or **The
+   client was asked** on a date (never in the future): the rate card is paid until the figures are
+   in. Under the form, when the date matches a rate on file, a line says the new one replaces it.
+   **Paid weeks to true up** (when there are any): the weeks already paid without the rate in force
+   then, each linking to its files, where a correction starts (Drata: the control's failing items
+   with a link to fix each). The rows on file below, newest first, each with who and when, and
+   **Remove** (Drata: unlink, kept in history): a wrong row is removed with a reason and stays
+   listed, struck through, with who removed it and why; a rate from the same date replaces the one
+   before (kept as replaced); a request never replaces a rate.
 4. **Evidence:** the files linked to this duty (Drata: link, unlink, create; Vanta: Download): name,
    effective date, added by and when, uploaded or generated; **Add file** (a file and its effective
    date); **Create** for duties with a document (the Illinois proof page, the Massachusetts job
@@ -49,7 +62,8 @@ attachments").
 
 ## Interactions
 - Mark done asks for an optional note; Not applicable asks for a reason (required); both appear in
-  History. A person's decision is never undone by the system; only the Owner reopens it. What
+  History. Removing an equal-pay row asks for a reason (required); with no rate left, a duty that
+  entering the rate closed is open again (in History). A person's decision is never undone by the system; only the Owner reopens it. What
   Shiftbook closed from the data (a renewal, a recorded date, a placement that no longer applies),
   the data reopens or closes again.
 - Files: PDF, images, spreadsheets, text, up to 20 MB; the effective date defaults to today.

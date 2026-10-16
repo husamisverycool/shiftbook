@@ -225,6 +225,20 @@
       "when": 1792092200000,
       "tag": "0031_counters_equal_pay",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792092300000,
+      "tag": "0032_equal_pay_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792092400000,
+      "tag": "0033_aca",
+      "breakpoints": true
     }
   ]
 }

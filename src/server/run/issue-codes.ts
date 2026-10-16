@@ -10,6 +10,7 @@ export const RUN_ISSUE_CODES = [
   "correction_no_differences",
   "correction_decision_needed",
   "correction_pay_due",
+  "equal_pay_rate_needed",
   "unmatched_entry",
   "entry_incomplete",
   "outside_period",

@@ -2,7 +2,8 @@
  * Writes PROPOSED golden cases to tests/goldens/_proposed/ for the owner to approve.
  * Every case states its expected result in plain English, and this script refuses to write a case
  * unless the engine's numbers equal the hand-computed numbers written here.
- *   pnpm tsx scripts/propose-goldens.ts
+ *   pnpm tsx scripts/propose-goldens.ts             (every case)
+ *   pnpm tsx scripts/propose-goldens.ts NAME …      (every case is checked; only these are written)
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -14,6 +15,9 @@ import { INVOICE_FILES, type InvoiceFileFormat } from "../tests/golden-runners/e
 import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_REGULAR_RATE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
+/** Names to write (all are still checked against their hand answers); none: every case. */
+const ONLY = process.argv.slice(2);
+const writes = (name: string) => ONLY.length === 0 || ONLY.includes(name);
 const WEEK = ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"];
 
 let n = 0;
@@ -66,6 +70,7 @@ function ruleCase(name: string, summary: string, inp: PayInput, hand: Expect) {
   if (JSON.stringify(engine) !== JSON.stringify(handAnswer)) {
     throw new Error(`${name}: engine disagrees with the hand-computed answer\nengine: ${JSON.stringify(engine)}\nhand:   ${JSON.stringify(handAnswer)}`);
   }
+  if (!writes(name)) return;
   mkdirSync(join(OUT, "rules"), { recursive: true });
   writeFileSync(join(OUT, "rules", `${name}.json`), JSON.stringify({ name, summary, input: inp, expected: result }, null, 2) + "\n");
   console.log(`proposed rules/${name}`);
@@ -343,6 +348,17 @@ ruleCase(
 );
 
 ruleCase(
+  "il-s42-equal-pay-rate-paid",
+  "The week after the 720-hour crossing of il-s42-720h-crossing-midweek (crossed on October 14, 2026, on file). The client's figures are in from Monday October 19: a comparable direct hire earns $18.50 an hour, and benefits are paid in lieu at an hourly cash value of $1.25 (820 ILCS 175/42(a)(1)(A), (b)). The worker, on a $17.00 rate card billed at $24.00, works 9 hours a day, Monday to Friday (45 h). From October 19 the pay rate is at least $18.50 + $1.25 = $19.75, so the regular rate is $19.75 and overtime is 1.5 × $19.75 = $29.625: pay 40 h × $19.75 = $790.00 and 5 h × $29.625 = $148.125 → $148.13 (rounded half up once). Billing stays on the rate card: 40 h × $24.00 = $960.00 and 5 h × $36.00 = $180.00. Each pay line says why its rate is above the card's; no warning that the equal-pay rate is missing.",
+  {
+    ...input(["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23"].map((d) => shift(d, 540, { payRateCents: 1700, billRateCents: 2400, clientName: "Client X" }))),
+    obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "worker-1", clientId: "client-1", crossedOn: "2026-10-14" }],
+    equalPayRates: [{ workerId: "worker-1", clientId: "client-1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 1850, benefitsCents: 125, method: "comparator" }],
+  },
+  { pay: [["REG", 2400, 79000], ["OT", 300, 14813]], bill: [["REG", 2400, 96000], ["OT", 300, 18000]], warnings: [] },
+);
+
+ruleCase(
   "multi-rate-own-sites-overtime-billing",
   "The two-rate week of multi-rate-regular-rate (pay unchanged: $928.87), with client B billed overtime only for hours that are overtime at its own sites. The worker spent only 16 hours at B's site (Thursday and Friday), so none of the 6 overtime hours on B's line would be overtime had the worker worked only there: they are billed at straight time, 6 h × $24.00 = $144.00, and the agency bears the $56.87 premium. Bill: A 30 h × $28.00 = $840.00; B 10 h × $24.00 + 6 h × $24.00 = $384.00.",
   input([
@@ -361,6 +377,7 @@ function exportCase(name: string, summary: string, fixture: ExportFixture, handT
   if (JSON.stringify(result.controlTotals) !== JSON.stringify(handTotals)) {
     throw new Error(`${name}: control totals ${JSON.stringify(result.controlTotals)} ≠ hand ${JSON.stringify(handTotals)}`);
   }
+  if (!writes(name)) return;
   const dir = join(OUT, "exports", name);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, result.filename), result.bytes);
@@ -432,6 +449,7 @@ function exportRefusal(name: string, summary: string, fixture: ExportFixture, ha
   if (!(error instanceof ExportError) || error.code !== hand.code || error.workerId !== hand.workerId || error.message !== hand.message) {
     throw new Error(`${name}: expected refusal ${JSON.stringify(hand)}, got ${error instanceof Error ? `${(error as ExportError).code}: ${error.message}` : "a file"}`);
   }
+  if (!writes(name)) return;
   const dir = join(OUT, "exports", name);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "case.json"), JSON.stringify({ summary, fixture, expectedError: hand }, null, 2) + "\n");
@@ -727,6 +745,7 @@ function invoiceFileCase(name: string, summary: string, format: InvoiceFileForma
   const kind = INVOICE_FILES[format];
   const got = new TextDecoder().decode(kind.make(input));
   if (got !== handText) throw new Error(`${name}: file\n${JSON.stringify(got)}\n≠ hand\n${JSON.stringify(handText)}`);
+  if (!writes(name)) return;
   const dir = join(OUT, "exports", name);
   mkdirSync(dir, { recursive: true });
   const filename = kind.filename(input.number);
@@ -745,6 +764,7 @@ function invoiceFileRefusal(name: string, summary: string, format: InvoiceFileFo
   if (!(error instanceof ExportError) || error.code !== hand.code || error.workerId !== undefined || error.message !== hand.message) {
     throw new Error(`${name}: expected refusal ${JSON.stringify(hand)}, got ${error instanceof Error ? `${(error as ExportError).code}: ${error.message}` : "a file"}`);
   }
+  if (!writes(name)) return;
   const dir = join(OUT, "exports", name);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "case.json"), JSON.stringify({ summary, fixture: null, invoiceFile: { format, input }, expectedError: hand }, null, 2) + "\n");

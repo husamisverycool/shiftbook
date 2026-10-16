@@ -7,7 +7,7 @@ import { ArrowLeftIcon, DownloadIcon, ExternalLinkIcon, PaperclipIcon } from "lu
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { addFileAction, addNoteAction, closeAction, makeDocumentAction, recordI9Action, reopenAction, reverifyAction, saveNoticeDetailsAction, unlinkFileAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
+import { addFileAction, addNoteAction, closeAction, makeDocumentAction, recordI9Action, reopenAction, reverifyAction, removeEqualPayRateAction, saveNoticeDetailsAction, setEqualPayRateAction, unlinkFileAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,8 +18,9 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { parseDollars } from "@/lib/amounts";
 import type { ObligationDetail } from "@/server/compliance/queries";
-import { longDate } from "../format";
+import { longDate, money } from "../format";
 import { dueIn, OwnerPicker } from "./list";
 import { StatusBadge } from "./status-badge";
 
@@ -208,6 +209,8 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
       {d.notice && <NoticeForm d={d} />}
       {d.i9 && (i.kind === "i9_section1" || i.kind === "i9_section2") && <I9Form d={d} today={today} />}
       {d.i9 && i.kind === "i9_reverify" && open && i.mayAct && <ReverifyForm d={d} today={today} />}
+      {/* A saved or removed row starts the form afresh, with its default date. */}
+      {d.equalPay && <EqualPayForm key={d.equalPay.rates.filter((r) => r.replacedAt === null).map((r) => r.id).join()} d={d} today={today} />}
     </div>
   );
 }
@@ -589,6 +592,195 @@ function CloseDialog({ id, status, onClose }: { id: string; status: "done" | "no
             data-testid="confirm-close"
           >
             {td("save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const EQUAL_PAY_METHODS = ["comparator", "closest_seniority", "survey_median", "survey_75th"] as const;
+
+/** The Illinois equal-pay rate (820 ILCS 175/42(a), (b)): the client's figures from a date, or that the client was asked. */
+function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
+  const te = useTranslations("compliance.detail.equalPay");
+  const locale = useLocale();
+  const can = d.item.mayAct;
+  const rates = d.equalPay!.rates;
+  const live = rates.filter((r) => r.replacedAt === null);
+  // The first rate from the crossing; a later one from today (a new rate rarely reaches back).
+  const [v, setV] = useState({ effectiveFrom: live.some((r) => r.kind === "rate") ? today : (d.crossedOn ?? today), method: "comparator" as (typeof EQUAL_PAY_METHODS)[number], rate: "", benefits: "0", comparator: "", note: "" });
+  const [removing, setRemoving] = useState<string | null>(null);
+  const replaces = live.find((r) => r.kind === "rate" && r.effectiveFrom === v.effectiveFrom);
+  const [askedOn, setAskedOn] = useState(today);
+  const { pending, act } = useAct();
+  const rateCents = parseDollars(v.rate);
+  const benefitsCents = parseDollars(v.benefits);
+  const ready = v.effectiveFrom !== "" && rateCents !== null && rateCents > 0 && benefitsCents !== null && v.comparator.trim() !== "";
+  const trueUps = d.equalPay!.trueUps;
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="equal-pay" data-testid="equal-pay-form">
+      <h2 id="equal-pay" className="text-base font-semibold">
+        {te("title")}
+      </h2>
+      <p className="text-xs text-muted-foreground">{te("intro")}</p>
+      {can && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-4">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="ep-from" className="text-xs text-muted-foreground">
+                {te("from")}
+              </Label>
+              <Input id="ep-from" type="date" value={v.effectiveFrom} onChange={(e) => setV({ ...v, effectiveFrom: e.target.value })} data-testid="ep-from" />
+            </div>
+            <div className="flex flex-col gap-1 sm:col-span-3">
+              <Label htmlFor="ep-method" className="text-xs text-muted-foreground">
+                {te("method")}
+              </Label>
+              <NativeSelect id="ep-method" className="w-full" value={v.method} onChange={(e) => setV({ ...v, method: e.target.value as (typeof EQUAL_PAY_METHODS)[number] })} data-testid="ep-method">
+                {EQUAL_PAY_METHODS.map((m) => (
+                  <NativeSelectOption key={m} value={m}>
+                    {te(`methods.${m}`)}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="ep-rate" className="text-xs text-muted-foreground">
+                {te("rate")}
+              </Label>
+              <Input id="ep-rate" inputMode="decimal" value={v.rate} aria-invalid={v.rate !== "" && rateCents === null ? true : undefined} onChange={(e) => setV({ ...v, rate: e.target.value })} data-testid="ep-rate" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="ep-benefits" className="text-xs text-muted-foreground">
+                {te("benefits")}
+              </Label>
+              <Input id="ep-benefits" inputMode="decimal" value={v.benefits} aria-invalid={benefitsCents === null ? true : undefined} onChange={(e) => setV({ ...v, benefits: e.target.value })} data-testid="ep-benefits" />
+            </div>
+            <div className="flex flex-col gap-1 sm:col-span-2">
+              <Label htmlFor="ep-comparator" className="text-xs text-muted-foreground">
+                {te("comparator")}
+              </Label>
+              <Input id="ep-comparator" maxLength={300} value={v.comparator} onChange={(e) => setV({ ...v, comparator: e.target.value })} data-testid="ep-comparator" />
+            </div>
+            <div className="flex flex-col gap-1 sm:col-span-4">
+              <Label htmlFor="ep-note" className="text-xs text-muted-foreground">
+                {te("note")}
+              </Label>
+              <Input id="ep-note" maxLength={500} value={v.note} onChange={(e) => setV({ ...v, note: e.target.value })} data-testid="ep-note" />
+            </div>
+          </div>
+          {replaces && <p className="text-xs text-muted-foreground" data-testid="ep-replaces">{te("replaces", { date: longDate(replaces.effectiveFrom, locale) })}</p>}
+          <div className="flex flex-wrap items-end gap-3">
+            <Button
+              size="sm"
+              disabled={pending || !ready}
+              onClick={() =>
+                act(
+                  () => setEqualPayRateAction(d.item.id, { effectiveFrom: v.effectiveFrom, kind: "rate", rateCents, benefitsCents, method: v.method, comparator: v.comparator.trim(), note: v.note.trim() || null }),
+                  () => toast.success(te("saved")),
+                )
+              }
+              data-testid="save-equal-pay"
+            >
+              {te("save")}
+            </Button>
+            <span className="text-xs text-muted-foreground">{te("or")}</span>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="ep-asked" className="text-xs text-muted-foreground">
+                {te("askedOn")}
+              </Label>
+              <Input id="ep-asked" type="date" className="w-44" max={today} value={askedOn} onChange={(e) => setAskedOn(e.target.value)} data-testid="ep-asked" />
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending || askedOn === "" || askedOn > today}
+              onClick={() => act(() => setEqualPayRateAction(d.item.id, { effectiveFrom: askedOn, kind: "asked", rateCents: null, benefitsCents: null, method: null, comparator: null, note: null }), () => toast.success(te("askedSaved")))}
+              data-testid="save-asked"
+            >
+              {te("asked")}
+            </Button>
+          </div>
+        </>
+      )}
+      {removing && <RemoveRateDialog obligationId={d.item.id} rateId={removing} onClose={() => setRemoving(null)} />}
+      {trueUps.length > 0 && (
+        <div className="flex flex-col gap-1 rounded-md border border-destructive/40 p-3 text-sm" data-testid="ep-true-ups">
+          <p className="font-medium text-destructive">{te("trueUpTitle")}</p>
+          <p className="text-xs text-muted-foreground">{te("trueUpBody")}</p>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1">
+            {trueUps.map((w) => (
+              <li key={w.periodId}>
+                <Link href={{ pathname: "/convert", query: { period: w.periodId, step: "files" } }} className="underline underline-offset-4">
+                  {te("week", { from: longDate(w.startsOn, locale), to: longDate(w.endsOn, locale) })}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {rates.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{te("none")}</p>
+      ) : (
+        <ul className="flex flex-col gap-1 text-sm" data-testid="equal-pay-rates">
+          {rates.map((r) => (
+            <li key={r.id} className={r.replacedAt ? "text-muted-foreground" : ""} data-testid="equal-pay-rate">
+              <span className={r.replacedAt ? "line-through" : ""}>
+                {r.kind === "asked"
+                  ? te("askedRow", { date: longDate(r.effectiveFrom, locale) })
+                  : te("rateRow", { date: longDate(r.effectiveFrom, locale), total: money((r.rateCents ?? 0) + (r.benefitsCents ?? 0), locale), rate: money(r.rateCents ?? 0, locale), benefits: money(r.benefitsCents ?? 0, locale), method: te(`methods.${r.method ?? "comparator"}`), comparator: r.comparator ?? "" })}
+              </span>{" "}
+              <span className="text-xs text-muted-foreground">{te("by", { by: r.by, date: longDate(new Date(r.at).toISOString().slice(0, 10), locale) })}</span>
+              {r.replacedAt && <span className="text-xs text-muted-foreground"> · {r.removedReason ? te("removed", { by: r.replacedBy ?? "", reason: r.removedReason }) : te("replaced")}</span>}
+              {can && !r.replacedAt && (
+                <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setRemoving(r.id)} data-testid="remove-equal-pay">
+                  {te("remove")}
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function RemoveRateDialog({ obligationId, rateId, onClose }: { obligationId: string; rateId: string; onClose: () => void }) {
+  const te = useTranslations("compliance.detail.equalPay");
+  const td = useTranslations("compliance.detail");
+  const [reason, setReason] = useState("");
+  const { pending, act } = useAct();
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{te("removeTitle")}</DialogTitle>
+          <DialogDescription>{te("removeBody")}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="ep-remove-reason">{td("reason")}</Label>
+          <Textarea id="ep-remove-reason" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} data-testid="ep-remove-reason" />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {td("cancel")}
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={pending || reason.trim() === ""}
+            onClick={() =>
+              act(
+                () => removeEqualPayRateAction(obligationId, rateId, reason.trim()),
+                () => {
+                  toast.success(te("removedSaved"));
+                  onClose();
+                },
+              )
+            }
+            data-testid="confirm-remove-equal-pay"
+          >
+            {te("remove")}
           </Button>
         </DialogFooter>
       </DialogContent>

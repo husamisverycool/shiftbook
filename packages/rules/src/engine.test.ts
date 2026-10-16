@@ -1572,3 +1572,146 @@ describe("computePay — second opinion on steps 5–7", () => {
     expect(none.billLines.filter((l) => l.type === "HOL_NOT_WORKED")).toEqual([]);
   });
 });
+
+describe("computePay — the Illinois equal-pay rate (820 ILCS 175/42(a), (b); slice j step 3b)", () => {
+  const RULE: EqualPayRule = { jurisdiction: "IL", ruleCode: "il_dtlsa_equal_pay", countsFrom: "2024-04-01", warnMinutes: 36_000, windowMonths: 12, triggerMinutes: 43_200, longWindowMonths: 48, longTriggerMinutes: 249_600, effectiveFrom: "2024-04-01", effectiveTo: null, citation: "820 ILCS 175/42" };
+  // The week after the crossing on file (2026-10-14): Monday 2026-10-19 to Friday, 9 h a day (45 h) at the card's $17.00.
+  const WEEK = ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23"];
+  const onFile = [{ kind: "il_equal_pay_720h" as const, workerId: "w1", clientId: "c1", crossedOn: "2026-10-14" }];
+  const run = (rates: PayInput["equalPayRates"]) =>
+    computePay({ ...input(WEEK.map((d) => shift(d, 540, { payRateCents: 1700, billRateCents: 2400, clientName: "Prairie Line" }))), equalPayRules: [RULE], obligationsOnFile: onFile, equalPayRates: rates });
+
+  it("pays the comparator's rate plus the benefits' hourly cash value from its date, overtime on it, and says why", () => {
+    // $18.50 + $1.25 = $19.75. Regular 40 h × $19.75 = $790.00; overtime 5 h × 1.5 × $19.75 = 5 × $29.625 = $148.125 → $148.13.
+    const r = run([{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 1850, benefitsCents: 125, method: "comparator" }]);
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
+      ["REG", 2400, 79_000],
+      ["OT", 300, 14_813],
+    ]);
+    const why = "Illinois equal pay from 2026-10-19 (820 ILCS 175/42(a), (b)): the comparable direct hire's rate $18.50 + the benefits' hourly cash value $1.25 = $19.75, above the rate card's $17.00.";
+    for (const l of r.payLines) expect(l.explain.endsWith(why)).toBe(true);
+    // Billing is the rate card's: equal pay is the agency's cost.
+    expect(r.billLines.map((l) => [l.type, l.amountCents])).toEqual([
+      ["REG", 96_000],
+      ["OT", 18_000],
+    ]);
+    // The hours after the crossing are paid at the equal-pay rate: no "rate missing" warning.
+    expect(r.warnings.filter((w) => w.code === "equal_pay_rate_missing")).toEqual([]);
+  });
+
+  it("from a later date only the shifts from then on are raised; a week of two rates follows the regular rate rules", () => {
+    // Wednesday on: 3 × 9 h at $19.75; Monday and Tuesday 2 × 9 h at $17.00. Regular rate = (18 × $17.00 + 27 × $19.75) ÷ 45 = ($306.00 + $533.25) ÷ 45 = $18.65.
+    const r = run([{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-21", kind: "rate", rateCents: 1975, benefitsCents: 0, method: "survey_median" }]);
+    expect(r.payLines.filter((l) => l.type === "REG").map((l) => [l.minutes, l.rate.num, l.amountCents])).toEqual([
+      [1080, 1700, 30_600],
+      [1320, 1975, 43_450],
+    ]);
+    // 5 h of overtime fall on Friday at $19.75: straight $19.75 + 0.5 × $18.65 = $29.075 → 5 h = $145.375 → $145.38.
+    expect(r.payLines.filter((l) => l.type === "OT").map((l) => [l.minutes, l.amountCents])).toEqual([[300, 14_538]]);
+    expect(r.payLines.find((l) => l.type === "REG" && l.rate.num === 1700)!.explain).not.toContain("Illinois equal pay");
+    // Billing stays on the rate card's $24.00, in the two pay-rate groups: 18 h = $432.00, 22 h = $528.00; overtime 5 h × $36.00 = $180.00.
+    expect(r.billLines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
+      ["REG", 1080, 43_200],
+      ["REG", 1320, 52_800],
+      ["OT", 300, 18_000],
+    ]);
+  });
+
+  it("a request alone pays the rate card and says the figures were asked for; a rate below the card changes nothing", () => {
+    const asked = run([{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-16", kind: "asked", rateCents: null, benefitsCents: null, method: null }]);
+    expect(asked.payLines.map((l) => [l.type, l.amountCents])).toEqual([
+      ["REG", 68_000],
+      ["OT", 12_750],
+    ]);
+    expect(asked.warnings.find((w) => w.code === "equal_pay_rate_missing")!.message).toContain("the client was asked for its figures on 2026-10-16 and they are not in yet");
+    const lower = run([{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 1600, benefitsCents: 50, method: "comparator" }]);
+    expect(lower.payLines.map((l) => [l.type, l.amountCents])).toEqual([
+      ["REG", 68_000],
+      ["OT", 12_750],
+    ]);
+    expect(lower.payLines[0]!.explain).not.toContain("Illinois equal pay");
+  });
+
+  it("a malformed or doubled row holds only its worker, saying why; an explanation sent in on a shift is ignored", () => {
+    const other = WEEK.map((d) => shift(d, 480, { workerId: "w2", workerName: "Other Worker", assignmentId: "a2", payRateCents: 1700, billRateCents: 2400 }));
+    const both = (rates: PayInput["equalPayRates"]) =>
+      computePay({ ...input([...WEEK.map((d) => shift(d, 540, { payRateCents: 1700, billRateCents: 2400 })), ...other]), equalPayRules: [RULE], obligationsOnFile: onFile, equalPayRates: rates });
+    const bad = both([{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 0, benefitsCents: 0, method: "comparator" }]);
+    expect(bad.payLines.filter((l) => l.workerId === "w1")).toEqual([]);
+    expect(bad.blockers.map((b) => [b.code, b.workerId, b.message])).toEqual([["invalid_input", "w1", "The Illinois equal-pay rate from 2026-10-19: the rate must be a positive number of cents. All of this worker's weeks are held until it is fixed."]]);
+    // The other worker is paid as usual: 40 h × $17.00 = $680.00.
+    expect(bad.payLines.filter((l) => l.workerId === "w2").map((l) => [l.type, l.minutes, l.amountCents])).toEqual([["REG", 2400, 68_000]]);
+    const twice = both([
+      { workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 1850, benefitsCents: 0, method: "comparator" },
+      { workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 1900, benefitsCents: 0, method: "comparator" },
+    ]);
+    expect(twice.blockers.map((b) => b.message)).toEqual(["The Illinois equal-pay rate from 2026-10-19: two rows for c1 from the same date. All of this worker's weeks are held until it is fixed."]);
+    expect(twice.payLines.filter((l) => l.workerId === "w1")).toEqual([]);
+    const sneaky = computePay({ ...input(WEEK.map((d) => shift(d, 480, { payRateCents: 1700, payRateExplain: "Paid double by agreement." }))), equalPayRules: [RULE] });
+    expect(sneaky.payLines[0]!.explain).not.toContain("Paid double");
+  });
+
+  it("only covered work is raised: a shift in Indiana and clerical work at the same client keep the rate card", () => {
+    // Monday to Wednesday 8 h of day labor in Illinois; Thursday 8 h in Indiana; Friday 8 h of clerical work in Illinois. 40 h, no overtime.
+    const shifts = [
+      ...WEEK.slice(0, 3).map((d) => shift(d, 480, { payRateCents: 1700, billRateCents: 2400 })),
+      shift(WEEK[3]!, 480, { jurisdiction: "IN", countyFips: "18089", placeFips: NO_PLACE, payRateCents: 1700, billRateCents: 2400 }),
+      shift(WEEK[4]!, 480, { dayAndTemporaryLabor: false, payRateCents: 1700, billRateCents: 2400 }),
+    ];
+    // Indiana follows the federal rules (Ind. Code § 22-2-2-4).
+    const indiana: JurisdictionRule[] = ["weekly_overtime", "minimum_wage"].map((ruleCode) => ({ jurisdiction: "IN", ruleCode, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Ind. Code § 22-2-2-4" }));
+    const r = computePay({
+      ...input(shifts, {
+        jurisdictionRules: [...JURISDICTIONS, ...indiana],
+        overtimeRules: [...OT_RULES, { jurisdiction: "IN", ruleCode: "weekly_overtime", kind: "weekly", thresholdMinutes: 2400, multiplier: { num: 3, den: 2 }, earningType: "OT", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Ind. Code § 22-2-2-4(k)" }],
+        minimumWageRules: [...MIN_WAGE, { jurisdiction: "IN", rateCents: 725, effectiveFrom: "2009-07-24", effectiveTo: null, citation: "Ind. Code § 22-2-2-4(c)" }],
+      }),
+      equalPayRules: [RULE],
+      obligationsOnFile: onFile,
+      equalPayRates: [{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 1975, benefitsCents: 0, method: "comparator" }],
+    });
+    expect(r.blockers).toEqual([]);
+    const byRate = (cents: number) => r.payLines.filter((l) => l.type === "REG" && l.rate.num === cents).reduce((sum, l) => sum + l.minutes, 0);
+    // 24 h × $19.75 = $474.00 in Illinois day labor; Indiana and clerical 16 h × $17.00 = $272.00.
+    expect([byRate(1975), byRate(1700)]).toEqual([1440, 960]);
+    expect(r.payLines.reduce((sum, l) => sum + l.amountCents, 0)).toBe(47_400 + 27_200);
+    for (const l of r.payLines.filter((x) => x.rate.num === 1700)) expect(l.explain).not.toContain("Illinois equal pay");
+  });
+
+  it("a holiday not worked and a reporting-pay guarantee are paid at the equal-pay rate and say why", () => {
+    const why = "Illinois equal pay from 2026-11-23 (820 ILCS 175/42(a)): the comparable direct hire's rate $19.75, above the rate card's $17.00.";
+    const rate = [{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-11-23", kind: "rate" as const, rateCents: 1975, benefitsCents: 0, method: "comparator" as const }];
+    const holiday: HolidayPolicy = { clientId: null, name: "Agency holidays", dates: ["2026-11-26"], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false };
+    const hol = computePay({
+      ...input([...["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-27"].map((d) => shift(d, 480, { payRateCents: 1700, billRateCents: 2400 })), shift("2026-11-26", 0, { entryIds: [], reportedOnly: true, payRateCents: 1700, billRateCents: 2400 })]),
+      equalPayRules: [RULE],
+      equalPayRates: rate,
+      holidayPolicies: [holiday],
+      confirmations: [{ id: "h1", kind: "holiday_not_worked", workerId: "w1", assignmentId: "a1", date: "2026-11-26" }],
+    });
+    expect(hol.blockers).toEqual([]);
+    // 8 h × $19.75 = $158.00.
+    const notWorked = hol.payLines.find((l) => l.type === "HOL_NOT_WORKED")!;
+    expect([notWorked.minutes, notWorked.amountCents]).toEqual([480, 15_800]);
+    expect(notWorked.explain).toContain("(the Illinois equal-pay rate)");
+    expect(notWorked.explain.endsWith(why)).toBe(true);
+    const guarantee: GuaranteeRule = { jurisdiction: "IL", ruleCode: "il_day_labor_minimum", dueMinutes: 240, reassignedDueMinutes: 120, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: null, basis: "pay_rate", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "820 ILCS 175/30(g)" };
+    const short = computePay({
+      ...input([shift("2026-11-23", 90, { payRateCents: 1700, billRateCents: 2400 })]),
+      equalPayRules: [RULE],
+      equalPayRates: rate,
+      guaranteeRules: [guarantee],
+      confirmations: [{ id: "r1", kind: "reported_short", workerId: "w1", assignmentId: "a1", date: "2026-11-23" }],
+    });
+    expect(short.blockers).toEqual([]);
+    // 1.5 h worked × $19.75 = $29.625 → $29.63; the 2.5 h not worked × $19.75 = $49.375 → $49.38.
+    expect(short.payLines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
+      ["REG", 90, 2963],
+      ["MIN_GUARANTEE", 150, 4938],
+    ]);
+    const minimum = short.payLines.find((l) => l.type === "MIN_GUARANTEE")!;
+    expect(minimum.explain).toContain("(the Illinois equal-pay rate)");
+    expect(minimum.explain.endsWith(why)).toBe(true);
+  });
+});

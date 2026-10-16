@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { addObligationFile, addObligationNote, addPolicy, addRegistration, closeObligation, mayChangeComplianceSettings, recordI9, recordReverification, reopenObligation, setMaContact, setMaStatement, setObligationOwner, setOpenWeekendDays, storeComplianceDocument, unlinkObligationFile, type ComplianceResult } from "@/server/compliance/service";
 import { addOpeningBalance, removeOpeningBalance } from "@/server/compliance/counter-balances";
+import { removeEqualPayRate, setEqualPayRate } from "@/server/compliance/equal-pay-rates";
 import { createJobOrderNotice, createPacketDocument, createProofPage, saveNoticeDetails } from "@/server/compliance/documents";
 import { withAgency } from "@/server/db";
 import { PeriodBusyError } from "@/server/run/period-lock";
@@ -184,4 +185,29 @@ export async function addBalanceAction(input: unknown): Promise<ComplianceAction
 export async function removeBalanceAction(balanceId: string, reason: string): Promise<ComplianceActionResult> {
   if (!id.safeParse(balanceId).success || typeof reason !== "string" || reason.length > 1000) return { ok: false, error: "generic" };
   return run((tx, actor) => removeOpeningBalance(tx, actor, balanceId, reason));
+}
+
+const EqualPaySchema = z
+  .object({
+    effectiveFrom: isoDate,
+    kind: z.enum(["rate", "asked"]),
+    rateCents: z.number().int().nullable(),
+    benefitsCents: z.number().int().nullable(),
+    method: z.enum(["comparator", "closest_seniority", "survey_median", "survey_75th"]).nullable(),
+    comparator: z.string().max(300).nullable(),
+    note: z.string().max(500).nullable(),
+  })
+  .strict();
+
+/** The Illinois equal-pay rate from a date, or that the client was asked (the Owner). */
+export async function setEqualPayRateAction(obligationId: string, input: unknown): Promise<ComplianceActionResult> {
+  const parsed = EqualPaySchema.safeParse(input);
+  if (!id.safeParse(obligationId).success) return { ok: false, error: "generic" };
+  if (!parsed.success) return { ok: false, error: "invalid", field: String(parsed.error.issues[0]?.path[0] ?? "form") };
+  return run((tx, actor, today) => setEqualPayRate(tx, actor, obligationId, parsed.data, today));
+}
+
+export async function removeEqualPayRateAction(obligationId: string, rateId: string, reason: string): Promise<ComplianceActionResult> {
+  if (!id.safeParse(obligationId).success || !id.safeParse(rateId).success || typeof reason !== "string" || reason.length > 1000) return { ok: false, error: "generic" };
+  return run((tx, actor) => removeEqualPayRate(tx, actor, obligationId, rateId, reason));
 }

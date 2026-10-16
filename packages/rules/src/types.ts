@@ -1,3 +1,5 @@
+import type { EqualPayRate } from "./rules/il-equal-pay-rate";
+
 /** ISO calendar date, "YYYY-MM-DD". */
 export type IsoDate = string;
 
@@ -69,6 +71,8 @@ export interface Shift {
   billRateCents: number;
   /** How the bill rate came about when the rate card worked it out (a markup rounded to the cent), for the explanation. */
   billRateExplain?: string;
+  /** Why the pay rate is above the rate card's (the Illinois equal-pay rate), for the explanation; set by the engine. */
+  payRateExplain?: string;
   billOtMultiplier: Fraction;
   /** The rate card's double-time bill multiplier (California double time). */
   billDtMultiplier: Fraction;
@@ -305,6 +309,8 @@ export interface PayInput {
   holidayPolicies?: HolidayPolicy[];
   bonuses?: Bonus[];
   equalPayRules?: EqualPayRule[];
+  /** The Illinois equal-pay rates on file per worker and client, from a date (820 ILCS 175/42). */
+  equalPayRates?: EqualPayRate[];
   regularRateRules?: RegularRateRule[];
   /** Covered minutes worked before this run, per worker, client and day. */
   hoursWorked?: HoursWorked[];

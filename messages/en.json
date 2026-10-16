@@ -416,7 +416,8 @@
         "bonus_kind_check": "A California bonus to check",
         "approaching_equal_pay_hours": "Nearing 720 hours at one Illinois client",
         "equal_pay_obligation": "Illinois equal pay now applies",
-        "equal_pay_rate_missing": "Hours after 720 at one client without an equal-pay rate"
+        "equal_pay_rate_missing": "Hours after 720 at one client without an equal-pay rate",
+        "equal_pay_rate_needed": "Equal-pay rate due for hours after 720 at one client"
       },
       "rules": {
         "ca_daily_overtime": "daily overtime",
@@ -437,7 +438,8 @@
       "bothRealConfirm": "Confirm",
       "goToUpload": "Go to timesheets",
       "openApprovals": "Open Client approvals",
-      "openPayrollSettings": "Open payroll file settings"
+      "openPayrollSettings": "Open payroll file settings",
+      "openEqualPay": "Open the equal-pay duties"
     },
     "files": {
       "successTitle": "Files created",
@@ -2585,7 +2587,43 @@
       },
       "missingRegistration": "No Illinois registration in force: add it in Compliance settings first.",
       "noI9Files": "Form I-9 copies are not kept in Shiftbook (they hold Social Security numbers and birth dates): record the dates on Overview, and keep the form where the law asks.",
-      "proofNoRegistration": "No Illinois registration in force on {date}, the day the client checks: add the renewed registration first."
+      "proofNoRegistration": "No Illinois registration in force on {date}, the day the client checks: add the renewed registration first.",
+      "equalPay": {
+        "title": "Equal-pay rate",
+        "intro": "The client's figures, from the date they apply: the run then pays at least the rate plus the benefits' hourly cash value, and overtime on it. Until they are in, record that the client was asked: the rate card is paid and a correction trues it up.",
+        "from": "From",
+        "method": "How the client compared",
+        "methods": {
+          "comparator": "A comparable direct hire's rate",
+          "closest_seniority": "The direct hire with the closest seniority",
+          "survey_median": "Wage survey: the area's median for the job (720 hours)",
+          "survey_75th": "Wage survey: the 75th percentile (4,160 hours)"
+        },
+        "rate": "Hourly rate",
+        "benefits": "Benefits' hourly cash value",
+        "comparator": "Compared with (job and seniority, or SOC code and area)",
+        "note": "Note",
+        "save": "Save rate",
+        "saved": "Saved. The duty is done and the next run pays the rate.",
+        "or": "or",
+        "askedOn": "Asked the client on",
+        "asked": "The client was asked",
+        "askedSaved": "Saved. The rate card is paid until the client's figures are in.",
+        "none": "No rate on file yet.",
+        "rateRow": "From {date}: {total} an hour ({rate} + benefits {benefits}) — {method}; compared with {comparator}.",
+        "askedRow": "From {date}: the client was asked for its figures.",
+        "by": "by {by}, {date}",
+        "replaces": "Saving replaces the rate from {date} (it stays listed as replaced).",
+        "trueUpTitle": "Paid weeks to true up",
+        "trueUpBody": "These weeks were paid without the equal-pay rate in force then. Start a correction for each, so the difference is paid as soon as possible.",
+        "week": "{from} to {to}",
+        "remove": "Remove",
+        "removeTitle": "Remove this row",
+        "removeBody": "It stays listed as removed, with your reason; the next run no longer uses it. With no rate left, this duty is open again.",
+        "removed": "removed by {by}: {reason}",
+        "removedSaved": "Removed. It stays listed with your reason.",
+        "replaced": "replaced"
+      }
     },
     "who": {
       "owner": "the Owner",
@@ -2629,7 +2667,13 @@
         "minutes": "Enter hours like 620 or 620:30.",
         "throughOn": "Enter a date not after today.",
         "workerId": "Choose the worker and client.",
-        "clientId": "Choose the worker and client."
+        "clientId": "Choose the worker and client.",
+        "effectiveFrom": "Enter the date it applies from (a request: not after today).",
+        "method": "Choose how the client compared.",
+        "rateCents": "Enter the hourly rate, like 18.50.",
+        "benefitsCents": "Enter the benefits' hourly cash value, or 0.",
+        "comparator": "Say who it was compared with (up to 300 characters).",
+        "askedOverRate": "A rate is on file from that date; a request would not change it. Choose another date."
       },
       "closed_by_data": "Shiftbook closed this duty from the data; it opens again by itself if the data calls for it."
     },

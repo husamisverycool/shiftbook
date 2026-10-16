@@ -14,7 +14,7 @@
  */
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
-import { addDays, addMonths, computePay, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, or } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { fieldglassUpload } from "../../exports/invoice-files";
@@ -22,6 +22,7 @@ import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import { EQUAL_PAY_KINDS } from "../compliance/kinds";
+import { equalPayRatesOnFile } from "../compliance/equal-pay-rates";
 import { coveredHours, openingBalances } from "../compliance/hours";
 import { SYSTEM } from "../compliance/sync";
 import * as s from "../db/schema";
@@ -485,12 +486,52 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   }
   // This run's own obligations are recomputed, except one a person already closed; one Shiftbook set
   // aside (the hours that crossed changed) is not on file.
-  const obligationsOnFile = equalPayRows(await tx.select().from(s.obligations).where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), eq(s.obligations.closedBySystem, false), or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), ne(s.obligations.status, "open")))))
+  const crossingsOnFile = equalPayRows(await tx.select().from(s.obligations).where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), eq(s.obligations.closedBySystem, false), or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), ne(s.obligations.status, "open")))));
+  const obligationsOnFile = crossingsOnFile
     .map((o) => ({ kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn }))
     .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.kind, b.kind));
-  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, hoursWorked, obligationsOnFile, ...tables };
+  // The Illinois equal-pay rates on file (slice j, J6): the engine pays at least them from their dates.
+  const equalPayRates = await equalPayRatesOnFile(tx, runWorkers);
+  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, hoursWorked, obligationsOnFile, ...tables, ...(equalPayRates.length > 0 ? { equalPayRates } : {}) };
   const result = computePay(input);
   blockers.push(...result.blockers);
+  // The client's equal-pay figures are due before the laborer's next pay period begins (56 Ill. Adm.
+  // Code 260.505(b)): in a pay period that starts after a crossing, covered hours at that client need
+  // the rate in force, or a record that the client was asked (whatever its date) — then the rate card
+  // is paid and a correction trues it up. Pay is never held for want of the client's data: recording
+  // the request is enough. A crossing a person set aside as not applicable (the § 43 collective-
+  // agreement exception, say) holds nothing. After the 4,160-hour crossing a wage-survey median
+  // entered before it no longer counts: the survey method then asks for the 75th percentile
+  // (820 ILCS 175/42(a)(2)(B)).
+  const crossings = new Map<string, { at720: string | null; at4160: string | null }>();
+  for (const o of [...crossingsOnFile.filter((x) => x.status !== "not_applicable"), ...result.obligations]) {
+    const k = `${o.workerId}|${o.clientId}`;
+    const c = crossings.get(k) ?? { at720: null, at4160: null };
+    const field = o.kind === "il_equal_pay_720h" ? "at720" : "at4160";
+    if (c[field] === null || o.crossedOn < c[field]) c[field] = o.crossedOn;
+    crossings.set(k, c);
+  }
+  const rateNeeded = new Set<string>();
+  for (const sh of [...shifts].sort((a, b) => cmp(a.date, b.date))) {
+    if (sh.minutes <= 0 || sh.reportedOnly || !coveredByEqualPay(tables.equalPayRules ?? [], sh)) continue;
+    const k = `${sh.workerId}|${sh.clientId}`;
+    const c = crossings.get(k);
+    if (!c || c.at720 === null || c.at720 >= period.startsOn || rateNeeded.has(k)) continue;
+    const inForce = rateInForce(equalPayRates, sh.workerId, sh.clientId, sh.date);
+    const asked = latestRequest(equalPayRates, sh.workerId, sh.clientId);
+    const client = sh.clientName ?? sh.clientId;
+    const who = { code: "equal_pay_rate_needed" as const, workerId: sh.workerId, workerName: sh.workerName, clientId: sh.clientId, date: sh.date };
+    if (!inForce && !asked) {
+      rateNeeded.add(k);
+      blockers.push({ ...who, message: `${sh.workerName} passed 720 hours at ${client} on ${c.at720}, before this pay period began (${period.startsOn}), so the client's equal-pay figures are due now (820 ILCS 175/42; 56 Ill. Adm. Code 260.505(b)). On the equal-pay duty in Compliance, enter the rate, or record that the client was asked: the rate card is then paid and a correction trues it up.` });
+      continue;
+    }
+    const tier = c.at4160;
+    if (tier !== null && tier < period.startsOn && inForce?.method === "survey_median" && inForce.effectiveFrom < tier && !(asked && asked.effectiveFrom >= tier)) {
+      rateNeeded.add(k);
+      blockers.push({ ...who, message: `${sh.workerName} passed 4,160 hours at ${client} on ${tier}. The rate on file from ${inForce.effectiveFrom} is the wage survey's median; from then on the survey method asks for at least the 75th percentile (820 ILCS 175/42(a)(2)(B)). On the 4,160-hour duty in Compliance, enter the new rate, or record that the client was asked.` });
+    }
+  }
   const warnings: RunIssue[] = [...result.warnings, ...(await overtimeSpikes(tx, period, result.payLines, workerNameOf))];
 
   // Pay and bill lines must carry the same worked minutes for each worker, assignment, week and type

@@ -30,7 +30,8 @@ import { MA_REPORTING_PAY, maReportingPay } from "./rules/ma-reporting-pay";
 import { guaranteeRuleFor, PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
 import { HOLIDAY_NOT_WORKED, HOLIDAY_NOT_WORKED_CITATION, HOLIDAY_WORKED, HOLIDAY_WORKED_CITATION, holidayTermsFor, premiumCountsInRegularRate, premiumExclusionOn, type HolidayTerms } from "./rules/holiday-pay";
 import { addWorth, alvaradoWorth, BONUS, BONUS_CITATION, CA_FLAT_SUM_BONUS, CA_FLAT_SUM_CITATION } from "./rules/bonus";
-import { equalPayCounter } from "./rules/il-equal-pay";
+import { coveredByEqualPay, equalPayCounter } from "./rules/il-equal-pay";
+import { applyEqualPayRates, duplicateEqualPayRates, equalPayRateProblem } from "./rules/il-equal-pay-rate";
 import type { Bonus, Confirmation, ConfirmationKind, EarningType, Fraction, HolidayPolicy, Issue, JurisdictionRule, Line, PayInput, PayResult, PremiumRule, Shift } from "./types";
 
 export const RULES_VERSION = "2026.10-c8";
@@ -148,6 +149,8 @@ const lineKey = (s: Shift) => [s.assignmentId, s.clientId, s.payRateCents, s.bil
 
 interface Bucket {
   key: string;
+  /** Why the shifts' pay rate is above their rate card's (the Illinois equal-pay rate), each once. */
+  payWhy: string[];
   assignmentId: string;
   clientId: string;
   firstIndex: number;
@@ -207,10 +210,24 @@ export function computePay(input: PayInput): PayResult {
   const warnings: Issue[] = [];
   const payLines: Line[] = [];
   const billLines: Line[] = [];
-  const shiftsInOrder = [...input.shifts].sort(totalOrder);
-
   // A worker with a shift that cannot be placed in any week is held entirely.
   const heldWorkers = new Set<string>();
+  // The Illinois equal-pay rate raises a covered shift's pay rate from its date (the engine alone says
+  // why). A malformed or doubled row holds only its worker.
+  const allRates = input.equalPayRates ?? [];
+  const doubled = new Set(duplicateEqualPayRates(allRates));
+  for (const r of allRates) {
+    const problem = doubled.has(r) ? `two rows for ${r.clientId} from the same date` : equalPayRateProblem(r);
+    if (problem === null || heldWorkers.has(r.workerId)) continue;
+    heldWorkers.add(r.workerId);
+    blockers.push({ code: "invalid_input", workerId: r.workerId, message: `The Illinois equal-pay rate from ${String(r.effectiveFrom)}: ${problem}. All of this worker's weeks are held until it is fixed.` });
+  }
+  const rates = allRates.filter((r) => !heldWorkers.has(r.workerId));
+  const shiftsInOrder = applyEqualPayRates(
+    input.shifts.map((s) => (s.payRateExplain === undefined ? s : { ...s, payRateExplain: undefined })),
+    rates,
+    (s) => validShift(s) === null && coveredByEqualPay(rules.equalPayRules, s),
+  ).sort(totalOrder);
   for (const shift of shiftsInOrder) {
     if (!isIsoDate(shift.date)) {
       heldWorkers.add(shift.workerId);
@@ -669,7 +686,8 @@ export function computePay(input: PayInput): PayResult {
       const { shift, regular } = split;
       const premium = premiumOf(split);
       const k = lineKey(shift);
-      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], overtimeParts: [], trueUps: [], holiday: [], holidayBill: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } } };
+      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], overtimeParts: [], trueUps: [], holiday: [], holidayBill: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } }, payWhy: [] };
+      if (shift.payRateExplain && !b.payWhy.includes(shift.payRateExplain)) b.payWhy.push(shift.payRateExplain);
       if (regular > 0) noteWorking(b.billRate.regular, shift.billRateExplain);
       if (premium > 0) noteWorking(b.billRate.overtime, shift.billRateExplain);
       b.regular += regular;
@@ -730,6 +748,7 @@ export function computePay(input: PayInput): PayResult {
       const base = { workerId: first.workerId, assignmentId: b.assignmentId, clientId: b.clientId, workweekStart: week };
       const payRate: Fraction = { num: b.sample.payRateCents, den: 1 };
       const billRate: Fraction = { num: b.sample.billRateCents, den: 1 };
+      const rateWhy = b.payWhy.length > 0 ? ` ${b.payWhy.join(" ")}` : "";
 
       // 3. straight pay
       if (b.regular > 0) {
@@ -737,7 +756,7 @@ export function computePay(input: PayInput): PayResult {
         const scope = californiaDaily
           ? `hours not paid at a daily, seventh-day or weekly premium in the workweek starting ${week}`
           : `hours up to the ${formatDuration(weekly.thresholdMinutes)} weekly threshold in the workweek starting ${week}`;
-        weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.`, entryIds: uniqueSorted(b.regularEntries) });
+        weekPay.push({ ...base, type: "REG", minutes: b.regular, rate: payRate, amountCents: pay.amountCents, ruleId: "straight_time", explain: `${pay.text} Rule straight_time: ${scope}.${rateWhy}`, entryIds: uniqueSorted(b.regularEntries) });
         const bill = arithmetic("Billed regular", b.regular, billRate, "");
         weekBill.push({ ...base, type: "REG", minutes: b.regular, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_regular", explain: `${bill.text} Bill rate from the rate card${billRateNote(b.billRate.regular)}.`, entryIds: uniqueSorted(b.regularEntries) });
       }
@@ -779,7 +798,7 @@ export function computePay(input: PayInput): PayResult {
                 ? ` (${straight} + ${premium} × ${formatRate(part.base)}, because the minimum wage that day, ${formatRate(part.base)}, is higher than the regular rate ${rrText}; ${RATE_FLOOR_CITATION})`
                 : ` (${straight} + ${premium} × regular rate ${rrText})`;
           const pay = arithmetic(part.type === "DT" ? "Double time" : "Overtime", part.minutes, otRate, note);
-          weekPay.push({ ...base, type: part.type, minutes: part.minutes, rate: otRate, amountCents: pay.amountCents, ruleId: part.ruleCode, explain: `${pay.text} ${whyFor(part)}${singleRate ? "" : rrWhy}`, entryIds: uniqueSorted(part.entries) });
+          weekPay.push({ ...base, type: part.type, minutes: part.minutes, rate: otRate, amountCents: pay.amountCents, ruleId: part.ruleCode, explain: `${pay.text} ${whyFor(part)}${singleRate ? "" : rrWhy}${rateWhy}`, entryIds: uniqueSorted(part.entries) });
         }
 
         // Billing mirrors the pay lines by rule (a minimum-wage base never splits a bill line).
@@ -832,7 +851,7 @@ export function computePay(input: PayInput): PayResult {
         // Less than half a cent rounds to nothing: no line (the warning still asks for the rate card to be fixed).
         if (pay.amountCents === 0) continue;
         const why = `Rule ${MINIMUM_WAGE}: the pay rate is below the minimum wage on ${t.dates.join(", ")} (${t.citations.join("; ")}), so the difference is paid for every hour worked.`;
-        weekPay.push({ ...base, type: "MW_TRUEUP", minutes: t.minutes, rate, amountCents: pay.amountCents, ruleId: MINIMUM_WAGE, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(t.entries) });
+        weekPay.push({ ...base, type: "MW_TRUEUP", minutes: t.minutes, rate, amountCents: pay.amountCents, ruleId: MINIMUM_WAGE, explain: `${pay.text} ${why}${rateWhy}`, entryIds: uniqueSorted(t.entries) });
       }
       // 6. holiday premium on hours worked on a holiday: paid on top of straight time and any overtime.
       for (const h of b.holiday) {
@@ -844,7 +863,7 @@ export function computePay(input: PayInput): PayResult {
         const cut = formatMultiplier(h.cutOff);
         const counts = premiumCountsInRegularRate(k, h.cutOff) ? `A holiday premium below ${cut}× is counted in the regular rate` : `A holiday premium of ${cut}× or more is not counted in the regular rate`;
         const why = `Rule ${HOLIDAY_WORKED}: ${listDates(h.dates)} ${h.dates.length > 1 ? "are holidays" : "is a holiday"} under the holiday policy "${h.policy.name}", which pays ${formatMultiplier(k)} × the pay rate for hours worked; straight time is on the regular and overtime lines, and this premium is paid on top of any overtime, never credited toward it. ${counts} (${HOLIDAY_WORKED_CITATION}).`;
-        if (pay.amountCents > 0) weekPay.push({ ...base, type: "HOL", minutes: h.minutes, rate, amountCents: pay.amountCents, ruleId: HOLIDAY_WORKED, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(h.entries) });
+        if (pay.amountCents > 0) weekPay.push({ ...base, type: "HOL", minutes: h.minutes, rate, amountCents: pay.amountCents, ruleId: HOLIDAY_WORKED, explain: `${pay.text} ${why}${rateWhy}`, entryIds: uniqueSorted(h.entries) });
       }
       // Billed by the client's own holiday policy when it has one, else the agency's.
       for (const h of b.holidayBill) {
@@ -950,9 +969,10 @@ export function computePay(input: PayInput): PayResult {
       const rate: Fraction = rule.basis === "regular_rate" ? premiumBase(premiumRate, floorOf.get(sample)!).base : { num: effective(sample), den: 1 };
       const type: EarningType = rule.ruleCode === IL_DAY_LABOR_MINIMUM ? "MIN_GUARANTEE" : "REPORTING_PAY";
       const label = type === "MIN_GUARANTEE" ? "Day-labor minimum" : "Reporting-time pay";
-      const basisNote = rule.basis === "regular_rate" ? ` (the week's regular rate${premiumRateNote})` : sample.payRateCents < effective(sample) ? " (the minimum wage that day)" : " (the agreed pay rate)";
+      const basisNote = rule.basis === "regular_rate" ? ` (the week's regular rate${premiumRateNote})` : sample.payRateCents < effective(sample) ? " (the minimum wage that day)" : sample.payRateExplain ? " (the Illinois equal-pay rate)" : " (the agreed pay rate)";
+      const guaranteeWhy = sample.payRateExplain ? ` ${sample.payRateExplain}` : "";
       const pay = arithmetic(label, shortfall, rate, basisNote);
-      weekPay.push({ workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type, minutes: shortfall, rate, amountCents: pay.amountCents, ruleId: rule.ruleCode, explain: `${pay.text} Rule ${rule.ruleCode}: ${story}, not as hours worked (${rule.citation}).`, entryIds: uniqueSorted(day.flatMap((s) => s.entryIds)) });
+      weekPay.push({ workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type, minutes: shortfall, rate, amountCents: pay.amountCents, ruleId: rule.ruleCode, explain: `${pay.text} Rule ${rule.ruleCode}: ${story}, not as hours worked (${rule.citation}).${guaranteeWhy}`, entryIds: uniqueSorted(day.flatMap((s) => s.entryIds)) });
       if (sample.billsGuarantees === true) {
         const billRate: Fraction = { num: sample.billRateCents, den: 1 };
         const bill = arithmetic(`Billed ${label.toLowerCase()}`, shortfall, billRate, "");
@@ -965,10 +985,10 @@ export function computePay(input: PayInput): PayResult {
     for (const { c, sample, terms } of holidaysNotWorked) {
       const rate: Fraction = { num: effective(sample), den: 1 };
       const minutes = terms.notWorkedMinutes;
-      const pay = arithmetic("Holiday pay (not worked)", minutes, rate, sample.payRateCents < effective(sample) ? " (the minimum wage that day)" : " (the agreed pay rate)");
+      const pay = arithmetic("Holiday pay (not worked)", minutes, rate, sample.payRateCents < effective(sample) ? " (the minimum wage that day)" : sample.payRateExplain ? " (the Illinois equal-pay rate)" : " (the agreed pay rate)");
       const why = `Rule ${HOLIDAY_NOT_WORKED}: ${c.date} is a holiday under the holiday policy "${terms.notWorked!.name}", the worker did not work that day, and a person confirmed the worker is eligible; it is pay, not hours worked, so it counts toward neither overtime nor the regular rate (${HOLIDAY_NOT_WORKED_CITATION}).`;
       const line = { workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type: "HOL_NOT_WORKED" as const, minutes, entryIds: [] };
-      weekPay.push({ ...line, rate, amountCents: pay.amountCents, ruleId: HOLIDAY_NOT_WORKED, explain: `${pay.text} ${why}` });
+      weekPay.push({ ...line, rate, amountCents: pay.amountCents, ruleId: HOLIDAY_NOT_WORKED, explain: `${pay.text} ${why}${sample.payRateExplain ? ` ${sample.payRateExplain}` : ""}` });
       // Billed by the client's own policy (or the agency's when it has none): its minutes, if any.
       const billMinutes = terms.bill?.billNotWorked ? terms.bill.notWorkedMinutes : 0;
       if (terms.bill && billMinutes > 0) {
@@ -1051,7 +1071,7 @@ export function computePay(input: PayInput): PayResult {
   // The Illinois equal-pay counter runs over every usable shift of every worker not held: the hours
   // were worked whether or not something else holds their week.
   const counted = shiftsInOrder.filter((s) => !heldWorkers.has(s.workerId) && validShift(s) === null);
-  const equalPay = equalPayCounter({ rules: rules.equalPayRules, shifts: counted, hoursWorked: input.hoursWorked ?? [], onFile: input.obligationsOnFile ?? [], workweekStartsOn: input.workweekStartsOn });
+  const equalPay = equalPayCounter({ rules: rules.equalPayRules, shifts: counted, hoursWorked: input.hoursWorked ?? [], onFile: input.obligationsOnFile ?? [], workweekStartsOn: input.workweekStartsOn, rates });
   warnings.push(...equalPay.warnings);
 
   const order = (a: Line, b: Line) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);

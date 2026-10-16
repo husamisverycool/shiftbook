@@ -3,18 +3,25 @@
  * hours worked in earlier periods, records the 720-hour crossing as an obligation due before the next
  * pay period, keeps it in step when the run's hours change, and never records it twice.
  */
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { and, eq, gte, inArray, lt } from "drizzle-orm";
 import { EQUAL_PAY_KINDS } from "../../src/server/compliance/kinds";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { addDays } from "@shiftbook/rules";
-import { agencies, assignments, auditEvents, obligations, payPeriods, timeEntries, type ObligationEvidence } from "../../src/server/db/schema";
+import { agencies, assignments, auditEvents, equalPayRates, obligations, payLines, payPeriods, timeEntries, type ObligationEvidence } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
-import { addObligationNote } from "../../src/server/compliance/service";
+import { removeEqualPayRate, setEqualPayRate, weeksToTrueUp } from "../../src/server/compliance/equal-pay-rates";
+import { addOpeningBalance } from "../../src/server/compliance/counter-balances";
+import { addObligationNote, closeObligation } from "../../src/server/compliance/service";
+import { createRunFiles } from "../../src/server/files/service";
+import { LocalDocumentStore } from "../../src/server/storage";
 import { addEntry } from "../../src/server/review/service";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
-import { openAppDb, openOwnerDb } from "./helpers";
+import { approveAsOwner, openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
 const owner = openOwnerDb();
@@ -22,6 +29,9 @@ const actor: Actor = { agencyId: DEMO_AGENCY.id, userId: "00000000-0000-4000-a00
 const period = periodId("w2"); // Monday 2026-10-05 to Sunday 2026-10-11
 const inAgency = <T>(fn: Parameters<typeof app.withAgency<T>>[1]) => app.withAgency(actor.agencyId, fn);
 const marcus = workerId("marcus-bell");
+const TODAY = "2026-10-16";
+const theOwner: Actor = { ...actor, userId: "00000000-0000-4000-a000-000000000002", label: "Test owner", role: "owner" };
+const store = new LocalDocumentStore(mkdtempSync(join(tmpdir(), "sb-equal-pay-")));
 
 beforeEach(async () => {
   const existing = await owner.db.select().from(agencies).where(eq(agencies.id, DEMO_AGENCY.id));
@@ -144,4 +154,146 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     const rows = await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])));
     expect(rows.map((r) => [r.id, r.status, r.closedBySystem, r.crossedOn])).toEqual([[row!.id, "open", false, "2026-10-07"]]);
   });
+
+  it("the equal-pay rate (J6): from the next pay period the run needs the rate or a record that the client was asked; then it pays it", async () => {
+    await earlierHours();
+    await weekOfWork();
+    await inAgency((tx) => computeRun(tx, actor, period));
+    const duty = await theDuty();
+    expect(duty.crossedOn).toBe("2026-10-07");
+    const later = await nextWeek();
+    let run = await inAgency((tx) => computeRun(tx, actor, later));
+    const needed = run.blockers.filter((b) => b.code === "equal_pay_rate_needed");
+    expect(needed.map((b) => [b.workerId, b.date])).toEqual([[marcus, "2026-10-12"]]);
+    expect(needed[0]!.message).toContain("passed 720 hours at Prairie Line Manufacturing (demo) on 2026-10-07, before this pay period began (2026-10-12), so the client's equal-pay figures are due now");
+    // Only the Owner records it; a request is never in the future; a request made today clears the hold and the rate card is paid.
+    const asked = { effectiveFrom: TODAY, kind: "asked" as const, rateCents: null, benefitsCents: null, method: null, comparator: null, note: null };
+    expect(await inAgency((tx) => setEqualPayRate(tx, actor, duty.id, asked, TODAY))).toEqual({ ok: false, error: "not_allowed" });
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { ...asked, effectiveFrom: "2026-10-17" }, TODAY))).toEqual({ ok: false, error: "invalid", field: "effectiveFrom" });
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, asked, TODAY))).toEqual({ ok: true });
+    run = await inAgency((tx) => computeRun(tx, actor, later));
+    expect(run.blockers.filter((b) => b.code === "equal_pay_rate_needed")).toEqual([]);
+    expect(run.warnings.find((w) => w.code === "equal_pay_rate_missing" && w.workerId === marcus)!.message).toContain("the client was asked for its figures on 2026-10-16");
+    // The client's figures: $19.00 + $1.00 benefits from 2026-10-12. Regular 40 h × $20.00 = $800.00; overtime 5 h × $30.00 = $150.00.
+    const rate = { effectiveFrom: "2026-10-12", kind: "rate" as const, rateCents: 1900, benefitsCents: 100, method: "comparator" as const, comparator: "Machine operator II, 2 years", note: null };
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { ...rate, comparator: " " }, TODAY))).toEqual({ ok: false, error: "invalid", field: "comparator" });
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, rate, TODAY))).toEqual({ ok: true });
+    const done = await theDuty();
+    expect([done.status, done.statusNote, done.doneByLabel]).toEqual(["done", "Equal-pay rate entered from 2026-10-12.", "Test owner"]);
+    run = await inAgency((tx) => computeRun(tx, actor, later));
+    expect(run.blockers.filter((b) => b.workerId === marcus)).toEqual([]);
+    expect(await marcusLines(run.runId)).toEqual([
+      ["OT", 300, 15_000],
+      ["REG", 2400, 80_000],
+    ]);
+    const lines = await inAgency((tx) => tx.select().from(payLines).where(eq(payLines.payRunId, run.runId)));
+    expect(lines.find((l) => l.workerId === marcus && l.type === "REG")!.explain).toContain("Illinois equal pay from 2026-10-12 (820 ILCS 175/42(a), (b)): the comparable direct hire's rate $19.00 + the benefits' hourly cash value $1.00 = $20.00, above the rate card's $18.25.");
+    // A rate from the same date replaces the one before, kept as replaced; a request never replaces a rate.
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { ...rate, rateCents: 1950 }, TODAY))).toEqual({ ok: true });
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { ...asked, effectiveFrom: "2026-10-12" }, TODAY))).toEqual({ ok: false, error: "invalid", field: "askedOverRate" });
+    const rows = await inAgency((tx) => tx.select().from(equalPayRates).where(eq(equalPayRates.effectiveFrom, "2026-10-12")));
+    expect(rows.map((r) => [r.kind, r.rateCents, r.removedAt !== null]).sort()).toEqual([
+      ["rate", 1900, true],
+      ["rate", 1950, false],
+    ]);
+  });
+
+  it("a wrong rate is removed with a reason by the Owner, stays on file, and with no rate left the duty is open again", async () => {
+    await earlierHours();
+    await weekOfWork();
+    await inAgency((tx) => computeRun(tx, actor, period));
+    const duty = await theDuty();
+    const later = await nextWeek();
+    await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { effectiveFrom: "2026-10-09", kind: "asked", rateCents: null, benefitsCents: null, method: null, comparator: null, note: null }, TODAY));
+    await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { effectiveFrom: "2026-10-12", kind: "rate", rateCents: 9500, benefitsCents: 0, method: "comparator", comparator: "Typed $95.00 for $19.50", note: null }, TODAY));
+    const [wrong] = await inAgency((tx) => tx.select().from(equalPayRates).where(eq(equalPayRates.kind, "rate")));
+    expect(await inAgency((tx) => removeEqualPayRate(tx, actor, duty.id, wrong!.id, "typo"))).toEqual({ ok: false, error: "not_allowed" });
+    expect(await inAgency((tx) => removeEqualPayRate(tx, theOwner, duty.id, wrong!.id, "  "))).toEqual({ ok: false, error: "invalid", field: "reason" });
+    expect(await inAgency((tx) => removeEqualPayRate(tx, theOwner, duty.id, wrong!.id, "Typed $95.00 for $19.50"))).toEqual({ ok: true });
+    expect(await inAgency((tx) => removeEqualPayRate(tx, theOwner, duty.id, wrong!.id, "again"))).toEqual({ ok: false, error: "not_open" });
+    const [kept] = await inAgency((tx) => tx.select().from(equalPayRates).where(eq(equalPayRates.id, wrong!.id)));
+    expect([kept!.removedReason, kept!.removedByLabel, kept!.removedAt !== null]).toEqual(["Typed $95.00 for $19.50", "Test owner", true]);
+    expect((await theDuty()).status).toBe("open");
+    const logged = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityId, duty.id), eq(auditEvents.reason, "the equal-pay rate on file was removed"))));
+    expect(logged).toHaveLength(1);
+    // The request is still on file: the rate card is paid. 40 h × $18.25 = $730.00; 5 h × $27.375 = $136.875 → $136.88.
+    const run = await inAgency((tx) => computeRun(tx, actor, later));
+    expect(run.blockers.filter((b) => b.workerId === marcus)).toEqual([]);
+    expect(await marcusLines(run.runId)).toEqual([
+      ["OT", 300, 13_688],
+      ["REG", 2400, 73_000],
+    ]);
+  });
+
+  it("a crossing set aside as not applicable holds nothing", async () => {
+    await earlierHours();
+    await weekOfWork();
+    await inAgency((tx) => computeRun(tx, actor, period));
+    const duty = await theDuty();
+    expect(await inAgency((tx) => closeObligation(tx, theOwner, duty.id, "not_applicable", "Covered by a collective bargaining agreement (820 ILCS 175/43)"))).toEqual({ ok: true });
+    const later = await nextWeek();
+    const run = await inAgency((tx) => computeRun(tx, actor, later));
+    expect(run.blockers.filter((b) => b.code === "equal_pay_rate_needed")).toEqual([]);
+  });
+
+  it("after 4,160 hours a wage-survey median entered before then holds the run until the 75th percentile is entered or asked for", async () => {
+    // 4,200 hours at Prairie Line before Shiftbook, through Sunday 2026-10-04: both counters crossed before this pay period.
+    await inAgency((tx) => tx.update(timeEntries).set({ status: "rejected" }).where(and(eq(timeEntries.workerId, marcus), lt(timeEntries.workDate, "2026-10-05"))));
+    expect(await inAgency((tx) => addOpeningBalance(tx, theOwner, { workerId: marcus, clientId: clientId("il"), minutes: 252_000, throughOn: "2026-10-04", note: "Hours from the old payroll system" }, TODAY))).toEqual({ ok: true });
+    await weekOfWork();
+    let run = await inAgency((tx) => computeRun(tx, actor, period));
+    const kinds = await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])));
+    expect(kinds.map((o) => [o.kind, o.crossedOn]).sort()).toEqual([
+      ["il_equal_pay_4160h", "2026-10-04"],
+      ["il_equal_pay_720h", "2026-10-04"],
+    ]);
+    expect(run.blockers.filter((b) => b.code === "equal_pay_rate_needed").map((b) => b.message.slice(0, 81))).toEqual(["Marcus Bell passed 720 hours at Prairie Line Manufacturing (demo) on 2026-10-04, "]);
+    const duty = kinds.find((o) => o.kind === "il_equal_pay_720h")!;
+    const median = { effectiveFrom: "2026-10-01", kind: "rate" as const, rateCents: 1950, benefitsCents: 0, method: "survey_median" as const, comparator: "OEWS 51-9111, Chicago metro", note: null };
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, median, TODAY))).toEqual({ ok: true });
+    run = await inAgency((tx) => computeRun(tx, actor, period));
+    const tier = run.blockers.filter((b) => b.code === "equal_pay_rate_needed");
+    expect(tier.map((b) => b.message)).toEqual([
+      "Marcus Bell passed 4,160 hours at Prairie Line Manufacturing (demo) on 2026-10-04. The rate on file from 2026-10-01 is the wage survey's median; from then on the survey method asks for at least the 75th percentile (820 ILCS 175/42(a)(2)(B)). On the 4,160-hour duty in Compliance, enter the new rate, or record that the client was asked.",
+    ]);
+    // The 75th percentile from Monday clears it.
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { ...median, effectiveFrom: "2026-10-05", rateCents: 2150, method: "survey_75th" }, TODAY))).toEqual({ ok: true });
+    run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.blockers.filter((b) => b.code === "equal_pay_rate_needed")).toEqual([]);
+  });
+
+  it("weeks already paid from a rate's date without it are listed, each to be trued up by a correction", async () => {
+    await earlierHours();
+    await weekOfWork();
+    await inAgency((tx) => approveAsOwner(tx, theOwner, period));
+    await inAgency((tx) => createRunFiles(tx, theOwner, store, period, { today: "2026-10-13" }));
+    const duty = await theDuty();
+    expect(await inAgency((tx) => weeksToTrueUp(tx, marcus, clientId("il")))).toEqual([]);
+    // The client's figures arrive late, from the crossing day.
+    expect(await inAgency((tx) => setEqualPayRate(tx, theOwner, duty.id, { effectiveFrom: "2026-10-07", kind: "rate", rateCents: 2000, benefitsCents: 0, method: "comparator", comparator: "Machine operator II", note: null }, TODAY))).toEqual({ ok: true });
+    expect(await inAgency((tx) => weeksToTrueUp(tx, marcus, clientId("il")))).toEqual([{ periodId: period, startsOn: "2026-10-05", endsOn: "2026-10-11" }]);
+    // At another client, nothing.
+    expect(await inAgency((tx) => weeksToTrueUp(tx, marcus, clientId("ma")))).toEqual([]);
+  });
 });
+
+async function theDuty() {
+  const rows = await inAgency((tx) => tx.select().from(obligations).where(eq(obligations.kind, "il_equal_pay_720h")));
+  expect(rows).toHaveLength(1);
+  return rows[0]!;
+}
+
+/** The next week: Monday 2026-10-12 to Friday, 9 h a day (45 h) at the card's $18.25. */
+async function nextWeek() {
+  const [later] = await inAgency((tx) => tx.insert(payPeriods).values({ agencyId: actor.agencyId, startsOn: "2026-10-12", endsOn: "2026-10-18" }).returning());
+  for (const day of ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"]) {
+    const added = await inAgency((tx) => addEntry(tx, actor, later!.id, { workerId: marcus, workDate: day, inMinute: 420, outMinute: 960, breakMinutes: 0 }, ["other"], "next week"));
+    if (!added.ok) throw new Error(added.error);
+  }
+  return later!.id;
+}
+
+async function marcusLines(runId: string) {
+  const lines = await inAgency((tx) => tx.select().from(payLines).where(eq(payLines.payRunId, runId)));
+  return lines.filter((l) => l.workerId === marcus).map((l) => [l.type, l.minutes, l.amountCents]).sort();
+}

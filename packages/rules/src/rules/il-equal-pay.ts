@@ -16,6 +16,7 @@
 import { addDays, addMonths, isEffective, workweekStart } from "../dates";
 import { formatClock, formatDuration, formatHours } from "../format";
 import type { EqualPayRule, HoursWorked, Issue, Obligation, ObligationKind, ObligationOnFile, Shift, Weekday } from "../types";
+import { latestRequest, rateInForce, type EqualPayRate } from "./il-equal-pay-rate";
 
 export const IL_EQUAL_PAY = "il_dtlsa_equal_pay";
 
@@ -25,8 +26,11 @@ type Tier = { kind: ObligationKind; months: number; threshold: number };
 
 const ruleOn = (rules: EqualPayRule[], jurisdiction: string, date: string) => rules.find((r) => r.jurisdiction === jurisdiction && isEffective(date, r.effectiveFrom, r.effectiveTo)) ?? null;
 
-/** Work that counts: hours actually worked on day and temporary labor at a worksite whose state has a counter rule. */
-export const countsTowardEqualPay = (rules: EqualPayRule[], s: Shift) => s.minutes > 0 && !s.reportedOnly && s.dayAndTemporaryLabor !== false && ruleOn(rules, s.jurisdiction, s.date) !== null;
+/** Covered by the Act: day and temporary labor at a worksite whose state has the equal-pay rule in force that day. */
+export const coveredByEqualPay = (rules: EqualPayRule[], s: Shift) => s.dayAndTemporaryLabor !== false && ruleOn(rules, s.jurisdiction, s.date) !== null;
+
+/** Work that counts: hours actually worked on covered work. */
+export const countsTowardEqualPay = (rules: EqualPayRule[], s: Shift) => s.minutes > 0 && !s.reportedOnly && coveredByEqualPay(rules, s);
 
 /** First index whose date is ≥ date (dates ascending). */
 function lowerBound(events: Event[], date: string): number {
@@ -40,7 +44,7 @@ function lowerBound(events: Event[], date: string): number {
   return lo;
 }
 
-export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; hoursWorked: HoursWorked[]; onFile: ObligationOnFile[]; workweekStartsOn: Weekday }): { obligations: Obligation[]; warnings: Issue[] } {
+export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; hoursWorked: HoursWorked[]; onFile: ObligationOnFile[]; workweekStartsOn: Weekday; rates?: EqualPayRate[] }): { obligations: Obligation[]; warnings: Issue[] } {
   const obligations: Obligation[] = [];
   const warnings: Issue[] = [];
   const pairs = new Map<string, Shift[]>();
@@ -91,7 +95,7 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
     // The crossing that counts is the earliest: the one found, or the one on file. A crossing found
     // before the one on file is recorded (a late timesheet moves it earlier); once on file, it stays.
     const onFile = new Map(args.onFile.filter((o) => o.workerId === workerId && o.clientId === clientId).map((o) => [o.kind, o.crossedOn]));
-    const weeks = new Map<string, { after: number; lastDate: string; lastIndex: number; rule: EqualPayRule }>();
+    const weeks = new Map<string, { after: number; asked: string | null; lastDate: string; lastIndex: number; rule: EqualPayRule }>();
     let crossed720: string | null = null;
     for (const kind of ["il_equal_pay_720h", "il_equal_pay_4160h"] as const) {
       const f = found.get(kind) ?? null;
@@ -122,10 +126,14 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
           obligation.entryIds.push(...e.shift.entryIds);
         }
         if (kind === "il_equal_pay_720h") {
+          // Hours paid at an equal-pay rate on file are equal pay; asked-for figures are not in yet.
+          if (rateInForce(args.rates ?? [], workerId, clientId, e.date)) return;
+          const asked = latestRequest(args.rates ?? [], workerId, clientId);
           const rule = ruleOn(args.rules, jurisdiction, e.date) ?? f?.rule;
           const week = workweekStart(e.date, args.workweekStartsOn);
-          const w = weeks.get(week) ?? { after: 0, lastDate: e.date, lastIndex: i, rule: rule! };
+          const w = weeks.get(week) ?? { after: 0, asked: null, lastDate: e.date, lastIndex: i, rule: rule! };
           w.after += after;
+          if (asked) w.asked = asked.effectiveFrom;
           weeks.set(week, w);
         }
       });
@@ -144,7 +152,7 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
     events.forEach((e, i) => {
       if (!e.shift || !window12.has(i)) return;
       const week = workweekStart(e.date, args.workweekStartsOn);
-      const w = weeks.get(week) ?? { after: 0, lastDate: e.date, lastIndex: i, rule: ruleOn(args.rules, jurisdiction, e.date)! };
+      const w = weeks.get(week) ?? { after: 0, asked: null, lastDate: e.date, lastIndex: i, rule: ruleOn(args.rules, jurisdiction, e.date)! };
       w.lastDate = e.date;
       w.lastIndex = i;
       w.rule = ruleOn(args.rules, jurisdiction, e.date)!;
@@ -157,7 +165,8 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
       // The heads-up stops only from the crossing on (a crossing on file for a later date does not hide it).
       const crossedBy = crossed720 !== null && crossed720 <= w.lastDate;
       if (w.after > 0) {
-        warnings.push({ code: "equal_pay_rate_missing", ...who, message: `${workerName}, workweek starting ${week}: ${formatDuration(w.after)} worked at ${client} after passing ${formatHours(w.rule.triggerMinutes)} there are paid at the placement rate; the equal-pay rate and benefits (or their hourly cash value) are not on file, so back pay may be due once they are (820 ILCS 175/42).` });
+        const why = w.asked !== null ? `the client was asked for its figures on ${w.asked} and they are not in yet` : "the equal-pay rate and benefits (or their hourly cash value) are not on file";
+        warnings.push({ code: "equal_pay_rate_missing", ...who, message: `${workerName}, workweek starting ${week}: ${formatDuration(w.after)} worked at ${client} after passing ${formatHours(w.rule.triggerMinutes)} there are paid at the placement rate; ${why}, so back pay may be due once they are (820 ILCS 175/42).` });
       } else if (!crossedBy && total > w.rule.warnMinutes) {
         warnings.push({ code: "approaching_equal_pay_hours", ...who, date: w.lastDate, message: `${workerName}, workweek starting ${week}: ${formatDuration(total)} worked at ${client} in the ${w.rule.windowMonths} months to ${w.lastDate}; past ${formatHours(w.rule.triggerMinutes)} the Illinois equal-pay rule applies (820 ILCS 175/42), so ask the client now for the pay of its comparable direct hires.` });
       }
