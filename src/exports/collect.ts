@@ -86,7 +86,8 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
     const key = idKey(system, id);
     const other = bySystemId.get(key);
     if (other) {
-      throw new ExportError("duplicate_payroll_id", `${who(other)} and ${who(w)} both have ${WORKER_ID_NAME[system]} ${id}; ${name} would put both workers' pay on one person.`);
+      const ids = other.payrollIds[system]!.id === id ? id : `${other.payrollIds[system]!.id} and ${id}`;
+      throw new ExportError("duplicate_payroll_id", `${who(other)} and ${who(w)} both have ${WORKER_ID_NAME[system]} ${ids}; ${name} would put both workers' pay on one person.`);
     }
     bySystemId.set(key, w);
   }

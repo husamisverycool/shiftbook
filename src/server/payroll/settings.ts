@@ -75,13 +75,19 @@ function fromCodes(format: ExportFormat, codes: CodeMap): unknown {
 }
 
 /** The codes in use for a format (its defaults when none were saved), with the row they came from. */
-export async function payrollCodes(tx: Tx, format: ExportFormat): Promise<{ id: string | null; codes: CodeMap }> {
+/**
+ * The codes in use for a format (its defaults when none were saved). They are checked as when saved:
+ * a stored code today's rules refuse (saved under older rules) is left out of `codes`, so the run
+ * names the worker whose pay it would carry, and is shown with its problem on the settings page.
+ */
+export async function payrollCodes(tx: Tx, format: ExportFormat): Promise<{ id: string | null; codes: CodeMap; stored: CodeMap; problems: SettingProblem[] }> {
   const row = await currentSetting(tx, codesKey(format));
-  if (!row) return { id: null, codes: defaultCodes(format) };
-  const codes = toCodes(format, row.value);
-  // Checked as when saved: stored codes the file cannot use would only fail later, without a name.
-  if (codeMapProblems(format, codes).length > 0) throw new Error(`The stored ${format} codes are not valid: ${JSON.stringify(row.value)}`);
-  return { id: row.id, codes };
+  if (!row) return { id: null, codes: defaultCodes(format), stored: defaultCodes(format), problems: [] };
+  const stored = row.value && typeof row.value === "object" ? toCodes(format, row.value) : {};
+  const problems = codeMapProblems(format, stored);
+  const bad = new Set(problems.map((p) => p.field.split(".")[1]));
+  const codes = Object.fromEntries(Object.entries(stored).filter(([kind]) => !bad.has(kind))) as CodeMap;
+  return { id: row.id, codes, stored, problems };
 }
 
 /** Gusto's stored map as the Gusto exporter reads it. */

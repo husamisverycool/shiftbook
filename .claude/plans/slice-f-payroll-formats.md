@@ -122,3 +122,10 @@ employee list to match names (a later convenience).
   smaller findings — all fixed with tests (decision record 0015).
 - Step 3: `/settings/payroll` (system, earning codes, worker ids, spreadsheet columns), the agency
   menu's Settings, the Exceptions fix, the Files step naming the format.
+- Second review of the fixes (commit 7cc9485): every fix confirmed; four small items left (worker ids
+  kept the old system's values after a switch; a stored code refused by today's rules stopped the
+  settings page; a busy lock showed an error page; the duplicate-id message named one id) — fixed
+  with tests.
+- Evidence: 595 unit, 219 integration, 41 proposed answer keys, 38 browser tests (en and es, with
+  accessibility checks) all pass; the 12 older approved keys still wait on "approve all goldens".
+

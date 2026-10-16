@@ -163,6 +163,6 @@ describe("ADP Workforce Now paydata file", () => {
 
   it("treats file numbers that differ only by leading zeros as the same person", () => {
     const r = () => renderAdpWfn(base({ workers: [base().workers[0]!, { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: { adp_wfn: { id: "123" } } }] }));
-    expect(r).toThrowError(expect.objectContaining({ code: "duplicate_payroll_id" }));
+    expect(r).toThrowError(expect.objectContaining({ code: "duplicate_payroll_id", message: expect.stringContaining("both have ADP file number 000123 and 123") }));
   });
 });

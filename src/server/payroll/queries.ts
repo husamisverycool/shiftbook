@@ -3,7 +3,7 @@
  * with when and by whom it was last changed, its codes, and every worker's id in it.
  */
 import { desc, eq } from "drizzle-orm";
-import { SYSTEM_OF, type CodeMap, type ExportFormat, type PayrollSystem, type PayrollTarget } from "../../exports/targets";
+import { SYSTEM_OF, type CodeMap, type ExportFormat, type PayrollSystem, type PayrollTarget, type SettingProblem } from "../../exports/targets";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
@@ -15,7 +15,8 @@ export interface PayrollSettingsView {
   /** The settings row the page was drawn from (a save from a stale page is refused). */
   targetId: string | null;
   changed: { at: string; by: string } | null;
-  codes: { format: ExportFormat; id: string | null; codes: CodeMap } | null;
+  /** The stored codes, with what today's rules say is wrong with any of them. */
+  codes: { format: ExportFormat; id: string | null; codes: CodeMap; problems: SettingProblem[] } | null;
   system: PayrollSystem | null;
   workers: { id: string; firstName: string; lastName: string; value: string; title: string }[];
 }
@@ -33,7 +34,10 @@ export async function payrollSettingsView(tx: Tx, actor: Actor): Promise<Payroll
     target,
     targetId: row?.id ?? null,
     changed: last ? { at: last.occurredAt.toISOString(), by: last.actorLabel } : null,
-    codes: target ? { format: target.format, ...(await payrollCodes(tx, target.format)) } : null,
+    codes: target ? await (async () => {
+      const c = await payrollCodes(tx, target.format);
+      return { format: target.format, id: c.id, codes: c.stored, problems: c.problems };
+    })() : null,
     system,
     workers: people
       .map((w) => ({ id: w.id, firstName: w.firstName, lastName: w.lastName, value: system ? (w.payrollIds[system]?.id ?? "") : "", title: system ? (w.payrollIds[system]?.title ?? "") : "" }))

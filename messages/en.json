@@ -1540,7 +1540,8 @@
         "not_allowed": "Only the Owner changes payroll settings.",
         "not_found": "That worker no longer exists.",
         "generic": "That could not be saved. Try again.",
-        "invalid": "Check the fields marked below."
+        "invalid": "Check the fields marked below.",
+        "busy": "Payroll files are being made right now. Try again in a moment."
       }
     }
   }

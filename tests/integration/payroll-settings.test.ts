@@ -16,6 +16,7 @@ import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { StaleRequestError } from "../../src/server/errors";
 import { createRunFiles, RunNotApprovedError } from "../../src/server/files/service";
+import { payrollSettingsView } from "../../src/server/payroll/queries";
 import { currentSetting, payrollCodes, payrollTarget, setPayrollCodes, setPayrollTarget, setWorkerPayrollId, TARGET_KEY } from "../../src/server/payroll/settings";
 import { startCorrection } from "../../src/server/run/corrections";
 import { computeRun } from "../../src/server/run/service";
@@ -85,6 +86,21 @@ describe("the payroll system in use", () => {
     expect((await history()).length).toBe(2);
     // A page drawn before the second save is stale, even though both saves were today.
     await expect(inAgency((tx) => setPayrollTarget(tx, theOwner, ADP, "2026-10-16", seen))).rejects.toBeInstanceOf(StaleRequestError);
+  });
+
+  it("leaves a stored code today's rules refuse out of the file, and shows it on the settings page", async () => {
+    await owner.db
+      .update(s.agencySettings)
+      .set({ value: { REG: { code: "Reg Hours", as: "hours" }, OT: { code: "O/T Hours", as: "hours", factor: { num: 3, den: 2 } }, DT: { code: "D2", as: "hours", factor: { num: 2, den: 1 } } } })
+      .where(eq(s.agencySettings.key, "earning_code_map.adp_wfn_paydata"));
+    const c = await inAgency((tx) => payrollCodes(tx, "adp_wfn_paydata"));
+    expect(c.codes.DT).toBeUndefined();
+    expect(c.stored.DT).toMatchObject({ code: "D2" });
+    expect(c.problems).toEqual([expect.objectContaining({ field: "codes.DT", rule: "code_form_adp_wfn_paydata" })]);
+    await switchTo(ADP);
+    const view = await inAgency((tx) => payrollSettingsView(tx, theOwner));
+    expect(view.codes!.problems.map((p) => p.field)).toEqual(["codes.DT"]);
+    expect((await compute()).blockers.map((b) => b.code)).toEqual(["missing_payroll_id"]);
   });
 
   it("refuses codes that are not text instead of storing them", async () => {

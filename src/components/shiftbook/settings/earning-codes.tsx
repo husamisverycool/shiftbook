@@ -27,7 +27,7 @@ const factorText = (f: { num: number; den: number }) => exactDecimal(f.num, f.de
 /** A fixed column the agency may leave out (Gusto's bonus column). */
 const optionalColumn = (rule: KindRule) => rule.blank !== "fixed" && (rule.hours?.column ?? rule.dollars?.column);
 
-export function EarningCodes({ format, codes, id, canEdit }: { format: ExportFormat; codes: CodeMap; id: string | null; canEdit: boolean }) {
+export function EarningCodes({ format, codes, problems: stored, id, canEdit }: { format: ExportFormat; codes: CodeMap; problems: SettingProblem[]; id: string | null; canEdit: boolean }) {
   const t = useTranslations("settings.payroll");
   const router = useRouter();
   const refuse = useRefusal();
@@ -42,11 +42,12 @@ export function EarningCodes({ format, codes, id, canEdit }: { format: ExportFor
       const c = codes[kind];
       const as: CarriedAs = c?.as ?? (rule.hours ? "hours" : "dollars");
       const way = as === "hours" ? rule.hours : rule.dollars;
-      out[kind] = { code: c?.code ?? (rule.blank === "fixed" ? (way?.column ?? "") : ""), as, factor: c?.factor ? factorText(c.factor) : rule.hours ? factorText(rule.hours.factor) : "" };
+      out[kind] = { code: typeof c?.code === "string" ? c.code : rule.blank === "fixed" ? (way?.column ?? "") : "", as, factor: c?.factor ? factorText(c.factor) : rule.hours ? factorText(rule.hours.factor) : "" };
     }
     return out;
   });
-  const [problems, setProblems] = useState<SettingProblem[]>([]);
+  // Codes saved under older rules show what is wrong with them at once.
+  const [problems, setProblems] = useState<SettingProblem[]>(stored);
   const [saved, setSaved] = useState(false);
   const update = (kind: EarningType, change: Partial<Row>) => {
     setRows((r) => ({ ...r, [kind]: { ...r[kind]!, ...change } }));

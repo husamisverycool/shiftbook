@@ -288,10 +288,10 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
             {inUse === "spreadsheet_csv" && <TabsTrigger value="columns">{tp("tabs.columns")}</TabsTrigger>}
           </TabsList>
           <TabsContent value="codes" className="pt-2">
-            <EarningCodes key={view.codes.format} format={view.codes.format} codes={view.codes.codes} id={view.codes.id} canEdit={view.canEdit} />
+            <EarningCodes key={view.codes.format} format={view.codes.format} codes={view.codes.codes} problems={view.codes.problems} id={view.codes.id} canEdit={view.canEdit} />
           </TabsContent>
           <TabsContent value="workers" className="pt-2">
-            <WorkerIds system={SYSTEM_OF[inUse]} workers={view.workers} filter={filter} onFilter={setFilter} canEdit={view.canEdit} />
+            <WorkerIds key={inUse} system={SYSTEM_OF[inUse]} workers={view.workers} filter={filter} onFilter={setFilter} canEdit={view.canEdit} />
           </TabsContent>
           {view.target?.format === "spreadsheet_csv" && (
             <TabsContent value="columns" className="pt-2">

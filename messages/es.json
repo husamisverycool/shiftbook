@@ -1540,7 +1540,8 @@
         "not_allowed": "Solo el Propietario cambia la configuración de nómina.",
         "not_found": "Ese trabajador ya no existe.",
         "generic": "No se pudo guardar. Inténtelo de nuevo.",
-        "invalid": "Revise los campos marcados abajo."
+        "invalid": "Revise los campos marcados abajo.",
+        "busy": "Ahora mismo se están preparando archivos de nómina. Inténtelo de nuevo en un momento."
       }
     }
   }

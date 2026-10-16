@@ -5,6 +5,7 @@ import { z } from "zod";
 import { EXPORT_FORMATS, SYSTEM_OF, type ExportFormat, type PayrollSystem, type SettingProblem } from "@/exports/targets";
 import { withAgency } from "@/server/db";
 import { StaleRequestError } from "@/server/errors";
+import { PeriodBusyError } from "@/server/run/period-lock";
 import { setPayrollCodes, setPayrollTarget, setWorkerPayrollId } from "@/server/payroll/settings";
 import { currentActor } from "@/server/session";
 import { agencyToday } from "@/server/settings";
@@ -13,7 +14,7 @@ const refresh = () => revalidatePath("/[locale]/(app)/settings/payroll", "page")
 
 export type SettingsActionResult =
   | { ok: true }
-  | { ok: false; error: "not_allowed" | "stale" | "generic" | "not_found" }
+  | { ok: false; error: "not_allowed" | "stale" | "busy" | "generic" | "not_found" }
   | { ok: false; error: "invalid"; problems: SettingProblem[] }
   | { ok: false; error: "taken"; by: string };
 
@@ -31,6 +32,8 @@ async function guarded(fn: () => Promise<SettingsActionResult>): Promise<Setting
   } catch (error) {
     refresh();
     if (error instanceof StaleRequestError) return { ok: false, error: "stale" };
+    // Files are being made with the settings right now: try again in a moment.
+    if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
     throw error;
   }
 }
