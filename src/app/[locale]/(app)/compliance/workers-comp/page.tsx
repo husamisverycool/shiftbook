@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function WorkersCompPage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   const sp = await props.searchParams;
   const view = await withAgency(actor.agencyId, async (tx) => {
     const range = await packetRange(tx, await agencyToday(tx));

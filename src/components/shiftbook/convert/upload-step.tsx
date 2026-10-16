@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { MAX_TIMESHEET_BYTES } from "@/lib/limits";
+import { useCan } from "../abilities";
 import { REFUSAL_MESSAGE, type ActionRefusal } from "./types";
 
 export interface UploadDoc {
@@ -38,6 +39,7 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
   const tcommon = useTranslations("common");
   const tc = useTranslations("convert.errors");
   const router = useRouter();
+  const mayChange = useCan()("hours");
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [refused, setRefused] = useState<UploadResult["refused"]>([]);
@@ -93,55 +95,57 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
 
   return (
     <div className="flex flex-col gap-8">
-      <section aria-label={t("dropTitle")} className="flex flex-col gap-3">
-        <div
-          data-testid="drop-zone"
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            send(e.dataTransfer.files);
-          }}
-          className={`flex flex-col items-center gap-3 rounded-lg border border-dashed px-6 py-10 text-center transition-colors ${dragging ? "border-primary bg-muted" : ""}`}
-        >
-          {uploading ? <Loader2Icon className="size-6 animate-spin text-muted-foreground" /> : <UploadIcon className="size-6 text-muted-foreground" />}
-          <p className="font-medium">{uploading ? t("uploading") : t("dropTitle")}</p>
-          <p className="max-w-prose text-sm text-muted-foreground">{t("dropBody")}</p>
-          <input
-            ref={input}
-            type="file"
-            multiple
-            className="sr-only"
-            aria-label={t("select")}
-            tabIndex={-1}
-            data-testid="file-input"
-            accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,.csv,.xlsx"
-            onChange={(e) => {
-              if (e.target.files) send(e.target.files);
-              e.target.value = "";
+      {mayChange && (
+        <section aria-label={t("dropTitle")} className="flex flex-col gap-3">
+          <div
+            data-testid="drop-zone"
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
             }}
-          />
-          <Button variant="outline" onClick={() => input.current?.click()} disabled={uploading}>
-            {t("select")}
-          </Button>
-        </div>
-        {refused.length > 0 && (
-          <div className="flex flex-col gap-1 rounded-lg border p-3 text-sm" data-testid="refused">
-            <p className="font-medium">{t("refused")}</p>
-            <ul className="flex flex-col gap-0.5">
-              {refused.map((r) => (
-                <li key={r.filename} className="text-muted-foreground">
-                  {r.filename} — {t(r.reason)}
-                </li>
-              ))}
-            </ul>
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              send(e.dataTransfer.files);
+            }}
+            className={`flex flex-col items-center gap-3 rounded-lg border border-dashed px-6 py-10 text-center transition-colors ${dragging ? "border-primary bg-muted" : ""}`}
+          >
+            {uploading ? <Loader2Icon className="size-6 animate-spin text-muted-foreground" /> : <UploadIcon className="size-6 text-muted-foreground" />}
+            <p className="font-medium">{uploading ? t("uploading") : t("dropTitle")}</p>
+            <p className="max-w-prose text-sm text-muted-foreground">{t("dropBody")}</p>
+            <input
+              ref={input}
+              type="file"
+              multiple
+              className="sr-only"
+              aria-label={t("select")}
+              tabIndex={-1}
+              data-testid="file-input"
+              accept=".jpg,.jpeg,.png,.heic,.heif,.pdf,.csv,.xlsx"
+              onChange={(e) => {
+                if (e.target.files) send(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Button variant="outline" onClick={() => input.current?.click()} disabled={uploading}>
+              {t("select")}
+            </Button>
           </div>
-        )}
-      </section>
+          {refused.length > 0 && (
+            <div className="flex flex-col gap-1 rounded-lg border p-3 text-sm" data-testid="refused">
+              <p className="font-medium">{t("refused")}</p>
+              <ul className="flex flex-col gap-0.5">
+                {refused.map((r) => (
+                  <li key={r.filename} className="text-muted-foreground">
+                    {r.filename} — {t(r.reason)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {processing.length > 0 && (
         <section className="flex flex-col gap-2" data-testid="processing">
@@ -193,14 +197,16 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
                             {t("status.failed")}
                           </span>
                           {(d.stuck || d.error) && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.stuck ? t("stuck") : d.error}</span>}
-                          <div className="flex gap-3">
-                            <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => run(() => retryAction(d.id))}>
-                              {tcommon("retry")}
-                            </Button>
-                            <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => setArchiving(d)} data-testid="archive">
-                              {t("archive")}
-                            </Button>
-                          </div>
+                          {mayChange && (
+                            <div className="flex gap-3">
+                              <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => run(() => retryAction(d.id))}>
+                                {tcommon("retry")}
+                              </Button>
+                              <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => setArchiving(d)} data-testid="archive">
+                                {t("archive")}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <Badge variant="secondary">{t(`status.${d.status}`)}</Badge>

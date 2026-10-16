@@ -16,7 +16,7 @@ const VIEWS: CalendarView[] = ["month", "week", "agenda"];
 export default async function ComplianceCalendarPage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   const sp = await props.searchParams;
   const ask = complianceAsk(sp);
   const { items, today, startsOn } = await withAgency(actor.agencyId, async (tx) => {

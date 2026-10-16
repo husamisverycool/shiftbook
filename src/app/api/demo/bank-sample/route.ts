@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
   if (!isDemo()) return new Response("Not found", { status: 404 });
-  const actor = currentActor();
+  const actor = await currentActor();
   const { csv, today } = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     return { csv: bankSampleCsv(await openInvoicesByClient(tx), today), today };

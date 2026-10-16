@@ -20,6 +20,8 @@ const MESSAGES = { en, es } as const;
 
 async function check(page: Page, where: string) {
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  // A client navigation sets the page's title a moment after its address.
+  await page.waitForFunction(() => document.title.length > 0);
   const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   const serious = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(serious.map((v) => `${where}: ${v.id} — ${v.help} (${v.nodes.map((n) => n.target.join(" ")).join(", ")})`)).toEqual([]);

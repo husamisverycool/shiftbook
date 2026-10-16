@@ -19,7 +19,7 @@ export default async function ClientDetailPage(props: { params: Promise<{ locale
   const { locale, id } = await props.params;
   setRequestLocale(locale);
   if (!UUID.test(id)) notFound();
-  const actor = currentActor();
+  const actor = await currentActor();
   const view = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     const detail = await clientDetail(tx, id, today);

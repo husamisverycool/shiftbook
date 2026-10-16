@@ -14,7 +14,7 @@ export default async function JobOrderRoute(props: { params: Promise<{ locale: s
   const { locale, id } = await props.params;
   setRequestLocale(locale);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const actor = currentActor();
+  const actor = await currentActor();
   const { data, options, today } = await withAgency(actor.agencyId, async (tx) => {
     const day = await agencyToday(tx);
     return { data: await jobOrderPage(tx, id, day), options: await catalogOptions(tx), today: day };

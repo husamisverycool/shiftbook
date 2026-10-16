@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ClientApprovalRow, ClientApprovalState } from "@/server/approvals/service";
+import { useCan } from "../abilities";
 import { hoursMinutes, longDate } from "../format";
 import { SendDialog, type SendTarget } from "./send-dialog";
 
@@ -47,6 +48,9 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  // Decision 0026: asking clients is the hours ability; which clients must approve is the run's (Owner).
+  const can = useCan();
+  const mayAsk = can("hours");
   const [pending, start] = useTransition();
   const [sending, setSending] = useState<SendTarget | null>(null);
   const status = params.get("status") ?? "";
@@ -90,6 +94,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
           </NativeSelect>
         </label>
       </div>
+      {!mayAsk && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
 
       {disputed > 0 && (
         <Alert variant="destructive" data-testid="disputes-banner">
@@ -181,7 +186,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                             <Link href={`/approvals/${r.request.id}`} className="underline-offset-4 hover:underline">
                               {r.clientName}
                             </Link>
-                          ) : props.periodOpen ? (
+                          ) : props.periodOpen && mayAsk ? (
                             <button type="button" className="text-left underline-offset-4 hover:underline" onClick={() => setSending(sendTargetOf(r, props.periodId))}>
                               {r.clientName}
                             </button>
@@ -217,11 +222,11 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                         <TableCell className="text-sm text-muted-foreground">{r.lastActivity ? t(`activity.${r.lastActivity.kind}` as "activity.decided", { when: when(r.lastActivity.at) }) : ""}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           {/* A period whose files exist cannot be asked about any more: only Open. */}
-                          {props.periodOpen && (r.state === "not_sent" || r.state === "send_again") ? (
+                          {mayAsk && props.periodOpen && (r.state === "not_sent" || r.state === "send_again") ? (
                             <Button size="sm" variant="outline" disabled={pending} onClick={() => setSending(sendTargetOf(r, props.periodId))} data-testid="row-send">
                               {r.state === "not_sent" ? t("send") : t("sendAgain")}
                             </Button>
-                          ) : props.periodOpen && r.state === "waiting" && r.request ? (
+                          ) : mayAsk && props.periodOpen && r.state === "waiting" && r.request ? (
                             <Button size="sm" variant="outline" disabled={pending} onClick={() => remind(r.request!.id)}>
                               {t("remind")}
                             </Button>
@@ -230,16 +235,18 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                               {t("open")}
                             </Link>
                           ) : null}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" className="ml-1" aria-label={t("rowMenu", { client: r.clientName })} data-testid="row-menu" />}>
-                              <EllipsisIcon />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuCheckboxItem checked={r.approvalRequired} disabled={pending} onCheckedChange={(on) => setRequired(r.clientId, on === true)} data-testid="toggle-approval-required">
-                                {t("approvalRequired")}
-                              </DropdownMenuCheckboxItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {can("run") && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" className="ml-1" aria-label={t("rowMenu", { client: r.clientName })} data-testid="row-menu" />}>
+                                <EllipsisIcon />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuCheckboxItem checked={r.approvalRequired} disabled={pending} onCheckedChange={(on) => setRequired(r.clientId, on === true)} data-testid="toggle-approval-required">
+                                  {t("approvalRequired")}
+                                </DropdownMenuCheckboxItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

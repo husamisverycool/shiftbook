@@ -147,7 +147,8 @@
       "approve": "Approve",
       "approveWorking": "Approving…",
       "totals": "Create files",
-      "totalsWorking": "Creating files…"
+      "totalsWorking": "Creating files…",
+      "ownerOnly": "The Owner approves the run and makes the files."
     },
     "loadingTitle": "Computing totals",
     "loadingBody": "This can take a minute.",
@@ -579,7 +580,8 @@
       "roundingMore": "{name}: {amount} more from rounding each line once when hours moved between days or assignments at one rate; not paid.",
       "roundingLess": "{name}: {amount} less from rounding each line once when hours moved between days or assignments at one rate; not taken back.",
       "paidByHandWithKept": "All of it, including the {amount} they kept: choose this only if what they kept was recovered. Otherwise choose the cover first, then pay the rest by hand."
-    }
+    },
+    "readOnly": "You can look at everything here; the Owner and coordinators change hours."
   },
   "nav": {
     "label": "Main",
@@ -599,7 +601,11 @@
     "marginSettings": "Margin settings",
     "compliance": "Compliance",
     "complianceSettings": "Compliance settings",
-    "complianceBadge": "{count} overdue or due soon"
+    "complianceBadge": "{count} overdue or due soon",
+    "members": "Members",
+    "account": "Your account",
+    "signOut": "Sign out",
+    "youAre": "{name} · {role}"
   },
   "list": {
     "filter": "Filter",
@@ -737,7 +743,8 @@
       },
       "branch": "Branch",
       "noBranch": "No branch"
-    }
+    },
+    "readOnly": "Only the Owner and coordinators change job orders."
   },
   "jobOrder": {
     "breadcrumb": "Job orders",
@@ -774,7 +781,8 @@
     "noAssignments": "No workers are assigned yet.",
     "ownRatesOf": "{name}'s own rates",
     "ownRatesBody": "These rates apply to this worker on this job order from their start date; on other dates the job order's rates apply.",
-    "branch": "Branch"
+    "branch": "Branch",
+    "readOnly": "Only the Owner and coordinators change this job order, its rates and its assignments."
   },
   "assignments": {
     "title": "Assignments",
@@ -869,7 +877,8 @@
     },
     "noRecruiter": "No recruiter",
     "recruiterSaved": "Recruiter saved",
-    "recruiterError": "That didn't work. Try again."
+    "recruiterError": "That didn't work. Try again.",
+    "readOnly": "Only the Owner and coordinators change assignments."
   },
   "approvals": {
     "title": "Client approvals",
@@ -1019,7 +1028,8 @@
     },
     "approvalRequired": "Approval required before payroll",
     "requiredBadge": "Approval required",
-    "rowMenu": "More for {client}"
+    "rowMenu": "More for {client}",
+    "readOnly": "Only the Owner and coordinators ask clients to approve hours."
   },
   "rates": {
     "title": "Rate card",
@@ -1272,7 +1282,8 @@
     "invalidFormat": "Invalid format: rows with it are skipped",
     "invalidDates": "{count, plural, one {# date} other {# dates}} with an invalid format",
     "jobOrder": "Job order",
-    "newBadge": "New"
+    "newBadge": "New",
+    "readOnly": "Only the Owner and coordinators import placements."
   },
   "portal": {
     "attestation": "I confirm that the shifts I am approving were worked as shown, and I approve them for {client}.",
@@ -3068,5 +3079,294 @@
       "description": "Description",
       "tieOutSettled": "Payroll files with these pay dates: {files}, gross {gross}. Settled outside the files by corrections: {settled}. This packet, with the pay listed apart: {packet}. They agree."
     }
+  },
+  "roles": {
+    "owner": {
+      "name": "Owner",
+      "line": "Everything: approves weekly runs, sees the margin, manages members and settings."
+    },
+    "coordinator": {
+      "name": "Coordinator",
+      "line": "Timesheets and hours review, job orders and placements, their compliance duties."
+    },
+    "billing": {
+      "name": "Billing",
+      "line": "Invoices, receivables and cash, clients' billing details, their compliance duties."
+    },
+    "accountant": {
+      "name": "Accountant",
+      "line": "Reads everything except Social Security numbers. Changes nothing."
+    }
+  },
+  "authFrame": {
+    "product": "Shiftbook",
+    "language": "Language",
+    "english": "English",
+    "spanish": "Español"
+  },
+  "signIn": {
+    "title": "Sign in to Shiftbook",
+    "email": "Email",
+    "password": "Password",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "invalid": "That email and password don't match. Check both and try again.",
+    "locked": "Too many tries. Wait 15 minutes and try again, or reset your password.",
+    "resetLink": "Reset your password",
+    "notice": {
+      "signed_out": "You signed out.",
+      "expired": "Your session ended. Sign in again.",
+      "password_changed": "Your password was changed. Sign in with the new one.",
+      "link_expired": "That link no longer works."
+    },
+    "demoTitle": "Try the demo as",
+    "demoHint": "The demo people need no password and no code.",
+    "continueAs": "Continue as {name}",
+    "busy": "Too many people are signing in right now. Try again in a moment."
+  },
+  "signInCode": {
+    "title": "Enter your code",
+    "body": "Open your authenticator app and type the six-digit code it shows for Shiftbook.",
+    "code": "Six-digit code",
+    "verify": "Verify",
+    "verifying": "Verifying…",
+    "moreOptions": "More options",
+    "useRecovery": "Use a recovery code",
+    "useApp": "Use the code from the app",
+    "recovery": "Recovery code",
+    "recoveryBody": "Type one of the recovery codes you saved. Each one works once.",
+    "invalid": "That code didn't work. Type the newest code the app shows.",
+    "invalidRecovery": "That recovery code didn't work, or it was already used.",
+    "locked": "Too many wrong codes: wait 15 minutes, then sign in again.",
+    "notYou": "Not you?",
+    "signOut": "Sign out"
+  },
+  "signInNotice": {
+    "recoveryLeft": "{count, plural, =0 {You signed in with your last recovery code. Make new ones in Your account.} one {You signed in with a recovery code. # code is left.} other {You signed in with a recovery code. # codes are left.}}",
+    "openAccount": "Your account"
+  },
+  "setup": {
+    "title": "Set up your authenticator",
+    "required": "Your role needs a code from an authenticator app each time you sign in. Any authenticator app on your phone or computer works.",
+    "step1": "1. Scan the QR code",
+    "step1Body": "In your authenticator app, add an account and scan this code.",
+    "qrAlt": "QR code for your authenticator app",
+    "loading": "Making your code…",
+    "showKey": "Setup key",
+    "keyBody": "Can't scan it? Type this key into the app instead:",
+    "step2": "2. Type the code from the app",
+    "code": "Six-digit code",
+    "verify": "Verify",
+    "verifying": "Verifying…",
+    "invalid": "That code didn't work. Type the newest code the app shows.",
+    "expired": "This setup ended. Start it again.",
+    "startAgain": "Start again",
+    "step3": "3. Save your recovery codes",
+    "step3Body": "If you lose your phone, each of these codes lets you sign in once. Keep them somewhere safe, such as a password manager. They are shown only now.",
+    "download": "Download",
+    "print": "Print",
+    "copy": "Copy",
+    "copied": "Recovery codes copied.",
+    "saved": "I have saved my recovery codes",
+    "fileName": "shiftbook-recovery-codes.txt",
+    "fileHeader": "Shiftbook recovery codes for {email}. Each code works once.",
+    "on": "Your authenticator is on.",
+    "signOut": "Sign out",
+    "cancel": "Cancel"
+  },
+  "reset": {
+    "title": "Reset your password",
+    "body": "Type the email you sign in with. A link to choose a new password is sent there.",
+    "email": "Email",
+    "submit": "Send reset link",
+    "sending": "Sending…",
+    "back": "Back to sign in",
+    "sentTitle": "Check your email",
+    "sentBody": "If an account uses {email}, a link to choose a new password is on its way. It works once, for one hour.",
+    "demoCopy": "Demo: no email is sent. This is the copy in the demo mailbox:"
+  },
+  "newPassword": {
+    "title": "Choose a new password",
+    "forEmail": "For {email}",
+    "codeStep": "First, type the code from your authenticator app.",
+    "password": "New password",
+    "confirm": "Confirm password",
+    "rule": "At least 15 characters. Any characters, spaces too. Not your email.",
+    "submit": "Change password",
+    "submitting": "Changing…",
+    "expiredTitle": "This link no longer works",
+    "expiredBody": "Reset links work once, for one hour.",
+    "askAgain": "Ask for a new link",
+    "back": "Back to sign in",
+    "mismatch": "The two passwords are not the same.",
+    "errors": {
+      "too_short": "Use at least 15 characters.",
+      "too_long": "Use at most 128 characters.",
+      "is_email": "Don't use your email as your password.",
+      "one_character": "Use more than one character over and over.",
+      "wrong_password": "That is not your current password.",
+      "generic": "That didn't work. Try again.",
+      "locked": "Too many wrong passwords: wait an hour, or reset your password.",
+      "busy": "Too many people are signing in right now. Try again in a moment."
+    }
+  },
+  "invite": {
+    "title": "Join {agency}",
+    "body": "{by} invited you to join as {role}.",
+    "email": "You will sign in with {email}.",
+    "password": "Password",
+    "confirm": "Confirm password",
+    "submit": "Join {agency}",
+    "submitting": "Joining…",
+    "expiredTitle": "This invite no longer works",
+    "expiredBody": "An invite works once, for 10 days. Ask the agency's Owner to send it again.",
+    "toSignIn": "Go to sign in",
+    "nextSetup": "Your role needs an authenticator app: you set it up next."
+  },
+  "account": {
+    "eyebrow": "Settings",
+    "title": "Your account",
+    "who": "{email} · {role}",
+    "languageTitle": "Language",
+    "language": "Language",
+    "languageHint": "Your screens, your sign-in page and the emails Shiftbook sends you.",
+    "languageSaved": "Language saved.",
+    "passwordTitle": "Password",
+    "passwordChanged": "Last changed {date}.",
+    "passwordNever": "You have no password yet.",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "update": "Update password",
+    "set": "Set password",
+    "saving": "Saving…",
+    "passwordSaved": "Password saved. Anywhere else you were signed in is signed out.",
+    "authTitle": "Authenticator",
+    "authOff": "Off. With it on, each sign-in also asks for a code from an authenticator app.",
+    "authRequired": "Your role needs it.",
+    "setUp": "Set up authenticator",
+    "authOn": "On since {date}.",
+    "recoveryTitle": "Recovery codes",
+    "recoveryLeft": "{count, plural, =0 {No codes left.} one {# code left.} other {# codes left.}}",
+    "newCodes": "Make new recovery codes",
+    "newCodesTitle": "Make new recovery codes?",
+    "newCodesBody": "The codes you have now stop working.",
+    "newCodesConfirm": "Make new codes",
+    "setUpAgain": "Set up again",
+    "setUpAgainHint": "For a new phone. The old app keeps working until the new one is verified.",
+    "signOut": "Sign out",
+    "demoNote": "Demo: nothing here leaves the demo; try the password and the authenticator freely."
+  },
+  "members": {
+    "eyebrow": "Settings",
+    "title": "Members",
+    "invite": "Invite",
+    "rolesTitle": "Roles",
+    "ownerOnly": "Only the Owner invites people, changes roles and suspends.",
+    "role": "Role",
+    "status": "Status",
+    "all": "All",
+    "search": "Search name or email",
+    "columns": {
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "authenticator": "Authenticator",
+      "lastSeen": "Last seen",
+      "actions": "Actions"
+    },
+    "you": "You",
+    "statusLabels": {
+      "active": "Active",
+      "invited": "Invited",
+      "suspended": "Suspended"
+    },
+    "expires": "expires {date}",
+    "inviteLapsed": "invite expired",
+    "auth": {
+      "on": "On",
+      "off": "Off",
+      "needed": "Needed"
+    },
+    "never": "Never",
+    "count": "{count, plural, one {# member} other {# members}}",
+    "noMatch": "No one matches these filters.",
+    "clear": "Clear filters",
+    "menu": "Actions for {name}",
+    "changeRole": "Change role…",
+    "suspend": "Suspend…",
+    "restore": "Restore access",
+    "resend": "Send invite again",
+    "cancelInvite": "Cancel invite",
+    "openInvite": "Open the invite email",
+    "changeRoleTitle": "Change {name}'s role",
+    "save": "Save",
+    "saving": "Saving…",
+    "suspendTitle": "Suspend {name}?",
+    "suspendBody": "They are signed out at once and can't sign in until you restore access. Their work stays.",
+    "suspendConfirm": "Suspend",
+    "cancelTitle": "Cancel the invite to {name}?",
+    "cancelBody": "The link in their email stops working.",
+    "cancelConfirm": "Cancel invite",
+    "keep": "Keep",
+    "inviteTitle": "Invite a member",
+    "inviteBody": "They get an email with a link that works for 10 days.",
+    "name": "Name",
+    "email": "Email",
+    "language": "Language",
+    "send": "Send invite",
+    "sending": "Sending…",
+    "sent": "Invite sent to {email}.",
+    "resent": "Invite sent again to {email}.",
+    "roleChanged": "{name} is now {role}.",
+    "suspended": "{name} is suspended.",
+    "restored": "{name} can sign in again.",
+    "cancelled": "Invite cancelled.",
+    "demoCopyTitle": "Demo mailbox: invite to {email}",
+    "demoCopyBody": "The demo sends no email. Open the link below to accept the invite as this person (sign out first, or use a private window).",
+    "errors": {
+      "not_allowed": "Only the Owner can do this.",
+      "invalid_email": "Type a whole email address.",
+      "email_taken": "Someone already signs in with this email.",
+      "invalid_name": "Type their name.",
+      "invalid_role": "Choose a role.",
+      "not_found": "This person changed meanwhile. The list now shows the latest.",
+      "last_owner": "The agency needs at least one active Owner.",
+      "self": "You can't suspend yourself.",
+      "generic": "That didn't work. Try again.",
+      "confirm": "Confirm it's you first."
+    }
+  },
+  "authEmail": {
+    "greeting": "Hello {name},",
+    "footer": "Sent by Shiftbook on behalf of {agency}.",
+    "invite": {
+      "subject": "{by} invited you to {agency} on Shiftbook",
+      "intro": "{by} invited you to join {agency} on Shiftbook as {role}.",
+      "open": "Accept the invite",
+      "expires": "The invite works until {date}. It is meant for you only, so please do not forward it.",
+      "unexpected": "If you did not expect this invite, you can ignore this email."
+    },
+    "reset": {
+      "subject": "Reset your Shiftbook password",
+      "intro": "Someone asked to reset the password you use to sign in to {agency} on Shiftbook.",
+      "open": "Choose a new password",
+      "expires": "The link works once, for one hour.",
+      "unexpected": "If it was not you, ignore this email: your password stays as it is."
+    }
+  },
+  "confirmAccess": {
+    "title": "Confirm it's you",
+    "bodyPassword": "This change needs your password, given within the last 15 minutes.",
+    "bodyCode": "This change needs a code from your authenticator app (or a recovery code), given within the last 15 minutes.",
+    "password": "Password",
+    "code": "Code or recovery code",
+    "confirm": "Confirm",
+    "confirming": "Confirming…",
+    "cancel": "Cancel",
+    "invalid": "That didn't match. Try again.",
+    "locked": "Too many tries: wait a while, then try again.",
+    "busy": "Too many people are signing in right now. Try again in a moment."
   }
 }

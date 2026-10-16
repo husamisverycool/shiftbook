@@ -15,6 +15,7 @@ import * as s from "../db/schema";
 import { lockCatalog } from "../run/period-lock";
 import type { Actor } from "../session";
 import { planInsert } from "./versions";
+import { can } from "../permissions";
 
 export interface BillingSettings {
   invoiceTemplate: s.InvoiceTemplate;
@@ -37,7 +38,7 @@ export interface BillingProblem {
 
 const OT_RULES = s.otBillingRule.enumValues as readonly string[];
 /** Who may change invoice settings (the page says so to everyone else). */
-export const mayChangeBilling = (actor: Actor) => actor.role === "owner" || actor.role === "billing";
+export const mayChangeBilling = (actor: Actor) => can(actor, "clientBilling");
 
 /** Everything wrong with a set of invoice settings (empty when they can be saved). */
 export function billingProblems(value: unknown): BillingProblem[] {

@@ -147,7 +147,8 @@
       "approve": "Aprobar",
       "approveWorking": "Aprobando…",
       "totals": "Crear archivos",
-      "totalsWorking": "Creando archivos…"
+      "totalsWorking": "Creando archivos…",
+      "ownerOnly": "El Propietario aprueba la nómina y crea los archivos."
     },
     "loadingTitle": "Calculando totales",
     "loadingBody": "Puede tardar un minuto.",
@@ -579,7 +580,8 @@
       "roundingMore": "{name}: {amount} más por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se paga.",
       "roundingLess": "{name}: {amount} menos por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se descuenta.",
       "paidByHandWithKept": "Todo, incluidos los {amount} que conservó: elige esto solo si lo que conservó se recuperó. Si no, elige primero la cobertura y luego paga el resto a mano."
-    }
+    },
+    "readOnly": "Aquí puede consultar todo; el Propietario y los coordinadores cambian las horas."
   },
   "nav": {
     "label": "Principal",
@@ -599,7 +601,11 @@
     "marginSettings": "Configuración de margen",
     "compliance": "Cumplimiento",
     "complianceSettings": "Ajustes de cumplimiento",
-    "complianceBadge": "{count} vencidas o por vencer"
+    "complianceBadge": "{count} vencidas o por vencer",
+    "members": "Miembros",
+    "account": "Tu cuenta",
+    "signOut": "Cerrar sesión",
+    "youAre": "{name} · {role}"
   },
   "list": {
     "filter": "Filtrar",
@@ -737,7 +743,8 @@
       },
       "branch": "Oficina",
       "noBranch": "Sin oficina"
-    }
+    },
+    "readOnly": "Solo el Propietario y los coordinadores cambian las órdenes de trabajo."
   },
   "jobOrder": {
     "breadcrumb": "Órdenes de trabajo",
@@ -774,7 +781,8 @@
     "noAssignments": "Aún no hay trabajadores asignados.",
     "ownRatesOf": "Tarifas propias de {name}",
     "ownRatesBody": "Estas tarifas aplican a este trabajador en esta orden desde su fecha de inicio; en las demás fechas aplican las tarifas de la orden.",
-    "branch": "Oficina"
+    "branch": "Oficina",
+    "readOnly": "Solo el Propietario y los coordinadores cambian esta orden de trabajo, sus tarifas y sus asignaciones."
   },
   "assignments": {
     "title": "Asignaciones",
@@ -869,7 +877,8 @@
     },
     "noRecruiter": "Sin reclutador(a)",
     "recruiterSaved": "Reclutador(a) guardado",
-    "recruiterError": "No funcionó. Intente de nuevo."
+    "recruiterError": "No funcionó. Intente de nuevo.",
+    "readOnly": "Solo el Propietario y los coordinadores cambian las asignaciones."
   },
   "approvals": {
     "title": "Aprobaciones de clientes",
@@ -1019,7 +1028,8 @@
     },
     "approvalRequired": "Aprobación obligatoria antes de la nómina",
     "requiredBadge": "Aprobación obligatoria",
-    "rowMenu": "Más opciones de {client}"
+    "rowMenu": "Más opciones de {client}",
+    "readOnly": "Solo el Propietario y los coordinadores piden a los clientes que aprueben las horas."
   },
   "rates": {
     "title": "Tarifas",
@@ -1272,7 +1282,8 @@
     "invalidFormat": "Formato no válido: las filas con este valor se omiten",
     "invalidDates": "{count, plural, one {# fecha} other {# fechas}} con formato no válido",
     "jobOrder": "Orden de trabajo",
-    "newBadge": "Nueva"
+    "newBadge": "Nueva",
+    "readOnly": "Solo el Propietario y los coordinadores importan colocaciones."
   },
   "portal": {
     "attestation": "Confirmo que los turnos que apruebo se trabajaron como se muestran, y los apruebo en nombre de {client}.",
@@ -3068,5 +3079,294 @@
       "description": "Description",
       "tieOutSettled": "Archivos de nómina con estas fechas de pago: {files}, bruto {gross}. Liquidado fuera de los archivos por correcciones: {settled}. Este paquete, con el pago detallado: {packet}. Coinciden."
     }
+  },
+  "roles": {
+    "owner": {
+      "name": "Propietario",
+      "line": "Todo: aprueba las nóminas semanales, ve el margen, administra miembros y ajustes."
+    },
+    "coordinator": {
+      "name": "Coordinador",
+      "line": "Hojas de horas y revisión de horas, órdenes de trabajo y asignaciones, sus tareas de cumplimiento."
+    },
+    "billing": {
+      "name": "Facturación",
+      "line": "Facturas, cuentas por cobrar y cobros, datos de facturación de clientes, sus tareas de cumplimiento."
+    },
+    "accountant": {
+      "name": "Contador",
+      "line": "Ve todo excepto los números de Seguro Social. No cambia nada."
+    }
+  },
+  "authFrame": {
+    "product": "Shiftbook",
+    "language": "Idioma",
+    "english": "English",
+    "spanish": "Español"
+  },
+  "signIn": {
+    "title": "Inicia sesión en Shiftbook",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgot": "¿Olvidaste tu contraseña?",
+    "submit": "Iniciar sesión",
+    "submitting": "Iniciando sesión…",
+    "invalid": "Ese correo y esa contraseña no coinciden. Revisa ambos e inténtalo de nuevo.",
+    "locked": "Demasiados intentos. Espera 15 minutos y vuelve a intentarlo, o restablece tu contraseña.",
+    "resetLink": "Restablecer tu contraseña",
+    "notice": {
+      "signed_out": "Cerraste la sesión.",
+      "expired": "Tu sesión terminó. Inicia sesión de nuevo.",
+      "password_changed": "Tu contraseña cambió. Inicia sesión con la nueva.",
+      "link_expired": "Ese enlace ya no funciona."
+    },
+    "demoTitle": "Prueba la demostración como",
+    "demoHint": "Las personas de la demostración no necesitan contraseña ni código.",
+    "continueAs": "Continuar como {name}",
+    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtalo de nuevo en un momento."
+  },
+  "signInCode": {
+    "title": "Escribe tu código",
+    "body": "Abre tu aplicación de autenticación y escribe el código de seis dígitos que muestra para Shiftbook.",
+    "code": "Código de seis dígitos",
+    "verify": "Verificar",
+    "verifying": "Verificando…",
+    "moreOptions": "Más opciones",
+    "useRecovery": "Usar un código de recuperación",
+    "useApp": "Usar el código de la aplicación",
+    "recovery": "Código de recuperación",
+    "recoveryBody": "Escribe uno de los códigos de recuperación que guardaste. Cada uno funciona una vez.",
+    "invalid": "Ese código no funcionó. Escribe el código más reciente que muestra la aplicación.",
+    "invalidRecovery": "Ese código de recuperación no funcionó o ya se usó.",
+    "locked": "Demasiados códigos incorrectos: espera 15 minutos y vuelve a iniciar sesión.",
+    "notYou": "¿No eres tú?",
+    "signOut": "Cerrar sesión"
+  },
+  "signInNotice": {
+    "recoveryLeft": "{count, plural, =0 {Iniciaste sesión con tu último código de recuperación. Crea nuevos en Tu cuenta.} one {Iniciaste sesión con un código de recuperación. Queda # código.} other {Iniciaste sesión con un código de recuperación. Quedan # códigos.}}",
+    "openAccount": "Tu cuenta"
+  },
+  "setup": {
+    "title": "Configura tu autenticador",
+    "required": "Tu rol necesita un código de una aplicación de autenticación cada vez que inicias sesión. Sirve cualquier aplicación de autenticación en tu teléfono o computadora.",
+    "step1": "1. Escanea el código QR",
+    "step1Body": "En tu aplicación de autenticación, agrega una cuenta y escanea este código.",
+    "qrAlt": "Código QR para tu aplicación de autenticación",
+    "loading": "Preparando tu código…",
+    "showKey": "Clave de configuración",
+    "keyBody": "¿No puedes escanearlo? Escribe esta clave en la aplicación:",
+    "step2": "2. Escribe el código de la aplicación",
+    "code": "Código de seis dígitos",
+    "verify": "Verificar",
+    "verifying": "Verificando…",
+    "invalid": "Ese código no funcionó. Escribe el código más reciente que muestra la aplicación.",
+    "expired": "Esta configuración terminó. Empiézala de nuevo.",
+    "startAgain": "Empezar de nuevo",
+    "step3": "3. Guarda tus códigos de recuperación",
+    "step3Body": "Si pierdes tu teléfono, cada uno de estos códigos te permite iniciar sesión una vez. Guárdalos en un lugar seguro, como un administrador de contraseñas. Solo se muestran ahora.",
+    "download": "Descargar",
+    "print": "Imprimir",
+    "copy": "Copiar",
+    "copied": "Códigos de recuperación copiados.",
+    "saved": "Ya guardé mis códigos de recuperación",
+    "fileName": "shiftbook-codigos-de-recuperacion.txt",
+    "fileHeader": "Códigos de recuperación de Shiftbook para {email}. Cada código funciona una vez.",
+    "on": "Tu autenticador está activado.",
+    "signOut": "Cerrar sesión",
+    "cancel": "Cancelar"
+  },
+  "reset": {
+    "title": "Restablece tu contraseña",
+    "body": "Escribe el correo con el que inicias sesión. Ahí se envía un enlace para elegir una contraseña nueva.",
+    "email": "Correo electrónico",
+    "submit": "Enviar enlace",
+    "sending": "Enviando…",
+    "back": "Volver a iniciar sesión",
+    "sentTitle": "Revisa tu correo",
+    "sentBody": "Si una cuenta usa {email}, va en camino un enlace para elegir una contraseña nueva. Funciona una vez, durante una hora.",
+    "demoCopy": "Demostración: no se envía ningún correo. Esta es la copia del buzón de la demostración:"
+  },
+  "newPassword": {
+    "title": "Elige una contraseña nueva",
+    "forEmail": "Para {email}",
+    "codeStep": "Primero, escribe el código de tu aplicación de autenticación.",
+    "password": "Contraseña nueva",
+    "confirm": "Confirma la contraseña",
+    "rule": "Al menos 15 caracteres. Cualquier carácter, también espacios. No tu correo.",
+    "submit": "Cambiar contraseña",
+    "submitting": "Cambiando…",
+    "expiredTitle": "Este enlace ya no funciona",
+    "expiredBody": "Los enlaces para restablecer funcionan una vez, durante una hora.",
+    "askAgain": "Pedir un enlace nuevo",
+    "back": "Volver a iniciar sesión",
+    "mismatch": "Las dos contraseñas no son iguales.",
+    "errors": {
+      "too_short": "Usa al menos 15 caracteres.",
+      "too_long": "Usa como máximo 128 caracteres.",
+      "is_email": "No uses tu correo como contraseña.",
+      "one_character": "No repitas un solo carácter una y otra vez.",
+      "wrong_password": "Esa no es tu contraseña actual.",
+      "generic": "Eso no funcionó. Inténtalo de nuevo.",
+      "locked": "Demasiadas contraseñas incorrectas: espera una hora o restablece tu contraseña.",
+      "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtalo de nuevo en un momento."
+    }
+  },
+  "invite": {
+    "title": "Únete a {agency}",
+    "body": "{by} te invitó a unirte como {role}.",
+    "email": "Iniciarás sesión con {email}.",
+    "password": "Contraseña",
+    "confirm": "Confirma la contraseña",
+    "submit": "Unirme a {agency}",
+    "submitting": "Uniéndote…",
+    "expiredTitle": "Esta invitación ya no funciona",
+    "expiredBody": "Una invitación funciona una vez, durante 10 días. Pide al propietario de la agencia que la envíe de nuevo.",
+    "toSignIn": "Ir a iniciar sesión",
+    "nextSetup": "Tu rol necesita una aplicación de autenticación: la configuras a continuación."
+  },
+  "account": {
+    "eyebrow": "Configuración",
+    "title": "Tu cuenta",
+    "who": "{email} · {role}",
+    "languageTitle": "Idioma",
+    "language": "Idioma",
+    "languageHint": "Tus pantallas, tu página de inicio de sesión y los correos que Shiftbook te envía.",
+    "languageSaved": "Idioma guardado.",
+    "passwordTitle": "Contraseña",
+    "passwordChanged": "Último cambio: {date}.",
+    "passwordNever": "Todavía no tienes contraseña.",
+    "current": "Contraseña actual",
+    "new": "Contraseña nueva",
+    "confirm": "Confirma la contraseña nueva",
+    "update": "Actualizar contraseña",
+    "set": "Crear contraseña",
+    "saving": "Guardando…",
+    "passwordSaved": "Contraseña guardada. Se cerró la sesión en cualquier otro lugar donde la tenías abierta.",
+    "authTitle": "Autenticador",
+    "authOff": "Desactivado. Al activarlo, cada inicio de sesión también pide un código de una aplicación de autenticación.",
+    "authRequired": "Tu rol lo necesita.",
+    "setUp": "Configurar autenticador",
+    "authOn": "Activado desde el {date}.",
+    "recoveryTitle": "Códigos de recuperación",
+    "recoveryLeft": "{count, plural, =0 {No quedan códigos.} one {Queda # código.} other {Quedan # códigos.}}",
+    "newCodes": "Crear códigos de recuperación nuevos",
+    "newCodesTitle": "¿Crear códigos de recuperación nuevos?",
+    "newCodesBody": "Los códigos que tienes ahora dejan de funcionar.",
+    "newCodesConfirm": "Crear códigos nuevos",
+    "setUpAgain": "Configurar de nuevo",
+    "setUpAgainHint": "Para un teléfono nuevo. La aplicación anterior sigue funcionando hasta que se verifique la nueva.",
+    "signOut": "Cerrar sesión",
+    "demoNote": "Demostración: nada de aquí sale de la demostración; prueba la contraseña y el autenticador libremente."
+  },
+  "members": {
+    "eyebrow": "Configuración",
+    "title": "Miembros",
+    "invite": "Invitar",
+    "rolesTitle": "Roles",
+    "ownerOnly": "Solo el propietario invita personas, cambia roles y suspende.",
+    "role": "Rol",
+    "status": "Estado",
+    "all": "Todos",
+    "search": "Buscar nombre o correo",
+    "columns": {
+      "name": "Nombre",
+      "role": "Rol",
+      "status": "Estado",
+      "authenticator": "Autenticador",
+      "lastSeen": "Última vez",
+      "actions": "Acciones"
+    },
+    "you": "Tú",
+    "statusLabels": {
+      "active": "Activo",
+      "invited": "Invitado",
+      "suspended": "Suspendido"
+    },
+    "expires": "vence el {date}",
+    "inviteLapsed": "invitación vencida",
+    "auth": {
+      "on": "Activado",
+      "off": "Desactivado",
+      "needed": "Necesario"
+    },
+    "never": "Nunca",
+    "count": "{count, plural, one {# miembro} other {# miembros}}",
+    "noMatch": "Nadie coincide con estos filtros.",
+    "clear": "Quitar filtros",
+    "menu": "Acciones para {name}",
+    "changeRole": "Cambiar rol…",
+    "suspend": "Suspender…",
+    "restore": "Restaurar acceso",
+    "resend": "Enviar invitación de nuevo",
+    "cancelInvite": "Cancelar invitación",
+    "openInvite": "Abrir el correo de invitación",
+    "changeRoleTitle": "Cambiar el rol de {name}",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "suspendTitle": "¿Suspender a {name}?",
+    "suspendBody": "Su sesión se cierra en el acto y no puede iniciar sesión hasta que restaures su acceso. Su trabajo se conserva.",
+    "suspendConfirm": "Suspender",
+    "cancelTitle": "¿Cancelar la invitación a {name}?",
+    "cancelBody": "El enlace de su correo deja de funcionar.",
+    "cancelConfirm": "Cancelar invitación",
+    "keep": "Conservar",
+    "inviteTitle": "Invitar a un miembro",
+    "inviteBody": "Recibe un correo con un enlace que funciona durante 10 días.",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "language": "Idioma",
+    "send": "Enviar invitación",
+    "sending": "Enviando…",
+    "sent": "Invitación enviada a {email}.",
+    "resent": "Invitación enviada de nuevo a {email}.",
+    "roleChanged": "{name} ahora es {role}.",
+    "suspended": "{name} está suspendido.",
+    "restored": "{name} puede iniciar sesión de nuevo.",
+    "cancelled": "Invitación cancelada.",
+    "demoCopyTitle": "Buzón de la demostración: invitación a {email}",
+    "demoCopyBody": "La demostración no envía correos. Abre el enlace de abajo para aceptar la invitación como esta persona (cierra sesión primero o usa una ventana privada).",
+    "errors": {
+      "not_allowed": "Solo el propietario puede hacer esto.",
+      "invalid_email": "Escribe un correo completo.",
+      "email_taken": "Alguien ya inicia sesión con este correo.",
+      "invalid_name": "Escribe su nombre.",
+      "invalid_role": "Elige un rol.",
+      "not_found": "Esta persona cambió mientras tanto. La lista ahora muestra lo más reciente.",
+      "last_owner": "La agencia necesita al menos un propietario activo.",
+      "self": "No puedes suspenderte a ti mismo.",
+      "generic": "Eso no funcionó. Inténtalo de nuevo.",
+      "confirm": "Primero confirma que eres tú."
+    }
+  },
+  "authEmail": {
+    "greeting": "Hola, {name}:",
+    "footer": "Enviado por Shiftbook en nombre de {agency}.",
+    "invite": {
+      "subject": "{by} te invitó a {agency} en Shiftbook",
+      "intro": "{by} te invitó a unirte a {agency} en Shiftbook como {role}.",
+      "open": "Aceptar la invitación",
+      "expires": "La invitación funciona hasta el {date}. Es solo para ti, así que por favor no la reenvíes.",
+      "unexpected": "Si no esperabas esta invitación, puedes ignorar este correo."
+    },
+    "reset": {
+      "subject": "Restablece tu contraseña de Shiftbook",
+      "intro": "Alguien pidió restablecer la contraseña con la que inicias sesión en {agency} en Shiftbook.",
+      "open": "Elegir una contraseña nueva",
+      "expires": "El enlace funciona una vez, durante una hora.",
+      "unexpected": "Si no fuiste tú, ignora este correo: tu contraseña sigue igual."
+    }
+  },
+  "confirmAccess": {
+    "title": "Confirma que eres tú",
+    "bodyPassword": "Este cambio necesita tu contraseña, escrita en los últimos 15 minutos.",
+    "bodyCode": "Este cambio necesita un código de tu aplicación de autenticación (o un código de recuperación), escrito en los últimos 15 minutos.",
+    "password": "Contraseña",
+    "code": "Código o código de recuperación",
+    "confirm": "Confirmar",
+    "confirming": "Confirmando…",
+    "cancel": "Cancelar",
+    "invalid": "No coincide. Inténtalo de nuevo.",
+    "locked": "Demasiados intentos: espera un rato y vuelve a intentarlo.",
+    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtalo de nuevo en un momento."
   }
 }

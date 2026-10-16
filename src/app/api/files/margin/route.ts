@@ -12,7 +12,7 @@ import { agencyToday } from "@/server/settings";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request): Promise<Response> {
-  const actor = currentActor();
+  const actor = await currentActor();
   if (!mayViewMargin(actor)) return new Response("Not found", { status: 404 });
   const url = new URL(req.url);
   const kind = url.searchParams.get("kind");

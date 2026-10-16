@@ -14,12 +14,13 @@ import * as s from "../db/schema";
 import { PAY_DAY_KEY } from "../payroll/paid-lines";
 import { lockCatalog } from "../run/period-lock";
 import type { Actor } from "../session";
+import { can } from "../permissions";
 
 /** SPEC §2: the Owner sees margin; the read-only accountant reads everything. */
-export const mayViewMargin = (actor: Actor) => actor.role === "owner" || actor.role === "accountant";
-export const mayChangeMargin = (actor: Actor) => actor.role === "owner";
+export const mayViewMargin = (actor: Actor) => can(actor, "viewMargin");
+export const mayChangeMargin = (actor: Actor) => can(actor, "settings");
 export { PAY_DAY_KEY };
-export const mayChangePlacement = (actor: Actor) => actor.role !== "accountant";
+export const mayChangePlacement = (actor: Actor) => can(actor, "placements");
 
 export const OT_PREMIUM_KEY = "margin.wc_excludes_ot_premium";
 

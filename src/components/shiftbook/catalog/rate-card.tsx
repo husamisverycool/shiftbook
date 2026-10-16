@@ -25,6 +25,7 @@ import { useRouter } from "@/i18n/navigation";
 import type { RateVersionView } from "@/server/catalog/queries";
 import { billFromMarkup, inForce, type RateInput } from "@/server/catalog/versions";
 import { bpToInput, centsToInput, multiplierToInput, parseDollars, parseMultiplier, parsePercentBp } from "@/lib/amounts";
+import { useCan } from "../abilities";
 import { longDate, money } from "../format";
 
 const REASONS = ["wrong_from_start", "client_agreed", "data_entry", "other"] as const;
@@ -38,6 +39,8 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
   const t = useTranslations("rates");
   const locale = useLocale();
   const router = useRouter();
+  // Decision 0026: rates are changed by the Owner and coordinators (placements).
+  const mayChange = useCan()("placements");
   const current = inForce(versions, today);
   const [shownId, setShownId] = useState<string | null>(null);
   const shown = versions.find((v) => v.id === shownId) ?? current ?? versions.at(-1) ?? null;
@@ -90,10 +93,12 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
             </NativeSelect>
           </div>
         )}
-        <Button size="sm" onClick={() => setForm({ mode: "add", base: shown })} data-testid="new-version">
-          <PlusIcon />
-          {versions.length === 0 ? t("add") : t("newVersion")}
-        </Button>
+        {mayChange && (
+          <Button size="sm" onClick={() => setForm({ mode: "add", base: shown })} data-testid="new-version">
+            <PlusIcon />
+            {versions.length === 0 ? t("add") : t("newVersion")}
+          </Button>
+        )}
       </div>
 
       {/* Scheduled change (Gusto): one notice, or one summary with Review for several */}
@@ -107,7 +112,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
                 <li key={c}>{c}</li>
               ))}
             </ul>
-            {!scheduled[0]!.frozen && (
+            {mayChange && !scheduled[0]!.frozen && (
               <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setDeleting(scheduled[0]!)}>
                 {t("cancelScheduled")}
               </Button>
@@ -136,14 +141,16 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
             {shown.frozen ? (
               <Badge variant="secondary">{t("usedByPaid")}</Badge>
             ) : (
-              <>
-                <Button variant="outline" size="sm" onClick={() => setForm({ mode: "edit", base: shown })}>
-                  {t("edit")}
-                </Button>
-                <Button variant="outline" size="sm" disabled={shown.id === earliest?.id && versions.length > 1} onClick={() => setDeleting(shown)}>
-                  {t("delete")}
-                </Button>
-              </>
+              mayChange && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setForm({ mode: "edit", base: shown })}>
+                    {t("edit")}
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={shown.id === earliest?.id && versions.length > 1} onClick={() => setDeleting(shown)}>
+                    {t("delete")}
+                  </Button>
+                </>
+              )
             )}
           </div>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
@@ -177,9 +184,11 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
         <div className="flex flex-col items-center gap-2 rounded-lg border py-10 text-sm text-muted-foreground" data-testid="no-rates">
           <CalendarClockIcon className="size-5" />
           <p>{t("none")}</p>
-          <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setForm({ mode: "add", base: null })}>
-            {t("add")}
-          </Button>
+          {mayChange && (
+            <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setForm({ mode: "add", base: null })}>
+              {t("add")}
+            </Button>
+          )}
         </div>
       )}
 
@@ -244,7 +253,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
                     <li key={c}>{c}</li>
                   ))}
                 </ul>
-                {!v.frozen && (
+                {mayChange && !v.frozen && (
                   <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setDeleting(v)}>
                     {t("cancelScheduled")}
                   </Button>

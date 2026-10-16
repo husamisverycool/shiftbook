@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { FIELDS, SOURCES, type Field, type Mapping, type Source } from "@/server/placements/fields";
 import type { DateOrder, DistinctValue, PlannedRow } from "@/server/placements/plan";
 import type { ImportView } from "@/server/placements/service";
+import { useCan } from "../abilities";
 import { longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
 
@@ -31,6 +32,8 @@ type History = { id: string; source: string; filename: string; status: "draft" |
 
 export function ImportWizard({ view, history, options, step: asked }: { view: ImportView | null; history: History; options: CatalogOptions; step: string | null }) {
   const t = useTranslations("import");
+  // Decision 0026: importing is the placements ability; others read the results and the history.
+  const mayImport = useCan()("placements");
   const step: Step = !view ? "source" : view.status === "done" ? "run" : (STEPS as readonly string[]).includes(asked ?? "") && asked !== "source" && asked !== "run" ? (asked as Step) : "map";
   const at = STEPS.indexOf(step);
   return (
@@ -50,22 +53,25 @@ export function ImportWizard({ view, history, options, step: asked }: { view: Im
         <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         {view && <p className="text-sm text-muted-foreground">{t("fileLine", { file: view.filename, source: t(`sources.${view.source}`), rows: view.rowCount })}</p>}
       </div>
-      <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label={t("steps")}>
-        {STEPS.map((s, i) => (
-          <li key={s} aria-current={s === step ? "step" : undefined} className={cn("flex items-center gap-2", i > at ? "text-muted-foreground" : "", s === step && "font-semibold")}>
-            <span className={cn("flex size-6 items-center justify-center rounded-full border text-xs tabular-nums", i < at && "bg-primary text-primary-foreground", s === step && "border-foreground")}>
-              {i < at ? <CheckIcon className="size-3.5" /> : i + 1}
-            </span>
-            {t(`step.${s}`)}
-          </li>
-        ))}
-      </ol>
-      {step === "source" && <SourceStep />}
-      {view && step === "map" && <MapStep view={view} />}
-      {view && step === "values" && <ValuesStep view={view} options={options} />}
-      {view && step === "preview" && <PreviewStep view={view} options={options} />}
+      {!mayImport && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+      {mayImport && (
+        <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label={t("steps")}>
+          {STEPS.map((s, i) => (
+            <li key={s} aria-current={s === step ? "step" : undefined} className={cn("flex items-center gap-2", i > at ? "text-muted-foreground" : "", s === step && "font-semibold")}>
+              <span className={cn("flex size-6 items-center justify-center rounded-full border text-xs tabular-nums", i < at && "bg-primary text-primary-foreground", s === step && "border-foreground")}>
+                {i < at ? <CheckIcon className="size-3.5" /> : i + 1}
+              </span>
+              {t(`step.${s}`)}
+            </li>
+          ))}
+        </ol>
+      )}
+      {mayImport && step === "source" && <SourceStep />}
+      {mayImport && view && step === "map" && <MapStep view={view} />}
+      {mayImport && view && step === "values" && <ValuesStep view={view} options={options} />}
+      {mayImport && view && step === "preview" && <PreviewStep view={view} options={options} />}
       {view && step === "run" && <RunStep view={view} />}
-      {step === "source" && <HistoryList history={history} />}
+      {(step === "source" || (!mayImport && step !== "run")) && <HistoryList history={history} />}
     </div>
   );
 }

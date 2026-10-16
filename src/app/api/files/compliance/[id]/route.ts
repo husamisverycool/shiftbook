@@ -11,7 +11,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
   const { id } = await ctx.params;
   if (!UUID.test(id)) return new Response("Not found", { status: 404 });
-  const actor = currentActor();
+  const actor = await currentActor();
   const doc = await withAgency(actor.agencyId, (tx) => complianceDocument(tx, id));
   if (!doc) return new Response("Not found", { status: 404 });
   const bytes = await documentStore.get(doc.storageKey);

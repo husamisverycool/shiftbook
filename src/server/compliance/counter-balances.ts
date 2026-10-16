@@ -15,13 +15,14 @@ import { counters, type CounterRow } from "./counters";
 import { coveredHours, openingBalances } from "./hours";
 import { EQUAL_PAY_KINDS } from "./kinds";
 import type { ComplianceResult } from "./service";
+import { can } from "../permissions";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 /** At most every hour of four years (the table's check): a typing check, not a rule. */
 const MAX_MINUTES = 2_102_400;
 
-export const mayChangeBalances = (actor: Actor) => actor.role === "owner";
+export const mayChangeBalances = (actor: Actor) => can(actor, "settings");
 
 export interface BalanceInput {
   workerId: string;

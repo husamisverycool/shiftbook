@@ -8,6 +8,7 @@
  */
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   bigserial,
   boolean,
   check,
@@ -117,10 +118,86 @@ export const users = pgTable(
     email: text("email").notNull(),
     role: userRole("role").notNull(),
     preferredLocale: text("preferred_locale").notNull().default("en"),
+    /** "invited" until they accept; "suspended" people cannot sign in (slice k, drizzle/0034). */
+    status: text("status").$type<UserStatus>().notNull().default("active"),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("users_agency_email").on(t.agencyId, t.email)],
 );
+export type UserStatus = "active" | "invited" | "suspended";
+
+/** A person's login (slice k, decision K1): readable across agencies only in sign-in mode (app.auth). */
+export interface StoredRecoveryCode {
+  hash: string;
+  usedAt: string | null;
+}
+export const userLogins = pgTable("user_logins", {
+  // With agency_id, a foreign key to the person in that agency (drizzle/0034).
+  userId: uuid("user_id").primaryKey(),
+  agencyId: agencyId(),
+  email: text("email").notNull(),
+  passwordHash: text("password_hash"),
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
+  totpSecret: jsonb("totp_secret").$type<{ v: number; iv: string; tag: string; data: string }>(),
+  totpPending: jsonb("totp_pending").$type<{ v: number; iv: string; tag: string; data: string }>(),
+  totpEnabledAt: timestamp("totp_enabled_at", { withTimezone: true }),
+  totpLastStep: bigint("totp_last_step", { mode: "number" }),
+  recoveryCodes: jsonb("recovery_codes").$type<StoredRecoveryCode[]>().notNull().default(sql`'[]'::jsonb`),
+  /** Wrong passwords in the day since failedSince; 100 lock the password for an hour (NIST SP 800-63B's limit). */
+  failedCount: integer("failed_count").notNull().default(0),
+  failedSince: timestamp("failed_since", { withTimezone: true }),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  /** Wrong codes, counted apart from passwords (a right password never clears them). */
+  codeFailedCount: integer("code_failed_count").notNull().default(0),
+  codeFailedSince: timestamp("code_failed_since", { withTimezone: true }),
+  codeFailuresInRow: integer("code_failures_in_row").notNull().default(0),
+  codeLockedUntil: timestamp("code_locked_until", { withTimezone: true }),
+});
+
+/** Wrong passwords per email and address and per address (digests only), for the short throttle. */
+export const signInFailures = pgTable("sign_in_failures", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  keyHash: text("key_hash").notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** A signed-in browser (decision K2): only the token's SHA-256 is kept. */
+export const sessions = pgTable("sessions", {
+  id: id(),
+  agencyId: agencyId(),
+  userId: uuid("user_id").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  demo: boolean("demo").notNull().default(false),
+  secondStepAt: timestamp("second_step_at", { withTimezone: true }),
+  /** When the person last gave their password or a code in this session (GitHub's sudo mode). */
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  /** Wrong codes in this half session; five end it. */
+  codeFailures: integer("code_failures").notNull().default(0),
+  createdAt: createdAt(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  userAgent: text("user_agent"),
+});
+
+/** One-time links: an invite or a password reset (digests only). */
+export const authTokens = pgTable("auth_tokens", {
+  id: id(),
+  agencyId: agencyId(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  purpose: text("purpose").$type<"invite" | "reset">().notNull(),
+  tokenHash: text("token_hash").notNull(),
+  createdAt: createdAt(),
+  createdByLabel: text("created_by_label").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  /** A reset link of a person with an authenticator: when its code was given (GitHub asks the code before the new password). */
+  codeVerifiedAt: timestamp("code_verified_at", { withTimezone: true }),
+  /** The digest of the cookie given to the browser that gave the code: only it may set the password. */
+  codeProofHash: text("code_proof_hash"),
+});
 
 // Effective-dated agency settings: workweek start, rounding mode, earning-code maps, thresholds.
 export const agencySettings = pgTable(
@@ -1226,7 +1303,7 @@ export const clientDisputes = pgTable(
   ],
 );
 
-export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice";
+export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset";
 
 /** Every email sent, with any approval link hidden (Stripe keeps a log of customer emails). */
 export const emailMessages = pgTable(
@@ -1455,6 +1532,9 @@ export const reminders = pgTable(
 export const TENANT_TABLES = [
   "branches",
   "users",
+  "user_logins",
+  "sessions",
+  "auth_tokens",
   "agency_settings",
   "clients",
   "worksites",

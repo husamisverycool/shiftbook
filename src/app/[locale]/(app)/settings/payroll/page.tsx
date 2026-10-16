@@ -16,7 +16,7 @@ export default async function PayrollSettingsPage(props: { params: Promise<{ loc
   const { locale } = await props.params;
   setRequestLocale(locale);
   const sp = await props.searchParams;
-  const actor = currentActor();
+  const actor = await currentActor();
   const view = await withAgency(actor.agencyId, (tx) => payrollSettingsView(tx, actor));
   const asked = TABS.find((t) => t === sp.tab);
   // Spreadsheet columns exist only for the spreadsheet.

@@ -14,7 +14,7 @@ export async function GET(req: Request): Promise<Response> {
   const format = url.searchParams.get("format");
   if (!isIsoDate(from) || !isIsoDate(to) || to < from || (format !== "pdf" && format !== "csv")) return new Response("Not found", { status: 404 });
   const order = url.searchParams.get("order") === "class" ? "class" : "state";
-  const actor = currentActor();
+  const actor = await currentActor();
   const body = await withAgency(actor.agencyId, async (tx) => {
     const v = await wcPacketView(tx, { from, to, order });
     return format === "csv" ? new TextEncoder().encode(packetCsv(v)) : await packetPdf(tx, v, await agencyToday(tx));

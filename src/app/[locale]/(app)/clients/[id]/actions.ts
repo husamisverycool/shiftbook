@@ -5,7 +5,7 @@ import { z } from "zod";
 import { setBillingSettings, type BillingResult } from "@/server/catalog/billing";
 import { withAgency } from "@/server/db";
 import { PeriodBusyError } from "@/server/run/period-lock";
-import { currentActor } from "@/server/session";
+import { actorAllowedTo } from "@/server/session";
 
 /**
  * Starts a version of a client's invoice settings (docs/patterns/clients/[id].md). Shapes only here:
@@ -13,7 +13,7 @@ import { currentActor } from "@/server/session";
  */
 export async function saveBillingAction(clientId: string, values: unknown, effectiveFrom: string): Promise<BillingResult | { ok: false; error: "busy" | "generic" }> {
   if (!z.uuid().safeParse(clientId).success || !z.string().max(20).safeParse(effectiveFrom).success || JSON.stringify(values ?? null).length > 5000) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("clientBilling");
   try {
     return await withAgency(actor.agencyId, (tx) => setBillingSettings(tx, actor, clientId, values, effectiveFrom));
   } catch (error) {

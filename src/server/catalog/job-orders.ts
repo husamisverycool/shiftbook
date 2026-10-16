@@ -9,6 +9,7 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { lockCatalog } from "../run/period-lock";
 import type { Actor } from "../session";
+import { can } from "../permissions";
 
 export interface JobOrderInput {
   clientId: string;
@@ -28,7 +29,7 @@ export type JobOrderField = "client" | "worksite" | "position" | "soc_code" | "s
 export type JobOrderResult = { ok: true; id: string } | { ok: false; error: "invalid"; fields: JobOrderField[] } | { ok: false; error: "not_found" | "client_has_assignments" | "not_allowed" };
 
 /** The read-only accountant changes nothing (SPEC §2). */
-const mayChange = (actor: Actor) => actor.role !== "accountant";
+const mayChange = (actor: Actor) => can(actor, "placements");
 const MAX_RATE_CENTS = 10_000_000;
 const cents = (n: number | null) => n === null || (Number.isSafeInteger(n) && n > 0 && n <= MAX_RATE_CENTS);
 

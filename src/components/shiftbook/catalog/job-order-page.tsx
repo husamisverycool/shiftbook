@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { JobOrderPage } from "@/server/catalog/queries";
 import { inForce } from "@/server/catalog/versions";
+import { useCan } from "../abilities";
 import { longDate, money } from "../format";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
@@ -39,6 +40,8 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  // Decision 0026: the job order, its rates and its placements are changed by the Owner and coordinators.
+  const mayChange = useCan()("placements");
   const tab: Tab = (TABS as readonly string[]).includes(params.get("tab") ?? "") ? (params.get("tab") as Tab) : "overview";
   const setTab = (next: string) => router.replace(`${pathname}?tab=${next}`, { scroll: false });
   const [editing, setEditing] = useState(false);
@@ -85,16 +88,20 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
             {job.clientName} · {job.worksite.name}, {job.worksite.city}, {job.worksite.state}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-            <PencilIcon />
-            {t("edit")}
-          </Button>
-          <Button size="sm" onClick={() => setAssigning(true)}>
-            <UserPlusIcon />
-            {t("assign")}
-          </Button>
-        </div>
+        {mayChange ? (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <PencilIcon />
+              {t("edit")}
+            </Button>
+            <Button size="sm" onClick={() => setAssigning(true)}>
+              <UserPlusIcon />
+              {t("assign")}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("readOnly")}</p>
+        )}
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
@@ -146,7 +153,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
           </TabsContent>
 
           <TabsContent value="assignments" className="pt-4">
-            <AssignmentsTab data={data} today={today} onAssign={() => setAssigning(true)} />
+            <AssignmentsTab data={data} today={today} mayChange={mayChange} onAssign={() => setAssigning(true)} />
           </TabsContent>
 
           <TabsContent value="rates" className="flex flex-col gap-8 pt-4">
@@ -174,7 +181,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
   );
 }
 
-function AssignmentsTab({ data, today, onAssign }: { data: JobOrderPage; today: string; onAssign: () => void }) {
+function AssignmentsTab({ data, today, mayChange, onAssign }: { data: JobOrderPage; today: string; mayChange: boolean; onAssign: () => void }) {
   const t = useTranslations("jobOrder");
   const ta = useTranslations("assignments");
   const te = useTranslations("convert.errors");
@@ -215,15 +222,17 @@ function AssignmentsTab({ data, today, onAssign }: { data: JobOrderPage; today: 
       <div className="flex flex-col items-center gap-2 py-12 text-sm text-muted-foreground">
         <UserPlusIcon className="size-5" />
         <p>{t("noAssignments")}</p>
-        <Button variant="link" size="sm" className="h-auto px-0" onClick={onAssign}>
-          {t("assign")}
-        </Button>
+        {mayChange && (
+          <Button variant="link" size="sm" className="h-auto px-0" onClick={onAssign}>
+            {t("assign")}
+          </Button>
+        )}
       </div>
     );
   }
   return (
     <div className="flex flex-col gap-3">
-      {selected.length > 0 && (
+      {mayChange && selected.length > 0 && (
         <div role="toolbar" aria-label={ta("selection")} className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
           <span className="mr-auto tabular-nums">{ta("selectedCount", { count: selected.length })}</span>
           <Button size="sm" variant="outline" onClick={() => setEnding(true)}>
@@ -241,13 +250,15 @@ function AssignmentsTab({ data, today, onAssign }: { data: JobOrderPage; today: 
         <Table aria-label={t("tabs.assignments")}>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8">
-                <Checkbox
-                  aria-label={ta("selectAll")}
-                  checked={selected.length === data.assignments.length}
-                  onCheckedChange={(on) => setSelected(on ? data.assignments.map((a) => a.id) : [])}
-                />
-              </TableHead>
+              {mayChange && (
+                <TableHead className="w-8">
+                  <Checkbox
+                    aria-label={ta("selectAll")}
+                    checked={selected.length === data.assignments.length}
+                    onCheckedChange={(on) => setSelected(on ? data.assignments.map((a) => a.id) : [])}
+                  />
+                </TableHead>
+              )}
               <TableHead>{ta("col.worker")}</TableHead>
               <TableHead>{ta("col.start")}</TableHead>
               <TableHead>{ta("col.end")}</TableHead>
@@ -262,9 +273,11 @@ function AssignmentsTab({ data, today, onAssign }: { data: JobOrderPage; today: 
           <TableBody>
             {data.assignments.map((a) => (
               <TableRow key={a.id} data-state={selected.includes(a.id) ? "selected" : undefined} data-testid="assignment-row">
-                <TableCell>
-                  <Checkbox aria-label={ta("select", { name: a.workerName })} checked={selected.includes(a.id)} onCheckedChange={(on) => setSelected((cur) => (on ? [...cur, a.id] : cur.filter((x) => x !== a.id)))} />
-                </TableCell>
+                {mayChange && (
+                  <TableCell>
+                    <Checkbox aria-label={ta("select", { name: a.workerName })} checked={selected.includes(a.id)} onCheckedChange={(on) => setSelected((cur) => (on ? [...cur, a.id] : cur.filter((x) => x !== a.id)))} />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">{a.workerName}</TableCell>
                 <TableCell>{longDate(a.startDate, locale)}</TableCell>
                 <TableCell>{a.endDate ? longDate(a.endDate, locale) : "—"}</TableCell>
@@ -277,7 +290,8 @@ function AssignmentsTab({ data, today, onAssign }: { data: JobOrderPage; today: 
                   {a.ownRates ? (
                     <Badge variant="outline">{ta("ownRates")}</Badge>
                   ) : (
-                    a.status !== "cancelled" && (
+                    a.status !== "cancelled" &&
+                    mayChange && (
                       <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setOwnFor(a.id)}>
                         {ta("setOwnRates")}
                       </Button>

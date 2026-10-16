@@ -14,7 +14,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default async function CountersPage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   const sp = await props.searchParams;
   const show: CounterShow = sp.show === "near" || sp.show === "crossed" ? sp.show : "all";
   const clientId = typeof sp.client === "string" && UUID.test(sp.client) ? sp.client : null;

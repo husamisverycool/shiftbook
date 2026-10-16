@@ -16,7 +16,7 @@ export default async function ApprovalsPage(props: { params: Promise<{ locale: s
   const { locale } = await props.params;
   setRequestLocale(locale);
   const sp = await props.searchParams;
-  const actor = currentActor();
+  const actor = await currentActor();
   const { periods, periodId, periodOpen, rows } = await withAgency(actor.agencyId, async (tx) => {
     const periods = await listPeriods(tx);
     const asked = typeof sp.period === "string" ? periods.find((p) => p.id === sp.period) : undefined;

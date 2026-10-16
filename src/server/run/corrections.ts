@@ -23,9 +23,10 @@ import { billDifferences, planCorrectionInvoices, type CorrectionDocuments } fro
 import { differences, settlement, type DiffLine, type FileLine, type LineForDiff, type WeekLine } from "./differences";
 import { lockPeriod, openPeriod, periodState } from "./period-lock";
 import { computeRun } from "./service";
+import { can } from "../permissions";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const mayCorrect = (actor: Actor) => actor.role === "owner";
+const mayCorrect = (actor: Actor) => can(actor, "run");
 /** Entries a run may pay; the status a locked entry goes back to (decision E13). */
 const PAYABLE = ["extracted", "reviewed", "client_approved"] as const;
 

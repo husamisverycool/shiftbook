@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request): Promise<Response> {
   const asked = new URL(req.url).searchParams.get("asOf");
-  const actor = currentActor();
+  const actor = await currentActor();
   const { csv, asOf } = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     const asOf = asked && isIsoDate(asked) && asked <= today ? asked : today;

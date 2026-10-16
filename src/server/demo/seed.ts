@@ -21,6 +21,7 @@ import {
   NICKNAMES,
   PERIODS,
   RECRUITERS,
+  STAFF,
   I9_DATES,
   MA_DEPARTMENT_CONTACT,
   MA_JOB_ORDER_OPEN,
@@ -92,6 +93,9 @@ const CLEAR_ORDER = [
   "clients",
   "agency_settings",
   "pay_periods",
+  "auth_tokens",
+  "user_logins",
+  // Sessions are kept: the demo people are seeded again with the same ids, so a reset signs no one out.
   "users",
   "branches",
 ] as const;
@@ -112,6 +116,7 @@ export const periodId = (key: string) => demoUuid(`period:${key}`);
 export async function seedDemoAgency(tx: Tx): Promise<void> {
   await tx.insert(s.users).values({ ...DEMO_OWNER, agencyId });
   await tx.insert(s.users).values(RECRUITERS.map((r) => ({ id: demoUuid(`user:${r.key}`), agencyId, name: r.name, email: r.email, role: r.role })));
+  await tx.insert(s.users).values(STAFF.map((r) => ({ id: demoUuid(`user:${r.key}`), agencyId, name: r.name, email: r.email, role: r.role })));
   await tx.insert(s.branches).values(BRANCHES.map((b) => ({ id: demoUuid(`branch:${b.key}`), agencyId, name: b.name })));
   await tx.insert(s.burdenTaxRates).values(BURDEN_TAX_RATES.map((r) => ({ agencyId, ...r, effectiveFrom: SINCE, createdByLabel: "Demo setup" })));
   await tx.insert(s.wcRates).values(WC_RATES.map((r) => ({ agencyId, ...r, effectiveFrom: SINCE, createdByLabel: "Demo setup" })));

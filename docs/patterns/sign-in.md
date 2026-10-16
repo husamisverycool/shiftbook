@@ -1,0 +1,56 @@
+# Pattern: Sign in (`/sign-in`)
+
+Status: adopted — slice (k) plan, decisions K1 and K3 (2026-10-16, under the owner's "just keep going")
+Reference product and screen: GitHub — sign-in (email and password, then a separate two-factor step;
+"Forgot password?" leads to the password reset page); Linear — login page (each way to sign in is a
+full-width "Continue with …" button, one under another)
+Source URL: https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/accessing-github-using-two-factor-authentication
+Source URL: https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/recovering-your-account-if-you-lose-your-2fa-credentials
+Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/updating-your-github-access-credentials
+Source URL: https://linear.app/docs/login-methods
+Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3). Confidence: high for
+the steps (password first, then the code; reset by email); the page's exact layout is shown in
+screenshots, not described in text.
+
+## Purpose in Shiftbook
+Where everyone signs in (SPEC §2): email and password; then, for a person with an authenticator or
+whose role needs one, the code page. In demo mode the page also lists the demo people, so the demo
+opens with no password (decision K3).
+
+## Hierarchy
+1. **H1** "Sign in to Shiftbook".
+2. **Notice** (only when there is one): signed out; the session ended (timed out or signed out
+   elsewhere); the password was changed; the link used has expired.
+3. **Form** (GitHub sign-in):
+   1. **Email** field (email keyboard, autocomplete "username").
+   2. **Password** field (autocomplete "current-password"), with **Forgot password?** beside its
+      label, linking to `/sign-in/reset` (GitHub: the password reset page).
+   3. **Sign in** button (primary, full width).
+   4. Under the button, a refusal in place when there is one (see States).
+4. **Demo only — "Try the demo as"** (Linear: one full-width "Continue with …" button per way in):
+   one button per demo person, "Continue as <name>" with their role under the name: the Owner,
+   Lena (coordinator), Rosa (billing), Morgan (accountant). The demo has no phones, so these skip
+   the code (decision K3).
+
+## Interactions
+- Enter in either field submits. Focus starts in Email.
+- Sign in → the code page when the person has an authenticator; the authenticator setup page when
+  their role needs one and they have none; otherwise the page they were going to (or Convert
+  timesheets).
+- Continue as → straight into the app as that demo person.
+- Forgot password? → the reset page, with the email already typed carried over.
+
+## States
+- Wrong email or password: one message for both (never says which), the password field cleared, the
+  email kept.
+- Too many tries: ten wrong passwords for an email from one place in 15 minutes make it wait 15
+  minutes (an unknown email alike, so the page tells nothing about who has an account); 100 in a day
+  lock the password for an hour. The message says to wait and offers the password reset.
+- Busy: too many sign-ins at once — try again in a moment.
+- Submitting: the button shows it is working and cannot be pressed twice.
+- Already signed in: the page opens the app instead.
+
+## Never copy
+GitHub's or Linear's wording, icons, colors or logos.
+
+Deviations allowed: none

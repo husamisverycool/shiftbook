@@ -11,7 +11,7 @@ import * as r from "@/server/receivables/service";
 import * as s from "@/server/db/schema";
 import { inArray } from "drizzle-orm";
 import { PeriodBusyError } from "@/server/run/period-lock";
-import { currentActor } from "@/server/session";
+import { actorAllowedTo } from "@/server/session";
 
 /**
  * Receivables actions (slice h; patterns receivables.md, payments.md, bank.md, bank/import.md,
@@ -37,61 +37,61 @@ const small = (v: unknown) => JSON.stringify(v ?? null).length <= 20_000;
 
 export async function recordPaymentAction(input: unknown, bankLineId?: string): Promise<r.ReceivablesResult<{ paymentId: string }> | { ok: false; error: "busy" | "generic" }> {
   if (!small(input) || (bankLineId !== undefined && !id.safeParse(bankLineId).success)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.recordPayment(tx, actor, input, { bankLineId })));
 }
 
 export async function applyCreditAction(paymentId: string, applications: unknown): Promise<ActionResult> {
   if (!id.safeParse(paymentId).success || !small(applications)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.applyCredit(tx, actor, paymentId, applications)));
 }
 
 export async function applyInvoiceCreditAction(fromInvoiceId: string, applications: unknown): Promise<ActionResult> {
   if (!id.safeParse(fromInvoiceId).success || !small(applications)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.applyInvoiceCredit(tx, actor, fromInvoiceId, applications)));
 }
 
 export async function voidPaymentAction(paymentId: string, reason: string): Promise<ActionResult> {
   if (!id.safeParse(paymentId).success || typeof reason !== "string" || reason.length > 500) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.voidPayment(tx, actor, paymentId, reason)));
 }
 
 export async function writeOffAction(invoiceId: string, input: unknown): Promise<ActionResult> {
   if (!id.safeParse(invoiceId).success || !small(input)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.writeOff(tx, actor, invoiceId, input)));
 }
 
 export async function shortPayAction(invoiceId: string, reason: unknown, note: unknown): Promise<ActionResult> {
   if (!id.safeParse(invoiceId).success || !small([reason, note])) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.setShortPay(tx, actor, invoiceId, reason, note)));
 }
 
 export async function reminderAction(invoiceId: string, stage: unknown, locale: unknown, how: unknown): Promise<ActionResult> {
   if (!id.safeParse(invoiceId).success) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.recordReminder(tx, actor, invoiceId, stage, locale, how)));
 }
 
 export async function excludeLineAction(lineId: string, reason: unknown): Promise<ActionResult> {
   if (!id.safeParse(lineId).success) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.excludeLine(tx, actor, lineId, reason)));
 }
 
 export async function includeLineAction(lineId: string): Promise<ActionResult> {
   if (!id.safeParse(lineId).success) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.includeLine(tx, actor, lineId)));
 }
 
 export async function undoLineAction(lineId: string): Promise<ActionResult> {
   if (!id.safeParse(lineId).success) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.undoLine(tx, actor, lineId)));
 }
 
@@ -127,7 +127,7 @@ const HEAD_ROWS = 10;
  */
 export async function previewBankFileAction(text: string, mapping?: unknown): Promise<BankPreview | { ok: false; error: "size" | "lines" | "empty" | "not_allowed" | "generic" }> {
   if (typeof text !== "string") return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   if (!r.mayCollect(actor)) return { ok: false, error: "not_allowed" };
   if (Buffer.byteLength(text, "utf8") > BANK_FILE_LIMITS.bytes) return { ok: false, error: "size" };
   const rows = bankRows(text);
@@ -156,6 +156,6 @@ export async function previewBankFileAction(text: string, mapping?: unknown): Pr
 export async function importBankFileAction(filename: string, text: string, mapping: unknown, rows: number[]): Promise<r.ImportResult | { ok: false; error: "busy" | "generic" }> {
   const m = MappingSchema.safeParse(mapping);
   if (typeof filename !== "string" || typeof text !== "string" || !m.success || !z.array(z.number().int().min(1)).max(2000).safeParse(rows).success) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("cash");
   return guarded(() => withAgency(actor.agencyId, (tx) => r.importBankFile(tx, actor, { filename, text }, m.data, rows)));
 }

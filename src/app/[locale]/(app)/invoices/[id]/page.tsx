@@ -19,7 +19,7 @@ export default async function InvoiceDetailPage(props: { params: Promise<{ local
   setRequestLocale(locale);
   if (!UUID.test(id)) notFound();
   const sp = await props.searchParams;
-  const actor = currentActor();
+  const actor = await currentActor();
   const view = await withAgency(actor.agencyId, async (tx) => {
     const detail = await invoiceDetail(tx, id);
     if (!detail) return null;

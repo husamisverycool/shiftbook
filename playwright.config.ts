@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 /** Another checkout (a worktree) can run its own copy side by side: SHIFTBOOK_E2E_PORT=3200 with its own DATABASE_URL. */
 const PORT = Number(process.env.SHIFTBOOK_E2E_PORT ?? 3100);
+export const OWNER_STATE = `tests/e2e/.auth/owner-${PORT}.json`;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -15,10 +16,14 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
+  projects: [
+    // Signs in once as the demo Owner ("Continue as"); every test starts signed in unless it says otherwise.
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    { name: "chromium", testIgnore: /auth\.setup\.ts/, dependencies: ["setup"], use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, storageState: OWNER_STATE } },
+  ],
   webServer: {
     command: `pnpm exec next build && pnpm exec next start --port ${PORT}`,
-    url: `http://localhost:${PORT}/en/convert`,
+    url: `http://localhost:${PORT}/en/sign-in`,
     reuseExistingServer: false,
     timeout: 600_000,
     // The photo-path test uses its own hand-written recorded reading (tests/e2e/fixtures).

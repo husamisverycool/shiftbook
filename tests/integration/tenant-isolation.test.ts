@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agencies, clients, TENANT_TABLES, timeEntries, payPeriods } from "../../src/server/db/schema";
+import { agencies, authTokens, clients, sessions, TENANT_TABLES, timeEntries, payPeriods, userLogins, users } from "../../src/server/db/schema";
 import { databaseError, openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
@@ -90,6 +90,27 @@ describe("tenant isolation (SPEC §21)", () => {
     });
     const [still] = await owner.db.select().from(clients).where(eq(clients.id, bClient!.id));
     expect(still!.name).toBe("B client 1");
+  });
+
+  it("keeps another agency's logins, sessions and sign-in links out of reach of an agency's transaction (decision 0025)", async () => {
+    const [bUser] = await owner.db.insert(users).values({ agencyId: agencyB, name: "B person", email: "b.person@b.example", role: "owner" }).returning();
+    await owner.db.insert(userLogins).values({ userId: bUser!.id, agencyId: agencyB, email: "b.person@b.example" });
+    await owner.db.insert(sessions).values({ agencyId: agencyB, userId: bUser!.id, tokenHash: "a".repeat(64), expiresAt: new Date(Date.now() + 60_000) });
+    await owner.db.insert(authTokens).values({ agencyId: agencyB, userId: bUser!.id, purpose: "reset", tokenHash: "b".repeat(64), createdByLabel: "test", expiresAt: new Date(Date.now() + 60_000) });
+    await app.withAgency(agencyA, async (tx) => {
+      expect(await tx.select().from(userLogins)).toHaveLength(0);
+      expect(await tx.select().from(sessions)).toHaveLength(0);
+      expect(await tx.select().from(authTokens)).toHaveLength(0);
+      const moved = await tx.update(sessions).set({ endedAt: new Date() }).returning();
+      expect(moved).toHaveLength(0);
+    });
+    // Sign-in mode is set for one transaction only, and only by the sign-in service.
+    await app.db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.auth', 'on', true)`);
+      expect(await tx.select().from(sessions).where(eq(sessions.agencyId, agencyB))).toHaveLength(1);
+    });
+    expect(await app.db.select().from(sessions)).toHaveLength(0);
+    expect(await app.db.select().from(userLogins)).toHaveLength(0);
   });
 
   it("does not leak the agency setting between transactions", async () => {

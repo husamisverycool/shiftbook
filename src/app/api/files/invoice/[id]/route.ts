@@ -15,7 +15,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const { id } = await ctx.params;
   const file = new URL(req.url).searchParams.get("file") ?? "pdf";
   if (file !== "pdf" && file !== "csv" && file !== "vms") return new Response("Not found", { status: 404 });
-  const actor = currentActor();
+  const actor = await currentActor();
   const [row] = await withAgency(actor.agencyId, (tx) => tx.select().from(invoices).where(eq(invoices.id, id))).catch(() => []);
   const key = file === "pdf" ? row?.pdfStorageKey : file === "csv" ? row?.csvStorageKey : row?.vmsStorageKey;
   if (!row || !key) return new Response("Not found", { status: 404 });

@@ -1,13 +1,15 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { signOutAction } from "@/app/[locale]/(auth)/actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import type { Role } from "@/server/permissions";
 
 const AREAS = [
   { href: "/convert", key: "convert", jump: "c", icon: FileSpreadsheetIcon },
@@ -31,8 +33,10 @@ export function typing(target: EventTarget | null): boolean {
   return !!el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.getAttribute("role") === "combobox");
 }
 
-export function AppSidebar({ agencyName, showMargin = false, complianceCount = 0 }: { agencyName: string; showMargin?: boolean; complianceCount?: number }) {
+export function AppSidebar({ agencyName, person, showMargin = false, complianceCount = 0 }: { agencyName: string; person: { name: string; role: Role }; showMargin?: boolean; complianceCount?: number }) {
   const t = useTranslations("nav");
+  const tr = useTranslations("roles");
+  const [leaving, leave] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
   const [help, setHelp] = useState(false);
@@ -97,6 +101,23 @@ export function AppSidebar({ agencyName, showMargin = false, complianceCount = 0
                 <ShieldCheckIcon />
                 {t("complianceSettings")}
               </DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/settings/members" />} data-testid="menu-members">
+                <UserCogIcon />
+                {t("members")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* The person's own items (slice k). */}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel data-testid="menu-person">{t("youAre", { name: person.name, role: tr(`${person.role}.name`) })}</DropdownMenuLabel>
+                <DropdownMenuItem render={<Link href="/settings/account" />} data-testid="menu-account">
+                  <UserIcon />
+                  {t("account")}
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="menu-sign-out">
+                  <LogOutIcon />
+                  {t("signOut")}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarHeader>

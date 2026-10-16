@@ -9,7 +9,7 @@ import { FIELDS, SOURCES, type Mapping, type Source } from "@/server/placements/
 import type { DateOrder, Decisions } from "@/server/placements/plan";
 import { ImportFileError, runImport, saveDateOrder, saveDecision, saveMapping, startImport } from "@/server/placements/service";
 import { PeriodBusyError } from "@/server/run/period-lock";
-import { currentActor } from "@/server/session";
+import { actorAllowedTo } from "@/server/session";
 import { agencyToday } from "@/server/settings";
 import { documentStore } from "@/server/storage";
 
@@ -45,7 +45,7 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { ok: false; error:
 
 /** Starts an import; the columns removed on receipt are kept on it and shown on the mapping step. */
 export async function startImportAction(source: Source, form: FormData): Promise<{ ok: true; id: string } | { ok: false; error: Refusal }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   const file = form.get("file");
   if (!SourceSchema.safeParse(source).success) return { ok: false, error: "unsupported" };
   if (!(file instanceof File)) return { ok: false, error: "empty" };
@@ -58,7 +58,7 @@ export async function startImportAction(source: Source, form: FormData): Promise
 }
 
 export async function saveMappingAction(importId: string, mapping: Mapping): Promise<{ ok: true } | { ok: false; error: Refusal }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   const parsed = MappingSchema.safeParse(mapping);
   if (!id.safeParse(importId).success || !parsed.success) return { ok: false, error: "stale" };
   return guarded(async () => {
@@ -68,7 +68,7 @@ export async function saveMappingAction(importId: string, mapping: Mapping): Pro
 }
 
 export async function saveDecisionAction(importId: string, kind: keyof Decisions, raw: string, value: string | null): Promise<{ ok: true } | { ok: false; error: Refusal }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!id.safeParse(importId).success || !KindSchema.safeParse(kind).success || !RawSchema.safeParse(raw).success || !ValueSchema.safeParse(value).success) {
     return { ok: false, error: "stale" };
   }
@@ -79,7 +79,7 @@ export async function saveDecisionAction(importId: string, kind: keyof Decisions
 }
 
 export async function saveDateOrderAction(importId: string, order: DateOrder | null): Promise<{ ok: true } | { ok: false; error: Refusal }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!id.safeParse(importId).success || !DateOrderSchema.safeParse(order).success) return { ok: false, error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => saveDateOrder(tx, actor, importId, order));
@@ -88,7 +88,7 @@ export async function saveDateOrderAction(importId: string, order: DateOrder | n
 }
 
 export async function runImportAction(importId: string): Promise<{ ok: true } | { ok: false; error: Refusal }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!id.safeParse(importId).success) return { ok: false, error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, async (tx) => runImport(tx, actor, documentStore, importId, await agencyToday(tx)));

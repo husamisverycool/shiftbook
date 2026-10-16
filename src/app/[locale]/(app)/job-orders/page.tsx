@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function JobOrdersPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   const { rows, options } = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     return { rows: await listJobOrders(tx, today), options: await catalogOptions(tx) };

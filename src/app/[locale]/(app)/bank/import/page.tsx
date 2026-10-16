@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function BankImportPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   // Only those who may record payments bring the bank's lines in; the others see the Bank page.
   if (!mayCollect(actor)) redirect({ href: "/bank", locale });
   return <BankImport demo={isDemo()} />;

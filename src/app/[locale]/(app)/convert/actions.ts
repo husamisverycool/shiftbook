@@ -16,7 +16,7 @@ import { approveRun, unapproveRun } from "@/server/run/approval";
 import { discardCorrection, recordCorrectionDecision, removeCorrectionDecision, startCorrection, type CorrectionError } from "@/server/run/corrections";
 import { computeRun, setSkipped, SkipRefusedError } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
-import { currentActor } from "@/server/session";
+import { actorAllowedTo, currentActor } from "@/server/session";
 import { agencyToday } from "@/server/settings";
 import { documentStore } from "@/server/storage";
 
@@ -61,7 +61,7 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { error: ActionErro
 }
 
 export async function uploadTimesheets(payPeriodId: string, form: FormData): Promise<UploadResult> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, payPeriodId) || !(form instanceof FormData)) return { accepted: [], refused: [] };
   const files = form.getAll("files").filter((f): f is File => f instanceof File);
   const result = await receiveUploads(
@@ -78,12 +78,12 @@ export async function uploadTimesheets(payPeriodId: string, form: FormData): Pro
 
 /** Reads any queued uploads (for example after a restart). */
 export async function readQueued(): Promise<void> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   after(() => processQueuedDocuments(actor).catch(() => undefined));
 }
 
 export async function retryAction(documentId: string): Promise<{ ok: true } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, documentId)) return { error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => retryDocument(tx, actor, documentId));
@@ -94,7 +94,7 @@ export async function retryAction(documentId: string): Promise<{ ok: true } | { 
 }
 
 export async function archiveAction(documentId: string, reason: string): Promise<{ ok: true } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, documentId) || !ok(text, reason)) return { error: "stale" };
   if (reason.trim() === "") return { error: "generic" };
   return guarded(async () => {
@@ -105,7 +105,7 @@ export async function archiveAction(documentId: string, reason: string): Promise
 }
 
 export async function confirmDistinctAction(entryIds: string[], reason: string): Promise<{ ok: true } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(ids, entryIds) || !ok(text, reason)) return { error: "stale" };
   if (reason.trim() === "") return { error: "generic" };
   return guarded(async () => {
@@ -116,7 +116,7 @@ export async function confirmDistinctAction(entryIds: string[], reason: string):
 }
 
 export async function approveAction(entryIds: string[], bulk: boolean): Promise<{ approved: number; skipped: number } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(ids, entryIds) || typeof bulk !== "boolean") return { error: "stale" };
   return guarded(async () => {
     const r = await withAgency(actor.agencyId, (tx) => approveEntries(tx, actor, entryIds, { bulk }));
@@ -126,7 +126,7 @@ export async function approveAction(entryIds: string[], bulk: boolean): Promise<
 }
 
 export async function rejectAction(entryId: string): Promise<{ ok: true } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, entryId)) return { error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => rejectEntry(tx, actor, entryId));
@@ -136,7 +136,7 @@ export async function rejectAction(entryId: string): Promise<{ ok: true } | { er
 }
 
 export async function restoreAction(entryId: string): Promise<{ ok: true } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, entryId)) return { error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => restoreEntry(tx, actor, entryId));
@@ -165,7 +165,7 @@ export async function editAction(
   note: string,
   attachToClientId: string | null = null,
 ): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy"; clients?: { id: string; name: string }[] }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, entryId) || !ok(ChangeSchema, change) || !ok(reasonsSchema, reasons) || !ok(text, note) || !ok(id.nullable(), attachToClientId)) return { ok: false, error: "invalid_value" };
   return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, entryId, change, reasons, note, { attachToClientId })));
 }
@@ -176,14 +176,14 @@ export async function addAction(
   reasons: string[],
   note: string,
 ): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, payPeriodId) || !ok(AddSchema, input) || !ok(reasonsSchema, reasons) || !ok(text, note)) return { ok: false, error: "invalid_value" };
   const r = await edited(() => withAgency(actor.agencyId, (tx) => addEntry(tx, actor, payPeriodId, input, reasons, note)));
   return r.ok ? { ok: true } : r;
 }
 
 export async function computeTotalsAction(payPeriodId: string): Promise<{ ok: true } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, payPeriodId)) return { error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => computeRun(tx, actor, payPeriodId));
@@ -193,7 +193,7 @@ export async function computeTotalsAction(payPeriodId: string): Promise<{ ok: tr
 }
 
 export async function skipAction(payPeriodId: string, workerIds: string[], skipped: boolean, reason: string): Promise<{ ok: boolean } | { error: ActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   if (!ok(id, payPeriodId) || !ok(z.array(id).max(500), workerIds) || typeof skipped !== "boolean" || !ok(text, reason)) return { error: "stale" };
   if (reason.trim() === "") return { ok: false };
   return guarded(async () => {
@@ -208,7 +208,7 @@ export async function skipAction(payPeriodId: string, workerIds: string[], skipp
 
 /** The Owner approves the run as shown (slice e): the files will be made from exactly this. */
 export async function approveRunAction(payPeriodId: string, expectedFingerprint: string): Promise<{ ok: true } | { ok: false; error: "not_allowed" | "changed" | "blocked" | "period_locked" | "busy" | "generic" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   if (!ok(id, payPeriodId) || !ok(z.string().max(128), expectedFingerprint)) return { ok: false, error: "generic" };
   try {
     const r = await withAgency(actor.agencyId, (tx) => approveRun(tx, actor, payPeriodId, expectedFingerprint));
@@ -224,7 +224,7 @@ export async function approveRunAction(payPeriodId: string, expectedFingerprint:
 
 /** Takes the approval back, with a reason, before the files exist. */
 export async function unapproveRunAction(payPeriodId: string, reason: string): Promise<{ ok: true } | { ok: false; error: "not_allowed" | "reason_required" | "period_locked" | "busy" | "generic" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   if (!ok(id, payPeriodId) || !ok(text, reason)) return { ok: false, error: "generic" };
   try {
     const r = await withAgency(actor.agencyId, (tx) => unapproveRun(tx, actor, payPeriodId, reason));
@@ -242,7 +242,7 @@ export async function createFilesAction(
   payPeriodId: string,
   expectedFingerprint: string,
 ): Promise<{ ok: true } | { ok: false; error: "not_ready" | "not_approved" | "totals_changed" | "period_locked" | "busy" | "generic" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   if (!ok(id, payPeriodId) || !ok(z.string().max(128), expectedFingerprint)) return { ok: false, error: "generic" };
   try {
     await withAgency(actor.agencyId, async (tx) => createRunFiles(tx, actor, documentStore, payPeriodId, { today: await agencyToday(tx), expectedFingerprint }));
@@ -277,7 +277,7 @@ async function corrected(fn: () => Promise<{ ok: true } | { ok: false; error: Co
 
 /** The Owner starts a correction of a paid period, with a reason (slice e, decision E8). */
 export async function startCorrectionAction(payPeriodId: string, reason: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   if (!ok(id, payPeriodId) || !ok(text, reason)) return { ok: false, error: "generic" };
   return corrected(async () => {
     const r = await withAgency(actor.agencyId, (tx) => startCorrection(tx, actor, payPeriodId, reason));
@@ -287,21 +287,21 @@ export async function startCorrectionAction(payPeriodId: string, reason: string)
 
 /** The Owner discards a correction in which nothing differs (decision E12). */
 export async function discardCorrectionAction(payPeriodId: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   if (!ok(id, payPeriodId)) return { ok: false, error: "generic" };
   return corrected(() => withAgency(actor.agencyId, (tx) => discardCorrection(tx, actor, payPeriodId)));
 }
 
 /** The Owner records how a worker's difference is settled outside the payroll file (decision E9). */
 export async function recordDecisionAction(payPeriodId: string, workerId: string, decision: string, note: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   if (!ok(id, payPeriodId) || !ok(id, workerId) || !ok(z.enum(CORRECTION_DECISIONS), decision) || !ok(text, note)) return { ok: false, error: "generic" };
   return corrected(() => withAgency(actor.agencyId, (tx) => recordCorrectionDecision(tx, actor, payPeriodId, workerId, decision as (typeof CORRECTION_DECISIONS)[number], note)));
 }
 
 /** The Owner removes a decision recorded by mistake, or an agreement that no longer fits. */
 export async function removeDecisionAction(payPeriodId: string, decisionId: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   if (!ok(id, payPeriodId) || !ok(id, decisionId)) return { ok: false, error: "generic" };
   return corrected(() => withAgency(actor.agencyId, (tx) => removeCorrectionDecision(tx, actor, payPeriodId, decisionId)));
 }
@@ -317,7 +317,7 @@ export interface HistoryEvent {
 
 /** The entry's audit log in time order (docs/patterns/review.md: Restaurant365 Punch Edit Audit Log). */
 export async function entryHistory(entryId: string): Promise<HistoryEvent[]> {
-  const actor = currentActor();
+  const actor = await currentActor();
   if (!ok(id, entryId)) return [];
   const rows = await withAgency(actor.agencyId, (tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "time_entry"), eq(auditEvents.entityId, entryId))));
   return rows

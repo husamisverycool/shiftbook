@@ -14,7 +14,7 @@ export default async function ReceivablesPage(props: { params: Promise<{ locale:
   const { locale } = await props.params;
   setRequestLocale(locale);
   const sp = await props.searchParams;
-  const actor = currentActor();
+  const actor = await currentActor();
   const { view, today } = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     // A date in the future is read as today: the aging cannot see payments not yet received.

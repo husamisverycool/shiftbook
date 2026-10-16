@@ -111,7 +111,7 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
               <label htmlFor={`po-${r.id}`}>{t("col.po")}</label>
             </dt>
             <dd>
-              <PoField key={r.id} row={r} />
+              <PoField key={r.id} row={r} canChange={canChange} />
             </dd>
             <dt className="pt-2 text-muted-foreground">
               <label htmlFor={`recruiter-${r.id}`}>{t("col.recruiter")}</label>
@@ -121,35 +121,45 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
             </dd>
           </dl>
         )}
-        onCreate={() => setCreating(true)}
+        onCreate={canChange ? () => setCreating(true) : undefined}
         actions={
-          <>
-            <Link href="/assignments/import" className={buttonVariants({ variant: "outline", size: "sm" })}>
-              <UploadIcon />
-              {t("import")}
-            </Link>
-            <Button size="sm" onClick={() => setCreating(true)}>
-              {t("create")}
-            </Button>
-          </>
+          canChange ? (
+            <>
+              <Link href="/assignments/import" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                <UploadIcon />
+                {t("import")}
+              </Link>
+              <Button size="sm" onClick={() => setCreating(true)}>
+                {t("create")}
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("readOnly")}</p>
+          )
         }
-        bulk={(selected, clear) => (
-          <Button size="sm" variant="outline" onClick={() => setEnding({ rows: selected, clear })}>
-            {t("end")}
-          </Button>
-        )}
+        bulk={
+          canChange
+            ? (selected, clear) => (
+                <Button size="sm" variant="outline" onClick={() => setEnding({ rows: selected, clear })}>
+                  {t("end")}
+                </Button>
+              )
+            : undefined
+        }
         empty={
           <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
             <UsersIcon className="size-5" />
             <p>{t("empty")}</p>
-            <div className="flex gap-4">
-              <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setCreating(true)}>
-                {t("create")}
-              </Button>
-              <Link href="/assignments/import" className="text-sm underline-offset-4 hover:underline">
-                {t("import")}
-              </Link>
-            </div>
+            {canChange && (
+              <div className="flex gap-4">
+                <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setCreating(true)}>
+                  {t("create")}
+                </Button>
+                <Link href="/assignments/import" className="text-sm underline-offset-4 hover:underline">
+                  {t("import")}
+                </Link>
+              </div>
+            )}
           </div>
         }
       />
@@ -311,7 +321,7 @@ function RecruiterField({ row, users, canChange }: { row: AssignmentRow; users: 
  * The client's PO for this placement (decision G4; Bullhorn placement PO): saves when the field is
  * left or Enter is pressed, as the payroll worker ids do; empty means the client's own PO.
  */
-function PoField({ row }: { row: AssignmentRow }) {
+function PoField({ row, canChange }: { row: AssignmentRow; canChange: boolean }) {
   const t = useTranslations("assignments");
   const te = useTranslations("convert.errors");
   const router = useRouter();
@@ -330,6 +340,7 @@ function PoField({ row }: { row: AssignmentRow }) {
       } else setError(r.error === "busy" ? te("busy") : t(`poErrors.${r.error}`));
     });
   };
+  if (!canChange) return <span>{row.poNumber ?? row.clientPo ?? "—"}</span>;
   return (
     <div className="flex flex-col gap-1">
       <Input

@@ -8,6 +8,7 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
 import { currentSetting, payrollCodes, payrollTarget, TARGET_KEY } from "./settings";
+import { can } from "../permissions";
 
 export interface PayrollSettingsView {
   canEdit: boolean;
@@ -30,7 +31,7 @@ export async function payrollSettingsView(tx: Tx, actor: Actor): Promise<Payroll
   const system = target ? SYSTEM_OF[target.format] : null;
   const people = await tx.select().from(s.workers);
   return {
-    canEdit: actor.role === "owner",
+    canEdit: can(actor, "settings"),
     target,
     targetId: row?.id ?? null,
     changed: last ? { at: last.occurredAt.toISOString(), by: last.actorLabel } : null,

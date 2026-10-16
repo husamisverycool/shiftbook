@@ -15,11 +15,12 @@ import type { Actor } from "../session";
 import { correctionPlanFor } from "./corrections";
 import { openPeriod } from "./period-lock";
 import { computeRun } from "./service";
+import { can } from "../permissions";
 
 export type RunApprovalError = "not_allowed" | "changed" | "blocked" | "not_approved" | "reason_required" | "not_found";
 type Result = { ok: true } | { ok: false; error: RunApprovalError };
 
-const mayApprove = (actor: Actor) => actor.role === "owner";
+const mayApprove = (actor: Actor) => can(actor, "run");
 
 export async function approveRun(tx: Tx, actor: Actor, payPeriodId: string, expectedFingerprint: string): Promise<Result> {
   if (!mayApprove(actor)) return { ok: false, error: "not_allowed" };

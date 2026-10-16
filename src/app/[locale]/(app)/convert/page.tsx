@@ -27,7 +27,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
   const { locale } = await props.params;
   setRequestLocale(locale);
   const sp = await props.searchParams;
-  const actor = currentActor();
+  const actor = await currentActor();
   const inAgency = <T,>(fn: Parameters<typeof withAgency<T>>[1]) => withAgency(actor.agencyId, fn);
 
   const periodId = typeof sp.period === "string" ? sp.period : null;

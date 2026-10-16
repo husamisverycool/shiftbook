@@ -15,7 +15,7 @@ export default async function ApprovalPage(props: { params: Promise<{ locale: st
   const { locale, id } = await props.params;
   setRequestLocale(locale);
   if (!UUID.test(id)) notFound();
-  const actor = currentActor();
+  const actor = await currentActor();
   // In demo mode the history also opens each email as the approver received it (decision 0012).
   const detail = await withAgency(actor.agencyId, (tx) => approvalDetail(tx, id, { demoCopies: isDemo() }));
   if (!detail) notFound();

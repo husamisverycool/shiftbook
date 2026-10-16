@@ -15,12 +15,13 @@ import { agencyToday } from "../settings";
 import { BANK_FILE_LIMITS, bankRows, readBankLines } from "./bank-csv";
 import { fingerprints } from "./bank-fingerprint";
 import { invoiceBalances, settleStatuses, unappliedOf } from "./balances";
+import { can } from "../permissions";
 
 const INT4_MAX = 2_147_483_647;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isId = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 /** Who may record and change receivables (SPEC §2: Billing does invoices, AR and cash application). */
-export const mayCollect = (actor: Actor) => actor.role === "owner" || actor.role === "billing";
+export const mayCollect = (actor: Actor) => can(actor, "cash");
 
 export interface Application {
   invoiceId: string;

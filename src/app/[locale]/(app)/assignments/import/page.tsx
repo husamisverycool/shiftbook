@@ -15,7 +15,7 @@ export default async function ImportPage(props: { params: Promise<{ locale: stri
   const { locale } = await props.params;
   setRequestLocale(locale);
   const sp = await props.searchParams;
-  const actor = currentActor();
+  const actor = await currentActor();
   const id = typeof sp.id === "string" && /^[0-9a-f-]{36}$/i.test(sp.id) ? sp.id : null;
   const { view, history, options } = await withAgency(actor.agencyId, async (tx) => ({
     view: id ? await importView(tx, documentStore, id) : null,

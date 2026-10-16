@@ -24,6 +24,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRouter } from "@/i18n/navigation";
 import type { EntryChange, EditError } from "@/server/review/service";
+import { useCan } from "../abilities";
 import { clock, hoursMinutes, parseClock, shortDate } from "../format";
 import { SourcePanel } from "./source-panel";
 import { needsAttention, REFUSAL_MESSAGE, type ActionRefusal, type GridRow } from "./types";
@@ -58,6 +59,8 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
   const tc = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
+  // Decision 0026: only the Owner and coordinators change hours; everyone else reads the grid.
+  const mayChange = useCan()("hours");
   const [pending, start] = useTransition();
   const attention = props.rows.filter(needsAttention);
   // Opened for one worker (Client approvals: "Edit the hours"): every row of theirs, not only those needing review.
@@ -95,7 +98,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
   };
 
   const beginEdit = (r: GridRow) => {
-    if (r.status === "locked" || r.status === "rejected" || r.status === "client_approved") return;
+    if (!mayChange || r.status === "locked" || r.status === "rejected" || r.status === "client_approved") return;
     setEditing({
       id: r.id,
       draft: {
@@ -283,13 +286,15 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
           <Table ref={tableRef} onKeyDown={onKeyDown} aria-label={t("sectionTitle")} className="text-sm" data-testid="hours-grid">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8">
-                  <Checkbox
-                    aria-label={t("selectAll")}
-                    checked={visible.length > 0 && visible.every((r) => selected.has(r.id))}
-                    onCheckedChange={(on) => setSelected(on ? new Set(visible.map((r) => r.id)) : new Set())}
-                  />
-                </TableHead>
+                {mayChange && (
+                  <TableHead className="w-8">
+                    <Checkbox
+                      aria-label={t("selectAll")}
+                      checked={visible.length > 0 && visible.every((r) => selected.has(r.id))}
+                      onCheckedChange={(on) => setSelected(on ? new Set(visible.map((r) => r.id)) : new Set())}
+                    />
+                  </TableHead>
+                )}
                 {COLUMNS.map((c) => (
                   <TableHead key={c} className={["in", "out", "break", "hours"].includes(c) ? "text-right" : undefined}>
                     {t(`col${c[0]!.toUpperCase()}${c.slice(1)}` as "colWorker")}
@@ -322,18 +327,20 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                 );
                 return [
                   <TableRow key={r.id} data-state={selected.has(r.id) ? "selected" : undefined} data-testid="hours-row" className={r.status === "rejected" ? "text-muted-foreground line-through" : undefined}>
-                    <TableCell>
-                      <Checkbox
-                        aria-label={t("selectRow")}
-                        checked={selected.has(r.id)}
-                        onCheckedChange={(on) => {
-                          const next = new Set(selected);
-                          if (on) next.add(r.id);
-                          else next.delete(r.id);
-                          setSelected(next);
-                        }}
-                      />
-                    </TableCell>
+                    {mayChange && (
+                      <TableCell>
+                        <Checkbox
+                          aria-label={t("selectRow")}
+                          checked={selected.has(r.id)}
+                          onCheckedChange={(on) => {
+                            const next = new Set(selected);
+                            if (on) next.add(r.id);
+                            else next.delete(r.id);
+                            setSelected(next);
+                          }}
+                        />
+                      </TableCell>
+                    )}
                     {cell(
                       0,
                       isEditing && d ? (
@@ -426,7 +433,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                     <TableCell className="sticky right-0 bg-background text-right whitespace-nowrap shadow-[-8px_0_8px_-8px_var(--border)]">
                       {isEditing ? null : (
                         <div className="inline-flex items-center gap-0.5">
-                          {(r.status === "needs_review" || r.status === "extracted") && r.workerId !== null && r.minutes !== null && (
+                          {mayChange && (r.status === "needs_review" || r.status === "extracted") && r.workerId !== null && r.minutes !== null && (
                             <IconAction
                               label={t("approve")}
                               disabled={pending}
@@ -442,23 +449,24 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                               <CheckIcon />
                             </IconAction>
                           )}
-                          {r.status !== "rejected" && r.status !== "locked" && r.status !== "client_approved" && (
+                          {mayChange && r.status !== "rejected" && r.status !== "locked" && r.status !== "client_approved" && (
                             <IconAction label={t("edit")} onClick={() => beginEdit(r)} disabled={pending}>
                               <PencilIcon />
                             </IconAction>
                           )}
-                          {r.status === "rejected" ? (
-                            <IconAction label={t("undoReject")} onClick={() => act(() => restoreAction(r.id))} disabled={pending}>
-                              <RotateCcwIcon />
-                            </IconAction>
-                          ) : (
-                            r.status !== "locked" &&
-                            r.status !== "client_approved" && (
-                              <IconAction label={t("reject")} onClick={() => act(() => rejectAction(r.id))} disabled={pending}>
-                                <XIcon />
+                          {mayChange &&
+                            (r.status === "rejected" ? (
+                              <IconAction label={t("undoReject")} onClick={() => act(() => restoreAction(r.id))} disabled={pending}>
+                                <RotateCcwIcon />
                               </IconAction>
-                            )
-                          )}
+                            ) : (
+                              r.status !== "locked" &&
+                              r.status !== "client_approved" && (
+                                <IconAction label={t("reject")} onClick={() => act(() => rejectAction(r.id))} disabled={pending}>
+                                  <XIcon />
+                                </IconAction>
+                              )
+                            ))}
                           <IconAction label={t("openSource")} onClick={() => setPanel({ id: r.id, field: null })}>
                             <Maximize2Icon />
                           </IconAction>
@@ -493,7 +501,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell />
+                {mayChange && <TableCell />}
                 <TableCell colSpan={6} className="font-medium">
                   {t("totalRow")}
                 </TableCell>
@@ -532,7 +540,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
           />
           <p className="text-xs text-muted-foreground">{t("reasonBody")}</p>
         </div>
-      ) : (
+      ) : mayChange ? (
         <Button
           variant="ghost"
           size="sm"
@@ -543,9 +551,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
           <PlusIcon />
           {t("addEntry")}
         </Button>
-      )}
+      ) : null}
 
-      {selected.size > 0 && (
+      {mayChange && selected.size > 0 && (
         <div role="toolbar" aria-label={t("bulkBar")} className="fixed inset-x-0 bottom-6 z-40 mx-auto flex w-fit max-w-[calc(100%-2rem)] flex-wrap items-center gap-3 rounded-lg border bg-popover px-4 py-2 text-sm shadow-lg">
           <span>{t("selected", { count: selected.size })}</span>
           <Button

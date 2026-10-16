@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { JobOrderRow } from "@/server/catalog/queries";
+import { useCan } from "../abilities";
 import { money } from "../format";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
@@ -16,6 +17,8 @@ import { RecordList, type Column } from "./record-list";
 export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options: CatalogOptions }) {
   const t = useTranslations("jobOrders");
   const locale = useLocale();
+  // Decision 0026: job orders are changed by the Owner and coordinators (placements).
+  const mayChange = useCan()("placements");
   const [creating, setCreating] = useState(false);
   const rate = (c: number | null) => (c === null ? "—" : money(c, locale));
 
@@ -90,20 +93,26 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
             </section>
           </>
         )}
-        onCreate={() => setCreating(true)}
+        onCreate={mayChange ? () => setCreating(true) : undefined}
         actions={
-          <Button size="sm" onClick={() => setCreating(true)}>
-            <PlusIcon />
-            {t("create")}
-          </Button>
+          mayChange ? (
+            <Button size="sm" onClick={() => setCreating(true)}>
+              <PlusIcon />
+              {t("create")}
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("readOnly")}</p>
+          )
         }
         empty={
           <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
             <BriefcaseIcon className="size-5" />
             <p>{t("empty")}</p>
-            <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setCreating(true)}>
-              {t("create")}
-            </Button>
+            {mayChange && (
+              <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setCreating(true)}>
+                {t("create")}
+              </Button>
+            )}
           </div>
         }
       />

@@ -13,6 +13,7 @@ import { approveRunAction, computeTotalsAction, createFilesAction } from "@/app/
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
+import { useCan } from "../abilities";
 import { REFUSAL_MESSAGE, STEPS, type Step } from "./types";
 
 
@@ -41,14 +42,19 @@ export function ConvertFrame(props: {
 }) {
   const t = useTranslations("convert");
   const router = useRouter();
+  const can = useCan();
   const [pending, start] = useTransition();
   const [working, setWorking] = useState<null | "totals" | "approve" | "files">(null);
   const index = STEPS.indexOf(props.step);
   const reached = STEPS.slice(0, index + 1);
   const previous = index > 0 ? STEPS[index - 1]! : null;
+  // Decision 0026: a person who does not change hours still looks at the next step; approving and the files are the Owner's.
+  const mayHours = can("hours");
+  const ownerRuns = (props.forward?.kind === "approve" || props.forward?.kind === "createFiles") && !can("run");
+  const forward: Forward = props.forward?.kind === "computeTotals" && !mayHours ? { kind: "link", step: "exceptions", disabled: props.forward.disabled } : ownerRuns ? null : props.forward;
 
   const runForward = () => {
-    const f = props.forward;
+    const f = forward;
     if (!f) return;
     if (f.kind === "link") {
       router.push(hrefFor(props.periodId, f.step));
@@ -85,20 +91,23 @@ export function ConvertFrame(props: {
   };
 
   const forwardLabel = (() => {
-    const f = props.forward;
+    const f = forward;
     if (!f) return null;
     if (f.kind === "link") return t(`forward.${props.step === "upload" ? "upload" : props.step === "exceptions" ? "exceptions" : "hours"}`);
     if (f.kind === "computeTotals") return working === "totals" ? t("forward.hoursWorking") : t("forward.hours");
     if (f.kind === "approve") return working === "approve" ? t("forward.approveWorking") : t("forward.approve");
     return working === "files" ? t("forward.totalsWorking") : t("forward.totals");
   })();
-  const forwardButton = props.forward && (
-    <Button onClick={runForward} disabled={props.forward.disabled || pending} className="max-md:w-full" data-testid="forward">
+  const forwardButton = forward ? (
+    <Button onClick={runForward} disabled={forward.disabled || pending} className="max-md:w-full" data-testid="forward">
       {pending && <Loader2Icon className="animate-spin" />}
       {forwardLabel}
     </Button>
+  ) : (
+    // Before approval, Review totals says it already (convert.approval.ownerOnly).
+    ownerRuns && props.forward?.kind === "createFiles" && <p className="text-sm text-muted-foreground">{t("forward.ownerOnly")}</p>
   );
-  const editButton = props.editHref && !props.locked && (
+  const editButton = props.editHref && !props.locked && mayHours && (
     <Link href={hrefFor(props.periodId, "hours")} aria-disabled={pending} className={buttonVariants({ variant: "outline", className: `max-md:w-full ${pending ? "pointer-events-none opacity-50" : ""}` })}>
       {t("totals.edit")}
     </Link>
@@ -141,6 +150,7 @@ export function ConvertFrame(props: {
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-semibold tracking-tight">{props.title}</h1>
             <p className="text-sm text-muted-foreground">{props.periodLine}</p>
+            {!mayHours && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
           </div>
           {(forwardButton || editButton) && (
             <div className="flex gap-2 max-md:grid max-md:grid-cols-[repeat(auto-fit,minmax(0,1fr))]">

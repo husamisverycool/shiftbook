@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function PaymentsPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   const { rows, clients, today } = await withAgency(actor.agencyId, async (tx) => ({ rows: await paymentsList(tx), clients: await openInvoicesByClient(tx), today: await agencyToday(tx) }));
   return <PaymentsView rows={rows} clients={clients} today={today} canChange={mayCollect(actor)} />;
 }

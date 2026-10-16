@@ -12,6 +12,7 @@ import { correctionPlanFor, decisionText, paidBase } from "../run/corrections";
 import { PeriodLockedError, periodState } from "../run/period-lock";
 import { computeRun, type RunIssue } from "../run/service";
 import type { Actor } from "../session";
+import { can } from "../permissions";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const fullName = (w: { firstName: string; lastName: string }) => `${w.firstName} ${w.lastName}`;
@@ -230,7 +231,7 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
     correction: run.kind === "correction" ? await correctionView(tx, run, clients) : null,
     run: { id: run.id, version: run.version, status: run.status, fingerprint },
     approval: run.approvedAt ? { by: run.approvedByLabel ?? "", at: run.approvedAt } : null,
-    canApprove: actor.role === "owner",
+    canApprove: can(actor, "run"),
     summary: {
       workers: workers.length,
       regular: sum(workers, (w) => w.regular),
@@ -383,5 +384,5 @@ export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
       roundings,
     });
   }
-  return { run: { id: run.id, version: run.version }, versions, canCorrect: actor.role === "owner" };
+  return { run: { id: run.id, version: run.version }, versions, canCorrect: can(actor, "run") };
 }

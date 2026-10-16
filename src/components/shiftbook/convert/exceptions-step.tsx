@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
+import { useCan } from "../abilities";
 import { money } from "../format";
 import { DecisionButton, DiscardCorrectionButton, RemoveDecisionButton } from "./correction-actions";
 import type { TotalsData } from "./totals-review";
@@ -42,6 +43,8 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
   const tx = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
+  // Decision 0026: confirming, skipping and bringing back are the Owner's and coordinators' (hours).
+  const mayChange = useCan()("hours");
   const [pending, start] = useTransition();
   const [skipping, setSkipping] = useState<{ workerIds: string[] } | null>(null);
   const [confirming, setConfirming] = useState<string[] | null>(null);
@@ -94,7 +97,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
         {g.issues.map((i, n) => (
           <li key={n} className="flex flex-col gap-1">
             <span>{i.message}</span>
-            {!locked && i.entryIds && (
+            {!locked && mayChange && i.entryIds && (
               <Button size="sm" variant="outline" className="w-fit" onClick={() => setConfirming(i.entryIds!)} data-testid="both-real">
                 {t("bothReal")}
               </Button>
@@ -132,9 +135,11 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
         {t("goToUpload")}
       </Link>
     ) : ENTRY_LEVEL.has(g.code) ? (
-      <Link href={{ pathname: "/convert", query: { period: periodId, step: "hours" } }} className={buttonVariants({ size: "sm", variant: "outline" })}>
-        {t("edit")}
-      </Link>
+      mayChange && (
+        <Link href={{ pathname: "/convert", query: { period: periodId, step: "hours" } }} className={buttonVariants({ size: "sm", variant: "outline" })}>
+          {t("edit")}
+        </Link>
+      )
     ) : TO_APPROVALS.has(g.code) ? (
       <Link href={{ pathname: "/approvals", query: { period: periodId, ...(g.code === "client_dispute_open" ? { status: "disputed" } : {}) } }} className={buttonVariants({ size: "sm", variant: "outline" })}>
         {t("openApprovals")}
@@ -150,7 +155,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
         <Link href={{ pathname: "/settings/payroll", query: g.code === "missing_payroll_id" ? { tab: "workers", filter: "missing" } : {} }} className={buttonVariants({ size: "sm", variant: "outline" })} data-testid="open-payroll-settings">
           {t("openPayrollSettings")}
         </Link>
-        {skippable(g.workerIds).length > 0 && (
+        {mayChange && skippable(g.workerIds).length > 0 && (
           <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: skippable(g.workerIds) })} data-testid="skip-workers">
             {t("skipWorkers", { count: skippable(g.workerIds).length })}
           </Button>
@@ -164,7 +169,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
             {te("openClientSettings", { client: c.name })}
           </Link>
         ))}
-        {skippable(g.workerIds).length > 0 && (
+        {mayChange && skippable(g.workerIds).length > 0 && (
           <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: skippable(g.workerIds) })} data-testid="skip-workers">
             {t("skipWorkers", { count: skippable(g.workerIds).length })}
           </Button>
@@ -172,7 +177,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
       </div>
     ) : g.code === "correction_no_differences" ? (
       correction && data.canApprove ? <DiscardCorrectionButton periodId={periodId} baseVersion={correction.baseVersion} /> : null
-    ) : g.code === "correction_decision_needed" || (correction && g.code === "export_refused") ? null : skippable(g.workerIds).length > 0 ? (
+    ) : g.code === "correction_decision_needed" || (correction && g.code === "export_refused") ? null : mayChange && skippable(g.workerIds).length > 0 ? (
       <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: skippable(g.workerIds) })} data-testid="skip-workers">
         {t("skipWorkers", { count: skippable(g.workerIds).length })}
       </Button>
@@ -265,7 +270,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
                     {people.map((s) => (
                       <span key={s.workerId} className="inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-xs">
                         {s.name}
-                        {!locked && !correction?.noBringBack.includes(s.workerId) && (
+                        {!locked && mayChange && !correction?.noBringBack.includes(s.workerId) && (
                           <Button
                             size="icon-xs"
                             variant="ghost"
@@ -283,7 +288,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
                         )}
                       </span>
                     ))}
-                    {!locked && people.filter((p) => !correction?.noBringBack.includes(p.workerId)).length > 1 && (
+                    {!locked && mayChange && people.filter((p) => !correction?.noBringBack.includes(p.workerId)).length > 1 && (
                       <Button
                         size="xs"
                         variant="ghost"

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function MarginSettingsPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   if (!mayViewMargin(actor)) return <NotForRole />;
   const { view, today } = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);

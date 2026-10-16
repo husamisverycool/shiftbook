@@ -11,7 +11,7 @@ import { syncObligations } from "@/server/compliance/sync";
 import { withAgency, type Tx } from "@/server/db";
 import { setRecruiter, type MarginResult } from "@/server/margin/service";
 import { PeriodBusyError } from "@/server/run/period-lock";
-import { currentActor } from "@/server/session";
+import { actorAllowedTo } from "@/server/session";
 import { agencyToday } from "@/server/settings";
 
 // Every input is checked against its shape here: a hand-made request gets the same refusal as a bad form.
@@ -76,21 +76,21 @@ async function run<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: "bu
 }
 
 export async function createJobOrderAction(raw: JobOrderInput): Promise<JobOrderResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   const input = JobOrderSchema.safeParse(raw);
   if (!input.success) return { ok: false, error: "invalid", fields: [] };
   return run(() => withDuties(actor.agencyId, (tx) => createJobOrder(tx, actor, input.data)));
 }
 
 export async function updateJobOrderAction(jobOrderId: string, raw: JobOrderInput): Promise<JobOrderResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   const input = JobOrderSchema.safeParse(raw);
   if (!input.success || !id.safeParse(jobOrderId).success) return { ok: false, error: "invalid", fields: [] };
   return run(() => withDuties(actor.agencyId, (tx) => updateJobOrder(tx, actor, jobOrderId, input.data)));
 }
 
 export async function addRateAction(rawRef: { jobOrderId: string } | { assignmentId: string }, raw: RateInput): Promise<RateResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   const ref = RefSchema.safeParse(rawRef);
   const input = RateSchema.safeParse(raw);
   if (!ref.success || !input.success) return { ok: false, error: "invalid", problems: [] };
@@ -98,20 +98,20 @@ export async function addRateAction(rawRef: { jobOrderId: string } | { assignmen
 }
 
 export async function editRateAction(versionId: string, raw: RateInput, reasons: string[], note: string): Promise<RateResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   const input = RateSchema.safeParse(raw);
   if (!input.success || !id.safeParse(versionId).success || !strings.safeParse(reasons).success || typeof note !== "string") return { ok: false, error: "invalid", problems: [] };
   return run(() => withAgency(actor.agencyId, (tx) => editRateVersion(tx, actor, versionId, input.data, reasons, note.slice(0, 2000))));
 }
 
 export async function deleteRateAction(versionId: string): Promise<RateResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!id.safeParse(versionId).success) return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => deleteRateVersion(tx, actor, versionId)));
 }
 
 export async function createAssignmentAction(raw: { workerId: string; jobOrderId: string; startDate: string; endDate: string | null }): Promise<AssignmentResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   // Only these four fields: an import's source id can never be set from here.
   const input = AssignmentSchema.safeParse(raw);
   if (!input.success) return { ok: false, error: "invalid_date" };
@@ -119,33 +119,33 @@ export async function createAssignmentAction(raw: { workerId: string; jobOrderId
 }
 
 export async function setAssignmentDatesAction(assignmentId: string, raw: { startDate: string; endDate: string | null }): Promise<AssignmentResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   const dates = DatesSchema.safeParse(raw);
   if (!dates.success || !id.safeParse(assignmentId).success) return { ok: false, error: "invalid_date" };
   return run(() => withDuties(actor.agencyId, (tx) => setAssignmentDates(tx, actor, assignmentId, dates.data)));
 }
 
 export async function endAssignmentsAction(ids: string[], endDate: string): Promise<{ ended: string[]; refused: { id: string; error: string }[] } | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!z.array(id).max(1000).safeParse(ids).success || !isoDate.safeParse(endDate).success) return { ended: [], refused: [] };
   return run(() => withDuties(actor.agencyId, (tx) => endAssignments(tx, actor, ids, endDate)));
 }
 
 export async function cancelAssignmentAction(assignmentId: string, reason: string): Promise<AssignmentResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!id.safeParse(assignmentId).success || typeof reason !== "string") return { ok: false, error: "not_found" };
   return run(() => withDuties(actor.agencyId, (tx) => cancelAssignment(tx, actor, assignmentId, reason.slice(0, 2000))));
 }
 
 /** The client's PO for one placement (slice g, decision G4); empty means the client's own PO. */
 export async function setRecruiterAction(assignmentId: string, userId: string | null): Promise<MarginResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!id.safeParse(assignmentId).success || (userId !== null && !id.safeParse(userId).success)) return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => setRecruiter(tx, actor, assignmentId, userId)));
 }
 
 export async function setAssignmentPoAction(assignmentId: string, poNumber: string): Promise<PoResult | { ok: false; error: "busy" }> {
-  const actor = currentActor();
+  const actor = await actorAllowedTo("placements");
   if (!id.safeParse(assignmentId).success || !z.string().max(200).safeParse(poNumber).success) return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => setAssignmentPo(tx, actor, assignmentId, poNumber)));
 }

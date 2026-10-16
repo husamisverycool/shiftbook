@@ -7,7 +7,7 @@ import { withAgency } from "@/server/db";
 import { StaleRequestError } from "@/server/errors";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { setPayrollCodes, setPayrollTarget, setWorkerPayrollId } from "@/server/payroll/settings";
-import { currentActor } from "@/server/session";
+import { actorAllowedTo } from "@/server/session";
 import { agencyToday } from "@/server/settings";
 
 const refresh = () => revalidatePath("/[locale]/(app)/settings/payroll", "page");
@@ -40,13 +40,13 @@ async function guarded(fn: () => Promise<SettingsActionResult>): Promise<Setting
 
 export async function saveTargetAction(target: unknown, expectedId: string | null): Promise<SettingsActionResult> {
   if (!json.safeParse(target).success || !rowId.safeParse(expectedId).success) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("settings");
   return guarded(() => withAgency(actor.agencyId, async (tx) => setPayrollTarget(tx, actor, target, await agencyToday(tx), expectedId)));
 }
 
 export async function saveCodesAction(which: ExportFormat, codes: unknown, expectedId: string | null): Promise<SettingsActionResult> {
   if (!format.safeParse(which).success || !json.safeParse(codes).success || !rowId.safeParse(expectedId).success) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("settings");
   return guarded(() => withAgency(actor.agencyId, async (tx) => setPayrollCodes(tx, actor, which, codes, await agencyToday(tx), expectedId)));
 }
 
@@ -54,6 +54,6 @@ export async function saveWorkerIdAction(workerId: string, which: PayrollSystem,
   if (!z.uuid().safeParse(workerId).success || !system.safeParse(which).success || !z.string().max(200).safeParse(id).success || !z.string().max(200).optional().safeParse(title).success) {
     return { ok: false, error: "generic" };
   }
-  const actor = currentActor();
+  const actor = await actorAllowedTo("settings");
   return guarded(() => withAgency(actor.agencyId, (tx) => setWorkerPayrollId(tx, actor, workerId, which, id, title)));
 }

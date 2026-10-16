@@ -16,7 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { ApprovalDetail } from "@/server/approvals/service";
+import { useCan } from "../abilities";
 import { clock, hoursMinutes, longDate, shortDate } from "../format";
+import { LinkedText } from "../linked-text";
 import { ApprovalStateBadge } from "./approvals-view";
 import { HoursTable } from "./hours-table";
 import { SendDialog, type SendTarget } from "./send-dialog";
@@ -25,28 +27,13 @@ type Email = ApprovalDetail["emails"][number];
 type Dispute = ApprovalDetail["disputes"][number];
 
 /** Text with its web links clickable (the demo copy's approval link). */
-function Linked({ text }: { text: string }) {
-  const parts = text.split(/(https?:\/\/\S+)/g);
-  return (
-    <>
-      {parts.map((p, i) =>
-        /^https?:\/\//.test(p) ? (
-          <a key={i} href={p} className="break-all text-primary underline underline-offset-4" data-testid="email-link">
-            {p}
-          </a>
-        ) : (
-          <span key={i}>{p}</span>
-        ),
-      )}
-    </>
-  );
-}
-
 export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; demo: boolean }) {
   const t = useTranslations("approvals");
   const td = useTranslations("approvals.detail");
   const locale = useLocale();
   const router = useRouter();
+  // Decision 0026: reminding, changing the approver, withdrawing and settling disputes are the hours ability.
+  const mayAsk = useCan()("hours");
   const [pending, start] = useTransition();
   const [sending, setSending] = useState<SendTarget | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
@@ -127,7 +114,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
           <ApprovalStateBadge state={detail.state} />
         </div>
         <p className="text-sm text-muted-foreground">{td("sentTo", { name: r.approverName, email: r.approverEmail, language: t(r.locale === "es" ? "spanish" : "english") })}</p>
-        {active && (
+        {active && mayAsk && (
           <div className="flex flex-wrap gap-2">
             {detail.state === "waiting" && (
               <Button variant="outline" disabled={pending} onClick={() => run(() => sendReminderAction(r.id), t("done.reminded"))}>
@@ -151,6 +138,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
             )}
           </div>
         )}
+        {!mayAsk && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
         {detail.needsReview > 0 && <p className="text-sm text-destructive">{td("needsReview", { count: detail.needsReview })}</p>}
       </div>
 
@@ -192,7 +180,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
                     <dd>{d.reason}</dd>
                   </div>
                 </dl>
-                {detail.periodOpen && (
+                {detail.periodOpen && mayAsk && (
                   <div className="flex flex-wrap gap-2">
                     {proposed && (
                       <Button size="sm" disabled={pending} onClick={() => run(() => settleDisputeAction(d.id, "accept", ""), t("done.settled"))} data-testid="accept-dispute">
@@ -327,7 +315,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
                 <div className="flex flex-col gap-2" data-testid="demo-copy">
                   <p className="font-medium">{td("demoCopy")}</p>
                   <div tabIndex={0} aria-label={td("demoCopy")} className="max-h-64 overflow-auto rounded-md border p-3 whitespace-pre-wrap outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <Linked text={email.demoCopy.textBody} />
+                    <LinkedText text={email.demoCopy.textBody} />
                   </div>
                 </div>
               )}

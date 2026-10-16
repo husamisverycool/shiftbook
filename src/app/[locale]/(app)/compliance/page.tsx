@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function CompliancePage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   const ask = complianceAsk(await props.searchParams);
   const { items, users } = await withAgency(actor.agencyId, async (tx) => complianceItems(tx, actor, await agencyToday(tx)));
   const shown = filterItems(items, ask, actor);

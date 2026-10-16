@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function CashPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   if (!mayViewMargin(actor)) return <NotForRole />;
   const view = await withAgency(actor.agencyId, async (tx) => cashView(tx, await agencyToday(tx)));
   return (

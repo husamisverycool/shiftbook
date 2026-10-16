@@ -10,3 +10,12 @@ export class StaleRequestError extends Error {
     this.name = "StaleRequestError";
   }
 }
+
+/** The person's role may not do this (decision K4). The screens hide what a role cannot do, so this
+ * meets only a page left open while the Owner changed the person's role, or a hand-made request. */
+export class NotAllowedError extends Error {
+  constructor() {
+    super("Your role does not allow this. Ask the Owner if you need it.");
+    this.name = "NotAllowedError";
+  }
+}

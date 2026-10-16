@@ -69,9 +69,9 @@ function contactOf(agency: EmailAgency) {
 }
 
 /** Paragraphs → text and HTML; a paragraph may hold a link (the one button). */
-type Block = { text: string } | { link: string; label: string } | { list: string[] };
+export type Block = { text: string } | { link: string; label: string } | { list: string[] };
 
-function assemble(subject: string, blocks: Block[]): RenderedEmail {
+export function assemble(subject: string, blocks: Block[]): RenderedEmail {
   const text = blocks
     .map((b) => ("text" in b ? b.text : "link" in b ? `${b.label}: ${b.link}` : b.list.map((line) => `- ${line}`).join("\n")))
     .join("\n\n");

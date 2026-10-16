@@ -18,7 +18,7 @@ export default async function ObligationPage(props: { params: Promise<{ locale: 
   if (!UUID.test(id)) notFound();
   const sp = await props.searchParams;
   const tab = TABS.find((x) => x === sp.tab) ?? "overview";
-  const actor = currentActor();
+  const actor = await currentActor();
   const { d, today } = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     return { d: await obligationDetail(tx, actor, id, today), today };

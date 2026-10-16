@@ -11,7 +11,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string; pa
   const { id, page } = await ctx.params;
   const n = Number(page);
   if (!Number.isSafeInteger(n) || n < 1) return new Response("Not found", { status: 404 });
-  const actor = currentActor();
+  const actor = await currentActor();
   const [row] = await withAgency(actor.agencyId, (tx) =>
     tx.select().from(documentPages).where(and(eq(documentPages.documentId, id), eq(documentPages.pageNumber, n))),
   ).catch(() => []);

@@ -9,7 +9,7 @@ import { setClientApprovalRequired } from "@/server/run/approval";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { withAgency } from "@/server/db";
 import { approvalDeps, linkBaseUrl } from "@/server/services";
-import { currentActor } from "@/server/session";
+import { actorAllowedTo } from "@/server/session";
 
 export type ApprovalActionResult = { ok: true } | { ok: false; error: string; count?: number; detail?: string };
 
@@ -33,7 +33,7 @@ async function guarded(fn: () => Promise<{ ok: true } | ApprovalFailure>): Promi
 export async function sendApprovalAction(input: unknown): Promise<ApprovalActionResult> {
   const i = (input ?? {}) as Record<string, unknown>;
   if (!isText(i.clientId, 40) || !isText(i.payPeriodId, 40) || !isText(i.approverName, 200) || !isText(i.approverEmail, 320) || !isText(i.locale, 5)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   const agencyLocale = await getLocale();
   return guarded(async () =>
     sendApprovalRequest(await deps(), actor, { clientId: i.clientId as string, payPeriodId: i.payPeriodId as string, approverName: i.approverName as string, approverEmail: i.approverEmail as string, locale: i.locale as string, agencyLocale }),
@@ -42,19 +42,19 @@ export async function sendApprovalAction(input: unknown): Promise<ApprovalAction
 
 export async function sendReminderAction(requestId: unknown): Promise<ApprovalActionResult> {
   if (!isText(requestId, 40)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   return guarded(async () => sendReminder(await deps(), actor, requestId));
 }
 
 export async function withdrawApprovalAction(requestId: unknown, reason: unknown): Promise<ApprovalActionResult> {
   if (!isText(requestId, 40) || !isText(reason, 2000)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   return guarded(async () => withdrawApproval(approvalDeps(""), actor, requestId, reason));
 }
 
 export async function settleDisputeAction(disputeId: unknown, action: unknown, reply: unknown): Promise<ApprovalActionResult> {
   if (!isText(disputeId, 40) || (action !== "accept" && action !== "keep") || !isText(reply, 2000)) return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("hours");
   return guarded(async () =>
     settleDispute(approvalDeps(""), actor, disputeId, action, reply, (tx, entryId, change, note) => editEntry(tx, actor, entryId, change, ["confirmed_client"], note, { clientTimesAccepted: true })),
   );
@@ -64,7 +64,7 @@ export async function settleDisputeAction(disputeId: unknown, action: unknown, r
 /** "Approval required before payroll" for a client (slice e, decision E6), audited. */
 export async function setApprovalRequiredAction(clientId: unknown, required: unknown): Promise<ApprovalActionResult> {
   if (!isText(clientId, 40) || typeof required !== "boolean") return { ok: false, error: "generic" };
-  const actor = currentActor();
+  const actor = await actorAllowedTo("run");
   try {
     const r = await withAgency(actor.agencyId, (tx) => setClientApprovalRequired(tx, actor, clientId, required));
     return r.ok ? { ok: true } : { ok: false, error: r.error === "not_allowed" ? "not_allowed" : "generic" };

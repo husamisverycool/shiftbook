@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function InvoicesPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   const rows = await withAgency(actor.agencyId, (tx) => listInvoices(tx));
   return <InvoicesView rows={rows} />;
 }

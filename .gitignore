@@ -11,6 +11,8 @@ next-env.d.ts
 playwright-report/
 test-results/
 blob-report/
+# the signed-in browser state Playwright's setup saves (a demo session)
+tests/e2e/.auth/
 
 # secrets — never committed
 .env

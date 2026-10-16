@@ -15,7 +15,7 @@ export default async function BankPage(props: { params: Promise<{ locale: string
   setRequestLocale(locale);
   const sp = await props.searchParams;
   const tab: BankTab = sp.tab === "posted" || sp.tab === "excluded" ? sp.tab : "review";
-  const actor = currentActor();
+  const actor = await currentActor();
   const { view, clients, today } = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     return { view: await bankView(tx, today), clients: await openInvoicesByClient(tx), today };

@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function OvertimePage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const actor = currentActor();
+  const actor = await currentActor();
   if (!mayViewMargin(actor)) return <NotForRole />;
   const ask = marginAsk(await props.searchParams);
   const t = await getTranslations("margin");

@@ -38,6 +38,12 @@ export const RECRUITERS = [
   { key: "sam", name: "Sam Whitfield (demo)", email: "sam@cedarrow.example.com", role: "coordinator" as const },
 ] as const;
 
+/** The demo's billing clerk and outside accountant (slice k): with the Owner and Lena, the "Continue as" choices. Invented people. */
+export const STAFF = [
+  { key: "billing", name: "Rosa Delgado (demo)", email: "billing@cedarrow.example.com", role: "billing" as const },
+  { key: "accountant", name: "Morgan Ellis (demo)", email: "accountant@cedarrow.example.com", role: "accountant" as const },
+] as const;
+
 /**
  * Estimated burden for the margin (slice i, decision I12). Employer taxes: FICA 7.65% (Social
  * Security 6.2% + Medicare 1.45%) and FUTA 0.6% (IRS Publication 15, 2026) plus each state's

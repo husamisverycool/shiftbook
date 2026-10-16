@@ -16,11 +16,12 @@ import * as s from "../db/schema";
 import { StaleRequestError } from "../errors";
 import { lockPayrollSettings } from "../run/period-lock";
 import type { Actor } from "../session";
+import { can } from "../permissions";
 
 export const TARGET_KEY = "payroll.target";
 export const codesKey = (format: ExportFormat) => `earning_code_map.${format}`;
 
-const mayChange = (actor: Actor) => actor.role === "owner";
+const mayChange = (actor: Actor) => can(actor, "settings");
 export type SettingsResult = { ok: true } | { ok: false; error: "not_allowed" } | { ok: false; error: "invalid"; problems: SettingProblem[] };
 
 /** The setting in use now: the one row with no end date. */

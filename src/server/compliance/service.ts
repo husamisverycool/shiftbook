@@ -15,6 +15,7 @@ import { lockCompliance } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { complianceRules, OPEN_DAYS_KEY, syncObligations } from "./sync";
+import { can } from "../permissions";
 
 export type ComplianceError = "not_allowed" | "not_found" | "invalid" | "not_open" | "already_open" | "closed_by_data";
 export type ComplianceResult = { ok: true } | { ok: false; error: ComplianceError; field?: string };
@@ -37,7 +38,7 @@ export const MA_STATEMENT_KEY = "compliance.ma_statement_document";
 const text = (v: unknown, max: number) => typeof v === "string" && v.trim().length > 0 && v.trim().length <= max;
 const dateOrNull = (v: unknown) => v === null || (typeof v === "string" && isIsoDate(v));
 
-export const mayChangeComplianceSettings = (actor: Actor) => actor.role === "owner";
+export const mayChangeComplianceSettings = (actor: Actor) => can(actor, "settings");
 
 /** The Owner acts on every duty; a coordinator or billing on the kinds whose rule names them; the accountant reads. */
 export async function mayActOn(tx: Tx, actor: Actor, kind: string): Promise<boolean> {
