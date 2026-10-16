@@ -2796,7 +2796,7 @@
       "tieSettled": "Cuadra con los archivos de nómina con estas fechas de pago ({files}): bruto {gross}, y {settled} que las correcciones liquidaron fuera de los archivos ({decisions, plural, one {# decisión} other {# decisiones}})."
     },
     "counters": {
-      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Shiftbook se agregan como saldos iniciales, y la nómina también las cuenta.",
+      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica (820 ILCS 175/42) después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Shiftbook se agregan como saldos iniciales, y la nómina también las cuenta.",
       "search": "Buscar",
       "searchPlaceholder": "Trabajador",
       "client": "Cliente",

@@ -2796,7 +2796,7 @@
       "tieSettled": "Ties to the payroll files with these pay dates ({files}): gross {gross}, and {settled} that corrections settled outside the files ({decisions, plural, one {# decision} other {# decisions}})."
     },
     "counters": {
-      "intro": "Hours of day and temporary labor at each Illinois client. Equal pay applies after more than {trigger} hours there in {months} months (or {longTrigger} in {longMonths}); past {warn} the worker is near. Hours worked before Shiftbook are added as opening balances, and the run counts them too.",
+      "intro": "Hours of day and temporary labor at each Illinois client. Equal pay applies (820 ILCS 175/42) after more than {trigger} hours there in {months} months (or {longTrigger} in {longMonths}); past {warn} the worker is near. Hours worked before Shiftbook are added as opening balances, and the run counts them too.",
       "search": "Search",
       "searchPlaceholder": "Worker",
       "client": "Client",
