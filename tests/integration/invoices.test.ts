@@ -154,8 +154,9 @@ describe("a client's invoice settings (dated versions)", () => {
     const rows = await inAgency((tx) => tx.select().from(s.assignments).where(eq(s.assignments.jobOrderId, jobOrderId("il-operator"))));
     expect(rows.find((a) => a.id === assignmentId("anita-patel"))!.poNumber).toBe("PO-7");
     expect(rows.find((a) => a.id === assignmentId("marcus-bell"))!.poNumber).toBeNull();
-    const [event] = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "assignment"), eq(s.auditEvents.entityId, assignmentId("anita-patel")))));
-    expect(event).toMatchObject({ before: { poNumber: null }, after: { poNumber: "PO-7" } });
+    // Audit events are never deleted, and other test files use the same demo ids: this change's own event.
+    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "assignment"), eq(s.auditEvents.entityId, assignmentId("anita-patel")))));
+    expect(events.filter((e) => (e.after as { poNumber?: string } | null)?.poNumber === "PO-7")).toEqual([expect.objectContaining({ before: { poNumber: null }, after: expect.objectContaining({ poNumber: "PO-7" }) })]);
   });
 });
 
