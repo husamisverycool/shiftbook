@@ -28,4 +28,4 @@ Screen: `slice-c/c2-california-week-files.png`.
 ## Invoice PDF — `docs/patterns/_documents/invoice.md`
 No layout change: the new kinds of line (double time, holiday, bonus, minimum-wage top-up,
 meal and rest premiums, reporting pay) use the existing line layout with their own English and
-Spanish names (checked by the invoice unit tests).
+Spanish names (a unit test checks every kind has both).
