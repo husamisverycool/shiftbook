@@ -36,8 +36,16 @@ export function computeCompliance(c: ComplianceCase): unknown {
       });
     case "aca":
       return acaRows(c.input);
-    case "wc_packet":
-      return packet(c.input.lines, c.input.order);
+    case "wc_packet": {
+      // Each row's working as message keys (`said`, decision 0030) says exactly its English `explain`,
+      // which the key checks; the unit tests of the packet prove it for every case.
+      const out = packet(c.input.lines, c.input.order);
+      return { ...out, rows: out.rows.map((r) => {
+        const { said, ...rest } = r;
+        void said;
+        return rest;
+      }) };
+    }
   }
 }
 

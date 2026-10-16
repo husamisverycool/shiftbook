@@ -29,15 +29,23 @@ The English is the record — the answer keys pin it byte for byte, and exports,
   its stored English. Used on Exceptions, Review totals, the margin lines, overtime not billed and the
   rate form's markup preview (`billFromMarkup` returns the working's keys too, and the bill line uses
   them while they say exactly the stored working).
+- **Shiftbook's own messages** the same way, under a second namespace `said` (`src/server/said.ts`,
+  `SAID_EN`; messages/en.json `said` equals it): the run's own blockers and warnings (`said` beside
+  `message` on each issue), the invoice problems, a correction's decisions and moves, days to pay, a
+  deposit's suggested match, overtime not billed, a pay line's estimated burden and the workers' comp
+  packet's rows. The same hook says them (`getEngineSay()` in server components); an export's own
+  refusal (from the payroll or VMS file writers) and a person's own words stay as they are.
 - **Storage**: migration 0037 adds nullable `say jsonb` to `pay_lines` and `bill_lines`; a run's
   blockers and warnings (jsonb) carry each issue's say. Never backfilled: older rows keep their English.
-  The run's fingerprint leaves every `say` out, so a run computed before keeps its fingerprint and an
-  approval of it stands.
-- **Proof**: the answer-key runner compares the result with every `say` removed (as the compliance
-  runner removes `explain`); unit tests check, for every approved and proposed answer key and for every
-  case of the engine's own tests (run again through a checking `computePay`), that each say says exactly
-  its record with keys `ENGINE_EN` has, that every template is valid ICU in both languages, and that
-  each answer key renders in English through next-intl exactly as stored.
+  The run's fingerprint leaves every `say` and `said` out, so a run computed before keeps its
+  fingerprint and an approval of it stands.
+- **Proof**: the answer-key runners compare the result with every `say` removed (and the workers' comp
+  packet's rows without `said`, as the duties without `explain`); unit tests check, for every approved
+  and proposed answer key and for every case of the engine's own tests (run again through a checking
+  `computePay`), that each say says exactly its record with keys `ENGINE_EN` has, that every template
+  is valid ICU in both languages, and that each answer key renders in English through next-intl exactly
+  as stored; the server's workings are checked the same way, and stored run issues and lines in the
+  integration tests.
 
 ## Alternatives considered
 - Translating the stored English with patterns on the screen: brittle, and silently wrong when a

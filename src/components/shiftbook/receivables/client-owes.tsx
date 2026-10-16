@@ -8,11 +8,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { ClientReceivables, PaymentClients } from "@/server/receivables/queries";
+import { useEngineSay } from "../engine-say";
 import { money } from "../format";
 import { PaymentDialog } from "./payment-dialog";
 
 export function ClientOwes({ clientId, owes, clients, today, canChange }: { clientId: string; owes: ClientReceivables; clients: PaymentClients; today: string; canChange: boolean }) {
   const t = useTranslations("clientOwes");
+  // Days to pay's working in the reader's language (decision 0030).
+  const say = useEngineSay();
   const locale = useLocale();
   const [paying, setPaying] = useState(false);
   const facts: { key: string; label: string; value: string; title?: string }[] = [
@@ -24,7 +27,7 @@ export function ClientOwes({ clientId, owes, clients, today, canChange }: { clie
       key: "daysToPay",
       label: t("daysToPay"),
       value: owes.daysToPay.averageDays === null ? "—" : t("days", { days: owes.daysToPay.averageDays, count: owes.daysToPay.invoices }),
-      title: owes.daysToPay.explain,
+      title: say(owes.daysToPay),
     },
   ];
   return (
@@ -52,7 +55,7 @@ export function ClientOwes({ clientId, owes, clients, today, canChange }: { clie
           </div>
         ))}
       </dl>
-      {owes.daysToPay.averageDays !== null && <p className="text-xs text-muted-foreground">{owes.daysToPay.explain}</p>}
+      {owes.daysToPay.averageDays !== null && <p className="text-xs text-muted-foreground">{say(owes.daysToPay)}</p>}
       {paying && <PaymentDialog clients={clients} mode={{ kind: "record", clientId }} today={today} onClose={() => setPaying(false)} />}
     </section>
   );

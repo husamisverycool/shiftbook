@@ -71,7 +71,7 @@ export function MarginOvertime({ view }: { view: OvertimeView }) {
                   {open === key && (
                     <TableRow className="hover:bg-transparent">
                       <TableCell colSpan={9} className="text-xs whitespace-normal" data-testid="overtime-explain">
-                        <p className="text-muted-foreground">{r.explain}</p>
+                        <p className="text-muted-foreground">{say(r)}</p>
                         <ul className="mt-2 flex flex-col gap-1">
                           {r.lines.map((d, i) => (
                             <li key={i} data-testid="overtime-line">

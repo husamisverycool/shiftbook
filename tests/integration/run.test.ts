@@ -8,7 +8,8 @@ import { agencies, auditEvents, billLines, payLines, payRuns, sourceDocuments, t
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
-import { computeRun, setSkipped } from "../../src/server/run/service";
+import { computeRun, setSkipped, type RunIssue } from "../../src/server/run/service";
+import { saidEnglish } from "../../src/server/said";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { inLineOrder, openAppDb, openOwnerDb } from "./helpers";
@@ -145,5 +146,12 @@ describe("computing a pay run from the period's time entries", () => {
     );
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers.map((b) => b.code)).toContain("unmatched_entry");
+    // Each stored blocker carries its message as keys (decision 0030) — the engine's `say` or the run's
+    // own `said` — saying exactly its English.
+    const [stored] = await inAgency((tx) => tx.select().from(payRuns).where(eq(payRuns.id, run.runId)));
+    const issues = [...(stored!.blockers as RunIssue[]), ...(stored!.warnings as RunIssue[])];
+    expect(issues.length).toBeGreaterThan(0);
+    for (const i of issues) expect(i.say ? english(i.say) : saidEnglish(i.said!), i.code).toBe(i.message);
+    expect(issues.find((i) => i.code === "unmatched_entry")!.said).toEqual([{ key: "unmatchedOn", values: { name: "Unknown Person", date: { date: "2026-10-08" } } }]);
   });
 });

@@ -24,6 +24,8 @@ describe("suggested matches for a deposit (H6), in Stripe's order", () => {
       shortCents: 0,
       confidence: "high",
       explain: "invoice number PLM-20261005-2 on the deposit; $636.00 equals what it owes.",
+      // The same reasoning as message keys for the reader's language (decision 0030).
+      said: [{ key: "refExactOne", values: { what: { say: [{ key: "whatInvoiceNumber", values: { invoices: "PLM-20261005-2" } }] }, amount: "$636.00" } }],
     });
   });
 

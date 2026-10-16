@@ -8,7 +8,7 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { isStuck } from "../intake/service";
 import { clientNets } from "../files/invoice-plan";
-import { correctionPlanFor, decisionText, paidBase } from "../run/corrections";
+import { correctionPlanFor, decisionSaid, decisionText, paidBase } from "../run/corrections";
 import { PeriodLockedError, periodState } from "../run/period-lock";
 import { computeRun, type RunIssue } from "../run/service";
 import type { Actor } from "../session";
@@ -378,7 +378,7 @@ export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
         .map((i) => ({ id: i.id, number: i.number, kind: i.kind, originalNumber: originals.find((o) => o.id === i.originalInvoiceId)?.number ?? null, totalCents: i.totalCents, dueOn: i.dueOn, clientName: i.clientName }))
         .sort((a, b) => cmp(a.number, b.number)),
       decisions: decided
-        .map((d) => ({ name: fullName(d), text: decisionText(d), note: d.note, by: d.by }))
+        .map((d) => ({ name: fullName(d), text: decisionText(d), said: [decisionSaid(d)], note: d.note, by: d.by }))
         .sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase())),
       netZero,
       roundings,

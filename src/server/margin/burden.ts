@@ -7,6 +7,7 @@
  * the explain string shows each part and the rounding. A missing rate counts as zero and says so.
  */
 import { exactDecimal, formatCents, formatMoney, roundHalfUpBig } from "@shiftbook/rules";
+import { explained, nest, say, type Said } from "../said";
 
 export interface BurdenRates {
   /** Employer taxes in parts per million of pay, or null when no rate applies. */
@@ -32,6 +33,8 @@ export interface LineBurden {
   cents: number;
   incomplete: boolean;
   explain: string;
+  /** The working as message keys for the reader's language (decision 0030). */
+  said: Said;
 }
 
 const MILLION = 1_000_000n;
@@ -75,23 +78,22 @@ export function lineBurden(line: BurdenLineInput, rates: BurdenRates): LineBurde
   const num = amount * (tax * share.den + wc * share.num);
   const cents = roundHalfUpBig(num, den);
   const pay = formatCents(line.amountCents);
-  const parts: string[] = [];
-  parts.push(
+  // Said one after the other: taxes; workers' comp; the burden and its rounding (decision 0030).
+  const said: Said = [
     rates.taxPpm === null
-      ? `No employer tax rate for ${rates.taxState ?? "the worksite's state"} (counted as $0.00)`
-      : `Employer taxes (${rates.taxState ?? "any other state"}) ${percentOf(rates.taxPpm)} of ${pay} = ${dollars(amount * tax, MILLION)}`,
-  );
-  if (rates.wcClass === null) parts.push("no workers' comp class on the rate card (counted as $0.00)");
-  else if (rates.wcPpm === null) parts.push(`no workers' comp rate for ${rates.wcState ?? "the worker's state"} ${rates.wcClass} (counted as $0.00)`);
+      ? say("burdenNoTax", { state: rates.taxState ?? nest(say("theWorksiteState")) })
+      : say("burdenTax", { state: rates.taxState ?? nest(say("anyOtherState")), percent: percentOf(rates.taxPpm), pay, amount: dollars(amount * tax, MILLION) }),
+  ];
+  if (rates.wcClass === null) said.push(say("burdenNoWcClass"));
+  else if (rates.wcPpm === null) said.push(say("burdenNoWcRate", { state: rates.wcState ?? nest(say("theWorkersState")), class: rates.wcClass }));
   else {
     const base = dollars(amount * share.num, share.den);
     const premium =
-      share.text === null ? "" : share.text === "none" ? " (all of it is overtime premium, left out)" : share.text === "unknown" ? " (no overtime multiplier on file for its rule: counted in full)" : ` (the overtime premium left out: ${share.text} of ${pay})`;
-    parts.push(`workers' comp (${rates.wcState} ${rates.wcClass}) ${perHundred(rates.wcPpm)} per $100 of ${base}${premium} = ${dollars(amount * share.num * wc, MILLION * share.den)}`);
+      share.text === null ? "" : share.text === "none" ? nest(say("premiumAllLeftOut")) : share.text === "unknown" ? nest(say("premiumUnknownMultiplier")) : nest(say("premiumLeftOut", { share: share.text, pay }));
+    said.push(say("burdenWc", { state: String(rates.wcState), class: rates.wcClass, rate: perHundred(rates.wcPpm), base, premium, amount: dollars(amount * share.num * wc, MILLION * share.den) }));
   }
   const exact = num % den === 0n;
   // (num and den stay well inside safe integers: pay below $100,000 a line × 1,000,000 × 3.)
-  parts.push(exact ? `burden ${formatCents(cents)}` : `burden ${dollars(num, den)} → ${formatCents(cents)}, rounded half up once`);
-  const text = parts.join("; ");
-  return { cents, incomplete: rates.taxPpm === null || rates.wcPpm === null || rates.wcClass === null, explain: `${text.charAt(0).toUpperCase()}${text.slice(1)}.` };
+  said.push(exact ? say("burdenExact", { amount: formatCents(cents) }) : say("burdenRounded", { exact: dollars(num, den), amount: formatCents(cents) }));
+  return { cents, incomplete: rates.taxPpm === null || rates.wcPpm === null || rates.wcClass === null, ...explained(said) };
 }

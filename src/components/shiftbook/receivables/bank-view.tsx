@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { BankView as View, PaymentClients } from "@/server/receivables/queries";
+import { useEngineSay } from "../engine-say";
 import { longDate, money } from "../format";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
 
@@ -26,6 +27,8 @@ type ReviewLine = View["review"][number];
 
 export function BankView({ view, tab, clients, today, canChange }: { view: View; tab: BankTab; clients: PaymentClients; today: string; canChange: boolean }) {
   const t = useTranslations("bank");
+  // Why a deposit is matched as suggested, in the reader's language (decision 0030).
+  const say = useEngineSay();
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -110,7 +113,7 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
                         {l.suggestion.shortCents > 0 && <span className="text-destructive">{t("short", { amount: money(l.suggestion.shortCents, locale) })}</span>}
                         {l.suggestion.creditCents > 0 && <span>{t("credit", { amount: money(l.suggestion.creditCents, locale) })}</span>}
                       </span>
-                      <span className="text-muted-foreground">{l.suggestion.explain}</span>
+                      <span className="text-muted-foreground">{say(l.suggestion)}</span>
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">{t("noSuggestion")}</p>

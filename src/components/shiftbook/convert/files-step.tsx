@@ -10,6 +10,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ControlTotals, InvoiceKind } from "@/server/db/schema";
 import { hoursMinutes, longDate, money } from "../format";
+import type { Said } from "@/server/said";
+import { getEngineSay } from "../engine-say-server";
 import { StartCorrectionButton } from "./correction-actions";
 
 export interface FilesVersion {
@@ -19,7 +21,7 @@ export interface FilesVersion {
   reason: string | null;
   payroll: { id: string; format: string; filename: string; sha256: string; controlTotals: ControlTotals; notes: string[] } | null;
   invoices: { id: string; number: string; kind: InvoiceKind; originalNumber: string | null; clientName: string; dueOn: string; totalCents: number }[];
-  decisions: { name: string; text: string; note: string; by: string }[];
+  decisions: { name: string; text: string; said?: Said; note: string; by: string }[];
   /** A correction's clients whose differences net to zero: no document (decision E11). */
   netZero: string[];
   /** A correction's cents left over from rounding when hours moved at one rate: neither paid nor taken back. */
@@ -61,6 +63,8 @@ async function Version({ v }: { v: FilesVersion }) {
   const tr = await getTranslations("convert.correction");
   const tc = await getTranslations("common");
   const locale = await getLocale();
+  // A recorded decision in the reader's language (decision 0030); the person's note stays as typed.
+  const say = await getEngineSay();
   const ct = v.payroll?.controlTotals;
   const correction = v.kind === "correction";
   return (
@@ -128,7 +132,7 @@ async function Version({ v }: { v: FilesVersion }) {
           <ul className="list-disc pl-5 text-muted-foreground">
             {v.decisions.map((d) => (
               <li key={d.name}>
-                {d.name}: {d.text} — {d.note} ({d.by})
+                {d.name}: {say({ message: d.text, said: d.said })} — {d.note} ({d.by})
               </li>
             ))}
           </ul>

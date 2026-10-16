@@ -130,9 +130,8 @@ for (const locale of ["en", "es"] as const) {
       locale === "en" ? "Anita Patel on October 5, 2026: pay rate $14.50/h is below the minimum wage of $15.00/h" : "Anita Patel el 5 de octubre de 2026: la tarifa de pago de $14.50/h está por debajo del salario mínimo de $15.00/h",
     );
     await expect(warning).toContainText(locale === "en" ? "A top-up line pays the difference; fix the rate card." : "Una línea de complemento paga la diferencia; corrija la tarjeta de tarifas.");
-    // Review totals: the same warning, acknowledged by approving.
-    await toTotals(page, m);
-    await expect(page.getByText(locale === "en" ? "pay rate $14.50/h is below the minimum wage of $15.00/h" : "la tarifa de pago de $14.50/h está por debajo del salario mínimo de $15.00/h")).toBeVisible();
+    // (The Gusto hours file cannot carry the top-up, so the run stops there until the rate card is fixed.)
+    await expect(page.getByTestId("blocker").filter({ hasText: m.convert.totals.blockers.export_refused })).toContainText("Anita Patel");
     expect(errors).toEqual([]);
   });
 }

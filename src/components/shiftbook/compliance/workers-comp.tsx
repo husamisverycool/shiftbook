@@ -15,6 +15,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { WcPacketView } from "@/server/compliance/documents";
+import { useEngineSay } from "../engine-say";
 import { hoursMinutes, money } from "../format";
 
 type Figures = { minutes: number; straightCents: number; otPremiumCents: number; dtPremiumCents: number; otherCents: number; totalCents: number };
@@ -22,6 +23,8 @@ type Figures = { minutes: number; straightCents: number; otPremiumCents: number;
 export function WorkersCompPacket({ view }: { view: WcPacketView }) {
   const t = useTranslations("compliance.workersComp");
   const locale = useLocale();
+  // Each row's working in the reader's language (decision 0030).
+  const say = useEngineSay();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -136,7 +139,7 @@ export function WorkersCompPacket({ view }: { view: WcPacketView }) {
                   {view.rows
                     .filter((r) => groupKey(r) === groupKey(c))
                     .map((r) => (
-                      <TableRow key={`${groupKey(r)}|${r.workerId}`} data-testid="wc-row" title={r.explain}>
+                      <TableRow key={`${groupKey(r)}|${r.workerId}`} data-testid="wc-row" title={say(r)}>
                         <TableCell>{view.order === "state" ? r.state : r.classCode}</TableCell>
                         <TableCell>{view.order === "state" ? r.classCode : r.state}</TableCell>
                         <TableCell className="font-medium">{r.workerName}</TableCell>

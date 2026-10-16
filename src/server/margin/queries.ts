@@ -165,12 +165,12 @@ export async function marginLines(tx: Tx, from: string, to: string): Promise<Mar
     l.burdenCents += b.cents;
     if (TIME.has(p.type)) l.minutesPaid += p.minutes;
     if (b.incomplete) l.incomplete += 1;
-    l.details.push({ kind: "pay", type: p.type, minutes: p.minutes, amountCents: p.amountCents, burdenCents: b.cents, explain: p.explain, say: p.say, burdenExplain: b.explain });
+    l.details.push({ kind: "pay", type: p.type, minutes: p.minutes, amountCents: p.amountCents, burdenCents: b.cents, explain: p.explain, say: p.say, burdenExplain: b.explain, burdenSaid: b.said });
   }
   for (const b of bills) {
     const l = lineFor(b.assignmentId, b.workerId, b.workweekStart, b.clientId);
     l.billedCents += b.amountCents;
-    l.details.push({ kind: "bill", type: b.type, minutes: b.minutes, amountCents: b.amountCents, burdenCents: 0, explain: b.explain, say: b.say, burdenExplain: null } satisfies MarginDetail);
+    l.details.push({ kind: "bill", type: b.type, minutes: b.minutes, amountCents: b.amountCents, burdenCents: 0, explain: b.explain, say: b.say, burdenExplain: null, burdenSaid: null } satisfies MarginDetail);
   }
   return [...lines.values()];
 }

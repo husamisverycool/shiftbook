@@ -12,6 +12,7 @@
  */
 import { formatCents } from "@shiftbook/rules";
 import { daysFrom } from "./aging";
+import { explained, nest, say, type Said } from "../said";
 
 export interface OpenInvoice {
   id: string;
@@ -44,6 +45,8 @@ export interface Suggestion {
   shortCents: number;
   confidence: "high" | "medium";
   explain: string;
+  /** The reasoning as message keys for the reader's language (decision 0030). */
+  said: Said;
 }
 
 /** The window for a match on amount alone: invoices issued from 90 days before to 20 days after (QuickBooks Online). */
@@ -124,18 +127,21 @@ export function suggestMatch(deposit: Deposit, open: OpenInvoice[], clients: Mat
   if (referenced.length > 0 && refClients.length === 1 && (!client || client.id === refClients[0])) {
     const invoices = [...referenced].sort(byAge);
     const owed = invoices.reduce((s, i) => s + i.balanceCents, 0);
-    const what = byNumber.length > 0 ? `invoice number${invoices.length > 1 ? "s" : ""} ${list(invoices)} on the deposit` : `PO ${invoices[0]!.poNumber} on the deposit (invoice${invoices.length > 1 ? "s" : ""} ${list(invoices)})`;
+    const many = invoices.length > 1;
+    const what = nest(byNumber.length > 0 ? say(many ? "whatInvoiceNumbers" : "whatInvoiceNumber", { invoices: list(invoices) }) : say(many ? "whatPoMany" : "whatPo", { po: String(invoices[0]!.poNumber), invoices: list(invoices) }));
     const r = fill(invoices, deposit.amountCents);
     const exact = owed === deposit.amountCents;
     return {
       clientId: refClients[0]!,
       ...r,
       confidence: exact && byNumber.length > 0 ? "high" : "medium",
-      explain: exact
-        ? `${what}; ${amount} equals what ${invoices.length > 1 ? "they" : "it"} owe${invoices.length > 1 ? "" : "s"}.`
-        : owed > deposit.amountCents
-          ? `${what}; ${amount} is ${formatCents(owed - deposit.amountCents)} less than the ${formatCents(owed)} owed: applied oldest first, the rest left short.`
-          : `${what}; ${amount} is ${formatCents(deposit.amountCents - owed)} more than the ${formatCents(owed)} owed: the rest left as the client's credit.`,
+      ...explained([
+        exact
+          ? say(many ? "refExactMany" : "refExactOne", { what, amount })
+          : owed > deposit.amountCents
+            ? say("refShort", { what, amount, difference: formatCents(owed - deposit.amountCents), owed: formatCents(owed) })
+            : say("refOver", { what, amount, difference: formatCents(deposit.amountCents - owed), owed: formatCents(owed) }),
+      ]),
     };
   }
 
@@ -164,7 +170,7 @@ export function suggestMatch(deposit: Deposit, open: OpenInvoice[], clients: Mat
         creditCents: 0,
         shortCents: 0,
         confidence,
-        explain: `${amount} equals what invoice${best.length > 1 ? "s" : ""} ${list(best)} owe${best.length > 1 ? "" : "s"}${client ? `; the client is named on the deposit` : `; the only client with invoices adding up to it`}${unique ? "" : " (the oldest of several that add up to it)"}.`,
+        ...explained([say(best.length > 1 ? "sumMany" : "sumOne", { amount, invoices: list(best), why: nest(say(client ? "whyNamed" : "whyOnlyClient")), oldest: unique ? "" : nest(say("oldestOfSeveral")) })]),
       };
     }
   }
@@ -178,7 +184,14 @@ export function suggestMatch(deposit: Deposit, open: OpenInvoice[], clients: Mat
       clientId: client.id,
       ...r,
       confidence: "medium",
-      explain: `The client is named on the deposit; no invoice number on it, and no group of its invoices adds up to ${amount}: applied to the oldest first (${list(invoices.slice(0, r.applications.length))})${r.shortCents > 0 ? `, ${formatCents(r.shortCents)} left short` : ""}${r.creditCents > 0 ? `, ${formatCents(r.creditCents)} left as credit` : ""}.`,
+      ...explained([
+        say("namedOldestFirst", {
+          amount,
+          invoices: list(invoices.slice(0, r.applications.length)),
+          short: r.shortCents > 0 ? nest(say("leftShort", { amount: formatCents(r.shortCents) })) : "",
+          credit: r.creditCents > 0 ? nest(say("leftCredit", { amount: formatCents(r.creditCents) })) : "",
+        }),
+      ]),
     };
   }
   return null;
