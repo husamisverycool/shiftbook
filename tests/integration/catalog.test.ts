@@ -299,6 +299,11 @@ describe("assignments", () => {
     expect(moved!.assignmentId).toBe(caAssignment!.id);
   });
 
+  it("an attach with the worker cleared is refused, never dropped", async () => {
+    const [entry] = (await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.payPeriodId, week))))).filter((e) => e.assignmentId !== null);
+    expect(await inAgency((tx) => editEntry(tx, actor, entry!.id, { workerId: null }, ["matched_worker"], "", { attachToClientId: clientId("ma") }))).toEqual({ ok: false, error: "worker_required" });
+  });
+
   it("attaching to a client where the worker has no assignment that day is refused, never sent to another client", async () => {
     const [entry] = (await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.payPeriodId, week))))).filter((e) => e.assignmentId !== null);
     const before = entry!.assignmentId;

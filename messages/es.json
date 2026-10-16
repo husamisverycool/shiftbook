@@ -203,8 +203,8 @@
         "other": "Necesita revisión",
         "assignment_at_other_client": "La asignación del trabajador ese día es con otro cliente",
         "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas",
-        "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edite para asignar estas horas allí si son de ese cliente",
-        "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edite para asignar estas horas allí si son de ese cliente"
+        "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edita para asignar estas horas allí si son de ese cliente",
+        "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edita para asignar estas horas allí si son de ese cliente"
       },
       "fields": {
         "worker": "trabajador",

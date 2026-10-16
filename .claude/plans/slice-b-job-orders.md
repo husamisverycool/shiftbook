@@ -42,6 +42,13 @@ pattern files below (copied from the research notes, every claim with its URL).
   a worker at two other clients gets one "Attach to" per client; an attach to a client with no
   assignment that day is refused (the hours stay put); the kept client holds only for the same
   worker; pages no longer scroll sideways at 1024 px. 538 tests and 19 browser tests pass.
+- Seventh review fixed: the id-column change no longer lets birth dates through — a header-less
+  first row with an old 8-digit date is refused again; 8-digit dates under a date word in any of
+  the common languages ("Fecha", "Data de nascimento", "Geboortedatum") are removed; the "most
+  dates are old" rule is back, with an exception only for real id columns; a file name with a birth
+  word keeps none of its numbers; "FN" and "geb" count only before an old date; an attach with the
+  worker cleared is refused; Spanish uses the informal "edita" throughout. 542 tests and 19 browser
+  tests pass.
 
 ## Goal (what the owner can do at the end)
 From a sidebar on every page: open **Job orders**, see them as a list grouped by client, open one

@@ -33,7 +33,7 @@ const WORDS = new Set([
 const SHORT = new Set(["ss", "sin", "tin", "l4"]);
 const ID_WORDS = new Set(["no", "num", "nbr", "number", "numero", "número", "id", "employee", "emp", "worker", "candidate", "last", "4", "four"]);
 /** Pieces that name one anywhere in the heading once it is squeezed to letters. */
-const PIECES = ["socialsecurity", "socialinsurance", "taxid", "taxpayer", "dateofbirth", "birthdate", "segurosoc", "fechadenacimiento", "fechanac", "cumplea", "datedenaissance", "geburt", "gebdatum"];
+const PIECES = ["socialsecurity", "socialinsurance", "taxid", "taxpayer", "dateofbirth", "birthdate", "segurosoc", "fechadenacimiento", "fechanac", "cumplea", "datedenaissance", "geburt", "gebdatum", "nascimento", "nascita", "geboorte", "urodzeni"];
 
 function sensitiveHeading(heading: string): boolean {
   const text = heading.normalize("NFKC");
@@ -164,6 +164,8 @@ function yearsInside(text: string, thisYear: number): number[] {
 
 /** Words that say a date nearby is a birth date ("Geb.-Nr.", a building number, is not one). */
 const BIRTH_WORDS = String.raw`d\.?\s?o\.?\s?b(?![a-z])|born(?![a-z])|birth[a-z]*|b['’\-]?day(?![a-z])|b-?date(?![a-z])|f\.?\s?nac|f\.\s?n\.(?![a-z])|nac(?![a-zñ])|nac(?:id[oa]s?|i[oó]|imiento)|cumplea[a-zñ]*|naissance|naiss\.|n[ée]e?\s{1,3}le(?![a-z])|geboren|geburt[a-z]*|geb\.(?![\s\-]{0,3}nr)`;
+/** Headings that say a column holds dates, where an 8-digit number is one ("Fecha", "Data de nascimento", "Geboortedatum"). */
+const DATE_WORD = /(?<![a-z])(?:date|fecha|data|datum|dt)|nascimento|nascita|geboorte|urodzeni/i;
 const BIRTH_WORD = new RegExp(String.raw`(?<![a-zñ])(?:${BIRTH_WORDS})`, "i");
 /** Letters, accented ones included, on lowercased text (so "Gebühr" is one word). */
 const LETTER = "a-zà-öø-ÿ";
@@ -172,13 +174,16 @@ const LETTER = "a-zà-öø-ÿ";
  * "YOB" with a year alone, "geb" without its dot), then the spaces or marks before the date. Also
  * finds a date written against its label ("dob01/02/1990").
  */
-const LABEL = new RegExp(String.raw`(?<![${LETTER}\d])(?:${BIRTH_WORDS}|(?<yob>y\.?\s?o\.?\s?b\.?)|f\.?\s?n\.?|geb\.?(?:\s{1,3}am)?)(?![${LETTER}])[\s:#=.,\-]{0,3}`, "gi");
+const LABEL = new RegExp(String.raw`(?<![${LETTER}\d])(?:${BIRTH_WORDS}|(?<yob>y\.?\s?o\.?\s?b\.?)|(?<ambiguous>f\.?\s?n\.?|geb\.?(?:\s{1,3}am)?))(?![${LETTER}])[\s:#=.,\-]{0,3}`, "gi");
 const YEAR_ALONE = /(?:19|20)\d{2}(?!\d)/y;
 /** Every date has a digit within its first 31 characters (a weekday, a month name and spaces come first at most). */
 const DIGIT_SOON = /\D{0,30}\d/y;
 
-/** True when a date comes right after a birth word or label in the text. */
-function labelledDate(text: string): boolean {
+/**
+ * True when a date comes right after a birth word or label in the text. "FN" and "geb" have other
+ * meanings ("Fn." a footnote): after them only a date old enough to be a birth date counts.
+ */
+function labelledDate(text: string, thisYear: number): boolean {
   const t = text.normalize("NFKC").toLowerCase();
   for (const label of t.matchAll(LABEL)) {
     const at = label.index + label[0].length;
@@ -189,14 +194,15 @@ function labelledDate(text: string): boolean {
     for (const form of AT) {
       form.re.lastIndex = at;
       const m = form.re.exec(t);
-      if (m && form.year(m)) return true;
+      const y = m ? form.year(m) : null;
+      if (y && (!label.groups?.ambiguous || fullYear(y, thisYear) <= thisYear - 14)) return true;
     }
   }
   return false;
 }
 
 /** A cell that gives a birth date: a date anywhere beside a birth word, or right after a label. */
-const birthDateIn = (text: string, thisYear: number) => (BIRTH_WORD.test(text) && yearsInside(text, thisYear).length > 0) || labelledDate(text);
+const birthDateIn = (text: string, thisYear: number) => (BIRTH_WORD.test(text) && yearsInside(text, thisYear).length > 0) || labelledDate(text, thisYear);
 
 /**
  * Most cells with digits are dates (next to the heading's birth word, an 8-digit number counts) and
@@ -205,11 +211,14 @@ const birthDateIn = (text: string, thisYear: number) => (BIRTH_WORD.test(text) &
  */
 function birthDates(heading: string, values: string[], thisYear: number): boolean {
   if (values.some((v) => birthDateIn(v, thisYear))) return true;
-  const nearBirthWord = BIRTH_WORD.test(heading.normalize("NFKC"));
-  const years = values.map((v) => dateYear(v, thisYear, nearBirthWord)).filter((y): y is number => y !== null);
+  const h = heading.normalize("NFKC");
+  const nearDateWord = BIRTH_WORD.test(h) || DATE_WORD.test(h);
+  const years = values.map((v) => dateYear(v, thisYear, nearDateWord)).filter((y): y is number => y !== null);
   const withDigits = values.filter((v) => /\d/.test(v)).length;
+  // An id column (most cells with digits are bare 8-digit numbers) is not taken for dates by a stray one.
+  const ids = values.filter((v) => /^\d{8}$/.test(v)).length;
   const old = years.filter((y) => y <= thisYear - 14).length;
-  return years.length * 2 > withDigits && old * 2 > years.length;
+  return old > 0 && old * 2 > years.length && (nearDateWord || ids * 2 <= withDigits);
 }
 
 /** A spreadsheet's column letter: 0 → A, 26 → AA. */
@@ -244,7 +253,12 @@ export type RemovedColumn = { column: string; heading: string; reason: "heading"
  */
 export function headingProblem(header: string[], today: string): boolean {
   const thisYear = Number(today.slice(0, 4));
-  return header.some((h) => ssnIn(h) || dateYear(h, thisYear) !== null);
+  // An 8-digit number old enough to be a birth date is a record too ("19900102"; not "10192026").
+  return header.some((h) => {
+    if (ssnIn(h) || dateYear(h, thisYear) !== null) return true;
+    const y = /^\s*\d{8}\s*$/.test(h) ? dateYear(h, thisYear, true) : null;
+    return y !== null && y <= thisYear - 14;
+  });
 }
 
 export function dropSensitive(
@@ -288,5 +302,7 @@ export function safeFilename(name: string, today: string): string {
       return y && (birth || fullYear(y, thisYear) <= thisYear - 14) ? "•••" : m[0];
     });
   }
+  // A name with a birth word keeps none of its numbers ("dob01-02-1990.csv": the date sits against the word).
+  if (birth) out = out.replace(/\d+/g, "•••");
   return out.slice(0, 200);
 }

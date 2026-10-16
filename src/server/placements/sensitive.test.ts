@@ -233,6 +233,36 @@ describe("fifth review: time zones, more spellings, no false alarms on names, an
 
 describe("sixth review: id columns kept, birth words next to dates, every digit hidden", () => {
   const column = (heading: string, values: string[]) => dropSensitive(["Name", heading], values.map((v, i) => [`Worker ${i}`, v]), today);
+  it("seventh review: keeps removing birth dates under date words in other languages, beside placeholders with digits, and stray ones in notes", () => {
+    for (const heading of ["Data de nascimento", "Geboortedatum", "Data di nascita", "Data urodzenia", "Fecha", "Date 2"]) {
+      expect(column(heading, ["19900102", "19850304", "19791231"]).removed).toHaveLength(1);
+      expect(column(heading, ["02011990", "04031985"]).removed).toHaveLength(1);
+    }
+    for (const values of [
+      ["01/02/1990", "00/00/0000", "00/00/0000", "00/00/0000"],
+      ["1990-01-02", "0000-00-00", "0000-00-00"],
+      ["1990-01-02", "1985-03-04", "0", "0", "0", "0", "0"],
+      ["1/2/1990", "1/0/1900", "1/0/1900"],
+      ["Prefers 2nd shift", "01/02/1990", "Rate $19.50", "Call ext 210"],
+    ]) {
+      expect(column("Info", values).removed).toHaveLength(1);
+    }
+    // An id column is still kept (most of its cells are bare 8-digit numbers).
+    expect(column("Placement ID", ["10011999", "45000123", "45000124", "45000125"]).removed).toEqual([]);
+  });
+
+  it("an ambiguous label (FN, geb) makes a birth date only of an old date", () => {
+    expect(column("Notes", ["Fn. 10/19/2026 orientation", "ok"]).removed).toEqual([]);
+    expect(column("Notes", ["FN 02/01/1990", "ok"]).removed).toHaveLength(1);
+    expect(column("Notes", ["geb 02.01.1990", "ok"]).removed).toHaveLength(1);
+  });
+
+  it("hides every number in a file name that has a birth word", () => {
+    expect(safeFilename("dob01-02-1990.csv", today)).toBe("dob•••-•••-•••.csv");
+    expect(safeFilename("born1990-01-02.csv", today)).toBe("born•••-•••-•••.csv");
+    expect(safeFilename("Anita dob19900102.csv", today)).toBe("Anita dob•••.csv");
+  });
+
   it("removes birth dates padded with placeholders that hold no digits (n/a, unknown, -)", () => {
     expect(column("Notes", ["01/02/1990", "03/04/1985", "n/a", "unknown", "-", "?"]).removed).toHaveLength(1);
     expect(column("Notes", ["01/02/1990", "45000123", "45000124", "45000125"]).removed).toEqual([]);
@@ -274,8 +304,12 @@ describe("sixth review: id columns kept, birth words next to dates, every digit 
     expect(column("Notes", ["ok", "DOB 8 8 80"]).removed).toEqual([{ column: "B", heading: "Notes", reason: "birth_dates" }]);
   });
 
-  it.each(["10192026", "8 8 10", "19900102"])("takes %s as a heading (a bare number is not a date there)", (heading) => {
+  it.each(["10192026", "8 8 10"])("takes %s as a heading (a bare number is not a date there)", (heading) => {
     expect(headingProblem(["Candidate", heading], today)).toBe(false);
+  });
+
+  it("refuses a first row holding an 8-digit number old enough to be a birth date (a record, not a heading)", () => {
+    expect(headingProblem(["70001", "Anita", "Patel", "19900102", "Prairie Line Manufacturing (demo)", "20261019"], today)).toBe(true);
   });
 
   it("refuses a first row whose date carries a named time zone", () => {

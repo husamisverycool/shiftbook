@@ -29,7 +29,8 @@ export type EditError =
   | "several_assignments"
   | "assignment_at_other_client"
   | "timesheet_client_unclear"
-  | "attach_client_unavailable";
+  | "attach_client_unavailable"
+  | "worker_required";
 
 /**
  * A refused change. For hours whose assignment that day is at another client than the timesheet's
@@ -241,6 +242,9 @@ export async function editEntry(
   const [entry] = await tx.select().from(s.timeEntries).where(eq(s.timeEntries.id, entryId));
   if (!entry) return { ok: false, error: "not_found" };
   if (!EDITABLE.includes(entry.status)) return { ok: false, error: "not_editable" };
+  // Hours are attached to a client for a worker: an attach with no worker would be dropped, so it is refused.
+  const workerAfter = change.workerId === undefined ? entry.workerId : change.workerId;
+  if (opts.attachToClientId && !workerAfter) return { ok: false, error: "worker_required" };
   const [doc] = entry.sourceDocumentId
     ? await tx
         .select({ clientId: s.sourceDocuments.clientId, clientName: s.clients.name })
