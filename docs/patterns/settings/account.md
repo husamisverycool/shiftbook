@@ -12,6 +12,7 @@ Source URL: https://docs.github.com/en/authentication/securing-your-account-with
 Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/sudo-mode
 Source URL: https://slack.com/help/articles/215058658-Manage-your-language-preferences
 Source URL: https://squareup.com/help/us/en/article/5234
+Source URL: https://vercel.com/docs/accounts
 Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3a, §4). Confidence: high
 for the sections and their actions; the page's spacing is not documented.
 
@@ -35,7 +36,15 @@ their own account): their language, their password, their authenticator and reco
      confirmation says the old ones stop working; then the new ten with Download, Print, Copy and
      **I have saved my recovery codes**); **Set up again** for a new phone (the same three-part
      setup; the old authenticator works until the new one is verified).
-5. **Sign out** (a secondary button at the bottom).
+5. **Connected accounts** (decision 0033; Vercel's "Login Connections" in the account's
+   Authentication settings, one connection per outside service): one line on what they are (another
+   way to sign in; the authenticator code is still asked when the role needs it); one row each for
+   **Google** and **Microsoft** (shown when that way in is offered), the provider's own mark and name:
+   - Not connected: **Connect** — confirm it's them, then the provider (the demo's stand-in in the
+     demo), then back here with a toast.
+   - Connected: the account's email as the provider gave it, "Connected <date>", and **Disconnect**
+     (a confirmation; confirm it's them first).
+6. **Sign out** (a secondary button at the bottom).
 
 ## Interactions
 - Set up authenticator, Set up again and Make new recovery codes first ask the person to confirm it's
@@ -43,6 +52,8 @@ their own account): their language, their password, their authenticator and reco
   `_components/confirm-access.md`).
 - Language → saved at once; the page reloads in that language.
 - Update password → saved; the other places they were signed in are signed out; a toast says so.
+- Connect → back from the provider with a toast: connected; or already connected to another
+  Shiftbook person; or the provider did not sign them in.
 
 ## States
 - Wrong current password, the passwords differ, or the rule is broken: a message under the field.

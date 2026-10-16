@@ -16,6 +16,7 @@ import type { Role } from "@/server/permissions";
 import { AuthenticatorSetup, RecoveryCodes } from "../auth/authenticator-setup";
 import { useConfirmed } from "../auth/confirm-access";
 import { NewPasswordFields } from "../auth/fields";
+import { ConnectedAccounts } from "./connected-accounts";
 
 export interface AccountProps {
   name: string;
@@ -192,7 +193,7 @@ export function AccountView(props: AccountProps) {
         )}
       </Section>
       {/* Sign-in methods: passkeys (decision 0032) go here. */}
-      {/* Sign-in methods: Google and Microsoft (decision 0033) go here. */}
+      <ConnectedAccounts />
 
       <div className="border-t pt-6">
         <Button variant="outline" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="account-sign-out">

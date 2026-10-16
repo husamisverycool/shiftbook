@@ -21,6 +21,13 @@ These go in the hosting service's environment settings — never in the code, ne
 | `SHIFTBOOK_TRUSTED_PROXY_HOPS` | How many proxies in front of the app add to `X-Forwarded-For` (usually 1; set `0` when nothing stands in front of the app, or visitors could make up their own address). Used to know each visitor's address (sign-in throttling, approval evidence). |
 | `ANTHROPIC_API_KEY` | Reading photographed timesheets (optional; files and spreadsheets work without it). |
 | `SHIFTBOOK_STORAGE_DIR` | Where uploaded files are kept, if not the default. |
+| `SHIFTBOOK_GOOGLE_CLIENT_ID`, `SHIFTBOOK_GOOGLE_CLIENT_SECRET` | "Continue with Google" (optional; decision 0033). From a Google Cloud OAuth client of type "Web application" whose authorized redirect URI is `<SHIFTBOOK_APP_URL>/api/auth/oidc/google/callback`. The button appears once both are set. |
+| `SHIFTBOOK_MICROSOFT_CLIENT_ID`, `SHIFTBOOK_MICROSOFT_CLIENT_SECRET` | "Continue with Microsoft" (optional; decision 0033). From a Microsoft Entra app registration for "accounts in any organizational directory and personal Microsoft accounts", web redirect URI `<SHIFTBOOK_APP_URL>/api/auth/oidc/microsoft/callback`, with the optional ID-token claims `email` and `xms_edov` added (without `xms_edov`, people connect Microsoft from Your account before signing in with it). |
+
+An agency's own single sign-on needs no setting here: its Owner enters the provider's details in
+Settings › Single sign-on and registers `<SHIFTBOOK_APP_URL>/api/auth/oidc/sso/callback` with it. In
+demo mode none of these are used: Google, Microsoft and SSO go through the demo's stand-in, inside the
+app.
 
 ## The first agency and its Owner
 

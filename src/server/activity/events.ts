@@ -4,7 +4,7 @@
  */
 
 /** What happened: the audit action, with a look at the SSN or a worker's file, and an SSN change, told apart. */
-export const ACTIVITY_EVENTS = ["create", "update", "delete", "approve", "export", "import", "reset", "sign_in", "sign_out", "sign_in_failed", "refuse", "ssn_viewed", "file_opened", "ssn_changed"] as const;
+export const ACTIVITY_EVENTS = ["create", "update", "delete", "approve", "export", "import", "reset", "sign_in", "sign_out", "sign_in_failed", "refuse", "ssn_viewed", "file_opened", "ssn_changed", "identity_connected", "identity_disconnected"] as const;
 export type ActivityEventKind = (typeof ACTIVITY_EVENTS)[number];
 
 /** The kinds of record the log names (the filter offers these; anything else reads as "Other"). */
@@ -69,5 +69,7 @@ export function eventOf(action: string, after: unknown): string {
   const a = (after ?? {}) as Record<string, unknown>;
   if (action === "reveal") return typeof a.filename === "string" ? "file_opened" : "ssn_viewed";
   if (action === "update" && a.ssn === "changed") return "ssn_changed";
+  // Decision 0033: a Google, Microsoft or SSO identity connected to the person, or disconnected.
+  if (action === "update" && (a.identity === "connected" || a.identity === "disconnected")) return `identity_${a.identity}`;
   return action;
 }

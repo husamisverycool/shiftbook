@@ -55,8 +55,10 @@ function whereOf(f: ActivityFilters, zone: string): SQL[] {
   if (f.action === "ssn_viewed") out.push(eq(e.action, "reveal"), sql`not (${after} ? 'filename')`);
   else if (f.action === "file_opened") out.push(eq(e.action, "reveal"), sql`${after} ? 'filename'`);
   else if (f.action === "ssn_changed") out.push(eq(e.action, "update"), sql`${after}->>'ssn' = 'changed'`);
-  // "Changed" lists the changes an SSN change is not (it has its own action).
-  else if (f.action === "update") out.push(eq(e.action, "update"), sql`coalesce(${after}->>'ssn', '') <> 'changed'`);
+  else if (f.action === "identity_connected") out.push(eq(e.action, "update"), sql`${after}->>'identity' = 'connected'`);
+  else if (f.action === "identity_disconnected") out.push(eq(e.action, "update"), sql`${after}->>'identity' = 'disconnected'`);
+  // "Changed" lists the changes an SSN change or a connected identity is not (they have their own actions).
+  else if (f.action === "update") out.push(eq(e.action, "update"), sql`coalesce(${after}->>'ssn', '') <> 'changed'`, sql`coalesce(${after}->>'identity', '') not in ('connected', 'disconnected')`);
   else if (f.action) out.push(eq(e.action, f.action));
   return out;
 }

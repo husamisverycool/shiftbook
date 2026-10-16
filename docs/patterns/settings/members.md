@@ -54,6 +54,10 @@ everyone else sees the list.
 - Not the Owner: no Invite button and no row menus; a line says only the Owner manages members.
 - Saving: buttons show they are working.
 
+## Related
+- The agency's single sign-on is its own page beside Members in the agency menu
+  (`settings/sso.md`, decision 0033), as Linear keeps it under Security and Notion under Identity.
+
 ## Never copy
 Linear's, Stripe's or GitHub's wording, icons, colors or logos.
 

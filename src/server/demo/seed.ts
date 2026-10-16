@@ -37,7 +37,8 @@ import {
   type JobKey,
 } from "./dataset";
 import { scenario } from "./scenario";
-import { appKey } from "../auth/crypto";
+import { appKey, seal } from "../auth/crypto";
+import { DEMO_SSO_ISSUER, demoClientId, demoClientSecret } from "../auth/demo-idp-config";
 import { last4Of, sealSsn, ssnIndex } from "../workers/ssn";
 
 const agencyId = DEMO_AGENCY.id;
@@ -97,6 +98,9 @@ const CLEAR_ORDER = [
   "clients",
   "agency_settings",
   "pay_periods",
+  "agency_sso",
+  "email_sign_in_codes",
+  "user_identities",
   "auth_tokens",
   "user_logins",
   // Sessions are kept: the demo people are seeded again with the same ids, so a reset signs no one out.
@@ -122,6 +126,9 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
   await tx.insert(s.users).values(RECRUITERS.map((r) => ({ id: demoUuid(`user:${r.key}`), agencyId, name: r.name, email: r.email, role: r.role })));
   await tx.insert(s.users).values(STAFF.map((r) => ({ id: demoUuid(`user:${r.key}`), agencyId, name: r.name, email: r.email, role: r.role })));
   await tx.insert(s.branches).values(BRANCHES.map((b) => ({ id: demoUuid(`branch:${b.key}`), agencyId, name: b.name })));
+  // Single sign-on on, through the demo's stand-in provider (decision 0033); its secret derived at run time.
+  const ssoSecret = demoClientSecret("sso");
+  await tx.insert(s.agencySso).values({ agencyId, enabled: true, issuer: DEMO_SSO_ISSUER, clientId: demoClientId("sso"), clientSecret: seal(Buffer.from(ssoSecret, "utf8"), appKey(), `sso:${agencyId}`), secretLast4: ssoSecret.slice(-4), updatedByLabel: "Demo setup" });
   await tx.insert(s.burdenTaxRates).values(BURDEN_TAX_RATES.map((r) => ({ agencyId, ...r, effectiveFrom: SINCE, createdByLabel: "Demo setup" })));
   await tx.insert(s.wcRates).values(WC_RATES.map((r) => ({ agencyId, ...r, effectiveFrom: SINCE, createdByLabel: "Demo setup" })));
   await tx.insert(s.agencySettings).values(
