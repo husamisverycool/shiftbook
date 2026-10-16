@@ -2962,8 +2962,7 @@
       "noteRateEntered": "Equal-pay rate entered from {date}."
     },
     "explainUnits": {
-      "hours": "{count, plural, one {{n} hour} other {{n} hours}}",
-      "duration": "{h}h {m}m"
+      "hours": "{count, plural, one {{n} hour} other {{n} hours}}"
     },
     "citations": {
       "aca_offer": "26 U.S.C. § 4980H; 26 C.F.R. § 54.4980H-3(d) (a worker measured full-time is treated as full-time for the stability period: offer coverage from its first day)",

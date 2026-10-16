@@ -85,7 +85,7 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByTestId("margin-line-explain")).toContainText(locale === "en" ? "the overtime premium left out: 2/3 of $164.25" : "sin la prima de horas extra: 2/3 de $164.25");
     // The run's own explanation of the line, in the reader's language (decision 0030).
     await expect(page.getByTestId("margin-line-explain")).toContainText(
-      locale === "en" ? "Regular: 40h 00m (2400 min) × $18.25/h = 73000¢ exactly → $730.00." : "Horas regulares: 40 h 00 min (2400 min) × $18.25/h = 73000¢ exactos → $730.00.",
+      locale === "en" ? "Regular: 40:00 (2400 min) × $18.25/h = 73000¢ exactly → $730.00." : "Horas regulares: 40:00 (2400 min) × $18.25/h = 73000¢ exactos → $730.00.",
     );
     await check(page, "margin, a line opened");
 
@@ -117,7 +117,7 @@ for (const locale of ["en", "es"] as const) {
     await ot.getByRole("button").click();
     await expect(page.getByTestId("overtime-explain")).toContainText(locale === "en" ? "its premium (the part above straight time) $54.75" : "su prima (la parte por encima del tiempo sencillo) $54.75");
     await expect(page.getByTestId("overtime-line")).toHaveCount(2);
-    await expect(page.getByTestId("overtime-line").first()).toContainText(locale === "en" ? "Overtime: 6h 00m (360 min) × $27.375/h (1.5 × $18.25)" : "Horas extra: 6 h 00 min (360 min) × $27.375/h (1.5 × $18.25)");
+    await expect(page.getByTestId("overtime-line").first()).toContainText(locale === "en" ? "Overtime: 6:00 (360 min) × $27.375/h (1.5 × $18.25)" : "Horas extra: 6:00 (360 min) × $27.375/h (1.5 × $18.25)");
     await check(page, "overtime not billed");
 
     // Cash floating: the week's payroll, paid 5 days after it ended, not yet paid for.
