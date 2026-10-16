@@ -127,13 +127,19 @@ export function exactDecimalBig(num: bigint, den: bigint, places = 4): string {
   return `${negative ? "-" : ""}${text}${remainder !== 0n ? "…" : ""}`;
 }
 
-/** num/den (den > 0) in lowest terms as safe integers, or null when it does not fit: the caller holds the work. */
-export function reduceFractionBig(num: bigint, den: bigint): { num: number; den: number } | null {
+/** num/den (den > 0) in lowest terms, as big integers (exact sums of many fractions stay small). */
+export function lowestTermsBig(num: bigint, den: bigint): { num: bigint; den: bigint } {
   if (den <= 0n) throw new Error("denominator must be positive");
   let x = num < 0n ? -num : num;
   let y = den;
   while (y !== 0n) [x, y] = [y, x % y];
   const g = x === 0n ? 1n : x;
-  const out = { num: Number(num / g), den: Number(den / g) };
+  return { num: num / g, den: den / g };
+}
+
+/** num/den (den > 0) in lowest terms as safe integers, or null when it does not fit: the caller holds the work. */
+export function reduceFractionBig(num: bigint, den: bigint): { num: number; den: number } | null {
+  const low = lowestTermsBig(num, den);
+  const out = { num: Number(low.num), den: Number(low.den) };
   return Number.isSafeInteger(out.num) && Number.isSafeInteger(out.den) ? out : null;
 }

@@ -16,13 +16,12 @@ import { lineBurden } from "./burden";
 import { expectedOn, floatingRows, payDateOf, projection, type ExpectedInvoice, type PeriodClientCollected, type PeriodClientPaid } from "./floating";
 import { overtimeRows } from "./leakage";
 import { groupLines, totalsOf, weeksBetween, type GroupBy, type MarginDetail, type MarginLine, type SortBy } from "./margin";
+import { cardFor, doneRuns, firstDays, inForce, multipliers } from "../payroll/paid-lines";
 import { OT_PREMIUM_KEY, PAY_DAY_KEY } from "./service";
 
-const DONE: ("exported" | "closed")[] = ["exported", "closed"];
 /** Hours paid: the time worked (regular, overtime, double time). */
 const TIME = new Set(["REG", "OT", "DT"]);
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const inForce = <T extends { effectiveFrom: string; effectiveTo: string | null }>(rows: T[], date: string) => rows.find((r) => isEffective(date, r.effectiveFrom, r.effectiveTo));
 /** The longest chosen period, in weeks (two years). */
 export const MAX_WEEKS = 104;
 /** Days to pay counts invoices paid off in the year before the date (as slice h's H7). */
@@ -48,31 +47,6 @@ export async function marginPeriod(tx: Tx, today: string, ask: { weeks?: string;
   }
   const weeks = PRESET_WEEKS.find((w) => String(w) === ask.weeks) ?? 13;
   return { from: addDays(thisWeek, -7 * (weeks - 1)), to: thisWeek, preset: weeks };
-}
-
-interface DoneRun {
-  id: string;
-  payPeriodId: string;
-  version: number;
-  endsOn: string;
-}
-
-/**
- * The runs whose files were made: every version (the period's invoices are on all of them), and each
- * period's latest, whose lines are the whole period computed again (review finding 1).
- */
-async function doneRuns(tx: Tx): Promise<{ all: DoneRun[]; latest: DoneRun[] }> {
-  const all = await tx
-    .select({ id: s.payRuns.id, payPeriodId: s.payRuns.payPeriodId, version: s.payRuns.version, endsOn: s.payPeriods.endsOn })
-    .from(s.payRuns)
-    .innerJoin(s.payPeriods, eq(s.payPeriods.id, s.payRuns.payPeriodId))
-    .where(inArray(s.payRuns.status, DONE));
-  const latest = new Map<string, DoneRun>();
-  for (const r of all) {
-    const cur = latest.get(r.payPeriodId);
-    if (!cur || r.version > cur.version) latest.set(r.payPeriodId, r);
-  }
-  return { all, latest: [...latest.values()] };
 }
 
 /** Names and places behind the lines: assignments → job orders → clients, worksites, branches; recruiters; workers. */
@@ -117,31 +91,6 @@ async function directory(tx: Tx) {
   };
 }
 
-/** An overtime pay line's multiplier from its rule (overtime_rules): the worksite state's row, else the federal one. */
-async function multipliers(tx: Tx) {
-  const rules = await tx.select().from(s.overtimeRules);
-  return (ruleId: string, state: string | null, week: string) => {
-    const rows = rules.filter((r) => r.ruleCode === ruleId && isEffective(week, r.effectiveFrom, r.effectiveTo));
-    const r = rows.find((x) => x.jurisdiction === state) ?? rows.find((x) => x.jurisdiction === "US") ?? rows[0];
-    return r ? { num: r.multiplierNum, den: r.multiplierDen } : null;
-  };
-}
-
-/** The first day each pay line's time was worked (from its time entries), else its week's first day. */
-async function firstDays(tx: Tx, lines: { timeEntryIds: string[] }[]) {
-  const ids = [...new Set(lines.flatMap((l) => l.timeEntryIds))];
-  const dates = new Map<string, string>();
-  for (let i = 0; i < ids.length; i += 1000) {
-    const rows = await tx.select({ id: s.timeEntries.id, workDate: s.timeEntries.workDate }).from(s.timeEntries).where(inArray(s.timeEntries.id, ids.slice(i, i + 1000)));
-    for (const r of rows) if (r.workDate) dates.set(r.id, r.workDate);
-  }
-  return (l: { timeEntryIds: string[]; workweekStart: string }) =>
-    l.timeEntryIds
-      .map((id) => dates.get(id))
-      .filter((d): d is string => d !== undefined)
-      .sort(cmp)[0] ?? l.workweekStart;
-}
-
 export interface MarginView {
   from: string;
   to: string;
@@ -166,9 +115,6 @@ export async function marginLines(tx: Tx, from: string, to: string): Promise<Mar
   const [cards, taxes, wcs, multiplierOf, firstDay] = await Promise.all([tx.select().from(s.rateCards), tx.select().from(s.burdenTaxRates), tx.select().from(s.wcRates), multipliers(tx), firstDays(tx, pays)]);
   const exclude = new Map<string, boolean>();
   for (const week of new Set(pays.map((p) => p.workweekStart))) exclude.set(week, (await settingOn<boolean>(tx, OT_PREMIUM_KEY, week)) !== false);
-  // The rate card in force on the line's first day of work, else one that starts later that week (review finding 2).
-  const cardFor = (rows: (typeof s.rateCards.$inferSelect)[], day: string, week: string) =>
-    inForce(rows, day) ?? rows.filter((r) => r.effectiveFrom > day && r.effectiveFrom <= addDays(week, 6)).sort((x, y) => cmp(x.effectiveFrom, y.effectiveFrom))[0];
 
   const lines = new Map<string, MarginLine>();
   const lineFor = (assignmentId: string | null, workerId: string, week: string, clientId: string | null) => {

@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { exactDecimal, exactDecimalBig, floorDiv, mod, reduceFractionBig, roundHalfUp, roundHalfUpBig } from "./int";
+import { exactDecimal, exactDecimalBig, floorDiv, lowestTermsBig, mod, reduceFractionBig, roundHalfUp, roundHalfUpBig } from "./int";
 
 describe("roundHalfUp(num, den) — integer division rounded half away from zero", () => {
   it("rounds exact quotients without change", () => {
@@ -71,6 +71,15 @@ describe("big-integer helpers for line amounts", () => {
   });
 });
 
+
+describe("lowestTermsBig — exact lowest terms as big integers; the sign stays on the numerator", () => {
+  it("reduces", () => {
+    expect(lowestTermsBig(16_425n * 52n, 3n)).toEqual({ num: 284_700n, den: 1n });
+    expect(lowestTermsBig(-18n, 12n)).toEqual({ num: -3n, den: 2n });
+    expect(lowestTermsBig(0n, 7n)).toEqual({ num: 0n, den: 1n });
+    expect(() => lowestTermsBig(1n, 0n)).toThrow();
+  });
+});
 
 describe("reduceFractionBig — exact lowest terms, or null when it cannot be a safe integer", () => {
   it("reduces big numerators and denominators exactly", () => {

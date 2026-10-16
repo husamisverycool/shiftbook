@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { addObligationFile, addObligationNote, addPolicy, addRegistration, closeObligation, mayChangeComplianceSettings, recordI9, recordReverification, reopenObligation, setMaStatement, setObligationOwner, storeComplianceDocument, unlinkObligationFile, type ComplianceResult } from "@/server/compliance/service";
+import { addObligationFile, addObligationNote, addPolicy, addRegistration, closeObligation, mayChangeComplianceSettings, recordI9, recordReverification, reopenObligation, setMaContact, setMaStatement, setObligationOwner, setOpenWeekendDays, storeComplianceDocument, unlinkObligationFile, type ComplianceResult } from "@/server/compliance/service";
+import { createJobOrderNotice, createPacketDocument, createProofPage, saveNoticeDetails } from "@/server/compliance/documents";
 import { withAgency } from "@/server/db";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { currentActor } from "@/server/session";
@@ -80,9 +81,17 @@ export async function reverifyAction(obligationId: string, reverifiedOn: string,
   return run((tx, actor, today) => recordReverification(tx, actor, obligationId, { reverifiedOn, nextExpiresOn }, today));
 }
 
+/** A refusal after the file was kept: thrown so the transaction keeps nothing. */
+class Refused extends Error {
+  constructor(readonly result: ComplianceResult) {
+    super("refused");
+  }
+}
+
 /**
  * A registration, a policy or the Massachusetts statement with its file (FormData: the fields as JSON
- * in "data", and "file"). Only the Owner; the fields are checked before the file is kept.
+ * in "data", and "file"). Only the Owner; the fields are checked before the file is kept, and a
+ * refusal after it keeps nothing (the record rolls back and the stored bytes are removed).
  */
 async function withFile<T>(form: FormData, schema: z.ZodType<T>, save: (tx: Parameters<Parameters<typeof withAgency>[1]>[0], actor: ReturnType<typeof currentActor>, today: string, data: T, documentId: string | null) => Promise<ComplianceResult>, fileRequired = false): Promise<ComplianceActionResult> {
   if (!(form instanceof FormData)) return { ok: false, error: "generic" };
@@ -100,19 +109,29 @@ async function withFile<T>(form: FormData, schema: z.ZodType<T>, save: (tx: Para
   const upload = file instanceof File && file.size > 0 ? file : null;
   if (fileRequired && !upload) return { ok: false, error: "invalid", field: "file" };
   const bytes = upload ? new Uint8Array(await upload.arrayBuffer()) : null;
-  return run(async (tx, actor, today) => {
-    let documentId: string | null = null;
-    if (upload && bytes) {
-      const doc = await storeComplianceDocument(tx, actor, documentStore, { filename: upload.name, bytes, effectiveOn: today }, "upload");
-      if (!doc.ok) return doc;
-      documentId = doc.id;
-    }
-    return save(tx, actor, today, parsed.data, documentId);
-  });
+  let stored: string | null = null;
+  try {
+    return await run(async (tx, actor, today) => {
+      let documentId: string | null = null;
+      if (upload && bytes) {
+        const doc = await storeComplianceDocument(tx, actor, documentStore, { filename: upload.name, bytes, effectiveOn: today }, "upload");
+        if (!doc.ok) return doc;
+        documentId = doc.id;
+        stored = doc.storageKey;
+      }
+      const result = await save(tx, actor, today, parsed.data, documentId);
+      if (!result.ok && documentId) throw new Refused(result);
+      return result;
+    });
+  } catch (error) {
+    if (!(error instanceof Refused)) throw error;
+    if (stored) await documentStore.removePrefix(stored);
+    return error.result;
+  }
 }
 
 const RegistrationSchema = z.object({ jurisdiction: z.string().max(2), branchId: id.nullable(), number: z.string().max(200), issuedOn: dateOrNull, expiresOn: isoDate }).strict();
-const PolicySchema = z.object({ carrier: z.string().max(400), policyNumber: z.string().max(200), states: z.array(z.string().max(2)).max(60), startsOn: isoDate, endsOn: isoDate, auditDueOn: dateOrNull }).strict();
+const PolicySchema = z.object({ carrier: z.string().max(400), carrierContact: z.string().max(1000).nullable(), policyNumber: z.string().max(200), states: z.array(z.string().max(2)).max(60), startsOn: isoDate, endsOn: isoDate, auditDueOn: dateOrNull }).strict();
 
 export async function addRegistrationAction(form: FormData): Promise<ComplianceActionResult> {
   return withFile(form, RegistrationSchema, (tx, actor, today, data, documentId) => addRegistration(tx, actor, { ...data, documentId }, today));
@@ -124,4 +143,30 @@ export async function addPolicyAction(form: FormData): Promise<ComplianceActionR
 
 export async function setMaStatementAction(form: FormData): Promise<ComplianceActionResult> {
   return withFile(form, z.object({}).strict(), (tx, actor, today, _data, documentId) => setMaStatement(tx, actor, documentId!, today), true);
+}
+
+/** Makes the duty's document (the proof page, the job order, the packet) and keeps it as evidence. */
+export async function makeDocumentAction(obligationId: string, kind: string): Promise<ComplianceActionResult> {
+  if (!id.safeParse(obligationId).success) return { ok: false, error: "generic" };
+  const make = kind === "ma_job_order" ? createJobOrderNotice : kind === "wc_audit" ? createPacketDocument : kind === "il_client_proof" || kind === "il_client_proof_contract" ? createProofPage : null;
+  if (!make) return { ok: false, error: "generic" };
+  return run((tx, actor, today) => make(tx, actor, documentStore, obligationId, today));
+}
+
+const NoticeSchema = z.object({ employerPhone: z.string().max(80), startTime: z.string().max(5), endTime: z.string().max(5), overtime: z.enum(["yes", "no", "possible"]), requirements: z.string().max(600), meals: z.string().max(600), transport: z.string().max(600), strike: z.boolean() }).strict();
+
+export async function saveNoticeDetailsAction(obligationId: string, input: unknown): Promise<ComplianceActionResult> {
+  const parsed = NoticeSchema.safeParse(input);
+  if (!id.safeParse(obligationId).success || !parsed.success) return { ok: false, error: "generic" };
+  return run((tx, actor) => saveNoticeDetails(tx, actor, obligationId, parsed.data));
+}
+
+export async function setMaContactAction(contact: string): Promise<ComplianceActionResult> {
+  if (typeof contact !== "string" || contact.length > 1000) return { ok: false, error: "generic" };
+  return run((tx, actor, today) => setMaContact(tx, actor, contact, today));
+}
+
+export async function setOpenDaysAction(days: unknown): Promise<ComplianceActionResult> {
+  if (!Array.isArray(days) || days.length > 2) return { ok: false, error: "generic" };
+  return run((tx, actor, today) => setOpenWeekendDays(tx, actor, days, today));
 }

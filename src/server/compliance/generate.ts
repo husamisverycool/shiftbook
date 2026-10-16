@@ -7,16 +7,22 @@
  * - Registrations (820 ILCS 175/45, 56 Ill. Adm. Code 260.320; 454 CMR 24.06; N.J.S.A. 34:8D-8): a
  *   renewal before each one expires; a newer one for the same state and office renews it.
  * - Illinois proof of registration (820 ILCS 175/85(a); 260.510): for each client with day and
- *   temporary labor in Illinois, before the contract starts and on each March 1 and September 1 a
- *   placement is running, up to the next one.
+ *   temporary labor in Illinois, before each contract starts (a placement after a gap longer than
+ *   the rule's window), and on each March 1 and September 1 the client has covered work running or
+ *   within the window before, up to the next one.
  * - Massachusetts job order (M.G.L. c. 149 § 159C(b)): by the end of the placement's first pay period.
  * - New Jersey notice in English and the worker's language (N.J.S.A. 34:8D-3(a)): designated
  *   classifications only (SOC major groups in the rule row), by the start.
- * - Form I-9 (8 C.F.R. § 274a.2(b)(1)): Section 1 by the first day, Section 2 three business days
- *   later (weekends skipped; holidays counted, which gives the earlier, safe date), reverification by
- *   the end of the work authorization. Dates only (decision J4).
- * - Workers' comp: renewal by the day the policy ends; the premium audit on its date.
- * The run records the Illinois equal-pay crossings itself (slice c).
+ * - Form I-9 (8 C.F.R. § 274a.2(b)(1)): one per hire date. Section 1 by the first day, Section 2
+ *   three business days later (Monday to Friday and the weekend days the agency is open; holidays
+ *   counted, which gives the earlier, safe date), or by the first day for a job shorter than that;
+ *   a date recorded more than the rule's window before the hire belongs to an earlier hire.
+ *   Reverification by the end of the work authorization. Dates only (decision J4).
+ * - Workers' comp: renewal by the day the policy ends (a following policy covering at least the same
+ *   states renews it); the premium audit on its date.
+ * A duty further back than its rule's look-back is marked too old: not created, but one already on
+ * file is kept (an overdue duty never closes because it is old). The run records the Illinois
+ * equal-pay crossings itself (slice c).
  */
 import { addDays, isEffective, weekdayOf } from "@shiftbook/rules";
 
@@ -35,6 +41,8 @@ export interface ComplianceRule {
   /** "MM-DD" each year. */
   fixedDates: string[];
   lookbackDays: number;
+  /** How far back related facts count: covered work before an Illinois date or contract; an I-9 date before the hire. */
+  windowDays: number;
   socGroups: string[];
   roles: string[];
   citation: string;
@@ -56,6 +64,8 @@ export interface Policy {
   id: string;
   carrier: string;
   policyNumber: string;
+  /** The states it covers; none listed: all. */
+  states: string[];
   startsOn: string;
   endsOn: string;
   auditDueOn: string | null;
@@ -84,6 +94,15 @@ export interface WorkerI9 {
   i9Section1On: string | null;
   i9Section2On: string | null;
   workAuthExpiresOn: string | null;
+  /** When the job that starts on the hire date ends (the latest such placement); null: open-ended or unknown. */
+  firstJobEndsOn: string | null;
+}
+
+/** The weekdays (0 Sunday … 6 Saturday) the agency is open, from a date (an agency setting). */
+export interface OpenDays {
+  weekdays: number[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
 }
 
 export interface GenerateInput {
@@ -93,6 +112,7 @@ export interface GenerateInput {
   policies: Policy[];
   placements: Placement[];
   workers: WorkerI9[];
+  openDays: OpenDays[];
 }
 
 export type Facts = Record<string, string | number | boolean | null>;
@@ -117,19 +137,24 @@ export interface Wanted extends Subject {
   message: string;
   /** Closed by the data itself (renewed; the date recorded), with the note saying how. */
   done: { note: string } | null;
+  /** Due further back than the rule's look-back: not created, but kept if already on file. */
+  tooOld: boolean;
 }
 
 export const keyOf = (s: Subject) => [s.kind, s.workerId ?? "", s.clientId ?? "", s.assignmentId ?? "", s.registrationId ?? "", s.policyId ?? "", s.occurrence].join("|");
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
-/** n business days after a date: Monday to Friday; holidays are not skipped (the earlier date). */
-export function addBusinessDays(date: string, n: number): string {
+/** Monday to Friday always count as business days; holidays are not skipped (the earlier date). */
+export const WEEKDAYS_OPEN = [1, 2, 3, 4, 5];
+
+/** n business days after a date: Monday to Friday, and the weekend days in `open`; holidays are not skipped (the earlier date). */
+export function addBusinessDays(date: string, n: number, open: number[] = WEEKDAYS_OPEN): string {
   let d = date;
   for (let left = n; left > 0; ) {
     d = addDays(d, 1);
     const w = weekdayOf(d);
-    if (w !== 0 && w !== 6) left -= 1;
+    if (WEEKDAYS_OPEN.includes(w) || open.includes(w)) left -= 1;
   }
   return d;
 }
@@ -139,15 +164,15 @@ const REGISTRATION_RULE: Record<Registration["jurisdiction"], string> = { IL: "i
 export function wantedObligations(input: GenerateInput): Wanted[] {
   const out: Wanted[] = [];
   const ruleOn = (code: string, date: string) => input.rules.find((r) => r.code === code && isEffective(date, r.effectiveFrom, r.effectiveTo)) ?? null;
-  /** Not created when its due date is further back than the rule's look-back. */
-  const recent = (r: ComplianceRule, dueOn: string) => dueOn >= addDays(input.today, -r.lookbackDays);
+  /** Too old when its due date is further back than the rule's look-back. */
+  const tooOld = (r: ComplianceRule, dueOn: string) => dueOn < addDays(input.today, -r.lookbackDays);
   const none = { workerId: null, clientId: null, assignmentId: null, registrationId: null, policyId: null };
-  const push = (r: ComplianceRule, w: Omit<Wanted, "kind" | "jurisdiction" | "subjectKind" | "remindOn" | "message"> & { anchorText: string }) => {
-    if (!recent(r, w.dueOn)) return;
+  const push = (r: ComplianceRule, w: Omit<Wanted, "kind" | "jurisdiction" | "subjectKind" | "remindOn" | "message" | "tooOld"> & { anchorText: string }) => {
     const { anchorText, ...rest } = w;
-    out.push({ ...rest, kind: r.code, jurisdiction: r.jurisdiction, subjectKind: r.subjectKind, remindOn: addDays(w.dueOn, -r.remindDays), message: `${anchorText} (${r.citation}).` });
+    out.push({ ...rest, kind: r.code, jurisdiction: r.jurisdiction, subjectKind: r.subjectKind, remindOn: addDays(w.dueOn, -r.remindDays), message: `${anchorText} (${r.citation}).`, tooOld: tooOld(r, w.dueOn) });
   };
-  const dueAfter = (r: ComplianceRule, anchor: string) => (r.businessDays > 0 ? addBusinessDays(anchor, r.businessDays) : addDays(anchor, r.offsetDays));
+  const openOn = (date: string) => input.openDays.find((o) => isEffective(date, o.effectiveFrom, o.effectiveTo))?.weekdays ?? WEEKDAYS_OPEN;
+  const dueAfter = (r: ComplianceRule, anchor: string) => (r.businessDays > 0 ? addBusinessDays(anchor, r.businessDays, openOn(anchor)) : addDays(anchor, r.offsetDays));
   const expiryText = (what: string, anchor: string, r: ComplianceRule, due: string) =>
     r.offsetDays < 0 ? `${what} expires ${anchor}; due ${-r.offsetDays} days before, on ${due}` : r.offsetDays === 0 ? `${what} ends ${anchor}; due that day` : `${what} expires ${anchor}; due ${r.offsetDays} days after, on ${due}`;
 
@@ -168,24 +193,38 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
     });
   }
 
-  // Illinois clients with day and temporary labor: proof before the contract starts, and on the fixed dates.
+  // Illinois clients with day and temporary labor: proof before each contract starts, and on the fixed dates.
   const live = input.placements.filter((p) => p.status !== "cancelled");
   const covered = live.filter((p) => p.state === "IL" && p.dayAndTemporaryLabor);
+  const proofRules = input.rules.filter((r) => r.code === "il_client_proof");
+  const fromYear = Number(addDays(input.today, -Math.max(0, ...proofRules.map((r) => r.lookbackDays))).slice(0, 4));
+  const toYear = Number(input.today.slice(0, 4)) + 1;
+  const dates = [...new Set(Array.from({ length: toYear - fromYear + 1 }, (_, i) => fromYear + i).flatMap((y) => proofRules.flatMap((r) => r.fixedDates).map((md) => `${y}-${md}`)))].sort(cmp);
+  const nextDate = dates.find((d) => d >= input.today);
   for (const clientId of [...new Set(covered.map((p) => p.clientId))]) {
     const mine = covered.filter((p) => p.clientId === clientId).sort((a, b) => cmp(a.startDate, b.startDate) || cmp(a.id, b.id));
-    const first = mine[0]!.startDate;
-    const contract = ruleOn("il_client_proof_contract", first);
-    if (contract) push(contract, { ...none, clientId, occurrence: "contract", dueOn: first, facts: { contractStarts: first }, done: null, anchorText: `The first placement starts ${first}; proof of registration due by then` });
-    const runningOn = (d: string) => mine.some((p) => p.startDate <= d && (p.endDate === null || p.endDate >= d));
-    const years = Number(input.today.slice(0, 4));
-    const fixed = (code: string) => input.rules.filter((r) => r.code === code).flatMap((r) => r.fixedDates);
-    const dates = [...new Set([years - 2, years - 1, years, years + 1].flatMap((y) => fixed("il_client_proof").map((md) => `${y}-${md}`)))].sort(cmp);
-    const nextDate = dates.find((d) => d >= input.today);
+    // A contract starts with a placement when no covered work for the client ran within the window before it.
+    let lastEnd: string | null = null;
+    for (const p of mine) {
+      const r = ruleOn("il_client_proof_contract", p.startDate);
+      const ongoing = lastEnd !== null && (lastEnd === "open" || lastEnd >= addDays(p.startDate, -(r?.windowDays ?? 0)));
+      if (!ongoing && r) {
+        const since = lastEnd === null ? "" : `, more than ${r.windowDays} days after the client's last covered work (${lastEnd})`;
+        push(r, { ...none, clientId, occurrence: `contract:${p.startDate}`, dueOn: p.startDate, facts: { contractStarts: p.startDate }, done: null, anchorText: `A placement starts ${p.startDate}${since}; proof of registration due by then` });
+      }
+      const end = p.endDate ?? "open";
+      if (lastEnd !== "open" && (end === "open" || lastEnd === null || end > lastEnd)) lastEnd = end;
+    }
     for (const d of dates) {
-      if (nextDate === undefined || d > nextDate || !runningOn(d)) continue;
+      if (nextDate === undefined || d > nextDate) continue;
       const r = ruleOn("il_client_proof", d);
       if (!r || !r.fixedDates.includes(d.slice(5))) continue;
-      push(r, { ...none, clientId, occurrence: d, dueOn: addDays(d, r.offsetDays), facts: { date: d }, done: null, anchorText: `A placement is running on ${d}, one of the dates (${r.fixedDates.join(", ")}) the client checks the agency's registration` });
+      const from = addDays(d, -r.windowDays);
+      const running = mine.some((p) => p.startDate <= d && (p.endDate === null || p.endDate >= d));
+      const recently = !running && mine.some((p) => p.startDate <= d && p.endDate !== null && p.endDate >= from);
+      if (!running && !recently) continue;
+      const why = running ? `A placement is running on ${d}` : `The client had covered work within ${r.windowDays} days before ${d}`;
+      push(r, { ...none, clientId, occurrence: d, dueOn: addDays(d, r.offsetDays), facts: { date: d }, done: null, anchorText: `${why}, one of the dates (${r.fixedDates.join(", ")}) the client checks the agency's registration` });
     }
   }
 
@@ -204,18 +243,33 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
     }
   }
 
-  // Form I-9, as dates.
+  // Form I-9, as dates: one per hire date.
   for (const w of input.workers) {
     if (w.hireDate) {
+      const hire = w.hireDate;
       for (const [code, doneOn, part] of [
         ["i9_section1", w.i9Section1On, "Section 1"],
         ["i9_section2", w.i9Section2On, "Section 2"],
       ] as const) {
-        const r = ruleOn(code, w.hireDate);
+        const r = ruleOn(code, hire);
         if (!r) continue;
-        const dueOn = dueAfter(r, w.hireDate);
-        const how = r.businessDays > 0 ? `due ${r.businessDays} business days later (weekends skipped), on ${dueOn}` : dueOn === w.hireDate ? "due by the first day" : `due on ${dueOn}`;
-        push(r, { ...none, workerId: w.id, occurrence: "", dueOn, facts: { hireDate: w.hireDate, completedOn: doneOn }, done: doneOn ? { note: `${part} completed on ${doneOn}.` } : null, anchorText: `Hired ${w.hireDate}; ${how}` });
+        // A job shorter than the business days: Section 2 by the first day (M-274 4.0).
+        const open = openOn(hire);
+        const short = r.businessDays > 0 && w.firstJobEndsOn !== null && w.firstJobEndsOn < addBusinessDays(addDays(hire, -1), r.businessDays, open);
+        const dueOn = short ? hire : dueAfter(r, hire);
+        const weekend = open.filter((d) => !WEEKDAYS_OPEN.includes(d));
+        const counted = weekend.length === 0 ? "weekends skipped" : `Monday to Friday and ${weekend.map((d) => (d === 6 ? "Saturday" : "Sunday")).join(" and ")} counted`;
+        const how = short
+          ? `the job ends ${w.firstJobEndsOn}, less than ${r.businessDays} business days: due by the first day`
+          : r.businessDays > 0
+            ? `due ${r.businessDays} business days later (${counted}), on ${dueOn}`
+            : dueOn === hire
+              ? "due by the first day"
+              : `due on ${dueOn}`;
+        // A date recorded long before this hire belongs to an earlier one.
+        const counts = doneOn !== null && doneOn >= addDays(hire, -r.windowDays);
+        const earlier = doneOn !== null && !counts ? `; ${part} on file is dated ${doneOn}, more than ${r.windowDays} days before this hire` : "";
+        push(r, { ...none, workerId: w.id, occurrence: hire, dueOn, facts: { hireDate: hire, completedOn: counts ? doneOn : null }, done: counts ? { note: `${part} completed on ${doneOn}.` } : null, anchorText: `Hired ${hire}; ${how}${earlier}` });
       }
     }
     if (w.workAuthExpiresOn) {
@@ -232,7 +286,9 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
     const r = ruleOn("wc_policy_renewal", p.endsOn);
     if (r) {
       const dueOn = dueAfter(r, p.endsOn);
-      const next = input.policies.filter((o) => o.id !== p.id && o.startsOn <= addDays(p.endsOn, 1) && o.endsOn > p.endsOn).sort((a, b) => cmp(a.startsOn, b.startsOn))[0];
+      // A following policy renews it when it starts by the next day and covers at least the same states.
+      const covers = (o: Policy) => o.states.length === 0 || (p.states.length > 0 && p.states.every((x) => o.states.includes(x)));
+      const next = input.policies.filter((o) => o.id !== p.id && o.startsOn <= addDays(p.endsOn, 1) && o.endsOn > p.endsOn && covers(o)).sort((a, b) => cmp(a.startsOn, b.startsOn))[0];
       push(r, { ...none, policyId: p.id, occurrence: "", dueOn, facts: { carrier: p.carrier, policyNumber: p.policyNumber, endsOn: p.endsOn, renewedBy: next?.policyNumber ?? null, renewedUntil: next?.endsOn ?? null }, done: next ? { note: `Renewed: ${next.policyNumber}, from ${next.startsOn} to ${next.endsOn}.` } : null, anchorText: expiryText(`Policy ${p.policyNumber}`, p.endsOn, r, dueOn) });
     }
     if (p.auditDueOn) {

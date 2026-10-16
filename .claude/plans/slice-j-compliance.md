@@ -92,9 +92,9 @@ the Illinois equal-pay rate so the run pays it, and see who is full-time under t
   stored that could drift. The run uses the same balances, so a crossing found here is the run's.
 - J6 **Illinois equal-pay rate** (finishes C3): entered on the crossing's obligation — the client's
   comparator rate (or the method the client chose and its rate), the hourly cash value of benefits,
-  and the comparator's seniority or SOC code (§ 10(a)(7)) — from a date. The run pays at least that
-  rate for every hour at that client from the crossing (a top-up line, part of the regular rate, as
-  the minimum wage), plus the benefits' cash value per hour worked. **Pay is never held** (paying late
+  and the comparator's seniority or SOC code (§ 10(a)(7)) — from a date. From that date the run pays
+  that worker at that client at least the rate plus the benefits' cash value per hour (the pay rate
+  is raised, so overtime's regular rate includes it), and each pay line says why. **Pay is never held** (paying late
   is itself a violation): from the week after a crossing with no rate on file, the run is blocked
   for that worker until the rate is entered, or the Owner records that the client's data was asked
   for on a date and the week is paid at the rate card now and trued up by a correction later.
@@ -127,3 +127,46 @@ the Illinois equal-pay rate so the run pays it, and see who is full-time under t
 6. Should the Illinois proof page be emailed to clients before March 1 and September 1, or only printed?
 7. While a client's equal-pay data is late, should we pay at the rate card and true up later (our
    default), or wait?
+
+## Step 3 in detail (2026-10-16, after steps 1–2 and their second opinion)
+Three parts, each usable end to end before the next.
+
+**3a — Hours counters with opening balances (J5).**
+- Data: `hours_opening_balances` (worker, client, minutes, the date they run to, a note; who and
+  when; tenant isolated; audited; never edited, a wrong one is removed by the Owner with a reason).
+- The run counts them as hours worked at the client on the date they run to (the safe reading: the
+  latest date they could have been worked, so they stay in the 12- and 48-month windows longest).
+- `/compliance/counters` (pattern `compliance/counters.md`, TempWorks ACA Employee Cycles): one row
+  per worker and Illinois client with covered work or a balance — hours in the 12 and 48 months to
+  today, the crossing on file or hours to go, the equal-pay rate on file; filters client and Show
+  (all, near — past the rule's heads-up — crossed); a row opens its balances with Add balance.
+- Tests: a pure counter function (windows, balances, thresholds from the rule row); integration: a
+  balance makes the run find the crossing; the page in English and Spanish.
+
+**3b — The Illinois equal-pay rate (J6; a wage-rule change: second opinion).**
+- Data: `equal_pay_rates` (worker, client, from a date; the comparable direct hire's hourly rate and
+  the hourly cash value of benefits, how the client compared — a comparable direct hire, or the
+  wage-survey method's 75th percentile — and the comparator's job or seniority; or "asked the client
+  on a date", which pays the rate card now and is trued up by a correction later); entered on the
+  crossing's duty page by the Owner; audited; dated rows, never edited.
+- Engine (pure, `packages/rules/src/rules/il-equal-pay-rate.ts`): from the rate's date, a shift of
+  that worker at that client is paid at least the rate plus the benefits' value (the shift's pay rate
+  is raised, so the regular rate and overtime follow) and its pay line says why; the "rate missing"
+  warning is not raised for weeks with a rate on file. Outputs for inputs without rates are unchanged,
+  so the rules version and the approved answer keys stay; a proposed answer key shows the raise.
+- Run: a blocker `equal_pay_rate_needed` for a worker with hours at the client in a pay period that
+  starts after the one the crossing fell in, with neither a rate nor "asked on" on file.
+- Tests first: engine unit tests with hand arithmetic; integration through the run; the duty page.
+
+**3c — ACA look-back (J8).**
+- Data: dated settings (standard measurement months and first month, administrative days, stability
+  months) checked against dated limits in `aca_rules` (3–12 months, at most 90 days, at least 6 months
+  and no shorter than the measurement period, 30 hours a week, a 13-week break); monthly hours from
+  before Shiftbook imported from a CSV (`aca_monthly_hours`).
+- Hours of service: paid minutes of the latest paid version of each period (worked, holiday and
+  leave lines; not premiums), by the day worked, plus the imported months.
+- `/compliance/aca` (pattern `compliance/aca.md`, TempWorks ACA Employee Cycles): one row per worker
+  and cycle — hire date, cycle (initial or standard), measurement start, end, hours, weeks, average,
+  full-time or not; administrative and stability periods; a break in service; filters and Show.
+- Duty `aca_offer` (rule row, citation 26 C.F.R. § 54.4980H-3): coverage offered by the end of the
+  administrative period to each worker measured full-time.

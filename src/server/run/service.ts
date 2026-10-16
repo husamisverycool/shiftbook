@@ -22,6 +22,7 @@ import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import { EQUAL_PAY_KINDS } from "../compliance/kinds";
+import { SYSTEM } from "../compliance/sync";
 import * as s from "../db/schema";
 import type { ExportPayLine } from "../../exports/registry";
 import { makesVms, planEntries, vmsInput } from "../files/invoice-documents";
@@ -34,7 +35,7 @@ import { FILE_OF, SYSTEM_OF, WORKER_ID_NAME } from "../../exports/targets";
 import type { Actor } from "../session";
 import { billForDiff, decisionText, describeMoves, fileWorkers, hasRealDifferences, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
 import type { RunIssueCode } from "./issue-codes";
-import { openPeriod, PeriodLockedError } from "./period-lock";
+import { lockCompliance, openPeriod, PeriodLockedError } from "./period-lock";
 
 export { PeriodLockedError } from "./period-lock";
 export { settingOn } from "../settings";
@@ -70,6 +71,8 @@ export interface RunResult {
 const INT4_MAX = 2_147_483_647;
 /** Line types that are worked time, billed minute for minute (pay-only lines are not billed time). */
 const BILLED_TIME = new Set<string>(WORKED_TIME);
+/** The note on an equal-pay duty whose crossing the run no longer finds (its hours changed). */
+export const NOT_CROSSED = "No longer applies: the hours that crossed the threshold changed.";
 type EqualPayRow = typeof s.obligations.$inferSelect & { kind: ObligationKind; workerId: string; clientId: string; crossedOn: string };
 const equalPayRows = (rows: (typeof s.obligations.$inferSelect)[]): EqualPayRow[] =>
   rows.filter((o): o is EqualPayRow => (EQUAL_PAY_KINDS as readonly string[]).includes(o.kind) && o.workerId !== null && o.clientId !== null && o.crossedOn !== null);
@@ -493,8 +496,11 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       .filter((r): r is { workerId: string; clientId: string; date: string; minutes: number } => r.workerId !== null && r.date !== null)
       .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.date, b.date));
   }
-  // This run's own obligations are recomputed, except one a person already marked done.
-  const obligationsOnFile = equalPayRows(await tx.select().from(s.obligations).where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), ne(s.obligations.status, "open")))))
+  // This run's own obligations are recomputed, except one a person already closed; one Shiftbook set
+  // aside (the hours that crossed changed) is not on file. The compliance lock keeps the duties still
+  // until this run has written its own (slice j second opinion).
+  await lockCompliance(tx, actor.agencyId);
+  const obligationsOnFile = equalPayRows(await tx.select().from(s.obligations).where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), eq(s.obligations.closedBySystem, false), or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), ne(s.obligations.status, "open")))))
     .map((o) => ({ kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn }))
     .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.kind, b.kind));
   const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, hoursWorked, obligationsOnFile, ...tables };
@@ -717,23 +723,48 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const mine = equalPayRows(await tx.select().from(s.obligations).where(and(eq(s.obligations.payRunId, run.id), inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]))));
   const keyOf = (o: { kind: string; workerId: string; clientId: string; crossedOn: string }) => `${o.kind}|${o.workerId}|${o.clientId}|${o.crossedOn}`;
   const wanted = new Set(result.obligations.map(keyOf));
+  // One no longer crossed goes: deleted while nobody has touched it, else set aside with its notes,
+  // files and owner kept (Shiftbook's own closing, so a later run may open it again).
   const gone = mine.filter((m) => m.status === "open" && !wanted.has(keyOf(m)));
   if (gone.length > 0) {
-    await tx.delete(s.obligations).where(inArray(s.obligations.id, gone.map((m) => m.id)));
-    await audit(tx, actor, gone.map((m) => ({ action: "delete" as const, entityType: "obligation", entityId: m.id, before: { kind: m.kind, workerId: m.workerId, clientId: m.clientId, crossedOn: m.crossedOn }, reason: "the run's hours changed" })));
+    const ids = gone.map((m) => m.id);
+    const [noted, filed] = await Promise.all([
+      tx.selectDistinct({ id: s.obligationNotes.obligationId }).from(s.obligationNotes).where(inArray(s.obligationNotes.obligationId, ids)),
+      tx.selectDistinct({ id: s.obligationDocuments.obligationId }).from(s.obligationDocuments).where(inArray(s.obligationDocuments.obligationId, ids)),
+    ]);
+    const touched = new Set([...noted, ...filed].map((r) => r.id));
+    const keep = gone.filter((m) => touched.has(m.id) || m.ownerUserId !== null);
+    const drop = gone.filter((m) => !keep.includes(m));
+    if (drop.length > 0) {
+      await tx.delete(s.obligations).where(inArray(s.obligations.id, drop.map((m) => m.id)));
+      await audit(tx, actor, drop.map((m) => ({ action: "delete" as const, entityType: "obligation", entityId: m.id, before: { kind: m.kind, workerId: m.workerId, clientId: m.clientId, crossedOn: m.crossedOn }, reason: "the run's hours changed" })));
+    }
+    if (keep.length > 0) {
+      await tx.update(s.obligations).set({ status: "not_applicable", statusNote: NOT_CROSSED, doneAt: new Date(), doneBy: null, doneByLabel: SYSTEM, closedBySystem: true }).where(inArray(s.obligations.id, keep.map((m) => m.id)));
+      await audit(tx, actor, keep.map((m) => ({ action: "update" as const, entityType: "obligation", entityId: m.id, before: { status: "open" }, after: { status: "not_applicable" }, reason: NOT_CROSSED })));
+    }
   }
+  const reopened = { status: "open" as const, statusNote: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false };
   for (const o of result.obligations) {
     const overdue = o.crossedOn < period.startsOn;
     const dueOn = overdue ? period.startsOn : period.endsOn;
     const facts: s.ObligationEvidence = { ruleCode: o.ruleCode, citation: o.citation, crossedAtMinute: o.crossedAtMinute, windowStart: o.windowStart, thresholdMinutes: o.thresholdMinutes, minutesAfter: o.minutesAfter, earlierMinutesAfter: o.earlierMinutesAfter, overdue, entryIds: o.entryIds };
     const same = mine.find((m) => keyOf(m) === keyOf(o));
     if (same) {
-      await tx.update(s.obligations).set({ facts, message: o.message, dueOn }).where(eq(s.obligations.id, same.id));
+      const again = same.closedBySystem && same.status !== "open";
+      await tx.update(s.obligations).set({ facts, message: o.message, dueOn, ...(again ? reopened : {}) }).where(eq(s.obligations.id, same.id));
+      if (again) await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: same.id, before: { status: same.status }, after: { status: "open" }, reason: "the run's hours cross again" }]);
       continue;
     }
     // One obligation per worker, client and kind: the engine records one only when it crosses earlier
     // than the one on file (a late timesheet), and then the row moves to this run's earlier crossing.
+    // One Shiftbook set aside is not on file for the engine: the new crossing takes it over, open.
     const [held] = equalPayRows(await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, o.kind), eq(s.obligations.workerId, o.workerId), eq(s.obligations.clientId, o.clientId))));
+    if (held?.closedBySystem) {
+      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message, ...reopened }).where(eq(s.obligations.id, held.id));
+      await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: held.id, before: { status: held.status, crossedOn: held.crossedOn }, after: { status: "open", crossedOn: o.crossedOn }, reason: "the run's hours cross again" }]);
+      continue;
+    }
     if (held) {
       if (o.crossedOn >= held.crossedOn) throw new Error(`Obligation ${held.id} is already on file from ${held.crossedOn}; the run found ${o.crossedOn}.`);
       await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message }).where(eq(s.obligations.id, held.id));

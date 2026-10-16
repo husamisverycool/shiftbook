@@ -2364,7 +2364,8 @@
     "tabsLabel": "Compliance views",
     "tabs": {
       "list": "List",
-      "calendar": "Calendar"
+      "calendar": "Calendar",
+      "workersComp": "Workers' comp"
     },
     "areasLabel": "Areas",
     "areas": {
@@ -2549,7 +2550,41 @@
         "renewed": "Renewed by {number}, which runs to {date}.",
         "completed": "Completed on {date}.",
         "noLonger": "It no longer applies: what it was worked out from has changed."
-      }
+      },
+      "create": {
+        "il_client_proof": "Make the proof page",
+        "il_client_proof_contract": "Make the proof page",
+        "ma_job_order": "Make the job order",
+        "wc_audit": "Make the packet",
+        "made": "Made and added to the evidence.",
+        "hint": "Shiftbook makes the document from what it knows and keeps it here."
+      },
+      "notice": {
+        "title": "Job order details",
+        "intro": "What the job order states that Shiftbook does not otherwise know. Kept on the job order for every placement.",
+        "startTime": "Daily start",
+        "endTime": "Anticipated end",
+        "overtime": "Overtime",
+        "overtimeOptions": {
+          "yes": "Will occur",
+          "possible": "May occur",
+          "no": "Not expected"
+        },
+        "requirements": "Clothing, equipment, training or licenses, and their cost",
+        "meals": "Meals (provided? charge?)",
+        "transport": "Transportation (provided? fee?)",
+        "strike": "A strike or lockout at the worksite",
+        "save": "Save details",
+        "saved": "Saved.",
+        "missing": "Add the job order details first.",
+        "department": "Add the Department's contact details in Compliance settings first.",
+        "noStatement": "No multilingual statement on file: the job order will say it must be given. Add it in Compliance settings.",
+        "employerPhone": "Worksite employer's phone ({client})",
+        "agencyPhone": "The agency has no phone number on file, and the job order must give it."
+      },
+      "missingRegistration": "No Illinois registration in force: add it in Compliance settings first.",
+      "noI9Files": "Form I-9 copies are not kept in Shiftbook (they hold Social Security numbers and birth dates): record the dates on Overview, and keep the form where the law asks.",
+      "proofNoRegistration": "No Illinois registration in force on {date}, the day the client checks: add the renewed registration first."
     },
     "who": {
       "owner": "the Owner",
@@ -2568,15 +2603,30 @@
         "file_size": "The file is empty or larger than 20 MB.",
         "effective_on": "Enter the date the file took effect.",
         "section1On": "A completed date can't be later than today.",
-        "section2On": "Section 2 can't be before the first day or later than today.",
+        "section2On": "Section 2 can't be before Section 1 or later than today.",
         "reverifiedOn": "The reverification date can't be later than today.",
         "nextExpiresOn": "The new end date must be after the reverification.",
         "reason": "Say why it does not apply.",
         "note": "Keep the note under 500 characters.",
         "body": "Write the note (up to 2,000 characters).",
         "hireDate": "Enter a date.",
-        "workAuthExpiresOn": "Enter a date."
-      }
+        "workAuthExpiresOn": "Enter a date.",
+        "registration": "No Illinois registration in force on the duty's date: add it in Compliance settings.",
+        "details": "Add the job order details first.",
+        "department": "Add the Department's contact details in Compliance settings first.",
+        "startTime": "Enter a time like 07:00.",
+        "endTime": "Enter a time like 15:30.",
+        "requirements": "Say what is required, or \"None\" (up to 300 characters).",
+        "meals": "Say whether meals are provided and any charge (up to 300 characters).",
+        "transport": "Say whether transportation is provided and any fee (up to 300 characters).",
+        "contact": "Enter the contact details (up to 500 characters).",
+        "i9_files": "Form I-9 copies are not kept in Shiftbook: record the dates only.",
+        "agency_phone": "The agency has no phone number on file, and the job order must give it.",
+        "employerPhone": "Enter the worksite employer's phone number.",
+        "carrierContact": "Keep the insurer's address and phone under 500 characters.",
+        "days": "Choose Saturday, Sunday, both or neither."
+      },
+      "closed_by_data": "Shiftbook closed this duty from the data; it opens again by itself if the data calls for it."
     },
     "calendar": {
       "today": "Today",
@@ -2594,6 +2644,42 @@
       "nextDue": "The next duty is due {date}.",
       "dayLabel": "{date}: {count, plural, one {# duty} other {# duties}}",
       "keys": "Keys: M month · W week · A agenda · T today · J or N next · Shift+← previous · G go to a date"
+    },
+    "workersComp": {
+      "title": "Workers' comp",
+      "from": "From",
+      "to": "To",
+      "order": "Order",
+      "orders": {
+        "state": "State first",
+        "class": "Class first"
+      },
+      "export": "Export",
+      "pdf": "Packet (PDF)",
+      "csv": "Table (CSV)",
+      "missingTitle": "Paid with no class on the rate card",
+      "missingIntro": "Left out of the totals until their rate card has a class.",
+      "cols": {
+        "state": "State",
+        "classCode": "Class",
+        "worker": "Worker",
+        "hours": "Hours",
+        "straight": "Straight time",
+        "ot": "OT premium",
+        "dt": "DT premium",
+        "other": "Other pay",
+        "total": "Total pay"
+      },
+      "subtotal": "{state} {classCode}",
+      "total": "Total",
+      "tieEqual": "Ties to the payroll files with these pay dates ({files}): gross {gross}.",
+      "tieDifferent": "Payroll files with these pay dates ({files}): gross {gross}; settled outside the files by corrections: {settled}; this packet {packet}; {difference} not explained — check the runs with these pay dates.",
+      "none": "Nothing was paid with pay dates in this range.",
+      "tableLabel": "Payroll by state, class and worker",
+      "openJobOrder": "Open the job order",
+      "intro": "Pay by state and class with the overtime premium apart, for the pay dates in the range (the policy's period by default).",
+      "apply": "Apply",
+      "tieSettled": "Ties to the payroll files with these pay dates ({files}): gross {gross}, and {settled} that corrections settled outside the files ({decisions, plural, one {# decision} other {# decisions}})."
     }
   },
   "complianceSettings": {
@@ -2654,7 +2740,8 @@
         "startsOn": "Starts",
         "endsOn": "Ends",
         "auditDueOn": "Premium audit due (optional)",
-        "file": "Policy file (optional)"
+        "file": "Policy file (optional)",
+        "carrierContact": "Insurer's address and phone (printed on Massachusetts job orders)"
       }
     },
     "statement": {
@@ -2663,9 +2750,114 @@
       "none": "No statement yet: upload the Department's statement so it can go with each job order.",
       "upload": "Upload statement",
       "current": "<file>{name}</file>, added {date} by {by}",
-      "file": "Statement file"
+      "file": "Statement file",
+      "contact": "The Department's contact details printed on each job order",
+      "contactHint": "Its name, address and phone, as the Department publishes them.",
+      "saveContact": "Save contact",
+      "noContact": "No contact details yet."
     },
     "renewalStatus": "{status}, {date}",
-    "noRenewal": "—"
+    "noRenewal": "—",
+    "openDays": {
+      "title": "Business days for Form I-9",
+      "intro": "Section 2 is due three business days after the first day. Monday to Friday always count; a weekend day the agency is open counts too, which brings the date earlier.",
+      "legend": "Days the agency is open",
+      "hint": "Holidays are counted as business days, which only makes the date earlier.",
+      "save": "Save days",
+      "days": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
+    }
+  },
+  "complianceDocuments": {
+    "page": "Page {page} of {pages}",
+    "ilProof": {
+      "title": "Proof of registration",
+      "law": "Illinois Day and Temporary Labor Services Act (820 ILCS 175)",
+      "made": "Made",
+      "forClient": "For",
+      "office": "Office",
+      "number": "Registration number",
+      "issued": "Issued",
+      "expires": "Expires",
+      "agencyOffice": "{name} (the agency)",
+      "workersComp": "Workers' compensation insurance",
+      "insurer": "Insurer",
+      "policy": "Policy",
+      "period": "Period",
+      "howToCheck": "How to check",
+      "howToCheckText": "The client may verify this registration with the Illinois Department of Labor, which lists the registered day and temporary labor service agencies at https://labor.illinois.gov/employers/approveddtlsa.html. The law asks the client to verify it before contracting with the agency and on March 1 and September 1 of each year (820 ILCS 175/85(a)).",
+      "noPolicy": "No policy on file for {date}."
+    },
+    "maJobOrder": {
+      "title": "Job order",
+      "law": "Massachusetts Temporary Workers Right to Know (M.G.L. c. 149 § 159C)",
+      "worker": "Worker",
+      "starts": "Starts",
+      "made": "Made",
+      "contacts": "Contacts",
+      "agency": "Staffing agency",
+      "insurer": "Workers' compensation insurer",
+      "client": "Worksite employer",
+      "department": "Department of Labor Standards",
+      "job": "The job",
+      "position": "Position",
+      "soc": "Occupation code (SOC)",
+      "requirements": "Clothing, equipment, training or licenses, and their cost",
+      "pay": "Pay",
+      "rate": "Hourly rate",
+      "payDay": "Pay day",
+      "overtime": "Overtime",
+      "hours": "Hours",
+      "times": "Daily start and anticipated end",
+      "duration": "Expected duration",
+      "extras": "Meals, transportation and the worksite",
+      "meals": "Meals",
+      "transport": "Transportation",
+      "strike": "Strike or lockout at the worksite",
+      "payDayText": "Every week, on the {weekday} after the workweek ends ({days} days after)",
+      "policyLine": "Policy {number}",
+      "noPolicy": "No policy on file for this date",
+      "overtimeYes": "Overtime will occur, paid at {rate} an hour",
+      "overtimePossible": "Overtime may occur, paid at {rate} an hour",
+      "overtimeNo": "No overtime is expected",
+      "until": "Until {date}",
+      "noEnd": "Not set: open-ended",
+      "strikeYes": "Yes",
+      "strikeNo": "No",
+      "statementAttached": "The Department of Labor Standards' multilingual statement is given with this job order.",
+      "statementMissing": "The Department of Labor Standards' multilingual statement must be given with this job order.",
+      "payDaySameDay": "Every week, on the last day of the workweek ({weekday})"
+    },
+    "wcPacket": {
+      "title": "Workers' compensation payroll",
+      "insurer": "Insurer",
+      "range": "Pay dates",
+      "made": "Made",
+      "summary": "Summary by state and class",
+      "detail": "By worker",
+      "missing": "Paid with no class on the rate card (not in the totals)",
+      "tieOut": "Ties to the payroll files",
+      "state": "State",
+      "classCode": "Class",
+      "worker": "Worker",
+      "hours": "Hours",
+      "straight": "Straight time",
+      "ot": "OT premium",
+      "dt": "DT premium",
+      "other": "Other pay",
+      "total": "Total pay",
+      "subtotal": "Subtotal",
+      "tieOutEqual": "Payroll files with these pay dates: {files}, gross {gross}. This packet, with the pay listed apart: {packet}. They agree.",
+      "tieOutDifferent": "Payroll files with these pay dates: {files}, gross {gross}. Settled outside the files by corrections: {settled}. This packet, with the pay listed apart: {packet}. Not explained: {difference}.",
+      "description": "Description",
+      "tieOutSettled": "Payroll files with these pay dates: {files}, gross {gross}. Settled outside the files by corrections: {settled}. This packet, with the pay listed apart: {packet}. They agree."
+    }
   }
 }

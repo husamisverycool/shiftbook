@@ -1,22 +1,28 @@
 /**
  * Keeps the obligations table in step with what the agency's data calls for (decision J3): new
- * duties are created, open ones follow their dates, the data closes what it settles (a renewal, an
- * I-9 date), and an open duty the data no longer calls for is closed as not applicable. A person's
- * decision (done, not applicable) is never undone; what Shiftbook closed, Shiftbook may reopen.
- * The run keeps the Illinois equal-pay crossings itself.
+ * duties are created (not those further back than their look-back), open ones follow their dates,
+ * the data closes what it settles (a renewal, an I-9 date), and an open duty the data no longer calls
+ * for is closed as not applicable — never one only because it is old. A person's decision (done, not
+ * applicable) is never undone; what Shiftbook closed, Shiftbook may reopen or close again as the data
+ * says. The run keeps the Illinois equal-pay crossings itself.
  */
 import { addDays, workweekStart, type Weekday } from "@shiftbook/rules";
 import { eq, notInArray } from "drizzle-orm";
 import { auditBy } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
-import { lockCompliance } from "../run/period-lock";
+import { lockCompliance, tryLockCompliance } from "../run/period-lock";
 import { settingOn } from "../settings";
 import { EQUAL_PAY_KINDS } from "./kinds";
-import { keyOf, wantedObligations, type ComplianceRule, type Placement, type Wanted } from "./generate";
+import { keyOf, wantedObligations, type ComplianceRule, type GenerateInput, type OpenDays, type Placement, type Wanted } from "./generate";
 
 /** Who Shiftbook's own changes are recorded as. */
 export const SYSTEM = "Shiftbook";
+/** The weekdays the agency is open (0 Sunday … 6 Saturday), dated: its weekend days count as I-9 business days. */
+export const OPEN_DAYS_KEY = "compliance.open_weekdays";
+
+/** JSON with its keys sorted, so facts read back from jsonb compare equal to the same facts worked out again. */
+export const stableJson = (v: unknown): string => JSON.stringify(v, (_k, x: unknown) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.entries(x as Record<string, unknown>).sort(([a], [b]) => cmp(a, b))) : x));
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -25,8 +31,8 @@ export async function complianceRules(tx: Tx): Promise<ComplianceRule[]> {
 }
 
 /** The facts the duties are worked out from. */
-export async function complianceInput(tx: Tx, today: string) {
-  const [rules, registrations, policies, rows, workers] = await Promise.all([
+export async function complianceInput(tx: Tx, today: string): Promise<GenerateInput> {
+  const [rules, registrations, policies, rows, workers, openRows] = await Promise.all([
     complianceRules(tx),
     tx.select().from(s.agencyRegistrations),
     tx.select().from(s.wcPolicies),
@@ -48,6 +54,7 @@ export async function complianceInput(tx: Tx, today: string) {
       .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId))
       .innerJoin(s.workers, eq(s.workers.id, s.assignments.workerId)),
     tx.select().from(s.workers),
+    tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, OPEN_DAYS_KEY)),
   ]);
   const startsOn = new Map<string, Weekday>();
   const weekStart = async (date: string) => {
@@ -62,11 +69,17 @@ export async function complianceInput(tx: Tx, today: string) {
     // Pay periods are the agency's workweeks: the first one ends six days after the start's week begins.
     placements.push({ ...r, dayAndTemporaryLabor: r.dayAndTemporaryLabor !== false, firstPeriodEnd: addDays(workweekStart(r.startDate, await weekStart(r.startDate)), 6) });
   }
-  const firstStart = (workerId: string) =>
-    placements
-      .filter((p) => p.workerId === workerId && p.status !== "cancelled")
-      .map((p) => p.startDate)
-      .sort(cmp)[0] ?? null;
+  const mine = (workerId: string) => placements.filter((p) => p.workerId === workerId && p.status !== "cancelled");
+  const firstStart = (workerId: string) => mine(workerId).map((p) => p.startDate).sort(cmp)[0] ?? null;
+  /** When the job starting on the hire date ends: the latest such placement's end; open-ended or none: null. */
+  const firstJobEnds = (workerId: string, hire: string | null) => {
+    const first = mine(workerId).filter((p) => p.startDate === hire);
+    return first.length === 0 || first.some((p) => p.endDate === null) ? null : first.map((p) => p.endDate!).sort(cmp).at(-1)!;
+  };
+  const openDays: OpenDays[] = openRows
+    .filter((r) => Array.isArray(r.value))
+    .map((r) => ({ weekdays: (r.value as unknown[]).filter((d): d is number => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6), effectiveFrom: r.effectiveFrom, effectiveTo: r.effectiveTo }))
+    .sort((a, b) => cmp(a.effectiveFrom, b.effectiveFrom));
   return {
     today,
     rules,
@@ -75,11 +88,23 @@ export async function complianceInput(tx: Tx, today: string) {
     placements,
     workers: workers
       .sort((a, b) => cmp(a.lastName, b.lastName) || cmp(a.firstName, b.firstName) || cmp(a.id, b.id))
-      .map((w) => ({ id: w.id, hireDate: w.hireDate ?? firstStart(w.id), i9Section1On: w.i9Section1On, i9Section2On: w.i9Section2On, workAuthExpiresOn: w.workAuthExpiresOn })),
+      .map((w) => {
+        const hireDate = w.hireDate ?? firstStart(w.id);
+        return { id: w.id, hireDate, i9Section1On: w.i9Section1On, i9Section2On: w.i9Section2On, workAuthExpiresOn: w.workAuthExpiresOn, firstJobEndsOn: firstJobEnds(w.id, hireDate) };
+      }),
+    openDays,
   };
 }
 
 const subjectOf = (w: Wanted) => ({ workerId: w.workerId, clientId: w.clientId, assignmentId: w.assignmentId, registrationId: w.registrationId, policyId: w.policyId });
+
+/**
+ * Works the duties out again unless someone is changing them right now (then it is left to them): for
+ * the sidebar's badge on every page, which must never wait.
+ */
+export async function syncIfFree(tx: Tx, agencyId: string, today: string): Promise<void> {
+  if (await tryLockCompliance(tx, agencyId)) await syncObligations(tx, agencyId, today);
+}
 
 export async function syncObligations(tx: Tx, agencyId: string, today: string): Promise<{ created: number; changed: number; closed: number }> {
   await lockCompliance(tx, agencyId);
@@ -98,6 +123,8 @@ export async function syncObligations(tx: Tx, agencyId: string, today: string): 
     const o = byKey.get(key);
     const closedNow = w.done ? { status: "done" as const, statusNote: w.done.note, doneAt: now, doneBy: null, doneByLabel: SYSTEM, closedBySystem: true } : null;
     if (!o) {
+      // Work long past is not tracked: too old to create (one already on file is kept below).
+      if (w.tooOld) continue;
       const [row] = await tx
         .insert(s.obligations)
         .values({ agencyId, kind: w.kind, jurisdiction: w.jurisdiction, subjectKind: w.subjectKind, ...subjectOf(w), occurrence: w.occurrence, dueOn: w.dueOn, remindOn: w.remindOn, facts: w.facts, message: w.message, ...(closedNow ?? {}) })
@@ -109,11 +136,16 @@ export async function syncObligations(tx: Tx, agencyId: string, today: string): 
       }
       continue;
     }
-    const datesMoved = o.dueOn !== w.dueOn || o.remindOn !== w.remindOn || o.message !== w.message || JSON.stringify(o.facts) !== JSON.stringify(w.facts);
+    const datesMoved = o.dueOn !== w.dueOn || o.remindOn !== w.remindOn || o.message !== w.message || stableJson(o.facts) !== stableJson(w.facts);
     if (o.status === "open" && closedNow) {
       await tx.update(s.obligations).set({ dueOn: w.dueOn, remindOn: w.remindOn, facts: w.facts, message: w.message, ...closedNow }).where(eq(s.obligations.id, o.id));
       await auditBy(tx, who, [{ action: "update", entityType: "obligation", entityId: o.id, before: { status: "open" }, after: { status: "done", note: w.done!.note } }]);
       closed += 1;
+    } else if (o.closedBySystem && closedNow && (o.status !== "done" || o.statusNote !== closedNow.statusNote)) {
+      // Shiftbook closed it and the data now settles it (or settles it another way): done, saying how.
+      await tx.update(s.obligations).set({ dueOn: w.dueOn, remindOn: w.remindOn, facts: w.facts, message: w.message, ...closedNow }).where(eq(s.obligations.id, o.id));
+      await auditBy(tx, who, [{ action: "update", entityType: "obligation", entityId: o.id, before: { status: o.status, note: o.statusNote }, after: { status: "done", note: w.done!.note } }]);
+      changed += 1;
     } else if (o.status !== "open" && o.closedBySystem && !closedNow) {
       // Shiftbook closed it and the data calls for it again: open.
       await tx.update(s.obligations).set({ status: "open", statusNote: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false, dueOn: w.dueOn, remindOn: w.remindOn, facts: w.facts, message: w.message }).where(eq(s.obligations.id, o.id));

@@ -14,9 +14,9 @@ import * as s from "../db/schema";
 import { lockCompliance } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
-import { complianceRules, syncObligations } from "./sync";
+import { complianceRules, OPEN_DAYS_KEY, syncObligations } from "./sync";
 
-export type ComplianceError = "not_allowed" | "not_found" | "invalid" | "not_open" | "already_open";
+export type ComplianceError = "not_allowed" | "not_found" | "invalid" | "not_open" | "already_open" | "closed_by_data";
 export type ComplianceResult = { ok: true } | { ok: false; error: ComplianceError; field?: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -82,12 +82,13 @@ export async function closeObligation(tx: Tx, actor: Actor, id: string, status: 
   return { ok: true };
 }
 
-/** Only the Owner reopens a duty that was done or set aside. */
+/** Only the Owner reopens a duty a person closed; what the data closed, the data keeps closed. */
 export async function reopenObligation(tx: Tx, actor: Actor, id: string): Promise<ComplianceResult> {
   if (actor.role !== "owner") return { ok: false, error: "not_allowed" };
   const r = await obligationFor(tx, actor, id);
   if ("error" in r) return { ok: false, error: r.error! };
   if (r.o.status === "open") return { ok: false, error: "already_open" };
+  if (r.o.closedBySystem) return { ok: false, error: "closed_by_data" };
   await tx.update(s.obligations).set({ status: "open", statusNote: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false }).where(eq(s.obligations.id, id));
   await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: id, before: { status: r.o.status, note: r.o.statusNote }, after: { status: "open" } }]);
   return { ok: true };
@@ -109,7 +110,7 @@ export interface EvidenceFile {
 }
 
 /** A file kept in the document store and recorded (never deleted); the caller links it. */
-export async function storeComplianceDocument(tx: Tx, actor: Actor, store: DocumentStore, file: EvidenceFile, source: "upload" | "generated"): Promise<{ ok: true; id: string } | { ok: false; error: "invalid"; field: string }> {
+export async function storeComplianceDocument(tx: Tx, actor: Actor, store: DocumentStore, file: EvidenceFile, source: "upload" | "generated"): Promise<{ ok: true; id: string; storageKey: string } | { ok: false; error: "invalid"; field: string }> {
   const name = file.filename.trim().replace(/[\\/]/g, "_");
   const ext = name.toLowerCase().split(".").pop() ?? "";
   const mediaType = EVIDENCE_TYPES[ext];
@@ -133,7 +134,7 @@ export async function storeComplianceDocument(tx: Tx, actor: Actor, store: Docum
     createdByLabel: actor.label,
   });
   await audit(tx, actor, [{ action: "create", entityType: "compliance_document", entityId: id, after: { filename: name, source, effectiveOn: file.effectiveOn } }]);
-  return { ok: true, id };
+  return { ok: true, id, storageKey };
 }
 
 export async function linkDocument(tx: Tx, actor: Actor, obligationId: string, documentId: string): Promise<void> {
@@ -143,9 +144,13 @@ export async function linkDocument(tx: Tx, actor: Actor, obligationId: string, d
   await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: obligationId, after: { linkedDocumentId: documentId } }]);
 }
 
+/** Form I-9 copies are never kept in Shiftbook: dates only (decision J4). */
+export const keepsNoFiles = (kind: string) => kind.startsWith("i9_");
+
 export async function addObligationFile(tx: Tx, actor: Actor, store: DocumentStore, id: string, file: EvidenceFile): Promise<ComplianceResult> {
   const r = await obligationFor(tx, actor, id);
   if ("error" in r) return { ok: false, error: r.error! };
+  if (keepsNoFiles(r.o.kind)) return { ok: false, error: "invalid", field: "i9_files" };
   const doc = await storeComplianceDocument(tx, actor, store, file, "upload");
   if (!doc.ok) return doc;
   await linkDocument(tx, actor, id, doc.id);
@@ -176,9 +181,10 @@ export async function recordI9(tx: Tx, actor: Actor, workerId: string, input: I9
   if (!(await mayActOn(tx, actor, "i9_section1"))) return { ok: false, error: "not_allowed" };
   if (!UUID.test(workerId)) return { ok: false, error: "not_found" };
   for (const [field, v] of Object.entries(input)) if (!dateOrNull(v)) return { ok: false, error: "invalid", field };
-  // A completed date cannot be later than today; Section 2 cannot come before the first day.
+  // A completed date cannot be later than today; Section 2 cannot come before Section 1 (both may come
+  // before the first day, once the job is accepted: M-274 3.0, 4.0).
   for (const field of ["section1On", "section2On"] as const) if (input[field] !== null && input[field]! > today) return { ok: false, error: "invalid", field };
-  if (input.section2On !== null && input.hireDate !== null && input.section2On < input.hireDate) return { ok: false, error: "invalid", field: "section2On" };
+  if (input.section2On !== null && input.section1On !== null && input.section2On < input.section1On) return { ok: false, error: "invalid", field: "section2On" };
   await lockCompliance(tx, actor.agencyId);
   const [w] = await tx.select().from(s.workers).where(eq(s.workers.id, workerId));
   if (!w) return { ok: false, error: "not_found" };
@@ -187,6 +193,16 @@ export async function recordI9(tx: Tx, actor: Actor, workerId: string, input: I9
   if (JSON.stringify(before) === JSON.stringify(after)) return { ok: true };
   await tx.update(s.workers).set(after).where(eq(s.workers.id, workerId));
   await audit(tx, actor, [{ action: "update", entityType: "worker", entityId: workerId, before, after }]);
+  // A changed end of the work authorization: the reverification for the old date is set aside by
+  // whoever changed it, saying so (the new date gets its own).
+  if (w.workAuthExpiresOn !== null && w.workAuthExpiresOn !== input.workAuthExpiresOn) {
+    const [old] = await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, "i9_reverify"), eq(s.obligations.workerId, workerId), eq(s.obligations.occurrence, w.workAuthExpiresOn), eq(s.obligations.status, "open")));
+    if (old) {
+      const note = input.workAuthExpiresOn ? `The work authorization's end was changed from ${w.workAuthExpiresOn} to ${input.workAuthExpiresOn}.` : `The work authorization's end (${w.workAuthExpiresOn}) was removed.`;
+      await tx.update(s.obligations).set({ status: "not_applicable", statusNote: note, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false }).where(eq(s.obligations.id, old.id));
+      await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: old.id, before: { status: "open" }, after: { status: "not_applicable", note } }]);
+    }
+  }
   await syncObligations(tx, actor.agencyId, today);
   return { ok: true };
 }
@@ -237,6 +253,8 @@ export async function addRegistration(tx: Tx, actor: Actor, input: RegistrationI
 
 export interface PolicyInput {
   carrier: string;
+  /** The insurer's address and phone (for Massachusetts job orders); optional. */
+  carrierContact: string | null;
   policyNumber: string;
   states: string[];
   startsOn: string;
@@ -249,13 +267,14 @@ export async function addPolicy(tx: Tx, actor: Actor, input: PolicyInput, today:
   if (!mayChangeComplianceSettings(actor)) return { ok: false, error: "not_allowed" };
   if (!text(input.carrier, 120)) return { ok: false, error: "invalid", field: "carrier" };
   if (!text(input.policyNumber, 60)) return { ok: false, error: "invalid", field: "policyNumber" };
+  if (input.carrierContact !== null && (typeof input.carrierContact !== "string" || input.carrierContact.trim().length > 500)) return { ok: false, error: "invalid", field: "carrierContact" };
   if (!Array.isArray(input.states) || input.states.length > 60 || !input.states.every((x) => typeof x === "string" && /^[A-Z]{2}$/.test(x))) return { ok: false, error: "invalid", field: "states" };
   if (!isIsoDate(input.startsOn)) return { ok: false, error: "invalid", field: "startsOn" };
   if (!isIsoDate(input.endsOn) || input.endsOn < input.startsOn) return { ok: false, error: "invalid", field: "endsOn" };
   if (!dateOrNull(input.auditDueOn)) return { ok: false, error: "invalid", field: "auditDueOn" };
   await lockCompliance(tx, actor.agencyId);
   if (input.documentId !== null && (!UUID.test(input.documentId) || (await tx.select({ id: s.complianceDocuments.id }).from(s.complianceDocuments).where(eq(s.complianceDocuments.id, input.documentId))).length === 0)) return { ok: false, error: "invalid", field: "documentId" };
-  const values = { carrier: input.carrier.trim(), policyNumber: input.policyNumber.trim(), states: [...new Set(input.states)].sort(), startsOn: input.startsOn, endsOn: input.endsOn, auditDueOn: input.auditDueOn, documentId: input.documentId };
+  const values = { carrier: input.carrier.trim(), carrierContact: input.carrierContact?.trim() || null, policyNumber: input.policyNumber.trim(), states: [...new Set(input.states)].sort(), startsOn: input.startsOn, endsOn: input.endsOn, auditDueOn: input.auditDueOn, documentId: input.documentId };
   const [row] = await tx.insert(s.wcPolicies).values({ agencyId: actor.agencyId, ...values, createdBy: actor.userId, createdByLabel: actor.label }).returning({ id: s.wcPolicies.id });
   await audit(tx, actor, [{ action: "create", entityType: "wc_policy", entityId: row!.id, after: values }]);
   await syncObligations(tx, actor.agencyId, today);
@@ -270,19 +289,51 @@ async function linkCertificate(tx: Tx, actor: Actor, subject: { registrationId: 
   for (const o of await tx.select({ id: s.obligations.id }).from(s.obligations).where(where)) await linkDocument(tx, actor, o.id, documentId);
 }
 
+/** A compliance setting from today: today's row replaced, else the one before ends yesterday. */
+async function setFromToday(tx: Tx, actor: Actor, key: string, value: unknown, today: string) {
+  const rows = await tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, key));
+  const current = rows.find((r) => r.effectiveTo === null);
+  if (current && current.effectiveFrom === today) await tx.update(s.agencySettings).set({ value }).where(eq(s.agencySettings.id, current.id));
+  else {
+    if (current) await tx.update(s.agencySettings).set({ effectiveTo: addDays(today, -1) }).where(eq(s.agencySettings.id, current.id));
+    await tx.insert(s.agencySettings).values({ agencyId: actor.agencyId, key, value, effectiveFrom: today });
+  }
+  await audit(tx, actor, [{ action: "update", entityType: "agency_setting", entityId: actor.agencyId, before: current ? { key, value: current.value } : null, after: { key, value } }]);
+}
+
 /** The Department's multilingual statement sent with each Massachusetts job order (454 CMR 24.08). */
 export async function setMaStatement(tx: Tx, actor: Actor, documentId: string, today: string): Promise<ComplianceResult> {
   if (!mayChangeComplianceSettings(actor)) return { ok: false, error: "not_allowed" };
   if (!UUID.test(documentId)) return { ok: false, error: "not_found" };
   await lockCompliance(tx, actor.agencyId);
   if ((await tx.select({ id: s.complianceDocuments.id }).from(s.complianceDocuments).where(eq(s.complianceDocuments.id, documentId))).length === 0) return { ok: false, error: "not_found" };
-  const rows = await tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, MA_STATEMENT_KEY));
-  const current = rows.find((r) => r.effectiveTo === null);
-  if (current && current.effectiveFrom === today) await tx.update(s.agencySettings).set({ value: { documentId } }).where(eq(s.agencySettings.id, current.id));
-  else {
-    if (current) await tx.update(s.agencySettings).set({ effectiveTo: addDays(today, -1) }).where(eq(s.agencySettings.id, current.id));
-    await tx.insert(s.agencySettings).values({ agencyId: actor.agencyId, key: MA_STATEMENT_KEY, value: { documentId }, effectiveFrom: today });
-  }
-  await audit(tx, actor, [{ action: "update", entityType: "agency_setting", entityId: actor.agencyId, after: { key: MA_STATEMENT_KEY, documentId } }]);
+  await setFromToday(tx, actor, MA_STATEMENT_KEY, { documentId }, today);
+  return { ok: true };
+}
+
+/** The Department of Labor Standards' contact details printed on each Massachusetts job order (M.G.L. c. 149 § 159C(b)). */
+export const MA_CONTACT_KEY = "compliance.ma_department_contact";
+
+export async function setMaContact(tx: Tx, actor: Actor, contact: unknown, today: string): Promise<ComplianceResult> {
+  if (!mayChangeComplianceSettings(actor)) return { ok: false, error: "not_allowed" };
+  if (!text(contact, 500)) return { ok: false, error: "invalid", field: "contact" };
+  await lockCompliance(tx, actor.agencyId);
+  await setFromToday(tx, actor, MA_CONTACT_KEY, (contact as string).trim(), today);
+  return { ok: true };
+}
+
+/**
+ * The weekend days the agency is open (Owner), from today: they count as business days for Form I-9
+ * Section 2 (Monday to Friday always do; holidays are never skipped — the earlier, safe date).
+ */
+export async function setOpenWeekendDays(tx: Tx, actor: Actor, days: unknown, today: string): Promise<ComplianceResult> {
+  if (!mayChangeComplianceSettings(actor)) return { ok: false, error: "not_allowed" };
+  if (!Array.isArray(days) || days.length > 2 || !days.every((d) => d === 0 || d === 6)) return { ok: false, error: "invalid", field: "days" };
+  await lockCompliance(tx, actor.agencyId);
+  const weekdays = [...new Set([1, 2, 3, 4, 5, ...(days as number[])])].sort((a, b) => a - b);
+  const current = await tx.select().from(s.agencySettings).where(and(eq(s.agencySettings.key, OPEN_DAYS_KEY), isNull(s.agencySettings.effectiveTo)));
+  if (JSON.stringify(current[0]?.value ?? [1, 2, 3, 4, 5]) === JSON.stringify(weekdays)) return { ok: true };
+  await setFromToday(tx, actor, OPEN_DAYS_KEY, weekdays, today);
+  await syncObligations(tx, actor.agencyId, today);
   return { ok: true };
 }

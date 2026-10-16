@@ -68,3 +68,75 @@ Screens: `j17-compliance-settings.png`, `j18-add-registration.png`, `j19-registr
 - Evidence rows squeezed the file name; the details now sit on a second line.
 - Shiftbook's own closing notes showed in English on Spanish screens; they are now worded in the
   reader's language (the English note stays in the record).
+
+## Step 2 — the documents
+
+### Making a duty's document — `docs/patterns/compliance/[id].md` (Drata: create evidence)
+Screens: `slice-j/j21-make-proof-page.png`, `j22-proof-page-made.png`, `j24-job-order-made.png`.
+- ✓ The Evidence tab of a proof-page, job-order or audit duty has the button that makes its document;
+  the file is kept as generated evidence with its date (`j22`, `j24`).
+- ✓ The Massachusetts job order needs its details and the Department's contact first; the button says
+  so and links to the settings; without the Department's statement on file the job order says it must
+  be given.
+
+### Job order details — `docs/patterns/compliance/[id].md` (Overview: the duty's form)
+Screen: `j23-job-order-details.png`.
+- ✓ Daily start and anticipated end, overtime, clothing/equipment/training and cost, meals,
+  transportation, strike or lockout; kept on the job order for every placement.
+
+### Workers' comp packet — `docs/patterns/compliance/workers-comp.md` (Patriot Workers' Comp Wages; NCRB Rule 2-C-2-a)
+Screens: `j26-workers-comp-none.png`, `j27-workers-comp-packet.png`, `j28-workers-comp-class-first.png`.
+- ✓ From and To (the policy's period by default), State first · Class first, Export (PDF, CSV).
+- ✓ Missing classes listed first and out of the totals (unit and integration tests; none in the demo).
+- ✓ Grouped by state then class (or class first): worker, hours, straight time, OT premium, DT
+  premium, other pay, total; a subtotal per class with its description; a total.
+- ✓ The tie-out line: the payroll files with these pay dates and their gross; they agree.
+- ✓ Nothing paid in the range says so (`j26`).
+
+### Compliance settings — the Department's contact — `docs/patterns/settings/compliance.md`
+Screen: `j25-settings-contact.png`.
+- ✓ The contact details printed on each Massachusetts job order, above the statement upload.
+
+### The documents
+- `doc-il-proof-1.png` — `docs/patterns/_documents/il-registration-proof.md`: ✓ the agency and the
+  title, the law, the date; For (the client); the registration table; the workers' comp insurer,
+  policy and period; how the client checks (the Department's list and the dates the law names); page
+  numbers.
+- `doc-ma-job-order-1.png` — `_documents/ma-job-order.md`: ✓ the worker, start, date made; the four
+  contacts; the job; pay (rate, pay day, overtime and its rate); hours; meals, transportation, strike;
+  the statement line; page numbers.
+- `doc-wc-packet-1.png` — `_documents/wc-audit-packet.md`: ✓ title, insurer and policy, pay dates,
+  date made; summary by state and class with descriptions; by worker; missing classes apart; the
+  tie-out; no Social Security numbers.
+
+### Differences found and what was done
+- The proof page's last paragraph had loose line spacing; it now uses the page's normal spacing.
+- The packet's summary squeezed the class description under the code; it now has its own column.
+- "1 files" read wrong; the tie-out now names the files' count in parentheses.
+
+## Second opinion, fixed (decision 0022)
+Screens: `j21-make-proof-page.png` (again), `j22-proof-page-made.png` (again), `j23-job-order-details.png`
+(again), `j25-settings-contact.png` (again), `j29-i9-no-files.png`, `j17-compliance-settings.png` (again),
+`doc-il-proof-1.png` and `doc-ma-job-order-1.png` (again).
+- ✓ A duty past its look-back stays open; the data reopens or closes again only what Shiftbook
+  closed, and a duty the data closed has no Reopen (refused if asked).
+- ✓ The next proof page (March 1, 2027) says why it cannot be made yet — no Illinois registration in
+  force that day — with a link to Compliance settings (`j21`); the contract's proof page, made today,
+  shows the registration and policy in force today (`j22`, `doc-il-proof-1`); a page made early with
+  no policy then says "No policy on file for …".
+- ✓ The job order's details start with the worksite employer's phone (`j23`); the job order gives a
+  name, address and phone for every contact, the overtime rate from Massachusetts' overtime rule and
+  the pay day as the settings stood (`doc-ma-job-order-1`); without the agency's phone it cannot be
+  made.
+- ✓ Compliance settings: the insurer's address and phone under its name, and the business days for
+  Form I-9 — Monday to Friday fixed, Saturday and Sunday for the Owner (`j25`, `j17`; Jira's standard
+  working days).
+- ✓ An I-9 duty's Evidence tab says copies are not kept and has no upload (`j29`).
+- ✓ The packet's tie-out counts what corrections settled outside the files (integration test; the demo
+  has no correction).
+
+### Differences found and what was done
+- The I-9 Evidence tab said "No files yet. Add the file…" under the note that no files are kept; the
+  empty-files line is gone there.
+- The employer's phone label read "Harborview Events & Hospitality (demo)'s phone"; it is now
+  "Worksite employer's phone (Harborview Events & Hospitality (demo))".

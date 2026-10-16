@@ -68,11 +68,14 @@ export const REGISTRATIONS: { key: string; jurisdiction: "IL" | "MA"; number: st
   { key: "il", jurisdiction: "IL", number: "IL-DTLSA-0000-DEMO", issuedOn: "2026-01-01", expiresOn: "2026-12-31" },
   { key: "ma", jurisdiction: "MA", number: "MA-PA-0000-DEMO", issuedOn: "2025-11-21", expiresOn: "2026-11-20" },
 ];
-export const WC_POLICY = { carrier: "Example Mutual Insurance (demo)", policyNumber: "WC-0000-DEMO", states: ["CA", "IL", "MA"], startsOn: "2026-01-01", endsOn: "2026-12-31", auditDueOn: "2027-02-15" };
+export const WC_POLICY = { carrier: "Example Mutual Insurance (demo)", carrierContact: "100 Example Plaza, Springfield, IL 62701\n(217) 555-0188", policyNumber: "WC-0000-DEMO", states: ["CA", "IL", "MA"], startsOn: "2026-01-01", endsOn: "2026-12-31", auditDueOn: "2027-02-15" };
 /** Everyone was hired when their placement started, and their I-9 was done on time (dates only). */
 export const I9_DATES = { hireDate: "2026-08-03", section1On: "2026-08-03", section2On: "2026-08-05" };
 /** One worker's work authorization ends within 90 days: reverification is due soon. */
 export const WORK_AUTH_ENDS: Record<string, string> = { "kateryna-bondarenko": "2026-12-20" };
+/** What the Massachusetts job orders state (slice j step 2), and the Department's contact as the agency keeps it. */
+export const MA_NOTICE_DETAILS = { employerPhone: "(617) 555-0123", startTime: "16:00", endTime: "23:00", overtime: "possible" as const, requirements: "Black pants and black non-slip shoes (the worker's own); no cost", meals: "One staff meal each shift, no charge", transport: "Not provided", strike: false };
+export const MA_DEPARTMENT_CONTACT = "Massachusetts Department of Labor Standards\n100 Cambridge Street, Suite 500, Boston, MA 02114\n(Demo: check the current phone number on mass.gov.)";
 /** Massachusetts placements whose job order is not on file as sent: one overdue duty to show. */
 export const MA_JOB_ORDER_OPEN = ["kwame-boateng"];
 

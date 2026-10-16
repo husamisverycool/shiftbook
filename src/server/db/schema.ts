@@ -242,6 +242,19 @@ export const nicknames = pgTable(
 );
 
 // ---------- job orders, rate cards, assignments ----------
+/** What a Massachusetts job order states that Shiftbook does not otherwise know (drizzle/0030; M.G.L. c. 149 § 159C(b)). */
+export interface NoticeDetails {
+  /** The worksite employer's telephone number (the law asks for its name, address and phone). */
+  employerPhone: string;
+  startTime: string;
+  endTime: string;
+  overtime: "yes" | "no" | "possible";
+  requirements: string;
+  meals: string;
+  transport: string;
+  strike: boolean;
+}
+
 export const jobOrders = pgTable("job_orders", {
   id: id(),
   agencyId: agencyId(),
@@ -258,6 +271,8 @@ export const jobOrders = pgTable("job_orders", {
   dayAndTemporaryLabor: boolean("day_and_temporary_labor").notNull().default(true),
   /** The office whose margin the order counts in (slice i, decision I10). */
   branchId: uuid("branch_id").references(() => branches.id),
+  /** For the Massachusetts job order (slice j). */
+  noticeDetails: jsonb("notice_details").$type<NoticeDetails>(),
   createdAt: createdAt(),
 });
 
@@ -939,6 +954,7 @@ export const complianceRules = pgTable("compliance_rules", {
   remindDays: integer("remind_days").notNull(),
   fixedDates: text("fixed_dates").array().notNull(),
   lookbackDays: integer("lookback_days").notNull(),
+  windowDays: integer("window_days").notNull(),
   socGroups: text("soc_groups").array().notNull(),
   roles: text("roles").array().notNull(),
   citation: text("citation").notNull(),
@@ -984,6 +1000,8 @@ export const wcPolicies = pgTable("wc_policies", {
   carrier: text("carrier").notNull(),
   policyNumber: text("policy_number").notNull(),
   states: text("states").array().notNull(),
+  /** The insurer's address and phone, printed on Massachusetts job orders (M.G.L. c. 149 § 159C(b)). */
+  carrierContact: text("carrier_contact"),
   startsOn: isoDate("starts_on").notNull(),
   endsOn: isoDate("ends_on").notNull(),
   auditDueOn: isoDate("audit_due_on"),

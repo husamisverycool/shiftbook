@@ -78,6 +78,12 @@ export async function lockCompliance(tx: Tx, agencyId: string): Promise<void> {
   await advisoryLock(tx, `compliance:${agencyId}`, "exclusive");
 }
 
+/** The compliance lock if it is free right now (true), else nothing (false): for work that may be skipped. */
+export async function tryLockCompliance(tx: Tx, agencyId: string): Promise<boolean> {
+  const rows = await tx.execute<{ ok: boolean }>(sql`select pg_try_advisory_xact_lock(hashtextextended(${`compliance:${agencyId}`}, 0)) as ok`);
+  return rows[0]?.ok === true;
+}
+
 /**
  * The payroll file settings (slice f): changed under the exclusive lock, so two saves cannot both
  * start a row; read under the shared lock while files are made, so the file uses the settings the

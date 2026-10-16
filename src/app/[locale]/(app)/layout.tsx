@@ -18,7 +18,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
   const actor = currentActor();
   const { agency, urgent } = await withAgency(actor.agencyId, async (tx) => {
     const [agency] = await tx.select({ name: agencies.name }).from(agencies).where(eq(agencies.id, actor.agencyId));
-    return { agency, urgent: await urgentCount(tx, await agencyToday(tx)) };
+    return { agency, urgent: await urgentCount(tx, actor.agencyId, await agencyToday(tx)) };
   });
   return (
     <SidebarProvider className="min-h-0">

@@ -138,6 +138,69 @@ for (const locale of ["en", "es"] as const) {
     await expect(dialog).toBeHidden();
     await expect(page.getByTestId("registration-row")).toHaveCount(3);
     await expect(page.getByTestId("registration-row").filter({ hasText: "IL-DTLSA-0000-DEMO" })).toContainText(m.complianceSettings.registrations.replaced);
+    // The insurer's address and phone show under its name; the agency opens on Saturdays.
+    await expect(page.getByTestId("policy-row").first()).toContainText("(217) 555-0188");
+    await expect(page.getByTestId("open-day-1")).toBeDisabled();
+    await expect(page.getByTestId("save-open-days")).toBeDisabled();
+    await page.getByTestId("open-day-6").click();
+    await page.getByTestId("save-open-days").click();
+    await expect(page.getByText(m.complianceSettings.saved).first()).toBeVisible();
+    await expect(page.getByTestId("open-days")).toBeVisible();
+    await expect(page.getByTestId("save-open-days")).toBeDisabled();
+    expect(errors).toEqual([]);
+  });
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`compliance documents: the Illinois proof page, the Massachusetts job order with its details, the workers' comp packet (${locale})`, async ({ page }) => {
+    test.setTimeout(240_000);
+    const m = MESSAGES[locale];
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (msg) => msg.type() === "error" && /MISSING_MESSAGE|FORMATTING_ERROR/.test(msg.text()) && errors.push(msg.text()));
+    const rows = page.getByTestId("obligation-row");
+
+    // Prairie Line's next proof page waits for a registration in force on March 1, 2027.
+    await page.goto(`/${locale}/compliance?area=clients`);
+    await rows.first().getByRole("link").click();
+    await page.getByTestId("obligation-tab-evidence").click();
+    await expect(page.getByTestId("make-document-button")).toBeDisabled();
+    await expect(page.getByTestId("make-document")).toContainText(m.compliance.detail.proofNoRegistration.split("{date}")[0]!);
+    await expect(page.getByTestId("make-document").getByRole("link")).toHaveAttribute("href", `/${locale}/settings/compliance`);
+    // The contract's proof page (given already), made again today and kept as evidence.
+    await page.goto(`/${locale}/compliance?area=clients&status=done`);
+    await rows.first().getByRole("link").click();
+    await page.getByTestId("obligation-tab-evidence").click();
+    await expect(page.getByTestId("make-document-button")).toHaveText(m.compliance.detail.create.il_client_proof_contract);
+    await page.getByTestId("make-document-button").click();
+    await expect(page.getByTestId("evidence-file")).toContainText("il-proof-of-registration-PLM-");
+    await expect(page.getByTestId("evidence-file")).toContainText(m.compliance.detail.generated);
+    await check(page, "proof page made");
+    const [proof] = await Promise.all([page.waitForEvent("download"), page.getByTestId("evidence-file").getByRole("link").click()]);
+    expect(proof.suggestedFilename()).toMatch(/^il-proof-of-registration-PLM-\d{4}-\d{2}-\d{2}\.pdf$/);
+
+    // Kwame's Massachusetts job order: the details, then the document.
+    await page.goto(`/${locale}/compliance?area=placements`);
+    await rows.first().getByRole("link").click();
+    await expect(page.getByTestId("notice-form")).toBeVisible();
+    await expect(page.getByTestId("notice-start")).toHaveValue("16:00");
+    await page.getByTestId("notice-transport").fill(locale === "en" ? "Shuttle from the station, no fee" : "Transporte desde la estación, sin costo");
+    await page.getByTestId("save-notice").click();
+    await expect(page.getByText(m.compliance.detail.notice.saved)).toBeVisible();
+    await check(page, "job order details");
+    await page.getByTestId("obligation-tab-evidence").click();
+    await page.getByTestId("make-document-button").click();
+    await expect(page.getByTestId("evidence-file")).toContainText("ma-job-order-boateng-kwame-2026-08-03.pdf");
+
+    // The workers' comp tab: nothing paid in the demo's policy year yet; the packet still downloads.
+    await page.goto(`/${locale}/compliance/workers-comp`);
+    await expect(page.getByTestId("wc-none")).toBeVisible();
+    await expect(page.getByTestId("wc-from")).toHaveValue("2026-01-01");
+    await check(page, "workers' comp");
+    await page.getByTestId("wc-export").click();
+    const [packet] = await Promise.all([page.waitForEvent("download"), page.getByTestId("wc-export-pdf").click()]);
+    expect(packet.suggestedFilename()).toBe("workers-comp-2026-01-01-to-2026-12-31.pdf");
     expect(errors).toEqual([]);
   });
 }

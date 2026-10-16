@@ -9,9 +9,9 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
 import type { ComplianceRule } from "./generate";
-import { MA_STATEMENT_KEY } from "./service";
+import { keepsNoFiles, MA_CONTACT_KEY, MA_STATEMENT_KEY } from "./service";
 import { displayStatus, STATUS_ORDER, type DisplayStatus } from "./status";
-import { complianceRules, syncObligations } from "./sync";
+import { complianceRules, OPEN_DAYS_KEY, syncIfFree, syncObligations } from "./sync";
 
 export const AREAS = ["registrations", "clients", "placements", "workers", "equal_pay", "workers_comp", "aca"] as const;
 export type Area = (typeof AREAS)[number];
@@ -156,8 +156,12 @@ export function filterItems(items: ComplianceItem[], f: ComplianceFilters, actor
 /** Open duties per area (the side list's counts). */
 export const areaCounts = (items: ComplianceItem[]) => Object.fromEntries(AREAS.map((a) => [a, items.filter((i) => i.area === a && OPEN_STATUSES.includes(i.status)).length])) as Record<Area, number>;
 
-/** Overdue and due soon, for the sidebar's badge (no working out: a read). */
-export async function urgentCount(tx: Tx, today: string): Promise<number> {
+/**
+ * Overdue and due soon, for the sidebar's badge: worked out again first (a new placement's duty, a date
+ * that came into range), unless someone is changing the duties right now.
+ */
+export async function urgentCount(tx: Tx, agencyId: string, today: string): Promise<number> {
+  await syncIfFree(tx, agencyId, today);
   const [row] = await tx
     .select({ n: sql<number>`count(*)::int` })
     .from(s.obligations)
@@ -187,6 +191,24 @@ export async function obligationDetail(tx: Tx, actor: Actor, id: string, today: 
   const doc = (x: (typeof links)[number]) => ({ id: x.doc.id, filename: x.doc.filename, effectiveOn: x.doc.effectiveOn, source: x.doc.source, sizeBytes: x.doc.sizeBytes, addedBy: x.link.linkedByLabel, addedAt: x.link.linkedAt, unlinkedAt: x.link.unlinkedAt, unlinkedBy: x.link.unlinkedByLabel });
   const worker = o.workerId ? (await tx.select().from(s.workers).where(eq(s.workers.id, o.workerId)))[0] : undefined;
   const assignment = o.assignmentId ? (await tx.select({ id: s.assignments.id, jobOrderId: s.assignments.jobOrderId, startDate: s.assignments.startDate }).from(s.assignments).where(eq(s.assignments.id, o.assignmentId)))[0] : undefined;
+  // The Massachusetts job order's details and what else it needs (slice j step 2).
+  const notice =
+    o.kind === "ma_job_order" && assignment
+      ? await (async () => {
+          const [job] = await tx.select({ noticeDetails: s.jobOrders.noticeDetails }).from(s.jobOrders).where(eq(s.jobOrders.id, assignment.jobOrderId));
+          const settings = await tx.select().from(s.agencySettings).where(and(inArray(s.agencySettings.key, [MA_CONTACT_KEY, MA_STATEMENT_KEY]), isNull(s.agencySettings.effectiveTo)));
+          const [agency] = await tx.select({ phone: s.agencies.phone }).from(s.agencies).limit(1);
+          return { details: job?.noticeDetails ?? null, hasContact: settings.some((x) => x.key === MA_CONTACT_KEY), hasStatement: settings.some((x) => x.key === MA_STATEMENT_KEY), hasAgencyPhone: Boolean(agency?.phone) };
+        })()
+      : null;
+  // The Illinois proof page shows the registration in force on the day the client checks.
+  const proof = ["il_client_proof", "il_client_proof_contract"].includes(o.kind)
+    ? await (async () => {
+        const on = o.dueOn > today ? o.dueOn : today;
+        const regs = await tx.select().from(s.agencyRegistrations).where(eq(s.agencyRegistrations.jurisdiction, "IL"));
+        return { on, hasRegistration: regs.some((g) => (g.issuedOn === null || g.issuedOn <= on) && g.expiresOn >= on) };
+      })()
+    : null;
   return {
     item,
     rule: rule ? { citation: rule.citation, sourceUrl: rule.sourceUrl, anchor: rule.anchor, offsetDays: rule.offsetDays, businessDays: rule.businessDays, remindDays: rule.remindDays, fixedDates: rule.fixedDates } : null,
@@ -206,6 +228,12 @@ export async function obligationDetail(tx: Tx, actor: Actor, id: string, today: 
     i9: worker ? { workerId: worker.id, hireDate: worker.hireDate, section1On: worker.i9Section1On, section2On: worker.i9Section2On, workAuthExpiresOn: worker.workAuthExpiresOn } : null,
     // What the data closed, the data keeps closed: reopening it would not last.
     mayReopen: actor.role === "owner" && o.status !== "open" && !o.closedBySystem,
+    notice,
+    proof,
+    /** Form I-9 copies are never kept here (dates only). */
+    keepsNoFiles: keepsNoFiles(o.kind),
+    /** Duties Shiftbook can make a document for. */
+    makes: ["il_client_proof", "il_client_proof_contract", "ma_job_order", "wc_audit"].includes(o.kind),
   };
 }
 export type ObligationDetail = NonNullable<Awaited<ReturnType<typeof obligationDetail>>>;
@@ -228,7 +256,7 @@ export async function complianceSettings(tx: Tx, actor: Actor, today: string) {
       .select()
       .from(s.obligations)
       .where(inArray(s.obligations.kind, ["il_registration_renewal", "ma_registration_renewal", "nj_certification_renewal", "wc_policy_renewal", "wc_audit"])),
-    tx.select().from(s.agencySettings).where(and(eq(s.agencySettings.key, MA_STATEMENT_KEY), isNull(s.agencySettings.effectiveTo))),
+    tx.select().from(s.agencySettings).where(and(inArray(s.agencySettings.key, [MA_STATEMENT_KEY, MA_CONTACT_KEY, OPEN_DAYS_KEY]), isNull(s.agencySettings.effectiveTo))),
   ]);
   const docName = (id: string | null) => (id ? (docs.find((d) => d.id === id)?.filename ?? null) : null);
   const renewal = (where: (o: (typeof renewals)[number]) => boolean) => {
@@ -239,7 +267,19 @@ export async function complianceSettings(tx: Tx, actor: Actor, today: string) {
     const r = [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
     return r ? { at: r.createdAt, by: r.createdByLabel } : null;
   };
-  const statementId = (statement[0]?.value as { documentId?: string } | undefined)?.documentId ?? null;
+  const statementId = (statement.find((x) => x.key === MA_STATEMENT_KEY)?.value as { documentId?: string } | undefined)?.documentId ?? null;
+  const contact = statement.find((x) => x.key === MA_CONTACT_KEY)?.value;
+  const openDays = statement.find((x) => x.key === OPEN_DAYS_KEY);
+  // Who set the open days: the audit event of the setting's last change.
+  const [openDaysEvent] = openDays
+    ? await tx
+        .select({ at: s.auditEvents.occurredAt, by: s.auditEvents.actorLabel })
+        .from(s.auditEvents)
+        .where(and(eq(s.auditEvents.entityType, "agency_setting"), sql`${s.auditEvents.after}->>'key' = ${OPEN_DAYS_KEY}`))
+        .orderBy(desc(s.auditEvents.occurredAt))
+        .limit(1)
+    : [];
+  const openDaysChanged = openDaysEvent ? { at: openDaysEvent.at, by: openDaysEvent.by } : null;
   const statementDoc = statementId ? docs.find((d) => d.id === statementId) : undefined;
   return {
     registrations: registrations
@@ -262,7 +302,9 @@ export async function complianceSettings(tx: Tx, actor: Actor, today: string) {
       .map((p) => ({ ...p, documentName: docName(p.documentId), renewal: renewal((o) => o.policyId === p.id && o.kind === "wc_policy_renewal"), audit: renewal((o) => o.policyId === p.id && o.kind === "wc_audit") })),
     branches: branches.sort((a, b) => cmp(a.name, b.name)),
     statement: statementDoc ? { id: statementDoc.id, filename: statementDoc.filename, at: statementDoc.createdAt, by: statementDoc.createdByLabel } : null,
-    changed: { registrations: newest(registrations), policies: newest(policies) },
+    contact: typeof contact === "string" ? contact : null,
+    openDays: Array.isArray(openDays?.value) ? (openDays.value as number[]) : [1, 2, 3, 4, 5],
+    changed: { registrations: newest(registrations), policies: newest(policies), openDays: openDaysChanged },
   };
 }
 export type ComplianceSettings = Awaited<ReturnType<typeof complianceSettings>>;

@@ -11,16 +11,17 @@ import { audit } from "../audit";
 import { planInsert, type Dated } from "../catalog/versions";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { PAY_DAY_KEY } from "../payroll/paid-lines";
 import { lockCatalog } from "../run/period-lock";
 import type { Actor } from "../session";
 
 /** SPEC §2: the Owner sees margin; the read-only accountant reads everything. */
 export const mayViewMargin = (actor: Actor) => actor.role === "owner" || actor.role === "accountant";
 export const mayChangeMargin = (actor: Actor) => actor.role === "owner";
+export { PAY_DAY_KEY };
 export const mayChangePlacement = (actor: Actor) => actor.role !== "accountant";
 
 export const OT_PREMIUM_KEY = "margin.wc_excludes_ot_premium";
-export const PAY_DAY_KEY = "payroll.pay_day_after_period_end";
 
 export interface MarginProblem {
   field: "state" | "classCode" | "description" | "ratePpm" | "includes" | "effectiveFrom" | "days";

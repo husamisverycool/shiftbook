@@ -10,6 +10,7 @@ import { addDays } from "@shiftbook/rules";
 import { agencies, assignments, auditEvents, obligations, payPeriods, timeEntries, type ObligationEvidence } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
+import { addObligationNote } from "../../src/server/compliance/service";
 import { addEntry } from "../../src/server/review/service";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
@@ -125,5 +126,22 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.warnings.filter((w) => w.workerId === marcus && w.code.includes("equal_pay"))).toEqual([]);
     expect(await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])))).toEqual([]);
+  });
+
+  it("a crossing that goes away: deleted while untouched; with a note it is set aside, kept, and opens again when the hours cross again", async () => {
+    await earlierHours();
+    const ids = await weekOfWork();
+    await inAgency((tx) => computeRun(tx, actor, period));
+    const [row] = await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])));
+    const theOwner: Actor = { ...actor, userId: "00000000-0000-4000-a000-000000000002", label: "Test owner", role: "owner" };
+    expect(await inAgency((tx) => addObligationNote(tx, theOwner, row!.id, "Asked the client for its rate."))).toEqual({ ok: true });
+    await inAgency((tx) => tx.update(timeEntries).set({ status: "rejected" }).where(inArray(timeEntries.id, ids)));
+    await inAgency((tx) => computeRun(tx, actor, period));
+    const [aside] = await inAgency((tx) => tx.select().from(obligations).where(eq(obligations.id, row!.id)));
+    expect([aside!.status, aside!.closedBySystem, aside!.statusNote]).toEqual(["not_applicable", true, "No longer applies: the hours that crossed the threshold changed."]);
+    await inAgency((tx) => tx.update(timeEntries).set({ status: "reviewed" }).where(inArray(timeEntries.id, ids)));
+    await inAgency((tx) => computeRun(tx, actor, period));
+    const rows = await inAgency((tx) => tx.select().from(obligations).where(inArray(obligations.kind, [...EQUAL_PAY_KINDS])));
+    expect(rows.map((r) => [r.id, r.status, r.closedBySystem, r.crossedOn])).toEqual([[row!.id, "open", false, "2026-10-07"]]);
   });
 });

@@ -2364,7 +2364,8 @@
     "tabsLabel": "Vistas de cumplimiento",
     "tabs": {
       "list": "Lista",
-      "calendar": "Calendario"
+      "calendar": "Calendario",
+      "workersComp": "Compensación laboral"
     },
     "areasLabel": "Áreas",
     "areas": {
@@ -2549,7 +2550,41 @@
         "renewed": "Renovada con {number}, vigente hasta el {date}.",
         "completed": "Completada el {date}.",
         "noLonger": "Ya no aplica: cambiaron los datos con que se calculó."
-      }
+      },
+      "create": {
+        "il_client_proof": "Hacer la página de prueba",
+        "il_client_proof_contract": "Hacer la página de prueba",
+        "ma_job_order": "Hacer la orden de trabajo",
+        "wc_audit": "Hacer el paquete",
+        "made": "Hecho y agregado a la evidencia.",
+        "hint": "Shiftbook hace el documento con lo que sabe y lo guarda aquí."
+      },
+      "notice": {
+        "title": "Datos de la orden de trabajo",
+        "intro": "Lo que la orden de trabajo indica y Shiftbook no sabe de otra forma. Se guarda en la orden de trabajo para cada colocación.",
+        "startTime": "Inicio diario",
+        "endTime": "Fin previsto",
+        "overtime": "Horas extra",
+        "overtimeOptions": {
+          "yes": "Habrá",
+          "possible": "Puede haber",
+          "no": "No se esperan"
+        },
+        "requirements": "Ropa, equipo, capacitación o licencias, y su costo",
+        "meals": "Comidas (¿se dan? ¿costo?)",
+        "transport": "Transporte (¿se da? ¿tarifa?)",
+        "strike": "Huelga o cierre patronal en el lugar de trabajo",
+        "save": "Guardar datos",
+        "saved": "Guardado.",
+        "missing": "Primero agregue los datos de la orden de trabajo.",
+        "department": "Primero agregue los datos de contacto del Departamento en Ajustes de cumplimiento.",
+        "noStatement": "No hay declaración multilingüe: la orden de trabajo dirá que debe entregarse. Agréguela en Ajustes de cumplimiento.",
+        "employerPhone": "Teléfono del empleador del lugar de trabajo ({client})",
+        "agencyPhone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo."
+      },
+      "missingRegistration": "No hay registro de Illinois vigente: primero agréguelo en Ajustes de cumplimiento.",
+      "noI9Files": "Las copias del Formulario I-9 no se guardan en Shiftbook (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
+      "proofNoRegistration": "No hay registro de Illinois vigente el {date}, el día en que el cliente verifica: primero agregue el registro renovado."
     },
     "who": {
       "owner": "el Propietario",
@@ -2568,15 +2603,30 @@
         "file_size": "El archivo está vacío o pesa más de 20 MB.",
         "effective_on": "Escriba la fecha en que el archivo entró en vigor.",
         "section1On": "Una fecha de finalización no puede ser posterior a hoy.",
-        "section2On": "La Sección 2 no puede ser antes del primer día ni después de hoy.",
+        "section2On": "La Sección 2 no puede ser antes de la Sección 1 ni después de hoy.",
         "reverifiedOn": "La fecha de reverificación no puede ser posterior a hoy.",
         "nextExpiresOn": "La nueva fecha de vencimiento debe ser posterior a la reverificación.",
         "reason": "Diga por qué no aplica.",
         "note": "La nota debe tener menos de 500 caracteres.",
         "body": "Escriba la nota (hasta 2,000 caracteres).",
         "hireDate": "Escriba una fecha.",
-        "workAuthExpiresOn": "Escriba una fecha."
-      }
+        "workAuthExpiresOn": "Escriba una fecha.",
+        "registration": "No hay registro de Illinois vigente en la fecha de la obligación: agréguelo en Ajustes de cumplimiento.",
+        "details": "Primero agregue los datos de la orden de trabajo.",
+        "department": "Primero agregue los datos de contacto del Departamento en Ajustes de cumplimiento.",
+        "startTime": "Escriba una hora como 07:00.",
+        "endTime": "Escriba una hora como 15:30.",
+        "requirements": "Diga qué se requiere, o \"Nada\" (hasta 300 caracteres).",
+        "meals": "Diga si se dan comidas y su costo (hasta 300 caracteres).",
+        "transport": "Diga si se da transporte y su tarifa (hasta 300 caracteres).",
+        "contact": "Escriba los datos de contacto (hasta 500 caracteres).",
+        "i9_files": "Las copias del Formulario I-9 no se guardan en Shiftbook: registre solo las fechas.",
+        "agency_phone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo.",
+        "employerPhone": "Escriba el teléfono del empleador del lugar de trabajo.",
+        "carrierContact": "La dirección y el teléfono de la aseguradora deben tener menos de 500 caracteres.",
+        "days": "Elija sábado, domingo, ambos o ninguno."
+      },
+      "closed_by_data": "Shiftbook cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
     },
     "calendar": {
       "today": "Hoy",
@@ -2594,6 +2644,42 @@
       "nextDue": "La siguiente obligación vence el {date}.",
       "dayLabel": "{date}: {count, plural, one {# obligación} other {# obligaciones}}",
       "keys": "Teclas: M mes · W semana · A agenda · T hoy · J o N siguiente · Mayús+← anterior · G ir a una fecha"
+    },
+    "workersComp": {
+      "title": "Compensación laboral",
+      "from": "Desde",
+      "to": "Hasta",
+      "order": "Orden",
+      "orders": {
+        "state": "Estado primero",
+        "class": "Clase primero"
+      },
+      "export": "Exportar",
+      "pdf": "Paquete (PDF)",
+      "csv": "Tabla (CSV)",
+      "missingTitle": "Pagado sin clase en la tarifa",
+      "missingIntro": "Fuera de los totales hasta que su tarifa tenga una clase.",
+      "cols": {
+        "state": "Estado",
+        "classCode": "Clase",
+        "worker": "Trabajador",
+        "hours": "Horas",
+        "straight": "Tiempo normal",
+        "ot": "Prima HE",
+        "dt": "Prima doble",
+        "other": "Otro pago",
+        "total": "Pago total"
+      },
+      "subtotal": "{state} {classCode}",
+      "total": "Total",
+      "tieEqual": "Cuadra con los archivos de nómina con estas fechas de pago ({files}): bruto {gross}.",
+      "tieDifferent": "Archivos de nómina con estas fechas de pago ({files}): bruto {gross}; liquidado fuera de los archivos por correcciones: {settled}; este paquete {packet}; {difference} sin explicar: revise las nóminas con estas fechas de pago.",
+      "none": "No se pagó nada con fechas de pago en este rango.",
+      "tableLabel": "Nómina por estado, clase y trabajador",
+      "openJobOrder": "Abrir la orden de trabajo",
+      "intro": "Pago por estado y clase con la prima de horas extra aparte, para las fechas de pago del rango (el periodo de la póliza por defecto).",
+      "apply": "Aplicar",
+      "tieSettled": "Cuadra con los archivos de nómina con estas fechas de pago ({files}): bruto {gross}, y {settled} que las correcciones liquidaron fuera de los archivos ({decisions, plural, one {# decisión} other {# decisiones}})."
     }
   },
   "complianceSettings": {
@@ -2654,7 +2740,8 @@
         "startsOn": "Inicia",
         "endsOn": "Termina",
         "auditDueOn": "Auditoría de prima (opcional)",
-        "file": "Archivo de la póliza (opcional)"
+        "file": "Archivo de la póliza (opcional)",
+        "carrierContact": "Dirección y teléfono de la aseguradora (se imprimen en las órdenes de trabajo de Massachusetts)"
       }
     },
     "statement": {
@@ -2663,9 +2750,114 @@
       "none": "Aún no hay declaración: suba la declaración de la División para que acompañe cada orden de trabajo.",
       "upload": "Subir declaración",
       "current": "<file>{name}</file>, agregada el {date} por {by}",
-      "file": "Archivo de la declaración"
+      "file": "Archivo de la declaración",
+      "contact": "Los datos de contacto del Departamento que se imprimen en cada orden de trabajo",
+      "contactHint": "Su nombre, dirección y teléfono, como los publica el Departamento.",
+      "saveContact": "Guardar contacto",
+      "noContact": "Aún no hay datos de contacto."
     },
     "renewalStatus": "{status}, {date}",
-    "noRenewal": "—"
+    "noRenewal": "—",
+    "openDays": {
+      "title": "Días hábiles para el Formulario I-9",
+      "intro": "La Sección 2 vence tres días hábiles después del primer día. De lunes a viernes siempre cuentan; un día de fin de semana en que la agencia abre también cuenta, lo que adelanta la fecha.",
+      "legend": "Días en que la agencia abre",
+      "hint": "Los feriados se cuentan como días hábiles, lo que solo adelanta la fecha.",
+      "save": "Guardar días",
+      "days": {
+        "0": "Domingo",
+        "1": "Lunes",
+        "2": "Martes",
+        "3": "Miércoles",
+        "4": "Jueves",
+        "5": "Viernes",
+        "6": "Sábado"
+      }
+    }
+  },
+  "complianceDocuments": {
+    "page": "Page {page} of {pages}",
+    "ilProof": {
+      "title": "Proof of registration",
+      "law": "Illinois Day and Temporary Labor Services Act (820 ILCS 175)",
+      "made": "Made",
+      "forClient": "For",
+      "office": "Office",
+      "number": "Registration number",
+      "issued": "Issued",
+      "expires": "Expires",
+      "agencyOffice": "{name} (the agency)",
+      "workersComp": "Workers' compensation insurance",
+      "insurer": "Insurer",
+      "policy": "Policy",
+      "period": "Period",
+      "howToCheck": "How to check",
+      "howToCheckText": "The client may verify this registration with the Illinois Department of Labor, which lists the registered day and temporary labor service agencies at https://labor.illinois.gov/employers/approveddtlsa.html. The law asks the client to verify it before contracting with the agency and on March 1 and September 1 of each year (820 ILCS 175/85(a)).",
+      "noPolicy": "No hay póliza registrada para el {date}."
+    },
+    "maJobOrder": {
+      "title": "Job order",
+      "law": "Massachusetts Temporary Workers Right to Know (M.G.L. c. 149 § 159C)",
+      "worker": "Worker",
+      "starts": "Starts",
+      "made": "Made",
+      "contacts": "Contacts",
+      "agency": "Staffing agency",
+      "insurer": "Workers' compensation insurer",
+      "client": "Worksite employer",
+      "department": "Department of Labor Standards",
+      "job": "The job",
+      "position": "Position",
+      "soc": "Occupation code (SOC)",
+      "requirements": "Clothing, equipment, training or licenses, and their cost",
+      "pay": "Pay",
+      "rate": "Hourly rate",
+      "payDay": "Pay day",
+      "overtime": "Overtime",
+      "hours": "Hours",
+      "times": "Daily start and anticipated end",
+      "duration": "Expected duration",
+      "extras": "Meals, transportation and the worksite",
+      "meals": "Meals",
+      "transport": "Transportation",
+      "strike": "Strike or lockout at the worksite",
+      "payDayText": "Every week, on the {weekday} after the workweek ends ({days} days after)",
+      "policyLine": "Policy {number}",
+      "noPolicy": "No policy on file for this date",
+      "overtimeYes": "Overtime will occur, paid at {rate} an hour",
+      "overtimePossible": "Overtime may occur, paid at {rate} an hour",
+      "overtimeNo": "No overtime is expected",
+      "until": "Until {date}",
+      "noEnd": "Not set: open-ended",
+      "strikeYes": "Yes",
+      "strikeNo": "No",
+      "statementAttached": "The Department of Labor Standards' multilingual statement is given with this job order.",
+      "statementMissing": "The Department of Labor Standards' multilingual statement must be given with this job order.",
+      "payDaySameDay": "Cada semana, el último día de la semana laboral ({weekday})"
+    },
+    "wcPacket": {
+      "title": "Workers' compensation payroll",
+      "insurer": "Insurer",
+      "range": "Pay dates",
+      "made": "Made",
+      "summary": "Summary by state and class",
+      "detail": "By worker",
+      "missing": "Paid with no class on the rate card (not in the totals)",
+      "tieOut": "Ties to the payroll files",
+      "state": "State",
+      "classCode": "Class",
+      "worker": "Worker",
+      "hours": "Hours",
+      "straight": "Straight time",
+      "ot": "OT premium",
+      "dt": "DT premium",
+      "other": "Other pay",
+      "total": "Total pay",
+      "subtotal": "Subtotal",
+      "tieOutEqual": "Payroll files with these pay dates: {files}, gross {gross}. This packet, with the pay listed apart: {packet}. They agree.",
+      "tieOutDifferent": "Archivos de nómina con estas fechas de pago: {files}, bruto {gross}. Liquidado fuera de los archivos por correcciones: {settled}. Este paquete, con el pago detallado: {packet}. Sin explicar: {difference}.",
+      "description": "Description",
+      "tieOutSettled": "Archivos de nómina con estas fechas de pago: {files}, bruto {gross}. Liquidado fuera de los archivos por correcciones: {settled}. Este paquete, con el pago detallado: {packet}. Coinciden."
+    }
   }
 }

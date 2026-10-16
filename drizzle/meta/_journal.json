@@ -211,6 +211,13 @@
       "when": 1792092000000,
       "tag": "0029_compliance",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792092100000,
+      "tag": "0030_job_order_notice",
+      "breakpoints": true
     }
   ]
 }

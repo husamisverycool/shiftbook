@@ -10,6 +10,7 @@ import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { audit } from "../audit";
 import { createAssignment } from "../catalog/assignments";
 import { createJobOrder } from "../catalog/job-orders";
+import { syncObligations } from "../compliance/sync";
 import { addRateVersion, versionsOf } from "../catalog/rate-cards";
 import { inForce } from "../catalog/versions";
 import type { Tx } from "../db/client";
@@ -268,6 +269,8 @@ export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: 
   await tx.update(s.placementImports).set({ status: "done", results, updatedAt: new Date() }).where(eq(s.placementImports.id, id));
   const imported = results.filter((r) => r.outcome === "imported").length;
   await audit(tx, actor, [{ action: "import", entityType: "placement_import", entityId: id, after: { imported, skipped: results.length - imported } }]);
+  // The duties the new placements call for (a Massachusetts job order, an I-9 for a new hire).
+  await syncObligations(tx, actor.agencyId, today);
   return results;
 }
 

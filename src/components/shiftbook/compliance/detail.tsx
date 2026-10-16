@@ -7,12 +7,14 @@ import { ArrowLeftIcon, DownloadIcon, ExternalLinkIcon, PaperclipIcon } from "lu
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { addFileAction, addNoteAction, closeAction, recordI9Action, reopenAction, reverifyAction, unlinkFileAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
+import { addFileAction, addNoteAction, closeAction, makeDocumentAction, recordI9Action, reopenAction, reverifyAction, saveNoticeDetailsAction, unlinkFileAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -203,6 +205,7 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
           </Link>
         )}
       </section>
+      {d.notice && <NoticeForm d={d} />}
       {d.i9 && (i.kind === "i9_section1" || i.kind === "i9_section2") && <I9Form d={d} today={today} />}
       {d.i9 && i.kind === "i9_reverify" && open && i.mayAct && <ReverifyForm d={d} today={today} />}
     </div>
@@ -215,6 +218,75 @@ function Card({ label, children }: { label: string; children: React.ReactNode })
       <span className="text-xs text-muted-foreground">{label}</span>
       {children}
     </div>
+  );
+}
+
+/** The job order's details for its Massachusetts job orders (M.G.L. c. 149 § 159C(b)); kept on the job order. */
+function NoticeForm({ d }: { d: ObligationDetail }) {
+  const tn = useTranslations("compliance.detail.notice");
+  const n = d.notice!.details;
+  const [v, setV] = useState({ employerPhone: n?.employerPhone ?? "", startTime: n?.startTime ?? "", endTime: n?.endTime ?? "", overtime: n?.overtime ?? "possible", requirements: n?.requirements ?? "", meals: n?.meals ?? "", transport: n?.transport ?? "", strike: n?.strike ?? false });
+  const { pending, act } = useAct();
+  const can = d.item.mayAct;
+  const text = (key: "requirements" | "meals" | "transport", label: string) => (
+    <div className="flex flex-col gap-1 sm:col-span-2">
+      <Label htmlFor={`notice-${key}`} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Input id={`notice-${key}`} value={v[key]} maxLength={300} disabled={!can} onChange={(e) => setV({ ...v, [key]: e.target.value })} data-testid={`notice-${key}`} />
+    </div>
+  );
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="notice" data-testid="notice-form">
+      <h2 id="notice" className="text-base font-semibold">
+        {tn("title")}
+      </h2>
+      <p className="text-xs text-muted-foreground">{tn("intro")}</p>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <div className="flex flex-col gap-1 sm:col-span-4">
+          <Label htmlFor="notice-phone" className="text-xs text-muted-foreground">
+            {tn("employerPhone", { client: d.names.client ?? "" })}
+          </Label>
+          <Input id="notice-phone" type="tel" className="sm:w-60" value={v.employerPhone} maxLength={40} disabled={!can} onChange={(e) => setV({ ...v, employerPhone: e.target.value })} data-testid="notice-phone" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="notice-start" className="text-xs text-muted-foreground">
+            {tn("startTime")}
+          </Label>
+          <Input id="notice-start" type="time" value={v.startTime} disabled={!can} onChange={(e) => setV({ ...v, startTime: e.target.value })} data-testid="notice-start" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="notice-end" className="text-xs text-muted-foreground">
+            {tn("endTime")}
+          </Label>
+          <Input id="notice-end" type="time" value={v.endTime} disabled={!can} onChange={(e) => setV({ ...v, endTime: e.target.value })} data-testid="notice-end" />
+        </div>
+        <div className="flex flex-col gap-1 sm:col-span-2">
+          <Label htmlFor="notice-overtime" className="text-xs text-muted-foreground">
+            {tn("overtime")}
+          </Label>
+          <NativeSelect id="notice-overtime" className="w-full" value={v.overtime} disabled={!can} onChange={(e) => setV({ ...v, overtime: e.target.value as "yes" | "no" | "possible" })}>
+            {(["yes", "possible", "no"] as const).map((o) => (
+              <NativeSelectOption key={o} value={o}>
+                {tn(`overtimeOptions.${o}`)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
+        {text("requirements", tn("requirements"))}
+        {text("meals", tn("meals"))}
+        {text("transport", tn("transport"))}
+        <div className="flex items-center gap-2 sm:col-span-2">
+          <Checkbox id="notice-strike" checked={v.strike} disabled={!can} onCheckedChange={(on) => setV({ ...v, strike: on === true })} />
+          <Label htmlFor="notice-strike">{tn("strike")}</Label>
+        </div>
+      </div>
+      {can && (
+        <Button size="sm" className="w-fit" disabled={pending} onClick={() => act(() => saveNoticeDetailsAction(d.item.id, v), () => toast.success(tn("saved")))} data-testid="save-notice">
+          {tn("save")}
+        </Button>
+      )}
+    </section>
   );
 }
 
@@ -319,9 +391,45 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
       )}
     </li>
   );
+  const notice = d.notice;
+  const blocked = notice
+    ? !notice.details?.employerPhone
+      ? td("notice.missing")
+      : !notice.hasContact
+        ? td("notice.department")
+        : !notice.hasAgencyPhone
+          ? td("notice.agencyPhone")
+          : null
+    : d.proof && !d.proof.hasRegistration
+      ? td("proofNoRegistration", { date: longDate(d.proof.on, locale) })
+      : null;
   return (
     <div className="flex flex-col gap-4">
-      {d.item.mayAct && (
+      {d.makes && d.item.mayAct && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4" data-testid="make-document">
+          <Button size="sm" disabled={pending || blocked !== null} onClick={() => act(() => makeDocumentAction(d.item.id, d.item.kind), () => toast.success(td("create.made")))} data-testid="make-document-button">
+            {td(`create.${d.item.kind}` as "create.ma_job_order")}
+          </Button>
+          <p className="flex-1 text-xs text-muted-foreground">
+            {blocked ?? td("create.hint")}
+            {(blocked === td("notice.department") || (d.proof && !d.proof.hasRegistration) || (notice && notice.details && !notice.hasStatement)) && (
+              <>
+                {" "}
+                {notice && notice.details && notice.hasContact && !notice.hasStatement && <span>{td("notice.noStatement")} </span>}
+                <Link href="/settings/compliance" className="underline underline-offset-4">
+                  {td("settingsLink")}
+                </Link>
+              </>
+            )}
+          </p>
+        </div>
+      )}
+      {d.keepsNoFiles && (
+        <p className="rounded-lg border p-4 text-sm text-muted-foreground" data-testid="no-i9-files">
+          {td("noI9Files")}
+        </p>
+      )}
+      {d.item.mayAct && !d.keepsNoFiles && (
         <form
           className="flex flex-wrap items-end gap-3 rounded-lg border p-4"
           onSubmit={(e) => {
@@ -357,7 +465,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
           <p className="w-full text-xs text-muted-foreground">{td("fileTypes")}</p>
         </form>
       )}
-      {d.files.length === 0 ? (
+      {d.keepsNoFiles && d.files.length === 0 ? null : d.files.length === 0 ? (
         <p className="rounded-lg border py-10 text-center text-sm text-muted-foreground" data-testid="no-files">
           {td("noFiles")}
         </p>

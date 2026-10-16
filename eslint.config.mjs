@@ -13,6 +13,7 @@ const MONEY_CODE = [
   "src/lib/amounts.ts",
   "src/server/placements/**/*.ts",
   "src/server/margin/**/*.ts",
+  "src/server/compliance/**/*.ts",
 ];
 const MONEY_EXEMPT = ["packages/rules/src/int.ts", "**/*.test.ts"];
 

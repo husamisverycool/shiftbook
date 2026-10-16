@@ -6,7 +6,9 @@ import { PlusIcon, UploadIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
-import { addPolicyAction, addRegistrationAction, setMaStatementAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
+import { addPolicyAction, addRegistrationAction, setMaContactAction, setMaStatementAction, setOpenDaysAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -165,7 +167,10 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
               <TableBody>
                 {view.policies.map((p) => (
                   <TableRow key={p.id} data-testid="policy-row">
-                    <TableCell className="font-medium whitespace-normal">{p.carrier}</TableCell>
+                    <TableCell className="whitespace-normal">
+                      <span className="font-medium">{p.carrier}</span>
+                      {p.carrierContact && <span className="block text-xs whitespace-pre-line text-muted-foreground">{p.carrierContact}</span>}
+                    </TableCell>
                     <TableCell>{p.policyNumber}</TableCell>
                     <TableCell>{p.states.join(", ")}</TableCell>
                     <TableCell className="whitespace-nowrap">{date(p.startsOn)}</TableCell>
@@ -184,6 +189,8 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
 
       {section("statement-title", t("statement.title"), t("statement.intro"), null, <Statement view={view} canChange={canChange} />, null)}
 
+      {section("open-days-title", t("openDays.title"), t("openDays.intro"), null, <OpenDays view={view} canChange={canChange} />, changed(view.changed.openDays))}
+
       {adding === "registration" && <RegistrationDialog view={view} today={today} onClose={() => setAdding(null)} />}
       {adding === "policy" && <PolicyDialog today={today} onClose={() => setAdding(null)} />}
     </div>
@@ -195,9 +202,24 @@ function Statement({ view, canChange }: { view: View; canChange: boolean }) {
   const locale = useLocale();
   const [file, setFile] = useState<File | null>(null);
   const [key, setKey] = useState(0);
+  const [contact, setContact] = useState(view.contact ?? "");
   const { pending, save } = useSave();
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-4" data-testid="ma-statement">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="ma-contact">{t("contact")}</Label>
+        {canChange ? (
+          <>
+            <Textarea id="ma-contact" value={contact} maxLength={500} rows={3} onChange={(e) => setContact(e.target.value)} data-testid="ma-contact" />
+            <p className="text-xs text-muted-foreground">{t("contactHint")}</p>
+            <Button size="sm" variant="outline" className="w-fit" disabled={pending || contact.trim() === "" || contact === (view.contact ?? "")} onClick={() => save(() => setMaContactAction(contact), () => undefined)} data-testid="save-ma-contact">
+              {t("saveContact")}
+            </Button>
+          </>
+        ) : (
+          <p className="text-sm whitespace-pre-line">{view.contact ?? t("noContact")}</p>
+        )}
+      </div>
       <p className="text-sm">
         {view.statement ? (
           t.rich("current", {
@@ -328,7 +350,7 @@ function RegistrationDialog({ view, today, onClose }: { view: View; today: strin
 function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }) {
   const t = useTranslations("complianceSettings.policy");
   const tc = useTranslations("compliance");
-  const [v, setV] = useState({ carrier: "", policyNumber: "", states: "", startsOn: today, endsOn: "", auditDueOn: "" });
+  const [v, setV] = useState({ carrier: "", carrierContact: "", policyNumber: "", states: "", startsOn: today, endsOn: "", auditDueOn: "" });
   const [file, setFile] = useState<File | null>(null);
   const { pending, save, field } = useSave();
   const input = (key: keyof typeof v, type = "text") => (
@@ -348,6 +370,11 @@ function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }
           <Field id="policy-policyNumber" label={t("fields.policyNumber")}>
             {input("policyNumber")}
           </Field>
+          <div className="sm:col-span-2">
+            <Field id="policy-carrierContact" label={t("fields.carrierContact")}>
+              <Textarea id="policy-carrierContact" rows={2} maxLength={500} value={v.carrierContact} aria-invalid={field === "carrierContact" ? true : undefined} onChange={(e) => setV({ ...v, carrierContact: e.target.value })} data-testid="policy-carrierContact" />
+            </Field>
+          </div>
           <Field id="policy-states" label={t("fields.states")}>
             {input("states")}
           </Field>
@@ -376,7 +403,7 @@ function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }
                 .split(/[,\s]+/)
                 .map((s) => s.trim().toUpperCase())
                 .filter(Boolean);
-              form.set("data", JSON.stringify({ carrier: v.carrier, policyNumber: v.policyNumber, states, startsOn: v.startsOn, endsOn: v.endsOn, auditDueOn: v.auditDueOn || null }));
+              form.set("data", JSON.stringify({ carrier: v.carrier, carrierContact: v.carrierContact.trim() || null, policyNumber: v.policyNumber, states, startsOn: v.startsOn, endsOn: v.endsOn, auditDueOn: v.auditDueOn || null }));
               if (file) form.set("file", file);
               save(() => addPolicyAction(form), onClose);
             }}
@@ -387,5 +414,43 @@ function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** The days the agency is open (Jira's standard working days): the weekend ones count as I-9 business days. */
+function OpenDays({ view, canChange }: { view: View; canChange: boolean }) {
+  const t = useTranslations("complianceSettings.openDays");
+  const [days, setDays] = useState<number[]>(view.openDays.filter((d) => d === 0 || d === 6));
+  const { pending, save } = useSave();
+  const same = [0, 6].every((d) => days.includes(d) === view.openDays.includes(d));
+  // Monday first, Sunday last, as a US work week reads.
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border p-4" data-testid="open-days">
+      <fieldset className="flex flex-wrap gap-x-5 gap-y-2">
+        <legend className="mb-2 text-sm font-medium">{t("legend")}</legend>
+        {order.map((d) => {
+          const weekend = d === 0 || d === 6;
+          return (
+            <div key={d} className="flex items-center gap-2">
+              <Checkbox
+                id={`open-day-${d}`}
+                checked={weekend ? days.includes(d) : true}
+                disabled={!weekend || !canChange}
+                onCheckedChange={(on) => setDays(on === true ? [...days, d] : days.filter((x) => x !== d))}
+                data-testid={`open-day-${d}`}
+              />
+              <Label htmlFor={`open-day-${d}`}>{t(`days.${d}` as "days.1")}</Label>
+            </div>
+          );
+        })}
+      </fieldset>
+      <p className="text-xs text-muted-foreground">{t("hint")}</p>
+      {canChange && (
+        <Button size="sm" variant="outline" className="w-fit" disabled={pending || same} onClick={() => save(() => setOpenDaysAction(days), () => undefined)} data-testid="save-open-days">
+          {t("save")}
+        </Button>
+      )}
+    </div>
   );
 }

@@ -14,12 +14,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { addObligationFile, addObligationNote, addRegistration, closeObligation, recordI9, recordReverification, reopenObligation, setObligationOwner, unlinkObligationFile } from "../../src/server/compliance/service";
+import { addObligationFile, addObligationNote, addRegistration, closeObligation, recordI9, recordReverification, reopenObligation, setObligationOwner, setOpenWeekendDays, unlinkObligationFile } from "../../src/server/compliance/service";
 import { complianceItems, filterItems, obligationDetail, urgentCount } from "../../src/server/compliance/queries";
 import { syncObligations } from "../../src/server/compliance/sync";
 import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY, DEMO_OWNER } from "../../src/server/demo/dataset";
-import { assignmentId, clearDemoAgency, clientId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
+import { assignmentId, clearDemoAgency, clientId, jobOrderId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { openAppDb, openOwnerDb } from "./helpers";
@@ -73,7 +73,7 @@ describe("the demo's duties, most urgent first (J1, J3)", () => {
     ]);
     // Every worker's I-9 was recorded on time: closed by the data itself.
     expect(all.filter((i) => i.kind.startsWith("i9_section") && i.status === "done")).toHaveLength(80);
-    expect(await inAgency((tx) => urgentCount(tx, TODAY))).toBe(4);
+    expect(await inAgency((tx) => urgentCount(tx, theOwner.agencyId, TODAY))).toBe(4);
   });
 
   it("filters: area, state, search, owner", async () => {
@@ -192,5 +192,91 @@ describe("the data closes and reopens what it settles (J3)", () => {
     // Syncing never touches it.
     await inAgency((tx) => syncObligations(tx, theOwner.agencyId, TODAY));
     expect((await one("il_equal_pay_720h")).status).toBe("overdue");
+  });
+});
+
+describe("second opinion (slice j)", () => {
+  beforeEach(freshAgency);
+
+  it("age never closes a duty: an overdue one further back than its look-back stays open", async () => {
+    // Kwame's job order was due 2026-08-09; on 2027-12-01 it is past the 365-day look-back, and still owed.
+    const o = await one("ma_job_order", (i) => i.status === "overdue");
+    await inAgency((tx) => syncObligations(tx, theOwner.agencyId, "2027-12-01"));
+    expect((await inAgency((tx) => obligationDetail(tx, theOwner, o.id, "2027-12-01")))!.item.status).toBe("overdue");
+  });
+
+  it("syncing again changes nothing (the facts compare equal whatever order the database keeps their keys in)", async () => {
+    await items();
+    expect(await inAgency((tx) => syncObligations(tx, theOwner.agencyId, TODAY))).toEqual({ created: 0, changed: 0, closed: 0 });
+  });
+
+  it("what the data closed cannot be reopened by hand; what Shiftbook set aside, the data may close as done", async () => {
+    const old = await one("il_registration_renewal");
+    await inAgency((tx) => addRegistration(tx, theOwner, { jurisdiction: "IL", branchId: null, number: "IL-DTLSA-0001-DEMO", issuedOn: "2027-01-01", expiresOn: "2027-12-31", documentId: null }, TODAY));
+    expect(await inAgency((tx) => reopenObligation(tx, theOwner, old.id))).toEqual({ ok: false, error: "closed_by_data" });
+    // A hire date moved and back: the first Section 2 duty was set aside, then the data says it was done.
+    const w = workerId("ashley-nguyen");
+    await inAgency((tx) => recordI9(tx, coordinator, w, { hireDate: "2026-10-15", section1On: "2026-10-15", section2On: null, workAuthExpiresOn: null }, TODAY));
+    const s2 = await one("i9_section2", (i) => i.links.workerId === w && i.occurrence === "2026-10-15");
+    await inAgency((tx) => recordI9(tx, coordinator, w, { hireDate: "2026-10-14", section1On: "2026-10-14", section2On: null, workAuthExpiresOn: null }, TODAY));
+    expect((await inAgency((tx) => obligationDetail(tx, theOwner, s2.id, TODAY)))!.item.status).toBe("not_applicable");
+    await inAgency((tx) => recordI9(tx, coordinator, w, { hireDate: "2026-10-15", section1On: "2026-10-15", section2On: "2026-10-16", workAuthExpiresOn: null }, TODAY));
+    const d = (await inAgency((tx) => obligationDetail(tx, theOwner, s2.id, TODAY)))!;
+    expect([d.item.status, d.statusNote, d.closedBySystem]).toEqual(["done", "Section 2 completed on 2026-10-16.", true]);
+  });
+
+  it("Form I-9: one set of duties per hire date; Section 2 may come before the first day but not before Section 1; no I-9 files kept", async () => {
+    const w = workerId("ashley-nguyen");
+    expect(await inAgency((tx) => recordI9(tx, coordinator, w, { hireDate: "2026-10-19", section1On: "2026-10-14", section2On: "2026-10-13", workAuthExpiresOn: null }, TODAY))).toEqual({ ok: false, error: "invalid", field: "section2On" });
+    expect(await inAgency((tx) => recordI9(tx, coordinator, w, { hireDate: "2026-10-19", section1On: "2026-10-14", section2On: "2026-10-15", workAuthExpiresOn: null }, TODAY))).toEqual({ ok: true });
+    const mine = (await items()).items.filter((i) => i.links.workerId === w && i.kind.startsWith("i9_section"));
+    expect(mine.filter((i) => i.occurrence === "2026-10-19").map((i) => [i.kind, i.status])).toEqual([
+      ["i9_section1", "done"],
+      ["i9_section2", "done"],
+    ]);
+    // The first hire's (2026-08-03), done then, stay done.
+    expect(mine.filter((i) => i.occurrence !== "2026-10-19").map((i) => [i.occurrence, i.status])).toEqual([
+      ["2026-08-03", "done"],
+      ["2026-08-03", "done"],
+    ]);
+    const s1 = mine.find((i) => i.kind === "i9_section1")!;
+    expect(await inAgency((tx) => addObligationFile(tx, theOwner, store, s1.id, { filename: "i9.pdf", bytes: PDF, effectiveOn: TODAY }))).toEqual({ ok: false, error: "invalid", field: "i9_files" });
+    expect((await inAgency((tx) => obligationDetail(tx, theOwner, s1.id, TODAY)))!.keepsNoFiles).toBe(true);
+  });
+
+  it("a changed end of the work authorization sets the old reverification aside, by whoever changed it, saying so", async () => {
+    const o = await one("i9_reverify");
+    const w = o.links.workerId!;
+    const [worker] = await owner.db.select().from(s.workers).where(eq(s.workers.id, w));
+    expect(await inAgency((tx) => recordI9(tx, coordinator, w, { hireDate: worker!.hireDate, section1On: worker!.i9Section1On, section2On: worker!.i9Section2On, workAuthExpiresOn: "2027-06-30" }, TODAY))).toEqual({ ok: true });
+    const d = (await inAgency((tx) => obligationDetail(tx, theOwner, o.id, TODAY)))!;
+    expect([d.item.status, d.doneByLabel, d.closedBySystem, d.statusNote]).toEqual(["not_applicable", "Test coordinator", false, "The work authorization's end was changed from 2026-12-20 to 2027-06-30."]);
+    expect((await items()).items.filter((i) => i.kind === "i9_reverify" && i.links.workerId === w).map((i) => [i.occurrence, i.status])).toEqual([
+      ["2027-06-30", "upcoming"],
+      ["2026-12-20", "not_applicable"],
+    ]);
+  });
+
+  it("Saturdays count as I-9 business days once the Owner says the agency is open then", async () => {
+    const w = workerId("ashley-nguyen");
+    await inAgency((tx) => recordI9(tx, coordinator, w, { hireDate: "2026-10-15", section1On: "2026-10-15", section2On: null, workAuthExpiresOn: null }, TODAY));
+    expect(await inAgency((tx) => setOpenWeekendDays(tx, coordinator, [6], TODAY))).toEqual({ ok: false, error: "not_allowed" });
+    expect(await inAgency((tx) => setOpenWeekendDays(tx, theOwner, [6, 3], TODAY))).toEqual({ ok: false, error: "invalid", field: "days" });
+    // Weekdays only: Thursday the 15th + 3 = Tuesday the 20th. The setting in force on the hire date
+    // counts; open on Saturdays from the 15th: Friday, Saturday, Monday — the 19th.
+    expect((await one("i9_section2", (i) => i.links.workerId === w && i.occurrence === "2026-10-15")).dueOn).toBe("2026-10-20");
+    expect(await inAgency((tx) => setOpenWeekendDays(tx, theOwner, [6], "2026-10-15"))).toEqual({ ok: true });
+    expect((await one("i9_section2", (i) => i.links.workerId === w && i.occurrence === "2026-10-15")).dueOn).toBe("2026-10-19");
+  });
+
+  it("the sidebar's count works the duties out first: a new Massachusetts placement's overdue job order counts at once", async () => {
+    expect(await inAgency((tx) => urgentCount(tx, theOwner.agencyId, TODAY))).toBe(4);
+    await owner.db.insert(s.assignments).values({ agencyId: theOwner.agencyId, workerId: workerId("marcus-bell"), jobOrderId: jobOrderId("ma-server"), startDate: "2026-10-05", status: "active" });
+    expect(await inAgency((tx) => urgentCount(tx, theOwner.agencyId, TODAY))).toBe(5);
+  });
+
+  it("an Illinois contract proof is one per contract: covered work after a gap longer than the window is a new contract", async () => {
+    const before = (await items()).items.filter((i) => i.kind === "il_client_proof_contract").map((i) => i.occurrence);
+    expect(before).toEqual(["contract:2026-08-03"]);
   });
 });

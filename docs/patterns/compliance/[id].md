@@ -23,7 +23,8 @@ attachments").
 1. **Header:** a link back to Compliance; H1 the duty and its subject; badges for the status
    (Overdue, Due soon, Upcoming, Done, Not applicable) and the state; at the right the actions for
    its status: **Mark done** (with an optional note; Vanta "Mark as complete") and **Not applicable**
-   (with a reason) while open; **Reopen** once done or not applicable (Owner only).
+   (with a reason) while open; **Reopen** once a person closed it (Owner only; what Shiftbook closed
+   from the data, the data reopens).
 2. **Tabs** (Drata, Vanta): Overview · Evidence · History · Notes, in the address.
 3. **Overview:** summary cards (Drata's readiness cards): Due (date and how far away), Owner (a
    picker), Evidence (how many files), Status. Then **What the law asks** — the rule in plain words,
@@ -31,12 +32,16 @@ attachments").
    the worker, the placement, the registration or the policy) and the facts the duty was worked out
    from (for example "Contract started 2026-03-02"; "Hired 2026-10-12; Section 2 due 2026-10-15,
    three business days later"). Where the duty needs data, its form is here: the I-9 dates; the
-   Illinois equal-pay rate; for a registration or policy, a link to Compliance settings.
+   Massachusetts job order's details (the worksite employer's phone, times, overtime, requirements,
+   meals, transportation, strike; kept on the job order); the Illinois equal-pay rate; for a
+   registration or policy, a link to Compliance settings.
 4. **Evidence:** the files linked to this duty (Drata: link, unlink, create; Vanta: Download): name,
    effective date, added by and when, uploaded or generated; **Add file** (a file and its effective
    date); **Create** for duties with a document (the Illinois proof page, the Massachusetts job
    order, the workers' comp packet), which makes the file and links it. An unlinked file moves to
-   **Past files** below (Vanta: History; Drata: past artifacts) and is never deleted.
+   **Past files** below (Vanta: History; Drata: past artifacts) and is never deleted. Form I-9 duties
+   keep no files: the tab says copies are not kept here (they hold Social Security numbers and birth
+   dates) and the dates go on the Overview.
 5. **History:** what happened, newest first: created (and from what), owner changes, files linked
    and unlinked, done, not applicable, reopened — who and when.
 6. **Notes:** notes newest first, each with who and when; a box to add one (Vanta "a space for
@@ -44,13 +49,17 @@ attachments").
 
 ## Interactions
 - Mark done asks for an optional note; Not applicable asks for a reason (required); both appear in
-  History. A done or not-applicable duty is never reopened by the system, only by the Owner.
+  History. A person's decision is never undone by the system; only the Owner reopens it. What
+  Shiftbook closed from the data (a renewal, a recorded date, a placement that no longer applies),
+  the data reopens or closes again.
 - Files: PDF, images, spreadsheets, text, up to 20 MB; the effective date defaults to today.
 - Keyboard: Esc goes back to the list.
 
 ## States
 - **Overdue / Due soon:** the status badge and the Due card say so in words, not only color.
 - **No files yet:** the Evidence tab says what would prove the duty (from its rule).
+- **Create blocked:** the button says what is missing first (the job order's details, the
+  Department's contact, the agency's phone, a registration in force on the duty's date).
 - **Read only** (the accountant, or a role the duty is not for): no actions, pickers or forms.
 
 ## Never copy
