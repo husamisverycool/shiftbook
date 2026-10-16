@@ -182,7 +182,7 @@ export function PaymentDialog({ clients, mode, today, onClose }: { clients: Paym
             ) : client.invoices.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("nothingOpen")}</p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border">
+              <div className="overflow-hidden rounded-xl border bg-card">
                 <Table>
                   <TableHeader>
                     <TableRow>

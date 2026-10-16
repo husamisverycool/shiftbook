@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { JobOrderRow } from "@/server/catalog/queries";
 import { useCan } from "../abilities";
+import { EmptyState } from "../empty-state";
 import { money } from "../format";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
@@ -105,15 +106,19 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
           )
         }
         empty={
-          <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
-            <BriefcaseIcon className="size-5" />
-            <p>{t("empty")}</p>
-            {mayChange && (
-              <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setCreating(true)}>
-                {t("create")}
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            icon={BriefcaseIcon}
+            title={t("empty")}
+            description={t("emptyBody")}
+            action={
+              mayChange && (
+                <Button size="sm" onClick={() => setCreating(true)}>
+                  <PlusIcon />
+                  {t("create")}
+                </Button>
+              )
+            }
+          />
         }
       />
       {creating && <JobOrderForm onClose={() => setCreating(false)} options={options} />}

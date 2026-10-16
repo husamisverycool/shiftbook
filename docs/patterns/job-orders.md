@@ -23,11 +23,14 @@ workers, the rate in force today. Open one to see its details, assignments and r
 
 ## Hierarchy
 1. **View header:** the view's name ("Job orders"); on the right a filter control, the display
-   options button, and the create button (Linear).
+   options button, and the create button (Linear). The title is set as every page's title
+   (`_components/page-header.md`, decision 0029).
 2. **Filter bar** (only when filters are applied): each filter as a chip; filters are written to the
    URL so the link shares the filtered view (Linear).
 3. **Group headers** when grouped (default: by client), sticky while scrolling, each with a count
-   and a collapse toggle at its left edge (Linear).
+   and a collapse toggle at its left edge: full-width tinted bands, the rows running edge to edge
+   under them with hairline dividers and no box around the list (Linear's list view screenshot,
+   https://linear.app/docs/filters).
 4. **Rows:** the properties chosen in display options. Shiftbook's properties: position, client,
    worksite (city, state), shift, headcount (assigned / wanted), pay rate in force today, bill rate
    in force today, prevailing-wage flag. A checkbox appears at the left edge on hover (Linear).
@@ -54,8 +57,8 @@ workers, the rate in force today. Open one to see its details, assignments and r
   job-order equivalent yet).
 
 ## States
-- Empty (no job orders): the empty-state component (`_components/empty-state.md`) with an inline
-  create link.
+- Empty (no job orders): the empty-state component (`_components/empty-state.md`): what a job
+  order is for, and the create button.
 - No results for the filters: the empty-state component with a clear-filters link (Linear does not
   document this state — difference listed).
 - Loading: the list skeleton; error: an error alert with "Try again" (as the converter).

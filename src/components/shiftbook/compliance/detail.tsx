@@ -8,7 +8,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { addFileAction, addNoteAction, closeAction, makeDocumentAction, recordI9Action, reopenAction, reverifyAction, removeEqualPayRateAction, saveNoticeDetailsAction, setEqualPayRateAction, unlinkFileAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -17,11 +16,11 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
 import { parseDollars } from "@/lib/amounts";
 import type { Explain } from "@/lib/explain";
 import type { ObligationDetail } from "@/server/compliance/queries";
 import { longDate, money } from "../format";
+import { PageTabs } from "../page";
 import { useCite, useSay } from "./explain";
 import { dueIn, OwnerPicker } from "./list";
 import { StatusBadge } from "./status-badge";
@@ -65,12 +64,14 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
       </Link>
       <div className="flex flex-wrap items-start gap-3">
         <div className="mr-auto flex min-w-0 flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{t(`kinds.${i.kind}` as "kinds.ma_job_order")}</h1>
-          <p className="text-sm text-muted-foreground">{i.subject}</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={i.status} />
-            <Badge variant="outline">{t(`states.${i.jurisdiction}` as "states.IL")}</Badge>
+          {/* Stripe's detail header: the title with its status beside it, then the record's facts. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t(`kinds.${i.kind}` as "kinds.ma_job_order")}</h1>
+            <StatusBadge status={i.status} size="lg" />
           </div>
+          <p className="text-sm text-muted-foreground">
+            {i.subject} · {t(`states.${i.jurisdiction}` as "states.IL")}
+          </p>
         </div>
         {i.mayAct && open && (
           <div className="flex gap-2">
@@ -95,20 +96,17 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
         </p>
       )}
       {!i.mayAct && <p className="text-sm text-muted-foreground">{td("readOnly", { who: t(`who.${whoFor(d)}`) })}</p>}
-      <nav aria-label={td("tabs.overview")} className="flex w-fit gap-1 rounded-lg bg-muted p-[3px]">
-        {TABS.map((x) => (
-          <Link
-            key={x}
-            href={x === "overview" ? `/compliance/${i.id}` : `/compliance/${i.id}?tab=${x}`}
-            aria-current={x === tab ? "page" : undefined}
-            className={cn("rounded-md px-3 py-1 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground dark:text-muted-foreground", x === tab && "bg-background text-foreground shadow-sm dark:text-foreground")}
-            data-testid={`obligation-tab-${x}`}
-          >
-            {td(`tabs.${x}`)}
-            {x === "evidence" && d.files.length > 0 ? ` (${d.files.length})` : x === "notes" && d.notes.length > 0 ? ` (${d.notes.length})` : ""}
-          </Link>
-        ))}
-      </nav>
+      <PageTabs
+        label={td("tabs.overview")}
+        current={tab}
+        tabs={TABS.map((x) => ({
+          key: x,
+          label: td(`tabs.${x}`),
+          count: x === "evidence" && d.files.length > 0 ? d.files.length : x === "notes" && d.notes.length > 0 ? d.notes.length : undefined,
+          href: x === "overview" ? `/compliance/${i.id}` : `/compliance/${i.id}?tab=${x}`,
+          testId: `obligation-tab-${x}`,
+        }))}
+      />
       {tab === "overview" && <Overview d={d} today={today} />}
       {tab === "evidence" && <Evidence d={d} today={today} />}
       {tab === "history" && <History d={d} />}
@@ -227,7 +225,7 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
 
 function Card({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border p-3">
+    <div className="flex flex-col gap-1 rounded-xl border bg-card p-3">
       <span className="text-xs text-muted-foreground">{label}</span>
       {children}
     </div>
@@ -250,7 +248,7 @@ function NoticeForm({ d }: { d: ObligationDetail }) {
     </div>
   );
   return (
-    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="notice" data-testid="notice-form">
+    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="notice" data-testid="notice-form">
       <h2 id="notice" className="text-base font-semibold">
         {tn("title")}
       </h2>
@@ -317,7 +315,7 @@ function I9Form({ d, today }: { d: ObligationDetail; today: string }) {
     </div>
   );
   return (
-    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="i9">
+    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="i9">
       <h2 id="i9" className="text-base font-semibold">
         {td("title")}
       </h2>
@@ -348,7 +346,7 @@ function ReverifyForm({ d, today }: { d: ObligationDetail; today: string }) {
   const [next, setNext] = useState("");
   const { pending, act } = useAct();
   return (
-    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="reverify">
+    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="reverify">
       <h2 id="reverify" className="text-base font-semibold">
         {td("title")}
       </h2>
@@ -419,7 +417,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
   return (
     <div className="flex flex-col gap-4">
       {d.makes && d.item.mayAct && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4" data-testid="make-document">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-4" data-testid="make-document">
           <Button size="sm" disabled={pending || blocked !== null} onClick={() => act(() => makeDocumentAction(d.item.id, d.item.kind), () => toast.success(td("create.made")))} data-testid="make-document-button">
             {td(`create.${d.item.kind}` as "create.ma_job_order")}
           </Button>
@@ -438,13 +436,13 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
         </div>
       )}
       {d.keepsNoFiles && (
-        <p className="rounded-lg border p-4 text-sm text-muted-foreground" data-testid="no-i9-files">
+        <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground" data-testid="no-i9-files">
           {td("noI9Files")}
         </p>
       )}
       {d.item.mayAct && !d.keepsNoFiles && (
         <form
-          className="flex flex-wrap items-end gap-3 rounded-lg border p-4"
+          className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (!file) return;
@@ -479,18 +477,18 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
         </form>
       )}
       {d.keepsNoFiles && d.files.length === 0 ? null : d.files.length === 0 ? (
-        <p className="rounded-lg border py-10 text-center text-sm text-muted-foreground" data-testid="no-files">
+        <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground" data-testid="no-files">
           {td("noFiles")}
         </p>
       ) : (
-        <ul className="rounded-lg border">{d.files.map((f) => row(f, false))}</ul>
+        <ul className="overflow-hidden rounded-xl border bg-card">{d.files.map((f) => row(f, false))}</ul>
       )}
       {d.pastFiles.length > 0 && (
         <section aria-labelledby="past-files" className="flex flex-col gap-2">
           <h2 id="past-files" className="text-sm font-semibold">
             {td("pastFiles")}
           </h2>
-          <ul className="rounded-lg border">{d.pastFiles.map((f) => row(f, true))}</ul>
+          <ul className="overflow-hidden rounded-xl border bg-card">{d.pastFiles.map((f) => row(f, true))}</ul>
         </section>
       )}
     </div>
@@ -515,7 +513,7 @@ function History({ d }: { d: ObligationDetail }) {
     return td("history.other");
   };
   return (
-    <ol className="flex flex-col rounded-lg border" data-testid="obligation-history">
+    <ol className="flex flex-col overflow-hidden rounded-xl border bg-card" data-testid="obligation-history">
       {d.history.map((h, n) => (
         <li key={n} className="flex flex-wrap items-baseline gap-x-4 border-b px-3 py-2 text-sm last:border-b-0">
           <span className="w-56 text-xs text-muted-foreground tabular-nums">{new Date(h.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
@@ -557,7 +555,7 @@ function Notes({ d }: { d: ObligationDetail }) {
       ) : (
         <ul className="flex flex-col gap-2">
           {d.notes.map((n) => (
-            <li key={n.id} className="rounded-lg border p-3" data-testid="obligation-note">
+            <li key={n.id} className="rounded-xl border bg-card p-3" data-testid="obligation-note">
               <p className="text-sm whitespace-pre-wrap">{n.body}</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {n.by} · {new Date(n.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}
@@ -632,7 +630,7 @@ function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
   const ready = v.effectiveFrom !== "" && rateCents !== null && rateCents > 0 && benefitsCents !== null && v.comparator.trim() !== "";
   const trueUps = d.equalPay!.trueUps;
   return (
-    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="equal-pay" data-testid="equal-pay-form">
+    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="equal-pay" data-testid="equal-pay-form">
       <h2 id="equal-pay" className="text-base font-semibold">
         {te("title")}
       </h2>

@@ -13,7 +13,7 @@ import { z } from "zod";
 import { RESET_PROOF_COOKIE } from "@/server/auth/cookie";
 import { authDeps } from "@/server/auth/deps";
 import { renderResetEmail } from "@/server/auth/emails";
-import { safeNext } from "@/server/auth/next-path";
+import { localePath, safeNext } from "@/server/auth/next-path";
 import {
   beginAuthenticatorSetup,
   changePassword,
@@ -70,10 +70,10 @@ const tokenNow = async () => (await cookies()).get(SESSION_COOKIE)?.value;
 /** Where a fresh session goes next: the code, the authenticator setup, or the page they wanted. */
 function onward(next: "done" | "code" | "setup", locale: string, wanted: unknown): never {
   const back = safeNext(wanted);
-  const keep = back === "/convert" ? "" : `?next=${encodeURIComponent(back)}`;
+  const keep = back === "/" ? "" : `?next=${encodeURIComponent(back)}`;
   if (next === "code") redirect(`/${locale}/sign-in/code${keep}`);
   if (next === "setup") redirect(`/${locale}/sign-in/setup${keep}`);
-  redirect(`/${locale}${back}`);
+  redirect(localePath(locale, back));
 }
 
 export async function signInAction(input: { email: string; password: string; next: string | null }): Promise<{ ok: false; error: "invalid" | "locked" | "busy" }> {
@@ -109,7 +109,7 @@ export async function verifyCodeAction(input: { code: string; next: string | nul
   const session = await readSession(authDeps(), r.token);
   const back = safeNext(input.next);
   const mark = r.recoveryLeft === null ? "" : `${back.includes("?") ? "&" : "?"}recoveryLeft=${r.recoveryLeft}`;
-  redirect(`/${session?.locale ?? locale}${back}${mark}`);
+  redirect(localePath(session?.locale ?? locale, `${back}${mark}`));
 }
 
 export async function signOutAction(): Promise<void> {

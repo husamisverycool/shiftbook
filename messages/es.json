@@ -65,25 +65,25 @@
       "approval_request": "Horas por aprobar: {client}, {period}",
       "approval_reminder": "Recordatorio: horas por aprobar de {client}, {period}",
       "approval_renewal": "Nuevo enlace: horas por aprobar de {client}, {period}",
-      "approval_confirmation": "{disputed, plural, =0 {Aprobaste horas de {client}, {period}} other {Horas aprobadas y disputadas de {client}, {period}}}",
+      "approval_confirmation": "{disputed, plural, =0 {Usted aprobó horas de {client}, {period}} other {Horas aprobadas y disputadas de {client}, {period}}}",
       "approval_notice": "{disputed, plural, =0 {{client} aprobó horas del {period}} other {{client} disputó {disputed, plural, one {# turno} other {# turnos}} del {period}}}"
     },
     "greeting": "Hola, {name}:",
     "intro": {
-      "approval_request": "{agency} te pide revisar y aprobar las horas que trabajaron tus trabajadores temporales para {client} del {start} al {end}.",
-      "approval_reminder": "Un recordatorio: {agency} todavía espera tu aprobación de las horas trabajadas para {client} del {start} al {end}.",
-      "approval_renewal": "Aquí tienes el nuevo enlace que pediste para revisar las horas trabajadas para {client} del {start} al {end}."
+      "approval_request": "{agency} le pide revisar y aprobar las horas que trabajaron sus trabajadores temporales para {client} del {start} al {end}.",
+      "approval_reminder": "Un recordatorio: {agency} todavía espera su aprobación de las horas trabajadas para {client} del {start} al {end}.",
+      "approval_renewal": "Aquí tiene el nuevo enlace que pidió para revisar las horas trabajadas para {client} del {start} al {end}."
     },
     "summary": "Por aprobar: {workers, plural, one {# trabajador} other {# trabajadores}}, {shifts, plural, one {# turno} other {# turnos}}, {hours} horas.",
     "open": "Revisar las horas",
-    "expires": "El enlace funciona hasta el {date}. Es solo para ti, así que no lo reenvíes.",
+    "expires": "El enlace funciona hasta el {date}. Es solo para usted, así que no lo reenvíe.",
     "decided": "El {when}, {name} ({email}) aprobó {shifts, plural, one {# turno} other {# turnos}} ({hours} horas) trabajados para {client} del {start} al {end}.",
     "nothingApproved": "El {when}, {name} ({email}) no aprobó ningún turno de {client} del {start} al {end}.",
     "disputedTitle": "Disputados, a la espera de {agency}:",
     "disputedLine": "{worker}, {date}: {reason}",
-    "changeHint": "Para cambiar algo, comunícate con {agency}.",
-    "noticeOpen": "Abre la solicitud en Shiftbook: {link}",
-    "contact": "¿Preguntas? Comunícate con {agency}: {contact}.",
+    "changeHint": "Para cambiar algo, comuníquese con {agency}.",
+    "noticeOpen": "Abra la solicitud en Shiftbook: {link}",
+    "contact": "¿Preguntas? Comuníquese con {agency}: {contact}.",
     "footer": "Enviado por Shiftbook en nombre de {agency}."
   },
   "meta": {
@@ -126,7 +126,9 @@
       "closed": "Cerrado",
       "approved": "Aprobada",
       "correcting": "Corrección en curso"
-    }
+    },
+    "emptyTitle": "Aún no hay periodos de pago",
+    "emptyBody": "Los periodos de pago aparecen aquí semana a semana."
   },
   "convert": {
     "saveAndExit": "Guardar y salir",
@@ -154,7 +156,7 @@
     "loadingBody": "Puede tardar un minuto.",
     "filesLoadingTitle": "Creando archivos",
     "upload": {
-      "dropTitle": "Suelta aquí las hojas de horas",
+      "dropTitle": "Suelte aquí las hojas de horas",
       "dropBody": "Fotos (JPG, PNG, HEIC), PDF, exportaciones de reloj checador (CSV, XLSX) y exportaciones de VMS. Hasta 25 MB cada una.",
       "select": "Elegir archivos",
       "refused": "No agregados",
@@ -189,10 +191,10 @@
       "uploading": "Subiendo…",
       "archive": "Archivar",
       "archiveTitle": "¿Archivar esta hoja de horas?",
-      "archiveBody": "Sus horas no se pagan ni se facturan. Explica por qué, por ejemplo, que las mismas horas están en otro archivo.",
+      "archiveBody": "Sus horas no se pagan ni se facturan. Explique por qué, por ejemplo, que las mismas horas están en otro archivo.",
       "archiveReason": "Motivo",
       "archiveConfirm": "Archivar",
-      "stuck": "La lectura se detuvo antes de terminar. Vuelve a leerlo, o archívalo si sus horas están en otro archivo."
+      "stuck": "La lectura se detuvo antes de terminar. Vuelva a leerlo, o archívelo si sus horas están en otro archivo."
     },
     "hours": {
       "sectionTitle": "Horas",
@@ -265,8 +267,8 @@
         "other": "Necesita revisión",
         "assignment_at_other_client": "La asignación del trabajador ese día es con otro cliente",
         "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas",
-        "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edita para asignar estas horas allí si son de ese cliente",
-        "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edita para asignar estas horas allí si son de ese cliente"
+        "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edite para asignar estas horas allí si son de ese cliente",
+        "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edite para asignar estas horas allí si son de ese cliente"
       },
       "fields": {
         "worker": "trabajador",
@@ -288,25 +290,25 @@
       "chooseReasons": "Motivo",
       "reasonsChosen": "{count, plural, one {# motivo} other {# motivos}}",
       "note": "Nota",
-      "notePlaceholder": "Agrega una nota (necesaria para Otro)",
+      "notePlaceholder": "Agregue una nota (necesaria para Otro)",
       "saveEdit": "Guardar",
       "cancelEdit": "Cancelar",
       "editing": "Editando",
       "editErrors": {
-        "reason_required": "Elige un motivo.",
-        "note_required": "Agrega una nota para Otro.",
+        "reason_required": "Elija un motivo.",
+        "note_required": "Agregue una nota para Otro.",
         "not_found": "Este registro ya no existe.",
         "not_editable": "Este registro ya no se puede cambiar.",
         "date_outside_period": "La fecha debe estar dentro del periodo de pago.",
         "out_not_after_in": "La salida debe ser después de la entrada.",
-        "crosses_midnight": "El turno pasa de medianoche; captura cada día por separado.",
+        "crosses_midnight": "El turno pasa de medianoche; capture cada día por separado.",
         "break_too_long": "El descanso dura lo mismo que el turno o más.",
         "invalid_value": "Un valor no es válido.",
         "no_assignment": "Ese trabajador no tiene una asignación activa en esa fecha.",
         "several_assignments": "Ese trabajador tiene más de una asignación activa en esa fecha.",
-        "worker_required": "Elige primero un trabajador.",
+        "worker_required": "Elija primero un trabajador.",
         "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar.",
-        "period_busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento.",
+        "period_busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtelo de nuevo en un momento.",
         "assignment_at_other_client": "{count, plural, one {La asignación de ese trabajador en esa fecha es con {client}} other {Las asignaciones de ese trabajador en esa fecha son con {client}}}, no con el cliente de esta hoja de horas.",
         "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas. {count, plural, one {La asignación de ese trabajador en esa fecha es con {client}.} other {Las asignaciones de ese trabajador en esa fecha son con {client}.}}",
         "attach_client_unavailable": "Ese trabajador no tiene una asignación con ese cliente en esa fecha, así que las horas se quedan donde están."
@@ -333,7 +335,7 @@
       "actions": "Acciones",
       "readings": "Lecturas: {a} / {b}",
       "bulkBar": "Acciones en grupo",
-      "approveRefused": "Este registro aún no se puede aprobar. Corrige primero el trabajador, la fecha o las horas.",
+      "approveRefused": "Este registro aún no se puede aprobar. Corrija primero el trabajador, la fecha o las horas.",
       "addEntry": "Agregar registro",
       "manual": "Capturado a mano",
       "filterClient": "Cliente",
@@ -369,9 +371,9 @@
       "blockerCount": "{count, plural, one {# trabajador} other {# trabajadores}}",
       "skipWorkers": "{count, plural, one {Omitir a este trabajador en esta nómina} other {Omitir a estos # trabajadores en esta nómina}}",
       "skipTitle": "¿Omitir en esta nómina?",
-      "skipBody": "Los trabajadores omitidos no están en este archivo de nómina ni en estas facturas. Págales por separado.",
+      "skipBody": "Los trabajadores omitidos no están en este archivo de nómina ni en estas facturas. Págueles por separado.",
       "skipReasonLabel": "Motivo",
-      "grossByHand": "{name}: {amount} de pago bruto en este período, para pagar a mano si se omite.",
+      "grossByHand": "{name}: {amount} de pago bruto en este periodo, para pagar a mano si se omite.",
       "skipConfirm": "Omitir",
       "unskip": "Volver a incluir",
       "skippedTitle": "{count, plural, one {# trabajador omitido} other {# trabajadores omitidos}}",
@@ -380,7 +382,7 @@
         "entry_needs_review": "Hay registros por revisar",
         "client_dispute_open": "Turnos que el cliente disputó",
         "client_approval_missing": "Turnos que el cliente debe aprobar primero",
-        "overtime_spike": "Mucho más tiempo extra que la semana anterior",
+        "overtime_spike": "Muchas más horas extra que la semana anterior",
         "correction_no_differences": "No hay nada que corregir",
         "correction_decision_needed": "Falta decidir qué hacer con la diferencia de un trabajador",
         "correction_pay_due": "Se debe más pago",
@@ -435,7 +437,7 @@
       "bringBackAll": "Volver a incluir a todos",
       "bothReal": "Ambos son reales",
       "bothRealTitle": "¿Ambos registros son trabajo real?",
-      "bothRealBody": "Confirma que estos registros son trabajos distintos del mismo día, no las mismas horas leídas dos veces. Si alguno cambia después, se volverá a preguntar.",
+      "bothRealBody": "Confirme que estos registros son trabajos distintos del mismo día, no las mismas horas leídas dos veces. Si alguno cambia después, se volverá a preguntar.",
       "bothRealConfirm": "Confirmar",
       "goToUpload": "Ir a las hojas de horas",
       "openApprovals": "Abrir Aprobaciones de clientes",
@@ -468,7 +470,7 @@
         "qbd_iif": "Archivo de tiempo de QuickBooks Desktop (IIF)",
         "qbo_time_csv": "Importación de tiempo de QuickBooks Online",
         "adp_wfn_paydata": "Datos de pago de ADP Workforce Now",
-        "adp_run_csv": "Importación de hojas de tiempo de RUN Powered by ADP",
+        "adp_run_csv": "Importación de hojas de horas de RUN Powered by ADP",
         "spreadsheet_csv": "Hoja de cálculo"
       },
       "systems": {
@@ -483,29 +485,29 @@
       "dollars": "Pagado en dólares"
     },
     "errors": {
-      "busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento.",
+      "busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtelo de nuevo en un momento.",
       "generic": "Algo salió mal. No se cambió nada.",
       "notReady": "La nómina todavía tiene problemas por resolver.",
       "periodLocked": "Los archivos de este periodo ya se crearon, así que sus horas y totales ya no pueden cambiar aquí. El Propietario puede empezar una corrección desde su paso Archivos.",
       "stale": "Esto cambió en otra pestaña o ventana. La página ahora muestra lo más reciente.",
-      "totalsChanged": "Los totales cambiaron desde que los revisaste. Revísalos de nuevo y luego crea los archivos.",
-      "notApproved": "La nómina no está aprobada tal como está. Revisa los totales, apruébalos y luego crea los archivos.",
+      "totalsChanged": "Los totales cambiaron desde que los revisó. Revíselos de nuevo y luego cree los archivos.",
+      "notApproved": "La nómina no está aprobada tal como está. Revise los totales, apruébelos y luego cree los archivos.",
       "notAllowed": "Solo el Propietario puede aprobar o desaprobar una nómina.",
-      "approvalBlocked": "La nómina todavía tiene problemas que la detienen. Resuélvelos en el paso Excepciones.",
-      "skipRefused": "A este trabajador se le pagó en la versión que se corrige, así que no se le puede omitir. Corrige lo que lo detiene o registra una decisión para su diferencia.",
+      "approvalBlocked": "La nómina todavía tiene problemas que la detienen. Resuélvalos en el paso Excepciones.",
+      "skipRefused": "A este trabajador se le pagó en la versión que se corrige, así que no se le puede omitir. Corrija lo que lo detiene o registre una decisión para su diferencia.",
       "ownerOnly": "Solo el Propietario puede empezar, descartar o decidir sobre una corrección.",
       "notPaid": "Este periodo no tiene una versión pagada que corregir, o ya hay una corrección abierta.",
-      "hasDifferences": "Algo difiere de la versión pagada, así que esta corrección no se puede descartar. Termínala o devuelve las horas a como estaban.",
-      "hasDecisions": "Hay decisiones registradas en esta corrección. Quítalas primero si no se hizo nada fuera de los archivos."
+      "hasDifferences": "Algo difiere de la versión pagada, así que esta corrección no se puede descartar. Termínela o devuelva las horas a como estaban.",
+      "hasDecisions": "Hay decisiones registradas en esta corrección. Quítelas primero si no se hizo nada fuera de los archivos."
     },
     "exceptions": {
       "summaryNone": "No hay problemas que detengan la nómina.",
-      "summaryNoneBody": "Revisa los totales y aprueba la nómina.",
+      "summaryNoneBody": "Revise los totales y apruebe la nómina.",
       "summaryBlocking": "{count, plural, one {# problema detiene esta nómina} other {# problemas detienen esta nómina}}",
-      "summaryBlockingBody": "Corrige cada uno abajo. Al volver a este paso se revisa de nuevo.",
+      "summaryBlockingBody": "Corrija cada uno abajo. Al volver a este paso se revisa de nuevo.",
       "blockingTitle": "Detienen la nómina",
       "warningsTitle": "Avisos",
-      "warningsHint": "Los avisos nunca detienen la nómina. Al aprobar, los das por vistos.",
+      "warningsHint": "Los avisos nunca detienen la nómina. Al aprobar, los da por vistos.",
       "noWarnings": "Sin avisos.",
       "openClientSettings": "Abrir la configuración de facturas de {client}"
     },
@@ -519,7 +521,7 @@
       "cancel": "Cancelar",
       "confirm": "Desaprobar",
       "ownerOnly": "Solo el Propietario puede aprobar esta nómina.",
-      "warningsAck": "Al aprobar das por {count, plural, one {visto # aviso} other {vistos # avisos}}.",
+      "warningsAck": "Al aprobar da por {count, plural, one {visto # aviso} other {vistos # avisos}}.",
       "unapproved": "Aprobación retirada"
     },
     "correction": {
@@ -545,7 +547,7 @@
       "notePlaceholder": "Qué se hizo: número de cheque, fecha del consentimiento, quién lo aprobó",
       "decideConfirm": "Registrar decisión",
       "decisionOnFile": "Decidido: {decision} — {note} ({by})",
-      "decisionStale": "Ya no corresponde a la diferencia: quítala y luego registra lo que falta.",
+      "decisionStale": "Ya no corresponde a la diferencia: quítela y luego registre lo que falta.",
       "colWas": "Antes",
       "colNow": "Ahora",
       "colDifference": "Diferencia",
@@ -574,12 +576,12 @@
       "corrects": "Corrige {number}",
       "netZero": "Sin factura para {clients}: las diferencias facturadas suman {zero}.",
       "decideHeld": "{amount} de pago que una corrección anterior le dejó puede cubrirlo.",
-      "decideNone": "Su diferencia ya no existe. Quita la decisión si no se hizo nada fuera de los archivos.",
+      "decideNone": "La diferencia del trabajador ya no existe. Quite la decisión si no se hizo nada fuera de los archivos.",
       "removeDecision": "Quitar decisión",
       "roundingTitle": "Redondeo sobrante",
       "roundingMore": "{name}: {amount} más por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se paga.",
       "roundingLess": "{name}: {amount} menos por redondear cada línea una vez al mover horas entre días o asignaciones con la misma tarifa; no se descuenta.",
-      "paidByHandWithKept": "Todo, incluidos los {amount} que conservó: elige esto solo si lo que conservó se recuperó. Si no, elige primero la cobertura y luego paga el resto a mano."
+      "paidByHandWithKept": "Todo, incluidos los {amount} que el trabajador conservó: elija esto solo si lo que conservó se recuperó. Si no, elija primero la cobertura y luego pague el resto a mano."
     },
     "readOnly": "Aquí puede consultar todo; el Propietario y los coordinadores cambian las horas."
   },
@@ -600,14 +602,21 @@
     "margin": "Margen",
     "marginSettings": "Configuración de margen",
     "compliance": "Cumplimiento",
-    "complianceSettings": "Ajustes de cumplimiento",
+    "complianceSettings": "Configuración de cumplimiento",
     "complianceBadge": "{count} vencidas o por vencer",
     "workers": "Trabajadores",
     "members": "Miembros",
     "activity": "Actividad",
-    "account": "Tu cuenta",
+    "account": "Su cuenta",
     "signOut": "Cerrar sesión",
-    "youAre": "{name} · {role}"
+    "youAre": "{name} · {role}",
+    "home": "Inicio",
+    "groups": {
+      "payroll": "Nómina",
+      "billing": "Facturación",
+      "staffing": "Personal",
+      "oversight": "Supervisión"
+    }
   },
   "list": {
     "filter": "Filtrar",
@@ -709,7 +718,7 @@
     "form": {
       "createTitle": "Nueva orden de trabajo",
       "editTitle": "Editar orden de trabajo",
-      "draftRestored": "Tu borrador sin guardar regresó.",
+      "draftRestored": "Su borrador sin guardar regresó.",
       "client": "Cliente",
       "worksite": "Lugar de trabajo",
       "choose": "Elegir…",
@@ -727,18 +736,18 @@
       "created": "Orden de trabajo creada.",
       "saved": "Orden de trabajo guardada.",
       "draftTitle": "¿Guardar como borrador?",
-      "draftBody": "El borrador se queda en este navegador y regresa la próxima vez que crees una orden de trabajo.",
+      "draftBody": "El borrador se queda en este navegador y regresa la próxima vez que cree una orden de trabajo.",
       "discard": "Descartar",
       "saveDraft": "Guardar borrador",
       "errors": {
-        "client": "Elige un cliente.",
-        "worksite": "Elige uno de los lugares de este cliente.",
-        "position": "Escribe el puesto (hasta 120 caracteres).",
-        "soc_code": "Usa el formato 12-3456.",
+        "client": "Elija un cliente.",
+        "worksite": "Elija uno de los lugares de este cliente.",
+        "position": "Escriba el puesto (hasta 120 caracteres).",
+        "soc_code": "Use el formato 12-3456.",
         "shift": "El turno debe tener menos de 60 caracteres.",
-        "headcount": "Escribe un número entero de 1 a 10,000.",
-        "pay_range": "Escribe montos como 18.50, el primero no mayor que el segundo.",
-        "amount": "Escribe un monto como 18.50.",
+        "headcount": "Escriba un número entero de 1 a 10,000.",
+        "pay_range": "Escriba montos como 18.50, el primero no mayor que el segundo.",
+        "amount": "Escriba un monto como 18.50.",
         "client_has_assignments": "Hay trabajadores asignados a esta orden, así que su cliente no puede cambiar.",
         "branch": "Elija una de las oficinas de la agencia.",
         "not_allowed": "El acceso del contador es de solo lectura: el Propietario o un coordinador cambian las órdenes de trabajo."
@@ -746,7 +755,8 @@
       "branch": "Oficina",
       "noBranch": "Sin oficina"
     },
-    "readOnly": "Solo el Propietario y los coordinadores cambian las órdenes de trabajo."
+    "readOnly": "Solo el Propietario y los coordinadores cambian las órdenes de trabajo.",
+    "emptyBody": "Cada orden de trabajo fija las tarifas de pago y de cobro de sus trabajadores."
   },
   "jobOrder": {
     "breadcrumb": "Órdenes de trabajo",
@@ -784,12 +794,14 @@
     "ownRatesOf": "Tarifas propias de {name}",
     "ownRatesBody": "Estas tarifas aplican a este trabajador en esta orden desde su fecha de inicio; en las demás fechas aplican las tarifas de la orden.",
     "branch": "Oficina",
-    "readOnly": "Solo el Propietario y los coordinadores cambian esta orden de trabajo, sus tarifas y sus asignaciones."
+    "readOnly": "Solo el Propietario y los coordinadores cambian esta orden de trabajo, sus tarifas y sus asignaciones.",
+    "filled": "Cubierta",
+    "open": "Abierta"
   },
   "assignments": {
     "title": "Asignaciones",
     "create": "Nueva asignación",
-    "import": "Importar colocaciones",
+    "import": "Importar asignaciones",
     "empty": "Aún no hay asignaciones.",
     "selection": "Asignaciones seleccionadas",
     "selectedCount": "{count, plural, one {# seleccionada} other {# seleccionadas}}",
@@ -809,8 +821,8 @@
     "cancelBody": "Una asignación cancelada nunca se paga ni se cobra. Solo se puede cancelar si ninguna de sus horas se pagó.",
     "reason": "Motivo",
     "assignTitle": "Asignar un trabajador",
-    "assignBody": "Elige un trabajador de la lista y las fechas.",
-    "assignedSoFar": "Asignados: {names}. Agrega otro o elige Listo.",
+    "assignBody": "Elija un trabajador de la lista y las fechas.",
+    "assignedSoFar": "Asignados: {names}. Agregue otro o elija Listo.",
     "chooseWorker": "Elegir un trabajador…",
     "endOptional": "Fin (opcional)",
     "done": "Listo",
@@ -859,12 +871,12 @@
       "not_found": "Esta asignación ya no existe.",
       "worker_not_found": "Ese trabajador no está en la lista.",
       "job_order_not_found": "Esa orden de trabajo ya no existe.",
-      "invalid_date": "Escribe fechas completas.",
+      "invalid_date": "Escriba fechas completas.",
       "end_before_start": "La fecha de fin es anterior a la de inicio.",
       "overlaps": "{name} ya tiene una asignación en esta orden para esas fechas.",
       "paid_outside": "Algunas horas de {name} en esta asignación ya se pagaron, así que las fechas deben seguir incluyéndolas.",
-      "has_paid_hours": "Algunas horas de {name} en esta asignación ya se pagaron, así que no se puede cancelar. Termínala en su lugar.",
-      "reason_required": "Escribe un motivo.",
+      "has_paid_hours": "Algunas horas de {name} en esta asignación ya se pagaron, así que no se puede cancelar. Termínela en su lugar.",
+      "reason_required": "Escriba un motivo.",
       "already_cancelled": "Esta asignación ya estaba cancelada."
     },
     "chooseJobOrder": "Elegir una orden de trabajo…",
@@ -880,7 +892,8 @@
     "noRecruiter": "Sin reclutador(a)",
     "recruiterSaved": "Reclutador(a) guardado",
     "recruiterError": "No funcionó. Intente de nuevo.",
-    "readOnly": "Solo el Propietario y los coordinadores cambian las asignaciones."
+    "readOnly": "Solo el Propietario y los coordinadores cambian las asignaciones.",
+    "emptyBody": "Una asignación pone a un trabajador en una orden de trabajo desde una fecha de inicio."
   },
   "approvals": {
     "title": "Aprobaciones de clientes",
@@ -906,7 +919,7 @@
       "approved": "Aprobado"
     },
     "stateHint": {
-      "disputed": "El cliente disputó turnos. Resuelve cada uno.",
+      "disputed": "El cliente disputó turnos. Resuelva cada uno.",
       "not_sent": "Todavía no se envió una solicitud de aprobación para este periodo.",
       "send_again": "Algunos turnos necesitan la aprobación del cliente y ningún enlace vigente los incluye.",
       "waiting": "Enviado. El cliente todavía no respondió.",
@@ -935,7 +948,6 @@
     "sendBlocked": "{count, plural, one {# turno} other {# turnos}} de este cliente todavía necesitan revisión antes de poder enviar las horas.",
     "reviewHours": "Revisar horas",
     "cancel": "Cancelar",
-    "empty": "Todavía no hay horas en este periodo de pago.",
     "emptyLink": "Convertir hojas de horas",
     "noResults": "Ningún cliente coincide con estos filtros.",
     "done": {
@@ -947,19 +959,19 @@
     "errors": {
       "not_found": "Esa solicitud ya no existe.",
       "period_locked": "Los archivos de este periodo de pago ya se crearon, así que sus horas ya no pueden cambiar.",
-      "settings_missing": "Faltan los ajustes de aprobación de la agencia (días del enlace y horas de los recordatorios).",
+      "settings_missing": "Falta la configuración de aprobación de la agencia (días del enlace y horas de los recordatorios).",
       "needs_review": "Algunos turnos de este cliente todavía necesitan revisión.",
       "nothing_to_approve": "Nada espera la aprobación del cliente.",
-      "name_required": "Escribe el nombre del aprobador.",
-      "invalid_email": "Escribe un correo válido.",
-      "invalid_locale": "Elige inglés o español.",
-      "send_failed": "No se pudo enviar el correo. No se envió nada; inténtalo de nuevo en un momento.",
+      "name_required": "Escriba el nombre del aprobador.",
+      "invalid_email": "Escriba un correo válido.",
+      "invalid_locale": "Elija inglés o español.",
+      "send_failed": "No se pudo enviar el correo. No se envió nada; inténtelo de nuevo en un momento.",
       "not_open": "Esta solicitud fue reemplazada por una más reciente.",
       "dispute_not_open": "Esta disputa ya se resolvió.",
-      "no_proposal": "El cliente no dio horas corregidas. Edita las horas o mantenlas.",
-      "reply_required": "Escribe una respuesta para el cliente.",
-      "reason_required": "Escribe un motivo.",
-      "edit_refused": "Las horas del cliente no se pueden aplicar tal como están ({detail}). Edita las horas.",
+      "no_proposal": "El cliente no dio horas corregidas. Edite las horas o manténgalas.",
+      "reply_required": "Escriba una respuesta para el cliente.",
+      "reason_required": "Escriba un motivo.",
+      "edit_refused": "Las horas del cliente no se pueden aplicar tal como están ({detail}). Edite las horas.",
       "generic": "Algo salió mal. No se cambió nada.",
       "not_allowed": "Solo el Propietario puede cambiar esto."
     },
@@ -982,7 +994,7 @@
       "edit": "Editar las horas",
       "keep": "Mantener las horas",
       "keepTitle": "Mantener las horas registradas",
-      "keepBody": "Escribe una respuesta. El cliente la verá en el próximo enlace, y el turno necesitará otra vez su aprobación.",
+      "keepBody": "Escriba una respuesta. El cliente la verá en el próximo enlace, y el turno necesitará otra vez su aprobación.",
       "reply": "Respuesta",
       "keepConfirm": "Mantener las horas",
       "settled": {
@@ -1031,7 +1043,9 @@
     "approvalRequired": "Aprobación obligatoria antes de la nómina",
     "requiredBadge": "Aprobación obligatoria",
     "rowMenu": "Más opciones de {client}",
-    "readOnly": "Solo el Propietario y los coordinadores piden a los clientes que aprueben las horas."
+    "readOnly": "Solo el Propietario y los coordinadores piden a los clientes que aprueben las horas.",
+    "emptyTitle": "Aún no hay horas en este periodo de pago",
+    "emptyBody": "Convierta las hojas de horas de la semana y luego envíe a cada cliente sus horas."
   },
   "rates": {
     "title": "Tarifas",
@@ -1042,12 +1056,12 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "usedByPaid": "Usada en una semana pagada",
-    "frozenWhy": "Las semanas hasta el {date} se pagaron con esta versión, así que no puede cambiar. Agrega una versión nueva.",
+    "frozenWhy": "Las semanas hasta el {date} se pagaron con esta versión, así que no se puede cambiar. Agregue una versión nueva.",
     "between": "Del {from} al {to}",
     "from": "Desde el {from}",
     "pay": "Tarifa de pago",
     "bill": "Tarifa de cobro",
-    "markupOf": "(margen de {percent}%)",
+    "markupOf": "(recargo de {percent}%)",
     "wc": "Código de clase WC",
     "ot": "Multiplicador de cobro por horas extra",
     "dt": "Multiplicador de cobro por tiempo doble",
@@ -1080,9 +1094,9 @@
     "payPerHour": "Tarifa de pago ($/h)",
     "billAs": "Cobro",
     "billRate": "Tarifa de cobro",
-    "markup": "Margen",
+    "markup": "Recargo",
     "billPerHour": "Tarifa de cobro ($/h)",
-    "markupPercent": "Margen (%)",
+    "markupPercent": "Recargo (%)",
     "markupPreview": "Tarifa de cobro: {working}.",
     "reasonLabel": "¿Por qué cambia esta versión?",
     "note": "Nota",
@@ -1096,25 +1110,25 @@
       "other": "Otro"
     },
     "errors": {
-      "effective_from": "Elige la fecha en que empieza.",
-      "pay_rate": "Escribe una tarifa de pago como 18.50.",
-      "bill_rate": "Escribe una tarifa de cobro como 26.50.",
-      "markup": "Escribe un margen como 45 o 45.5.",
-      "ot_multiplier": "Escribe un multiplicador de 1 a 10, como 1.5.",
-      "dt_multiplier": "Escribe un multiplicador de 1 a 10, como 2.",
-      "wc_class_code": "Usa solo letras y números.",
+      "effective_from": "Elija la fecha en que empieza.",
+      "pay_rate": "Escriba una tarifa de pago como 18.50.",
+      "bill_rate": "Escriba una tarifa de cobro como 26.50.",
+      "markup": "Escriba un recargo como 45 o 45.5.",
+      "ot_multiplier": "Escriba un multiplicador de 1 a 10, como 1.5.",
+      "dt_multiplier": "Escriba un multiplicador de 1 a 10, como 2.",
+      "wc_class_code": "Use solo letras y números.",
       "same_start": "Otra versión ya empieza ese día.",
-      "paid": "Las semanas hasta el {date} ya se pagaron con estas tarifas; empieza después de ese día.",
+      "paid": "Las semanas hasta el {date} ya se pagaron con estas tarifas; empiece después de ese día.",
       "earliest": "La primera versión se queda mientras existan otras; su inicio no puede pasar al de la siguiente.",
-      "reason_required": "Elige un motivo.",
-      "note_required": "Agrega una nota para Otro.",
+      "reason_required": "Elija un motivo.",
+      "note_required": "Agregue una nota para Otro.",
       "not_found": "Esta versión de tarifas ya no existe.",
       "invalid": "Algunos valores no son válidos."
     }
   },
   "import": {
     "breadcrumb": "Asignaciones",
-    "title": "Importar colocaciones",
+    "title": "Importar asignaciones",
     "fileLine": "{file} de {source}, {rows} filas",
     "steps": "Pasos de la importación",
     "step": {
@@ -1131,13 +1145,13 @@
       "other": "Otra hoja de cálculo"
     },
     "sourceHint": {
-      "bullhorn": "Una lista de colocaciones exportada como CSV.",
-      "jobadder": "Una exportación de colocaciones (CSV).",
-      "spott": "Una exportación de colocaciones (Excel o CSV).",
-      "other": "Cualquier CSV o Excel con una colocación por fila."
+      "bullhorn": "Una lista de asignaciones exportada como CSV.",
+      "jobadder": "Una exportación de asignaciones (CSV).",
+      "spott": "Una exportación de asignaciones (Excel o CSV).",
+      "other": "Cualquier CSV o Excel con una asignación por fila."
     },
-    "whichSource": "¿De dónde vienen las colocaciones?",
-    "drop": "Suelta el archivo aquí",
+    "whichSource": "¿De dónde vienen las asignaciones?",
+    "drop": "Suelte el archivo aquí",
     "chosen": "{name} está listo para subir",
     "accepted": "CSV o Excel (.xlsx), hasta 10 MB y 2,000 filas. Las columnas que pueden contener números de Seguro Social o fechas de nacimiento se quitan al recibir el archivo.",
     "choose": "Elegir un archivo",
@@ -1146,14 +1160,14 @@
       "unsupported": "Solo se pueden importar archivos CSV y Excel (.xlsx).",
       "empty": "El archivo no tiene fila de encabezados o no tiene filas.",
       "too_large": "El archivo pesa más de 10 MB.",
-      "busy": "Otra persona está cambiando órdenes de trabajo o pagando una semana ahora mismo. Inténtalo de nuevo en un momento.",
+      "busy": "Otra persona está cambiando órdenes de trabajo o pagando una semana ahora mismo. Inténtelo de nuevo en un momento.",
       "stale": "Esta importación cambió en otra pestaña o ventana. La página ahora muestra lo más reciente.",
-      "too_many_rows": "Una importación acepta hasta 2,000 filas. Divide el archivo e importa cada parte.",
-      "no_header": "La primera fila debe tener los nombres de las columnas. En este archivo tiene una fecha o un número con forma de número de Seguro Social, así que parece una colocación. Agregue una fila con los nombres de las columnas arriba y vuelva a subirlo."
+      "too_many_rows": "Una importación acepta hasta 2,000 filas. Divida el archivo e importe cada parte.",
+      "no_header": "La primera fila debe tener los nombres de las columnas. En este archivo tiene una fecha o un número con forma de número de Seguro Social, así que parece una asignación. Agregue una fila con los nombres de las columnas arriba y vuelva a subirlo."
     },
     "back": "Atrás",
     "next": "Siguiente",
-    "mapBody": "Relaciona cada columna del archivo con un campo de Shiftbook. Las columnas en \"No importar\" se omiten.",
+    "mapBody": "Relacione cada columna del archivo con un campo de Shiftbook. Las columnas en \"No importar\" se omiten.",
     "missingTitle": "Todavía falta",
     "fileColumn": "Columna del archivo",
     "samples": "Valores de ejemplo",
@@ -1161,7 +1175,7 @@
     "fieldFor": "Campo para {column}",
     "dontImport": "No importar",
     "fields": {
-      "externalId": "ID de colocación",
+      "externalId": "ID de asignación",
       "workerName": "Nombre del trabajador",
       "workerFirstName": "Nombre de pila del trabajador",
       "workerLastName": "Apellido del trabajador",
@@ -1205,7 +1219,7 @@
     "willSkip": "Filas omitidas",
     "row": "Fila",
     "reason": "Motivo",
-    "previewNote": "Las tarifas distintas a las de la orden se vuelven tarifas propias del trabajador desde su fecha de inicio. No se escribe nada hasta que empieces la importación.",
+    "previewNote": "Las tarifas distintas a las de la orden se vuelven tarifas propias del trabajador desde su fecha de inicio. No se escribe nada hasta que empiece la importación.",
     "start": "Importar",
     "doneTitle": "{imported} importadas, {skipped} omitidas",
     "openAssignments": "Abrir asignaciones",
@@ -1224,18 +1238,18 @@
     "historyDone": "{imported} importadas, {skipped} omitidas",
     "historyDraft": "Sin terminar",
     "reasons": {
-      "already_imported": "La colocación {value} ya se importó antes.",
-      "twice_in_file": "La colocación {value} aparece dos veces en el archivo.",
+      "already_imported": "La asignación {value} ya se importó antes.",
+      "twice_in_file": "La asignación {value} aparece dos veces en el archivo.",
       "left_out": "Se dejó fuera en la revisión ({value}).",
       "not_on_roster": "{value} no está en la lista de trabajadores.",
       "several_on_roster": "{value} coincide con más de un trabajador de la lista.",
       "client_not_found": "No hay un cliente llamado {value}.",
-      "new_job_order_needs_worksite": "No hay una orden {value} en este cliente; elige una existente o un lugar para una nueva.",
+      "new_job_order_needs_worksite": "No hay una orden {value} en este cliente; elija una existente o un lugar para una nueva.",
       "several_job_orders": "Más de una orden coincide con {value}.",
       "missing_value": "{value} está vacío.",
       "invalid_date": "{value} no es una fecha.",
       "end_before_start": "La fecha de fin {value} es anterior a la de inicio.",
-      "invalid_rate": "\"{value}\" no es una tarifa (usa un punto para los centavos, como 18.25).",
+      "invalid_rate": "\"{value}\" no es una tarifa (use un punto para los centavos, como 18.25).",
       "cancelled_in_source": "Cancelada en el sistema de origen ({value}).",
       "overlaps": "El trabajador ya tiene una asignación en esta orden para esas fechas.",
       "rates_refused": "No se pudieron agregar las tarifas: {value}.",
@@ -1245,7 +1259,7 @@
       "end_before_start_assignment": "La fecha de fin es anterior a la de inicio.",
       "invalid_date_assignment": "Una fecha no es válida.",
       "invalid_value": "{value} no es válido.",
-      "status_unclear": "El estado \"{value}\" no está claro; elige qué significa en la revisión.",
+      "status_unclear": "El estado \"{value}\" no está claro; elija qué significa en la revisión.",
       "could_not_save": "Esta fila no se pudo guardar."
     },
     "rateVersions": "Versiones de tarifas propias por agregar",
@@ -1285,7 +1299,7 @@
     "invalidDates": "{count, plural, one {# fecha} other {# fechas}} con formato no válido",
     "jobOrder": "Orden de trabajo",
     "newBadge": "Nueva",
-    "readOnly": "Solo el Propietario y los coordinadores importan colocaciones."
+    "readOnly": "Solo el Propietario y los coordinadores importan asignaciones."
   },
   "portal": {
     "attestation": "Confirmo que los turnos que apruebo se trabajaron como se muestran, y los apruebo en nombre de {client}.",
@@ -1294,10 +1308,10 @@
     "period": "Periodo de pago del {start} al {end}",
     "sentTo": "Enviado a {name} ({email})",
     "status": {
-      "waiting": "Esperando tu aprobación",
+      "waiting": "Esperando su aprobación",
       "approved": "Aprobado el {when} por {name}",
       "disputed": "Algunos turnos están disputados y esperan a {agency}",
-      "newHours": "Hay turnos nuevos o cambiados que esperan tu aprobación"
+      "newHours": "Hay turnos nuevos o cambiados que esperan su aprobación"
     },
     "dispute": "Disputar",
     "editDispute": "Editar disputa",
@@ -1305,7 +1319,7 @@
     "willDispute": "Por disputar",
     "disputeTitle": "Disputar este turno",
     "disputeShift": "{worker}, {day}: de {start} a {end}, descanso de {break} min, {hours} horas.",
-    "correctedTimes": "Horas correctas, si las sabes",
+    "correctedTimes": "Horas correctas, si las sabe",
     "start": "Entrada",
     "end": "Salida",
     "breakMinutes": "Descanso (minutos)",
@@ -1315,61 +1329,61 @@
     "cancel": "Cancelar",
     "approveTitle": "Aprobar",
     "approveSummary": "Se aprobarán {shifts, plural, one {# turno} other {# turnos}} ({hours} horas).",
-    "disputeSummary": "{count, plural, one {# turno disputado se envía} other {# turnos disputados se envían}} a {agency} con tus motivos.",
-    "fullName": "Tu nombre completo",
-    "evidence": "Tu nombre, la hora, y tu dirección de internet y navegador se guardan con tu aprobación.",
+    "disputeSummary": "{count, plural, one {# turno disputado se envía} other {# turnos disputados se envían}} a {agency} con sus motivos.",
+    "fullName": "Su nombre completo",
+    "evidence": "Su nombre, la hora, y su dirección de internet y navegador se guardan con su aprobación.",
     "approveButton": "Aprobar horas",
     "sendDisputesButton": "Enviar disputas",
-    "final": "Una vez enviado, no se puede cambiar aquí. Para cambiarlo, comunícate con {agency}.",
-    "nothingWaiting": "Nada espera tu aprobación.",
+    "final": "Una vez enviado, no se puede cambiar aquí. Para cambiarlo, comuníquese con {agency}.",
+    "nothingWaiting": "Nada espera su aprobación.",
     "keptReply": "{agency} mantuvo estas horas: {reply}",
     "clientDispute": "Disputado: {reason}",
-    "done": "Gracias. Tu respuesta se envió.",
+    "done": "Gracias. Su respuesta se envió.",
     "expired": {
       "title": "Este enlace venció",
-      "body": "Pide un nuevo enlace por correo, o comunícate con {agency}.",
-      "newLink": "Envíame un nuevo enlace",
+      "body": "Pida un nuevo enlace por correo, o comuníquese con {agency}.",
+      "newLink": "Enviarme un nuevo enlace",
       "sent": "Se envió un nuevo enlace al correo al que se mandó esta solicitud.",
-      "closed": "Este periodo de pago está cerrado, así que no se puede enviar un nuevo enlace. Comunícate con {agency}."
+      "closed": "Este periodo de pago está cerrado, así que no se puede enviar un nuevo enlace. Comuníquese con {agency}."
     },
     "replaced": {
       "title": "Este enlace fue reemplazado",
-      "body": "Usa el enlace del correo más reciente de {agency}."
+      "body": "Use el enlace del correo más reciente de {agency}."
     },
     "invalid": {
       "title": "Este enlace no es válido",
-      "body": "Usa el enlace del correo más reciente que recibiste."
+      "body": "Use el enlace del correo más reciente que recibió."
     },
     "closed": {
       "title": "Este periodo de pago está cerrado",
-      "body": "Sus horas ya se pagaron. Para cambiar algo, comunícate con {agency}."
+      "body": "Las horas de este periodo ya se pagaron. Para cambiar algo, comuníquese con {agency}."
     },
-    "contact": "¿Preguntas? Comunícate con {agency}: {contact}",
+    "contact": "¿Preguntas? Comuníquese con {agency}: {contact}",
     "providedBy": "Proporcionado por {agency} a través de Shiftbook.",
     "language": "Idioma",
     "english": "English",
     "spanish": "Español",
     "errors": {
-      "changed": "Las horas cambiaron desde que abriste esta página. Estas son las más recientes; revísalas de nuevo.",
+      "changed": "Las horas cambiaron desde que abrió esta página. Estas son las más recientes; revíselas de nuevo.",
       "link_expired": "Este enlace venció.",
       "link_replaced": "Este enlace fue reemplazado por uno más reciente.",
       "link_invalid": "Este enlace no es válido.",
       "period_locked": "Este periodo de pago está cerrado.",
       "not_waiting": "Este turno ya no espera aprobación.",
       "invalid_times": "La salida debe ser después de la entrada el mismo día, y el descanso más corto que el turno.",
-      "reason_required": "Escribe qué está mal en este turno.",
-      "name_required": "Escribe tu nombre completo.",
-      "confirm_required": "Marca la confirmación para aprobar.",
-      "nothing_to_approve": "Nada espera tu aprobación.",
-      "too_soon": "Se envió un nuevo enlace hace poco. Revisa tu correo o comunícate con la agencia.",
-      "send_failed": "No se pudo enviar el correo. Inténtalo de nuevo en un momento.",
-      "settings_missing": "Falta algo del lado de la agencia. Comunícate con ella.",
+      "reason_required": "Escriba qué está mal en este turno.",
+      "name_required": "Escriba su nombre completo.",
+      "confirm_required": "Marque la confirmación para aprobar.",
+      "nothing_to_approve": "Nada espera su aprobación.",
+      "too_soon": "Se envió un nuevo enlace hace poco. Revise su correo o comuníquese con la agencia.",
+      "send_failed": "No se pudo enviar el correo. Inténtelo de nuevo en un momento.",
+      "settings_missing": "Falta algo del lado de la agencia. Comuníquese con ella.",
       "generic": "Algo salió mal. No se cambió nada.",
-      "link_active": "Este enlace todavía funciona. Vuelve a cargar la página.",
-      "link_too_old": "Este enlace venció hace demasiado tiempo. Pide uno nuevo a la agencia.",
-      "reason_too_long": "El motivo es demasiado largo; usa menos de 2000 caracteres."
+      "link_active": "Este enlace todavía funciona. Vuelva a cargar la página.",
+      "link_too_old": "Este enlace venció hace demasiado tiempo. Pida uno nuevo a la agencia.",
+      "reason_too_long": "El motivo es demasiado largo; use menos de 2000 caracteres."
     },
-    "currentTimesHint": "Deja un campo vacío para mantener lo registrado."
+    "currentTimesHint": "Deje un campo vacío para mantener lo registrado."
   },
   "hoursTable": {
     "label": "Horas por trabajador y día",
@@ -1613,7 +1627,7 @@
     "title": "Estado de cuenta",
     "date": "Fecha del estado de cuenta",
     "number": "Factura",
-    "period": "Período de pago",
+    "period": "Periodo de pago",
     "issued": "Emitida",
     "due": "Vence",
     "amount": "Importe",
@@ -1641,7 +1655,6 @@
     "oneClientOnly": "Un estado de cuenta reúne facturas de un solo cliente.",
     "beforeStatements": "{number} se creó antes de que los estados de cuenta pudieran incluirla: descargue su PDF por separado.",
     "clearSelection": "Quitar",
-    "empty": "Aún no hay facturas. Las facturas se crean con los archivos de cada semana.",
     "emptyLink": "Convertir hojas de horas",
     "noResults": "Ninguna factura coincide con estos filtros.",
     "selectAll": "Seleccionar todas las facturas",
@@ -1655,7 +1668,7 @@
       "status": "Estado",
       "number": "Número",
       "client": "Cliente",
-      "period": "Período de pago",
+      "period": "Periodo de pago",
       "issued": "Emitida",
       "due": "Vence",
       "actions": "Acciones"
@@ -1681,7 +1694,7 @@
       "amountDue": "Importe a pagar",
       "issued": "Emitida",
       "due": "Vence",
-      "period": "Período de pago",
+      "period": "Periodo de pago",
       "po": "Orden de compra",
       "worksite": "Lugar de trabajo",
       "template": "Plantilla",
@@ -1707,11 +1720,12 @@
       "addsTo": "Se suma a la factura",
       "run": "Los archivos de la semana (versión {version})",
       "openFiles": "Abrir los archivos"
-    }
+    },
+    "emptyTitle": "Aún no hay facturas",
+    "emptyBody": "Las facturas de cada semana se crean con su archivo de nómina."
   },
   "clients": {
     "title": "Clientes",
-    "empty": "Aún no hay clientes. Los clientes llegan con las órdenes de trabajo.",
     "emptyLink": "Órdenes de trabajo",
     "col": {
       "name": "Nombre",
@@ -1787,8 +1801,8 @@
     "backupImagesHint": "Las fotos de las hojas de horas, con los números de Seguro Social y las fechas de nacimiento tapados.",
     "vmsHint": "Se crea con cada factura, a partir de los números de hoja de horas de la descarga del cliente.",
     "appliesFrom": "Se aplica desde",
-    "appliesFromHint": "Las facturas de los períodos que terminan en esta fecha o después usan esta configuración.",
-    "appliesFromHintInvoiced": "Los períodos hasta el día antes del {date} ya se facturaron: una nueva versión empieza el {date} o después.",
+    "appliesFromHint": "Las facturas de los periodos de pago que terminan en esta fecha o después usan esta configuración.",
+    "appliesFromHintInvoiced": "Los periodos hasta el día antes del {date} ya se facturaron: una nueva versión empieza el {date} o después.",
     "cancel": "Cancelar",
     "save": "Guardar",
     "saved": "Guardado. Vigente desde el {date}.",
@@ -1808,7 +1822,9 @@
       "not_found": "Este cliente ya no existe.",
       "busy": "Se están creando los archivos en este momento. Inténtelo de nuevo en un momento.",
       "generic": "Algo salió mal. No se guardó nada."
-    }
+    },
+    "emptyTitle": "Aún no hay clientes",
+    "emptyBody": "Los clientes se agregan con sus órdenes de trabajo."
   },
   "reminderTemplate": {
     "before_due": {
@@ -1835,7 +1851,6 @@
       "voided": "Anulados"
     },
     "any": "Cualquiera",
-    "empty": "Aún no hay pagos. Registre un cheque o ACH cuando llegue, o traiga el archivo del banco para emparejar sus depósitos.",
     "importBank": "Importar archivo del banco",
     "date": "Fecha de recibo",
     "client": "Cliente",
@@ -1921,7 +1936,9 @@
     "from": "Origen",
     "fromTyped": "Ingresado a mano",
     "fromBank": "Archivo del banco",
-    "applyInvoiceCreditBody": "{amount} de crédito de las notas de crédito de esta factura aún no se aplica. Elija las facturas que paga."
+    "applyInvoiceCreditBody": "{amount} de crédito de las notas de crédito de esta factura aún no se aplica. Elija las facturas que paga.",
+    "emptyTitle": "Aún no hay pagos",
+    "emptyBody": "Registre un cheque o ACH cuando llegue, o importe el archivo del banco."
   },
   "receivables": {
     "title": "Cuentas por cobrar",
@@ -1931,9 +1948,7 @@
       "aging": "Antigüedad",
       "short": "Pagos incompletos"
     },
-    "empty": "No se debe nada al {date}.",
     "emptyLink": "Ver facturas",
-    "summary": "{total} por cobrar al {date}: {overdue} vencido, {credit} en crédito sin aplicar.",
     "client": "Cliente",
     "buckets": {
       "current": "Al día",
@@ -1966,7 +1981,19 @@
       "unknown": "Desconocido",
       "other": "Otro"
     },
-    "noReason": "Sin motivo aún"
+    "noReason": "Sin motivo aún",
+    "emptyTitle": "No se debe nada",
+    "emptyBody": "Ninguna factura tiene saldo al {date}.",
+    "figures": {
+      "owed": "Por cobrar",
+      "owedNote": "Al {date}",
+      "overdue": "Vencido",
+      "overdueNote": "Pasada la fecha de vencimiento",
+      "credit": "Crédito sin aplicar",
+      "creditNote": "Pagado pero aún sin factura"
+    },
+    "tabsLabel": "Vistas de cuentas por cobrar",
+    "shortEmptyTitle": "No hay pagos incompletos"
   },
   "bank": {
     "title": "Banco",
@@ -1977,7 +2004,6 @@
       "posted": "Registradas",
       "excluded": "Excluidas"
     },
-    "empty": "Aún no hay archivo del banco. Descargue la actividad de su banco como archivo CSV e impórtela aquí para emparejar sus depósitos con facturas.",
     "reviewEmpty": "Todos los depósitos están registrados o excluidos.",
     "confidence": {
       "high": "Alta",
@@ -1990,7 +2016,6 @@
     "findMatch": "Buscar coincidencia",
     "exclude": "Excluir",
     "date": "Fecha",
-    "description": "Descripción",
     "amount": "Monto",
     "payment": "Pago",
     "why": "Motivo",
@@ -2020,7 +2045,11 @@
       "busy": "Alguien más está guardando pagos ahora. Intente de nuevo en un momento.",
       "generic": "No funcionó. Intente de nuevo.",
       "not_short_paid": "Solo una factura que un pago dejó incompleta puede tener esto."
-    }
+    },
+    "emptyTitle": "Aún no hay archivo del banco",
+    "emptyBody": "Importe la actividad de su banco como CSV para emparejar sus depósitos con facturas.",
+    "tabsLabel": "Líneas del banco",
+    "reviewEmptyTitle": "Todo al día"
   },
   "bankImport": {
     "bank": "Banco",
@@ -2033,7 +2062,7 @@
     },
     "drop": "Suelte aquí el archivo CSV de su banco",
     "chosen": "Elegido: {name}",
-    "limits": "Un archivo CSV, hasta 1.000 líneas y 1 MB.",
+    "limits": "Un archivo CSV, hasta 1,000 líneas y 1 MB.",
     "choose": "Elegir archivo",
     "demoSample": "¿Probando la demostración?",
     "demoSampleLink": "Descargar un archivo de banco de ejemplo",
@@ -2090,7 +2119,7 @@
     "errors": {
       "type": "Elija un archivo CSV.",
       "size": "El archivo pesa más de 1 MB.",
-      "lines": "El archivo tiene más de 1.000 líneas. Descargue un rango de fechas más corto e importe cada parte.",
+      "lines": "El archivo tiene más de 1,000 líneas. Descargue un rango de fechas más corto e importe cada parte.",
       "empty": "El archivo no tiene líneas para importar.",
       "unreadable": "Las líneas {rows} no se pueden leer. Regrese y revise las columnas.",
       "generic": "No funcionó. Intente de nuevo.",
@@ -2181,7 +2210,7 @@
   },
   "margin": {
     "title": "Margen",
-    "period": "Período",
+    "period": "Periodo",
     "presets": {
       "4": "Últimas 4 semanas",
       "13": "Últimas 13 semanas",
@@ -2216,8 +2245,8 @@
     },
     "formulas": {
       "hours": "Horas normales, extra y dobles pagadas.",
-      "billed": "Lo que las facturas cobraron por el trabajo, de las líneas de facturación de la corrida.",
-      "pay": "Pago bruto por el trabajo, de las líneas de pago de la corrida.",
+      "billed": "Lo que las facturas cobraron por el trabajo, de las líneas de facturación de la nómina semanal.",
+      "pay": "Pago bruto por el trabajo, de las líneas de pago de la nómina semanal.",
       "burden": "Costos estimados del empleador: impuestos del empleador como porcentaje del pago, más compensación laboral por cada $100 de pago (sin la prima de horas extra cuando la configuración lo indica), con las tarifas vigentes esa semana.",
       "margin": "Facturado − pago − carga estimada.",
       "percent": "Margen bruto ÷ facturado, con un decimal, redondeado hacia arriba en la mitad."
@@ -2240,7 +2269,6 @@
     },
     "none": "Ninguno",
     "weekOf": "Semana del {date}",
-    "empty": "Ninguna semana del {from} al {to} tiene sus archivos hechos todavía, así que no hay nada que mostrar.",
     "emptyLink": "Convertir hojas de horas",
     "lineIncomplete": "Carga incompleta: falta una tarifa.",
     "payLine": "Pago ({type}):",
@@ -2263,7 +2291,7 @@
     "tableLabel": "Margen por {group}",
     "total": "Total",
     "overtime": {
-      "none": "No se pagaron horas extra en este período.",
+      "none": "No se pagaron horas extra en este periodo.",
       "allBilled": "Las {hours} de horas extra pagadas se facturaron al multiplicador de horas extra.",
       "summary": "{paid} de horas extra pagadas; {leaked} no facturadas al multiplicador; {premium} de prima pagada por ellas y no facturada.",
       "client": "Cliente",
@@ -2286,13 +2314,13 @@
       "now": "Adelantado hoy",
       "nowWhy": "Nómina pagada hasta el {date} menos lo que los clientes pagaron por ese trabajo.",
       "payroll": "Nómina del {date}",
-      "estimate": "Aún no hay corrida para esa semana: el promedio de las últimas cuatro semanas pagadas.",
-      "fromRun": "De la corrida de esa semana.",
+      "estimate": "Aún no hay nómina de esa semana: el promedio de las últimas cuatro semanas pagadas.",
+      "fromRun": "De la nómina de esa semana.",
       "estimateBadge": "Estimado",
       "expected": "Por cobrar para entonces",
       "nothingExpected": "No se espera cobrar ninguna factura abierta para entonces.",
       "after": "Adelantado después de esa nómina",
-      "noPayDay": "No hay día de pago configurado, así que las fechas de pago se toman como el último día del período.",
+      "noPayDay": "No hay día de pago configurado, así que las fechas de pago se toman como el último día del periodo.",
       "none": "No hay nada adelantado: toda nómina pagada hasta ahora ya fue pagada por los clientes.",
       "byClient": "Efectivo adelantado por cliente",
       "client": "Cliente",
@@ -2306,7 +2334,10 @@
       "marginKept": "Una factura solo devuelve la nómina de su propia semana; el resto es margen.",
       "overdue": "{amount} ya pasó la fecha en que se esperaba y no se cuenta."
     },
-    "csvIncomplete": "Líneas de pago sin tarifa"
+    "csvIncomplete": "Líneas de pago sin tarifa",
+    "emptyTitle": "Aún no hay nada que mostrar",
+    "emptyBody": "Ninguna semana del {from} al {to} tiene sus archivos hechos.",
+    "notForRoleTitle": "El margen es para el Propietario y el contador"
   },
   "marginSettings": {
     "above": "Configuración",
@@ -2338,11 +2369,11 @@
     },
     "payDay": {
       "title": "Día de pago",
-      "intro": "Cuántos días después de que termina un período de pago se paga a sus trabajadores; el efectivo adelantado cuenta desde entonces.",
+      "intro": "Cuántos días después de que termina un periodo de pago se paga a sus trabajadores; el efectivo adelantado cuenta desde entonces.",
       "notSet": "No hay día de pago configurado.",
-      "current": "Se paga a los trabajadores {days, plural, one {# día} other {# días}} después de que termina el período (desde el {date}).",
+      "current": "Se paga a los trabajadores {days, plural, one {# día} other {# días}} después de que termina el periodo (desde el {date}).",
       "next": "Desde el {date}: {days, plural, one {# día} other {# días}}.",
-      "days": "Días después de que termina el período",
+      "days": "Días después de que termina el periodo",
       "fromHint": "Se aplica a los periodos de pago que terminan en esa fecha o después."
     },
     "state": "Estado",
@@ -2376,7 +2407,7 @@
   },
   "compliance": {
     "title": "Cumplimiento",
-    "settings": "Ajustes de cumplimiento",
+    "settings": "Configuración de cumplimiento",
     "tabsLabel": "Vistas de cumplimiento",
     "tabs": {
       "list": "Lista",
@@ -2390,9 +2421,9 @@
       "all": "Todas",
       "registrations": "Registros",
       "clients": "Clientes",
-      "placements": "Colocaciones",
+      "placements": "Asignaciones",
       "workers": "Trabajadores",
-      "equal_pay": "Pago igual",
+      "equal_pay": "Igualdad salarial",
       "workers_comp": "Compensación laboral",
       "aca": "ACA"
     },
@@ -2450,8 +2481,8 @@
       "nj_certification_renewal": "Renovación de la certificación de Nueva Jersey",
       "il_client_proof": "Prueba de registro de Illinois",
       "il_client_proof_contract": "Prueba de registro de Illinois antes del contrato",
-      "il_equal_pay_720h": "Pago igual de Illinois tras 720 horas",
-      "il_equal_pay_4160h": "Pago igual de Illinois tras 4,160 horas",
+      "il_equal_pay_720h": "Igualdad salarial de Illinois tras 720 horas",
+      "il_equal_pay_4160h": "Igualdad salarial de Illinois tras 4,160 horas",
       "ma_job_order": "Orden de trabajo de Massachusetts",
       "nj_language_notice": "Aviso de Nueva Jersey en el idioma del trabajador",
       "i9_section1": "Formulario I-9, Sección 1",
@@ -2468,9 +2499,9 @@
       "il_client_proof": "Entregue al cliente la prueba del registro de la agencia en Illinois. El cliente debe verificar el registro antes de contratar y cada 1 de marzo y 1 de septiembre.",
       "il_client_proof_contract": "Entregue al cliente la prueba del registro de la agencia en Illinois antes de que empiece el contrato.",
       "il_equal_pay_720h": "Después de más de 720 horas con un mismo cliente en 12 meses, al trabajador se le paga al menos lo que el cliente paga a empleados comparables, con beneficios iguales o su valor en efectivo por hora. Pida la comparación al cliente antes del siguiente periodo de pago.",
-      "il_equal_pay_4160h": "Después de más de 4,160 horas con un mismo cliente en 48 meses, aplica la medida de pago igual más alta.",
+      "il_equal_pay_4160h": "Después de más de 4,160 horas con un mismo cliente en 48 meses, aplica la medida de igualdad salarial más alta.",
       "ma_job_order": "Entregue al trabajador la orden de trabajo por escrito, por el medio que el trabajador eligió, antes de que termine el primer periodo de pago: los datos de contacto de la agencia, de su aseguradora de compensación laboral, del cliente y del Departamento; el trabajo y lo que requiere; día de pago, tarifa por hora y si puede haber horas extra; horarios de inicio y fin; comidas y transporte. No hace falta para trabajo profesional, de secretaría ni de asistente administrativo.",
-      "nj_language_notice": "Entregue el aviso de asignación en inglés y en el idioma principal del trabajador al empezar la colocación, en el formulario del Departamento de Trabajo.",
+      "nj_language_notice": "Entregue el aviso de asignación en inglés y en el idioma principal del trabajador al empezar la asignación, en el formulario del Departamento de Trabajo.",
       "i9_section1": "El trabajador completa la Sección 1 del Formulario I-9 a más tardar el primer día de trabajo.",
       "i9_section2": "La agencia examina los documentos del trabajador y completa la Sección 2 dentro de {days} días hábiles del primer día.",
       "i9_reverify": "Reverifique la autorización de empleo del trabajador a más tardar el día en que vence (Suplemento B).",
@@ -2515,7 +2546,7 @@
       "subject": "Para",
       "client": "Cliente",
       "worker": "Trabajador",
-      "placement": "Colocación",
+      "placement": "Asignación",
       "openPlacement": "Abrir la orden de trabajo",
       "doneBy": "Hecha por {by} el {date}.",
       "naBy": "Descartada por {by} el {date}.",
@@ -2564,7 +2595,7 @@
         "nextExpires": "La nueva autorización vence (vacío si no vence)",
         "save": "Registrar"
       },
-      "settingsLink": "Cámbielo en Ajustes de cumplimiento",
+      "settingsLink": "Cámbielo en Configuración de cumplimiento",
       "acaLink": "Abrir el método retrospectivo de la ACA",
       "readOnly": "Puede consultar esta obligación; cambiarla corresponde a {who}.",
       "system": {
@@ -2582,7 +2613,7 @@
       },
       "notice": {
         "title": "Datos de la orden de trabajo",
-        "intro": "Lo que la orden de trabajo indica y Shiftbook no sabe de otra forma. Se guarda en la orden de trabajo para cada colocación.",
+        "intro": "Lo que la orden de trabajo indica y Shiftbook no sabe de otra forma. Se guarda en la orden de trabajo para cada asignación.",
         "startTime": "Inicio diario",
         "endTime": "Fin previsto",
         "overtime": "Horas extra",
@@ -2598,12 +2629,12 @@
         "save": "Guardar datos",
         "saved": "Guardado.",
         "missing": "Primero agregue los datos de la orden de trabajo.",
-        "department": "Primero agregue los datos de contacto del Departamento en Ajustes de cumplimiento.",
-        "noStatement": "No hay declaración multilingüe: la orden de trabajo dirá que debe entregarse. Agréguela en Ajustes de cumplimiento.",
+        "department": "Primero agregue los datos de contacto del Departamento en Configuración de cumplimiento.",
+        "noStatement": "No hay declaración multilingüe: la orden de trabajo dirá que debe entregarse. Agréguela en Configuración de cumplimiento.",
         "employerPhone": "Teléfono del empleador del lugar de trabajo ({client})",
         "agencyPhone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo."
       },
-      "missingRegistration": "No hay registro de Illinois vigente: primero agréguelo en Ajustes de cumplimiento.",
+      "missingRegistration": "No hay registro de Illinois vigente: primero agréguelo en Configuración de cumplimiento.",
       "noI9Files": "Las copias del Formulario I-9 no se guardan en Shiftbook (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
       "proofNoRegistration": "No hay registro de Illinois vigente el {date}, el día en que el cliente verifica: primero agregue el registro renovado.",
       "equalPay": {
@@ -2668,9 +2699,9 @@
         "body": "Escriba la nota (hasta 2,000 caracteres).",
         "hireDate": "Escriba una fecha.",
         "workAuthExpiresOn": "Escriba una fecha.",
-        "registration": "No hay registro de Illinois vigente en la fecha de la obligación: agréguelo en Ajustes de cumplimiento.",
+        "registration": "No hay registro de Illinois vigente en la fecha de la obligación: agréguelo en Configuración de cumplimiento.",
         "details": "Primero agregue los datos de la orden de trabajo.",
-        "department": "Primero agregue los datos de contacto del Departamento en Ajustes de cumplimiento.",
+        "department": "Primero agregue los datos de contacto del Departamento en Configuración de cumplimiento.",
         "startTime": "Escriba una hora como 07:00.",
         "endTime": "Escriba una hora como 15:30.",
         "requirements": "Diga qué se requiere, o \"Nada\" (hasta 300 caracteres).",
@@ -2808,12 +2839,12 @@
     },
     "aca": {
       "intro": "Quién es de tiempo completo según el método retrospectivo: las horas de servicio de cada periodo de medición, promediadas por semana. A quien resulte de tiempo completo se le ofrece cobertura para el periodo de estabilidad siguiente.",
-      "parameters": "Ajustes del método retrospectivo y horas registradas",
-      "settingsTitle": "Ajustes de medición",
+      "parameters": "Configuración del método retrospectivo y horas registradas",
+      "settingsTitle": "Configuración de medición",
       "settingsLine": "Periodos de {months} meses desde {month}; {admin} días administrativos; periodos de estabilidad de {stability} meses. Vigentes desde el {date}.",
       "noSettings": "Aún no hay periodos: nadie se mide hasta que se definan.",
-      "noSettingsReadOnly": "Aún no hay periodos: el Propietario los define en Ajustes de cumplimiento.",
-      "changeSettings": "Cámbielos en Ajustes de cumplimiento",
+      "noSettingsReadOnly": "Aún no hay periodos: el Propietario los define en Configuración de cumplimiento.",
+      "changeSettings": "Cámbielos en Configuración de cumplimiento",
       "setSettings": "Definir los periodos",
       "hoursTitle": "Horas registradas",
       "paidLine": "Semanas pagadas en Shiftbook: {range}.",
@@ -2931,7 +2962,7 @@
       "il_client_proof": "820 ILCS 175/85(a); 56 Ill. Adm. Code 260.510 (el cliente verifica el registro de la agencia el 1 de marzo y el 1 de septiembre; la agencia entrega la prueba de registro)",
       "il_client_proof_contract": "820 ILCS 175/85(a); 56 Ill. Adm. Code 260.510 (prueba de registro antes de que empiece el contrato)",
       "il_equal_pay_4160h": "820 ILCS 175/42(c) (más de 4,160 horas en un mismo cliente en 48 meses)",
-      "il_equal_pay_720h": "820 ILCS 175/42(a); 56 Ill. Adm. Code 260.505(b) (más de 720 horas en un mismo cliente en 12 meses: igualdad de pago y de beneficios)",
+      "il_equal_pay_720h": "820 ILCS 175/42(a); 56 Ill. Adm. Code 260.505(b) (más de 720 horas en un mismo cliente en 12 meses: igualdad salarial y de beneficios)",
       "il_registration_renewal": "820 ILCS 175/45; 56 Ill. Adm. Code 260.320 (renovación al menos 60 días antes de que venza el registro)",
       "ma_job_order": "M.G.L. c. 149 § 159C(b); 454 CMR 24.08 (la orden de trabajo confirmada por escrito antes de que termine el primer periodo de pago)",
       "ma_registration_renewal": "454 CMR 24.06(2) (renovación a más tardar 30 días antes de que venza la licencia o el registro); M.G.L. c. 140 § 46D",
@@ -2942,9 +2973,9 @@
     }
   },
   "complianceSettings": {
-    "title": "Ajustes de cumplimiento",
-    "settings": "Ajustes",
-    "description": "Las obligaciones de cumplimiento se calculan con estos datos y con los clientes, colocaciones y trabajadores de la agencia.",
+    "title": "Configuración de cumplimiento",
+    "settings": "Configuración",
+    "description": "Las obligaciones de cumplimiento se calculan con estos datos y con los clientes, asignaciones y trabajadores de la agencia.",
     "readOnly": "Solo el Propietario cambia estos datos.",
     "changed": "Último cambio el {date} por {by}",
     "saved": "Guardado. Las obligaciones se calcularon de nuevo.",
@@ -3138,15 +3169,15 @@
   "roles": {
     "owner": {
       "name": "Propietario",
-      "line": "Todo: aprueba las nóminas semanales, ve el margen, administra miembros y ajustes."
+      "line": "Todo: aprueba las nóminas semanales, ve el margen, administra miembros y la configuración."
     },
     "coordinator": {
       "name": "Coordinador",
-      "line": "Hojas de horas y revisión de horas, órdenes de trabajo y asignaciones, sus tareas de cumplimiento."
+      "line": "Hojas de horas y revisión de horas, órdenes de trabajo y asignaciones, sus obligaciones de cumplimiento."
     },
     "billing": {
       "name": "Facturación",
-      "line": "Facturas, cuentas por cobrar y cobros, datos de facturación de clientes, sus tareas de cumplimiento."
+      "line": "Facturas, cuentas por cobrar y cobros, datos de facturación de clientes, sus obligaciones de cumplimiento."
     },
     "accountant": {
       "name": "Contador",
@@ -3160,29 +3191,29 @@
     "spanish": "Español"
   },
   "signIn": {
-    "title": "Inicia sesión en Shiftbook",
+    "title": "Inicie sesión en Shiftbook",
     "email": "Correo electrónico",
     "password": "Contraseña",
-    "forgot": "¿Olvidaste tu contraseña?",
+    "forgot": "¿Olvidó su contraseña?",
     "submit": "Iniciar sesión",
     "submitting": "Iniciando sesión…",
-    "invalid": "Ese correo y esa contraseña no coinciden. Revisa ambos e inténtalo de nuevo.",
-    "locked": "Demasiados intentos. Espera 15 minutos y vuelve a intentarlo, o restablece tu contraseña.",
-    "resetLink": "Restablecer tu contraseña",
+    "invalid": "Ese correo y esa contraseña no coinciden. Revise ambos e inténtelo de nuevo.",
+    "locked": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo, o restablezca su contraseña.",
+    "resetLink": "Restablecer su contraseña",
     "notice": {
-      "signed_out": "Cerraste la sesión.",
-      "expired": "Tu sesión terminó. Inicia sesión de nuevo.",
-      "password_changed": "Tu contraseña cambió. Inicia sesión con la nueva.",
+      "signed_out": "Cerró la sesión.",
+      "expired": "Su sesión terminó. Inicie sesión de nuevo.",
+      "password_changed": "Su contraseña cambió. Inicie sesión con la nueva.",
       "link_expired": "Ese enlace ya no funciona."
     },
-    "demoTitle": "Prueba la demostración como",
+    "demoTitle": "Pruebe la demostración como",
     "demoHint": "Las personas de la demostración no necesitan contraseña ni código.",
     "continueAs": "Continuar como {name}",
-    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtalo de nuevo en un momento."
+    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento."
   },
   "signInCode": {
-    "title": "Escribe tu código",
-    "body": "Abre tu aplicación de autenticación y escribe el código de seis dígitos que muestra para Shiftbook.",
+    "title": "Escriba su código",
+    "body": "Abra su aplicación de autenticación y escriba el código de seis dígitos que muestra para Shiftbook.",
     "code": "Código de seis dígitos",
     "verify": "Verificar",
     "verifying": "Verificando…",
@@ -3190,35 +3221,35 @@
     "useRecovery": "Usar un código de recuperación",
     "useApp": "Usar el código de la aplicación",
     "recovery": "Código de recuperación",
-    "recoveryBody": "Escribe uno de los códigos de recuperación que guardaste. Cada uno funciona una vez.",
-    "invalid": "Ese código no funcionó. Escribe el código más reciente que muestra la aplicación.",
+    "recoveryBody": "Escriba uno de los códigos de recuperación que guardó. Cada uno funciona una vez.",
+    "invalid": "Ese código no funcionó. Escriba el código más reciente que muestra la aplicación.",
     "invalidRecovery": "Ese código de recuperación no funcionó o ya se usó.",
-    "locked": "Demasiados códigos incorrectos: espera 15 minutos y vuelve a iniciar sesión.",
-    "notYou": "¿No eres tú?",
+    "locked": "Demasiados códigos incorrectos: espere 15 minutos y vuelva a iniciar sesión.",
+    "notYou": "¿No es usted?",
     "signOut": "Cerrar sesión"
   },
   "signInNotice": {
-    "recoveryLeft": "{count, plural, =0 {Iniciaste sesión con tu último código de recuperación. Crea nuevos en Tu cuenta.} one {Iniciaste sesión con un código de recuperación. Queda # código.} other {Iniciaste sesión con un código de recuperación. Quedan # códigos.}}",
-    "openAccount": "Tu cuenta"
+    "recoveryLeft": "{count, plural, =0 {Inició sesión con su último código de recuperación. Cree nuevos en Su cuenta.} one {Inició sesión con un código de recuperación. Queda # código.} other {Inició sesión con un código de recuperación. Quedan # códigos.}}",
+    "openAccount": "Su cuenta"
   },
   "setup": {
-    "title": "Configura tu autenticador",
-    "required": "Tu rol necesita un código de una aplicación de autenticación cada vez que inicias sesión. Sirve cualquier aplicación de autenticación en tu teléfono o computadora.",
-    "step1": "1. Escanea el código QR",
-    "step1Body": "En tu aplicación de autenticación, agrega una cuenta y escanea este código.",
-    "qrAlt": "Código QR para tu aplicación de autenticación",
-    "loading": "Preparando tu código…",
+    "title": "Configure su autenticador",
+    "required": "Su rol necesita un código de una aplicación de autenticación cada vez que inicia sesión. Sirve cualquier aplicación de autenticación en su teléfono o computadora.",
+    "step1": "1. Escanee el código QR",
+    "step1Body": "En su aplicación de autenticación, agregue una cuenta y escanee este código.",
+    "qrAlt": "Código QR para su aplicación de autenticación",
+    "loading": "Preparando su código…",
     "showKey": "Clave de configuración",
-    "keyBody": "¿No puedes escanearlo? Escribe esta clave en la aplicación:",
-    "step2": "2. Escribe el código de la aplicación",
+    "keyBody": "¿No puede escanearlo? Escriba esta clave en la aplicación:",
+    "step2": "2. Escriba el código de la aplicación",
     "code": "Código de seis dígitos",
     "verify": "Verificar",
     "verifying": "Verificando…",
-    "invalid": "Ese código no funcionó. Escribe el código más reciente que muestra la aplicación.",
-    "expired": "Esta configuración terminó. Empiézala de nuevo.",
+    "invalid": "Ese código no funcionó. Escriba el código más reciente que muestra la aplicación.",
+    "expired": "Esta configuración terminó. Empiécela de nuevo.",
     "startAgain": "Empezar de nuevo",
-    "step3": "3. Guarda tus códigos de recuperación",
-    "step3Body": "Si pierdes tu teléfono, cada uno de estos códigos te permite iniciar sesión una vez. Guárdalos en un lugar seguro, como un administrador de contraseñas. Solo se muestran ahora.",
+    "step3": "3. Guarde sus códigos de recuperación",
+    "step3Body": "Si pierde su teléfono, cada uno de estos códigos le permite iniciar sesión una vez. Guárdelos en un lugar seguro, como un administrador de contraseñas. Solo se muestran ahora.",
     "download": "Descargar",
     "print": "Imprimir",
     "copy": "Copiar",
@@ -3226,28 +3257,28 @@
     "saved": "Ya guardé mis códigos de recuperación",
     "fileName": "shiftbook-codigos-de-recuperacion.txt",
     "fileHeader": "Códigos de recuperación de Shiftbook para {email}. Cada código funciona una vez.",
-    "on": "Tu autenticador está activado.",
+    "on": "Su autenticador está activado.",
     "signOut": "Cerrar sesión",
     "cancel": "Cancelar"
   },
   "reset": {
-    "title": "Restablece tu contraseña",
-    "body": "Escribe el correo con el que inicias sesión. Ahí se envía un enlace para elegir una contraseña nueva.",
+    "title": "Restablezca su contraseña",
+    "body": "Escriba el correo con el que inicia sesión. Ahí se envía un enlace para elegir una contraseña nueva.",
     "email": "Correo electrónico",
     "submit": "Enviar enlace",
     "sending": "Enviando…",
     "back": "Volver a iniciar sesión",
-    "sentTitle": "Revisa tu correo",
+    "sentTitle": "Revise su correo",
     "sentBody": "Si una cuenta usa {email}, va en camino un enlace para elegir una contraseña nueva. Funciona una vez, durante una hora.",
     "demoCopy": "Demostración: no se envía ningún correo. Esta es la copia del buzón de la demostración:"
   },
   "newPassword": {
-    "title": "Elige una contraseña nueva",
+    "title": "Elija una contraseña nueva",
     "forEmail": "Para {email}",
-    "codeStep": "Primero, escribe el código de tu aplicación de autenticación.",
+    "codeStep": "Primero, escriba el código de su aplicación de autenticación.",
     "password": "Contraseña nueva",
-    "confirm": "Confirma la contraseña",
-    "rule": "Al menos 15 caracteres. Cualquier carácter, también espacios. No tu correo.",
+    "confirm": "Confirme la contraseña",
+    "rule": "Al menos 15 caracteres. Cualquier carácter, también espacios. No su correo.",
     "submit": "Cambiar contraseña",
     "submitting": "Cambiando…",
     "expiredTitle": "Este enlace ya no funciona",
@@ -3256,69 +3287,69 @@
     "back": "Volver a iniciar sesión",
     "mismatch": "Las dos contraseñas no son iguales.",
     "errors": {
-      "too_short": "Usa al menos 15 caracteres.",
-      "too_long": "Usa como máximo 128 caracteres.",
-      "is_email": "No uses tu correo como contraseña.",
-      "one_character": "No repitas un solo carácter una y otra vez.",
-      "wrong_password": "Esa no es tu contraseña actual.",
-      "generic": "Eso no funcionó. Inténtalo de nuevo.",
-      "locked": "Demasiadas contraseñas incorrectas: espera una hora o restablece tu contraseña.",
-      "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtalo de nuevo en un momento."
+      "too_short": "Use al menos 15 caracteres.",
+      "too_long": "Use como máximo 128 caracteres.",
+      "is_email": "No use su correo como contraseña.",
+      "one_character": "No repita un solo carácter una y otra vez.",
+      "wrong_password": "Esa no es su contraseña actual.",
+      "generic": "Eso no funcionó. Inténtelo de nuevo.",
+      "locked": "Demasiadas contraseñas incorrectas: espere una hora o restablezca su contraseña.",
+      "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento."
     }
   },
   "invite": {
-    "title": "Únete a {agency}",
-    "body": "{by} te invitó a unirte como {role}.",
-    "email": "Iniciarás sesión con {email}.",
+    "title": "Únase a {agency}",
+    "body": "{by} le envió una invitación para unirse como {role}.",
+    "email": "Iniciará sesión con {email}.",
     "password": "Contraseña",
-    "confirm": "Confirma la contraseña",
+    "confirm": "Confirme la contraseña",
     "submit": "Unirme a {agency}",
-    "submitting": "Uniéndote…",
+    "submitting": "Uniéndose…",
     "expiredTitle": "Esta invitación ya no funciona",
-    "expiredBody": "Una invitación funciona una vez, durante 10 días. Pide al propietario de la agencia que la envíe de nuevo.",
+    "expiredBody": "Una invitación funciona una vez, durante 10 días. Pida al Propietario de la agencia que la envíe de nuevo.",
     "toSignIn": "Ir a iniciar sesión",
-    "nextSetup": "Tu rol necesita una aplicación de autenticación: la configuras a continuación."
+    "nextSetup": "Su rol necesita una aplicación de autenticación: la configura a continuación."
   },
   "account": {
     "eyebrow": "Configuración",
-    "title": "Tu cuenta",
+    "title": "Su cuenta",
     "who": "{email} · {role}",
     "languageTitle": "Idioma",
     "language": "Idioma",
-    "languageHint": "Tus pantallas, tu página de inicio de sesión y los correos que Shiftbook te envía.",
+    "languageHint": "Sus pantallas, su página de inicio de sesión y los correos que Shiftbook le envía.",
     "languageSaved": "Idioma guardado.",
     "passwordTitle": "Contraseña",
     "passwordChanged": "Último cambio: {date}.",
-    "passwordNever": "Todavía no tienes contraseña.",
+    "passwordNever": "Todavía no tiene contraseña.",
     "current": "Contraseña actual",
     "new": "Contraseña nueva",
-    "confirm": "Confirma la contraseña nueva",
+    "confirm": "Confirme la contraseña nueva",
     "update": "Actualizar contraseña",
     "set": "Crear contraseña",
     "saving": "Guardando…",
-    "passwordSaved": "Contraseña guardada. Se cerró la sesión en cualquier otro lugar donde la tenías abierta.",
+    "passwordSaved": "Contraseña guardada. Se cerró la sesión en cualquier otro lugar donde la tenía abierta.",
     "authTitle": "Autenticador",
     "authOff": "Desactivado. Al activarlo, cada inicio de sesión también pide un código de una aplicación de autenticación.",
-    "authRequired": "Tu rol lo necesita.",
+    "authRequired": "Su rol lo necesita.",
     "setUp": "Configurar autenticador",
     "authOn": "Activado desde el {date}.",
     "recoveryTitle": "Códigos de recuperación",
     "recoveryLeft": "{count, plural, =0 {No quedan códigos.} one {Queda # código.} other {Quedan # códigos.}}",
     "newCodes": "Crear códigos de recuperación nuevos",
     "newCodesTitle": "¿Crear códigos de recuperación nuevos?",
-    "newCodesBody": "Los códigos que tienes ahora dejan de funcionar.",
+    "newCodesBody": "Los códigos que tiene ahora dejan de funcionar.",
     "newCodesConfirm": "Crear códigos nuevos",
     "setUpAgain": "Configurar de nuevo",
     "setUpAgainHint": "Para un teléfono nuevo. La aplicación anterior sigue funcionando hasta que se verifique la nueva.",
     "signOut": "Cerrar sesión",
-    "demoNote": "Demostración: nada de aquí sale de la demostración; prueba la contraseña y el autenticador libremente."
+    "demoNote": "Demostración: nada de aquí sale de la demostración; pruebe la contraseña y el autenticador libremente."
   },
   "members": {
     "eyebrow": "Configuración",
     "title": "Miembros",
     "invite": "Invitar",
     "rolesTitle": "Roles",
-    "ownerOnly": "Solo el propietario invita personas, cambia roles y suspende.",
+    "ownerOnly": "Solo el Propietario invita personas, cambia roles y suspende.",
     "role": "Rol",
     "status": "Estado",
     "all": "Todos",
@@ -3331,7 +3362,7 @@
       "lastSeen": "Última vez",
       "actions": "Acciones"
     },
-    "you": "Tú",
+    "you": "Usted",
     "statusLabels": {
       "active": "Activo",
       "invited": "Invitado",
@@ -3359,7 +3390,7 @@
     "save": "Guardar",
     "saving": "Guardando…",
     "suspendTitle": "¿Suspender a {name}?",
-    "suspendBody": "Su sesión se cierra en el acto y no puede iniciar sesión hasta que restaures su acceso. Su trabajo se conserva.",
+    "suspendBody": "La sesión de esta persona se cierra en el acto y no puede iniciar sesión hasta que usted restaure su acceso. Su trabajo se conserva.",
     "suspendConfirm": "Suspender",
     "cancelTitle": "¿Cancelar la invitación a {name}?",
     "cancelBody": "El enlace de su correo deja de funcionar.",
@@ -3379,50 +3410,50 @@
     "restored": "{name} puede iniciar sesión de nuevo.",
     "cancelled": "Invitación cancelada.",
     "demoCopyTitle": "Buzón de la demostración: invitación a {email}",
-    "demoCopyBody": "La demostración no envía correos. Abre el enlace de abajo para aceptar la invitación como esta persona (cierra sesión primero o usa una ventana privada).",
+    "demoCopyBody": "La demostración no envía correos. Abra el enlace de abajo para aceptar la invitación como esta persona (cierre sesión primero o use una ventana privada).",
     "errors": {
-      "not_allowed": "Solo el propietario puede hacer esto.",
-      "invalid_email": "Escribe un correo completo.",
+      "not_allowed": "Solo el Propietario puede hacer esto.",
+      "invalid_email": "Escriba un correo completo.",
       "email_taken": "Alguien ya inicia sesión con este correo.",
-      "invalid_name": "Escribe su nombre.",
-      "invalid_role": "Elige un rol.",
+      "invalid_name": "Escriba el nombre.",
+      "invalid_role": "Elija un rol.",
       "not_found": "Esta persona cambió mientras tanto. La lista ahora muestra lo más reciente.",
-      "last_owner": "La agencia necesita al menos un propietario activo.",
-      "self": "No puedes suspenderte a ti mismo.",
-      "generic": "Eso no funcionó. Inténtalo de nuevo.",
-      "confirm": "Primero confirma que eres tú."
+      "last_owner": "La agencia necesita al menos un Propietario activo.",
+      "self": "No puede suspenderse a sí mismo.",
+      "generic": "Eso no funcionó. Inténtelo de nuevo.",
+      "confirm": "Primero confirme que es usted."
     }
   },
   "authEmail": {
     "greeting": "Hola, {name}:",
     "footer": "Enviado por Shiftbook en nombre de {agency}.",
     "invite": {
-      "subject": "{by} te invitó a {agency} en Shiftbook",
-      "intro": "{by} te invitó a unirte a {agency} en Shiftbook como {role}.",
+      "subject": "Invitación de {by} para unirse a {agency} en Shiftbook",
+      "intro": "{by} le envió una invitación para unirse a {agency} en Shiftbook como {role}.",
       "open": "Aceptar la invitación",
-      "expires": "La invitación funciona hasta el {date}. Es solo para ti, así que por favor no la reenvíes.",
-      "unexpected": "Si no esperabas esta invitación, puedes ignorar este correo."
+      "expires": "La invitación funciona hasta el {date}. Es solo para usted, así que por favor no la reenvíe.",
+      "unexpected": "Si no esperaba esta invitación, puede ignorar este correo."
     },
     "reset": {
-      "subject": "Restablece tu contraseña de Shiftbook",
-      "intro": "Alguien pidió restablecer la contraseña con la que inicias sesión en {agency} en Shiftbook.",
+      "subject": "Restablezca su contraseña de Shiftbook",
+      "intro": "Alguien pidió restablecer la contraseña con la que inicia sesión en {agency} en Shiftbook.",
       "open": "Elegir una contraseña nueva",
       "expires": "El enlace funciona una vez, durante una hora.",
-      "unexpected": "Si no fuiste tú, ignora este correo: tu contraseña sigue igual."
+      "unexpected": "Si no fue usted, ignore este correo: su contraseña sigue igual."
     }
   },
   "confirmAccess": {
-    "title": "Confirma que eres tú",
-    "bodyPassword": "Este cambio necesita tu contraseña, escrita en los últimos 15 minutos.",
-    "bodyCode": "Este cambio necesita un código de tu aplicación de autenticación (o un código de recuperación), escrito en los últimos 15 minutos.",
+    "title": "Confirme que es usted",
+    "bodyPassword": "Este cambio necesita su contraseña, escrita en los últimos 15 minutos.",
+    "bodyCode": "Este cambio necesita un código de su aplicación de autenticación (o un código de recuperación), escrito en los últimos 15 minutos.",
     "password": "Contraseña",
     "code": "Código o código de recuperación",
     "confirm": "Confirmar",
     "confirming": "Confirmando…",
     "cancel": "Cancelar",
-    "invalid": "No coincide. Inténtalo de nuevo.",
-    "locked": "Demasiados intentos: espera un rato y vuelve a intentarlo.",
-    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtalo de nuevo en un momento."
+    "invalid": "No coincide. Inténtelo de nuevo.",
+    "locked": "Demasiados intentos: espere un rato y vuelva a intentarlo.",
+    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento."
   },
   "workers": {
     "title": "Trabajadores",
@@ -3456,7 +3487,6 @@
       "active": "Activo",
       "ended": "De baja"
     },
-    "empty": "Todavía no hay trabajadores.",
     "noMatch": "Ningún trabajador coincide con «{query}».",
     "noActive": "No hay trabajadores activos. Los dados de baja están ocultos.",
     "clearSearch": "Borrar búsqueda",
@@ -3637,7 +3667,9 @@
           "effective_on": "Escriba la fecha en que el archivo entró en vigor."
         }
       }
-    }
+    },
+    "emptyTitle": "Aún no hay trabajadores",
+    "emptyBody": "Agregue a cada trabajador una vez; sus asignaciones, pagos y documentos lo siguen."
   },
   "activityLog": {
     "eyebrow": "Configuración",
@@ -3702,7 +3734,7 @@
       "activity_log": "Registro de actividad",
       "agency": "Agencia",
       "agency_registration": "Registro estatal",
-      "agency_setting": "Ajuste",
+      "agency_setting": "Configuración de la agencia",
       "approval_request": "Aprobación del cliente",
       "assignment": "Asignación",
       "bank_import": "Archivo bancario",
@@ -3726,7 +3758,7 @@
       "rate_card": "Tarifas",
       "reminder": "Recordatorio",
       "short_pay": "Pago incompleto",
-      "source_document": "Archivo de horas",
+      "source_document": "Archivo de hoja de horas",
       "time_entry": "Horas",
       "user": "Miembro",
       "wc_policy": "Póliza de compensación laboral",
@@ -3736,5 +3768,130 @@
     },
     "allTypes": "Todos",
     "gone": "ya no está en el sistema"
+  },
+  "home": {
+    "title": "Inicio",
+    "showGuide": "Guía de configuración",
+    "guide": {
+      "title": "Guía de configuración",
+      "intro": "Siete pasos llevan una semana de las hojas de horas a las facturas cobradas. Cada uno se marca como hecho cuando ocurre.",
+      "progress": "{done} de {total} pasos hechos",
+      "hide": "Ocultar la guía",
+      "collapse": "Contraer la guía",
+      "expand": "Expandir la guía",
+      "allDone": "Todos los pasos están hechos. Puede ocultar esta guía.",
+      "done": "Hecho",
+      "notDone": "Pendiente",
+      "steps": {
+        "payroll": {
+          "title": "Elija su sistema de nómina",
+          "body": "Shiftbook crea el archivo que importa su sistema de nómina: Gusto, ADP, QuickBooks o una hoja de cálculo.",
+          "action": "Abrir la configuración del archivo de nómina"
+        },
+        "placements": {
+          "title": "Agregue clientes y órdenes de trabajo",
+          "body": "Las tarifas de pago y de cobro vienen de cada orden de trabajo. Importe asignaciones desde una hoja de cálculo o agréguelas una por una.",
+          "action": "Abrir órdenes de trabajo"
+        },
+        "convert": {
+          "title": "Convierta una semana de hojas de horas",
+          "body": "Suelte fotos, PDF y exportaciones del reloj checador, y revise solo las filas que Shiftbook marca.",
+          "demo": "En esta demostración, descargue las hojas de horas de ejemplo desde el aviso de arriba y suéltelas todas.",
+          "action": "Convertir hojas de horas"
+        },
+        "approval": {
+          "title": "Pida a un cliente que apruebe las horas",
+          "body": "El cliente aprueba o disputa cada turno desde un enlace en un correo. No necesita una cuenta.",
+          "action": "Abrir aprobaciones de clientes"
+        },
+        "files": {
+          "title": "Apruebe la semana y cree los archivos",
+          "body": "Se revisa cada regla de pago y luego Shiftbook crea el archivo de nómina y la factura de cada cliente con su respaldo.",
+          "action": "Abrir el periodo de pago"
+        },
+        "bank": {
+          "title": "Empareje un archivo del banco con las facturas",
+          "body": "Importe el CSV de su banco y cada depósito se empareja con las facturas que paga.",
+          "action": "Abrir banco"
+        },
+        "ssn": {
+          "title": "Consulte el SSN de un trabajador",
+          "body": "Solo el Propietario puede, con un motivo. El registro de actividad guarda quién lo consultó, cuándo y por qué.",
+          "action": "Abrir trabajadores"
+        }
+      }
+    },
+    "attention": {
+      "title": "Requiere atención",
+      "none": "Nada requiere atención por ahora.",
+      "period": {
+        "none": "El periodo de pago {period} no ha comenzado.",
+        "draft": "El periodo de pago {period} está en curso.",
+        "validating": "El periodo de pago {period} está en curso.",
+        "blocked": "{count, plural, one {Periodo de pago {period}: # problema detiene la nómina.} other {Periodo de pago {period}: # problemas detienen la nómina.}}",
+        "ready": "El periodo de pago {period} está listo para aprobar.",
+        "approved": "El periodo de pago {period} está aprobado; aún no se crean sus archivos.",
+        "exported": "Periodo de pago {period}: los archivos están creados.",
+        "closed": "El periodo de pago {period} está cerrado.",
+        "correcting": "Periodo de pago {period}: hay una corrección en curso."
+      },
+      "periodAction": {
+        "none": "Empezar",
+        "draft": "Continuar",
+        "validating": "Continuar",
+        "blocked": "Ver los problemas",
+        "ready": "Revisar totales",
+        "approved": "Crear los archivos",
+        "exported": "Ver archivos",
+        "closed": "Ver archivos",
+        "correcting": "Continuar"
+      },
+      "disputed": "{count, plural, one {# cliente disputó turnos en este periodo de pago.} other {# clientes disputaron turnos en este periodo de pago.}}",
+      "toSend": "{count, plural, one {# cliente debe aprobar horas antes de la nómina y no se le ha pedido.} other {# clientes deben aprobar horas antes de la nómina y no se les ha pedido.}}",
+      "waiting": "{count, plural, one {Esperando a que # cliente apruebe horas.} other {Esperando a que # clientes aprueben horas.}}",
+      "dutiesOverdue": "{count, plural, one {# obligación de cumplimiento está vencida.} other {# obligaciones de cumplimiento están vencidas.}}",
+      "dutiesDueSoon": "{count, plural, one {# obligación de cumplimiento vence pronto.} other {# obligaciones de cumplimiento vencen pronto.}}",
+      "invoicesOverdue": "{count, plural, one {# factura está vencida: {amount}.} other {# facturas están vencidas: {amount}.}}",
+      "bank": "{count, plural, one {# depósito bancario está por revisar.} other {# depósitos bancarios están por revisar.}}",
+      "status": {
+        "disputed": "Disputado",
+        "toSend": "Por enviar",
+        "waiting": "En espera",
+        "overdue": "Vencida",
+        "dueSoon": "Por vencer",
+        "toMatch": "Por revisar"
+      },
+      "open": {
+        "approvals": "Abrir aprobaciones de clientes",
+        "compliance": "Abrir cumplimiento",
+        "receivables": "Abrir cuentas por cobrar",
+        "bank": "Abrir banco"
+      }
+    },
+    "today": "Hoy",
+    "todayHours": "Horas de este periodo de pago",
+    "todayWorkers": "Trabajadores con horas",
+    "todayStatus": "Periodo de pago",
+    "todayChart": "Horas por día, {period}",
+    "todayNoPeriod": "Aún no hay periodo de pago.",
+    "side": {
+      "receivables": "Cuentas por cobrar abiertas",
+      "overdue": "Vencido",
+      "compliance": "Cumplimiento",
+      "complianceValue": "{overdue} vencidas · {soon} por vencer",
+      "invoices": "{count, plural, one {# factura} other {# facturas}}",
+      "view": "Ver"
+    },
+    "overview": {
+      "title": "Su resumen",
+      "range": "Rango de fechas",
+      "rangeValue": "Últimas 13 semanas",
+      "billed": "Facturado",
+      "margin": "Margen bruto",
+      "hours": "Horas pagadas",
+      "previous": "{value} las 13 semanas anteriores",
+      "viewMore": "Ver más",
+      "chart": "{title}, semana por semana, {range}"
+    }
   }
 }

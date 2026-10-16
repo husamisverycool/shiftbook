@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { AssignmentRow } from "@/server/catalog/queries";
+import { EmptyState } from "../empty-state";
 import { longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
 import { RecordList, type Column } from "./record-list";
@@ -147,20 +148,25 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
             : undefined
         }
         empty={
-          <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
-            <UsersIcon className="size-5" />
-            <p>{t("empty")}</p>
-            {canChange && (
-              <div className="flex gap-4">
-                <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setCreating(true)}>
+          <EmptyState
+            icon={UsersIcon}
+            title={t("empty")}
+            description={t("emptyBody")}
+            action={
+              canChange && (
+                <Button size="sm" onClick={() => setCreating(true)}>
                   {t("create")}
                 </Button>
-                <Link href="/assignments/import" className="text-sm underline-offset-4 hover:underline">
+              )
+            }
+            secondary={
+              canChange && (
+                <Link href="/assignments/import" className={buttonVariants({ variant: "outline", size: "sm" })}>
                   {t("import")}
                 </Link>
-              </div>
-            )}
-          </div>
+              )
+            }
+          />
         }
       />
       {creating && <CreateAssignment options={options} today={today} onClose={() => setCreating(false)} />}

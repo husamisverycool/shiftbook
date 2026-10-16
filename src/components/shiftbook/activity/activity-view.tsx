@@ -29,7 +29,7 @@ export function NotForActivity() {
     <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
       <div className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
       </div>
       <p className="text-sm text-muted-foreground" data-testid="activity-not-for-role">
         {t("notForRole")}
@@ -118,7 +118,7 @@ export function ActivityView({ today, filters, page, selected: initial, options,
       <header className="flex flex-wrap items-end gap-3">
         <div className="mr-auto flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
         </div>
         <Button variant="outline" size="sm" onClick={() => router.refresh()} data-testid="activity-refresh">
           <RefreshCwIcon />
@@ -216,7 +216,7 @@ export function ActivityView({ today, filters, page, selected: initial, options,
       </div>
 
       {events.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 rounded-lg border p-6 text-sm" data-testid="activity-empty">
+        <div className="flex flex-col items-start gap-3 rounded-xl border bg-card p-6 text-sm" data-testid="activity-empty">
           <p>{t("noMatch")}</p>
           <Button variant="outline" size="sm" onClick={clear}>
             {t("clearFilters")}
@@ -225,7 +225,7 @@ export function ActivityView({ today, filters, page, selected: initial, options,
       ) : (
         <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
           <div className="flex min-w-0 flex-col gap-3">
-            <ul ref={list} aria-label={t("listLabel")} className="flex flex-col divide-y overflow-hidden rounded-lg border" onKeyDown={onListKey} data-testid="activity-list">
+            <ul ref={list} aria-label={t("listLabel")} className="flex flex-col divide-y border-y" onKeyDown={onListKey} data-testid="activity-list">
               {events.map((e) => {
                 const on = e.id === selectedId;
                 // A light background and a bar on the left mark the chosen row (its grey text stays readable).
@@ -269,13 +269,13 @@ const shown = (v: unknown) => (v === undefined || v === null ? "—" : typeof v 
 
 function Details({ event: e, typeLabel, eventLabel, recordName, when, onRecord }: { event: ActivityEvent | null; typeLabel: (t: string) => string; eventLabel: (e: string) => string; recordName: (r: ActivityEvent["record"]) => string; when: (iso: string, seconds?: boolean) => string; onRecord: (e: ActivityEvent) => void }) {
   const t = useTranslations("activityLog.details");
-  if (!e) return <p className="rounded-lg border p-6 text-sm text-muted-foreground">{t("none")}</p>;
+  if (!e) return <p className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">{t("none")}</p>;
   const before = (e.before && typeof e.before === "object" ? e.before : {}) as Record<string, unknown>;
   const after = (e.after && typeof e.after === "object" ? e.after : {}) as Record<string, unknown>;
   const fields = [...new Set([...Object.keys(before), ...Object.keys(after)])];
   const name = recordName(e.record);
   return (
-    <section className="flex min-w-0 flex-col gap-5 rounded-lg border p-5 lg:sticky lg:top-4" aria-labelledby="activity-details-title" data-testid="activity-details">
+    <section className="flex min-w-0 flex-col gap-5 rounded-xl border bg-card p-5 lg:sticky lg:top-4" aria-labelledby="activity-details-title" data-testid="activity-details">
       <h2 id="activity-details-title" className="text-lg font-semibold">
         {eventLabel(e.event)} <span className="font-normal text-muted-foreground">· {typeLabel(e.entityType)}</span>
       </h2>

@@ -141,4 +141,7 @@ on inspiration from great products NOT your own idea of what's best".
 ## Never copy
 Logos, product names, icons, illustrations, wording or colors from Gusto or any reference.
 
+## Look (decision 0029, from the products' own screenshots)
+The pay periods as Stripe's lists show them: full width, small-capital headers, the period's state as a tinted badge.
+
 Deviations allowed: none

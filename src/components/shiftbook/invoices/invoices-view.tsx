@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/invoices.md — Stripe invoices list (status chips in the address, a status
 // badge per row, a ⋯ menu, the row opens the invoice); Bullhorn "# Selected" actions; Avionté
 // Invoice Merge (one customer's invoices) for Make statement.
-import { ReceiptTextIcon } from "lucide-react";
+import { ListFilterIcon, ReceiptTextIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -11,6 +11,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { InvoiceRow } from "@/server/invoices/queries";
+import { EmptyState } from "../empty-state";
+import { Page, PageHeader, PageTabs } from "../page";
 import { InvoicesTable } from "./invoices-table";
 
 const STATUSES = ["issued", "paid", "void"] as const;
@@ -48,17 +50,29 @@ export function InvoicesView({ rows }: { rows: InvoiceRow[] }) {
     });
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+    <Page>
+      {/* Stripe's invoices list: the title, then the statuses as underline tabs with their counts. */}
+      <PageHeader
+        title={t("title")}
+        tabs={
+          rows.length > 0 ? (
+            <PageTabs
+              label={t("filterStatus")}
+              current={status || "all"}
+              tabs={(["", ...STATUSES] as const).map((s) => ({
+                key: s || "all",
+                label: s === "" ? t("all") : t(`status.${s}`),
+                count: rows.filter((r) => (s === "" || r.status === s) && (client === "" || r.clientId === client)).length,
+                href: { pathname: "/invoices", query: { ...(s ? { status: s } : {}), ...(client ? { client } : {}) } },
+                testId: `status-chip-${s || "all"}`,
+              }))}
+            />
+          ) : undefined
+        }
+      />
 
       {rows.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filterStatus")}>
-          {(["", ...STATUSES] as const).map((s) => (
-            <Button key={s || "all"} size="sm" variant={status === s ? "secondary" : "outline"} aria-pressed={status === s} onClick={() => setParam("status", s)} data-testid={`status-chip-${s || "all"}`}>
-              {s === "" ? t("all") : t(`status.${s}`)}
-              <span className="text-muted-foreground tabular-nums">{rows.filter((r) => (s === "" || r.status === s) && (client === "" || r.clientId === client)).length}</span>
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
           <NativeSelect aria-label={t("filterClient")} value={client} onChange={(e) => setParam("client", e.target.value)} className="w-64">
             <NativeSelectOption value="">
               {t("filterClient")}: {t("any")}
@@ -98,24 +112,31 @@ export function InvoicesView({ rows }: { rows: InvoiceRow[] }) {
       )}
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground" data-testid="invoices-empty">
-          <ReceiptTextIcon className="size-5" />
-          <p>{t("empty")}</p>
-          <Link href="/convert" className={buttonVariants({ variant: "link", size: "sm" })}>
-            {t("emptyLink")}
-          </Link>
-        </div>
+        <EmptyState
+          icon={ReceiptTextIcon}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={
+            <Link href="/convert" className={buttonVariants({ size: "sm" })}>
+              {t("emptyLink")}
+            </Link>
+          }
+          testId="invoices-empty"
+        />
       ) : shown.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
-          <ReceiptTextIcon className="size-5" />
-          <p>{t("noResults")}</p>
-          <Button variant="link" size="sm" onClick={clear}>
-            {t("clearFilters")}
-          </Button>
-        </div>
+        <EmptyState
+          kind="filtered"
+          icon={ListFilterIcon}
+          title={t("noResults")}
+          action={
+            <Button variant="outline" size="sm" onClick={clear}>
+              {t("clearFilters")}
+            </Button>
+          }
+        />
       ) : (
         <InvoicesTable rows={shown} selected={selected} onSelect={select} back={params.toString()} />
       )}
-    </div>
+    </Page>
   );
 }

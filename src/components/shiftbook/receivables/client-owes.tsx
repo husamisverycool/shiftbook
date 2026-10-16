@@ -28,7 +28,7 @@ export function ClientOwes({ clientId, owes, clients, today, canChange }: { clie
     },
   ];
   return (
-    <section className="flex flex-col gap-3 rounded-lg border p-4" aria-labelledby="owes-title" data-testid="client-owes">
+    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="owes-title" data-testid="client-owes">
       <div className="flex flex-wrap items-center gap-3">
         <h2 id="owes-title" className="mr-auto text-lg font-semibold">
           {t("title")}

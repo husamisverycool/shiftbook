@@ -44,4 +44,7 @@ documents; and the way to put several of one client's invoices into one statemen
 ## Never copy
 Stripe's, Bullhorn's or Avionté's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+The title, then the statuses (All, Issued, Paid, Void) as underline tabs with their counts, as Stripe's invoices list shows them (https://docs.stripe.com/invoicing/dashboard); the client filter beside them; the table full width with small-capital headers and the status as a tinted badge.
+
 Deviations allowed: none

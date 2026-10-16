@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { DemoBanner } from "@/components/shiftbook/demo-banner";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,7 +28,8 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   setRequestLocale(locale);
   return (
     <html lang={locale} className={GeistSans.className}>
-      <body className="min-h-svh bg-background text-foreground antialiased">
+      {/* The banner's height, so the sidebar fits the screen under it (decision 0029). */}
+      <body className="min-h-svh bg-background text-foreground antialiased" style={isDemo() ? ({ "--banner-height": "2.5rem" } as CSSProperties) : undefined}>
         <NextIntlClientProvider>
           <TooltipProvider>
             {isDemo() && <DemoBanner />}

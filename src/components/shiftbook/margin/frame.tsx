@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/margin.md — Stripe Billing analytics (export the summary or the rows;
 // configure the definitions), Stripe home (date range), Mercury Insights (tabs; the time frame at
 // the top right).
-import { DownloadIcon, SettingsIcon } from "lucide-react";
+import { DownloadIcon, LockIcon, SettingsIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
+import { EmptyState } from "../empty-state";
+import { Page, PageHeader, PageTabs } from "../page";
 
 export type MarginTab = "overview" | "overtime" | "cash";
 export interface Period {
@@ -52,18 +53,20 @@ export function MarginFrame({ tab, period, exports, children }: { tab: MarginTab
   const exportHref = (kind: string) => `/api/files/margin?${new URLSearchParams([...kept.entries(), ["kind", kind], ["locale", locale]]).toString()}`;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <div className="flex flex-wrap items-end gap-3">
-        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
+    <Page>
+      <PageHeader
+        title={t("title")}
+        actions={
+          <>
         {period && (
           <div className="flex flex-wrap items-end gap-2">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="margin-period" className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="margin-period" className="text-sm text-muted-foreground">
                 {t("period")}
               </Label>
               <NativeSelect
                 id="margin-period"
-                className="w-48"
+                className="w-44"
                 value={custom ? "custom" : String(period.preset)}
                 onChange={(e) => {
                   if (e.target.value === "custom") setCustom(true);
@@ -129,26 +132,16 @@ export function MarginFrame({ tab, period, exports, children }: { tab: MarginTab
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
-        <Link href="/settings/margin" className={buttonVariants({ variant: "ghost", size: "sm" })} data-testid="margin-settings-link">
+        <Link href="/settings/margin" className={buttonVariants({ variant: "outline", size: "sm" })} data-testid="margin-settings-link">
           <SettingsIcon />
           {t("settings")}
         </Link>
-      </div>
-      <nav aria-label={t("tabsLabel")} className="flex w-fit gap-1 rounded-lg bg-muted p-[3px]">
-        {TABS.map((x) => (
-          <Link
-            key={x.tab}
-            href={kept.size > 0 ? `${x.href}?${kept.toString()}` : x.href}
-            aria-current={x.tab === tab ? "page" : undefined}
-            className={cn("rounded-md px-3 py-1 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground dark:text-muted-foreground", x.tab === tab && "bg-background text-foreground shadow-sm dark:text-foreground")}
-            data-testid={`margin-tab-${x.tab}`}
-          >
-            {t(`tabs.${x.tab}`)}
-          </Link>
-        ))}
-      </nav>
+          </>
+        }
+        tabs={<PageTabs label={t("tabsLabel")} current={tab} tabs={TABS.map((x) => ({ key: x.tab, label: t(`tabs.${x.tab}`), href: kept.size > 0 ? `${x.href}?${kept.toString()}` : x.href, testId: `margin-tab-${x.tab}` }))} />}
+      />
       {children}
-    </div>
+    </Page>
   );
 }
 
@@ -156,11 +149,9 @@ export function MarginFrame({ tab, period, exports, children }: { tab: MarginTab
 export function NotForRole() {
   const t = useTranslations("margin");
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6">
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      <p className="text-sm text-muted-foreground" data-testid="margin-not-allowed">
-        {t("notForRole")}
-      </p>
-    </div>
+    <Page>
+      <PageHeader title={t("title")} />
+      <EmptyState icon={LockIcon} title={t("notForRoleTitle")} description={t("notForRole")} testId="margin-not-allowed" />
+    </Page>
   );
 }

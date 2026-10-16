@@ -65,7 +65,7 @@ export function MarginSettingsView({ view, today, states, canChange }: { view: V
     <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-8 px-4 py-6">
       <header className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("above")}</p>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("description")}</p>
         {!canChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
       </header>
@@ -83,7 +83,7 @@ export function MarginSettingsView({ view, today, states, canChange }: { view: V
         view.taxRates.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("taxes.none")}</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="min-w-0">
             <Table aria-labelledby="taxes-title" data-testid="tax-rates">
               <TableHeader>
                 <TableRow>
@@ -135,7 +135,7 @@ export function MarginSettingsView({ view, today, states, canChange }: { view: V
           {view.wcRates.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("wc.none")}</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="min-w-0">
               <Table aria-labelledby="wc-title" data-testid="wc-rates">
                 <TableHeader>
                   <TableRow>
@@ -188,7 +188,7 @@ function OtPremium({ view, today, canChange }: { view: View; today: string; canC
   const [problems, setProblems] = useState<Problem[]>([]);
   const { pending, save } = useSave();
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-4" data-testid="ot-premium">
+    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" data-testid="ot-premium">
       <div className="flex items-center gap-2">
         <Checkbox id="ot-premium" checked={exclude} disabled={!canChange} onCheckedChange={(on) => setExclude(on === true)} />
         <Label htmlFor="ot-premium">{t("wc.otPremium")}</Label>
@@ -221,7 +221,7 @@ function PayDay({ view, today, canChange }: { view: View; today: string; canChan
   const { pending, save } = useSave();
   const problem = (field: string) => problems.find((p) => p.field === field);
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-4" data-testid="pay-day">
+    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" data-testid="pay-day">
       <p className="text-sm">{view.payDay.days === null ? t("payDay.notSet") : t("payDay.current", { days: view.payDay.days, date: view.payDay.from ? longDate(view.payDay.from, locale) : "" })}</p>
       {view.payDay.next && <p className="text-xs">{t("payDay.next", { days: view.payDay.next.days, date: longDate(view.payDay.next.from, locale) })}</p>}
       {canChange && (

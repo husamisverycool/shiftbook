@@ -85,7 +85,7 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
     <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-8 px-4 py-6">
       <header className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("settings")}</p>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("description")}</p>
         {!canChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
       </header>
@@ -101,9 +101,9 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
           </Button>
         ),
         view.registrations.length === 0 ? (
-          <p className="rounded-lg border py-8 text-center text-sm text-muted-foreground">{t("registrations.none")}</p>
+          <p className="rounded-xl border border-dashed py-8 text-center text-sm text-muted-foreground">{t("registrations.none")}</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="min-w-0">
             <Table aria-labelledby="registrations-title">
               <TableHeader>
                 <TableRow>
@@ -148,9 +148,9 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
           </Button>
         ),
         view.policies.length === 0 ? (
-          <p className="rounded-lg border py-8 text-center text-sm text-muted-foreground">{t("policy.none")}</p>
+          <p className="rounded-xl border border-dashed py-8 text-center text-sm text-muted-foreground">{t("policy.none")}</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="min-w-0">
             <Table aria-labelledby="policy-title">
               <TableHeader>
                 <TableRow>
@@ -207,7 +207,7 @@ function Statement({ view, canChange }: { view: View; canChange: boolean }) {
   const [contact, setContact] = useState(view.contact ?? "");
   const { pending, save } = useSave();
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-4" data-testid="ma-statement">
+    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" data-testid="ma-statement">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="ma-contact">{t("contact")}</Label>
         {canChange ? (
@@ -428,7 +428,7 @@ function OpenDays({ view, canChange }: { view: View; canChange: boolean }) {
   // Monday first, Sunday last, as a US work week reads.
   const order = [1, 2, 3, 4, 5, 6, 0];
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4" data-testid="open-days">
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4" data-testid="open-days">
       <fieldset className="flex flex-wrap gap-x-5 gap-y-2">
         <legend className="mb-2 text-sm font-medium">{t("legend")}</legend>
         {order.map((d) => {
@@ -473,7 +473,7 @@ function AcaSettings({ view, canChange }: { view: View; canChange: boolean }) {
   const month = (m: number) => new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2000, m - 1, 1)));
   const months = Array.from({ length: limits.maxMeasurementMonths - limits.minMeasurementMonths + 1 }, (_, i) => limits.minMeasurementMonths + i);
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4" data-testid="aca-settings-form">
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4" data-testid="aca-settings-form">
       {!current && <p className="text-sm text-muted-foreground" data-testid="aca-settings-none">{t("none")}</p>}
       <div className="grid gap-3 sm:grid-cols-4">
         <Field id="aca-months" label={t("measurementMonths")} invalid={field === "measurementMonths"}>

@@ -133,7 +133,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
       )}
 
       {shown ? (
-        <div className="rounded-lg border p-4">
+        <div className="rounded-xl border bg-card p-4">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <p className="mr-auto text-sm text-muted-foreground">
               {shown.effectiveTo ? t("between", { from: longDate(shown.effectiveFrom, locale), to: longDate(shown.effectiveTo, locale) }) : t("from", { from: longDate(shown.effectiveFrom, locale) })}
@@ -181,7 +181,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
           {shown.frozen && paidThrough && <p className="mt-3 text-xs text-muted-foreground">{t("frozenWhy", { date: longDate(paidThrough, locale) })}</p>}
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-2 rounded-lg border py-10 text-sm text-muted-foreground" data-testid="no-rates">
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-10 text-sm text-muted-foreground" data-testid="no-rates">
           <CalendarClockIcon className="size-5" />
           <p>{t("none")}</p>
           {mayChange && (
@@ -194,7 +194,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
 
       {/* History, newest first (Gusto) */}
       {versions.length > 0 && (
-        <div className="rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("history")}>
             <TableHeader>
               <TableRow>
@@ -246,7 +246,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
           </DialogHeader>
           <ul className="flex flex-col gap-3">
             {scheduled.map((v, i) => (
-              <li key={v.id} className="rounded-lg border p-3 text-sm">
+              <li key={v.id} className="rounded-xl border bg-card p-3 text-sm">
                 <p className="font-medium">{longDate(v.effectiveFrom, locale)}</p>
                 <ul className="list-disc pl-4">
                   {changesFrom(i === 0 ? current : scheduled[i - 1]!, v).map((c) => (

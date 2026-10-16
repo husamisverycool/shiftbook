@@ -21,7 +21,7 @@ export function ComplianceList({ items, users, nextUpcoming, filtered }: { items
   const rows = useRef<(HTMLAnchorElement | null)[]>([]);
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg border py-14 text-center text-sm text-muted-foreground" data-testid="compliance-empty">
+      <div className="flex flex-col items-center gap-2 border-t py-16 text-center text-sm text-muted-foreground" data-testid="compliance-empty">
         {filtered ? (
           <>
             <p>{t("noMatch")}</p>
@@ -43,10 +43,11 @@ export function ComplianceList({ items, users, nextUpcoming, filtered }: { items
   // ↑/↓ move between rows, Enter opens one (the links are in order).
   const move = (from: number, by: number) => rows.current[Math.min(ordered.length - 1, Math.max(0, from + by))]?.focus();
   return (
-    <div className="flex flex-col gap-4" aria-label={t("listLabel")}>
+    // Linear's grouped list: full-width tinted group bands with their count, rows edge to edge.
+    <div className="flex flex-col border-t" aria-label={t("listLabel")}>
       {groups.map((g) => (
-        <section key={g.status} aria-labelledby={`group-${g.status}`} className="overflow-hidden rounded-lg border">
-          <h2 id={`group-${g.status}`} className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2 text-sm font-medium">
+        <section key={g.status} aria-labelledby={`group-${g.status}`}>
+          <h2 id={`group-${g.status}`} className="flex items-center gap-2 border-b bg-muted/70 px-3 py-2 text-sm font-medium">
             {t(`statuses.${g.status}`)}
             <span className="text-xs text-muted-foreground tabular-nums">{g.items.length}</span>
           </h2>
@@ -54,7 +55,7 @@ export function ComplianceList({ items, users, nextUpcoming, filtered }: { items
             {g.items.map((i) => {
               const at = ordered.indexOf(i.id);
               return (
-                <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-2 last:border-b-0 hover:bg-muted/30" data-testid="obligation-row">
+                <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-2.5 hover:bg-muted/30" data-testid="obligation-row">
                   <Link
                     href={`/compliance/${i.id}`}
                     ref={(el) => {

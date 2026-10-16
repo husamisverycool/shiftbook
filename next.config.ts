@@ -57,8 +57,8 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      { source: "/", destination: "/en/convert", permanent: false },
-      { source: "/:locale(en|es)", destination: "/:locale/convert", permanent: false },
+      // Home is each language's root (decision 0029).
+      { source: "/", destination: "/en", permanent: false },
     ];
   },
 };

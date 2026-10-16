@@ -15,7 +15,7 @@ export function WeeklyChart({ weeks }: { weeks: { week: string; billedCents: num
   const scale = (hasNegative ? H / 2 : H) / max;
   const bar = 100 / Math.max(weeks.length, 1);
   return (
-    <figure className="flex flex-col gap-2 rounded-lg border p-4" data-testid="weekly-chart">
+    <figure className="flex flex-col gap-2 rounded-lg bg-card p-5 shadow-xs ring-1 ring-foreground/5" data-testid="weekly-chart">
       <figcaption className="text-sm font-medium">{t("chartTitle")}</figcaption>
       <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" className="h-40 w-full" aria-hidden="true">
         <line x1="0" x2="100" y1={zero} y2={zero} className="stroke-border" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />

@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/receivables.md — FreshBooks Accounts Aging (one row per client across the
 // columns; a client opens its page; any amount lists the invoices behind it; export); QuickBooks
 // Online A/R aging (Current, 1–30, 31–60, 61–90, 91+; as of a date); TempWorks Short Pay Invoices.
-import { DownloadIcon, ReceiptTextIcon } from "lucide-react";
+import { DownloadIcon, ReceiptTextIcon, WalletIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
@@ -11,10 +11,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ReceivablesView as View } from "@/server/receivables/queries";
+import { EmptyState } from "../empty-state";
 import { longDate, money } from "../format";
+import { KeyFigure, KeyFigures } from "../key-figures";
+import { Page, PageHeader, PageTabs, TableFrame } from "../page";
 
 const BUCKETS = ["current", "d1_30", "d31_60", "d61_90", "d91_plus"] as const;
 type Bucket = (typeof BUCKETS)[number];
@@ -51,45 +53,58 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
     );
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <div className="flex flex-wrap items-end gap-3">
-        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="as-of" className="text-xs text-muted-foreground">
-            {t("asOf")}
-          </Label>
-          <Input id="as-of" type="date" className="w-44" value={view.asOf} max={today} onChange={(e) => e.target.value && go({ asOf: e.target.value === today ? "" : e.target.value })} data-testid="as-of" />
-        </div>
-        <a href={`/api/files/receivables?asOf=${view.asOf}`} download className={buttonVariants({ variant: "outline", size: "sm" })} data-testid="export-aging">
-          <DownloadIcon />
-          {t("export")}
-        </a>
-      </div>
-
-      <Tabs value={tab} onValueChange={(v) => go({ tab: v === "aging" ? "" : String(v) })}>
-        <TabsList>
-          <TabsTrigger value="aging">{t("tabs.aging")}</TabsTrigger>
-          <TabsTrigger value="short" data-testid="tab-short">
-            {t("tabs.short")} <span className="text-muted-foreground tabular-nums">{view.shortPaid.length}</span>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+    <Page>
+      <PageHeader
+        title={t("title")}
+        actions={
+          <>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="as-of" className="text-sm text-muted-foreground">
+                {t("asOf")}
+              </Label>
+              <Input id="as-of" type="date" className="h-8 w-40" value={view.asOf} max={today} onChange={(e) => e.target.value && go({ asOf: e.target.value === today ? "" : e.target.value })} data-testid="as-of" />
+            </div>
+            <a href={`/api/files/receivables?asOf=${view.asOf}`} download className={buttonVariants({ variant: "outline", size: "sm" })} data-testid="export-aging">
+              <DownloadIcon />
+              {t("export")}
+            </a>
+          </>
+        }
+        tabs={
+          <PageTabs
+            label={t("tabsLabel")}
+            current={tab}
+            tabs={[
+              { key: "aging", label: t("tabs.aging"), href: { pathname: "/receivables", query: params.get("asOf") ? { asOf: params.get("asOf")! } : {} } },
+              { key: "short", label: t("tabs.short"), count: view.shortPaid.length, href: { pathname: "/receivables", query: { ...(params.get("asOf") ? { asOf: params.get("asOf")! } : {}), tab: "short" } }, testId: "tab-short" },
+            ]}
+          />
+        }
+      />
+      {/* Figures as Mercury's Transactions page sets them: the headline owed, then what is overdue and the credit not yet applied (decision 0029). */}
+      <KeyFigures>
+        <KeyFigure size="lg" label={t("figures.owed")} value={money(view.totalCents, locale)} note={t("figures.owedNote", { date: longDate(view.asOf, locale) })} testId="figure-owed" />
+        <KeyFigure label={t("figures.overdue")} value={money(view.overdueCents, locale)} note={t("figures.overdueNote")} testId="figure-overdue" />
+        <KeyFigure label={t("figures.credit")} value={money(view.creditCents, locale)} note={t("figures.creditNote")} testId="figure-credit" />
+      </KeyFigures>
 
       {tab === "aging" ? (
         view.clients.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground" data-testid="receivables-empty">
-            <ReceiptTextIcon className="size-5" />
-            <p>{t("empty", { date: longDate(view.asOf, locale) })}</p>
-            <Link href="/invoices" className={buttonVariants({ variant: "link", size: "sm" })}>
-              {t("emptyLink")}
-            </Link>
-          </div>
+          <EmptyState
+            icon={WalletIcon}
+            title={t("emptyTitle")}
+            description={t("emptyBody", { date: longDate(view.asOf, locale) })}
+            action={
+              <Link href="/invoices" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                <ReceiptTextIcon />
+                {t("emptyLink")}
+              </Link>
+            }
+            testId="receivables-empty"
+          />
         ) : (
           <>
-            <p className="text-sm" data-testid="aging-summary">
-              {t("summary", { total: money(view.totalCents, locale), overdue: money(view.overdueCents, locale), credit: money(view.creditCents, locale), date: longDate(view.asOf, locale) })}
-            </p>
-            <div className="overflow-x-auto rounded-lg border">
+            <TableFrame>
               <Table aria-label={t("tabs.aging")} data-testid="aging-table">
                 <TableHeader>
                   <TableRow>
@@ -182,15 +197,13 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                   </TableRow>
                 </TableFooter>
               </Table>
-            </div>
+            </TableFrame>
           </>
         )
       ) : view.shortPaid.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted-foreground" data-testid="short-empty">
-          {t("shortEmpty")}
-        </p>
+        <EmptyState icon={WalletIcon} title={t("shortEmptyTitle")} description={t("shortEmpty")} testId="short-empty" />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <TableFrame>
           <Table aria-label={t("tabs.short")} data-testid="short-table">
             <TableHeader>
               <TableRow>
@@ -219,8 +232,8 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
               ))}
             </TableBody>
           </Table>
-        </div>
+        </TableFrame>
       )}
-    </div>
+    </Page>
   );
 }

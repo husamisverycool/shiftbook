@@ -148,7 +148,7 @@ export function ConvertFrame(props: {
 
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{props.title}</h1>
+            <h1 className="text-[28px] leading-9 font-bold tracking-tight">{props.title}</h1>
             <p className="text-sm text-muted-foreground">{props.periodLine}</p>
             {!mayHours && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
           </div>
@@ -175,7 +175,7 @@ export function ConvertFrame(props: {
 
 export function LoadingPanel({ title, body }: { title: string; body: string }) {
   return (
-    <div role="status" className="flex flex-col items-center gap-2 rounded-lg border py-16 text-center">
+    <div role="status" className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
       <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
       <p className="font-medium">{title}</p>
       {body && <p className="text-sm text-muted-foreground">{body}</p>}

@@ -50,7 +50,7 @@ export function ImportWizard({ view, history, options, step: asked }: { view: Im
         </BreadcrumbList>
       </Breadcrumb>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
         {view && <p className="text-sm text-muted-foreground">{t("fileLine", { file: view.filename, source: t(`sources.${view.source}`), rows: view.rowCount })}</p>}
       </div>
       {!mayImport && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
@@ -130,7 +130,7 @@ function SourceStep() {
         <legend className="mb-2 text-lg font-semibold">{t("whichSource")}</legend>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {SOURCES.map((s) => (
-            <label key={s} className={cn("flex cursor-pointer flex-col gap-1 rounded-lg border p-4 text-sm has-[:checked]:border-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring")}>
+            <label key={s} className={cn("flex cursor-pointer flex-col gap-1 rounded-xl border bg-card p-4 text-sm has-[:checked]:border-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring")}>
               <span className="flex items-center gap-2 font-medium">
                 <input type="radio" name="source" value={s} checked={source === s} onChange={() => setSource(s)} />
                 {t(`sources.${s}`)}
@@ -225,7 +225,7 @@ function MapStep({ view }: { view: ImportView }) {
           <AlertDescription className="text-foreground">{missing.map((f) => tf(f)).join(", ")}</AlertDescription>
         </Alert>
       )}
-      <div className="rounded-lg border">
+      <div className="min-w-0">
         <Table aria-label={t("step.map")}>
           <TableHeader>
             <TableRow>
@@ -331,7 +331,7 @@ function ValuesStep({ view, options }: { view: ImportView; options: CatalogOptio
         {kind === "dates" ? (
           <DatesPanel view={view} />
         ) : (
-          <div className="rounded-lg border">
+          <div className="min-w-0">
             <Table aria-label={t(`kinds.${kind}`)}>
               <TableHeader>
                 <TableRow>
@@ -375,7 +375,7 @@ function DatesPanel({ view }: { view: ImportView }) {
     });
   return (
     <div className="flex flex-col gap-4">
-      <fieldset className="flex flex-col gap-2 rounded-lg border p-4" disabled={pending}>
+      <fieldset className="flex flex-col gap-2 rounded-xl border bg-card p-4" disabled={pending}>
         <legend className="px-1 text-sm font-medium">{t("dateOrder.legend")}</legend>
         {(["month_first", "day_first"] as const).map((o) => (
           <label key={o} className="flex items-center gap-2 text-sm">
@@ -385,7 +385,7 @@ function DatesPanel({ view }: { view: ImportView }) {
         ))}
         <p className="text-xs text-muted-foreground">{t(view.dates.chosen ? "dateOrder.chosen" : "dateOrder.auto")}</p>
       </fieldset>
-      <div className="rounded-lg border">
+      <div className="min-w-0">
         <Table aria-label={t("kinds.dates")}>
           <TableHeader>
             <TableRow>
@@ -496,7 +496,7 @@ function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
       go(view.id, "run");
     });
   const tile = (label: string, value: number, testId?: string) => (
-    <div className="rounded-lg border p-4">
+    <div className="rounded-xl border bg-card p-4">
       <dt className="text-sm text-muted-foreground">{label}</dt>
       <dd className="text-2xl font-semibold tabular-nums" data-testid={testId}>
         {value}
@@ -547,7 +547,7 @@ function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
         </div>
       )}
       {p.rateVersions.length > 0 && (
-        <div className="rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("rateVersions")}>
             <TableHeader>
               <TableRow>
@@ -573,7 +573,7 @@ function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
         </div>
       )}
       {skips.length > 0 && (
-        <div className="rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("willSkip")}>
             <TableHeader>
               <TableRow>
@@ -642,7 +642,7 @@ function RunStep({ view }: { view: ImportView }) {
           </Button>
         ))}
       </div>
-      <div className="rounded-lg border">
+      <div className="min-w-0">
         <Table aria-label={t("step.run")}>
           <TableHeader>
             <TableRow>
@@ -680,7 +680,7 @@ function HistoryList({ history }: { history: History }) {
           <p>{t("noHistory")}</p>
         </div>
       ) : (
-        <div className="rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("history")}>
             <TableHeader>
               <TableRow>

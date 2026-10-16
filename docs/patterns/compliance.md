@@ -47,4 +47,7 @@ Form I-9 deadlines, ACA offers.
 ## Never copy
 Vanta's or Linear's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+The list grouped as Linear's list view shows groups (https://linear.app/docs/filters): full-width tinted bands with the group's name and count, rows edge to edge under them with hairline dividers, no box; the views (List, Calendar, Counters, Workers' comp, ACA) as underline tabs under the title; each status a tinted badge.
+
 Deviations allowed: none

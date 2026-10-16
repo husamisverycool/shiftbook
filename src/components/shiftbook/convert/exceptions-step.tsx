@@ -184,7 +184,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
     ) : null;
 
   const rows = (groups: Group[], kind: "blocker" | "warning") => (
-    <ul className="flex flex-col divide-y rounded-lg border">
+    <ul className="flex flex-col divide-y border-y">
       {groups.map((g) => (
         <li key={`${g.code}|${g.ruleCode ?? ""}|${g.jurisdiction ?? ""}`} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between" data-testid={kind}>
           <div className="flex min-w-0 flex-col gap-1 text-sm">

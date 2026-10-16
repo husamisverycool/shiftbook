@@ -52,4 +52,7 @@ who has not, and which shifts a client disputed.
 ## Never copy
 Harvest's, Stripe's, Instawork's or Linear's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+Stripe's list: the title with the pay period on the right, the filters, then the table full width; each client's state as a tinted badge.
+
 Deviations allowed: none

@@ -26,11 +26,13 @@ export function DemoBanner() {
     <div
       role="region"
       aria-label={t("demo")}
-      className="border-b bg-muted text-foreground"
+      className="border-b bg-muted text-foreground md:h-(--banner-height)"
     >
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5 text-sm">
-        <p className="mr-auto">{t("demo")}</p>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5 text-sm md:h-full md:flex-nowrap md:py-0">
+        <p className="mr-auto md:truncate" title={t("demo")}>
+          {t("demo")}
+        </p>
+        <div className="flex shrink-0 items-center gap-4">
           <a
             href="/api/demo/samples"
             download
@@ -62,7 +64,7 @@ export function DemoBanner() {
                     start(async () => {
                       await resetDemoAction();
                       toast.success(t("resetDone"));
-                      router.push("/convert");
+                      router.push("/");
                       router.refresh();
                     })
                   }

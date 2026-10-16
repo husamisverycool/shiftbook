@@ -1,34 +1,38 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, FileSpreadsheetIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { Role } from "@/server/permissions";
 import { useCan } from "./abilities";
 
+// Home first, then the areas in groups under short labels (decision 0029: Stripe's sidebar sections,
+// Apple's two levels at most). The G-then-letter keys stay as they were.
 const AREAS = [
-  { href: "/convert", key: "convert", jump: "c", icon: FileSpreadsheetIcon },
-  { href: "/job-orders", key: "jobOrders", jump: "j", icon: BriefcaseIcon },
-  { href: "/assignments", key: "assignments", jump: "a", icon: UsersIcon },
-  { href: "/approvals", key: "approvals", jump: "p", icon: ClipboardCheckIcon },
-  { href: "/invoices", key: "invoices", jump: "i", icon: ReceiptTextIcon },
-  { href: "/clients", key: "clients", jump: "l", icon: Building2Icon },
-  { href: "/receivables", key: "receivables", jump: "r", icon: WalletIcon },
-  { href: "/payments", key: "payments", jump: "y", icon: BanknoteIcon },
-  { href: "/bank", key: "bank", jump: "b", icon: LandmarkIcon },
-  // Slice i: the Owner and the accountant only (SPEC §2).
-  { href: "/margin", key: "margin", jump: "m", icon: ChartColumnIcon },
-  // Slice j: everyone reads compliance; the badge counts what is overdue or due soon.
-  { href: "/compliance", key: "compliance", jump: "o", icon: ShieldCheckIcon },
+  { href: "/", key: "home", jump: "h", icon: HouseIcon, group: null },
+  { href: "/convert", key: "convert", jump: "c", icon: FileSpreadsheetIcon, group: "payroll" },
+  { href: "/approvals", key: "approvals", jump: "p", icon: ClipboardCheckIcon, group: "payroll" },
+  { href: "/invoices", key: "invoices", jump: "i", icon: ReceiptTextIcon, group: "billing" },
+  { href: "/receivables", key: "receivables", jump: "r", icon: WalletIcon, group: "billing" },
+  { href: "/payments", key: "payments", jump: "y", icon: BanknoteIcon, group: "billing" },
+  { href: "/bank", key: "bank", jump: "b", icon: LandmarkIcon, group: "billing" },
+  { href: "/job-orders", key: "jobOrders", jump: "j", icon: BriefcaseIcon, group: "staffing" },
+  { href: "/assignments", key: "assignments", jump: "a", icon: UsersIcon, group: "staffing" },
   // Slice k: the roster, read by everyone; the Owner and coordinators change it.
-  { href: "/workers", key: "workers", jump: "w", icon: ContactRoundIcon },
+  { href: "/workers", key: "workers", jump: "w", icon: ContactRoundIcon, group: "staffing" },
+  { href: "/clients", key: "clients", jump: "l", icon: Building2Icon, group: "staffing" },
+  // Slice i: the Owner and the accountant only (SPEC §2).
+  { href: "/margin", key: "margin", jump: "m", icon: ChartColumnIcon, group: "oversight" },
+  // Slice j: everyone reads compliance; the badge counts what is overdue or due soon.
+  { href: "/compliance", key: "compliance", jump: "o", icon: ShieldCheckIcon, group: "oversight" },
 ] as const;
+const GROUPS = ["payroll", "billing", "staffing", "oversight"] as const;
 
 /** True while the person is typing, so single-letter shortcuts stay out of the way. */
 export function typing(target: EventTarget | null): boolean {
@@ -73,7 +77,7 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
 
   return (
     <>
-      <Sidebar className="sticky top-0 h-svh">
+      <Sidebar variant="inset" className="sticky top-0 h-[calc(100svh-var(--banner-height,0px))]">
         <SidebarHeader>
           {/* Linear: the workspace name opens the menu that holds Settings. */}
           <DropdownMenu>
@@ -133,28 +137,54 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
           </DropdownMenu>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <nav aria-label={t("label")}>
-                <SidebarMenu>
-                  {areas.map((a) => (
-                    <SidebarMenuItem key={a.key}>
-                      <SidebarMenuButton isActive={pathname === a.href || pathname.startsWith(`${a.href}/`)} render={<Link href={a.href} />}>
-                        <a.icon />
-                        <span>{t(a.key)}</span>
-                      </SidebarMenuButton>
-                      {a.key === "compliance" && complianceCount > 0 && (
-                        <SidebarMenuBadge data-testid="compliance-badge" aria-label={t("complianceBadge", { count: complianceCount })}>
-                          {complianceCount}
-                        </SidebarMenuBadge>
-                      )}
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </nav>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <nav aria-label={t("label")} className="contents">
+            {[null, ...GROUPS].map((group) => {
+              const items = areas.filter((a) => a.group === group);
+              if (items.length === 0) return null;
+              return (
+                <SidebarGroup key={group ?? "home"} className="py-1">
+                  {group && <SidebarGroupLabel>{t(`groups.${group}`)}</SidebarGroupLabel>}
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {items.map((a) => {
+                        const active = a.href === "/" ? pathname === "/" : pathname === a.href || pathname.startsWith(`${a.href}/`);
+                        return (
+                          <SidebarMenuItem key={a.key}>
+                            {/* Linear's refresh: inactive items muted, the current one full strength. */}
+                            <SidebarMenuButton
+                              isActive={active}
+                              render={<Link href={a.href} />}
+                              className="text-sidebar-foreground/80 data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground data-active:[&>svg]:text-sidebar-accent-foreground"
+                            >
+                              <a.icon />
+                              <span>{t(a.key)}</span>
+                            </SidebarMenuButton>
+                            {a.key === "compliance" && complianceCount > 0 && (
+                              <SidebarMenuBadge data-testid="compliance-badge" aria-label={t("complianceBadge", { count: complianceCount })}>
+                                {complianceCount}
+                              </SidebarMenuBadge>
+                            )}
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              );
+            })}
+          </nav>
         </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setHelp(true)} className="text-sidebar-foreground/80 [&>svg]:text-muted-foreground" data-testid="shortcuts-button">
+                <KeyboardIcon />
+                <span>{t("shortcuts")}</span>
+              </SidebarMenuButton>
+              <kbd className="pointer-events-none absolute top-1.5 right-2 rounded border bg-background px-1.5 font-mono text-xs text-muted-foreground">?</kbd>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
       <Dialog open={help} onOpenChange={setHelp}>
         <DialogContent>

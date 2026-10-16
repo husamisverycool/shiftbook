@@ -38,7 +38,7 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
           {t("profile.back")}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{name}</h1>
+          <h1 className="text-[28px] leading-9 font-bold tracking-tight">{name}</h1>
           <Badge variant={profile.status === "active" ? "secondary" : "outline"} data-testid="worker-status">
             {t(`status.${profile.status}`)}
           </Badge>
@@ -47,7 +47,7 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
       </header>
 
       <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="min-w-0">
-        <TabsList>
+        <TabsList variant="line" className="h-10! w-full justify-start border-b">
           {TABS.map((k) => (
             <TabsTrigger key={k} value={k} data-testid={`tab-${k}`}>
               {t(`profile.tabs.${k}`)}
@@ -76,7 +76,7 @@ export function Section({ title, testId, onEdit, editing, actions, children }: {
   const t = useTranslations("workers.profile");
   const headingId = `${testId}-title`;
   return (
-    <section className="flex flex-col gap-4 rounded-lg border p-5" aria-labelledby={headingId} data-testid={testId}>
+    <section className="flex flex-col gap-4 rounded-xl border bg-card p-5" aria-labelledby={headingId} data-testid={testId}>
       <div className="flex flex-wrap items-center gap-2">
         <h2 id={headingId} className="mr-auto text-base font-semibold">
           {title}

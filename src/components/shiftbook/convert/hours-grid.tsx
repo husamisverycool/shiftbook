@@ -239,7 +239,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label={t("sectionTitle")} className="inline-flex rounded-lg border p-0.5">
+        <div role="group" aria-label={t("sectionTitle")} className="inline-flex rounded-xl border bg-card p-0.5">
           <Button size="sm" variant={filter === "review" ? "secondary" : "ghost"} aria-pressed={filter === "review"} onClick={() => setFilter("review")}>
             {t("filterNeedsReview", { count: attention.length })}
           </Button>
@@ -282,7 +282,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
           )}
         </div>
       ) : (
-        <div className="@container overflow-x-auto rounded-lg border" data-testid="hours-grid-frame">
+        <div className="@container overflow-hidden rounded-xl border bg-card" data-testid="hours-grid-frame">
           <Table ref={tableRef} onKeyDown={onKeyDown} aria-label={t("sectionTitle")} className="text-sm" data-testid="hours-grid">
             <TableHeader>
               <TableRow>

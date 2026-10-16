@@ -47,4 +47,7 @@ Turn the bank's deposits into payments: Shiftbook suggests, a person confirms (S
 ## Never copy
 Intuit's, Stripe's, Microsoft's or Zoho's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+For review, Posted and Excluded as underline tabs with counts under the title (Stripe's invoices list tabs); the suggestion's confidence as a tinted badge.
+
 Deviations allowed: none

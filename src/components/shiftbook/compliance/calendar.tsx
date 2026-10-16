@@ -168,7 +168,7 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
           {days
             .filter((d) => on(d).length > 0)
             .map((d) => (
-              <li key={d} className="overflow-hidden rounded-lg border">
+              <li key={d} className="overflow-hidden rounded-xl border bg-card">
                 <h3 className={cn("border-b bg-muted/40 px-3 py-1.5 text-sm font-medium", d === today && "text-primary")}>{longDate(d, locale)}</h3>
                 <ul>
                   {on(d).map((i) => (
@@ -185,7 +185,7 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
             ))}
         </ol>
       ) : (
-        <div className="overflow-x-auto rounded-lg border" data-testid={`calendar-${view}`}>
+        <div className="overflow-hidden rounded-xl border bg-card" data-testid={`calendar-${view}`}>
           <div className="grid min-w-[44rem] grid-cols-7">
             {weekdays.map((w, n) => (
               <div key={n} className="border-b px-2 py-1 text-xs font-medium text-muted-foreground">

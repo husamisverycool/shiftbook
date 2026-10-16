@@ -59,7 +59,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
           </>
         )}
       </div>
-      <div className="flex flex-col divide-y rounded-lg border text-sm" data-testid="invoice-payments">
+      <div className="flex flex-col divide-y border-y text-sm" data-testid="invoice-payments">
         <div className="flex flex-wrap items-center justify-between gap-3 p-3">
           <span className="font-medium">{credit ? t("creditForClient") : t("balance")}</span>
           <span className="flex items-center gap-3">

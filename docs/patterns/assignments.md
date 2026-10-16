@@ -19,7 +19,8 @@ and whether it is active. Also the entry point to importing placements.
 
 ## Hierarchy
 1. **View header:** "Assignments"; on the right the filter control, display options, Import, and
-   the create button (Linear).
+   the create button (Linear). The title is set as every page's title
+   (`_components/page-header.md`, decision 0029); the rows as job orders' (Linear's list view).
 2. **Filter bar** when filters apply (in the URL).
 3. **Group headers** (default: by status — active, ended, cancelled), sticky, with counts.
 4. **Rows:** worker, client and position (fields of the linked job order, as Attio views show linked

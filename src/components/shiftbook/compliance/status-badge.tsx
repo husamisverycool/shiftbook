@@ -1,17 +1,18 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
 import type { DisplayStatus } from "@/server/compliance/status";
+import { Status, type Tone } from "../status";
+
+/** One status language (decision 0029): overdue must be acted on, due soon needs attention. */
+export const STATUS_TONE: Record<DisplayStatus, Tone> = { overdue: "critical", due_soon: "warning", upcoming: "neutral", done: "success", not_applicable: "neutral" };
 
 /** The status in words (never color alone): Overdue, Due soon, Upcoming, Done, Not applicable. */
-export function StatusBadge({ status }: { status: DisplayStatus }) {
+export function StatusBadge({ status, size }: { status: DisplayStatus; size?: "default" | "lg" }) {
   const t = useTranslations("compliance.statuses");
-  // Overdue is red text on the page's own background (a red tint behind small text fails contrast).
-  const variant = status === "due_soon" ? "default" : status === "done" ? "secondary" : "outline";
   return (
-    <Badge variant={variant} className={status === "overdue" ? "border-destructive text-destructive" : undefined} data-testid={`status-${status}`}>
+    <Status tone={STATUS_TONE[status]} size={size} data-testid={`status-${status}`}>
       {t(status)}
-    </Badge>
+    </Status>
   );
 }

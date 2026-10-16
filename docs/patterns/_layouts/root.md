@@ -25,7 +25,7 @@ banner on every page (SPEC §18) with the one-click reset.
 
 ## Interactions
 - Reset demo → confirms in a dialog (shadcn alert dialog: title, one line, cancel and confirm), then
-  restores the seeded demo agency (SPEC §18) and returns to the converter's landing.
+  restores the seeded demo agency (SPEC §18) and returns to Home (decision 0029).
 - Sample timesheets → downloads one .zip of the demo's sample folder (SPEC §24 step 1: "upload the
   sample folder").
 - Leaving demo mode: not available in the demo deployment.

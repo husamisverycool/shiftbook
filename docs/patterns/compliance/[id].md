@@ -79,4 +79,7 @@ attachments").
 ## Never copy
 Drata's or Vanta's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+The header as Stripe's detail header: back link, the duty's name with its status badge beside it, then whom it is for and its state; Overview, Evidence, History and Notes as underline tabs.
+
 Deviations allowed: none

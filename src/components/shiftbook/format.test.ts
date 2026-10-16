@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { clock, hoursMinutes, money, parseClock } from "./format";
+import { clock, hoursMinutes, money, parseClock, signedMoney } from "./format";
 
 describe("screen formatting", () => {
   it("shows money exactly from integer cents in both languages", () => {
     expect(money(144038, "en")).toBe("$1,440.38");
     expect(money(1688, "en")).toBe("$16.88");
     expect(money(-5, "en")).toBe("-$0.05");
-    expect(money(144038, "es").replace(/\s/g, " ")).toBe("1440,38 US$");
+    expect(money(144038, "es")).toBe("$1,440.38");
+    expect(signedMoney(-5475, "es")).toBe("-$54.75");
     expect(money(9007199254740991, "en")).toBe("$90,071,992,547,409.91");
   });
 

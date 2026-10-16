@@ -111,11 +111,11 @@ export function WorkersCompPacket({ view }: { view: WcPacketView }) {
         </section>
       )}
       {view.rows.length === 0 ? (
-        <p className="rounded-lg border py-14 text-center text-sm text-muted-foreground" data-testid="wc-none">
+        <p className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground" data-testid="wc-none">
           {t("none")}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("tableLabel")} data-testid="wc-table">
             <TableHeader>
               <TableRow>

@@ -3,21 +3,22 @@
 // Pattern: docs/patterns/bank.md — QuickBooks Online bank transactions "For review" (a suggested
 // match with its confidence; Post; find another match; Posted with Undo; Excluded); Stripe's order
 // of matching; Business Central confidence; Zoho Books choosing several invoices.
-import { LandmarkIcon, UploadIcon } from "lucide-react";
+import { CircleCheckIcon, LandmarkIcon, UploadIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { excludeLineAction, includeLineAction, recordPaymentAction, undoLineAction } from "@/app/[locale]/(app)/payments/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { BankView as View, PaymentClients } from "@/server/receivables/queries";
+import { EmptyState } from "../empty-state";
 import { longDate, money } from "../format";
+import { Page, PageHeader, PageTabs, TableFrame } from "../page";
+import { Status } from "../status";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
 
 export type BankTab = "review" | "posted" | "excluded";
@@ -52,44 +53,47 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
     setMatching({ kind: "bank", lineId: l.id, postedOn: l.postedOn, amountCents: l.amountCents, description: l.description, clientId: l.suggestion?.clientId, applications: l.suggestion?.applications.map((a) => ({ invoiceId: a.invoiceId, amountCents: a.amountCents })) });
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        {canChange && (
-          <Link href="/bank/import" className={buttonVariants({ size: "sm" })} data-testid="import-bank">
-            <UploadIcon />
-            {t("import")}
-          </Link>
-        )}
-      </div>
-      {!canChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
-      <Tabs value={tab} onValueChange={(v) => router.replace(v === "review" ? pathname : `${pathname}?tab=${String(v)}`)}>
-        <TabsList>
-          {(["review", "posted", "excluded"] as const).map((k) => (
-            <TabsTrigger key={k} value={k} data-testid={`tab-${k}`}>
-              {t(`tabs.${k}`)} <span className="text-muted-foreground tabular-nums">{view[k].length}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
-      {!view.imported ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground" data-testid="bank-empty">
-          <LandmarkIcon className="size-5" />
-          <p>{t("empty")}</p>
-          {canChange && (
-            <Link href="/bank/import" className={buttonVariants({ variant: "link", size: "sm" })}>
+    <Page>
+      <PageHeader
+        title={t("title")}
+        description={canChange ? undefined : t("readOnly")}
+        actions={
+          canChange && (
+            <Link href="/bank/import" className={buttonVariants({ size: "sm" })} data-testid="import-bank">
+              <UploadIcon />
               {t("import")}
             </Link>
-          )}
-        </div>
+          )
+        }
+        tabs={
+          <PageTabs
+            label={t("tabsLabel")}
+            current={tab}
+            tabs={(["review", "posted", "excluded"] as const).map((k) => ({ key: k, label: t(`tabs.${k}`), count: view[k].length, href: k === "review" ? pathname : { pathname, query: { tab: k } }, testId: `tab-${k}` }))}
+          />
+        }
+      />
+
+      {!view.imported ? (
+        <EmptyState
+          icon={LandmarkIcon}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={
+            canChange && (
+              <Link href="/bank/import" className={buttonVariants({ size: "sm" })}>
+                <UploadIcon />
+                {t("import")}
+              </Link>
+            )
+          }
+          testId="bank-empty"
+        />
       ) : tab === "review" ? (
         view.review.length === 0 ? (
-          <p className="py-16 text-center text-sm text-muted-foreground" data-testid="review-empty">
-            {t("reviewEmpty")}
-          </p>
+          <EmptyState icon={CircleCheckIcon} title={t("reviewEmptyTitle")} description={t("reviewEmpty")} testId="review-empty" />
         ) : (
-          <ul className="flex flex-col divide-y rounded-lg border" data-testid="review-list">
+          <ul className="flex flex-col divide-y border-y" data-testid="review-list">
             {view.review.map((l) => (
               <li key={l.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-start" data-testid="review-line">
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -101,9 +105,9 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
                   {l.suggestion ? (
                     <div className="flex flex-col gap-1 text-sm" data-testid="suggestion">
                       <span className="flex flex-wrap items-center gap-2">
-                        <Badge variant={l.suggestion.confidence === "high" ? "secondary" : "outline"} data-testid="confidence">
+                        <Status tone={l.suggestion.confidence === "high" ? "success" : "warning"} data-testid="confidence">
                           {t(`confidence.${l.suggestion.confidence}`)}
-                        </Badge>
+                        </Status>
                         <span>
                           {l.suggestion.clientName} · {l.suggestion.applications.map((a) => `${a.number} (${money(a.amountCents, locale)})`).join(", ")}
                         </span>
@@ -136,7 +140,7 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
           </ul>
         )
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <TableFrame>
           <Table aria-label={t(`tabs.${tab}`)} data-testid={`${tab}-table`}>
             <TableHeader>
               <TableRow>
@@ -192,11 +196,11 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
                   ))}
             </TableBody>
           </Table>
-        </div>
+        </TableFrame>
       )}
       {matching && <PaymentDialog clients={clients} mode={matching} today={today} onClose={() => setMatching(null)} />}
       {excluding && <ExcludeDialog line={excluding} onClose={() => setExcluding(null)} />}
-    </div>
+    </Page>
   );
 }
 

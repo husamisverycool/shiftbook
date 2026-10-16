@@ -133,7 +133,7 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
             </Button>
           </div>
           {refused.length > 0 && (
-            <div className="flex flex-col gap-1 rounded-lg border p-3 text-sm" data-testid="refused">
+            <div className="flex flex-col gap-1 rounded-xl border bg-card p-3 text-sm" data-testid="refused">
               <p className="font-medium">{t("refused")}</p>
               <ul className="flex flex-col gap-0.5">
                 {refused.map((r) => (
@@ -170,7 +170,7 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
             <p>{t("empty")}</p>
           </div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="min-w-0">
             <Table aria-label={t("documents")}>
               <TableHeader>
                 <TableRow>

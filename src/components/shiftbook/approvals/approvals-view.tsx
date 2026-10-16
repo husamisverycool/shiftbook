@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/approvals.md — Harvest approval page (timeframe, status filter, per-row
 // approve or remind), Stripe invoices list (status badge with a tooltip, row opens the detail page),
 // Instawork's disputes banner, Linear's fixed status order.
-import { CircleAlertIcon, EllipsisIcon, InboxIcon } from "lucide-react";
+import { CircleAlertIcon, EllipsisIcon, InboxIcon, ListFilterIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useState, useTransition } from "react";
@@ -19,19 +19,24 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ClientApprovalRow, ClientApprovalState } from "@/server/approvals/service";
 import { useCan } from "../abilities";
+import { EmptyState } from "../empty-state";
 import { hoursMinutes, longDate } from "../format";
+import { Page, PageHeader, TableFrame } from "../page";
+import { Status, type Tone } from "../status";
 import { SendDialog, type SendTarget } from "./send-dialog";
 
 export const STATE_ORDER: ClientApprovalState[] = ["disputed", "not_sent", "send_again", "waiting", "approved"];
+/** One status language (decision 0029): disputed needs the agency, waiting is the client's turn. */
+const STATE_TONE: Record<ClientApprovalState, Tone> = { disputed: "critical", not_sent: "warning", send_again: "warning", waiting: "info", approved: "success" };
 
 export function ApprovalStateBadge({ state }: { state: ClientApprovalState }) {
   const t = useTranslations("approvals");
   return (
     <Tooltip>
       <TooltipTrigger render={<span tabIndex={0} className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" />}>
-        <Badge variant={state === "disputed" ? "destructive" : state === "approved" ? "secondary" : "outline"} data-testid="approval-state">
+        <Status tone={STATE_TONE[state]} data-testid="approval-state">
           {t(`state.${state}`)}
-        </Badge>
+        </Status>
       </TooltipTrigger>
       <TooltipContent>{t(`stateHint.${state}`)}</TooltipContent>
     </Tooltip>
@@ -80,21 +85,23 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
     });
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">{t("period")}</span>
-          <NativeSelect value={props.periodId} onChange={(e) => router.replace(`${pathname}?period=${e.target.value}`)} className="w-80" aria-label={t("period")}>
-            {props.periods.map((p) => (
-              <NativeSelectOption key={p.id} value={p.id}>
-                {t("periodOption", { start: longDate(p.startsOn, locale), end: longDate(p.endsOn, locale) })}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </label>
-      </div>
-      {!mayAsk && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+    <Page>
+      <PageHeader
+        title={t("title")}
+        description={mayAsk ? undefined : t("readOnly")}
+        actions={
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">{t("period")}</span>
+            <NativeSelect value={props.periodId} onChange={(e) => router.replace(`${pathname}?period=${e.target.value}`)} className="w-80" aria-label={t("period")}>
+              {props.periods.map((p) => (
+                <NativeSelectOption key={p.id} value={p.id}>
+                  {t("periodOption", { start: longDate(p.startsOn, locale), end: longDate(p.endsOn, locale) })}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </label>
+        }
+      />
 
       {disputed > 0 && (
         <Alert variant="destructive" data-testid="disputes-banner">
@@ -137,23 +144,29 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
       </div>
 
       {props.rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
-          <InboxIcon className="size-5" />
-          <p>{t("empty")}</p>
-          <Link href="/convert" className={buttonVariants({ variant: "link", size: "sm" })}>
-            {t("emptyLink")}
-          </Link>
-        </div>
+        <EmptyState
+          icon={InboxIcon}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={
+            <Link href="/convert" className={buttonVariants({ size: "sm" })}>
+              {t("emptyLink")}
+            </Link>
+          }
+        />
       ) : shown.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
-          <InboxIcon className="size-5" />
-          <p>{t("noResults")}</p>
-          <Button variant="link" size="sm" onClick={() => router.replace(`${pathname}?period=${props.periodId}`)}>
-            {t("clearFilters")}
-          </Button>
-        </div>
+        <EmptyState
+          kind="filtered"
+          icon={ListFilterIcon}
+          title={t("noResults")}
+          action={
+            <Button variant="outline" size="sm" onClick={() => router.replace(`${pathname}?period=${props.periodId}`)}>
+              {t("clearFilters")}
+            </Button>
+          }
+        />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <TableFrame>
           <Table aria-label={t("title")} data-testid="approvals-list">
             <TableHeader>
               <TableRow>
@@ -255,9 +268,9 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
               })}
             </TableBody>
           </Table>
-        </div>
+        </TableFrame>
       )}
       {sending && <SendDialog target={sending} onClose={() => setSending(null)} />}
-    </div>
+    </Page>
   );
 }

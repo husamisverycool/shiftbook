@@ -8,7 +8,6 @@ import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { voidPaymentAction } from "@/app/[locale]/(app)/payments/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -18,10 +17,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { PaymentClients, PaymentRow } from "@/server/receivables/queries";
+import { EmptyState } from "../empty-state";
 import { longDate, money } from "../format";
+import { Page, PageHeader, TableFrame } from "../page";
+import { Status, type Tone } from "../status";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
 
 const FILTERS = ["credit", "voided"] as const;
+/** One status language (decision 0029). */
+const PAYMENT_TONE: Record<PaymentRow["status"], Tone> = { applied: "success", credit: "warning", voided: "neutral" };
 
 export function PaymentsView({ rows, clients, today, canChange }: { rows: PaymentRow[]; clients: PaymentClients; today: string; canChange: boolean }) {
   const t = useTranslations("payments");
@@ -44,16 +48,18 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
   const count = (f: (typeof FILTERS)[number] | "") => rows.filter((r) => (f === "" || (f === "credit" ? r.status === "credit" : r.status === "voided")) && (client === "" || r.clientId === client)).length;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        {canChange && (
-          <Button onClick={() => setDialog({ kind: "record" })} data-testid="record-payment">
-            {t("record")}
-          </Button>
-        )}
-      </div>
-      {!canChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+    <Page>
+      <PageHeader
+        title={t("title")}
+        description={canChange ? undefined : t("readOnly")}
+        actions={
+          canChange && (
+            <Button size="sm" onClick={() => setDialog({ kind: "record" })} data-testid="record-payment">
+              {t("record")}
+            </Button>
+          )
+        }
+      />
 
       {rows.length > 0 && (
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filter")}>
@@ -77,22 +83,26 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
       )}
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground" data-testid="payments-empty">
-          <BanknoteIcon className="size-5" />
-          <p>{t("empty")}</p>
-          <div className="flex gap-4">
-            {canChange && (
-              <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setDialog({ kind: "record" })}>
+        <EmptyState
+          icon={BanknoteIcon}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={
+            canChange && (
+              <Button size="sm" onClick={() => setDialog({ kind: "record" })}>
                 {t("record")}
               </Button>
-            )}
-            <Link href="/bank/import" className={buttonVariants({ variant: "link", size: "sm", className: "h-auto px-0" })}>
+            )
+          }
+          secondary={
+            <Link href="/bank/import" className={buttonVariants({ variant: "outline", size: "sm" })}>
               {t("importBank")}
             </Link>
-          </div>
-        </div>
+          }
+          testId="payments-empty"
+        />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <TableFrame>
           <Table aria-label={t("title")} data-testid="payments-list">
             <TableHeader>
               <TableRow>
@@ -123,9 +133,9 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
                   <TableCell className="text-right tabular-nums">{money(p.appliedCents, locale)}</TableCell>
                   <TableCell className="text-right tabular-nums">{money(p.unusedCents, locale)}</TableCell>
                   <TableCell>
-                    <Badge variant={p.status === "credit" ? "secondary" : "outline"} title={p.voidReason ?? undefined}>
+                    <Status tone={PAYMENT_TONE[p.status]} title={p.voidReason ?? undefined}>
                       {t(`statuses.${p.status}`)}
-                    </Badge>
+                    </Status>
                   </TableCell>
                   <TableCell className="whitespace-nowrap" title={p.fromBank ?? undefined}>
                     {p.fromBank ? t("fromBank") : t("fromTyped")}
@@ -147,11 +157,11 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
               ))}
             </TableBody>
           </Table>
-        </div>
+        </TableFrame>
       )}
       {dialog && <PaymentDialog clients={clients} mode={dialog} today={today} onClose={() => setDialog(null)} />}
       {voiding && <VoidDialog payment={voiding} onClose={() => setVoiding(null)} />}
-    </div>
+    </Page>
   );
 }
 

@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { parseHoursToMinutes } from "@/lib/amounts";
 import type { CounterLine, CountersView } from "@/server/compliance/counter-balances";
-import { hoursMinutes, longDate } from "../format";
+import { hoursMinutes, longDate, numberLocale } from "../format";
 import { useAct } from "./detail";
 
 type Choice = { workerId: string; workerName: string; clientId: string; clientName: string };
@@ -43,10 +43,10 @@ export function Counters({ view, choices, canChange, today }: { view: CountersVi
   };
   const filtered = params.has("client") || params.has("show") || params.has("q");
   const rule = view.rule;
-  if (!rule) return <p className="rounded-lg border py-14 text-center text-sm text-muted-foreground">{t("noRule")}</p>;
+  if (!rule) return <p className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground">{t("noRule")}</p>;
   const h = (m: number) => hoursMinutes(m);
   /** A threshold in whole hours ("720", "4,160"), else h:mm. */
-  const limit = (m: number) => (m % 60 === 0 ? new Intl.NumberFormat(locale).format(Math.trunc(m / 60)) : hoursMinutes(m));
+  const limit = (m: number) => (m % 60 === 0 ? new Intl.NumberFormat(numberLocale(locale)).format(Math.trunc(m / 60)) : hoursMinutes(m));
   const keyOf = (l: CounterLine) => `${l.workerId}|${l.clientId}`;
   const status = (l: CounterLine) => {
     if (l.crossed720 !== null) {
@@ -116,11 +116,11 @@ export function Counters({ view, choices, canChange, today }: { view: CountersVi
         )}
       </div>
       {view.total === 0 ? (
-        <p className="rounded-lg border py-14 text-center text-sm text-muted-foreground" data-testid="counters-nothing">
+        <p className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground" data-testid="counters-nothing">
           {t("nothing")}
         </p>
       ) : view.rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border py-14 text-sm text-muted-foreground" data-testid="counters-no-match">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14 text-sm text-muted-foreground" data-testid="counters-no-match">
           {t("noMatch")}
           {filtered && (
             <button type="button" className={buttonVariants({ variant: "outline", size: "sm" })} onClick={() => go({ client: "", show: "", q: "" })}>
@@ -129,7 +129,7 @@ export function Counters({ view, choices, canChange, today }: { view: CountersVi
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("tableLabel")} data-testid="counters-table">
             <TableHeader>
               <TableRow>

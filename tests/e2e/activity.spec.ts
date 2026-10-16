@@ -27,7 +27,7 @@ async function signedInAs(browser: Browser, role: "coordinator" | "accountant"):
   const page = await context.newPage();
   await page.goto("/en/sign-in");
   await page.getByTestId(`continue-${role}`).click();
-  await expect(page).toHaveURL(/\/en\/convert$/);
+  await expect(page).toHaveURL(/\/en$/);
   return page;
 }
 

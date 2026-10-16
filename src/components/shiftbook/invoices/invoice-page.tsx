@@ -56,7 +56,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
           {td("back")}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-[28px] leading-9 font-bold tracking-tight">
             {t(`kindTitle.${r.kind}`)} {r.number}
           </h1>
           <InvoiceStatusBadge status={r.status} />
@@ -83,7 +83,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
         </p>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border p-4 text-sm sm:grid-cols-3 lg:grid-cols-7" data-testid="invoice-summary">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-xl border bg-card p-4 text-sm sm:grid-cols-3 lg:grid-cols-7" data-testid="invoice-summary">
         {summary.map((f) => (
           <div key={f.label} className="flex flex-col gap-0.5">
             <dt className="text-muted-foreground">{f.label}</dt>
@@ -97,7 +97,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
           {td("lines")}
         </h2>
         {detail.printed ? (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="min-w-0">
             <Table aria-labelledby="lines-title">
               <TableHeader>
                 <TableRow>
@@ -159,7 +159,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
             {detail.backup ? td("noBackup") : td("linesInPdf")}
           </p>
         ) : (
-          <ul className="flex flex-col divide-y rounded-lg border text-sm" data-testid="backup-list">
+          <ul className="flex flex-col divide-y border-y text-sm" data-testid="backup-list">
             <li className="flex items-center justify-between gap-3 p-3">
               <span>{td("hoursDetail")}</span>
               <Badge variant="outline">{detail.backup.detail ? td("included") : td("notIncluded")}</Badge>
@@ -189,7 +189,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
         <h2 id="related-title" className="text-lg font-semibold">
           {td("related")}
         </h2>
-        <ul className="flex flex-col divide-y rounded-lg border text-sm" data-testid="related-list">
+        <ul className="flex flex-col divide-y border-y text-sm" data-testid="related-list">
           {detail.original && (
             <li className="flex flex-wrap items-center justify-between gap-3 p-3">
               <span className="text-muted-foreground">{credit ? td("credits") : td("addsTo")}</span>

@@ -44,4 +44,7 @@ their profile. No SSN column (California's and New York's guidance: no SSNs on r
 ## Never copy
 Toast's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+Stripe's table (https://docs.stripe.com/invoicing/dashboard): full width, small-capital headers, hairline rows; each name with the person's initials in a circle (Linear's lists show people with their avatar, https://linear.app/docs/custom-views); the status as a tinted badge.
+
 Deviations allowed: none

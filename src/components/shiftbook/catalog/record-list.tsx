@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "../empty-state";
+import { PageHeader } from "../page";
 import { typing } from "../app-sidebar";
 
 export interface Column<R> {
@@ -59,6 +61,10 @@ interface Props<R extends { id: string }> {
   /** Display options are personal: kept in this browser under this key (Linear: personal by default). */
   storageKey: string;
   title: string;
+  /** One muted line under the title (decision 0029, page header). */
+  description?: ReactNode;
+  /** Key figures between the header and the rows (decision 0029). */
+  figures?: ReactNode;
   rows: R[];
   primary: (r: R) => string;
   secondary?: (r: R) => string | null;
@@ -246,10 +252,13 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
 
   return (
     <div className="flex min-h-[calc(100svh-3rem)]">
-      <div className="min-w-0 flex-1 px-4 py-6 md:px-6">
-        {/* View header (Linear) */}
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="mr-auto text-2xl font-semibold tracking-tight">{p.title}</h1>
+      <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+        {/* View header (Linear), as the shared page header (decision 0029) */}
+        <PageHeader
+          title={p.title}
+          description={p.description}
+          actions={
+            <>
           <DropdownMenu open={filterOpen} onOpenChange={setFilterOpen}>
             <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
               <ListFilterIcon />
@@ -322,11 +331,14 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
             </DropdownMenuContent>
           </DropdownMenu>
           {p.actions}
-        </div>
+            </>
+          }
+        />
+        {p.figures}
 
         {/* Applied filters as chips (Linear) */}
         {anyFilter && (
-          <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="filter-chips">
+          <div className="-mt-2 flex flex-wrap items-center gap-2" data-testid="filter-chips">
             {p.filters
               .filter((f) => applied[f.key])
               .map((f) => (
@@ -344,24 +356,27 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
         )}
 
         {/* Rows, in groups */}
-        <div className="mt-4" role="grid" aria-label={p.title} aria-multiselectable="true">
+        <div className={cn(filtered.length > 0 && "border-t")} role="grid" aria-label={p.title} aria-multiselectable="true">
           {filtered.length === 0 ? (
             p.rows.length === 0 ? (
               p.empty
             ) : (
-              <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
-                <ListFilterIcon className="size-5" />
-                <p>{t("noResults")}</p>
-                <Button variant="link" size="sm" className="h-auto px-0" onClick={clearFilters}>
-                  {t("clearFilters")}
-                </Button>
-              </div>
+              <EmptyState
+                kind="filtered"
+                icon={ListFilterIcon}
+                title={t("noResults")}
+                action={
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    {t("clearFilters")}
+                  </Button>
+                }
+              />
             )
           ) : (
             groups.map((g) => (
               <Fragment key={g.key || "all"}>
                 {grouping.value && (
-                  <div role="row" className="sticky top-0 z-10 flex items-center gap-2 border-b bg-muted/80 px-2 py-1.5 text-sm font-medium backdrop-blur">
+                  <div role="row" className="sticky top-0 z-10 flex items-center gap-2 border-b bg-muted/70 px-2 py-2 text-sm font-medium backdrop-blur">
                     <span role="columnheader" className="flex items-center gap-2">
                       <button
                         type="button"

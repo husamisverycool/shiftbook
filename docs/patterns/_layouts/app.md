@@ -1,21 +1,29 @@
 # Pattern: App frame with sidebar (`src/app/[locale]/(app)/layout.tsx`)
 
-Status: adopted — decision B4 (2026-10-15, under the owner's "do everything")
-Reference product and screen: Linear — sidebar and keyboard navigation
+Status: adopted — decision B4 (2026-10-15, under the owner's "do everything"); frame, groups and Home
+added by decision 0029 (2026-10-16)
+Reference product and screen: Linear — sidebar and keyboard navigation; Stripe Dashboard — sidebar
+sections and Home; shadcn/ui sidebar (inset variant) as the neutral base
 Source URL: https://linear.app/enablement/guide/navigating-linear
 Source URL: https://linear.app/docs/custom-views
 Source URL: https://linear.app/docs/display-options
 Source URL: https://linear.app/docs/workspaces
 Source URL: https://linear.app/docs/inbox
-Researched: 2026-10-15. Confidence: high for the sidebar's role, its sections and the navigation
-shortcuts; low for widths, icons and collapse behavior on narrow screens (not documented).
+Source URL: https://linear.app/now/behind-the-latest-design-refresh
+Source URL: https://docs.stripe.com/dashboard/basics
+Source URL: https://developer.apple.com/design/human-interface-guidelines/sidebars
+Source URL: https://ui.shadcn.com/docs/components/sidebar
+Researched: 2026-10-15 and 2026-10-16. Confidence: high for the sidebar's role, its sections and the
+navigation shortcuts; medium for the inset sheet (shadcn's documented variant; Linear's refresh
+describes the dimmer sidebar and softer structure, not the sheet itself).
 
 ## Purpose in Shiftbook
-The frame around every app page (converter, job orders, assignments, import): one place to move
-between areas, the same on every page, inside the root frame (demo banner above it).
+The frame around every app page: one place to move between areas, the same on every page, inside the
+root frame (demo banner above it).
 
 ## Hierarchy
-1. **Sidebar** on the left, full height under the demo banner:
+1. **Sidebar** on the left, full height under the demo banner, on the frame's dim tone (Linear's
+   refresh: a sidebar "a few notches dimmer", inactive items muted):
    1. Workspace name at the top (Linear: the workspace menu at the top of the sidebar). In Shiftbook:
       the agency's name, a button that opens a menu with **Settings** (Linear: "Click your workspace
       name in the upper-left corner and select Settings"). Settings opens the payroll file settings
@@ -26,30 +34,37 @@ between areas, the same on every page, inside the root frame (demo banner above 
       Below a separator, the person's own items (slice k): their name and role (not a link),
       **Your account**, and **Sign out**. Linear's docs do not say where its log-out item sits —
       listed as a difference.
-   2. The personal and workspace areas as a vertical list of links (Linear: Inbox, My issues, then
-      the workspace's views). In Shiftbook, in build order: Convert timesheets, Job orders,
-      Assignments, Client approvals (slice d), Invoices, Clients (slice g), Receivables, Payments,
-      Bank (slice h), Margin (slice i; shown to the Owner and the accountant only, SPEC §2),
-      Compliance (slice j) with a badge count of the duties overdue or due soon (Linear's Inbox
-      "badge count"), Workers (slice k).
-   3. The current area's link is highlighted.
-2. **Page** to the right of the sidebar: the route's own pattern.
+   2. **Home** first, alone (Stripe: the sidebar's first section starts with Home).
+   3. The areas in groups, each under a short muted label, two levels at most (Stripe's sidebar
+      sections; Apple "succinct, descriptive labels to title each group", "No more than two levels";
+      Linear's sections):
+      - **Payroll**: Convert timesheets, Client approvals (slice d);
+      - **Billing**: Invoices, Receivables, Payments, Bank (slices g, h);
+      - **Staffing**: Job orders, Assignments, Workers (slice k), Clients (slice g);
+      - **Oversight**: Margin (slice i; the Owner and the accountant only, SPEC §2), Compliance
+        (slice j) with a badge count of the duties overdue or due soon (Linear's "count or dot").
+   4. The current area's link is highlighted.
+   5. At the foot of the sidebar, **Keyboard shortcuts** with its key (`?`) (Stripe: "press the
+      question mark key (?) for a list of available keyboard shortcuts").
+2. **Page** to the right of the sidebar, on a raised sheet with large rounded corners and a hairline
+   edge (shadcn's `inset` variant; decision 0029 rule 1): the route's own pattern, starting with its
+   page header (`_components/page-header.md`).
 
 ## Interactions
 - Click a sidebar link → that area.
-- Keyboard (Linear "G then a letter" to jump): G then C → Convert timesheets, G then J → Job orders,
-  G then A → Assignments, G then P → Client approvals (A is taken; P as in "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R → Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M → Margin, G then O → Compliance (C is taken; O as in "Obligations"), G then W → Workers. Not
-  active while typing in a field.
-- `?` opens the list of keyboard shortcuts (Linear).
+- Keyboard (Linear "G then a letter" to jump): G then H → Home, G then C → Convert timesheets, G then
+  J → Job orders, G then A → Assignments, G then P → Client approvals (A is taken; P as in
+  "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R →
+  Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M →
+  Margin, G then O → Compliance (C is taken; O as in "Obligations"), G then W → Workers. Not active
+  while typing in a field.
+- `?` (or the sidebar's Keyboard shortcuts) opens the list of keyboard shortcuts (Linear, Stripe).
 
 ## States
 - Narrow screens: not documented by Linear for the web app. Shiftbook uses shadcn's sidebar default
-  (collapses behind a menu button) — listed as a difference.
-
-## Not known from the references (ask the owner before building)
-- Icons per link, sidebar width, whether the sidebar can be collapsed on desktop.
+  (collapses behind a menu button; the sheet fills the width) — listed as a difference.
 
 ## Never copy
-Linear's wording, icons, colors or logo.
+Linear's or Stripe's wording, icons, colors or logo.
 
 Deviations allowed: none

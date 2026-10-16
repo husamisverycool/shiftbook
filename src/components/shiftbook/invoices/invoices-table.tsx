@@ -12,13 +12,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Link, useRouter } from "@/i18n/navigation";
 import type { InvoiceRow } from "@/server/invoices/queries";
 import { dateRange, longDate, money } from "../format";
+import { TableFrame } from "../page";
+import { Status, type Tone } from "../status";
 
-export function InvoiceStatusBadge({ status }: { status: InvoiceRow["status"] }) {
+/** One status language (decision 0029): issued is waiting on the client, paid is done. */
+const INVOICE_TONE: Record<InvoiceRow["status"], Tone> = { draft: "neutral", issued: "info", paid: "success", void: "neutral" };
+
+export function InvoiceStatusBadge({ status, size }: { status: InvoiceRow["status"]; size?: "default" | "lg" }) {
   const t = useTranslations("invoices");
   return (
-    <Badge variant={status === "void" ? "outline" : status === "paid" ? "secondary" : "outline"} data-testid="invoice-status">
+    <Status tone={INVOICE_TONE[status]} size={size} data-testid="invoice-status">
       {t(`status.${status}`)}
-    </Badge>
+    </Status>
   );
 }
 
@@ -52,7 +57,7 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
   const some = selectable && props.rows.some((r) => props.selected!.has(r.id));
   const href = (r: InvoiceRow) => (props.back ? `/invoices/${r.id}?back=${encodeURIComponent(props.back)}` : `/invoices/${r.id}`);
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <TableFrame>
       <Table aria-label={t("title")} data-testid="invoices-list">
         <TableHeader>
           <TableRow>
@@ -104,6 +109,6 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
           ))}
         </TableBody>
       </Table>
-    </div>
+    </TableFrame>
   );
 }

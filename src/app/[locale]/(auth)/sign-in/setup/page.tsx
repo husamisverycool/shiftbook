@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { SetupView } from "@/components/shiftbook/auth/setup-page";
-import { safeNext } from "@/server/auth/next-path";
+import { localePath, safeNext } from "@/server/auth/next-path";
 import { nextStep } from "@/server/auth/service";
 import { currentSession } from "@/server/session";
 
@@ -18,6 +18,6 @@ export default async function SetupPage(props: { params: Promise<{ locale: strin
   if (!session) redirect(`/${locale}/sign-in?notice=expired`);
   const step = nextStep(session);
   if (step === "code") redirect(`/${locale}/sign-in/code?next=${encodeURIComponent(next)}`);
-  if (step === "done") redirect(`/${locale}${next}`);
+  if (step === "done") redirect(localePath(locale, next));
   return <SetupView email={session.email} next={next} />;
 }

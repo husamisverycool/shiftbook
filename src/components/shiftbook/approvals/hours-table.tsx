@@ -45,7 +45,7 @@ export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: str
   const toggle = (id: string) => setOpen((o) => (o.has(id) ? new Set([...o].filter((v) => v !== id)) : new Set([...o, id])));
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="min-w-0">
       <Table aria-label={t("label")} data-testid="hours-table">
         <TableHeader>
           <TableRow>

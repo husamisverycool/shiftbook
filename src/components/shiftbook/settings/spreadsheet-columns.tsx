@@ -113,7 +113,7 @@ export function SpreadsheetColumns({ layout: initial, targetId, canEdit }: { lay
         {listProblems.map((p, i) => (
           <FieldProblem key={i} problem={p} id={`columns-problem-${i}`} />
         ))}
-        <ol className="flex flex-col divide-y rounded-lg border" data-testid="included-columns">
+        <ol className="flex flex-col divide-y border-y" data-testid="included-columns">
           {layout.columns.map((c, i) => {
             const name = fieldName(c.field);
             const headerProblem = problemFor(problems, `columns.${i}.header`);
@@ -163,7 +163,7 @@ export function SpreadsheetColumns({ layout: initial, targetId, canEdit }: { lay
         <div className="flex max-w-md flex-col gap-2">
           <h3 className="text-base font-semibold">{t("columns.add")}</h3>
           <Input type="search" aria-label={t("columns.searchFields")} placeholder={t("columns.searchFields")} value={search} onChange={(e) => setSearch(e.target.value)} />
-          <ul className="flex flex-col divide-y rounded-lg border">
+          <ul className="flex flex-col divide-y border-y">
             {matches.length === 0 ? (
               <li className="p-3 text-sm text-muted-foreground">{t("columns.noFields")}</li>
             ) : (

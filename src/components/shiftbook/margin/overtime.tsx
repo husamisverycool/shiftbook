@@ -29,7 +29,7 @@ export function MarginOvertime({ view }: { view: OvertimeView }) {
       <p className="text-sm" data-testid="overtime-summary">
         {T.leakedMinutes === 0 ? t("allBilled", { hours: hoursMinutes(T.paidMinutes) }) : t("summary", { paid: hoursMinutes(T.paidMinutes), leaked: hoursMinutes(T.leakedMinutes), premium: money(T.premiumNotBilledCents, locale) })}
       </p>
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="min-w-0">
         <Table aria-label={tm("tabs.overtime")} data-testid="overtime-table">
           <TableHeader>
             <TableRow>

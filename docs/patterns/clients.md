@@ -27,4 +27,7 @@ The agency's clients, to open one and set how it is invoiced (decision G2–G9).
 ## Never copy
 Stripe's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+The title and the table as Stripe's lists show them: full width, small-capital headers, hairline rows, no box (https://docs.stripe.com/invoicing/dashboard).
+
 Deviations allowed: none

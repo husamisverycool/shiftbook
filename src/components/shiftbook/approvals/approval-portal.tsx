@@ -210,7 +210,7 @@ function Active({ view, token }: { view: ActiveView; token: string }) {
             <p>{t("final", { agency })}</p>
           </div>
         ) : (
-          <section className="flex flex-col gap-4 rounded-lg border p-4" aria-labelledby="approve-title" data-testid="approve-bar">
+          <section className="flex flex-col gap-4 rounded-xl border bg-card p-4" aria-labelledby="approve-title" data-testid="approve-bar">
             <h2 id="approve-title" className="text-lg font-semibold">
               {t("approveTitle")}
             </h2>

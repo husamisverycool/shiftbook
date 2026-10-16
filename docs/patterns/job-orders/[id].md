@@ -82,4 +82,7 @@ create/edit with effective dating; rate changes never rewrite locked periods).
 ## Never copy
 Wording, icons, colors or logos of Attio, Bullhorn, Gusto, Stripe or Linear.
 
+## Look (decision 0029, from the products' own screenshots)
+The header as Stripe's detail header: breadcrumb, the title with its state (Open or Filled) as a badge beside it, the facts line, the buttons on the right; the tabs underlined.
+
 Deviations allowed: none

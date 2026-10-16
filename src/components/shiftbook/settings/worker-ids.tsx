@@ -103,7 +103,7 @@ export function WorkerIds({ system, workers, filter, onFilter, canEdit }: { syst
         ))}
         <Input type="search" aria-label={t("workers.search")} placeholder={t("workers.search")} value={query} onChange={(e) => setQuery(e.target.value)} className="ml-auto w-64" />
       </div>
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="min-w-0">
         <Table>
           <TableHeader>
             <TableRow>

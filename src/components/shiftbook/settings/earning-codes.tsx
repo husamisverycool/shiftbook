@@ -83,7 +83,7 @@ export function EarningCodes({ format, codes, problems: stored, id, canEdit }: {
         </h2>
         <p className="text-sm text-muted-foreground">{t("codes.hint", { system })}</p>
       </div>
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="min-w-0">
         <Table>
           <TableHeader>
             <TableRow>

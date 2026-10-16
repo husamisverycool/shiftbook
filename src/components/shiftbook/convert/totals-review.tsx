@@ -157,7 +157,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
         <>
           <section className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">{t("summaryTitle")}</h2>
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="min-w-0">
               <Table aria-label={t("summaryTitle")} data-testid="summary">
                 <TableHeader>
                   <TableRow>
@@ -253,7 +253,7 @@ function CorrectionTotals({ c }: { c: CorrectionData }) {
     <>
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">{t("summaryTitle")}</h2>
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("summaryTitle")} data-testid="summary">
             <TableHeader>
               <TableRow>
@@ -338,7 +338,7 @@ function Paged<T>({ rows, head, row, foot }: { rows: T[]; head: string[]; row: (
   const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <div className="flex flex-col gap-2">
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="min-w-0">
         <Table>
           <TableHeader>
             <TableRow>

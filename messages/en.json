@@ -126,7 +126,9 @@
       "closed": "Closed",
       "approved": "Approved",
       "correcting": "Correction in progress"
-    }
+    },
+    "emptyTitle": "No pay periods yet",
+    "emptyBody": "Pay periods appear here week by week."
   },
   "convert": {
     "saveAndExit": "Save and exit",
@@ -607,7 +609,14 @@
     "activity": "Activity",
     "account": "Your account",
     "signOut": "Sign out",
-    "youAre": "{name} · {role}"
+    "youAre": "{name} · {role}",
+    "home": "Home",
+    "groups": {
+      "payroll": "Payroll",
+      "billing": "Billing",
+      "staffing": "Staffing",
+      "oversight": "Oversight"
+    }
   },
   "list": {
     "filter": "Filter",
@@ -746,7 +755,8 @@
       "branch": "Branch",
       "noBranch": "No branch"
     },
-    "readOnly": "Only the Owner and coordinators change job orders."
+    "readOnly": "Only the Owner and coordinators change job orders.",
+    "emptyBody": "Each job order sets the pay and bill rates its workers are paid and billed at."
   },
   "jobOrder": {
     "breadcrumb": "Job orders",
@@ -784,7 +794,9 @@
     "ownRatesOf": "{name}'s own rates",
     "ownRatesBody": "These rates apply to this worker on this job order from their start date; on other dates the job order's rates apply.",
     "branch": "Branch",
-    "readOnly": "Only the Owner and coordinators change this job order, its rates and its assignments."
+    "readOnly": "Only the Owner and coordinators change this job order, its rates and its assignments.",
+    "filled": "Filled",
+    "open": "Open"
   },
   "assignments": {
     "title": "Assignments",
@@ -880,7 +892,8 @@
     "noRecruiter": "No recruiter",
     "recruiterSaved": "Recruiter saved",
     "recruiterError": "That didn't work. Try again.",
-    "readOnly": "Only the Owner and coordinators change assignments."
+    "readOnly": "Only the Owner and coordinators change assignments.",
+    "emptyBody": "An assignment puts a worker on a job order from a start date."
   },
   "approvals": {
     "title": "Client approvals",
@@ -935,7 +948,6 @@
     "sendBlocked": "{count, plural, one {# shift} other {# shifts}} for this client still need review before the hours can be sent.",
     "reviewHours": "Review hours",
     "cancel": "Cancel",
-    "empty": "No hours in this pay period yet.",
     "emptyLink": "Convert timesheets",
     "noResults": "No clients match these filters.",
     "done": {
@@ -1031,7 +1043,9 @@
     "approvalRequired": "Approval required before payroll",
     "requiredBadge": "Approval required",
     "rowMenu": "More for {client}",
-    "readOnly": "Only the Owner and coordinators ask clients to approve hours."
+    "readOnly": "Only the Owner and coordinators ask clients to approve hours.",
+    "emptyTitle": "No hours in this pay period yet",
+    "emptyBody": "Convert the week's timesheets, then send each client its hours."
   },
   "rates": {
     "title": "Rate card",
@@ -1641,7 +1655,6 @@
     "oneClientOnly": "A statement puts together invoices of one client.",
     "beforeStatements": "{number} was made before statements could include it: download its PDF on its own.",
     "clearSelection": "Clear",
-    "empty": "No invoices yet. Invoices are made with each week's files.",
     "emptyLink": "Convert timesheets",
     "noResults": "No invoices match these filters.",
     "selectAll": "Select all invoices",
@@ -1707,11 +1720,12 @@
       "addsTo": "Adds to invoice",
       "run": "The week's files (version {version})",
       "openFiles": "Open the files"
-    }
+    },
+    "emptyTitle": "No invoices yet",
+    "emptyBody": "Each week's invoices are made with its payroll file."
   },
   "clients": {
     "title": "Clients",
-    "empty": "No clients yet. Clients come with job orders.",
     "emptyLink": "Job orders",
     "col": {
       "name": "Name",
@@ -1808,7 +1822,9 @@
       "not_found": "This client no longer exists.",
       "busy": "Files are being created right now. Try again in a moment.",
       "generic": "Something went wrong. Nothing was saved."
-    }
+    },
+    "emptyTitle": "No clients yet",
+    "emptyBody": "Clients are added with their job orders."
   },
   "reminderTemplate": {
     "before_due": {
@@ -1835,7 +1851,6 @@
       "voided": "Voided"
     },
     "any": "Any",
-    "empty": "No payments yet. Record a check or ACH as it comes in, or bring in the bank's file to match its deposits.",
     "importBank": "Import bank file",
     "date": "Date received",
     "client": "Client",
@@ -1921,7 +1936,9 @@
     "from": "From",
     "fromTyped": "Typed in",
     "fromBank": "Bank file",
-    "applyInvoiceCreditBody": "{amount} of credit from this invoice's credit notes is not applied yet. Choose the invoices it pays."
+    "applyInvoiceCreditBody": "{amount} of credit from this invoice's credit notes is not applied yet. Choose the invoices it pays.",
+    "emptyTitle": "No payments yet",
+    "emptyBody": "Record a check or ACH as it comes in, or import the bank's file."
   },
   "receivables": {
     "title": "Receivables",
@@ -1931,9 +1948,7 @@
       "aging": "Aging",
       "short": "Short pays"
     },
-    "empty": "Nothing is owed as of {date}.",
     "emptyLink": "See invoices",
-    "summary": "{total} owed as of {date}: {overdue} overdue, {credit} in unapplied credit.",
     "client": "Client",
     "buckets": {
       "current": "Current",
@@ -1966,7 +1981,19 @@
       "unknown": "Unknown",
       "other": "Other"
     },
-    "noReason": "No reason yet"
+    "noReason": "No reason yet",
+    "emptyTitle": "Nothing is owed",
+    "emptyBody": "No invoice has a balance as of {date}.",
+    "figures": {
+      "owed": "Owed",
+      "owedNote": "As of {date}",
+      "overdue": "Overdue",
+      "overdueNote": "Past the due date",
+      "credit": "Unapplied credit",
+      "creditNote": "Paid but not yet on an invoice"
+    },
+    "tabsLabel": "Receivables views",
+    "shortEmptyTitle": "No short pays"
   },
   "bank": {
     "title": "Bank",
@@ -1977,7 +2004,6 @@
       "posted": "Posted",
       "excluded": "Excluded"
     },
-    "empty": "No bank file yet. Download your bank's activity as a CSV file and import it here to match its deposits to invoices.",
     "reviewEmpty": "Every deposit is posted or excluded.",
     "confidence": {
       "high": "High",
@@ -1990,7 +2016,6 @@
     "findMatch": "Find match",
     "exclude": "Exclude",
     "date": "Date",
-    "description": "Description",
     "amount": "Amount",
     "payment": "Payment",
     "why": "Reason",
@@ -2020,7 +2045,11 @@
       "busy": "Someone else is saving payments right now. Try again in a moment.",
       "generic": "That didn't work. Try again.",
       "not_short_paid": "Only an invoice a payment left short can have this."
-    }
+    },
+    "emptyTitle": "No bank file yet",
+    "emptyBody": "Import your bank's activity as a CSV to match its deposits to invoices.",
+    "tabsLabel": "Bank lines",
+    "reviewEmptyTitle": "All caught up"
   },
   "bankImport": {
     "bank": "Bank",
@@ -2240,13 +2269,12 @@
     },
     "none": "None",
     "weekOf": "Week of {date}",
-    "empty": "No week from {from} to {to} has its files made yet, so there is nothing to show.",
     "emptyLink": "Convert timesheets",
     "lineIncomplete": "Burden incomplete: a rate is missing.",
     "payLine": "Pay ({type}):",
     "billLine": "Bill ({type}):",
     "burdenOf": "Burden: {explain}",
-    "incomplete": "{count, plural, one {# pay line's} other {# pay lines'}} burden is incomplete: a workers' comp or tax rate is missing and counts as $0.00.",
+    "incomplete": "{count, plural, one {# pay line''s} other {# pay lines''}} burden is incomplete: a workers' comp or tax rate is missing and counts as $0.00.",
     "groupBy": "Group by",
     "groups": {
       "client": "Client",
@@ -2306,7 +2334,10 @@
       "marginKept": "An invoice pays back only the payroll of its own week; the rest of it is margin.",
       "overdue": "{amount} is past the date it was expected and is not counted on."
     },
-    "csvIncomplete": "Pay lines with a rate missing"
+    "csvIncomplete": "Pay lines with a rate missing",
+    "emptyTitle": "Nothing to show yet",
+    "emptyBody": "No week from {from} to {to} has its files made.",
+    "notForRoleTitle": "Margin is for the Owner and the accountant"
   },
   "marginSettings": {
     "above": "Settings",
@@ -3456,7 +3487,6 @@
       "active": "Active",
       "ended": "Ended"
     },
-    "empty": "No workers yet.",
     "noMatch": "No worker matches “{query}”.",
     "noActive": "No active workers. Ended workers are hidden.",
     "clearSearch": "Clear search",
@@ -3637,7 +3667,9 @@
           "effective_on": "Enter the date the file took effect."
         }
       }
-    }
+    },
+    "emptyTitle": "No workers yet",
+    "emptyBody": "Add each worker once; assignments, pay and documents follow them."
   },
   "activityLog": {
     "eyebrow": "Settings",
@@ -3736,5 +3768,130 @@
     },
     "allTypes": "All",
     "gone": "no longer on file"
+  },
+  "home": {
+    "title": "Home",
+    "showGuide": "Setup guide",
+    "guide": {
+      "title": "Setup guide",
+      "intro": "Seven steps take a week from timesheets to paid invoices. Each is marked done when it happens.",
+      "progress": "{done} of {total} steps done",
+      "hide": "Hide guide",
+      "collapse": "Collapse the guide",
+      "expand": "Expand the guide",
+      "allDone": "Every step is done. You can hide this guide.",
+      "done": "Done",
+      "notDone": "Not done",
+      "steps": {
+        "payroll": {
+          "title": "Choose your payroll system",
+          "body": "Shiftbook makes the file your payroll system imports: Gusto, ADP, QuickBooks or a spreadsheet.",
+          "action": "Open payroll file settings"
+        },
+        "placements": {
+          "title": "Add clients and job orders",
+          "body": "Pay and bill rates come from each job order. Import placements from a spreadsheet or add them one at a time.",
+          "action": "Open job orders"
+        },
+        "convert": {
+          "title": "Convert a week of timesheets",
+          "body": "Drop in photos, PDFs and time-clock exports, then check only the rows Shiftbook flags.",
+          "demo": "In this demo, download the sample timesheets from the banner at the top and drop them all in.",
+          "action": "Convert timesheets"
+        },
+        "approval": {
+          "title": "Ask a client to approve the hours",
+          "body": "The client approves or disputes each shift from a link in an email. No account needed.",
+          "action": "Open client approvals"
+        },
+        "files": {
+          "title": "Approve the week and create the files",
+          "body": "Every pay rule is checked, then Shiftbook makes the payroll file and each client's invoice with its backup.",
+          "action": "Open the pay period"
+        },
+        "bank": {
+          "title": "Match a bank file to the invoices",
+          "body": "Import your bank's CSV and each deposit is matched to the invoices it pays.",
+          "action": "Open bank"
+        },
+        "ssn": {
+          "title": "Look up a worker's SSN",
+          "body": "Only the Owner can, with a reason. The activity log keeps who looked, when and why.",
+          "action": "Open workers"
+        }
+      }
+    },
+    "attention": {
+      "title": "Needs attention",
+      "none": "Nothing needs attention right now.",
+      "period": {
+        "none": "Pay period {period} has not started.",
+        "draft": "Pay period {period} is in progress.",
+        "validating": "Pay period {period} is in progress.",
+        "blocked": "{count, plural, one {Pay period {period}: # problem stops the run.} other {Pay period {period}: # problems stop the run.}}",
+        "ready": "Pay period {period} is ready to approve.",
+        "approved": "Pay period {period} is approved; its files are not made yet.",
+        "exported": "Pay period {period}: the files are made.",
+        "closed": "Pay period {period} is closed.",
+        "correcting": "Pay period {period}: a correction is in progress."
+      },
+      "periodAction": {
+        "none": "Start",
+        "draft": "Continue",
+        "validating": "Continue",
+        "blocked": "See the problems",
+        "ready": "Review totals",
+        "approved": "Create the files",
+        "exported": "View files",
+        "closed": "View files",
+        "correcting": "Continue"
+      },
+      "disputed": "{count, plural, one {# client disputed shifts in this pay period.} other {# clients disputed shifts in this pay period.}}",
+      "toSend": "{count, plural, one {# client must approve hours before payroll and has not been asked.} other {# clients must approve hours before payroll and have not been asked.}}",
+      "waiting": "{count, plural, one {Waiting on # client to approve hours.} other {Waiting on # clients to approve hours.}}",
+      "dutiesOverdue": "{count, plural, one {# compliance duty is overdue.} other {# compliance duties are overdue.}}",
+      "dutiesDueSoon": "{count, plural, one {# compliance duty is due soon.} other {# compliance duties are due soon.}}",
+      "invoicesOverdue": "{count, plural, one {# invoice is overdue: {amount}.} other {# invoices are overdue: {amount}.}}",
+      "bank": "{count, plural, one {# bank deposit is waiting for review.} other {# bank deposits are waiting for review.}}",
+      "status": {
+        "disputed": "Disputed",
+        "toSend": "To send",
+        "waiting": "Waiting",
+        "overdue": "Overdue",
+        "dueSoon": "Due soon",
+        "toMatch": "For review"
+      },
+      "open": {
+        "approvals": "Open client approvals",
+        "compliance": "Open compliance",
+        "receivables": "Open receivables",
+        "bank": "Open bank"
+      }
+    },
+    "today": "Today",
+    "todayHours": "Hours this pay period",
+    "todayWorkers": "Workers with hours",
+    "todayStatus": "Pay period",
+    "todayChart": "Hours by day, {period}",
+    "todayNoPeriod": "No pay period yet.",
+    "side": {
+      "receivables": "Open receivables",
+      "overdue": "Overdue",
+      "compliance": "Compliance",
+      "complianceValue": "{overdue} overdue · {soon} due soon",
+      "invoices": "{count, plural, one {# invoice} other {# invoices}}",
+      "view": "View"
+    },
+    "overview": {
+      "title": "Your overview",
+      "range": "Date range",
+      "rangeValue": "Last 13 weeks",
+      "billed": "Billed",
+      "margin": "Gross margin",
+      "hours": "Hours paid",
+      "previous": "{value} previous 13 weeks",
+      "viewMore": "View more",
+      "chart": "{title}, week by week, {range}"
+    }
   }
 }

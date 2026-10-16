@@ -19,19 +19,25 @@ export function clock(minute: number | null, locale: string): string {
   return new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(d);
 }
 
-/** Integer cents → "$1,234.56" / "1234,56 US$", exactly. */
+/**
+ * The locale numbers and money are written in: US Spanish writes them as US pay stubs and banks do
+ * ("$1,234.56", CLDR es-US), as the explanations already group numbers (decision 0028).
+ */
+export const numberLocale = (locale: string): string => (locale.startsWith("es") ? "es-US" : locale);
+
+/** Integer cents → "$1,234.56" in both languages, exactly. */
 export function money(cents: number, locale: string): string {
   const sign = cents < 0 ? "-" : "";
   const abs = Math.abs(cents);
   const exact = `${sign}${Math.trunc(abs / 100)}.${pad2(abs % 100)}`;
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }).format(exact as Intl.StringNumericLiteral);
+  return new Intl.NumberFormat(numberLocale(locale), { style: "currency", currency: "USD" }).format(exact as Intl.StringNumericLiteral);
 }
 
 /** A difference: "+$36.50", "-$54.75", "$0.00" (slice e corrections). */
 export function signedMoney(cents: number, locale: string): string {
   const abs = Math.abs(cents);
   const exact = `${cents < 0 ? "-" : ""}${Math.trunc(abs / 100)}.${pad2(abs % 100)}`;
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "USD", signDisplay: "exceptZero" }).format(exact as Intl.StringNumericLiteral);
+  return new Intl.NumberFormat(numberLocale(locale), { style: "currency", currency: "USD", signDisplay: "exceptZero" }).format(exact as Intl.StringNumericLiteral);
 }
 
 /** A difference in hours: "+2:00", "-1:30", "0:00". */

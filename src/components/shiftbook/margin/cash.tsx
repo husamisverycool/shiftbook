@@ -53,15 +53,16 @@ export function MarginCash({ view }: { view: CashView }) {
           </AlertDescription>
         </Alert>
       )}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="cash-cards">
+      {/* Figures as plain type in a row (Stripe's "Program summary", Mercury's headline figures). */}
+      <div className="grid gap-x-10 gap-y-5 border-b pb-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="cash-cards">
         {cards.map((c) => (
-          <div key={c.key} className="flex flex-col gap-1 rounded-lg border p-3" data-testid={`cash-${c.key}`}>
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div key={c.key} className="flex flex-col gap-1" data-testid={`cash-${c.key}`}>
+            <span className="flex items-center gap-2 text-[13px] text-muted-foreground">
               {c.label}
               {"badge" in c && c.badge && <Badge variant="outline">{c.badge}</Badge>}
             </span>
-            <span className="text-lg font-semibold tabular-nums">{c.value}</span>
-            <span className="text-xs text-muted-foreground">{c.why}</span>
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{c.value}</span>
+            <span className="text-[13px] text-muted-foreground">{c.why}</span>
           </div>
         ))}
       </div>
@@ -70,7 +71,7 @@ export function MarginCash({ view }: { view: CashView }) {
           {t("none")}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="min-w-0">
           <Table aria-label={t("byClient")} data-testid="cash-table">
             <TableHeader>
               <TableRow>

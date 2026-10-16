@@ -17,6 +17,7 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { Area } from "@/server/compliance/queries";
 import { typing } from "../app-sidebar";
+import { Page, PageHeader, PageTabs } from "../page";
 
 export type ComplianceTab = "list" | "calendar" | "counters" | "workersComp" | "aca";
 const TABS: { tab: ComplianceTab; href: string }[] = [
@@ -99,42 +100,23 @@ export function ComplianceFrame({
   }, []);
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        <Link
-          href="/settings/compliance"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-          data-testid="compliance-settings-link"
-        >
-          <SettingsIcon />
-          {t("settings")}
-        </Link>
-      </div>
-      <nav
-        aria-label={t("tabsLabel")}
-        className="flex w-fit gap-1 rounded-lg bg-muted p-[3px]"
-      >
-        {TABS.map((x) => (
-          <Link
-            key={x.tab}
-            href={
-              kept.size > 0 && FILTERED.includes(x.tab)
-                ? `${x.href}?${kept.toString()}`
-                : x.href
-            }
-            aria-current={x.tab === tab ? "page" : undefined}
-            className={cn(
-              "rounded-md px-3 py-1 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground dark:text-muted-foreground",
-              x.tab === tab &&
-                "bg-background text-foreground shadow-sm dark:text-foreground",
-            )}
-            data-testid={`compliance-tab-${x.tab}`}
-          >
-            {t(`tabs.${x.tab}`)}
+    <Page>
+      <PageHeader
+        title={t("title")}
+        actions={
+          <Link href="/settings/compliance" className={buttonVariants({ variant: "outline", size: "sm" })} data-testid="compliance-settings-link">
+            <SettingsIcon />
+            {t("settings")}
           </Link>
-        ))}
-      </nav>
+        }
+        tabs={
+          <PageTabs
+            label={t("tabsLabel")}
+            current={tab}
+            tabs={TABS.map((x) => ({ key: x.tab, label: t(`tabs.${x.tab}`), href: kept.size > 0 && FILTERED.includes(x.tab) ? `${x.href}?${kept.toString()}` : x.href, testId: `compliance-tab-${x.tab}` }))}
+          />
+        }
+      />
       {counts === null ? (
         children
       ) : (
@@ -235,7 +217,7 @@ export function ComplianceFrame({
           </div>
         </div>
       )}
-    </div>
+    </Page>
   );
 }
 

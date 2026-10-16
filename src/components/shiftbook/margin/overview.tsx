@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { formatPermille, GROUP_BYS, totalsOf, type GroupBy, type MarginLine, type MarginTotals, type SortBy } from "@/server/margin/margin";
 import type { MarginView } from "@/server/margin/queries";
+import { EmptyState } from "../empty-state";
 import { hoursMinutes, longDate, money } from "../format";
 import { WeeklyChart } from "./weekly-chart";
 
@@ -57,13 +58,17 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
 
   if (view.lines.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground" data-testid="margin-empty">
-        <TrendingUpIcon className="size-5" />
-        <p>{t("empty", { from: longDate(view.from, locale), to: longDate(view.to, locale) })}</p>
-        <Link href="/convert" className={buttonVariants({ variant: "link", size: "sm" })}>
-          {t("emptyLink")}
-        </Link>
-      </div>
+      <EmptyState
+        icon={TrendingUpIcon}
+        title={t("emptyTitle")}
+        description={t("emptyBody", { from: longDate(view.from, locale), to: longDate(view.to, locale) })}
+        action={
+          <Link href="/convert" className={buttonVariants({ size: "sm" })}>
+            {t("emptyLink")}
+          </Link>
+        }
+        testId="margin-empty"
+      />
     );
   }
 
@@ -112,17 +117,24 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7" data-testid="margin-cards">
+      {/* Figures as plain type in a row (Stripe's "Program summary", Mercury's headline figures). */}
+      <div className="flex flex-wrap gap-x-12 gap-y-5 border-b pb-6" data-testid="margin-cards">
         {cards.map((c) =>
           c.href ? (
-            <Link key={c.key} href={c.href} className="flex flex-col gap-1 rounded-lg border p-3 text-left hover:bg-muted/50" data-testid={`card-${c.key}`}>
-              <span className="text-xs text-muted-foreground">{c.label}</span>
-              <span className="text-lg font-semibold tabular-nums">{c.value}</span>
+            <Link key={c.key} href={c.href} className="group flex flex-col gap-1 text-left outline-none" data-testid={`card-${c.key}`}>
+              <span className="text-[13px] text-muted-foreground group-hover:underline group-focus-visible:underline">{c.label}</span>
+              <span className="text-2xl font-semibold tracking-tight tabular-nums">{c.value}</span>
             </Link>
           ) : (
-            <button key={c.key} type="button" onClick={() => setMetric(c.metric!)} className="flex flex-col gap-1 rounded-lg border p-3 text-left hover:bg-muted/50" data-testid={`card-${c.key}`}>
-              <span className="text-xs text-muted-foreground">{c.label}</span>
-              <span className="text-lg font-semibold tabular-nums">{c.value}</span>
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setMetric(c.metric!)}
+              className="group flex flex-col gap-1 text-left outline-none"
+              data-testid={`card-${c.key}`}
+            >
+              <span className="text-[13px] text-muted-foreground group-hover:underline group-focus-visible:underline">{c.label}</span>
+              <span className="text-2xl font-semibold tracking-tight tabular-nums">{c.value}</span>
             </button>
           ),
         )}
@@ -160,7 +172,7 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
           </NativeSelect>
         </div>
       </div>
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="min-w-0">
         <Table aria-label={t("tableLabel", { group: t(`groups.${groupBy}`) })} data-testid="margin-table">
           <TableHeader>
             <TableRow>

@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/workers.md — Toast Payroll Team page (an always-visible search that finds
 // people the status filter hides; Add employee; the Status filter on Active by default with the
 // others by checkbox; a row's name opens the profile) and its "missing from the Team page" help.
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { ContactRoundIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,10 @@ import type { PayrollSystem } from "@/exports/targets";
 import type { WorkerRow } from "@/server/workers/queries";
 import { useCan } from "../abilities";
 import { typing } from "../app-sidebar";
+import { EmptyState } from "../empty-state";
+import { Page, PageHeader, TableFrame } from "../page";
+import { PersonAvatar } from "../person";
+import { Status } from "../status";
 import { AddWorkerDialog } from "./add-worker";
 import { mediumDate } from "./dates";
 
@@ -53,29 +57,35 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
   const endedCount = rows.length - rows.filter((r) => r.status === "active").length;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <header className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-2xl font-semibold">{t("title")}</h1>
-        {mayChange ? (
-          <Button onClick={() => setAdding(true)} data-testid="add-worker">
-            <PlusIcon />
-            {t("add")}
-          </Button>
-        ) : (
-          <p className="text-sm text-muted-foreground">{t("readOnly")}</p>
-        )}
-      </header>
-
-      {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border py-16 text-sm text-muted-foreground" data-testid="workers-empty">
-          <p>{t("empty")}</p>
-          {mayChange && (
-            <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
+    <Page>
+      <PageHeader
+        title={t("title")}
+        description={mayChange ? undefined : t("readOnly")}
+        actions={
+          mayChange && (
+            <Button size="sm" onClick={() => setAdding(true)} data-testid="add-worker">
               <PlusIcon />
               {t("add")}
             </Button>
-          )}
-        </div>
+          )
+        }
+      />
+
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={ContactRoundIcon}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={
+            mayChange && (
+              <Button size="sm" onClick={() => setAdding(true)}>
+                <PlusIcon />
+                {t("add")}
+              </Button>
+            )
+          }
+          testId="workers-empty"
+        />
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -102,7 +112,7 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
           </div>
 
           {shown.length === 0 ? (
-            <div className="flex flex-col items-start gap-3 rounded-lg border p-6 text-sm" data-testid="workers-no-match">
+            <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed p-6 text-sm" data-testid="workers-no-match">
               {q ? (
                 <>
                   <p>{t("noMatch", { query: query.trim() })}</p>
@@ -122,7 +132,7 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <TableFrame>
               <Table aria-label={t("title")} data-testid="workers-list">
                 <TableHeader>
                   <TableRow>
@@ -137,10 +147,16 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
                   {shown.map((r) => (
                     <TableRow key={r.id} data-testid="worker-row" className={r.status === "ended" ? "text-muted-foreground" : undefined}>
                       <TableCell>
-                        <Link href={`/workers/${r.id}`} className="font-medium text-foreground underline-offset-4 hover:underline">
-                          {r.lastName}, {r.firstName}
-                        </Link>
-                        <div className="text-xs text-muted-foreground">{t(`language.${r.preferredLanguage === "es" ? "es" : "en"}`)}</div>
+                        {/* Initials beside the name (decision 0029; Geist entity). */}
+                        <div className="flex items-center gap-3">
+                          <PersonAvatar name={`${r.firstName} ${r.lastName}`} size="default" />
+                          <div className="min-w-0">
+                            <Link href={`/workers/${r.id}`} className="font-medium text-foreground underline-offset-4 hover:underline">
+                              {r.lastName}, {r.firstName}
+                            </Link>
+                            <div className="text-xs text-muted-foreground">{t(`language.${r.preferredLanguage === "es" ? "es" : "en"}`)}</div>
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {r.placements.length === 0 ? (
@@ -161,21 +177,19 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
                         {r.payrollNumber === null || system === null ? (
                           <span className="text-muted-foreground">{t("payroll.noSystem")}</span>
                         ) : r.payrollNumber === "set" ? (
-                          <Badge variant="secondary">{t("payroll.set")}</Badge>
+                          <span className="text-muted-foreground">{t("payroll.set")}</span>
                         ) : (
-                          <Badge variant="outline">
-                            {t("payroll.missing", { system: t(`systems.${system}`) })}
-                          </Badge>
+                          <Status tone="warning">{t("payroll.missing", { system: t(`systems.${system}`) })}</Status>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={r.status === "active" ? "secondary" : "outline"}>{t(`status.${r.status}`)}</Badge>
+                        <Status tone={r.status === "active" ? "success" : "neutral"}>{t(`status.${r.status}`)}</Status>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            </TableFrame>
           )}
           <p className="text-sm text-muted-foreground" aria-live="polite" data-testid="worker-count">
             {q ? t("countOf", { shown: shown.length, total: rows.length }) : t("count", { count: shown.length })}
@@ -184,6 +198,6 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
       )}
 
       {adding && <AddWorkerDialog today={today} onClose={() => setAdding(false)} />}
-    </div>
+    </Page>
   );
 }

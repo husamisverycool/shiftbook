@@ -68,12 +68,12 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
           <ArrowLeftIcon />
           {t("title")}
         </Link>
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-[28px] leading-9 font-bold tracking-tight">
           {detail.client.name} <span className="text-muted-foreground">· {detail.client.code}</span>
         </h1>
       </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border p-4" aria-labelledby="settings-title" data-testid="invoice-settings">
+      <section className="flex flex-col gap-4 rounded-xl border bg-card p-4" aria-labelledby="settings-title" data-testid="invoice-settings">
         <div className="flex flex-wrap items-center gap-3">
           <h2 id="settings-title" className="mr-auto text-lg font-semibold">
             {t("settings")}

@@ -54,7 +54,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
     );
   const month = (m: number) => new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2000, m - 1, 1)));
 
-  if (view.state === "no_rule") return <p className="rounded-lg border py-14 text-center text-sm text-muted-foreground">{t("noRule")}</p>;
+  if (view.state === "no_rule") return <p className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground">{t("noRule")}</p>;
   const importButton = canChange && (
     <Button size="sm" variant="outline" onClick={() => setImporting(true)} data-testid="aca-import">
       <UploadIcon />
@@ -95,7 +95,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">{t("intro")}</p>
-      <section className="grid gap-3 rounded-lg border p-4 text-sm sm:grid-cols-2" aria-label={t("parameters")} data-testid="aca-parameters">
+      <section className="grid gap-3 rounded-xl border bg-card p-4 text-sm sm:grid-cols-2" aria-label={t("parameters")} data-testid="aca-parameters">
         <div className="flex flex-col gap-1">
           <h2 className="font-semibold">{t("settingsTitle")}</h2>
           {view.settings ? (
@@ -125,7 +125,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
       </section>
 
       {view.state === "no_settings" ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border py-14 text-center text-sm text-muted-foreground" data-testid="aca-needs-settings">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground" data-testid="aca-needs-settings">
           {t("needsSettings")}
           {canChange && (
             <Link href="/settings/compliance#aca-title" className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -168,11 +168,11 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
             {importButton}
           </div>
           {view.total === 0 ? (
-            <p className="rounded-lg border py-14 text-center text-sm text-muted-foreground" data-testid="aca-nothing">
+            <p className="rounded-xl border border-dashed py-14 text-center text-sm text-muted-foreground" data-testid="aca-nothing">
               {t("nothing")}
             </p>
           ) : view.rows.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-lg border py-14 text-sm text-muted-foreground" data-testid="aca-no-match">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-14 text-sm text-muted-foreground" data-testid="aca-no-match">
               {t("noMatch")}
               {filtered && (
                 <button type="button" className={buttonVariants({ variant: "outline", size: "sm" })} onClick={() => go({ show: "", q: "" })}>
@@ -181,7 +181,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="min-w-0">
               <Table aria-label={t("tableLabel")} data-testid="aca-table">
                 <TableHeader>
                   <TableRow>

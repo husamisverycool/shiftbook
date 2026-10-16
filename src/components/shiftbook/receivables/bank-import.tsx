@@ -110,7 +110,7 @@ export function BankImport({ demo }: { demo: boolean }) {
           <ChevronLeftIcon className="size-4" />
           {t("bank")}
         </Link>
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
       </div>
       <ol className="flex flex-wrap items-center gap-2 text-sm" aria-label={t("steps")}>
         {STEPS.map((s, i) => (
@@ -176,7 +176,7 @@ export function BankImport({ demo }: { demo: boolean }) {
               {t("allImported")}
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="min-w-0">
               <Table aria-label={t("step.choose")} data-testid="choose-table">
                 <TableHeader>
                   <TableRow>
@@ -313,7 +313,7 @@ function MapStep({ preview, mapping, onChange, pending, onBack, onNext }: { prev
         <legend className="mb-2 text-sm font-medium">{t("amountsGiven")}</legend>
         <div className="grid gap-2 sm:grid-cols-3">
           {KINDS.map((k) => (
-            <label key={k} className="flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm has-[:checked]:border-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
+            <label key={k} className="flex cursor-pointer items-start gap-2 rounded-xl border bg-card p-3 text-sm has-[:checked]:border-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
               <input type="radio" name="amount-kind" className="mt-1" value={k} checked={a.kind === k} onChange={() => setKind(k)} />
               <span className="flex flex-col gap-0.5">
                 <span className="font-medium">{t(`kinds.${k}`)}</span>
@@ -346,7 +346,7 @@ function MapStep({ preview, mapping, onChange, pending, onBack, onNext }: { prev
             {t("previewEmpty")}
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="min-w-0">
             <Table aria-label={t("previewTitle")} data-testid="map-preview">
               <TableHeader>
                 <TableRow>

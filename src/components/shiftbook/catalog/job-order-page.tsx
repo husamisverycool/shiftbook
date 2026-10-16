@@ -27,6 +27,8 @@ import type { JobOrderPage } from "@/server/catalog/queries";
 import { inForce } from "@/server/catalog/versions";
 import { useCan } from "../abilities";
 import { longDate, money } from "../format";
+import { Facts, Page, PageHeader } from "../page";
+import { Status } from "../status";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
 import { RateCard } from "./rate-card";
@@ -65,60 +67,57 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
   ];
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink render={<Link href="/job-orders" />}>{t("breadcrumb")}</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{job.position}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <header className="flex flex-col gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+    <Page>
+      <PageHeader
+        context={
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink render={<Link href="/job-orders" />}>{t("breadcrumb")}</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{job.position}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        }
+        title={
+          <>
             {job.position}
             {job.shift && <span className="text-muted-foreground"> · {job.shift}</span>}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {job.clientName} · {job.worksite.name}, {job.worksite.city}, {job.worksite.state}
-          </p>
-        </div>
-        {mayChange ? (
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-              <PencilIcon />
-              {t("edit")}
-            </Button>
-            <Button size="sm" onClick={() => setAssigning(true)}>
-              <UserPlusIcon />
-              {t("assign")}
-            </Button>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">{t("readOnly")}</p>
-        )}
-      </header>
+          </>
+        }
+        status={
+          <Status tone={active.length >= job.headcount ? "success" : "info"} size="lg" data-testid="job-order-status">
+            {active.length >= job.headcount ? t("filled") : t("open")}
+          </Status>
+        }
+        description={mayChange ? `${job.clientName} · ${job.worksite.name}, ${job.worksite.city}, ${job.worksite.state}` : t("readOnly")}
+        actions={
+          mayChange && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                <PencilIcon />
+                {t("edit")}
+              </Button>
+              <Button size="sm" onClick={() => setAssigning(true)}>
+                <UserPlusIcon />
+                {t("assign")}
+              </Button>
+            </>
+          )
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-        <aside aria-label={t("details")} className="flex flex-col gap-3 rounded-lg border p-4 lg:self-start">
-          <h2 className="text-sm font-semibold">{t("details")}</h2>
-          <dl className="flex flex-col gap-2 text-sm">
-            {details.map(([k, v]) => (
-              <div key={k}>
-                <dt className="text-muted-foreground">{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-          </dl>
+        <aside aria-label={t("details")} className="flex flex-col gap-4 rounded-xl border bg-card p-4 lg:self-start">
+          <h2 className="text-base font-semibold">{t("details")}</h2>
+          <Facts items={details.map(([label, value]) => ({ label, value }))} />
         </aside>
 
         <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="min-w-0">
-          <TabsList>
+          <TabsList variant="line" className="h-10! w-full justify-start border-b">
             {TABS.map((k) => (
               <TabsTrigger key={k} value={k}>
                 {t(`tabs.${k}`)}
@@ -128,8 +127,8 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
           </TabsList>
 
           <TabsContent value="overview" className="flex flex-col gap-4 pt-4">
-            <section className="rounded-lg border p-4">
-              <h2 className="text-sm font-semibold">{t("ratesNow")}</h2>
+            <section className="rounded-xl border bg-card p-4">
+              <h2 className="text-base font-semibold">{t("ratesNow")}</h2>
               {current ? (
                 <p className="mt-1 text-sm">
                   {t("ratesLine", { pay: money(current.payRateCents, locale), bill: money(current.billRateCents, locale), from: longDate(current.effectiveFrom, locale) })}
@@ -142,8 +141,8 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
                 {t("openRates")}
               </Button>
             </section>
-            <section className="rounded-lg border p-4">
-              <h2 className="text-sm font-semibold">{t("assignmentsNow")}</h2>
+            <section className="rounded-xl border bg-card p-4">
+              <h2 className="text-base font-semibold">{t("assignmentsNow")}</h2>
               <p className="mt-1 text-sm">{t("assignmentsLine", { count: active.length, wanted: job.headcount })}</p>
               {nextEnd && <p className="mt-1 text-sm text-muted-foreground">{t("nextEnd", { date: longDate(nextEnd, locale) })}</p>}
               <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setTab("assignments")}>
@@ -177,7 +176,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
         />
       )}
       {assigning && <AssignForm jobOrderId={job.id} workers={options.workers} today={today} onClose={() => setAssigning(false)} />}
-    </div>
+    </Page>
   );
 }
 
@@ -246,7 +245,7 @@ function AssignmentsTab({ data, today, mayChange, onAssign }: { data: JobOrderPa
           </Button>
         </div>
       )}
-      <div className="rounded-lg border">
+      <div className="min-w-0">
         <Table aria-label={t("tabs.assignments")}>
           <TableHeader>
             <TableRow>

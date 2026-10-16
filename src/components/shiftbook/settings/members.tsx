@@ -78,7 +78,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
       <header className="flex flex-wrap items-end gap-3">
         <div className="mr-auto flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
         </div>
         {canManage && (
           <Button onClick={() => setInviting(true)} data-testid="invite-member">
@@ -133,7 +133,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
       </div>
 
       {shown.length === 0 ? (
-        <div className="flex flex-col items-start gap-2 rounded-lg border p-6">
+        <div className="flex flex-col items-start gap-2 rounded-xl border bg-card p-6">
           <p className="text-sm">{t("noMatch")}</p>
           <Button
             variant="outline"
@@ -148,7 +148,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
           </Button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="min-w-0">
           <Table data-testid="members">
             <TableHeader>
               <TableRow>

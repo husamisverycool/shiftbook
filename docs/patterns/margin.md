@@ -57,4 +57,7 @@ amount traceable to its lines and their explain strings. For the Owner and the a
 ## Never copy
 Stripe's, Brex's, Mercury's, TempWorks' or Bullhorn's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+The figures as plain type in a row over a hairline, as Stripe's app overview and Mercury's Insights set them (https://docs.stripe.com/stripe-apps/patterns/chart-layout, https://mercury.com/blog/introducing-insights); Overview, Overtime not billed and Cash floating as underline tabs.
+
 Deviations allowed: none

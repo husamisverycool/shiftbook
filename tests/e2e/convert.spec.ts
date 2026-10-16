@@ -69,7 +69,7 @@ for (const locale of ["en", "es"] as const) {
 
     // Review totals, approved by the Owner.
     await toTotals(page, m);
-    await expect(page.getByTestId("summary")).toContainText(locale === "en" ? "$" : "US$");
+    await expect(page.getByTestId("summary")).toContainText("$");
 
     // Files: the payroll file reconciles with the control totals shown; the invoice is a PDF.
     await approveAndCreateFiles(page, m);

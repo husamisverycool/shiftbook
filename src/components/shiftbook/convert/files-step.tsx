@@ -87,7 +87,7 @@ async function Version({ v }: { v: FilesVersion }) {
               {tc("download")}
             </a>
           </div>
-          <div className="rounded-lg border p-4">
+          <div className="rounded-xl border bg-card p-4">
             <h5 className="mb-3 text-sm font-medium">{t("controlTotals")}</h5>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
               <Figure label={t("workers")} value={String(ct.workers)} />
@@ -156,7 +156,7 @@ async function Version({ v }: { v: FilesVersion }) {
         {v.invoices.length === 0 ? (
           v.netZero.length === 0 && <p className="text-sm text-muted-foreground">{tr("noInvoices")}</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="min-w-0">
             <Table aria-label={t("invoicesTitle")}>
               <TableHeader>
                 <TableRow>

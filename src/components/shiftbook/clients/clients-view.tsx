@@ -7,23 +7,29 @@ import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "@/i18n/navigation";
 import type { ClientRow } from "@/server/clients/queries";
+import { EmptyState } from "../empty-state";
+import { Page, PageHeader, TableFrame } from "../page";
 
 export function ClientsView({ rows }: { rows: ClientRow[] }) {
   const t = useTranslations("clients");
   const ti = useTranslations("invoices");
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+    <Page>
+      <PageHeader title={t("title")} />
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground" data-testid="clients-empty">
-          <Building2Icon className="size-5" />
-          <p>{t("empty")}</p>
-          <Link href="/job-orders" className={buttonVariants({ variant: "link", size: "sm" })}>
-            {t("emptyLink")}
-          </Link>
-        </div>
+        <EmptyState
+          icon={Building2Icon}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+          action={
+            <Link href="/job-orders" className={buttonVariants({ size: "sm" })}>
+              {t("emptyLink")}
+            </Link>
+          }
+          testId="clients-empty"
+        />
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <TableFrame>
           <Table aria-label={t("title")} data-testid="clients-list">
             <TableHeader>
               <TableRow>
@@ -60,8 +66,8 @@ export function ClientsView({ rows }: { rows: ClientRow[] }) {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </TableFrame>
       )}
-    </div>
+    </Page>
   );
 }

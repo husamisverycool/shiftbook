@@ -111,7 +111,7 @@ test("the Owner invites a coordinator; they join, set up the authenticator, sign
   const recovery = await casey.getByTestId("recovery-code-item").allTextContents();
   await check(casey, "recovery codes");
   await casey.getByTestId("codes-saved").click();
-  await expect(casey).toHaveURL(/\/en\/convert$/);
+  await expect(casey).toHaveURL(/\/en$/);
 
   // Sign out from the agency menu.
   await casey.getByTestId("agency-menu").click();
@@ -142,7 +142,7 @@ test("the Owner invites a coordinator; they join, set up the authenticator, sign
   await casey.getByTestId("toggle-recovery").click();
   await casey.getByTestId("recovery-code").fill(recovery[0]!);
   await casey.getByTestId("code-submit").click();
-  await expect(casey).toHaveURL(/\/en\/convert$/);
+  await expect(casey).toHaveURL(/\/en$/);
   await expect(casey.getByText("You signed in with a recovery code. 9 codes are left.")).toBeVisible();
 
   // Too many wrong passwords from one place: even the right one waits. (The address comes from the
@@ -178,7 +178,7 @@ test("the accountant reads everything and sees no change buttons", async ({ brow
   const page = await signedOut(browser);
   await page.goto("/en/sign-in");
   await page.getByTestId("continue-accountant").click();
-  await expect(page).toHaveURL(/\/en\/convert$/);
+  await expect(page).toHaveURL(/\/en$/);
   await page.getByTestId("agency-menu").click();
   await expect(page.getByTestId("menu-person")).toHaveText("Morgan Ellis (demo) · Accountant");
   await page.keyboard.press("Escape");
@@ -206,7 +206,7 @@ test("a password reset through the demo mailbox, and the language preference", a
   const page = await signedOut(browser);
   await page.goto("/en/sign-in");
   await page.getByTestId("continue-billing").click();
-  await expect(page).toHaveURL(/\/en\/convert$/);
+  await expect(page).toHaveURL(/\/en$/);
   await page.goto("/en/settings/account");
   await expect(page.getByRole("heading", { level: 1, name: en.account.title })).toBeVisible();
   await check(page, "account");
@@ -243,7 +243,7 @@ test("a password reset through the demo mailbox, and the language preference", a
   await expect(other.getByTestId("password-error")).toHaveText(en.newPassword.mismatch);
   await other.getByTestId("confirm-password").fill("another long passphrase");
   await other.getByTestId("password-submit").click();
-  await expect(other).toHaveURL(/\/en\/convert$/);
+  await expect(other).toHaveURL(/\/en$/);
   // The link worked once.
   await other.goto(resetLink!);
   await expect(other.getByTestId("link-gone")).toBeVisible();

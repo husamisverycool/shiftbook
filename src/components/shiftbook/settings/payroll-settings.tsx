@@ -185,7 +185,7 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
     <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6">
       <header className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("title")}</p>
-        <h1 className="text-2xl font-semibold">{tp("title")}</h1>
+        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{tp("title")}</h1>
         <p className="text-sm text-muted-foreground">{tp("description")}</p>
       </header>
 
@@ -202,7 +202,7 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
         </Alert>
       )}
 
-      <section className="flex flex-col gap-4 rounded-lg border p-4" aria-labelledby="system-title">
+      <section className="flex flex-col gap-4 rounded-xl border bg-card p-4" aria-labelledby="system-title">
         <div className="flex flex-col gap-1">
           <h2 id="system-title" className="text-lg font-semibold">
             {tp("systemTitle")}
@@ -213,7 +213,7 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
           {EXPORT_FORMATS.map((f) => (
             <label
               key={f}
-              className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm has-checked:border-primary has-checked:bg-muted/50 has-disabled:cursor-not-allowed has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border bg-card p-3 text-sm has-checked:border-primary has-checked:bg-muted/50 has-disabled:cursor-not-allowed has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
               data-testid={`system-${f}`}
             >
               <input

@@ -108,7 +108,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
           {td("back")}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-[28px] leading-9 font-bold tracking-tight">
             {detail.clientName} · {t("periodOption", { start: longDate(detail.period.startsOn, locale), end: longDate(detail.period.endsOn, locale) })}
           </h1>
           <ApprovalStateBadge state={detail.state} />
@@ -151,7 +151,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
             const proposed = d.proposedInMinute !== null && d.proposedOutMinute !== null && d.proposedBreakMinutes !== null ? { inMinute: d.proposedInMinute, outMinute: d.proposedOutMinute, breakMinutes: d.proposedBreakMinutes } : null;
             const proposedMinutes = proposed ? proposed.outMinute - proposed.inMinute - proposed.breakMinutes : null;
             return (
-              <article key={d.id} className="flex flex-col gap-3 rounded-lg border p-4" data-testid="dispute-card">
+              <article key={d.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4" data-testid="dispute-card">
                 <h3 className="font-medium">
                   {d.workerName} · {shortDate(d.shift.workDate, locale)}
                 </h3>
@@ -209,7 +209,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
           {settled.length > 0 && (
             <ul className="flex flex-col gap-2 text-sm">
               {settled.map((d) => (
-                <li key={d.id} className="rounded-lg border px-4 py-2">
+                <li key={d.id} className="rounded-xl border bg-card px-4 py-2">
                   <span className="font-medium">
                     {d.workerName} · {shortDate(d.shift.workDate, locale)}
                   </span>
@@ -234,7 +234,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
         <h2 id="history-title" className="text-lg font-semibold">
           {td("historyTitle")}
         </h2>
-        <ol className="flex flex-col divide-y rounded-lg border" data-testid="history">
+        <ol className="flex flex-col divide-y border-y" data-testid="history">
           {timeline.map((item) => (
             <li key={item.key} className="flex flex-col gap-1 px-4 py-3 text-sm sm:flex-row sm:gap-6">
               <time className="w-44 shrink-0 text-muted-foreground tabular-nums">{when(item.at)}</time>

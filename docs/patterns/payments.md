@@ -47,4 +47,7 @@ Every payment received from a client, and recording one by hand (decision H2).
 ## Never copy
 Intuit's, Zoho's, TempWorks' or Stripe's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+Stripe's list: title with Record payment on the right, the filter buttons, the table full width with the status as a tinted badge (https://docs.stripe.com/invoicing/dashboard).
+
 Deviations allowed: none

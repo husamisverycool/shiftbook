@@ -302,7 +302,7 @@ for (const locale of ["en", "es"] as const) {
     await page.goto(`/${locale}/convert?period=${period}&step=hours`);
     await toExceptions(page, m);
     await toTotals(page, m);
-    await expect(page.getByTestId("summary")).toContainText(locale === "en" ? "$1,418.00" : "1418,00");
+    await expect(page.getByTestId("summary")).toContainText("$1,418.00");
 
     // A wrong rate is removed with a reason: it stays listed, and with no rate left the duty is open again.
     await page.goto(duty);

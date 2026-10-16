@@ -64,4 +64,7 @@ documents, and their employment (hire date, I-9 dates, assignments, end of emplo
 ## Never copy
 Toast's or Square's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+The header as Stripe's detail header: back link, the name with its status badge beside it; Profile, Employment and Documents as underline tabs.
+
 Deviations allowed: none
