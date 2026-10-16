@@ -61,7 +61,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
   ];
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

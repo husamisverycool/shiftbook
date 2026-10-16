@@ -93,6 +93,11 @@ Rules from the SPEC that apply to every interaction above:
 - Approval (Rippling): pending · approved · rejected. A rejected entry does not flow to payroll.
 - Dates outside the period are not editable (Rippling greys out inactive periods).
 - Alerts column / marker (Rippling): comments and warnings per entry.
+- Hours whose worker is assigned that day only at another client than the timesheet's, or whose
+  timesheet's client is unclear: held, naming that client (several: each, in name order). Editing
+  the row offers "Attach to {client}" for each named client, with the same required reason as Save;
+  the history keeps both clients. A Shiftbook rule (slice (b) plan, decision B5), not from the
+  references: a timesheet's hours never move to another client's bill by themselves.
 
 ## Not known from the references (ask the owner before building)
 - Order of the view-bar buttons (Airtable does not document it).

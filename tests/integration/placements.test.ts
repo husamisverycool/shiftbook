@@ -267,3 +267,19 @@ describe("fourth review: time-of-day dates, empty Excel headings, birth dates in
   });
 });
 
+
+describe("sixth review: id columns are not birth dates", () => {
+  it("keeps a Bullhorn file's placement ids and employee numbers when some look like old dates", async () => {
+    const csv = [
+      "Placement ID,Employee Number,Candidate First Name,Candidate Last Name,Company,Job Title,Shift,Start Date",
+      "10011999,10011990,Anita,Patel,Prairie Line Manufacturing (demo),Assembler,Day,10/19/2026",
+      "45000123,10011991,Marcus,Bell,Prairie Line Manufacturing (demo),Assembler,Second,10/19/2026",
+      "45000124,10011992,Robert,Jones,Prairie Line Manufacturing (demo),Assembler,Second,10/19/2026",
+    ].join("\n");
+    const { id, removed } = await inAgency((tx) => startImport(tx, actor, store, { source: "bullhorn", filename: "ids.csv", bytes: new TextEncoder().encode(csv) }, TODAY));
+    expect(removed).toEqual([]);
+    const view = await inAgency((tx) => importView(tx, store, id));
+    expect(view!.header).toEqual(["Placement ID", "Employee Number", "Candidate First Name", "Candidate Last Name", "Company", "Job Title", "Shift", "Start Date"]);
+    expect(view!.mapping.externalId).toBe("Placement ID");
+  });
+});

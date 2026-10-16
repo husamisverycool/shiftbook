@@ -161,7 +161,7 @@ export async function editAction(
   reasons: string[],
   note: string,
   attachToClientId: string | null = null,
-): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy"; client?: string; clientId?: string }> {
+): Promise<{ ok: true } | { ok: false; error: EditError | "period_busy"; clients?: { id: string; name: string }[] }> {
   const actor = currentActor();
   if (!ok(id, entryId) || !ok(ChangeSchema, change) || !ok(reasonsSchema, reasons) || !ok(text, note) || !ok(id.nullable(), attachToClientId)) return { ok: false, error: "invalid_value" };
   return edited(() => withAgency(actor.agencyId, (tx) => editEntry(tx, actor, entryId, change, reasons, note, { attachToClientId })));

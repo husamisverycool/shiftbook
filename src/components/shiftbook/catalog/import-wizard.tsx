@@ -34,7 +34,7 @@ export function ImportWizard({ view, history, options, step: asked }: { view: Im
   const step: Step = !view ? "source" : view.status === "done" ? "run" : (STEPS as readonly string[]).includes(asked ?? "") && asked !== "source" && asked !== "run" ? (asked as Step) : "map";
   const at = STEPS.indexOf(step);
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 md:px-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-6 px-4 py-6 md:px-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

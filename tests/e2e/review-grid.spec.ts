@@ -5,9 +5,23 @@
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { demoUuid } from "../../src/server/demo/dataset";
 
 const FIXTURE = "tests/e2e/fixtures/timeclock-messy-2026-10-05.csv";
+const CLOCK_HEADER = "Employee ID,Employee Name,Department,Date,Clock In,Clock Out,Break (min),Total Hours";
+const PRAIRIE = "Prairie Line Manufacturing (demo)";
+const HARBORVIEW = "Harborview Events & Hospitality (demo)";
+const PACIFIC = "Pacific Crest Distribution (demo)";
+
+/** Uploads a time-clock file written here (fictional demo workers) and opens the hours step. */
+async function uploadClock(page: Page, name: string, lines: string[]) {
+  await page.goto("/en/convert");
+  await page.getByRole("link", { name: "Start" }).first().click();
+  await page.getByTestId("file-input").setInputFiles({ name, mimeType: "text/csv", buffer: Buffer.from([CLOCK_HEADER, ...lines].join("\n")) });
+  await expect(page.getByTestId("document-row")).toHaveCount(1, { timeout: 60_000 });
+  await page.getByTestId("forward").click();
+}
 
 for (const locale of ["en", "es"] as const) {
   test(`review grid: fix, approve and reject flagged rows (${locale})`, async ({ page }) => {
@@ -126,4 +140,100 @@ test("review grid: add an entry by hand with a required reason", async ({ page }
   await expect(added).toContainText(h.manual);
   await expect(added).toContainText("4:00");
   await expect(added).toContainText(h.status.reviewed);
+});
+
+test("review grid: a timesheet whose client is unclear names each worker's client and attaches the hours there", async ({ page }) => {
+  const m = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
+  const h = m.convert.hours;
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  // One worker of each client: which client the timesheet is for cannot be told.
+  await uploadClock(page, "two-clients.csv", ['10413,"Patel, Anita",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.00', '20002,"Byrne, Conor",Events,10/08/2026,7:00 AM,3:30 PM,30,8.00']);
+
+  const anita = page.getByTestId("hours-row").filter({ hasText: "Anita Patel" });
+  await expect(anita).toContainText(h.reasons.timesheet_client_unclear_named.replace("{client}", PRAIRIE));
+  await anita.getByRole("button", { name: h.edit }).click();
+  // Attaching is offered at once (no failed save first); like saving, it needs a reason.
+  const attach = page.getByTestId("attach-other-client");
+  await expect(attach).toHaveText(h.attachTo.replace("{client}", PRAIRIE));
+  await expect(attach).toBeDisabled();
+  await page.getByTestId("reason-trigger").click();
+  await page.getByRole("menuitemcheckbox", { name: h.editReasons.confirmed_client }).click();
+  await page.keyboard.press("Escape");
+  // Saving without attaching is refused in words for a timesheet without a client.
+  await page.getByTestId("save-edit").click();
+  const alert = page.getByTestId("reason-row").getByRole("alert");
+  await expect(alert).toContainText(h.editErrors.timesheet_client_unclear.split(".")[0]!);
+  await expect(alert).toContainText(PRAIRIE);
+  await expect(alert).not.toContainText("not this timesheet's client");
+  await attach.click();
+  await expect(page.getByTestId("reason-row")).toHaveCount(0);
+
+  await page.getByRole("button", { name: /^All/ }).click();
+  const attached = page.getByTestId("hours-row").filter({ hasText: "Anita Patel" });
+  await expect(attached).toContainText(h.status.reviewed);
+  await attached.getByRole("button", { name: h.openSource }).click();
+  await expect(page.getByTestId("source-panel")).toContainText(h.historyAttachedUnclear.replace("{client}", PRAIRIE));
+  expect(errors).toEqual([]);
+});
+
+test("review grid: a worker at two other clients that day gets one attach button per client", async ({ page }) => {
+  const m = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
+  const h = m.convert.hours;
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  // Conor works at Harborview; he is also assigned at Pacific Crest that week.
+  await page.goto(`/en/job-orders/${demoUuid("job:ca-warehouse")}`);
+  await page.getByRole("button", { name: m.jobOrder.assign }).first().click();
+  const assign = page.getByRole("dialog");
+  await assign.getByLabel(m.assignments.col.worker).selectOption({ label: "Conor Byrne" });
+  await assign.getByLabel(m.assignments.col.start).fill("2026-10-05");
+  await assign.getByRole("button", { name: m.assignments.assignSubmit }).click();
+  await expect(assign).toContainText("Conor Byrne");
+  await assign.getByRole("button", { name: m.assignments.done }).click();
+
+  // A Prairie Line time clock (two of its workers) that also lists Conor.
+  await uploadClock(page, "prairie-week.csv", [
+    '10413,"Patel, Anita",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.00',
+    '10416,"Ruiz, Daniel",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.00',
+    '20002,"Byrne, Conor",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.00',
+  ]);
+  const conor = page.getByTestId("hours-row").filter({ hasText: "Conor Byrne" });
+  await conor.getByRole("button", { name: h.edit }).click();
+  await page.getByTestId("reason-trigger").click();
+  await page.getByRole("menuitemcheckbox", { name: h.editReasons.confirmed_client }).click();
+  await page.keyboard.press("Escape");
+  await page.getByTestId("save-edit").click();
+  const alert = page.getByTestId("reason-row").getByRole("alert");
+  await expect(alert).toContainText(HARBORVIEW);
+  await expect(alert).toContainText(PACIFIC);
+  // One button per client, in name order.
+  await expect(page.getByTestId("attach-other-client")).toHaveText([h.attachTo.replace("{client}", HARBORVIEW), h.attachTo.replace("{client}", PACIFIC)]);
+  await page.getByTestId("attach-other-client").filter({ hasText: PACIFIC }).click();
+  await expect(page.getByTestId("reason-row")).toHaveCount(0);
+  await page.getByRole("button", { name: /^All/ }).click();
+  await expect(page.getByTestId("hours-row").filter({ hasText: "Conor Byrne" })).toContainText(PACIFIC);
+});
+
+test("review grid: editing a row at 1024 px scrolls inside the grid, never the page sideways", async ({ page }) => {
+  const m = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
+  const h = m.convert.hours;
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await uploadClock(page, "wide-week.csv", ['10413,"Patel, Anita",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.25', '20002,"Byrne, Conor",Molding,10/08/2026,7:00 AM,3:30 PM,30,8.00']);
+  const conor = page.getByTestId("hours-row").filter({ hasText: "Conor Byrne" });
+  await conor.getByRole("button", { name: h.edit }).click();
+  await page.getByTestId("reason-trigger").click();
+  await page.getByRole("menuitemcheckbox", { name: h.editReasons.confirmed_client }).click();
+  await page.keyboard.press("Escape");
+  await page.getByTestId("save-edit").click();
+  const alert = page.getByTestId("reason-row").getByRole("alert");
+  await expect(alert).toContainText(HARBORVIEW);
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, window: window.innerWidth }));
+  expect(widths.page).toBeLessThanOrEqual(widths.window);
+  // The message and the attach button stay inside the visible part of the grid.
+  const frame = (await page.getByTestId("hours-grid-frame").boundingBox())!;
+  for (const box of [await alert.boundingBox(), await page.getByTestId("attach-other-client").boundingBox()]) {
+    expect(box!.x + box!.width).toBeLessThanOrEqual(frame.x + frame.width);
+  }
 });

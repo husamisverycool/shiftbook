@@ -243,7 +243,7 @@ describe("assignments", () => {
     const entry = late[0]!;
     const grid = await inAgency((tx) => hoursStep(tx, week));
     expect(grid.rows.find((r) => r.id === entry.id)!.otherClient).toEqual({ id: clientId("ma"), name: ma!.name });
-    const named = { ok: false, error: "assignment_at_other_client", client: ma!.name, clientId: clientId("ma") };
+    const named = { ok: false, error: "assignment_at_other_client", clients: [{ id: clientId("ma"), name: ma!.name }] };
     expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["confirmed_worker"], ""))).toEqual(named);
     // The everyday reason "Confirmed with the client" never moves hours to another client by itself.
     expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("anita-patel") }, ["misread_corrected", "confirmed_client"], "supervisor email"))).toEqual(named);
@@ -259,6 +259,52 @@ describe("assignments", () => {
     expect(logged!.after).toMatchObject({ attachedToClient: ma!.name, timesheetClient: il!.name });
     // Once attached, a later fix to the same entry keeps it there without attaching again.
     expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { outMinute: (moved!.outMinute ?? 900) - 15 }, ["confirmed_worker"], "left early"))).toEqual({ ok: true });
+    // Another worker on the line follows the usual rules: the earlier attach was for Anita's hours, not theirs.
+    expect(await inAgency((tx) => editEntry(tx, actor, entry.id, { workerId: workerId("conor-byrne") }, ["matched_worker"], ""))).toEqual(named);
+    const [still] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, entry.id)));
+    expect([still!.workerId, still!.assignmentId]).toEqual([workerId("anita-patel"), maAssignment!.id]);
+  });
+
+  it("a line attached to another client stays there when the timesheet's client later has an assignment that day too", async () => {
+    expect((await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-01-01", endDate: "2026-10-07" }))).ok).toBe(true);
+    expect((await inAgency((tx) => createAssignment(tx, actor, { workerId: workerId("anita-patel"), jobOrderId: jobOrderId("ma-server"), startDate: "2026-10-08", endDate: null }))).ok).toBe(true);
+    const [doc] = await inAgency((tx) => tx.select().from(sourceDocuments).where(eq(sourceDocuments.filename, SAMPLE)));
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "received" }).where(eq(sourceDocuments.id, doc!.id)));
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc!.id);
+    const [entry] = (await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.payPeriodId, week))))).filter((e) => e.workDate! >= "2026-10-08");
+    expect(await inAgency((tx) => editEntry(tx, actor, entry!.id, {}, ["confirmed_client"], "", { attachToClientId: clientId("ma") }))).toEqual({ ok: true });
+    const [attached] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, entry!.id)));
+    // Later she is also assigned at the timesheet's client from that day.
+    expect((await inAgency((tx) => createAssignment(tx, actor, { workerId: workerId("anita-patel"), jobOrderId: jobOrderId("il-assembler-day"), startDate: "2026-10-08", endDate: null }))).ok).toBe(true);
+    expect(await inAgency((tx) => editEntry(tx, actor, entry!.id, { outMinute: (attached!.outMinute ?? 900) - 15 }, ["confirmed_worker"], "left early"))).toEqual({ ok: true });
+    const [after] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, entry!.id)));
+    expect(after!.assignmentId).toBe(attached!.assignmentId);
+  });
+
+  it("a worker at two other clients that day: both are named, in name order, and the hours attach to the one chosen", async () => {
+    expect((await inAgency((tx) => setAssignmentDates(tx, actor, assignmentId("anita-patel"), { startDate: "2026-01-01", endDate: "2026-10-07" }))).ok).toBe(true);
+    expect((await inAgency((tx) => createAssignment(tx, actor, { workerId: workerId("anita-patel"), jobOrderId: jobOrderId("ma-server"), startDate: "2026-10-08", endDate: null }))).ok).toBe(true);
+    expect((await inAgency((tx) => createAssignment(tx, actor, { workerId: workerId("anita-patel"), jobOrderId: jobOrderId("ca-warehouse"), startDate: "2026-10-08", endDate: null }))).ok).toBe(true);
+    const [doc] = await inAgency((tx) => tx.select().from(sourceDocuments).where(eq(sourceDocuments.filename, SAMPLE)));
+    await inAgency((tx) => tx.update(sourceDocuments).set({ status: "received" }).where(eq(sourceDocuments.id, doc!.id)));
+    await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc!.id);
+    const [entry] = (await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.payPeriodId, week))))).filter((e) => e.workDate! >= "2026-10-08");
+    const names = await inAgency((tx) => tx.select({ id: clients.id, name: clients.name }).from(clients));
+    const [ca, ma] = [names.find((c) => c.id === clientId("ca"))!, names.find((c) => c.id === clientId("ma"))!];
+    expect(ma.name < ca.name).toBe(true);
+    expect(await inAgency((tx) => editEntry(tx, actor, entry!.id, {}, ["confirmed_client"], ""))).toEqual({ ok: false, error: "assignment_at_other_client", clients: [ma, ca] });
+    expect(await inAgency((tx) => editEntry(tx, actor, entry!.id, {}, ["confirmed_client"], "", { attachToClientId: clientId("ca") }))).toEqual({ ok: true });
+    const [moved] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, entry!.id)));
+    const [caAssignment] = await inAgency((tx) => tx.select().from(assignments).where(and(eq(assignments.workerId, workerId("anita-patel")), eq(assignments.jobOrderId, jobOrderId("ca-warehouse")))));
+    expect(moved!.assignmentId).toBe(caAssignment!.id);
+  });
+
+  it("attaching to a client where the worker has no assignment that day is refused, never sent to another client", async () => {
+    const [entry] = (await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, workerId("anita-patel")), eq(timeEntries.payPeriodId, week))))).filter((e) => e.assignmentId !== null);
+    const before = entry!.assignmentId;
+    expect(await inAgency((tx) => editEntry(tx, actor, entry!.id, {}, ["confirmed_client"], "", { attachToClientId: clientId("ma") }))).toEqual({ ok: false, error: "attach_client_unavailable" });
+    const [after] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, entry!.id)));
+    expect(after!.assignmentId).toBe(before);
   });
 
   it("a timesheet whose client is unclear never sends its hours to a client nobody named", async () => {
@@ -278,7 +324,8 @@ describe("assignments", () => {
     const [ma] = await inAgency((tx) => tx.select().from(clients).where(eq(clients.id, clientId("ma"))));
     const grid = await inAgency((tx) => hoursStep(tx, week));
     expect(grid.rows.find((r) => r.id === anita!.id)!.otherClient).toEqual({ id: clientId("ma"), name: ma!.name });
-    expect(await inAgency((tx) => editEntry(tx, actor, anita!.id, {}, ["misread_corrected"], ""))).toEqual({ ok: false, error: "assignment_at_other_client", client: ma!.name, clientId: clientId("ma") });
+    // Its own wording: the timesheet has no client to be "not" at.
+    expect(await inAgency((tx) => editEntry(tx, actor, anita!.id, {}, ["misread_corrected"], ""))).toEqual({ ok: false, error: "timesheet_client_unclear", clients: [{ id: clientId("ma"), name: ma!.name }] });
     expect(await inAgency((tx) => editEntry(tx, actor, anita!.id, {}, ["misread_corrected"], "", { attachToClientId: clientId("ma") }))).toEqual({ ok: true });
     const [logged] = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityId, anita!.id), eq(auditEvents.action, "update"))));
     expect(logged!.after).toMatchObject({ attachedToClient: ma!.name, timesheetClient: null });
@@ -290,7 +337,7 @@ describe("assignments", () => {
     await readStoredDocument({ withAgency: app.withAgency, store, imageReader: noImages }, actor, doc!.id);
     const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.sourceDocumentId, doc!.id), eq(timeEntries.workerId, workerId("anita-patel")))));
     const r = await inAgency((tx) => editEntry(tx, actor, entry!.id, { workerId: workerId("conor-byrne") }, ["misread_corrected", "confirmed_client"], ""));
-    expect(r).toMatchObject({ ok: false, error: "assignment_at_other_client", clientId: clientId("ma") });
+    expect(r).toMatchObject({ ok: false, error: "assignment_at_other_client", clients: [{ id: clientId("ma") }] });
   });
 
   it("never moves an assignment's dates so that paid hours fall outside them", async () => {

@@ -96,7 +96,7 @@ export function ConvertFrame(props: {
 
   return (
     <Working.Provider value={{ working: working !== null && pending }}>
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6">
+      <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-8 px-4 py-6">
         <div className="flex items-center justify-between gap-4">
           <nav aria-label={t("steps.upload")} className="min-w-0">
             {/* Narrow containers: the trail collapses to one back link naming the previous step. */}

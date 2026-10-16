@@ -90,3 +90,13 @@ Screens: `slice-b/b8-import-source.png`, `slice-b/b8b-import-no-header.png`, `sl
   - The preview's three lists sit one under another rather than in tabs.
   - No find-and-replace or cell editing; at most 2,000 rows per import.
   - Imports cannot be deleted afterwards, and drafts cannot be shared by link.
+
+## Review hours — hours at another client — `docs/patterns/review.md` (Rippling, Airtable)
+Screens: `slice-b/b13-hours-attach-two-clients.png` (1440 px), `slice-b/b14-hours-attach-1024.png` (1024 px).
+- ✓ A held row names where the worker's assignment is that day; editing it offers "Attach to
+  {client}" for each named client (two here, in name order), with the same required reason as Save.
+- ✓ The refusal names every client and wraps inside the grid's visible width; at 1024 px the grid
+  scrolls inside its frame and the page never scrolls sideways (browser test).
+- Differences:
+  - The attach control is a Shiftbook rule (slice (b) plan, decision B5), recorded in the pattern
+    file's States; the references have no notion of a timesheet's client.

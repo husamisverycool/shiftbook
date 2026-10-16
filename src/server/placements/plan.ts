@@ -8,6 +8,7 @@ import { parseDollars } from "../../lib/amounts";
 import { parseIsoDateText } from "../intake/parse";
 import { matchWorker, type RosterWorker } from "../intake/names";
 import type { Mapping, Source } from "./fields";
+import { MONTH_NAME, MONTH_NUMBER, WEEKDAY } from "./sensitive";
 
 export interface Catalog {
   workers: RosterWorker[];
@@ -92,30 +93,20 @@ export function dateOrderOf(values: string[]): DateOrder {
 const MAX_DATE_TEXT = 80;
 /**
  * An optional time of day (and time zone) after a date, as spreadsheets and databases write
- * date-time cells: "10/19/2026 12:00:00 AM", "2026-10-19 00:00:00 UTC", "2026-10-19T07:00:00-05:00".
- * Every repeat is bounded and the whole pattern anchored, so no cell can make reading slow.
+ * date-time cells: "10/19/2026 12:00:00 AM", "2026-10-19 00:00:00 UTC", "2026-10-19T07:00:00-05:00",
+ * "2026-10-19 07:00 America/Chicago". Every repeat is bounded and the whole pattern anchored, so no
+ * cell can make reading slow.
  */
-const TIME_PART = String.raw`(?:(?:\s{1,3}|T)(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?(?:\s{0,3}[ap]\.?\s?m\.?)?(?:\s{0,3}(?:z|utc|gmt|[a-z]{2,5}))?(?:\s{0,3}[+-]\d{2}(?::?\d{2})?)?)?`;
+const TIME_PART = String.raw`(?:(?:\s{1,3}|T)(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?(?:\s{0,3}[ap]\.?\s?m\.?)?(?:\s{0,3}(?:z|utc|gmt|[a-z]{2,14}(?:/[a-z0-9_+\-]{1,30}){1,2}|[a-z]{2,5}))?(?:\s{0,3}[+-]\d{2}(?::?\d{2})?)?)?`;
+/** A year after a month name: four digits, or two ("19-Oct-26", "Oct 19 '26"). */
+const NAMED_YEAR = String.raw`['’]?(\d{4}|\d{2})`;
 const NUMERIC = new RegExp(String.raw`^(\d{1,2})([/.\-])(\d{1,2})\2(\d{4}|\d{2})${TIME_PART}$`, "i");
 const YEAR_FIRST = new RegExp(String.raw`^(\d{4})([/.\-])(\d{1,2})\2(\d{1,2})${TIME_PART}$`, "i");
-const NAMED_DAY_FIRST = new RegExp(String.raw`^(\d{1,2})(?:st|nd|rd|th)?[\s\-/.]{0,3}(?:de\s{1,3})?([a-zñé]{3,10})\.?[\s\-/.,]{0,3}(?:de\s{1,3})?(\d{4})${TIME_PART}$`, "i");
-const NAMED_MONTH_FIRST = new RegExp(String.raw`^([a-zñé]{3,10})\.?[\s\-/.]{0,3}(\d{1,2})(?:st|nd|rd|th)?(?:,\s{0,3}|\s{1,3}|-)(\d{4})${TIME_PART}$`, "i");
-const MONTH_NUMBER: Record<string, number> = Object.fromEntries(
-  [
-    ["jan january ene enero", 1],
-    ["feb february febrero", 2],
-    ["mar march marzo", 3],
-    ["apr april abr abril", 4],
-    ["may mayo", 5],
-    ["jun june junio", 6],
-    ["jul july julio", 7],
-    ["aug august ago agosto", 8],
-    ["sep sept september septiembre setiembre", 9],
-    ["oct october octubre", 10],
-    ["nov november noviembre", 11],
-    ["dec december dic diciembre", 12],
-  ].flatMap(([names, n]) => String(names).split(" ").map((name) => [name, Number(n)])),
-);
+// "19 Oct 2026", "19-Oct-26", "Mon 19 Oct 2026", "19 de octubre de 2026", "19 octobre 2026", "19. Oktober 2026"
+const NAMED_DAY_FIRST = new RegExp(String.raw`^${WEEKDAY}(\d{1,2})(?:st|nd|rd|th)?[\s\-/.]{0,3}(?:de\s{1,3})?${MONTH_NAME}[\s\-/.,]{0,3}(?:de\s{1,3})?${NAMED_YEAR}${TIME_PART}$`, "i");
+// "Oct 19, 2026", "Mon, Oct 19, 2026", "Oct 19 '26" — a dash only before a four-digit year, so "Oct 19-26" stays a range of days
+const NAMED_MONTH_FIRST = new RegExp(String.raw`^${WEEKDAY}${MONTH_NAME}[\s\-/.]{0,3}(\d{1,2})(?:st|nd|rd|th)?(?:,\s{0,3}|\s{1,3}|-(?=\d{4}))${NAMED_YEAR}${TIME_PART}$`, "i");
+const monthOf = (name: string) => MONTH_NUMBER.get(name.toLowerCase());
 
 /** Year, month, day → ISO when it is a real date. A two-digit year is 20yy below 50 and 19yy from 50. */
 function isoOf(year: string, month: number, day: number): string | null {
@@ -123,18 +114,25 @@ function isoOf(year: string, month: number, day: number): string | null {
   return parseIsoDateText(`${String(y).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
 }
 
-/** A start or end date as written → ISO: year first and month names as they are; otherwise month or day first, as the file uses. */
+/**
+ * A start or end date as written → ISO: year first and month names (English, Spanish, French,
+ * German; a weekday before, a two-digit year) as they are; otherwise month or day first, as the
+ * file uses.
+ */
 export function parseDate(text: string, order: DateOrder): string | null {
-  const t = text.trim();
-  if (t.length > MAX_DATE_TEXT) return null;
+  const trimmed = text.trim();
+  if (trimmed.length > MAX_DATE_TEXT) return null;
+  const t = trimmed.normalize("NFKC");
   const y = YEAR_FIRST.exec(t);
   if (y) return isoOf(y[1]!, Number(y[3]), Number(y[4]));
   const n = NUMERIC.exec(t);
   if (n) return order === "month_first" ? isoOf(n[4]!, Number(n[1]), Number(n[3])) : isoOf(n[4]!, Number(n[3]), Number(n[1]));
   const d = NAMED_DAY_FIRST.exec(t);
-  if (d && MONTH_NUMBER[d[2]!.toLowerCase()]) return isoOf(d[3]!, MONTH_NUMBER[d[2]!.toLowerCase()]!, Number(d[1]));
+  const dayFirstMonth = d ? monthOf(d[2]!) : undefined;
+  if (d && dayFirstMonth) return isoOf(d[3]!, dayFirstMonth, Number(d[1]));
   const m = NAMED_MONTH_FIRST.exec(t);
-  if (m && MONTH_NUMBER[m[1]!.toLowerCase()]) return isoOf(m[3]!, MONTH_NUMBER[m[1]!.toLowerCase()]!, Number(m[2]));
+  const monthFirstMonth = m ? monthOf(m[1]!) : undefined;
+  if (m && monthFirstMonth) return isoOf(m[3]!, monthFirstMonth, Number(m[2]));
   return null;
 }
 

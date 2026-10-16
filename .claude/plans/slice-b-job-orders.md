@@ -33,6 +33,15 @@ pattern files below (copied from the research notes, every claim with its URL).
   number in a removed heading hidden; a timesheet whose client is unclear also needs the explicit
   "Attach to {client}"; once attached, later fixes keep the entry there; the history shows the
   attach in the reader's language. 480 tests, 16 browser tests pass.
+- Sixth review fixed: id columns are no longer removed as birth dates (dates must be most of the
+  cells with digits; 8-digit numbers and short spaced numbers count only next to a birth word);
+  "L4" only beside id words; every digit in a removed heading hidden (except the "4" of "Last 4");
+  more birth-date spellings in free text ("dob01/02/1990", "FN …", "YOB 1990", "geb …", named time
+  zones); start dates like "19-Oct-26", "Mon, Oct 19, 2026" and French and German months read; a
+  timesheet with no client says so, names the client and offers the attach before a failed save;
+  a worker at two other clients gets one "Attach to" per client; an attach to a client with no
+  assignment that day is refused (the hours stay put); the kept client holds only for the same
+  worker; pages no longer scroll sideways at 1024 px. 538 tests and 19 browser tests pass.
 
 ## Goal (what the owner can do at the end)
 From a sidebar on every page: open **Job orders**, see them as a list grouped by client, open one

@@ -6,14 +6,16 @@
  * - any cell holds a nine-digit number with or without separators (as `extraction/redact.ts` finds
  *   them on images) — a nine-digit id column is removed too, which is the safe way to be wrong; a
  *   ZIP+4 code (five digits, then four) is not that shape;
- * - most of its dates are at least 14 years before today (birth dates, as redact.ts treats them),
- *   in any common way of writing a date — except the start and end dates the import recognises,
- *   where an old placement is just history;
- * - any cell gives a date next to a birth word ("DOB 01/02/1990").
+ * - most of its cells are dates and most of those are at least 14 years before today (birth dates,
+ *   as redact.ts treats them), in any common way of writing a date — except the start and end
+ *   dates the import recognises, where an old placement is just history. An 8-digit number
+ *   ("19900102", "10011999") and a date of short numbers with spaces ("8 8 10") are as often an id
+ *   or hours, so they count as dates only when the heading has a birth word;
+ * - any cell gives a date next to a birth word ("DOB 01/02/1990", "dob01/02/1990"), or right after
+ *   a short label that means one only then ("FN 02/01/1990", "YOB 1990", "geb 02.01.1990").
  * A file whose first row holds an SSN or a date has no header row and is refused before anything
- * is kept. What is kept about a removed column is its position, its heading with anything shaped
- * like an SSN or a date hidden, and the reason. The stored copy, previews, mappings and logs only
- * ever see what is left.
+ * is kept. What is kept about a removed column is its position, its heading with every digit
+ * hidden, and the reason. The stored copy, previews, mappings and logs only ever see what is left.
  */
 import { floorDiv, mod } from "@shiftbook/rules";
 
@@ -22,10 +24,13 @@ const WORDS = new Set([
   "ssn", "ssno", "ssnum", "ssnumber", "socsec", "last4", "itin", "nss", "curp",
   "dob", "born", "birth", "birthdate", "birthdates", "birthday", "bday",
   "nacimiento", "nac", "fnac", "nacido", "nacida", "cumpleaños", "cumpleanos", "naissance", "naiss", "geboren",
-  "yob", "bdate", "l4", "lastfour",
+  "yob", "bdate", "lastfour",
 ]);
-/** Short forms that mean an SSN or a tax id only in a heading made of them and id words ("SS #", "Employee TIN"). */
-const SHORT = new Set(["ss", "sin", "tin"]);
+/**
+ * Short forms that mean an SSN or a tax id only in a heading made of them and id words ("SS #",
+ * "Employee TIN", "Employee L4"), never beside other words ("L4 Hours", "Level L4").
+ */
+const SHORT = new Set(["ss", "sin", "tin", "l4"]);
 const ID_WORDS = new Set(["no", "num", "nbr", "number", "numero", "número", "id", "employee", "emp", "worker", "candidate", "last", "4", "four"]);
 /** Pieces that name one anywhere in the heading once it is squeezed to letters. */
 const PIECES = ["socialsecurity", "socialinsurance", "taxid", "taxpayer", "dateofbirth", "birthdate", "segurosoc", "fechadenacimiento", "fechanac", "cumplea", "datedenaissance", "geburt", "gebdatum"];
@@ -51,39 +56,64 @@ const SSN_SOURCE = String.raw`(?<!\d)(?:\d{3}${SEP}\d{2}${SEP}?\d{4}|\d{9})(?!\d
 const SSN_SHAPED = new RegExp(SSN_SOURCE);
 const ssnIn = (text: string) => SSN_SHAPED.test(text.normalize("NFKC"));
 
-const MONTHS = new Set(
-  (
-    "jan january feb february mar march apr april may jun june jul july aug august sep sept september oct october nov november dec december " +
-    "ene enero febrero marzo abr abril mayo junio julio ago agosto septiembre setiembre octubre noviembre dic diciembre " +
-    "janvier janv février fevrier févr fevr mars avril avr mai juin juillet juil août aout septembre octobre novembre décembre decembre déc " +
-    "januar jänner jaenner februar märz maerz juni juli oktober okt dezember dez"
-  ).split(" "),
+/**
+ * Month names and their common short forms in English, Spanish, French and German → the month's
+ * number. The import's date reading (`plan.ts`) uses the same list.
+ */
+export const MONTH_NUMBER: ReadonlyMap<string, number> = new Map(
+  [
+    "jan january ene enero janvier janv januar jänner jaenner",
+    "feb february febrero février fevrier févr fevr fév fev februar",
+    "mar march marzo mars märz maerz mär",
+    "apr april abr abril avril avr",
+    "may mayo mai",
+    "jun june junio juin juni",
+    "jul july julio juillet juil juli",
+    "aug august ago agosto août aout",
+    "sep sept september septiembre setiembre septembre",
+    "oct october octubre octobre oktober okt",
+    "nov november noviembre novembre",
+    "dec december dic diciembre décembre decembre déc dezember dez",
+  ].flatMap((names, i) => names.split(" ").map((name) => [name, i + 1] as const)),
 );
 // Every repeat below is bounded, so a long cell can never make the search slow.
 const DAY = String.raw`(\d{1,2})(?:st|nd|rd|th)?`;
 const YEAR = String.raw`['’]?(\d{4}|\d{2})`;
-const NAME = String.raw`([a-zñéèêëàâäöüûôîïç]{3,11})\.?`;
+/** A month's name (checked against MONTH_NUMBER), with an optional dot; one capture group. */
+export const MONTH_NAME = String.raw`([a-zñéèêëàâäöüûôîïç]{3,11})\.?`;
+const NAME = MONTH_NAME;
 const DSEP = String.raw`[\s\-/.]`;
-/** An optional weekday before a date written with a month name ("Tue Jan 02 1990"). */
-const WEEKDAY = String.raw`(?:(?:mon|tue|wed|thu|fri|sat|sun|lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-zé]{0,7}\.?,?\s{1,3})?`;
+/** An optional weekday before a date written with a month name ("Tue Jan 02 1990", "Mon, Oct 19, 2026"); no capture group. */
+export const WEEKDAY = String.raw`(?:(?:mon|tue|wed|thu|fri|sat|sun|lun|mar|mi[eé]|jue|vie|s[aá]b|dom)[a-zé]{0,7}\.?,?\s{1,3})?`;
+/** A time zone: a short name ("UTC", "EST") or a named one ("America/Chicago", "America/Argentina/Buenos_Aires"). */
+const ZONE = String.raw`(?:z|utc|gmt|[a-z]{2,14}(?:/[a-z0-9_+\-]{1,30}){1,2}|[a-z]{2,5})`;
 /**
  * An optional time of day after a date, with an optional time zone, as spreadsheets and databases
- * write date-time cells ("1/2/1990 12:00:00 AM", "1990-01-02 00:00:00 UTC", "… GMT-0500 (Eastern
- * Standard Time)").
+ * write date-time cells ("1/2/1990 12:00:00 AM", "1990-01-02 00:00:00 UTC", "… America/Chicago",
+ * "… GMT-0500 (Eastern Standard Time)").
  */
-const TIME = String.raw`(?:(?:\s{1,3}|t)\d{1,2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:\s{0,3}[ap]\.?\s?m\.?)?(?:\s{0,3}(?:z|utc|gmt|[a-z]{2,5}))?(?:\s{0,3}[+-]\d{2}(?::?\d{2})?)?(?:\s{0,3}\([^)]{0,60}\))?)?`;
-const isMonth = (name: string | undefined) => MONTHS.has((name ?? "").toLowerCase());
+const TIME = String.raw`(?:(?:\s{1,3}|t)\d{1,2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:\s{0,3}[ap]\.?\s?m\.?)?(?:\s{0,3}${ZONE})?(?:\s{0,3}[+-]\d{2}(?::?\d{2})?)?(?:\s{0,3}\([^)]{0,60}\))?)?`;
+const isMonth = (name: string | undefined) => MONTH_NUMBER.has((name ?? "").toLowerCase());
 const dayOk = (d: string | undefined) => Number(d) >= 1 && Number(d) <= 31;
 const monthOk = (m: string | undefined) => Number(m) >= 1 && Number(m) <= 12;
-/** The ways a date is commonly written; each gives the year (and enough to check it is a date). */
-const DATE_FORMS: { source: string; year: (m: RegExpExecArray) => string | null }[] = [
+/** Numbers with spaces between them are a date on their own only with a year from 1900 to 2099 ("01 02 1990", not "8 8 10"). */
+const shortSpaced = (separator: string | undefined, year: string | undefined) => /\s/.test(separator ?? "") && !/^(?:19|20)\d{2}$/.test(year ?? "");
+/**
+ * The ways a date is commonly written; each gives the year (and enough to check it is a date).
+ * `loose` forms are as often a number (an id, hours): they count as a date only next to a birth word.
+ */
+const DATE_FORMS: { source: string; year: (m: RegExpExecArray) => string | null; loose?: (m: RegExpExecArray) => boolean }[] = [
   // 01/02/1990, 1/2/90, 02.01.1990, 01-02-1990, 01 02 1990 (one separator throughout; month or day first: only the year matters)
-  { source: String.raw`(\d{1,2})([/.\-]|\s{1,2})(\d{1,2})\2${YEAR}${TIME}`, year: (m) => (dayOk(m[1]) && dayOk(m[3]) && (monthOk(m[1]) || monthOk(m[3])) ? m[4]! : null) },
+  {
+    source: String.raw`(\d{1,2})([/.\-]|\s{1,2})(\d{1,2})\2${YEAR}${TIME}`,
+    year: (m) => (dayOk(m[1]) && dayOk(m[3]) && (monthOk(m[1]) || monthOk(m[3])) ? m[4]! : null),
+    loose: (m) => shortSpaced(m[2], m[4]),
+  },
   // 1990/01/02, 1990-01-02, 1990 01 02, 1990-01-02T00:00:00Z
-  { source: String.raw`(\d{4})([/.\-]|\s{1,2})(\d{1,2})\2(\d{1,2})${TIME}`, year: (m) => (monthOk(m[3]) && dayOk(m[4]) ? m[1]! : null) },
-  // 19900102, and 01021990 (month or day first)
-  { source: String.raw`((?:19|20)\d{2})(\d{2})(\d{2})`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null) },
-  { source: String.raw`(\d{2})(\d{2})((?:19|20)\d{2})`, year: (m) => (dayOk(m[1]) && dayOk(m[2]) && (monthOk(m[1]) || monthOk(m[2])) ? m[3]! : null) },
+  { source: String.raw`(\d{4})([/.\-]|\s{1,2})(\d{1,2})\2(\d{1,2})${TIME}`, year: (m) => (monthOk(m[3]) && dayOk(m[4]) ? m[1]! : null), loose: (m) => shortSpaced(m[2], m[1]) },
+  // 19900102, and 01021990 (month or day first): as often an id, so only next to a birth word
+  { source: String.raw`((?:19|20)\d{2})(\d{2})(\d{2})`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null), loose: () => true },
+  { source: String.raw`(\d{2})(\d{2})((?:19|20)\d{2})`, year: (m) => (dayOk(m[1]) && dayOk(m[2]) && (monthOk(m[1]) || monthOk(m[2])) ? m[3]! : null), loose: () => true },
   // 2 Jan 1990, 02-Jan-1990, 2 de enero de 1990, 2 janvier 1990, 2. Januar 1990, Tue, 02 Jan 1990 00:00:00 GMT
   { source: String.raw`${WEEKDAY}${DAY}${DSEP}{0,3}(?:de\s{1,3})?${NAME}[\s\-/.,]{0,3}(?:de\s{1,3})?${YEAR}${TIME}`, year: (m) => (isMonth(m[2]) && dayOk(m[1]) ? m[3]! : null) },
   // Jan 2, 1990; January 2 1990; Jan-02-1990; Jan 2 '90; Tue Jan 02 1990 — not a month and year
@@ -94,8 +124,10 @@ const DATE_FORMS: { source: string; year: (m: RegExpExecArray) => string | null 
   // 1990年1月2日
   { source: String.raw`(\d{4})\s{0,2}年\s{0,2}(\d{1,2})\s{0,2}月\s{0,2}(\d{1,2})\s{0,2}日`, year: (m) => (monthOk(m[2]) && dayOk(m[3]) ? m[1]! : null) },
 ];
-const WHOLE = DATE_FORMS.map((f) => ({ re: new RegExp(`^${f.source}$`, "i"), year: f.year }));
+const WHOLE = DATE_FORMS.map((f) => ({ re: new RegExp(`^${f.source}$`, "i"), year: f.year, loose: f.loose }));
 const INSIDE = DATE_FORMS.map((f) => ({ re: new RegExp(String.raw`(?<![\da-zñ])${f.source}(?![\da-zñ])`, "gi"), year: f.year }));
+/** A date starting exactly where the search is put (`lastIndex`), for dates right after a label. */
+const AT = DATE_FORMS.map((f) => ({ re: new RegExp(String.raw`${f.source}(?![\da-zñ])`, "iy"), year: f.year }));
 /** A cell longer than this is not a date (and is not run through the whole-cell patterns). */
 const MAX_DATE_CELL = 120;
 
@@ -106,13 +138,16 @@ function fullYear(text: string, thisYear: number): number {
   return yy > thisYear % 100 ? 1900 + yy : 2000 + yy;
 }
 
-/** The year of a cell that is a date, however it is written; null when it is not one. */
-function dateYear(text: string, thisYear: number): number | null {
+/**
+ * The year of a cell that is a date, however it is written; null when it is not one. An 8-digit
+ * number or short numbers with spaces are a date only next to a birth word (`nearBirthWord`).
+ */
+function dateYear(text: string, thisYear: number, nearBirthWord = false): number | null {
   const t = text.normalize("NFKC").trim().toLowerCase();
   if (t.length > MAX_DATE_CELL) return null;
   for (const form of WHOLE) {
     const m = form.re.exec(t);
-    const y = m ? form.year(m) : null;
+    const y = m && (nearBirthWord || !form.loose?.(m)) ? form.year(m) : null;
     if (y) return fullYear(y, thisYear);
   }
   return null;
@@ -127,15 +162,54 @@ function yearsInside(text: string, thisYear: number): number[] {
   }));
 }
 
-/** Words that say a date nearby is a birth date. */
-const BIRTH_WORD =
-  /(?<![a-zñ])(?:d\.?\s?o\.?\s?b(?![a-z])|born(?![a-z])|birth[a-z]*|b-?day(?![a-z])|f\.?\s?nac|f\.\s?n\.(?![a-z])|nac(?![a-zñ])|nac(?:id[oa]s?|i[oó]|imiento)|cumplea[a-zñ]*|naissance|naiss\.|n[ée]e?\s{1,3}le(?![a-z])|geboren|geburt[a-z]*|geb\.)/i;
+/** Words that say a date nearby is a birth date ("Geb.-Nr.", a building number, is not one). */
+const BIRTH_WORDS = String.raw`d\.?\s?o\.?\s?b(?![a-z])|born(?![a-z])|birth[a-z]*|b['’\-]?day(?![a-z])|b-?date(?![a-z])|f\.?\s?nac|f\.\s?n\.(?![a-z])|nac(?![a-zñ])|nac(?:id[oa]s?|i[oó]|imiento)|cumplea[a-zñ]*|naissance|naiss\.|n[ée]e?\s{1,3}le(?![a-z])|geboren|geburt[a-z]*|geb\.(?![\s\-]{0,3}nr)`;
+const BIRTH_WORD = new RegExp(String.raw`(?<![a-zñ])(?:${BIRTH_WORDS})`, "i");
+/** Letters, accented ones included, on lowercased text (so "Gebühr" is one word). */
+const LETTER = "a-zà-öø-ÿ";
+/**
+ * A birth word, or a short label that means a birth date only with a date right after it ("FN",
+ * "YOB" with a year alone, "geb" without its dot), then the spaces or marks before the date. Also
+ * finds a date written against its label ("dob01/02/1990").
+ */
+const LABEL = new RegExp(String.raw`(?<![${LETTER}\d])(?:${BIRTH_WORDS}|(?<yob>y\.?\s?o\.?\s?b\.?)|f\.?\s?n\.?|geb\.?(?:\s{1,3}am)?)(?![${LETTER}])[\s:#=.,\-]{0,3}`, "gi");
+const YEAR_ALONE = /(?:19|20)\d{2}(?!\d)/y;
+/** Every date has a digit within its first 31 characters (a weekday, a month name and spaces come first at most). */
+const DIGIT_SOON = /\D{0,30}\d/y;
 
-function birthDates(values: string[], thisYear: number): boolean {
-  if (values.some((v) => BIRTH_WORD.test(v) && yearsInside(v, thisYear).length > 0)) return true;
-  const years = values.map((v) => dateYear(v, thisYear)).filter((y): y is number => y !== null);
+/** True when a date comes right after a birth word or label in the text. */
+function labelledDate(text: string): boolean {
+  const t = text.normalize("NFKC").toLowerCase();
+  for (const label of t.matchAll(LABEL)) {
+    const at = label.index + label[0].length;
+    DIGIT_SOON.lastIndex = at;
+    if (!DIGIT_SOON.test(t)) continue;
+    YEAR_ALONE.lastIndex = at;
+    if (label.groups?.yob && YEAR_ALONE.test(t)) return true;
+    for (const form of AT) {
+      form.re.lastIndex = at;
+      const m = form.re.exec(t);
+      if (m && form.year(m)) return true;
+    }
+  }
+  return false;
+}
+
+/** A cell that gives a birth date: a date anywhere beside a birth word, or right after a label. */
+const birthDateIn = (text: string, thisYear: number) => (BIRTH_WORD.test(text) && yearsInside(text, thisYear).length > 0) || labelledDate(text);
+
+/**
+ * Most cells with digits are dates (next to the heading's birth word, an 8-digit number counts) and
+ * most of those are old. Placeholders without digits ("n/a", "unknown") neither hide a birth-date
+ * column nor make an id column look like one.
+ */
+function birthDates(heading: string, values: string[], thisYear: number): boolean {
+  if (values.some((v) => birthDateIn(v, thisYear))) return true;
+  const nearBirthWord = BIRTH_WORD.test(heading.normalize("NFKC"));
+  const years = values.map((v) => dateYear(v, thisYear, nearBirthWord)).filter((y): y is number => y !== null);
+  const withDigits = values.filter((v) => /\d/.test(v)).length;
   const old = years.filter((y) => y <= thisYear - 14).length;
-  return old > 0 && old * 2 > years.length;
+  return years.length * 2 > withDigits && old * 2 > years.length;
 }
 
 /** A spreadsheet's column letter: 0 → A, 26 → AA. */
@@ -149,14 +223,17 @@ function columnLetter(index: number): string {
   return out;
 }
 
+/** The "4" that names a column of last four digits ("SSN Last 4", "SSN4", "L4"): part of its name, not a value. */
+const NAMES_LAST_FOUR = /(?:last|(?<![a-z])l|ssn)[\s_\-]?$/i;
+
 /**
- * A removed column's heading with anything shaped like an SSN or a date hidden, and every other run
- * of two or more digits too: the column is gone, so nothing in its heading needs its digits.
+ * A removed column's heading with anything shaped like an SSN or a date hidden, and every other
+ * digit too ("DOB 1/2" → "DOB •••/•••"): the column is gone, so nothing in its heading needs them.
  */
 function masked(heading: string): string {
   let out = heading.normalize("NFKC").slice(0, 300).replace(new RegExp(SSN_SOURCE, "g"), "•••");
   for (const form of INSIDE) out = out.replace(form.re, (...m) => (form.year(m as unknown as RegExpExecArray) ? "•••" : m[0]));
-  return out.replace(/\d{2,}/g, "•••").slice(0, 100);
+  return out.replace(/\d+/g, (digits: string, at: number, all: string) => (digits === "4" && NAMES_LAST_FOUR.test(all.slice(Math.max(0, at - 5), at)) ? digits : "•••")).slice(0, 100);
 }
 
 export type RemovedColumn = { column: string; heading: string; reason: "heading" | "ssn_values" | "birth_dates" };
@@ -184,7 +261,7 @@ export function dropSensitive(
       ? "heading"
       : column.some(ssnIn)
         ? "ssn_values"
-        : !opts.dateColumns?.includes(h) && birthDates(column, thisYear)
+        : !opts.dateColumns?.includes(h) && birthDates(h, column, thisYear)
           ? "birth_dates"
           : null;
     if (reason) removed.push({ column: columnLetter(i), heading: masked(h), reason });

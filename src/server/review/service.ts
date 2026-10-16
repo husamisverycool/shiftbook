@@ -27,10 +27,16 @@ export type EditError =
   | "invalid_value"
   | "no_assignment"
   | "several_assignments"
-  | "assignment_at_other_client";
+  | "assignment_at_other_client"
+  | "timesheet_client_unclear"
+  | "attach_client_unavailable";
 
-/** A refused change; for an assignment at another client, that client's name and id. */
-export type EditFailure = { ok: false; error: EditError; client?: string; clientId?: string };
+/**
+ * A refused change. For hours whose assignment that day is at another client than the timesheet's
+ * ("assignment_at_other_client"), or when the timesheet's client is unclear ("timesheet_client_unclear"):
+ * every such client, in name order, for the person to attach the hours to one of them.
+ */
+export type EditFailure = { ok: false; error: EditError; clients?: { id: string; name: string }[] };
 
 export interface EntryChange {
   workerId?: string | null;
@@ -73,16 +79,29 @@ interface ClientScope {
   fromTimesheet: boolean;
   /** The other client the person chose to attach the hours to ("Attach to {client}"). */
   attachToClientId: string | null;
-  /** The client the entry is already attached to (a person chose it earlier); later fixes keep it there. */
+  /**
+   * The client the entry is already at, when its worker is not changing: a person attached it there
+   * (or it is the timesheet's), and later fixes to the same worker's hours keep it there.
+   */
   keepClientId: string | null;
 }
 
+const byName = (a: { id: string; name: string }, b: { id: string; name: string }) => {
+  const x = a.name.toLowerCase();
+  const y = b.name.toLowerCase();
+  return x < y ? -1 : x > y ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+};
+
 /**
- * The worker's assignment (not cancelled) covering a date. A timesheet belongs to one client, so its
- * entries take that client's assignments. An assignment at another client — or at any client when
- * the timesheet's client is unclear — is named in the refusal, and taken only when the person chose
- * to attach the hours to that very client (or attached them there before); never because of an edit
- * reason. Entries added by hand have no timesheet and take the worker's single assignment that day.
+ * The worker's assignment (not cancelled) covering a date, in this order:
+ * 1. at the client the person chose to attach the hours to now (when the worker has none there, the
+ *    hours stay where they are: refused, or the clients where the worker is are named);
+ * 2. at the client the same worker's entry is already at (attached there earlier), so a later fix
+ *    never moves it silently, even when the timesheet's client also has an assignment that day;
+ * 3. at the timesheet's client (a timesheet belongs to one client). Entries added by hand have no
+ *    timesheet and take the worker's single assignment that day.
+ * Otherwise every client where the worker has an assignment that day is named, in name order, for
+ * the person to attach the hours to one of them; never because of an edit reason.
  */
 async function assignmentFor(tx: Tx, workerId: string, date: string, scope: ClientScope): Promise<{ id: string; clientName: string; elsewhere: boolean } | Omit<EditFailure, "ok">> {
   const rows = await tx
@@ -92,16 +111,22 @@ async function assignmentFor(tx: Tx, workerId: string, date: string, scope: Clie
     .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId))
     .where(eq(s.assignments.workerId, workerId));
   const active = rows.filter((a) => a.status !== "cancelled" && a.start <= date && (a.end === null || date <= a.end));
-  const here = scope.documentClientId ? active.filter((a) => a.clientId === scope.documentClientId) : scope.fromTimesheet ? [] : active;
-  if (here.length > 1) return { error: "several_assignments" };
-  if (here.length === 1) return { id: here[0]!.id, clientName: here[0]!.clientName, elsewhere: false };
-  const others = [...new Map(active.map((a) => [a.clientId, a.clientName])).entries()];
-  if (others.length !== 1) return { error: "no_assignment" };
-  const [otherId, otherName] = others[0]!;
-  if (scope.attachToClientId !== otherId && scope.keepClientId !== otherId) return { error: "assignment_at_other_client", client: otherName, clientId: otherId };
-  const there = active.filter((a) => a.clientId === otherId);
-  if (there.length > 1) return { error: "several_assignments" };
-  return { id: there[0]!.id, clientName: otherName, elsewhere: true };
+  const atClient = (clientId: string | null) => (clientId ? active.filter((a) => a.clientId === clientId) : []);
+  const take = (found: typeof active): { id: string; clientName: string; elsewhere: boolean } | Omit<EditFailure, "ok"> =>
+    found.length > 1 ? { error: "several_assignments" } : { id: found[0]!.id, clientName: found[0]!.clientName, elsewhere: scope.fromTimesheet && found[0]!.clientId !== scope.documentClientId };
+
+  const chosen = atClient(scope.attachToClientId);
+  if (chosen.length > 0) return take(chosen);
+  const kept = atClient(scope.keepClientId);
+  const here = scope.documentClientId ? atClient(scope.documentClientId) : scope.fromTimesheet ? [] : active;
+  // The person chose a client where the worker has no assignment that day (it changed since): the
+  // hours are never sent somewhere else instead; they stay where they are, or the clients are named.
+  if (scope.attachToClientId && (kept.length > 0 || here.length > 0)) return { error: "attach_client_unavailable" };
+  if (kept.length > 0) return take(kept);
+  if (here.length > 0) return take(here);
+  const others = [...new Map(active.map((a) => [a.clientId, a.clientName])).entries()].map(([id, name]) => ({ id, name })).sort(byName);
+  if (others.length === 0) return { error: "no_assignment" };
+  return { error: scope.documentClientId === null ? "timesheet_client_unclear" : "assignment_at_other_client", clients: others };
 }
 
 type Values = ReturnType<typeof snapshot>;
@@ -228,11 +253,13 @@ export async function editEntry(
   const [current] = entry.assignmentId
     ? await tx.select({ clientId: s.jobOrders.clientId }).from(s.assignments).innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId)).where(eq(s.assignments.id, entry.assignmentId))
     : [];
+  // The client the entry is at is kept only for the same worker's hours; another worker's follow the usual rules.
+  const sameWorker = change.workerId === undefined || change.workerId === entry.workerId;
   const result = await applyChange(tx, before, change, period, {
     documentClientId: doc?.clientId ?? null,
     fromTimesheet: entry.sourceDocumentId !== null,
     attachToClientId: opts.attachToClientId ?? null,
-    keepClientId: current?.clientId ?? null,
+    keepClientId: sameWorker ? (current?.clientId ?? null) : null,
   });
   if (!result.ok) return result;
   const next = result.next;

@@ -19,7 +19,7 @@ export async function Landing({ periods }: { periods: LandingPeriod[] }) {
   const t = await getTranslations("landing");
   const locale = await getLocale();
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
       <div className="rounded-lg border">
         <Table aria-label={t("title")}>

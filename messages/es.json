@@ -203,7 +203,8 @@
         "other": "Necesita revisión",
         "assignment_at_other_client": "La asignación del trabajador ese día es con otro cliente",
         "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas",
-        "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edite para asignar estas horas allí si son de ese cliente"
+        "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edite para asignar estas horas allí si son de ese cliente",
+        "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edite para asignar estas horas allí si son de ese cliente"
       },
       "fields": {
         "worker": "trabajador",
@@ -244,7 +245,9 @@
         "worker_required": "Elige primero un trabajador.",
         "period_locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar.",
         "period_busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento.",
-        "assignment_at_other_client": "La asignación de ese trabajador en esa fecha es con {client}, no con el cliente de esta hoja de horas."
+        "assignment_at_other_client": "{count, plural, one {La asignación de ese trabajador en esa fecha es con {client}} other {Las asignaciones de ese trabajador en esa fecha son con {client}}}, no con el cliente de esta hoja de horas.",
+        "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas. {count, plural, one {La asignación de ese trabajador en esa fecha es con {client}.} other {Las asignaciones de ese trabajador en esa fecha son con {client}.}}",
+        "attach_client_unavailable": "Ese trabajador no tiene una asignación con ese cliente en esa fecha, así que las horas se quedan donde están."
       },
       "history": "Historial",
       "historyEmpty": "Aún no hay cambios.",

@@ -176,6 +176,24 @@ describe("planning: rates, statuses and dates are read strictly", () => {
     expect(parseDate("05/04/26", "month_first")).toBe("2026-05-04");
   });
 
+  it("reads the start dates the birth-date check also reads as dates (sixth review)", () => {
+    expect(parseDate("19-Oct-26", "month_first")).toBe("2026-10-19");
+    expect(parseDate("19-Oct-98", "month_first")).toBe("1998-10-19");
+    expect(parseDate("Oct 19 '26", "month_first")).toBe("2026-10-19");
+    expect(parseDate("Mon, Oct 19, 2026", "month_first")).toBe("2026-10-19");
+    expect(parseDate("Monday, October 19, 2026", "month_first")).toBe("2026-10-19");
+    expect(parseDate("Mon 19 Oct 2026", "month_first")).toBe("2026-10-19");
+    expect(parseDate("19 octobre 2026", "day_first")).toBe("2026-10-19");
+    expect(parseDate("19. Oktober 2026", "day_first")).toBe("2026-10-19");
+    expect(parseDate("19 févr. 2026", "day_first")).toBe("2026-02-19");
+    expect(parseDate("19. März 2026", "day_first")).toBe("2026-03-19");
+    expect(parseDate("2026-10-19 07:00 America/Chicago", "month_first")).toBe("2026-10-19");
+    // A range of days is not a date with a two-digit year, and a made-up month is not a month.
+    expect(parseDate("Oct 19-26", "month_first")).toBeNull();
+    expect(parseDate("19 Foo 2026", "month_first")).toBeNull();
+    expect(parseDate("31-Feb-26", "month_first")).toBeNull();
+  });
+
   it("stays fast on very long date cells", () => {
     const long = `1${" ".repeat(60_000)}1`;
     const started = Date.now();

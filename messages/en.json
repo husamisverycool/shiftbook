@@ -203,7 +203,8 @@
         "other": "Needs a check",
         "assignment_at_other_client": "The worker's assignment that day is at another client",
         "timesheet_client_unclear": "Which client this timesheet is for is unclear",
-        "assignment_at_other_client_named": "The worker's assignment that day is at {client}; edit to attach these hours there if they are theirs"
+        "assignment_at_other_client_named": "The worker's assignment that day is at {client}; edit to attach these hours there if they are theirs",
+        "timesheet_client_unclear_named": "Which client this timesheet is for is unclear; the worker's assignment that day is at {client}. Edit to attach these hours there if they are theirs"
       },
       "fields": {
         "worker": "worker",
@@ -244,7 +245,9 @@
         "worker_required": "Choose a worker first.",
         "period_locked": "This period's files were already created; its hours can no longer change.",
         "period_busy": "Someone else is changing this pay period right now. Try again in a moment.",
-        "assignment_at_other_client": "That worker's assignment on that date is at {client}, not this timesheet's client."
+        "assignment_at_other_client": "{count, plural, one {That worker's assignment on that date is at {client}} other {That worker's assignments on that date are at {client}}}, not this timesheet's client.",
+        "timesheet_client_unclear": "Which client this timesheet is for is unclear. {count, plural, one {That worker's assignment on that date is at {client}.} other {That worker's assignments on that date are at {client}.}}",
+        "attach_client_unavailable": "That worker has no assignment at that client on that date, so the hours stay where they are."
       },
       "history": "History",
       "historyEmpty": "No changes yet.",

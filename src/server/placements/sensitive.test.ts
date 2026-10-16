@@ -48,7 +48,6 @@ describe("birth dates", () => {
     [["02-Jan-1990", "04-Mar-1985"]],
     [["1990/01/02", "1985/03/04"]],
     [["02.01.1990", "04.03.1985"]],
-    [["19900102", "19850304"]],
     [["1990-01-02", "1985-03-04 00:00:00"]],
     [["2 de enero de 1990", "4 mar 1985"]],
   ])("drop a column whose dates are mostly 14 or more years old: %j", (dates) => {
@@ -232,3 +231,143 @@ describe("fifth review: time zones, more spellings, no false alarms on names, an
   });
 });
 
+describe("sixth review: id columns kept, birth words next to dates, every digit hidden", () => {
+  const column = (heading: string, values: string[]) => dropSensitive(["Name", heading], values.map((v, i) => [`Worker ${i}`, v]), today);
+  it("removes birth dates padded with placeholders that hold no digits (n/a, unknown, -)", () => {
+    expect(column("Notes", ["01/02/1990", "03/04/1985", "n/a", "unknown", "-", "?"]).removed).toHaveLength(1);
+    expect(column("Notes", ["01/02/1990", "45000123", "45000124", "45000125"]).removed).toEqual([]);
+  });
+  /** 8-digit ids from a fixed sequence (MINSTD), so the test is the same every run. */
+  const ids = (seed: number, count: number) => {
+    let x = seed;
+    return Array.from({ length: count }, () => {
+      x = (x * 48271) % 2147483647;
+      return String(10_000_000 + (x % 90_000_000));
+    });
+  };
+  const block = (first: number, count: number) => Array.from({ length: count }, (_, i) => String(first + i));
+
+  it.each([
+    ["Placement ID", ["10011999", "45000123", "45000124", "45000125"]],
+    ["Employee Number", ["02101998", "77777777", "88888888"]],
+    ["Employee Number", block(10_011_950, 60)],
+    ["Employee Number", block(12_011_950, 60)],
+    ["Hours", ["8 8 10", "8 8 8", "10 10 12"]],
+    ["When", ["19900102", "19850304"]],
+  ])("keeps an id or number column even when some values look like old dates: %s %j", (heading, values) => {
+    expect(column(heading, values).removed).toEqual([]);
+  });
+
+  it("keeps every column of random 8-digit ids, though some ids look like dates", () => {
+    const columns = Array.from({ length: 200 }, (_, c) => ids(c + 1, 200));
+    const header = ["Name", ...columns.map((_, c) => `Ref ${c}`)];
+    const rows = Array.from({ length: 200 }, (_, r) => [`Worker ${r}`, ...columns.map((col) => col[r]!)]);
+    const looksLikeDate = /^(?:(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])|(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?:19|20)\d{2})$/;
+    expect(columns.filter((col) => col.some((v) => looksLikeDate.test(v))).length).toBeGreaterThan(10);
+    expect(dropSensitive(header, rows, today).removed).toEqual([]);
+  });
+
+  it("counts 8-digit and short spaced dates only next to a birth word, in the heading or the cell", () => {
+    expect(column("Née le", ["19900102", "19850304"]).removed).toEqual([{ column: "B", heading: "Née le", reason: "birth_dates" }]);
+    expect(column("Née le", ["8 8 80", "3 4 85"]).removed).toEqual([{ column: "B", heading: "Née le", reason: "birth_dates" }]);
+    expect(column("Notes", ["ok", "DOB 19900102"]).removed).toEqual([{ column: "B", heading: "Notes", reason: "birth_dates" }]);
+    expect(column("Notes", ["ok", "DOB 8 8 80"]).removed).toEqual([{ column: "B", heading: "Notes", reason: "birth_dates" }]);
+  });
+
+  it.each(["10192026", "8 8 10", "19900102"])("takes %s as a heading (a bare number is not a date there)", (heading) => {
+    expect(headingProblem(["Candidate", heading], today)).toBe(false);
+  });
+
+  it("refuses a first row whose date carries a named time zone", () => {
+    expect(headingProblem(["70001", "1990-01-02 00:00:00 America/Chicago"], today)).toBe(true);
+    expect(headingProblem(["70001", "2026-10-19 07:00 America/Argentina/Buenos_Aires"], today)).toBe(true);
+  });
+
+  it("drops a column of old dates with a named time zone", () => {
+    expect(column("Info", ["1990-01-02 00:00:00 America/Chicago", "1985-03-04 00:00:00 America/New_York"]).removed).toEqual([{ column: "B", heading: "Info", reason: "birth_dates" }]);
+  });
+
+  it.each(["L4 Hours", "Level L4"])("keeps a column headed %s (L4 alone is not an SSN there)", (heading) => {
+    expect(one(heading).removed).toEqual([]);
+  });
+
+  it.each(["SSN L4", "Employee L4", "SS L4", "L4"])("drops a column headed %s", (heading) => {
+    expect(one(heading).removed).toEqual([{ column: "B", heading, reason: "heading" }]);
+  });
+
+  it.each([
+    ["DOB 1/2", "DOB •••/•••"],
+    ["Born 1 2 9 0", "Born ••• ••• ••• •••"],
+    ["SSN Last 4 1/2", "SSN Last 4 •••/•••"],
+  ])("hides every digit in a removed heading but the 4 that names a last-four column: %s", (heading, shown) => {
+    expect(one(heading).removed).toEqual([{ column: "B", heading: shown, reason: "heading" }]);
+  });
+
+  it.each([
+    "Bdate 01/02/1990",
+    "B-Date 01/02/1990",
+    "dob01/02/1990",
+    "geb 02.01.1990",
+    "geb. am 2. Januar 1990",
+    "FN 02/01/1990",
+    "B'day 1/2/1990",
+    "YOB 1990",
+    "DOB 1990-01-02 00:00:00 America/Chicago",
+  ])("drops free text that gives a birth date: %s", (note) => {
+    expect(column("Notes", ["ok", note]).removed).toEqual([{ column: "B", heading: "Notes", reason: "birth_dates" }]);
+  });
+
+  it.each([
+    "Mike Dobson 10/19/2026",
+    "Dobbins 10/19/2026",
+    "Osborne 10/19/2026",
+    "Nee Lewis 10/20/2026",
+    "Last 4 Weeks 10/19/2026",
+    "Geb.-Nr. 12, 10/19/2026",
+    "Gebühr 10/19/2026",
+    "Seguro de vida 10/19/2026",
+    "FN Anita, started 10/19/2026",
+    "7:00 AM - 3:30 PM",
+    "07:00-15:30",
+    "$19.00/hr, OT 1.5x",
+    "Mon-Fri",
+    "Oct 5-11",
+  ])("keeps free text that gives no birth date: %s", (note) => {
+    expect(column("Notes", ["ok", note]).removed).toEqual([]);
+  });
+
+  it.each(["Dobson", "Osborne", "Last 4 Weeks", "Geb.-Nr.", "Gebühr", "Seguro de vida", "Mon-Fri", "Oct 5-11"])("keeps a column headed %s, and takes it as a heading", (heading) => {
+    expect(one(heading).removed).toEqual([]);
+    expect(headingProblem(["Candidate", heading], today)).toBe(false);
+  });
+
+  it("stays well under 100 ms a call on 200,000-character hostile cells", () => {
+    const n = 200_000;
+    const hostile = [
+      "dob ".repeat(n / 4),
+      "dob0".repeat(n / 4),
+      "fn 1/".repeat(n / 5),
+      "yob 19".repeat(n / 6),
+      "geb. am ".repeat(n / 8),
+      "1/2/".repeat(n / 4),
+      "1 ".repeat(n / 2),
+      "1990-01-02 00:00:00 a/".repeat(n / 22),
+      "1990-01-02 00:00:00 " + "a/".repeat(n / 2),
+      "mon, ".repeat(n / 5),
+      "9".repeat(n),
+      "a".repeat(n),
+    ];
+    for (const cell of hostile) {
+      for (const call of [
+        () => dropSensitive(["Name", "Notes"], [["A", cell]], today),
+        () => dropSensitive(["Name", cell], [["A", "x"]], today),
+        () => headingProblem([cell], today),
+        () => safeFilename(cell, today),
+      ]) {
+        const started = performance.now();
+        call();
+        expect(performance.now() - started).toBeLessThan(100);
+      }
+    }
+  });
+});
