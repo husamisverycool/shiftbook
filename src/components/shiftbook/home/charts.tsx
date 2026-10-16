@@ -24,19 +24,26 @@ function Grid({ top, format, height, children }: { top: number; format: (n: numb
   );
 }
 
+/**
+ * The chart's numbers for screen readers. The box around the table is what is hidden: a table grows
+ * to fit its rows whatever size it is given, so hidden on its own it would still push the page wider
+ * and taller than the frame.
+ */
 function ScreenReaderTable({ caption, points, format }: { caption: string; points: Point[]; format: (n: number) => string }) {
   return (
-    <table className="sr-only">
-      <caption>{caption}</caption>
-      <tbody>
-        {points.map((p) => (
-          <tr key={p.label}>
-            <th scope="row">{p.label}</th>
-            <td>{format(p.value)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div className="sr-only">
+      <table>
+        <caption>{caption}</caption>
+        <tbody>
+          {points.map((p) => (
+            <tr key={p.label}>
+              <th scope="row">{p.label}</th>
+              <td>{format(p.value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

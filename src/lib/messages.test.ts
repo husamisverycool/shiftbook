@@ -122,6 +122,15 @@ describe("messages", () => {
     }
   });
 
+  it("says one of a thing in the singular (Home's compliance figure)", () => {
+    const say = (locale: "en" | "es") => {
+      const t = createTranslator({ locale, messages: (locale === "en" ? en : es) as unknown as Tree });
+      return (t as unknown as (k: string, v: object) => string)("home.side.complianceValue", { overdue: 1, soon: 3 });
+    };
+    expect(say("es")).toBe("1 vencida · 3 por vencer");
+    expect(say("en")).toBe("1 overdue · 3 due soon");
+  });
+
   describe("Spanish in one voice", () => {
     /** Informal "tú" words, and imperatives in the "tú" form where a sentence starts. */
     // "ven" and "sal" are left out: "se ven" (are seen) and "sal" are not always the informal voice.
@@ -140,6 +149,7 @@ describe("messages", () => {
       [/\bajustes\b/i, "configuración (settings)"],
       [/tarifa de facturaci[oó]n/i, "tarifa de cobro (bill rate)"],
       [/\bmargen de \{percent\}|^Margen \(%\)$|un margen como/i, "recargo (markup; margen is margin)"],
+      [/\bSSN\b/, "número de Seguro Social (SSN)"],
     ];
 
     it("speaks to the reader as usted", () => {

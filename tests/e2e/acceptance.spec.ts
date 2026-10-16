@@ -28,6 +28,18 @@ const MESSAGES = {
   es: JSON.parse(readFileSync("messages/es.json", "utf8")) as Messages,
 };
 const SAMPLES = "demo/samples/2026-10-05";
+
+/** The page fits its frame: no sideways scroll, and nothing hanging below the frame's sheet. */
+async function fitsFrame(page: Page) {
+  const room = await page.evaluate(() => {
+    const sheet = document.querySelector("[data-slot=sidebar-inset]")!.getBoundingClientRect();
+    return { wider: document.documentElement.scrollWidth - window.innerWidth, below: document.documentElement.scrollHeight - (sheet.bottom + window.scrollY) };
+  });
+  expect(room.wider).toBe(0);
+  // The sheet's own margin (8px) is all there is under it.
+  expect(room.below).toBeLessThanOrEqual(8);
+}
+
 /** A test photo with a hand-written recorded reading (fixtures/make-photo-fixture.ts): the photo path, until the demo's own photos have recorded readings. */
 const PHOTO = "tests/e2e/fixtures/photo-sign-in-2026-10-06.jpg";
 const PRAIRIE = "Prairie Line Manufacturing (demo)";
@@ -229,6 +241,7 @@ for (const locale of ["en", "es"] as const) {
     // Home: every step of the guide is done.
     await page.goto(`/${locale}`);
     await expect(page.getByTestId("setup-progress")).toHaveText(m.home.guide.progress.replace("{done}", "7").replace("{total}", "7"));
+    await fitsFrame(page);
     expect(errors).toEqual([]);
   });
 

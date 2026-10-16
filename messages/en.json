@@ -3897,7 +3897,7 @@
       "receivables": "Open receivables",
       "overdue": "Overdue",
       "compliance": "Compliance",
-      "complianceValue": "{overdue} overdue · {soon} due soon",
+      "complianceValue": "{overdue, plural, one {# overdue} other {# overdue}} · {soon, plural, one {# due soon} other {# due soon}}",
       "invoices": "{count, plural, one {# invoice} other {# invoices}}",
       "view": "View"
     },
