@@ -95,6 +95,10 @@ files unchanged). Screens to confirm premiums, enter bonuses and holiday policy 
   the other).
 - C5 Illinois 4-hour and Massachusetts reporting pay: the shortfall is paid in full, without
   counting overtime already earned against it.
+- C7 A client with its own holiday policy: the worker is paid the better of the client's and the
+  agency's terms for the date (the agency's promise to its worker stands; in Illinois promised
+  holiday pay is earned wages), and the client is billed by its own policy only, or by the agency's
+  when it has none (decided while building, after the second opinion on step 4).
 - C6 Illinois § 42 is treated as in force (state FAQ, May 22, 2025 court ruling); the research
   could not check court filings after that date.
 
@@ -131,5 +135,13 @@ weeks (e); other states; alternative workweek schedules; split-shift premiums (f
   straight time, the agency bearing the premium), and profile settings to bill confirmed meal and
   rest premiums and minimum pay for a short day at the bill rate (default: not billed, as before).
   Golden G4d. The double-time bill multiplier and holiday billing came earlier (steps 3 and 4).
-- Next: the step 4 review's findings, step 7 (lines and exports), the random-week property test,
-  the second-opinion reviews, Playwright.
+- Second opinion on step 4 (no blocking findings) fixed: decision C7; a missed meal or rest
+  period is paid at least at that day's minimum wage; flat-sum bonus overtime is one line per
+  multiple (each rate fits the database); a California bonus entered as nondiscretionary in an
+  overtime week gets a warning to check it is not a flat sum; holds name the worker even with no
+  hours in the run; the totals screen counts only hours worked; the 1.5× cut-off for keeping
+  holiday premiums out of the regular rate is a dated rule row; citations corrected (§ 207(e)(2)
+  for holidays not worked).
+- Next: step 7 (lines and exports: Gusto currently refuses holiday, bonus and premium lines, so a
+  run with them cannot create files), the random-week property test, the second-opinion review of
+  steps 5–7, Playwright.

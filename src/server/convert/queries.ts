@@ -216,7 +216,8 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
   const perClient = new Map<string, { clientId: string; name: string; minutes: number; billedCents: number }>();
   for (const l of bill) {
     const row = perClient.get(l.clientId) ?? { clientId: l.clientId, name: clients.find((c) => c.id === l.clientId)?.name ?? "", minutes: 0, billedCents: 0 };
-    row.minutes += l.minutes;
+    // Hours billed are worked hours only: a premium or minimum-pay line repeats or adds minutes nobody worked.
+    if (l.type === "REG" || l.type === "OT" || l.type === "DT") row.minutes += l.minutes;
     row.billedCents += l.amountCents;
     perClient.set(l.clientId, row);
   }

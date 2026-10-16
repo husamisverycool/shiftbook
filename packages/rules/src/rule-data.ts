@@ -5,7 +5,7 @@
  */
 import { isIsoDate } from "./dates";
 import { scopeProblem, STATE_FIPS } from "./places";
-import type { EqualPayRule, GuaranteeRule, HolidayPolicy, Issue, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
+import type { EqualPayRule, GuaranteeRule, HolidayPolicy, Issue, RegularRateRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule } from "./types";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const OPEN_END = "9999-12-31";
@@ -20,6 +20,7 @@ export interface RuleTables {
   /** Agency data, not law: which days are holidays and what the agency (or a client) pays for them. */
   holidayPolicies: HolidayPolicy[];
   equalPayRules: EqualPayRule[];
+  regularRateRules: RegularRateRule[];
 }
 
 /** Copies of the rule tables in one fixed order. */
@@ -39,6 +40,7 @@ export function canonicalRules(input: PayInput): RuleTables {
       (p) => key([p.clientId, p.name, JSON.stringify(p)]),
     ),
     equalPayRules: by(input.equalPayRules ?? [], (r) => key([r.jurisdiction, r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, JSON.stringify(r)])),
+    regularRateRules: by(input.regularRateRules ?? [], (r) => key([r.jurisdiction, r.ruleCode, r.effectiveFrom, r.effectiveTo ?? OPEN_END, JSON.stringify(r)])),
   };
 }
 
@@ -152,6 +154,11 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
       (typeof p.billNotWorked !== "boolean" && "whether a holiday not worked is billed must be yes or no");
     if (problem) issues.push(invalid(`${where}: ${problem}`));
   }
+  for (const r of t.regularRateRules) {
+    const where = `regular-rate rule ${r.jurisdiction} ${r.ruleCode}`;
+    const problem = (!knownJurisdiction(r.jurisdiction) && `"${r.jurisdiction}" is not US, a state or DC`) || datesProblem(r) || multiplierProblem(r.multiplier);
+    if (problem) issues.push(invalid(`${where}: ${problem}`));
+  }
   for (const r of t.equalPayRules) {
     const where = `equal-pay counter rule ${r.jurisdiction} ${r.ruleCode}`;
     const months = (n: number) => Number.isSafeInteger(n) && n >= 1 && n <= 120;
@@ -175,6 +182,7 @@ export function ruleDataProblems(t: RuleTables): Issue[] {
     ...overlapProblems(t.guaranteeRules, (r) => r.jurisdiction, (r) => `minimum-pay rule ${r.jurisdiction} ${r.ruleCode}`),
   );
   issues.push(...overlapProblems(t.equalPayRules, (r) => r.jurisdiction, (r) => `equal-pay counter rule ${r.jurisdiction} ${r.ruleCode}`));
+  issues.push(...overlapProblems(t.regularRateRules, (r) => `${r.jurisdiction}|${r.ruleCode}`, (r) => `regular-rate rule ${r.jurisdiction} ${r.ruleCode}`));
   // One holiday policy per client (or for the agency) on a date: which one pays would otherwise be a guess.
   for (let i = 0; i < t.holidayPolicies.length; i++) {
     for (let k = i + 1; k < t.holidayPolicies.length; k++) {

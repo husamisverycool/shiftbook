@@ -137,6 +137,8 @@ export interface Confirmation {
   id: string;
   kind: ConfirmationKind;
   workerId: string;
+  /** For messages a person reads when the worker has no hours in the run. */
+  workerName?: string;
   assignmentId: string;
   date: IsoDate;
   /** reported_short: the minutes the worker was scheduled for that day (California and Massachusetts need them). */
@@ -200,10 +202,25 @@ export interface HolidayPolicy {
 export interface Bonus {
   id: string;
   workerId: string;
+  /** For messages a person reads when the worker has no hours in the run. */
+  workerName?: string;
   assignmentId: string;
   workweekStart: IsoDate;
   amountCents: number;
   kind: "nondiscretionary" | "flat_sum";
+}
+
+/**
+ * A dated rule about the regular rate itself: premium pay at or above `multiplier` × the rate stays
+ * out of the regular rate (29 U.S.C. § 207(e)(6), ruleCode "premium_excluded_from_regular_rate").
+ */
+export interface RegularRateRule {
+  jurisdiction: string;
+  ruleCode: string;
+  multiplier: Fraction;
+  effectiveFrom: IsoDate;
+  effectiveTo: IsoDate | null;
+  citation: string;
 }
 
 /**
@@ -279,6 +296,7 @@ export interface PayInput {
   holidayPolicies?: HolidayPolicy[];
   bonuses?: Bonus[];
   equalPayRules?: EqualPayRule[];
+  regularRateRules?: RegularRateRule[];
   /** Covered minutes worked before this run, per worker, client and day. */
   hoursWorked?: HoursWorked[];
   obligationsOnFile?: ObligationOnFile[];
@@ -312,6 +330,7 @@ export type IssueCode =
   // warnings (do not block):
   | "allocation_order_assumed"
   | "premium_not_applicable"
+  | "bonus_kind_check"
   | "approaching_equal_pay_hours"
   | "equal_pay_obligation"
   | "equal_pay_rate_missing";

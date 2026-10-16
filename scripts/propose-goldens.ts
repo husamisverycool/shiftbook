@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addDays, computePay, type PayInput, type Shift } from "@shiftbook/rules";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
-import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
+import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_REGULAR_RATE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
 const WEEK = ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"];
@@ -45,6 +45,7 @@ const input = (shifts: Shift[]): PayInput => ({
   premiumRules: REFERENCE_PREMIUM_RULES,
   guaranteeRules: REFERENCE_GUARANTEE_RULES,
   equalPayRules: REFERENCE_EQUAL_PAY_RULES,
+  regularRateRules: REFERENCE_REGULAR_RATE_RULES,
 });
 const MA = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const; // Worcester County; Worcester
 const CA = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const; // San Bernardino County; Ontario
@@ -323,7 +324,7 @@ ruleCase(
     bonuses: [{ id: "bonus-1", workerId: "worker-1", assignmentId: "assignment-1", workweekStart: CA_WEEK[0]!, amountCents: 5000, kind: "flat_sum" }],
   },
   {
-    pay: [["REG", 2400, 72000], ["OT", 360, 16200], ["OT", 360, 16200], ["OT", 480, 21600], ["DT", 60, 3600], ["DT", 120, 7200], ["BONUS", 0, 5000], ["BONUS_OT", 1380, 4500]],
+    pay: [["REG", 2400, 72000], ["OT", 360, 16200], ["OT", 360, 16200], ["OT", 480, 21600], ["DT", 60, 3600], ["DT", 120, 7200], ["BONUS", 0, 5000], ["BONUS_OT", 1200, 3750], ["BONUS_OT", 180, 750]],
     bill: [["REG", 2400, 104000], ["OT", 360, 23400], ["OT", 360, 23400], ["OT", 480, 31200], ["DT", 60, 5200], ["DT", 120, 10400]],
   },
 );

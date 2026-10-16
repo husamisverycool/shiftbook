@@ -103,8 +103,9 @@ export async function setSkipped(tx: Tx, actor: Actor, payPeriodId: string, work
   await audit(tx, actor, [{ action: "update", entityType: "pay_run", entityId: run.id, before: { skipped: run.skipped.map((x) => x.workerId) }, after: { skipped: next.map((x) => x.workerId) }, reason }]);
 }
 
-async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules" | "premiumRules" | "guaranteeRules" | "equalPayRules">> {
+async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules" | "premiumRules" | "guaranteeRules" | "equalPayRules" | "regularRateRules">> {
   const ep = await tx.select().from(s.equalPayRules);
+  const rr = await tx.select().from(s.regularRateRules);
   const ot = await tx.select().from(s.overtimeRules);
   const jr = await tx.select().from(s.jurisdictionRules);
   const mw = await tx.select().from(s.minimumWageRules);
@@ -163,6 +164,7 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
         citation: r.citation,
       }),
     ),
+    regularRateRules: rr.map((r) => ({ jurisdiction: r.jurisdiction, ruleCode: r.ruleCode, multiplier: { num: r.multiplierNum, den: r.multiplierDen }, effectiveFrom: r.effectiveFrom, effectiveTo: r.effectiveTo, citation: r.citation })),
     equalPayRules: ep.map((r) => ({
       jurisdiction: r.jurisdiction,
       ruleCode: r.ruleCode,
@@ -201,6 +203,10 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   );
   const workerRows = await tx.select().from(s.workers);
   const workersById = new Map(workerRows.map((w) => [w.id, w]));
+  const workerNameOf = (id: string) => {
+    const w = workersById.get(id);
+    return w ? `${w.firstName} ${w.lastName}` : undefined;
+  };
   const assignmentRows = await tx
     .select({ assignment: s.assignments, jobOrder: s.jobOrders, worksite: s.worksites })
     .from(s.assignments)
@@ -214,10 +220,10 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   // What a person confirmed for days in this period: missed meal or rest periods, short days (the engine computes, a person confirms).
   const confirmations: Confirmation[] = (await tx.select().from(s.premiumConfirmations).where(and(gte(s.premiumConfirmations.workDate, period.startsOn), lte(s.premiumConfirmations.workDate, period.endsOn))))
     .filter((c) => !skippedIds.has(c.workerId))
-    .map((c) => ({ id: c.id, kind: c.kind, workerId: c.workerId, assignmentId: c.assignmentId, date: c.workDate, scheduledMinutes: c.scheduledMinutes, reassigned: c.reassigned }))
+    .map((c) => ({ id: c.id, kind: c.kind, workerId: c.workerId, workerName: workerNameOf(c.workerId), assignmentId: c.assignmentId, date: c.workDate, scheduledMinutes: c.scheduledMinutes, reassigned: c.reassigned }))
     .sort((a, b) => cmp(a.id, b.id));
-  // The agency's holiday policies (a client's own wins on its work), and bonuses entered for the
-  // workweeks of this period. A bonus whose week is not a workweek of the period holds its worker.
+  // The agency's holiday policies (a client's own never lowers the agency's for its worker), and bonuses
+  // entered for the workweeks of this period. A bonus whose week is not a workweek of the period holds its worker.
   const holidayPolicies: HolidayPolicy[] = (await tx.select().from(s.holidayPolicies))
     .map((p) => ({
       clientId: p.clientId,
@@ -231,7 +237,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     .sort((a, b) => cmp(a.clientId ?? "", b.clientId ?? "") || cmp(a.name, b.name));
   const bonuses: Bonus[] = (await tx.select().from(s.bonuses).where(and(gte(s.bonuses.workweekStart, period.startsOn), lte(s.bonuses.workweekStart, period.endsOn))))
     .filter((b) => !skippedIds.has(b.workerId))
-    .map((b) => ({ id: b.id, workerId: b.workerId, assignmentId: b.assignmentId, workweekStart: b.workweekStart, amountCents: b.amountCents, kind: b.kind }))
+    .map((b) => ({ id: b.id, workerId: b.workerId, workerName: workerNameOf(b.workerId), assignmentId: b.assignmentId, workweekStart: b.workweekStart, amountCents: b.amountCents, kind: b.kind }))
     .sort((a, b) => cmp(a.id, b.id));
 
   /** The shift for an assignment on a date with that day's rate card, billing profile and worksite; or why there is none. */

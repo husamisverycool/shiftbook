@@ -731,6 +731,18 @@ export const bonuses = pgTable(
   (t) => [index("bonuses_week").on(t.agencyId, t.workerId, t.workweekStart)],
 );
 
+/** Dated rules about the regular rate itself, such as the premium multiple that stays out of it (drizzle/0021). */
+export const regularRateRules = pgTable("regular_rate_rules", {
+  id: id(),
+  jurisdiction: text("jurisdiction").notNull(),
+  ruleCode: text("rule_code").notNull(),
+  multiplierNum: integer("multiplier_num").notNull(),
+  multiplierDen: integer("multiplier_den").notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+  citation: text("citation").notNull(),
+});
+
 /** The Illinois equal-pay counter's numbers as a dated rule row (drizzle/0019). */
 export const equalPayRules = pgTable("equal_pay_rules", {
   id: id(),

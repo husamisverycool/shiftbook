@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
-import { equalPayRules, guaranteeRules, jurisdictionRules, minimumWageRules, overtimeRules, premiumRules } from "../../src/server/db/schema";
-import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../../src/server/rules/reference-data";
+import { equalPayRules, guaranteeRules, jurisdictionRules, minimumWageRules, overtimeRules, premiumRules, regularRateRules } from "../../src/server/db/schema";
+import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_REGULAR_RATE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../../src/server/rules/reference-data";
 import { openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
@@ -90,6 +90,12 @@ describe("reference wage-rule data in the database matches src/server/rules/refe
     }));
     const key = (r: { jurisdiction: string; ruleCode: string }) => `${r.jurisdiction}:${r.ruleCode}`;
     expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_GUARANTEE_RULES, key));
+  });
+
+  it("the premium multiple that stays out of the regular rate", async () => {
+    const rows = await app.db.select().from(regularRateRules);
+    const fromDb = rows.map((r) => ({ jurisdiction: r.jurisdiction, ruleCode: r.ruleCode, multiplier: { num: r.multiplierNum, den: r.multiplierDen }, effectiveFrom: r.effectiveFrom, effectiveTo: r.effectiveTo, citation: r.citation }));
+    expect(fromDb).toEqual(REFERENCE_REGULAR_RATE_RULES);
   });
 
   it("the Illinois equal-pay counter", async () => {

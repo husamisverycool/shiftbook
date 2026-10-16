@@ -14,6 +14,7 @@ import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
 import { addEntry } from "../../src/server/review/service";
+import { totalsStep } from "../../src/server/convert/queries";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -130,6 +131,12 @@ describe("pay rules through the weekly run", () => {
       ["REG", 480],
       ["HOL", 480],
     ]);
+    // The totals screen counts the client's hours worked once: the holiday premium line repeats them.
+    const all = await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.clientId, clientId("ca")))));
+    const worked = all.filter((l) => l.type === "REG" || l.type === "OT" || l.type === "DT").reduce((sum, l) => sum + l.minutes, 0);
+    const totals = await inAgency((tx) => totalsStep(tx, actor, period));
+    expect(totals.clients.find((c) => c.clientId === clientId("ca"))!.minutes).toBe(worked);
+    expect(all.reduce((sum, l) => sum + l.minutes, 0)).toBe(worked + 480);
   });
 
   it("holds a bonus entered for a week with no hours instead of dropping it", async () => {

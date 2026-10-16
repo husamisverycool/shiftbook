@@ -5,7 +5,7 @@
  * so tests and goldens that use this module can never drift from what the app computes with.
  * Sources: docs/research/minimum-wage-2026.md and the citations on each row.
  */
-import type { EqualPayRule, GuaranteeRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PremiumRule } from "@shiftbook/rules";
+import type { EqualPayRule, GuaranteeRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PremiumRule, RegularRateRule } from "@shiftbook/rules";
 
 const since = "2000-01-01";
 
@@ -140,6 +140,19 @@ export const REFERENCE_GUARANTEE_RULES: GuaranteeRule[] = [
   guarantee({ jurisdiction: "IL", ruleCode: "il_day_labor_minimum", dueMinutes: 240, reassignedDueMinutes: 120, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: null, basis: "pay_rate", citation: "Day and Temporary Labor Services Act, 820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b) — sent and not utilized: at least 4 hours at the agreed rate; placed elsewhere the same shift: at least 2 hours" }),
 ];
 
+
+/** The premium multiple that stays out of the regular rate (drizzle/0021). */
+export const REFERENCE_REGULAR_RATE_RULES: RegularRateRule[] = [
+  {
+    jurisdiction: "US",
+    ruleCode: "premium_excluded_from_regular_rate",
+    multiplier: { num: 3, den: 2 },
+    effectiveFrom: "2000-01-01",
+    effectiveTo: null,
+    citation:
+      "29 U.S.C. § 207(e)(6) — a premium rate for work on holidays, Saturdays, Sundays or regular days of rest of not less than one and one-half times the rate for like work on other days stays out of the regular rate; a smaller premium counts in it (29 C.F.R. § 778.203); California follows (DLSE Enforcement Manual 49.1.2.4)",
+  },
+];
 
 /** The Illinois equal-pay counter (drizzle/0019). */
 export const REFERENCE_EQUAL_PAY_RULES: EqualPayRule[] = [
