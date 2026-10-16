@@ -94,7 +94,7 @@ for (const locale of ["en", "es"] as const) {
     const [summary] = await Promise.all([page.waitForEvent("download"), page.getByTestId("margin-export").click().then(() => page.getByTestId("export-summary").click())]);
     expect(summary.suggestedFilename()).toMatch(/^margin-summary-\d{4}-\d{2}-\d{2}-to-\d{4}-\d{2}-\d{2}\.csv$/);
     const lines = readFileSync((await summary.path())!, "utf8").split("\r\n");
-    expect(lines[0]).toBe("Recruiter,Hours,Billed,Pay,Estimated burden,Gross margin,Margin %");
+    expect(lines[0]).toBe([m.margin.groups.recruiter, m.margin.cols.hours, m.margin.cards.billed, m.margin.cards.pay, m.margin.cards.burden, m.margin.cards.margin, m.margin.cards.percent].join(","));
     expect(lines.slice(1, 3).sort()).toEqual(["Lena Ortiz (demo),46.00,1219.00,894.25,129.81,194.94,16.0%", "Sam Whitfield (demo),24.00,636.00,438.00,64.39,133.61,21.0%"]);
     await page.getByTestId("group-branch").click();
     await expect(rows).toHaveCount(1);
@@ -109,6 +109,9 @@ for (const locale of ["en", "es"] as const) {
     await expect(ot).toContainText("Marcus Bell");
     await expect(ot).toContainText(money(5475, locale));
     await expect(ot).toContainText(m.margin.overtime.reasons.bill_overtime_straight);
+    await ot.getByRole("button").click();
+    await expect(page.getByTestId("overtime-explain")).toContainText("its premium (the part above straight time) $54.75");
+    await expect(page.getByTestId("overtime-line")).toHaveCount(2);
     await check(page, "overtime not billed");
 
     // Cash floating: the week's payroll, paid 5 days after it ended, not yet paid for.

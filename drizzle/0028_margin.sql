@@ -36,7 +36,7 @@ CREATE TABLE "wc_rates" (
 	"created_by_label" text NOT NULL,
 	CONSTRAINT "wc_rates_rate" CHECK (rate_ppm >= 0 AND rate_ppm <= 1000000),
 	CONSTRAINT "wc_rates_state" CHECK (state ~ '^[A-Z]{2}$'),
-	CONSTRAINT "wc_rates_code" CHECK (length(class_code) BETWEEN 1 AND 10),
+	CONSTRAINT "wc_rates_code" CHECK (length(class_code) BETWEEN 1 AND 12),
 	CONSTRAINT "wc_rates_dates" CHECK (effective_to IS NULL OR effective_to >= effective_from)
 );
 --> statement-breakpoint

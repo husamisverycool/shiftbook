@@ -17,7 +17,7 @@ const line = (over: Partial<MarginLine>): MarginLine => ({
   billedCents: 129_850,
   payCents: 89_425,
   burdenCents: 18_000,
-  incomplete: false,
+  incomplete: 0,
   details: [],
   ...over,
 });
@@ -39,7 +39,7 @@ describe("margin rows and groups (decisions I4, I5)", () => {
     const lines = [
       line({}),
       line({ key: "b|2026-10-05", assignmentId: "b", workerId: "w2", workerName: "Anita Patel", recruiterId: "r1", recruiterName: "Lena Ortiz", billedCents: 63_600, payCents: 42_000, burdenCents: 8000, minutesPaid: 1440 }),
-      line({ key: "c|2026-09-28", assignmentId: "c", workerId: "w3", workerName: "Kai Brooks", clientId: "pcd", clientName: "Pacific Crest", week: "2026-09-28", branchId: null, branchName: null, billedCents: 10_000, payCents: 9000, burdenCents: 2000, incomplete: true }),
+      line({ key: "c|2026-09-28", assignmentId: "c", workerId: "w3", workerName: "Kai Brooks", clientId: "pcd", clientName: "Pacific Crest", week: "2026-09-28", branchId: null, branchName: null, billedCents: 10_000, payCents: 9000, burdenCents: 2000, incomplete: 2 }),
     ];
     const byClient = groupLines(lines, "client", "margin");
     expect(byClient.map((g) => [g.name, g.totals.marginCents, g.lines.length])).toEqual([
@@ -58,7 +58,7 @@ describe("margin rows and groups (decisions I4, I5)", () => {
     ]);
     expect(groupLines(lines, "branch", "margin").map((g) => g.name)).toEqual(["Main office", null]);
     expect(groupLines(lines, "week", "margin").map((g) => g.key)).toEqual(["2026-10-05", "2026-09-28"]);
-    expect(totalsOf(lines).incomplete).toBe(1);
+    expect(totalsOf(lines).incomplete).toBe(2);
   });
 
   it("the weeks of a period, oldest first", () => {

@@ -15,7 +15,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { formatPermille, GROUP_BYS, type GroupBy, type MarginLine, type MarginTotals, type SortBy } from "@/server/margin/margin";
+import { formatPermille, GROUP_BYS, totalsOf, type GroupBy, type MarginLine, type MarginTotals, type SortBy } from "@/server/margin/margin";
 import type { MarginView } from "@/server/margin/queries";
 import { hoursMinutes, longDate, money } from "../format";
 import { WeeklyChart } from "./weekly-chart";
@@ -87,9 +87,9 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
               {l.workerName} · {l.clientName ?? t("none")} · {t("weekOf", { date: longDate(l.week, locale) })}
             </span>
           </button>
-          {l.incomplete && <span className="ml-5 text-xs text-destructive">{t("lineIncomplete")}</span>}
+          {l.incomplete > 0 && <span className="ml-5 text-xs text-destructive">{t("lineIncomplete")}</span>}
         </TableCell>
-        {totalsCells({ minutesPaid: l.minutesPaid, billedCents: l.billedCents, payCents: l.payCents, burdenCents: l.burdenCents, marginCents: l.billedCents - l.payCents - l.burdenCents, marginPermille: null, incomplete: 0 })}
+        {totalsCells(totalsOf([l]))}
       </TableRow>
       {line === l.key && (
         <TableRow className="hover:bg-transparent">

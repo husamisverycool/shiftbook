@@ -19,9 +19,12 @@ import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { createRunFiles } from "../../src/server/files/service";
+import { updateJobOrder } from "../../src/server/catalog/job-orders";
 import { cashView, marginSettings, marginView, overtimeView } from "../../src/server/margin/queries";
-import { addTaxRate, addWcRate, setBranch, setOtPremium, setPayDay, setRecruiter } from "../../src/server/margin/service";
+import { addTaxRate, addWcRate, setOtPremium, setPayDay, setRecruiter } from "../../src/server/margin/service";
 import { recordPayment } from "../../src/server/receivables/service";
+import { startCorrection } from "../../src/server/run/corrections";
+import { editEntry } from "../../src/server/review/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { approveAsOwner, openAppDb, openOwnerDb } from "./helpers";
@@ -38,7 +41,14 @@ const inAgency = <T>(fn: Parameters<typeof app.withAgency<T>>[1]) => app.withAge
 const PERIOD = { from: "2026-09-28", to: "2026-10-12" };
 
 async function addShift(worker: string, date: string, inMinute: number, outMinute: number) {
-  await owner.db.insert(s.timeEntries).values({ agencyId: theOwner.agencyId, payPeriodId: w2, workerNameRaw: worker, workerId: workerId(worker), assignmentId: assignmentId(worker), workDate: date, inMinute, outMinute, breakMinutes: 0, minutes: outMinute - inMinute, confidence: "high", status: "reviewed" });
+  const [row] = await owner.db.insert(s.timeEntries).values({ agencyId: theOwner.agencyId, payPeriodId: w2, workerNameRaw: worker, workerId: workerId(worker), assignmentId: assignmentId(worker), workDate: date, inMinute, outMinute, breakMinutes: 0, minutes: outMinute - inMinute, confidence: "high", status: "reviewed" }).returning();
+  return row!;
+}
+
+/** The job order's form values with a branch (the Edit form). */
+async function branchTo(who: Actor, branchId: string) {
+  const [j] = await inAgency((tx) => tx.select().from(s.jobOrders).where(eq(s.jobOrders.id, jobOrderId("il-operator"))));
+  return inAgency((tx) => updateJobOrder(tx, who, j!.id, { clientId: j!.clientId, worksiteId: j!.worksiteId, position: j!.position, socCode: j!.socCode, shift: j!.shift, headcount: j!.headcount, payMinCents: j!.payMinCents, payMaxCents: j!.payMaxCents, prevailingWage: j!.prevailingWage, branchId }));
 }
 
 async function freshAgency() {
@@ -133,7 +143,8 @@ describe("margin by client, worker, recruiter, branch and week (I1–I6)", () =>
     expect(await inAgency((tx) => setRecruiter(tx, coordinator, assignmentId("anita-patel"), "00000000-0000-4000-a000-00000000dead"))).toEqual({ ok: false, error: "not_found" });
     expect(await inAgency((tx) => setRecruiter(tx, coordinator, assignmentId("anita-patel"), null))).toEqual({ ok: true });
     const [branch] = await inAgency((tx) => tx.select().from(s.branches).where(eq(s.branches.name, "Ontario office")));
-    expect(await inAgency((tx) => setBranch(tx, theOwner, jobOrderId("il-operator"), branch!.id))).toEqual({ ok: true });
+    expect(await branchTo(accountant, branch!.id)).toEqual({ ok: false, error: "not_allowed" });
+    expect(await branchTo(theOwner, branch!.id)).toMatchObject({ ok: true });
     await runWeek();
     const byBranch = await inAgency((tx) => marginView(tx, { ...PERIOD, groupBy: "branch", sort: "margin" }));
     expect(byBranch.groups.map((g) => [g.name, g.lines.length])).toEqual([
@@ -175,7 +186,61 @@ describe("cash floating and the next payroll (I8, I9)", () => {
     expect(v.next).toMatchObject({ payDate: "2026-10-23", payroll: { cents: 97_950, estimate: true }, expectedCents: 0, afterCents: 195_900 });
     const [invoice] = await inAgency((tx) => tx.select().from(s.invoices).where(eq(s.invoices.clientId, PLM)));
     await inAgency((tx) => recordPayment(tx, theOwner, { clientId: PLM, receivedOn: "2026-10-16", amountCents: 100_000, method: "ach", reference: null, memo: null, applications: [{ invoiceId: invoice!.id, amountCents: 100_000 }] }));
-    // Collected $1,000.00 for $979.50 paid: nothing floating (never below zero).
-    expect((await inAgency((tx) => cashView(tx, "2026-10-16"))).clients[0]).toMatchObject({ collectedCents: 100_000, floatingCents: 0 });
+    // Collected $1,000.00 for $979.50 paid: nothing floating (never below zero), so no row.
+    expect(await inAgency((tx) => cashView(tx, "2026-10-16"))).toMatchObject({ floatingCents: 0, clients: [] });
+  });
+
+  it("review 4: the pay day in force for each period's end; the next pay date by the setting then", async () => {
+    await runWeek();
+    expect(await inAgency((tx) => setPayDay(tx, theOwner, 2, "2026-10-18"))).toEqual({ ok: true });
+    const v = await inAgency((tx) => cashView(tx, "2026-10-16"));
+    // The week ending 10-11 is still paid 5 days later (10-16); the week ending 10-18 is paid 2 days later.
+    expect(v.floatingCents).toBe(97_950);
+    expect(v.next.payDate).toBe("2026-10-20");
+  });
+});
+
+describe("second-opinion review (slice i)", () => {
+  beforeEach(freshAgency);
+
+  it("1: a corrected week counts once, as its latest version: margin, overtime and cash", async () => {
+    await owner.db.update(s.clientBillingProfiles).set({ overtimeBillingRule: "straight_time" }).where(eq(s.clientBillingProfiles.clientId, PLM));
+    for (const d of ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09"]) await addShift("marcus-bell", d, 420, 960);
+    const anita = [await addShift("anita-patel", "2026-10-05", 420, 900), await addShift("anita-patel", "2026-10-06", 420, 900)];
+    await inAgency((tx) => approveAsOwner(tx, theOwner, w2));
+    await inAgency((tx) => createRunFiles(tx, theOwner, store, w2, { today: "2026-10-13" }));
+    const before = await inAgency((tx) => marginView(tx, { ...PERIOD, groupBy: "client", sort: "margin" }));
+    const otBefore = (await inAgency((tx) => overtimeView(tx, PERIOD))).totals.premiumNotBilledCents;
+    // Anita 2 more hours on Tuesday: pay + 2 h × $18.25 = $36.50, billed + 2 h × $26.50 = $53.00.
+    const r = await inAgency((tx) => startCorrection(tx, theOwner, w2, "Anita's Tuesday ran 2 hours longer"));
+    expect(r).toMatchObject({ ok: true });
+    const e = await inAgency((tx) => editEntry(tx, theOwner, anita[1]!.id, { outMinute: 1020, breakMinutes: 0 }, ["misread_corrected"], "test"));
+    expect(e).toMatchObject({ ok: true });
+    await inAgency((tx) => approveAsOwner(tx, theOwner, w2));
+    await inAgency((tx) => createRunFiles(tx, theOwner, store, w2, { today: "2026-10-20" }));
+    const after = await inAgency((tx) => marginView(tx, { ...PERIOD, groupBy: "client", sort: "margin" }));
+    expect(after.totals.payCents).toBe(before.totals.payCents + 3650);
+    expect(after.totals.billedCents).toBe(before.totals.billedCents + 5300);
+    expect(after.totals.minutesPaid).toBe(before.totals.minutesPaid + 120);
+    expect((await inAgency((tx) => overtimeView(tx, PERIOD))).totals.premiumNotBilledCents).toBe(otBefore);
+    const cash = await inAgency((tx) => cashView(tx, "2026-10-19"));
+    expect(cash.floatingCents).toBe(after.totals.payCents);
+    expect(cash.next.payroll).toEqual({ cents: after.totals.payCents, estimate: true });
+  });
+
+  it("2: a rate card that starts during the week still gives the week's lines their class", async () => {
+    await owner.db.update(s.rateCards).set({ effectiveFrom: "2026-10-07" }).where(eq(s.rateCards.jobOrderId, jobOrderId("il-operator")));
+    for (const d of ["2026-10-07", "2026-10-08", "2026-10-09"]) await addShift("marcus-bell", d, 420, 900);
+    await inAgency((tx) => approveAsOwner(tx, theOwner, w2));
+    await inAgency((tx) => createRunFiles(tx, theOwner, store, w2, { today: "2026-10-13" }));
+    // 24 h × $18.25 = $438.00 × 14.70% = $64.386 → $64.39, complete.
+    const v = await inAgency((tx) => marginView(tx, { ...PERIOD, groupBy: "worker", sort: "margin" }));
+    expect(v.totals).toMatchObject({ payCents: 43_800, burdenCents: 6439, incomplete: 0 });
+  });
+
+  it("7, 15: class codes as long as the rate card takes them; a worker's own workers' comp state with no rate is named", async () => {
+    expect(await inAgency((tx) => addWcRate(tx, theOwner, { state: "IL", classCode: "ABCDEFGHIJ12", description: null, ratePpm: 41_234, effectiveFrom: "2026-01-01" }))).toEqual({ ok: true });
+    await owner.db.update(s.workers).set({ wcState: "WI" }).where(eq(s.workers.id, workerId("marcus-bell")));
+    expect((await inAgency((tx) => marginSettings(tx, "2026-10-16"))).missing).toEqual(["WI 3632"]);
   });
 });

@@ -39,3 +39,17 @@ describe("typed amounts become integers exactly", () => {
     expect(parseMultiplier("x")).toBeNull();
   });
 });
+
+describe("rates to four decimals (margin settings, review finding 7)", () => {
+  it("reads 11.675 or 4.1234 as ten-thousandths; refuses five decimals and letters", async () => {
+    const { parseFourPlaces } = await import("./amounts");
+    expect(parseFourPlaces("11.675")).toBe(116_750);
+    expect(parseFourPlaces("4")).toBe(40_000);
+    expect(parseFourPlaces("$4.1234")).toBe(41_234);
+    expect(parseFourPlaces("0.5%")).toBe(5000);
+    expect(parseFourPlaces("1.23456")).toBeNull();
+    expect(parseFourPlaces("abc")).toBeNull();
+    expect(parseFourPlaces("")).toBeNull();
+  });
+});
+

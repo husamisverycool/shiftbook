@@ -51,38 +51,45 @@ rates, each with the date it applies from.
 | Sidebar | `_layouts/app.md` (updated) | Linear sidebar |
 
 ## Decisions made for the owner (2026-10-16, under "keep going"; any can be reversed)
-- I1 **What counts:** the pay and bill lines of runs whose files were made (exported or closed),
-  regular and correction (correction lines are signed differences, so they add), each in the week
-  of its `workweek_start`.
+- I1 **What counts:** the pay and bill lines of each period's latest run whose files were made
+  (exported or closed), each in the week of its `workweek_start`. A correction computes the whole
+  period again, so its lines replace the earlier version's (only its files carry the differences;
+  second opinion, finding 1).
 - I2 **Burden per pay line, rounded once:** employer taxes (a percentage for the worksite's state,
   in force on the week's first day) on the amount, plus workers' comp (a rate per $100 of pay for
-  the worker's workers' comp state, else the worksite's, and the rate card's class) on the amount
-  less the overtime premium (one third of time and a half, one half of double time) while the
+  the worker's workers' comp state, else the worksite's, and the class of the rate card in force on
+  the line's first day of work, else one starting later that week) on the amount less the overtime
+  premium (the part above straight time, from the line's overtime rule multiplier: 1/3 of time and a
+  half, 1/2 of double time; none on file counts the pay in full and says so) while the
   agency's setting says the premium is excluded (most states; on by default). One exact fraction,
   rounded half up once, with the arithmetic in the explain string. A missing rate counts as zero and
   the row says "burden incomplete" with a link to the settings; it never blocks anything.
 - I3 **Rates are kept by date:** a new rate starts on a date and ends the one before (Bullhorn);
   rates are read when the page is shown, so a rate corrected back to January changes past weeks
-  (TempWorks recomputes after a FUTA credit reduction). Only the Owner changes them.
+  (TempWorks recomputes after a FUTA credit reduction). Only the Owner changes them. Rates take up
+  to four decimals (11.675%, $4.1234 per $100); class codes up to 12 characters, as rate cards.
 - I4 **Margin row:** per assignment and week: hours paid, billed, pay, burden, gross margin
   (billed − pay − burden) and margin % (margin ÷ billed, to one decimal, half up; "—" with nothing
   billed). Every column header says its formula (vendors mean different things by "gross profit").
 - I5 **Group by** client (default), worker, recruiter, branch or week; "None" collects rows without a
   recruiter or branch so the totals tie. Sort by margin or margin %.
 - I6 **Period:** the last 13 weeks by default (Mercury's three months, week-aligned), or 4 or 52, or
-  chosen dates; weeks start on the agency's workweek start.
+  chosen dates (at most 104 weeks); weeks start on the agency's workweek start.
 - I7 **Overtime not billed:** per client, worker and week: overtime and double time paid; billed at
   the multiplier; billed at straight time; not billed; and the premium the agency paid on what was
   not billed at the multiplier (the pay's premium share, pro rata by minutes), with the reason from
   the client's terms.
-- I8 **Cash floating:** for each run and client whose pay date has passed (the period's last day +
-  the agency's pay day setting, 5 days in the demo): gross pay − payments applied to that run's
-  invoices for that client, never below zero, summed. Gross pay only (employer taxes are an open
+- I8 **Cash floating:** for each pay period and client whose pay date has passed (the period's last
+  day + the pay day setting in force on that day, 5 days in the demo): the latest version's gross
+  pay − payments applied to the period's invoices (every version's) for that client, never below
+  zero, summed; only what is floating is listed. Gross pay only (employer taxes are an open
   question).
-- I9 **Projection:** the next pay date; that payroll (the run for it if made, else the average of the
-  last four paid weeks, said to be an estimate); the open invoices expected in by then (issued + the
-  client's average days to pay, else the due date; Xero's expected dates); floating then = now +
-  payroll − expected cash, never below zero, with its explain string.
+- I9 **Projection:** the next pay date (each week's end + the pay day in force then); that payroll
+  (the run for it if made, else the average of the last four paid periods, said to be an estimate);
+  the open invoices expected in by then (issued + the client's average days to pay, else the due
+  date; Xero's expected dates). Floating then is the same sum on that date with each expected invoice
+  counted as collected for its own period, so the margin on one invoice never pays for another week
+  (finding 3); invoices already past their expected date are shown apart, not counted on.
 - I10 **Recruiter** on the assignment (any user of the agency); **branch** on the job order (the
   agency's branches). Both optional.
 - I11 **Roles:** the Owner and the Read-only accountant see Margin (SPEC §2); only the Owner changes

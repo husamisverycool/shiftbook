@@ -27,6 +27,17 @@ export function parsePercentBp(text: string): number | null {
   return parseDollars(text.trim().replace(/%$/, ""));
 }
 
+const FOUR_PLACES = /^(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,4}))?$/;
+
+/** "11.675" / "$4.1234" / "0.5%" → ten-thousandths (116,750 / 41,234 / 5,000); at most 4 decimals. A rate as parts per million of pay. */
+export function parseFourPlaces(text: string): number | null {
+  const m = FOUR_PLACES.exec(text.trim().replace(/^\$/, "").replace(/%$/, "").trim());
+  if (!m) return null;
+  const whole = m[1]!.replace(/,/g, "");
+  if (whole.length > 9) return null;
+  return mul(Number(whole), 10_000) + Number((m[2] ?? "").padEnd(4, "0"));
+}
+
 export function bpToInput(bp: number | null): string {
   return centsToInput(bp);
 }

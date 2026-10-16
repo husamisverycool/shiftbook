@@ -25,8 +25,10 @@ export interface JobOrderInput {
 }
 
 export type JobOrderField = "client" | "worksite" | "position" | "soc_code" | "shift" | "headcount" | "pay_range" | "branch";
-export type JobOrderResult = { ok: true; id: string } | { ok: false; error: "invalid"; fields: JobOrderField[] } | { ok: false; error: "not_found" | "client_has_assignments" };
+export type JobOrderResult = { ok: true; id: string } | { ok: false; error: "invalid"; fields: JobOrderField[] } | { ok: false; error: "not_found" | "client_has_assignments" | "not_allowed" };
 
+/** The read-only accountant changes nothing (SPEC §2). */
+const mayChange = (actor: Actor) => actor.role !== "accountant";
 const MAX_RATE_CENTS = 10_000_000;
 const cents = (n: number | null) => n === null || (Number.isSafeInteger(n) && n > 0 && n <= MAX_RATE_CENTS);
 
@@ -58,6 +60,7 @@ const clean = (input: JobOrderInput) => ({
 });
 
 export async function createJobOrder(tx: Tx, actor: Actor, raw: JobOrderInput): Promise<JobOrderResult> {
+  if (!mayChange(actor)) return { ok: false, error: "not_allowed" };
   const input = clean(raw);
   await lockCatalog(tx, actor.agencyId, "exclusive");
   const fields = await problems(tx, input);
@@ -68,6 +71,7 @@ export async function createJobOrder(tx: Tx, actor: Actor, raw: JobOrderInput): 
 }
 
 export async function updateJobOrder(tx: Tx, actor: Actor, id: string, raw: JobOrderInput): Promise<JobOrderResult> {
+  if (!mayChange(actor)) return { ok: false, error: "not_allowed" };
   const input = clean(raw);
   await lockCatalog(tx, actor.agencyId, "exclusive");
   const [current] = await tx.select().from(s.jobOrders).where(eq(s.jobOrders.id, id));

@@ -21,8 +21,23 @@ export function MarginCash({ view }: { view: CashView }) {
   const cards = [
     { key: "now", label: t("now"), value: money(view.floatingCents, locale), why: t("nowWhy", { date: longDate(view.asOf, locale) }) },
     { key: "payroll", label: t("payroll", { date: longDate(n.payDate, locale) }), value: money(n.payroll.cents, locale), why: n.payroll.estimate ? t("estimate") : t("fromRun"), badge: n.payroll.estimate ? t("estimateBadge") : null },
-    { key: "expected", label: t("expected"), value: money(n.expectedCents, locale), why: n.expected.filter((e) => e.expectedOn <= n.payDate).map((e) => `${e.number} (${longDate(e.expectedOn, locale)})`).join(", ") || t("nothingExpected") },
-    { key: "after", label: t("after"), value: money(n.afterCents, locale), why: n.explain },
+    {
+      key: "expected",
+      label: t("expected"),
+      value: money(n.expectedCents, locale),
+      why: [n.expected.map((e) => `${e.number} (${longDate(e.expectedOn, locale)})`).join(", ") || t("nothingExpected"), n.overdueCents > 0 ? t("overdue", { amount: money(n.overdueCents, locale) }) : null].filter(Boolean).join(" "),
+    },
+    {
+      key: "after",
+      label: t("after"),
+      value: money(n.afterCents, locale),
+      why: [
+        t("afterWhy", { now: money(view.floatingCents, locale), payroll: money(n.payroll.cents, locale), back: money(n.backCents, locale), after: money(n.afterCents, locale) }),
+        n.backCents < n.expectedCents ? t("marginKept") : null,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    },
   ];
   return (
     <>
@@ -85,7 +100,7 @@ export function MarginCash({ view }: { view: CashView }) {
                   </TableRow>
                   {open === c.clientId &&
                     c.weeks.map((w) => (
-                      <TableRow key={w.runId} className="bg-muted/30 hover:bg-muted/40" data-testid="cash-week">
+                      <TableRow key={w.periodId} className="bg-muted/30 hover:bg-muted/40" data-testid="cash-week">
                         <TableCell className="pl-8 text-sm">{t("week", { ends: longDate(w.periodEndsOn, locale), paid: longDate(w.payDate, locale) })}</TableCell>
                         <TableCell className="text-right tabular-nums">{money(w.paidCents, locale)}</TableCell>
                         <TableCell className="text-right tabular-nums">{money(w.collectedCents, locale)}</TableCell>

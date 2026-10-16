@@ -3,8 +3,8 @@
  * I7), per client, worker and week. The weekly run already bills every paid overtime minute, so what
  * leaks is the premium on the minutes the client's terms bill at straight time or not at all
  * (`bill_overtime_straight`, `bill_overtime_own_sites_straight`, `bill_overtime_not_billable`). The
- * premium is the worker's for the week, per minute: one third of overtime pay, one half of double
- * time (the pay's multiplier is 1.5 or 2 by law); the row's total is rounded once.
+ * premium is the worker's for the week, per minute: the part of the pay above straight time, from
+ * each pay line's overtime rule multiplier ((m − 1)/m of the pay); the row's total is rounded once.
  */
 import { formatCents, formatDuration, roundHalfUpBig } from "@shiftbook/rules";
 
@@ -14,6 +14,8 @@ export interface OvertimePay {
   type: "OT" | "DT";
   minutes: number;
   amountCents: number;
+  /** The pay line's overtime rule multiplier, or null when none is on file (no premium counted). */
+  multiplier: { num: number; den: number } | null;
 }
 
 export interface OvertimeBill {
@@ -39,15 +41,25 @@ export interface OvertimeRow {
   explain: string;
 }
 
-const PREMIUM = { OT: { num: 1n, den: 3n, text: "1/3", word: "one third" }, DT: { num: 1n, den: 2n, text: "1/2", word: "one half" } } as const;
 const STRAIGHT = new Set(["bill_overtime_straight", "bill_overtime_own_sites_straight"]);
+interface Paid {
+  minutes: number;
+  cents: number;
+  /** The premium paid, as an exact fraction of cents. */
+  premium: { num: bigint; den: bigint };
+}
+
+/** a/b + c/d over one denominator. */
+const add = (x: { num: bigint; den: bigint }, n: bigint, d: bigint) => ({ num: x.num * d + n * x.den, den: x.den * d });
 
 export function overtimeRows(pay: OvertimePay[], bill: OvertimeBill[]): OvertimeRow[] {
-  const paid = new Map<string, { minutes: number; cents: number }>();
+  const paid = new Map<string, Paid>();
   for (const p of pay) {
     const k = `${p.workerId}|${p.week}|${p.type}`;
-    const cur = paid.get(k) ?? { minutes: 0, cents: 0 };
-    paid.set(k, { minutes: cur.minutes + p.minutes, cents: cur.cents + p.amountCents });
+    const cur = paid.get(k) ?? { minutes: 0, cents: 0, premium: { num: 0n, den: 1n } };
+    const m = p.multiplier;
+    const premium = m && m.num > m.den ? add(cur.premium, BigInt(p.amountCents) * BigInt(m.num - m.den), BigInt(m.num)) : cur.premium;
+    paid.set(k, { minutes: cur.minutes + p.minutes, cents: cur.cents + p.amountCents, premium });
   }
   const rows = new Map<string, { row: Omit<OvertimeRow, "premiumNotBilledCents" | "explain">; leaked: { type: "OT" | "DT"; minutes: number; how: string }[] }>();
   for (const b of bill) {
@@ -65,26 +77,21 @@ export function overtimeRows(pay: OvertimePay[], bill: OvertimeBill[]): Overtime
   }
   return [...rows.values()]
     .map(({ row, leaked }) => {
-      // Σ minutes × pay × premium share ÷ paid minutes, over one denominator.
-      let num = 0n;
-      let den = 1n;
+      // Σ the week's premium × leaked minutes ÷ paid minutes, over one denominator.
+      let total = { num: 0n, den: 1n };
       const steps: string[] = [];
       for (const l of leaked) {
         const w = paid.get(`${row.workerId}|${row.week}|${l.type}`);
         if (!w || w.minutes <= 0) continue;
-        const share = PREMIUM[l.type];
-        const n = BigInt(w.cents) * share.num * BigInt(l.minutes);
-        const d = share.den * BigInt(w.minutes);
-        num = num * d + n * den;
-        den = den * d;
-        steps.push(`${formatDuration(l.minutes)} ${l.how}: premium not billed ${formatCents(w.cents)} × ${share.text} × ${l.minutes}/${w.minutes} min`);
+        total = add(total, w.premium.num * BigInt(l.minutes), w.premium.den * BigInt(w.minutes));
+        steps.push(`${formatDuration(l.minutes)} ${l.how}: premium not billed ${formatCents(roundHalfUpBig(w.premium.num, w.premium.den))} × ${l.minutes}/${w.minutes} min`);
       }
-      const premiumNotBilledCents = roundHalfUpBig(num, den);
+      const premiumNotBilledCents = roundHalfUpBig(total.num, total.den);
       const types = (["OT", "DT"] as const).filter((t) => paid.has(`${row.workerId}|${row.week}|${t}`));
       const intro = types
         .map((t) => {
           const w = paid.get(`${row.workerId}|${row.week}|${t}`)!;
-          return `${t === "OT" ? "Overtime" : "Double time"} paid this week: ${formatDuration(w.minutes)} for ${formatCents(w.cents)}, ${PREMIUM[t].word} of it the premium (${formatCents(roundHalfUpBig(BigInt(w.cents) * PREMIUM[t].num, PREMIUM[t].den))}).`;
+          return `${t === "OT" ? "Overtime" : "Double time"} paid this week: ${formatDuration(w.minutes)} for ${formatCents(w.cents)}; its premium (the part above straight time) ${formatCents(roundHalfUpBig(w.premium.num, w.premium.den))}.`;
         })
         .join(" ");
       const tail = steps.length === 0 ? "All of it billed at the overtime multiplier." : `${steps.join("; ")} = ${formatCents(premiumNotBilledCents)}.`;

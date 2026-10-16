@@ -35,7 +35,8 @@ export interface MarginLine {
   billedCents: number;
   payCents: number;
   burdenCents: number;
-  incomplete: boolean;
+  /** Pay lines whose burden lacks a rate. */
+  incomplete: number;
   details: MarginDetail[];
 }
 
@@ -47,7 +48,7 @@ export interface MarginTotals {
   marginCents: number;
   /** Margin % in tenths (173 = 17.3%); null when nothing was billed. */
   marginPermille: number | null;
-  /** Rows whose burden lacks a rate. */
+  /** Pay lines whose burden lacks a rate. */
   incomplete: number;
 }
 
@@ -64,7 +65,7 @@ export function totalsOf(lines: MarginLine[]): MarginTotals {
   const payCents = sum((l) => l.payCents);
   const burdenCents = sum((l) => l.burdenCents);
   const marginCents = billedCents - payCents - burdenCents;
-  return { minutesPaid: sum((l) => l.minutesPaid), billedCents, payCents, burdenCents, marginCents, marginPermille: marginPermille(marginCents, billedCents), incomplete: lines.filter((l) => l.incomplete).length };
+  return { minutesPaid: sum((l) => l.minutesPaid), billedCents, payCents, burdenCents, marginCents, marginPermille: marginPermille(marginCents, billedCents), incomplete: sum((l) => l.incomplete) };
 }
 
 const KEY: Record<GroupBy, (l: MarginLine) => [string | null, string | null]> = {

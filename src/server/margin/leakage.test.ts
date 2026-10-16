@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { overtimeRows } from "./leakage";
 
-const pay = (type: "OT" | "DT", minutes: number, amountCents: number) => ({ workerId: "w1", week: "2026-10-05", type, minutes, amountCents });
+const MULT = { OT: { num: 3, den: 2 }, DT: { num: 2, den: 1 } };
+const pay = (type: "OT" | "DT", minutes: number, amountCents: number) => ({ workerId: "w1", week: "2026-10-05", type, minutes, amountCents, multiplier: MULT[type] });
 const bill = (clientId: string, type: "OT" | "DT", minutes: number, ruleId: string) => ({ workerId: "w1", week: "2026-10-05", clientId, type, minutes, ruleId });
 
 describe("overtime not billed (decision I7)", () => {
@@ -19,7 +20,7 @@ describe("overtime not billed (decision I7)", () => {
         notBilledMinutes: 0,
         premiumNotBilledCents: 7950,
         reasons: ["bill_overtime_straight"],
-        explain: "Overtime paid this week: 6h 00m for $238.50, one third of it the premium ($79.50). 6h 00m billed at straight time: premium not billed $238.50 × 1/3 × 360/360 min = $79.50.",
+        explain: "Overtime paid this week: 6h 00m for $238.50; its premium (the part above straight time) $79.50. 6h 00m billed at straight time: premium not billed $79.50 × 360/360 min = $79.50.",
       },
     ]);
     expect(overtimeRows([pay("OT", 360, 23_850)], [bill("plm", "OT", 360, "bill_overtime_multiplier")])[0]).toMatchObject({ multiplierMinutes: 360, premiumNotBilledCents: 0, reasons: [] });
@@ -36,6 +37,10 @@ describe("overtime not billed (decision I7)", () => {
       // 53.00 × 120/240 = 26.50 + 26.50 × 60/60 = 26.50 → 53.00.
       ["plm", 180, 0, 120, 60, 5300, ["bill_overtime_own_sites_straight", "bill_overtime_not_billable"]],
     ]);
+  });
+
+  it("an overtime line with no multiplier on file carries no premium", () => {
+    expect(overtimeRows([{ ...pay("OT", 60, 3000), multiplier: null }], [bill("plm", "OT", 60, "bill_overtime_straight")])[0]!.premiumNotBilledCents).toBe(0);
   });
 
   it("the premium is rounded once over the whole row", () => {

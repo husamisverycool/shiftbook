@@ -23,6 +23,7 @@ export function MarginOvertime({ view }: { view: OvertimeView }) {
   }
   const T = view.totals;
   const hours = (m: number) => (m === 0 ? "—" : hoursMinutes(m));
+  const sum = (f: (r: OvertimeView["rows"][number]) => number) => view.rows.reduce((t, r) => t + f(r), 0);
   return (
     <>
       <p className="text-sm" data-testid="overtime-summary">
@@ -62,12 +63,19 @@ export function MarginOvertime({ view }: { view: OvertimeView }) {
                     <TableCell className="text-right tabular-nums">{hours(r.straightMinutes)}</TableCell>
                     <TableCell className="text-right tabular-nums">{hours(r.notBilledMinutes)}</TableCell>
                     <TableCell className={`text-right font-medium tabular-nums ${r.premiumNotBilledCents > 0 ? "text-destructive" : ""}`}>{money(r.premiumNotBilledCents, locale)}</TableCell>
-                    <TableCell>{r.reasons.length === 0 ? <span className="text-muted-foreground">{t("reasons.multiplier")}</span> : r.reasons.map((x) => t(`reasons.${x}` as "reasons.bill_overtime_straight")).join(", ")}</TableCell>
+                    <TableCell className="min-w-48 whitespace-normal">{r.reasons.length === 0 ? <span className="text-muted-foreground">{t("reasons.multiplier")}</span> : r.reasons.map((x) => t(`reasons.${x}` as "reasons.bill_overtime_straight")).join(", ")}</TableCell>
                   </TableRow>
                   {open === key && (
                     <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={9} className="text-xs whitespace-normal text-muted-foreground" data-testid="overtime-explain">
-                        {r.explain}
+                      <TableCell colSpan={9} className="text-xs whitespace-normal" data-testid="overtime-explain">
+                        <p className="text-muted-foreground">{r.explain}</p>
+                        <ul className="mt-2 flex flex-col gap-1">
+                          {r.lines.map((d, i) => (
+                            <li key={i} data-testid="overtime-line">
+                              <span className="font-medium">{d.kind === "pay" ? tm("payLine", { type: d.type }) : tm("billLine", { type: d.type })}</span> {d.explain}
+                            </li>
+                          ))}
+                        </ul>
                       </TableCell>
                     </TableRow>
                   )}
@@ -80,11 +88,10 @@ export function MarginOvertime({ view }: { view: OvertimeView }) {
               <TableCell colSpan={3} className="font-semibold">
                 {tm("total")}
               </TableCell>
-              <TableCell className="text-right tabular-nums">{hoursMinutes(T.paidMinutes)}</TableCell>
-              <TableCell />
-              <TableCell colSpan={2} className="text-right tabular-nums">
-                {hoursMinutes(T.leakedMinutes)}
-              </TableCell>
+              <TableCell className="text-right tabular-nums">{hours(T.paidMinutes)}</TableCell>
+              <TableCell className="text-right tabular-nums">{hours(sum((r) => r.multiplierMinutes))}</TableCell>
+              <TableCell className="text-right tabular-nums">{hours(sum((r) => r.straightMinutes))}</TableCell>
+              <TableCell className="text-right tabular-nums">{hours(sum((r) => r.notBilledMinutes))}</TableCell>
               <TableCell className="text-right font-semibold tabular-nums">{money(T.premiumNotBilledCents, locale)}</TableCell>
               <TableCell />
             </TableRow>

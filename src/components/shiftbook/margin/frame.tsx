@@ -4,7 +4,7 @@
 // configure the definitions), Stripe home (date range), Mercury Insights (tabs; the time frame at
 // the top right).
 import { DownloadIcon, SettingsIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const KEPT = ["weeks", "from", "to", "group", "sort"];
 
 export function MarginFrame({ tab, period, exports, children }: { tab: MarginTab; period: Period | null; exports: { label: string; kind: string }[]; children: ReactNode }) {
   const t = useTranslations("margin");
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -48,7 +49,7 @@ export function MarginFrame({ tab, period, exports, children }: { tab: MarginTab
     const s = q.toString();
     router.replace(s ? `${pathname}?${s}` : pathname);
   };
-  const exportHref = (kind: string) => `/api/files/margin?${new URLSearchParams([...kept.entries(), ["kind", kind]]).toString()}`;
+  const exportHref = (kind: string) => `/api/files/margin?${new URLSearchParams([...kept.entries(), ["kind", kind], ["locale", locale]]).toString()}`;
 
   return (
     <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">

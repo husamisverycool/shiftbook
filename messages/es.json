@@ -727,7 +727,8 @@
         "pay_range": "Escribe montos como 18.50, el primero no mayor que el segundo.",
         "amount": "Escribe un monto como 18.50.",
         "client_has_assignments": "Hay trabajadores asignados a esta orden, así que su cliente no puede cambiar.",
-        "branch": "Elija una de las oficinas de la agencia."
+        "branch": "Elija una de las oficinas de la agencia.",
+        "not_allowed": "El acceso del contador es de solo lectura: el Propietario o un coordinador cambian las órdenes de trabajo."
       },
       "branch": "Oficina",
       "noBranch": "Sin oficina"
@@ -2226,7 +2227,7 @@
     "payLine": "Pago ({type}):",
     "billLine": "Facturación ({type}):",
     "burdenOf": "Carga: {explain}",
-    "incomplete": "La carga de {count, plural, one {# fila está incompleta} other {# filas está incompleta}}: falta una tarifa de compensación laboral o de impuestos y cuenta como $0.00.",
+    "incomplete": "La carga de {count, plural, one {# línea de pago está incompleta} other {# líneas de pago están incompletas}}: falta una tarifa de compensación laboral o de impuestos y cuenta como $0.00.",
     "groupBy": "Agrupar por",
     "groups": {
       "client": "Cliente",
@@ -2281,8 +2282,12 @@
       "floating": "Adelantado",
       "daysToPay": "Días para pagar",
       "days": "{days} días ({count, plural, one {# factura} other {# facturas}})",
-      "week": "Semana que termina el {ends}, pagada el {paid}"
-    }
+      "week": "Semana que termina el {ends}, pagada el {paid}",
+      "afterWhy": "{now} adelantado hoy + {payroll} de nómina − {back} devuelto por las facturas que se esperan = {after}.",
+      "marginKept": "Una factura solo devuelve la nómina de su propia semana; el resto es margen.",
+      "overdue": "{amount} ya pasó la fecha en que se esperaba y no se cuenta."
+    },
+    "csvIncomplete": "Líneas de pago sin tarifa"
   },
   "marginSettings": {
     "above": "Configuración",
@@ -2318,7 +2323,8 @@
       "notSet": "No hay día de pago configurado.",
       "current": "Se paga a los trabajadores {days, plural, one {# día} other {# días}} después de que termina el período (desde el {date}).",
       "next": "Desde el {date}: {days, plural, one {# día} other {# días}}.",
-      "days": "Días después de que termina el período"
+      "days": "Días después de que termina el período",
+      "fromHint": "Se aplica a los periodos de pago que terminan en esa fecha o después."
     },
     "state": "Estado",
     "from": "Desde",
@@ -2334,9 +2340,9 @@
     "changed": "Último cambio el {date} por {by}.",
     "rules": {
       "state": "Elija un estado.",
-      "percent": "Ingrese un porcentaje de 0 a 100, con dos decimales como máximo.",
-      "per_hundred": "Ingrese dólares y centavos por cada $100 de pago.",
-      "class_code": "Hasta 10 letras, números, puntos o guiones.",
+      "percent": "Ingrese un porcentaje de 0 a 100, con cuatro decimales como máximo.",
+      "per_hundred": "Ingrese dólares por cada $100 de pago, con cuatro decimales como máximo (como 4.1234).",
+      "class_code": "Hasta 12 letras, números, puntos o guiones.",
       "too_long": "Es demasiado largo.",
       "date": "Ingrese una fecha.",
       "days": "Ingrese días enteros, de 0 a 28."

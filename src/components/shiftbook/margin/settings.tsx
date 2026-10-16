@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "@/i18n/navigation";
-import { parseDollars, parsePercentBp } from "@/lib/amounts";
+import { parseFourPlaces } from "@/lib/amounts";
 import { percentOf, perHundred } from "@/server/margin/burden";
 import type { MarginSettings as View } from "@/server/margin/queries";
 import { longDate } from "../format";
@@ -243,6 +243,7 @@ function PayDay({ view, today, canChange }: { view: View; today: string; canChan
           </Button>
         </div>
       )}
+      {canChange && <p className="text-xs text-muted-foreground">{t("payDay.fromHint")}</p>}
       {problem("days") && <p className="text-sm text-destructive">{t("rules.days")}</p>}
       {problem("effectiveFrom") && <p className="text-sm text-destructive">{t("rules.date")}</p>}
     </div>
@@ -277,7 +278,7 @@ function TaxDialog({ states, today, onClose }: { states: string[]; today: string
   const [from, setFrom] = useState(today);
   const [problems, setProblems] = useState<Problem[]>([]);
   const { pending, save } = useSave();
-  const bp = parsePercentBp(rate);
+  const ppm = parseFourPlaces(rate);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
@@ -293,7 +294,7 @@ function TaxDialog({ states, today, onClose }: { states: string[]; today: string
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tax-rate">{t("taxes.rate")}</Label>
-            <Input id="tax-rate" inputMode="decimal" placeholder="11.75" value={rate} onChange={(e) => setRate(e.target.value)} aria-invalid={rate !== "" && bp === null ? true : undefined} data-testid="tax-rate-input" />
+            <Input id="tax-rate" inputMode="decimal" placeholder="11.75" value={rate} onChange={(e) => setRate(e.target.value)} aria-invalid={rate !== "" && ppm === null ? true : undefined} data-testid="tax-rate-input" />
             <RuleUnder problems={problems} field="ratePpm" />
           </div>
           <div className="flex flex-col gap-1.5 sm:col-span-2">
@@ -311,8 +312,8 @@ function TaxDialog({ states, today, onClose }: { states: string[]; today: string
             {t("cancel")}
           </Button>
           <Button
-            disabled={pending || bp === null}
-            onClick={() => save(() => addTaxRateAction({ state: state || null, ratePpm: (bp ?? -1) * 100, includes: includes.trim() || null, effectiveFrom: from }), onClose, setProblems)}
+            disabled={pending || ppm === null}
+            onClick={() => save(() => addTaxRateAction({ state: state || null, ratePpm: ppm ?? -1, includes: includes.trim() || null, effectiveFrom: from }), onClose, setProblems)}
             data-testid="save-tax-rate"
           >
             {t("save")}
@@ -332,7 +333,7 @@ function WcDialog({ states, today, onClose }: { states: string[]; today: string;
   const [from, setFrom] = useState(today);
   const [problems, setProblems] = useState<Problem[]>([]);
   const { pending, save } = useSave();
-  const cents = parseDollars(rate);
+  const ppm = parseFourPlaces(rate);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
@@ -348,7 +349,7 @@ function WcDialog({ states, today, onClose }: { states: string[]; today: string;
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="wc-class">{t("wc.classCode")}</Label>
-            <Input id="wc-class" value={classCode} maxLength={10} placeholder="8292" onChange={(e) => setClassCode(e.target.value)} data-testid="wc-class-input" />
+            <Input id="wc-class" value={classCode} maxLength={12} placeholder="8292" onChange={(e) => setClassCode(e.target.value)} data-testid="wc-class-input" />
             <RuleUnder problems={problems} field="classCode" />
           </div>
           <div className="flex flex-col gap-1.5 sm:col-span-2">
@@ -357,7 +358,7 @@ function WcDialog({ states, today, onClose }: { states: string[]; today: string;
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="wc-rate">{t("wc.rate")}</Label>
-            <Input id="wc-rate" inputMode="decimal" placeholder="4.00" value={rate} onChange={(e) => setRate(e.target.value)} aria-invalid={rate !== "" && cents === null ? true : undefined} data-testid="wc-rate-input" />
+            <Input id="wc-rate" inputMode="decimal" placeholder="4.00" value={rate} onChange={(e) => setRate(e.target.value)} aria-invalid={rate !== "" && ppm === null ? true : undefined} data-testid="wc-rate-input" />
             <RuleUnder problems={problems} field="ratePpm" />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -371,8 +372,8 @@ function WcDialog({ states, today, onClose }: { states: string[]; today: string;
             {t("cancel")}
           </Button>
           <Button
-            disabled={pending || cents === null}
-            onClick={() => save(() => addWcRateAction({ state, classCode: classCode.trim(), description: description.trim() || null, ratePpm: (cents ?? -1) * 100, effectiveFrom: from }), onClose, setProblems)}
+            disabled={pending || ppm === null}
+            onClick={() => save(() => addWcRateAction({ state, classCode: classCode.trim(), description: description.trim() || null, ratePpm: ppm ?? -1, effectiveFrom: from }), onClose, setProblems)}
             data-testid="save-wc-rate"
           >
             {t("save")}

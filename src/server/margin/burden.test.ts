@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { lineBurden, percentOf, perHundred } from "./burden";
 
+const OT = { num: 3, den: 2 };
+const DT = { num: 2, den: 1 };
 const CA = { taxPpm: 117_500, taxState: "CA", wcPpm: 40_000, wcState: "CA", wcClass: "8292", excludeOtPremium: true };
 
 describe("estimated burden on one pay line (decision I2), rounded once", () => {
@@ -13,7 +15,7 @@ describe("estimated burden on one pay line (decision I2), rounded once", () => {
 
   it("overtime at time and a half: workers' comp leaves out the premium (2/3 of the pay)", () => {
     // $175.50 × 11.75% = $20.62125; WC on $117.00 × 4% = $4.68; $25.30125 → $25.30.
-    const b = lineBurden({ type: "OT", amountCents: 17_550 }, CA);
+    const b = lineBurden({ type: "OT", amountCents: 17_550, multiplier: OT }, CA);
     expect(b.cents).toBe(2530);
     expect(b.explain).toBe(
       "Employer taxes (CA) 11.75% of $175.50 = $20.6212…; workers' comp (CA 8292) $4.00 per $100 of $117.00 (the overtime premium left out: 2/3 of $175.50) = $4.68; burden $25.3012… → $25.30, rounded half up once.",
@@ -22,15 +24,23 @@ describe("estimated burden on one pay line (decision I2), rounded once", () => {
 
   it("an amount that is not a whole number of cents shows four places of dollars, … when there are more", () => {
     // $1.00 × 2/3 = $0.6666… of workers' comp base: × 4% = $0.0266…; taxes $0.1175.
-    expect(lineBurden({ type: "OT", amountCents: 100 }, CA).explain).toBe(
+    expect(lineBurden({ type: "OT", amountCents: 100, multiplier: OT }, CA).explain).toBe(
       "Employer taxes (CA) 11.75% of $1.00 = $0.1175; workers' comp (CA 8292) $4.00 per $100 of $0.6666… (the overtime premium left out: 2/3 of $1.00) = $0.0266…; burden $0.1441… → $0.14, rounded half up once.",
     );
   });
 
   it("double time leaves out half; with the premium counted, workers' comp is on all of it", () => {
     // $100.00: taxes $11.75; WC on $50.00 = $2.00 → $13.75; counted in full: $4.00 → $15.75.
-    expect(lineBurden({ type: "DT", amountCents: 10_000 }, CA).cents).toBe(1375);
-    expect(lineBurden({ type: "DT", amountCents: 10_000 }, { ...CA, excludeOtPremium: false }).cents).toBe(1575);
+    expect(lineBurden({ type: "DT", amountCents: 10_000, multiplier: DT }, CA).cents).toBe(1375);
+    expect(lineBurden({ type: "DT", amountCents: 10_000, multiplier: DT }, { ...CA, excludeOtPremium: false }).cents).toBe(1575);
+  });
+
+  it("the premium share comes from the line's overtime rule; with no multiplier on file the pay counts in full and says so", () => {
+    // A 1.75× rule leaves 4/7: $175.00 → WC on $100.00 = $4.00; taxes $20.5625 → $24.5625 → $24.56.
+    expect(lineBurden({ type: "OT", amountCents: 17_500, multiplier: { num: 7, den: 4 } }, CA)).toMatchObject({ cents: 2456 });
+    const none = lineBurden({ type: "OT", amountCents: 10_000, multiplier: null }, CA);
+    expect(none.cents).toBe(1575);
+    expect(none.explain).toContain("(no overtime multiplier on file for its rule: counted in full)");
   });
 
   it("a negative correction line has a negative burden, rounded half away from zero", () => {

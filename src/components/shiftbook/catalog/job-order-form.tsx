@@ -144,6 +144,7 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
         setErrors(Object.fromEntries(r.fields.map((f) => [FIELD_OF[f], t(`errors.${f}`)])));
       } else if (r.error === "busy") toast.error(te("busy"));
       else if (r.error === "client_has_assignments") setErrors({ clientId: t("errors.client_has_assignments") });
+      else if (r.error === "not_allowed") toast.error(t("errors.not_allowed"));
       else toast.error(te("stale"));
     });
   };

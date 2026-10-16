@@ -89,7 +89,7 @@ export async function addTaxRate(tx: Tx, actor: Actor, input: unknown): Promise<
     "burden_tax_rate",
     versions,
     v.effectiveFrom!,
-    async (row) => void (await tx.update(s.burdenTaxRates).set({ ...values, createdBy: actor.userId, createdByLabel: actor.label }).where(eq(s.burdenTaxRates.id, row.id))),
+    async (row) => void (await tx.update(s.burdenTaxRates).set({ ...values, createdAt: new Date(), createdBy: actor.userId, createdByLabel: actor.label }).where(eq(s.burdenTaxRates.id, row.id))),
     async (id, effectiveTo) => void (await tx.update(s.burdenTaxRates).set({ effectiveTo }).where(eq(s.burdenTaxRates.id, id))),
     async (effectiveTo) => (await tx.insert(s.burdenTaxRates).values({ agencyId: actor.agencyId, state, ...values, effectiveFrom: v.effectiveFrom!, effectiveTo, createdBy: actor.userId, createdByLabel: actor.label }).returning({ id: s.burdenTaxRates.id }))[0]!.id,
     { state, ...values },
@@ -111,7 +111,7 @@ export async function addWcRate(tx: Tx, actor: Actor, input: unknown): Promise<M
   const problems: MarginProblem[] = [];
   if (!(typeof v.state === "string" && STATE.test(v.state))) problems.push({ field: "state", rule: "state" });
   // As the rate card takes it (src/server/catalog/versions.ts).
-  if (!(typeof v.classCode === "string" && /^[A-Za-z0-9.-]{1,10}$/.test(v.classCode.trim()))) problems.push({ field: "classCode", rule: "class_code" });
+  if (!(typeof v.classCode === "string" && /^[A-Za-z0-9.-]{1,12}$/.test(v.classCode.trim()))) problems.push({ field: "classCode", rule: "class_code" });
   if (!text(v.description, 120)) problems.push({ field: "description", rule: "too_long" });
   if (!ppm(v.ratePpm)) problems.push({ field: "ratePpm", rule: "per_hundred" });
   if (typeof v.effectiveFrom !== "string" || !isIsoDate(v.effectiveFrom)) problems.push({ field: "effectiveFrom", rule: "date" });
@@ -126,7 +126,7 @@ export async function addWcRate(tx: Tx, actor: Actor, input: unknown): Promise<M
     "wc_rate",
     versions,
     v.effectiveFrom!,
-    async (row) => void (await tx.update(s.wcRates).set({ ...values, createdBy: actor.userId, createdByLabel: actor.label }).where(eq(s.wcRates.id, row.id))),
+    async (row) => void (await tx.update(s.wcRates).set({ ...values, createdAt: new Date(), createdBy: actor.userId, createdByLabel: actor.label }).where(eq(s.wcRates.id, row.id))),
     async (id, effectiveTo) => void (await tx.update(s.wcRates).set({ effectiveTo }).where(eq(s.wcRates.id, id))),
     async (effectiveTo) => (await tx.insert(s.wcRates).values({ agencyId: actor.agencyId, state: v.state!, classCode, ...values, effectiveFrom: v.effectiveFrom!, effectiveTo, createdBy: actor.userId, createdByLabel: actor.label }).returning({ id: s.wcRates.id }))[0]!.id,
     { state: v.state, classCode, ...values },
@@ -180,19 +180,5 @@ export async function setRecruiter(tx: Tx, actor: Actor, assignmentId: string, u
   if (a.recruiterUserId === userId) return { ok: true };
   await tx.update(s.assignments).set({ recruiterUserId: userId }).where(eq(s.assignments.id, assignmentId));
   await audit(tx, actor, [{ action: "update", entityType: "assignment", entityId: assignmentId, before: { recruiterUserId: a.recruiterUserId }, after: { recruiterUserId: userId } }]);
-  return { ok: true };
-}
-
-/** The office whose margin the job order counts in, or none. */
-export async function setBranch(tx: Tx, actor: Actor, jobOrderId: string, branchId: string | null): Promise<MarginResult> {
-  if (!mayChangePlacement(actor)) return { ok: false, error: "not_allowed" };
-  if (!UUID.test(jobOrderId) || (branchId !== null && !UUID.test(branchId))) return { ok: false, error: "not_found" };
-  await lockCatalog(tx, actor.agencyId, "exclusive");
-  const [j] = await tx.select().from(s.jobOrders).where(eq(s.jobOrders.id, jobOrderId));
-  if (!j) return { ok: false, error: "not_found" };
-  if (branchId !== null && (await tx.select({ id: s.branches.id }).from(s.branches).where(eq(s.branches.id, branchId))).length === 0) return { ok: false, error: "not_found" };
-  if (j.branchId === branchId) return { ok: true };
-  await tx.update(s.jobOrders).set({ branchId }).where(eq(s.jobOrders.id, jobOrderId));
-  await audit(tx, actor, [{ action: "update", entityType: "job_order", entityId: jobOrderId, before: { branchId: j.branchId }, after: { branchId } }]);
   return { ok: true };
 }

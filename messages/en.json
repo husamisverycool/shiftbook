@@ -727,7 +727,8 @@
         "pay_range": "Enter amounts like 18.50, with the first not above the second.",
         "amount": "Enter an amount like 18.50.",
         "client_has_assignments": "Workers are assigned to this job order, so its client cannot change.",
-        "branch": "Choose one of the agency's offices."
+        "branch": "Choose one of the agency's offices.",
+        "not_allowed": "The accountant's access is read only: the Owner or a coordinator changes job orders."
       },
       "branch": "Branch",
       "noBranch": "No branch"
@@ -2226,7 +2227,7 @@
     "payLine": "Pay ({type}):",
     "billLine": "Bill ({type}):",
     "burdenOf": "Burden: {explain}",
-    "incomplete": "{count, plural, one {# row's} other {# rows'}} burden is incomplete: a workers' comp or tax rate is missing and counts as $0.00.",
+    "incomplete": "{count, plural, one {# pay line's} other {# pay lines'}} burden is incomplete: a workers' comp or tax rate is missing and counts as $0.00.",
     "groupBy": "Group by",
     "groups": {
       "client": "Client",
@@ -2281,8 +2282,12 @@
       "floating": "Floating",
       "daysToPay": "Days to pay",
       "days": "{days} days ({count, plural, one {# invoice} other {# invoices}})",
-      "week": "Week ending {ends}, paid {paid}"
-    }
+      "week": "Week ending {ends}, paid {paid}",
+      "afterWhy": "{now} floating today + {payroll} payroll − {back} paid back by the invoices expected in = {after}.",
+      "marginKept": "An invoice pays back only the payroll of its own week; the rest of it is margin.",
+      "overdue": "{amount} is past the date it was expected and is not counted on."
+    },
+    "csvIncomplete": "Pay lines with a rate missing"
   },
   "marginSettings": {
     "above": "Settings",
@@ -2318,7 +2323,8 @@
       "notSet": "No pay day is set.",
       "current": "Workers are paid {days, plural, one {# day} other {# days}} after the period ends (since {date}).",
       "next": "From {date}: {days, plural, one {# day} other {# days}}.",
-      "days": "Days after the period ends"
+      "days": "Days after the period ends",
+      "fromHint": "It applies to the pay periods that end on or after that date."
     },
     "state": "State",
     "from": "From",
@@ -2334,9 +2340,9 @@
     "changed": "Last changed {date} by {by}.",
     "rules": {
       "state": "Choose a state.",
-      "percent": "Enter a percentage from 0 to 100, at most two decimals.",
-      "per_hundred": "Enter dollars and cents per $100 of pay.",
-      "class_code": "Up to 10 letters, numbers, dots or dashes.",
+      "percent": "Enter a percentage from 0 to 100, at most four decimals.",
+      "per_hundred": "Enter dollars per $100 of pay, at most four decimals (like 4.1234).",
+      "class_code": "Up to 12 letters, numbers, dots or dashes.",
       "too_long": "This is too long.",
       "date": "Enter a date.",
       "days": "Enter whole days, 0 to 28."

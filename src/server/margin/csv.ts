@@ -4,7 +4,7 @@
  * formula is kept as text (as the aging CSV, decision 0019).
  */
 import { floorDiv, formatCents, mod, roundHalfUp } from "@shiftbook/rules";
-import { formatPermille, type MarginGroup, type MarginLine } from "./margin";
+import { formatPermille, type GroupBy, type MarginGroup, type MarginLine } from "./margin";
 import type { OvertimeRow } from "./leakage";
 
 const money = (c: number) => (c < 0 ? `-${formatCents(-c).slice(1)}` : formatCents(c).slice(1)).replaceAll(",", "");
@@ -19,25 +19,57 @@ export function decimalHours(minutes: number): string {
   return `${minutes < 0 ? "-" : ""}${floorDiv(hundredths, 100)}.${String(mod(hundredths, 100)).padStart(2, "0")}`;
 }
 
-export function marginSummaryCsv(groups: MarginGroup[], groupLabel: string, noneLabel: string): string {
-  const head = [groupLabel, "Hours", "Billed", "Pay", "Estimated burden", "Gross margin", "Margin %"];
+/** Column names in the screen's language (review nit: the CSV speaks the page's language). */
+export interface MarginCsvLabels {
+  groups: Record<GroupBy, string>;
+  hours: string;
+  billed: string;
+  pay: string;
+  burden: string;
+  margin: string;
+  percent: string;
+  none: string;
+  incomplete: string;
+  overtime: { week: string; client: string; worker: string; paid: string; atMultiplier: string; atStraight: string; notBilled: string; premium: string; terms: string; reasons: Record<string, string> };
+}
+
+type MarginMessages = (typeof import("../../../messages/en.json"))["margin"];
+
+export const marginCsvLabels = (m: MarginMessages): MarginCsvLabels => ({
+  groups: m.groups,
+  hours: m.cols.hours,
+  billed: m.cards.billed,
+  pay: m.cards.pay,
+  burden: m.cards.burden,
+  margin: m.cards.margin,
+  percent: m.cards.percent,
+  none: m.none,
+  incomplete: m.csvIncomplete,
+  overtime: { ...m.overtime, reasons: m.overtime.reasons },
+});
+
+export function marginSummaryCsv(groups: MarginGroup[], by: GroupBy, l: MarginCsvLabels): string {
+  const head = [l.groups[by], l.hours, l.billed, l.pay, l.burden, l.margin, l.percent];
   return csv([
     head,
-    ...groups.map((g) => [g.name ?? noneLabel, decimalHours(g.totals.minutesPaid), money(g.totals.billedCents), money(g.totals.payCents), money(g.totals.burdenCents), money(g.totals.marginCents), g.totals.marginPermille === null ? "" : formatPermille(g.totals.marginPermille)]),
+    ...groups.map((g) => [g.name ?? l.none, decimalHours(g.totals.minutesPaid), money(g.totals.billedCents), money(g.totals.payCents), money(g.totals.burdenCents), money(g.totals.marginCents), g.totals.marginPermille === null ? "" : formatPermille(g.totals.marginPermille)]),
   ]);
 }
 
-export function marginLinesCsv(lines: MarginLine[]): string {
-  const head = ["Week", "Client", "Worker", "Recruiter", "Branch", "Hours", "Billed", "Pay", "Estimated burden", "Gross margin", "Burden incomplete"];
+const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+export function marginLinesCsv(lines: MarginLine[], l: MarginCsvLabels): string {
+  const head = [l.groups.week, l.groups.client, l.groups.worker, l.groups.recruiter, l.groups.branch, l.hours, l.billed, l.pay, l.burden, l.margin, l.incomplete];
   return csv([
     head,
     ...[...lines]
-      .sort((a, b) => (a.week < b.week ? -1 : a.week > b.week ? 1 : (a.clientName ?? "") < (b.clientName ?? "") ? -1 : (a.clientName ?? "") > (b.clientName ?? "") ? 1 : a.workerName < b.workerName ? -1 : 1))
-      .map((l) => [l.week, l.clientName ?? "", l.workerName, l.recruiterName ?? "", l.branchName ?? "", decimalHours(l.minutesPaid), money(l.billedCents), money(l.payCents), money(l.burdenCents), money(l.billedCents - l.payCents - l.burdenCents), l.incomplete ? "yes" : ""]),
+      .sort((a, b) => cmp(a.week, b.week) || cmp(a.clientName ?? "", b.clientName ?? "") || cmp(a.workerName, b.workerName))
+      .map((x) => [x.week, x.clientName ?? "", x.workerName, x.recruiterName ?? "", x.branchName ?? "", decimalHours(x.minutesPaid), money(x.billedCents), money(x.payCents), money(x.burdenCents), money(x.billedCents - x.payCents - x.burdenCents), x.incomplete > 0 ? String(x.incomplete) : ""]),
   ]);
 }
 
-export function overtimeCsv(rows: (OvertimeRow & { clientName: string; workerName: string })[]): string {
-  const head = ["Week", "Client", "Worker", "Overtime hours paid", "Billed at the multiplier", "Billed at straight time", "Not billed", "Premium not billed", "Client's terms"];
-  return csv([head, ...rows.map((r) => [r.week, r.clientName, r.workerName, decimalHours(r.paidMinutes), decimalHours(r.multiplierMinutes), decimalHours(r.straightMinutes), decimalHours(r.notBilledMinutes), money(r.premiumNotBilledCents), r.reasons.join(" ")])]);
+export function overtimeCsv(rows: (OvertimeRow & { clientName: string; workerName: string })[], l: MarginCsvLabels): string {
+  const o = l.overtime;
+  const head = [o.week, o.client, o.worker, o.paid, o.atMultiplier, o.atStraight, o.notBilled, o.premium, o.terms];
+  return csv([head, ...rows.map((r) => [r.week, r.clientName, r.workerName, decimalHours(r.paidMinutes), decimalHours(r.multiplierMinutes), decimalHours(r.straightMinutes), decimalHours(r.notBilledMinutes), money(r.premiumNotBilledCents), r.reasons.map((x) => o.reasons[x] ?? x).join("; ")])]);
 }

@@ -278,6 +278,7 @@ function RecruiterField({ row, users, canChange }: { row: AssignmentRow; users: 
         value={value}
         disabled={pending}
         onChange={(e) => {
+          const before = value;
           const next = e.target.value;
           setValue(next);
           run(async () => {
@@ -285,7 +286,11 @@ function RecruiterField({ row, users, canChange }: { row: AssignmentRow; users: 
             if (r.ok) {
               setNote({ error: false, text: t("recruiterSaved") });
               router.refresh();
-            } else setNote({ error: true, text: r.error === "busy" ? te("busy") : t("recruiterError") });
+            } else {
+              // Not saved: show what is on file again.
+              setValue(before);
+              setNote({ error: true, text: r.error === "busy" ? te("busy") : t("recruiterError") });
+            }
           });
         }}
         data-testid="assignment-recruiter"
