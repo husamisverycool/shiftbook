@@ -1,0 +1,67 @@
+# Pattern: A worker's profile (`/workers/[id]`)
+
+Status: adopted — slice (k) plan, step 2 (2026-10-16, under the owner's "just keep going")
+Reference product and screen: Toast Payroll — employee profile (tabs **Profile** and **Employment**
+at the top of the record; the Profile tab has separate sections, each with its own **Edit**: edit the
+fields, save, and the section shows them at once; **Retrieve SSN**: confirm the look is for business
+purposes, then the eye icon shows the number, and everyone who viewed or edited it is listed in the
+same pop-up; a new SSN already on another profile does not save; profiles are never deleted —
+employment ends and the record is kept); Square — a team member's profile sections in order, each
+with Edit (personal information first)
+Source URL: https://intercom.help/toast-central/en/articles/15483757-toast-payroll-update-employee-profile-information
+Source URL: https://squareup.com/help/us/en/article/6455
+Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §1b, §1c). Confidence: high
+for the tabs, the per-section Edit and the Retrieve SSN steps; the layout's spacing is not documented.
+
+## Purpose in Shiftbook
+One worker (SPEC §17): who they are, their language, their SSN (the last four; the whole number
+only for the Owner, with a reason, every look recorded), their payroll numbers per system, their
+documents, and their employment (hire date, I-9 dates, assignments, end of employment).
+
+## Hierarchy
+1. **Back link** "Workers"; **H1** the worker's name with a status badge (Active / Ended).
+2. **Tabs** (Toast): **Profile** · **Employment** · **Documents**.
+3. **Profile** tab — sections in order, each with its heading and its own **Edit** on the right:
+   1. **Personal** — first name, last name, preferred language (English, Spanish).
+   2. **Social Security number** — "•••-••-1234" (or "Not on file"); **Edit** to enter or replace it
+      (nine digits; refused when already on another worker, and the refused try is listed on that
+      worker); **Retrieve SSN** (the Owner only): a dialog asks the business reason (required, with
+      no SSN in it), then **Show** reveals the number in the dialog; the dialog lists everyone who
+      viewed or changed it, opened a file holding it, or entered it on another worker — when, and
+      why.
+   3. **Payroll numbers** — one row per payroll system (Gusto, QuickBooks Desktop, QuickBooks
+      Online, ADP Workforce Now, RUN, Spreadsheet), the number or "Not set".
+4. **Employment** tab: **Status** (Active, or Ended on a date — **End employment** / **Rehire**,
+   Toast's status change); **Hire date and Form I-9** (dates only, as the compliance duties use
+   them; Edit); **Assignments** (job, client, dates; links to the job order).
+5. **Documents** tab: the worker's files (name, kind, effective date, added by and when), **Add
+   document** (a file, its kind — Form W-4, state withholding form, direct deposit form, other — and
+   its effective date), **Remove** (it leaves the profile; the file is kept). No copies of Form I-9
+   or identity documents (decision J4: the I-9 is dates only); a file name with an SSN in it is
+   refused; the line under the form says so and asks for no date of birth either. A file holds the
+   SSN (a W-4) or bank details, so it opens the way Retrieve SSN does: the Owner clicks its name, a
+   dialog asks the business reason, **Open file** downloads it, and the opening is listed in the
+   Retrieve SSN dialog's "who viewed or changed it".
+
+## Interactions
+- Edit → the section's fields become inputs with **Save** and **Cancel**; Escape cancels.
+- Retrieve SSN → reason → Show; closing the dialog hides the number again. Entering or replacing an
+  SSN and Show ask "Confirm it's you" first when nothing was confirmed in the last 15 minutes
+  (`_components/confirm-access.md`).
+- The tab is in the address (`?tab=employment`), so a link can open it.
+
+## States
+- Not the Owner: no Retrieve SSN (the last four only); the accountant and Billing see no Edit, no
+  Add document and no Remove, and one line saying the Owner and coordinators change the profile.
+- Not the Owner: the documents' list without opening, and the line saying the Owner opens a
+  worker's files, with a reason (decision 0027).
+- More than 30 SSNs entered by one person within an hour: "Too many…; try again later".
+- Ending employment while assignments are current: the dialog says how many, to end them on their
+  job orders.
+- An SSN that breaks the rules or is already on another worker: a message under the field.
+- No documents yet: one line and Add document.
+
+## Never copy
+Toast's or Square's wording, icons, colors or logos.
+
+Deviations allowed: none

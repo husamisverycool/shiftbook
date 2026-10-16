@@ -14,9 +14,9 @@ describe("what each role may change (SPEC §2)", () => {
     for (const role of ROLES.filter((r) => r !== "accountant")) expect(readsOnly({ role })).toBe(false);
   });
 
-  it("a coordinator: intake and hours, placements, their compliance duties; no run approval, money, settings or margin", () => {
+  it("a coordinator: intake and hours, placements, the roster (never a whole SSN), their compliance duties; no run approval, money, settings or margin", () => {
     const yes = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: "coordinator" }, a));
-    expect(yes.sort()).toEqual(["compliance", "hours", "placements"]);
+    expect(yes.sort()).toEqual(["compliance", "hours", "placements", "workers"]);
   });
 
   it("billing: client billing, cash, their compliance duties; no hours, run, settings or margin", () => {

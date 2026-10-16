@@ -207,6 +207,20 @@ export const WORKERS: DemoWorker[] = [
   { key: "ashley-nguyen", firstName: "Ashley", lastName: "Nguyen", job: "ma-server", preferredLanguage: "en" },
 ];
 
+/**
+ * A demo worker's invented SSN, as nine digits. Always in the 900 area, which the SSA never issues,
+ * with a middle group of 10–49, which ITINs never use, so it can be no one's number. One worker has
+ * none on file, so the demo shows that state too.
+ */
+export function demoSsnDigits(workerKey: string): string | null {
+  if (workerKey === "ashley-nguyen") return null;
+  const h = createHash("sha256").update(`ssn:${workerKey}`).digest();
+  const area = 900 + (h[0]! % 100);
+  const group = 10 + (h[1]! % 40);
+  const serial = 1000 + (h.readUInt16BE(2) % 9000);
+  return `${area}${group}${serial}`;
+}
+
 /** A made-up six-character Gusto employee id per worker (Gusto uses short hex ids). */
 export function gustoIdFor(workerKey: string): string {
   return createHash("sha256").update(`gusto:${workerKey}`).digest("hex").slice(0, 6);

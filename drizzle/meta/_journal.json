@@ -246,6 +246,13 @@
       "when": 1792092500000,
       "tag": "0034_sign_in",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1792092600000,
+      "tag": "0035_worker_roster",
+      "breakpoints": true
     }
   ]
 }

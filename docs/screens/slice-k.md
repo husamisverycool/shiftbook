@@ -91,3 +91,51 @@ Screens: `k24-members-accountant.png`, `k25-job-orders-accountant.png`, `k26-con
   here; the Owner and coordinators change hours." with no upload area (`k26`).
 - Every server action names who may run it (a unit test reads them all); the services check the same
   table.
+
+## Step 2 — the worker roster
+
+### Workers — `docs/patterns/workers.md` (Toast Payroll Team page)
+Screens: `slice-k/k30-workers.png`, `k31-workers-search.png`, `k32-workers-no-match.png`,
+`k33-add-worker.png`, `k45-workers-es.png`.
+- ✓ H1 "Workers", Add worker at the right (the Owner and coordinators).
+- ✓ The search ("Search by name or payroll number"; `/` goes to it), and Include ended beside it.
+- ✓ The table by last name: Name (last, first) as a link with the language under it; Assignment (job
+  · client, "+1" when more); Hired; Payroll numbers ("Set", or "Missing for Gusto"); Status.
+- ✓ A payroll number finds its worker (`k31`: SB-0002 → Maribel Torres); accents do not matter; the
+  search finds ended workers too (Playwright).
+- ✓ Nothing matches: the words searched and Clear search (`k32`); no active workers: the line and
+  Include ended (Playwright).
+- ✓ Under the table: "40 workers" ("2 of 41 workers" while searching).
+- ✓ Add worker: first and last name, preferred language, hire date; Save opens the profile (`k33`).
+- ✓ Spanish (`k45`).
+- No SSN column anywhere on the list.
+
+### A worker's profile — `docs/patterns/workers/[id].md` (Toast employee profile; Square's sections)
+Screens: `k34-profile.png`, `k35-profile-edit-personal.png`, `k36-ssn-edit-error.png`,
+`k37-retrieve-ssn.png`, `k38-ssn-revealed.png`, `k39-payroll-edit.png`, `k40-employment.png`,
+`k41-end-employment.png`, `k42-documents.png`, `k43-add-document.png`, `k49-open-document.png`,
+`k44-profile-es.png`, `k46-documents-billing.png`, `k47-profile-accountant.png`,
+`k48-profile-coordinator.png`.
+- ✓ The back link "Workers"; H1 the name with the Active / Ended badge; tabs Profile · Employment ·
+  Documents (the tab in the address).
+- ✓ Profile: Personal, Social Security number, Payroll numbers, each a section with its own Edit
+  (`k34`); Edit turns the section's fields into inputs with Save and Cancel; Escape cancels (`k35`).
+- ✓ The SSN as "•••-••-8564"; a number that breaks the rules says why under the field (`k36`);
+  one already on another worker is refused, naming them (Playwright and the integration test).
+- ✓ Retrieve SSN (the Owner only): the business reason first (`k37`), then the number in the dialog
+  with "Closing this hides the number again", and the list of who viewed or changed it, when and
+  why (`k38`). Closing it takes the number off the page (Playwright reads the page after).
+- ✓ Payroll numbers: one row per system with the one in use marked; Gusto's job title with its
+  number (`k39`).
+- ✓ Employment: the status with End employment… (a last day; the current assignments named,
+  `k41`) or Rehire; hire date and the I-9 dates (dates only) with Edit; the assignments with links
+  to their job orders (`k40`).
+- ✓ Documents: name, kind, effective date, who added it and when; Add document (file, kind,
+  effective date, and the line about I-9 copies and SSNs in file names, `k43`); Remove (`k42`).
+  The Owner opens a file with a business reason, recorded like Retrieve SSN (`k49`).
+- ✓ Not the Owner: no Retrieve SSN and no opening of files (`k48`, a coordinator); Billing and the
+  accountant: no Edit, no Add, no Remove, the line saying who changes the profile and the line
+  saying the Owner opens a worker's files (`k46`, `k47`).
+- ✓ Spanish (`k44`).
+- Difference: Toast shows the number behind an eye icon in its pop-up; Shiftbook shows it in the
+  dialog after Show. Same steps (reason, then the number, then the list).

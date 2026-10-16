@@ -50,8 +50,10 @@ export function seal(plain: Buffer, key: Buffer, aad: string): Sealed {
 }
 
 export function unseal(s: Sealed, key: Buffer, aad: string): Buffer {
-  // A 16-byte tag only: GCM would otherwise accept a shortened one.
-  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(s.iv, "base64"), { authTagLength: 16 });
+  // The 12-byte nonce `seal` makes, and a 16-byte tag only: GCM would otherwise accept other lengths.
+  const iv = Buffer.from(s.iv, "base64");
+  if (iv.length !== 12) throw new Error("A sealed value has a malformed nonce.");
+  const decipher = createDecipheriv("aes-256-gcm", key, iv, { authTagLength: 16 });
   decipher.setAAD(Buffer.from(aad, "utf8"));
   decipher.setAuthTag(Buffer.from(s.tag, "base64"));
   return Buffer.concat([decipher.update(Buffer.from(s.data, "base64")), decipher.final()]);

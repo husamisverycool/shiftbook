@@ -76,7 +76,12 @@ coordinator, billing or the accountant.
    the session; `actorAllowedTo(ability)` gates every action (decision 0026); `scripts/create-agency.ts`
    makes a live agency and its first Owner's invite link (decision 0025).
 2. **Worker roster** — `/workers` (Toast Team page) and `/workers/[id]` (Toast profile: sections
-   with their own Edit; Retrieve SSN), add a worker, documents, payroll numbers, language.
+   with their own Edit; Retrieve SSN), add a worker, documents, payroll numbers, language
+   (decision 0027). Built: migration 0035 (status and end date; the sealed SSN, its last four and
+   keyed index; `worker_documents`), `src/server/workers/{ssn,service,queries}.ts`, the Workers
+   sidebar item (G then W), the two pages, `tests/integration/workers.test.ts`,
+   `tests/e2e/workers.spec.ts` (en/es). Worker files are W-4, state withholding, direct deposit and
+   other — no I-9 or identity copies (J4); Billing sees their list but cannot open them.
 3. **Activity log** — `/settings/activity` (Stripe Workbench events; GitHub audit-log export) and
    per-record history; Spanish duty explanations.
 

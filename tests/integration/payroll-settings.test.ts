@@ -135,7 +135,9 @@ describe("codes and worker ids", () => {
     // ADP's file number is a number: leading zeros name the same person.
     expect(await set(workerId("olivia-hart"), "51")).toEqual({ ok: true });
     expect(await set(anita, "000051")).toEqual({ ok: false, error: "taken", by: "Olivia Hart" });
-    expect(await set(anita, "100114", coordinator)).toEqual({ ok: false, error: "not_allowed" });
+    // The roster is the Owner's and the Coordinators'; billing and the accountant change none of it.
+    expect(await set(anita, "100114", { ...coordinator, role: "accountant" })).toEqual({ ok: false, error: "not_allowed" });
+    expect(await set(anita, "100114", { ...coordinator, role: "billing" })).toEqual({ ok: false, error: "not_allowed" });
     expect(await set(anita, "100114")).toEqual({ ok: true });
     const ids = async () => (await inAgency((tx) => tx.select().from(s.workers).where(eq(s.workers.id, anita))))[0]!.payrollIds;
     expect((await ids()).adp_wfn).toEqual({ id: "100114" });

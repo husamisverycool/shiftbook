@@ -77,6 +77,23 @@ describe("RUN Powered by ADP time sheet import", () => {
       expect.objectContaining({ code: "several_pay_rates", workerId: "w1" }),
     );
     expect(() => renderAdpRun(base({ workers: [base().workers[0]!, { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: {} }] }))).toThrowError(expect.objectContaining({ code: "missing_payroll_id", workerId: "w2" }));
+    // An id saved before SSN-shaped ids were refused: the run says so without repeating the number.
+    let said = "";
+    try {
+      renderAdpRun(base({ workers: [base().workers[0]!, { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: { adp_run: { id: "900-12-3456" } } }] }));
+    } catch (e) {
+      said = (e as Error).message;
+    }
+    expect(said).toMatch(/^Okafor, Ben: the RUN employee id looks like a Social Security number/);
+    expect(said).not.toMatch(/\d{4}/);
+    said = "";
+    try {
+      renderAdpRun(base({ workers: [{ ...base().workers[0]!, payrollIds: { adp_run: { id: "900-12-3456" } } }, { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: { adp_run: { id: "900-12-3456" } } }] }));
+    } catch (e) {
+      said = (e as Error).message;
+    }
+    expect(said).toContain("the same number");
+    expect(said).not.toMatch(/\d{4}/);
   });
 
   it("names a correction for its version", () => {

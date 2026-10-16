@@ -4,6 +4,7 @@
  * — where the target multiplies a rate it stores — every hours line exactly that rate times the
  * file's multiple. A refusal names the worker, so the run can offer to skip them (pay by hand).
  */
+import { idHoldsSsn } from "../lib/ssn-text";
 import { addDays, exactDecimal, formatRate, type EarningType, type Fraction } from "@shiftbook/rules";
 import { ExportError } from "./errors";
 import { checkAmountLine, checkLine, cmp, eachLine, sameRate, sortKey, times } from "./lines";
@@ -86,7 +87,8 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
     const key = idKey(system, id);
     const other = bySystemId.get(key);
     if (other) {
-      const ids = other.payrollIds[system]!.id === id ? id : `${other.payrollIds[system]!.id} and ${id}`;
+      // An SSN-shaped id (saved before they were refused) is never repeated in the message.
+      const ids = idHoldsSsn(id) ? "the same number" : other.payrollIds[system]!.id === id ? id : `${other.payrollIds[system]!.id} and ${id}`;
       throw new ExportError("duplicate_payroll_id", `${who(other)} and ${who(w)} both have ${WORKER_ID_NAME[system]} ${ids}; ${name} would put both workers' pay on one person.`);
     }
     bySystemId.set(key, w);
@@ -124,6 +126,8 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
     const id = worker.payrollIds[system]?.id;
     if (!id) throw new ExportError("missing_payroll_id", `${who(worker)} has no ${WORKER_ID_NAME[system]}, so ${name} cannot match the row.`);
     const bad = workerIdProblem(system, id, worker.payrollIds[system]?.title);
+    // An SSN-shaped id (saved before they were refused) is never repeated: the message is kept with the run.
+    if (bad?.rule === "no_ssn") throw new ExportError("missing_payroll_id", `${who(worker)}: the ${WORKER_ID_NAME[system]} looks like a Social Security number and cannot be used. Enter their ${WORKER_ID_NAME[system]} instead.`);
     if (bad?.field === "id") throw new ExportError("missing_payroll_id", `${who(worker)}: the ${WORKER_ID_NAME[system]} "${id}" cannot be used. ${bad.message}`);
     if (as === "dollars" && line.minutes === 0) checkAmountLine(line, who(worker));
     else checkLine(line, who(worker), correction);

@@ -602,6 +602,7 @@
     "compliance": "Compliance",
     "complianceSettings": "Compliance settings",
     "complianceBadge": "{count} overdue or due soon",
+    "workers": "Workers",
     "members": "Members",
     "account": "Your account",
     "signOut": "Sign out",
@@ -1594,7 +1595,8 @@
         "run_employee_id": "Up to 15 letters, digits or dashes.",
         "sheet_id": "Up to 50 characters.",
         "code_text": "A code is text.",
-        "choose_as": "Choose hours or dollars."
+        "choose_as": "Choose hours or dollars.",
+        "no_ssn": "An SSN can't be a payroll number: it would go into the payroll file."
       },
       "errors": {
         "stale": "These settings changed in another tab or window. The page now shows the latest.",
@@ -3368,5 +3370,220 @@
     "invalid": "That didn't match. Try again.",
     "locked": "Too many tries: wait a while, then try again.",
     "busy": "Too many people are signing in right now. Try again in a moment."
+  },
+  "workers": {
+    "title": "Workers",
+    "add": "Add worker",
+    "search": "Search by name or payroll number",
+    "searchLabel": "Search workers",
+    "includeEnded": "Include ended",
+    "count": "{count, plural, one {# worker} other {# workers}}",
+    "countOf": "{shown} of {total} workers",
+    "readOnly": "Only the Owner and coordinators add or change workers.",
+    "col": {
+      "name": "Name",
+      "placement": "Assignment",
+      "hired": "Hired",
+      "payroll": "Payroll numbers",
+      "status": "Status"
+    },
+    "language": {
+      "en": "English",
+      "es": "Spanish"
+    },
+    "placementAt": "{position} · {client}",
+    "more": "+{count}",
+    "notPlaced": "Not assigned",
+    "payroll": {
+      "set": "Set",
+      "missing": "Missing for {system}",
+      "noSystem": "No payroll system chosen"
+    },
+    "status": {
+      "active": "Active",
+      "ended": "Ended"
+    },
+    "empty": "No workers yet.",
+    "noMatch": "No worker matches “{query}”.",
+    "noActive": "No active workers. Ended workers are hidden.",
+    "clearSearch": "Clear search",
+    "systems": {
+      "gusto": "Gusto",
+      "qbd": "QuickBooks Desktop",
+      "qbo": "QuickBooks Online",
+      "adp_wfn": "ADP Workforce Now",
+      "adp_run": "RUN",
+      "spreadsheet": "Spreadsheet"
+    },
+    "new": {
+      "title": "Add worker",
+      "description": "Their name as payroll has it, the language for their messages, and the day they were hired.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "language": "Preferred language",
+      "hireDate": "Hire date",
+      "save": "Add worker",
+      "added": "{name} added."
+    },
+    "fields": {
+      "firstName": "Enter a first name, up to 100 characters.",
+      "lastName": "Enter a last name, up to 100 characters.",
+      "preferredLanguage": "Choose English or Spanish.",
+      "hireDate": "Enter a date.",
+      "endedOn": "Enter a day from the hire date up to today.",
+      "reason": "Keep the reason under 500 characters.",
+      "reasonSsn": "Leave the number out of the reason: the reason is kept for good."
+    },
+    "errors": {
+      "not_allowed": "Only the Owner and coordinators change workers.",
+      "too_many": "Too many Social Security numbers entered in the last hour. Try again later.",
+      "not_found": "This worker is no longer here. Reload the page.",
+      "generic": "That did not save. Try again.",
+      "busy": "Shiftbook is busy. Try again in a moment.",
+      "ended": "This worker's employment has already ended.",
+      "active": "This worker is already active.",
+      "none": "No SSN is on file for this worker.",
+      "reason_required": "Enter the business reason.",
+      "confirm": "Confirm it's you first."
+    },
+    "profile": {
+      "back": "Workers",
+      "tabs": {
+        "profile": "Profile",
+        "employment": "Employment",
+        "documents": "Documents"
+      },
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saved": "Saved.",
+      "readOnly": "You can look at this profile; the Owner and coordinators change it.",
+      "personal": {
+        "title": "Personal",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "language": "Preferred language"
+      },
+      "ssn": {
+        "title": "Social Security number",
+        "label": "Social Security number",
+        "masked": "•••-••-{last4}",
+        "notOnFile": "Not on file",
+        "hint": "Nine digits. After saving, only the last four show.",
+        "retrieve": "Retrieve SSN",
+        "rules": {
+          "format": "Enter nine digits.",
+          "area": "That can't be an SSN: none start with 000 or 666.",
+          "group": "That can't be an SSN: the middle two digits are never 00.",
+          "serial": "That can't be an SSN: the last four digits are never 0000."
+        },
+        "duplicate": "That number is already on {name}'s profile.",
+        "saved": "SSN saved. Only the last four show."
+      },
+      "reveal": {
+        "title": "Retrieve SSN",
+        "description": "For business purposes only. The look is recorded with your reason and listed below.",
+        "reason": "Business reason",
+        "reasonHint": "For example: setting up payroll, or a W-2 correction.",
+        "show": "Show",
+        "number": "Social Security number",
+        "hidden": "Closing this hides the number again.",
+        "activity": "Who viewed or changed it",
+        "noActivity": "Nobody has viewed or changed it yet.",
+        "viewed": "Viewed by {who}",
+        "changed": "Changed by {who}",
+        "opened": "{file} opened by {who}",
+        "matched": "Entered on another worker by {who}; refused",
+        "close": "Close"
+      },
+      "payroll": {
+        "title": "Payroll numbers",
+        "inUse": "In use",
+        "notSet": "Not set",
+        "noSystem": "No payroll system is chosen yet; numbers can still be kept for each.",
+        "numberLabel": "{system} number",
+        "titleLabel": "Gusto job title",
+        "taken": "Already used by {name}."
+      },
+      "employment": {
+        "status": "Status",
+        "activeSince": "Active since {date}",
+        "active": "Active",
+        "endedOn": "Ended on {date}",
+        "end": "End employment…",
+        "rehire": "Rehire",
+        "rehired": "{name} is active again.",
+        "ended": "Employment ended on {date}.",
+        "endTitle": "End {name}'s employment",
+        "endDescription": "The profile and its history are kept. Their assignments stay as they are.",
+        "endedOnLabel": "Last day",
+        "currentPlacements": "{count, plural, one {They have # current assignment; end it on its job order.} other {They have # current assignments; end them on their job orders.}}",
+        "endConfirm": "End employment",
+        "i9": {
+          "title": "Hire date and Form I-9",
+          "hint": "Dates only: Shiftbook keeps no copy of the form or of identity documents.",
+          "hireDate": "Hire date",
+          "section1On": "Section 1 completed",
+          "section2On": "Section 2 completed",
+          "workAuthExpiresOn": "Work authorization ends",
+          "rules": {
+            "hireDate": "Enter a date.",
+            "section1On": "Enter a day up to today.",
+            "section2On": "Enter a day up to today, not before Section 1.",
+            "workAuthExpiresOn": "Enter a date."
+          }
+        },
+        "placements": {
+          "title": "Assignments",
+          "job": "Job",
+          "client": "Client",
+          "dates": "Dates",
+          "status": "Status",
+          "current": "Current",
+          "past": "Past",
+          "upcoming": "Upcoming",
+          "cancelled": "Cancelled",
+          "from": "From {date}",
+          "between": "{from} – {to}",
+          "none": "No assignments yet."
+        }
+      },
+      "documents": {
+        "title": "Documents",
+        "add": "Add document",
+        "name": "Name",
+        "kind": "Kind",
+        "effectiveOn": "Effective date",
+        "added": "Added",
+        "addedBy": "{who}, {date}",
+        "open": "Open {name}",
+        "openTitle": "Open {name}",
+        "openDescription": "A worker's file holds their Social Security number or bank details. For business purposes only: the opening is recorded with your reason and listed with the SSN's views.",
+        "openConfirm": "Open file",
+        "remove": "Remove",
+        "removeTitle": "Remove {name}?",
+        "removeBody": "It leaves this profile. The file is kept for the record.",
+        "removed": "Document removed.",
+        "saved": "Document added.",
+        "empty": "No documents yet.",
+        "openOnly": "Only the Owner opens a worker's files, with a reason: they hold the Social Security number or bank details.",
+        "file": "File",
+        "hint": "PDF, an image, a spreadsheet, a document or text, up to 20 MB. No copies of Form I-9 or identity documents (the I-9 is dates only), and no SSN or date of birth in the file name.",
+        "kinds": {
+          "w4": "Form W-4",
+          "state_w4": "State withholding form",
+          "direct_deposit": "Direct deposit form",
+          "other": "Other"
+        },
+        "rules": {
+          "form": "Choose a file, its kind and its effective date.",
+          "kind": "Choose a kind.",
+          "file_type": "That kind of file can't be kept: use PDF, an image, a spreadsheet, a document or text.",
+          "file_size": "The file is empty or larger than 20 MB.",
+          "file_name": "Take the Social Security number out of the file name.",
+          "effective_on": "Enter the date the file took effect."
+        }
+      }
+    }
   }
 }

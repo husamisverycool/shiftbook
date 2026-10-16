@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, FileSpreadsheetIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -25,6 +25,8 @@ const AREAS = [
   { href: "/margin", key: "margin", jump: "m", icon: ChartColumnIcon },
   // Slice j: everyone reads compliance; the badge counts what is overdue or due soon.
   { href: "/compliance", key: "compliance", jump: "o", icon: ShieldCheckIcon },
+  // Slice k: the roster, read by everyone; the Owner and coordinators change it.
+  { href: "/workers", key: "workers", jump: "w", icon: ContactRoundIcon },
 ] as const;
 
 /** True while the person is typing, so single-letter shortcuts stay out of the way. */

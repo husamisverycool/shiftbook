@@ -255,6 +255,7 @@ export const worksites = pgTable(
 
 export { INVOICE_TEMPLATES, SEPARATE_BY, VMS_FORMATS, type InvoiceTemplate, type SeparateBy, type VmsFormat } from "../../lib/invoice-options";
 import type { InvoiceTemplate, SeparateBy, VmsFormat } from "../../lib/invoice-options";
+import type { WorkerDocumentKind } from "../../lib/worker-documents";
 
 export const clientBillingProfiles = pgTable(
   "client_billing_profiles",
@@ -303,8 +304,49 @@ export const workers = pgTable("workers", {
   i9Section1On: isoDate("i9_section1_on"),
   i9Section2On: isoDate("i9_section2_on"),
   workAuthExpiresOn: isoDate("work_auth_expires_on"),
+  /** Slice (k): never deleted; employment ends (Toast). */
+  status: text("status").$type<WorkerStatus>().notNull().default("active"),
+  endedOn: isoDate("ended_on"),
+  /** The SSN sealed with its own data key (src/server/workers/ssn.ts); only the last four in clear. */
+  ssnSealed: jsonb("ssn_sealed").$type<SealedSsnColumn>(),
+  ssnLast4: text("ssn_last4"),
+  /** A keyed digest that finds the same SSN on another worker in the agency, revealing nothing. */
+  ssnIndex: text("ssn_index"),
+  ssnChangedAt: timestamp("ssn_changed_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
+
+export type WorkerStatus = "active" | "ended";
+export interface SealedSsnColumn {
+  v: number;
+  iv: string;
+  tag: string;
+  data: string;
+  key: { v: number; iv: string; tag: string; data: string };
+}
+export { WORKER_DOCUMENT_KINDS, type WorkerDocumentKind } from "../../lib/worker-documents";
+
+/** A worker's files (slice k), kept in the agency's document store; removing one unlinks it. */
+export const workerDocuments = pgTable(
+  "worker_documents",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    workerId: uuid("worker_id")
+      .notNull()
+      .references(() => workers.id),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => complianceDocuments.id),
+    kind: text("kind").$type<WorkerDocumentKind>().notNull(),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    removedByLabel: text("removed_by_label"),
+  },
+  (t) => [index("worker_documents_worker").on(t.agencyId, t.workerId)],
+);
 
 // Per-agency nickname map used by roster matching (SPEC §6), e.g. "Bob" → "Robert".
 export const nicknames = pgTable(
@@ -1540,6 +1582,7 @@ export const TENANT_TABLES = [
   "worksites",
   "client_billing_profiles",
   "workers",
+  "worker_documents",
   "nicknames",
   "job_orders",
   "rate_cards",

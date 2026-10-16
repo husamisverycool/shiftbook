@@ -57,6 +57,13 @@ describe("payroll targets", () => {
     expect(workerIdProblem("qbo", "Ana Núñez")).toBeNull();
     expect(workerIdProblem("adp_run", "E 12")?.field).toBe("id");
     expect(workerIdProblem("spreadsheet", " A-1")?.field).toBe("id");
+    // An SSN is never a payroll number: it would go into the payroll file (SPEC §21).
+    for (const [system, id] of [["spreadsheet", "900123456"], ["gusto", "900-12-3456"], ["adp_run", "900-12-3456"], ["qbo", "Ana 900 12 3456"]] as const) expect(workerIdProblem(system, id, "Picker"), `${system} ${id}`).toMatchObject({ field: "id", rule: "no_ssn" });
+    expect(workerIdProblem("spreadsheet", "SB-0001")).toBeNull();
+    // Nine digits inside a longer id (letters around them) are part of that id, not an SSN.
+    expect(workerIdProblem("spreadsheet", "EMP123456789")).toBeNull();
+    expect(workerIdProblem("spreadsheet", "6f1c2a8e-0b4d-4c55-9a3e-123456789abc")).toBeNull();
+    expect(workerIdProblem("adp_wfn", "100155")).toBeNull();
   });
 
   it("the demo agency's payroll settings and worker ids pass the same checks", () => {

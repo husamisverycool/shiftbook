@@ -15,6 +15,7 @@ import {
   CLIENTS,
   DEMO_AGENCY,
   DEMO_OWNER,
+  demoSsnDigits,
   demoUuid,
   demoPayrollIds,
   JOB_ORDERS,
@@ -36,6 +37,8 @@ import {
   type JobKey,
 } from "./dataset";
 import { scenario } from "./scenario";
+import { appKey } from "../auth/crypto";
+import { last4Of, sealSsn, ssnIndex } from "../workers/ssn";
 
 const agencyId = DEMO_AGENCY.id;
 const SINCE = "2026-01-01";
@@ -68,6 +71,7 @@ const CLEAR_ORDER = [
   "equal_pay_rates",
   "aca_monthly_hours",
   "obligation_documents",
+  "worker_documents",
   "obligations",
   "agency_registrations",
   "wc_policies",
@@ -174,9 +178,11 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
 
   for (const [index, w] of WORKERS.entries()) {
     const job = JOB_ORDERS[w.job];
+    const ssn = demoSsnDigits(w.key);
     await tx.insert(s.workers).values({
       id: workerId(w.key),
       agencyId,
+      ...(ssn ? { ssnSealed: sealSsn(ssn, appKey(), workerId(w.key)), ssnLast4: last4Of(ssn), ssnIndex: ssnIndex(ssn, appKey(), agencyId) } : {}),
       firstName: w.firstName,
       lastName: w.lastName,
       preferredLanguage: w.preferredLanguage,

@@ -6,6 +6,7 @@
  *
  * Research with sources: docs/research/payroll-formats-slice-f.md.
  */
+import { idHoldsSsn } from "../lib/ssn-text";
 import type { EarningType, Fraction } from "@shiftbook/rules";
 import type { PayrollIds } from "../server/db/schema";
 import { badCharacter } from "./lines";
@@ -348,6 +349,8 @@ export function codeMapProblems(format: ExportFormat, value: unknown): SettingPr
 /** What is wrong with a worker's id (and Gusto's job title), or null. */
 export function workerIdProblem(system: PayrollSystem, id: string, title?: string): { field: "id" | "title"; rule: string; message: string } | null {
   if (id === "" || !isTrimmed(id)) return { field: "id", rule: "id_spaces", message: "Enter the id with no spaces around it." };
+  // The id goes into the payroll file and onto the roster: never an SSN (SPEC §21).
+  if (idHoldsSsn(id)) return { field: "id", rule: "no_ssn", message: "An SSN can't be a payroll number: it would go into the payroll file." };
   switch (system) {
     case "gusto":
       if (id.length > 64 || controlCharacter(id)) return { field: "id", rule: "gusto_id", message: "Gusto's employee id, up to 64 characters." };

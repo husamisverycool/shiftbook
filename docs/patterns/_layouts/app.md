@@ -30,14 +30,14 @@ between areas, the same on every page, inside the root frame (demo banner above 
       Assignments, Client approvals (slice d), Invoices, Clients (slice g), Receivables, Payments,
       Bank (slice h), Margin (slice i; shown to the Owner and the accountant only, SPEC §2),
       Compliance (slice j) with a badge count of the duties overdue or due soon (Linear's Inbox
-      "badge count").
+      "badge count"), Workers (slice k).
    3. The current area's link is highlighted.
 2. **Page** to the right of the sidebar: the route's own pattern.
 
 ## Interactions
 - Click a sidebar link → that area.
 - Keyboard (Linear "G then a letter" to jump): G then C → Convert timesheets, G then J → Job orders,
-  G then A → Assignments, G then P → Client approvals (A is taken; P as in "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R → Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M → Margin, G then O → Compliance (C is taken; O as in "Obligations"). Not
+  G then A → Assignments, G then P → Client approvals (A is taken; P as in "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R → Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M → Margin, G then O → Compliance (C is taken; O as in "Obligations"), G then W → Workers. Not
   active while typing in a field.
 - `?` opens the list of keyboard shortcuts (Linear).
 

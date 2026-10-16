@@ -27,6 +27,10 @@ export const ABILITIES = {
   settings: ["owner"],
   /** Invites, roles and suspensions. */
   members: ["owner"],
+  /** The worker roster: a worker's details, payroll numbers, documents, an SSN entered, employment (slice k). */
+  workers: ["owner", "coordinator"],
+  /** A whole SSN on screen, with a reason, every time recorded (SPEC §2, §17). */
+  revealSsn: ["owner"],
   /** The margin pages (reading). */
   viewMargin: ["owner", "accountant"],
 } as const satisfies Record<string, readonly Role[]>;

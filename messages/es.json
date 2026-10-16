@@ -602,6 +602,7 @@
     "compliance": "Cumplimiento",
     "complianceSettings": "Ajustes de cumplimiento",
     "complianceBadge": "{count} vencidas o por vencer",
+    "workers": "Trabajadores",
     "members": "Miembros",
     "account": "Tu cuenta",
     "signOut": "Cerrar sesión",
@@ -1594,7 +1595,8 @@
         "run_employee_id": "Hasta 15 letras, dígitos o guiones.",
         "sheet_id": "Hasta 50 caracteres.",
         "code_text": "Un código es texto.",
-        "choose_as": "Elija horas o dólares."
+        "choose_as": "Elija horas o dólares.",
+        "no_ssn": "Un número de Seguro Social no puede ser número de nómina: iría en el archivo de nómina."
       },
       "errors": {
         "stale": "Esta configuración cambió en otra pestaña o ventana. La página ya muestra lo más reciente.",
@@ -3368,5 +3370,220 @@
     "invalid": "No coincide. Inténtalo de nuevo.",
     "locked": "Demasiados intentos: espera un rato y vuelve a intentarlo.",
     "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtalo de nuevo en un momento."
+  },
+  "workers": {
+    "title": "Trabajadores",
+    "add": "Agregar trabajador",
+    "search": "Buscar por nombre o número de nómina",
+    "searchLabel": "Buscar trabajadores",
+    "includeEnded": "Incluir dados de baja",
+    "count": "{count, plural, one {# trabajador} other {# trabajadores}}",
+    "countOf": "{shown} de {total} trabajadores",
+    "readOnly": "Solo el Propietario y los coordinadores agregan o cambian trabajadores.",
+    "col": {
+      "name": "Nombre",
+      "placement": "Asignación",
+      "hired": "Contratación",
+      "payroll": "Números de nómina",
+      "status": "Estado"
+    },
+    "language": {
+      "en": "Inglés",
+      "es": "Español"
+    },
+    "placementAt": "{position} · {client}",
+    "more": "+{count}",
+    "notPlaced": "Sin asignación",
+    "payroll": {
+      "set": "Registrado",
+      "missing": "Falta en {system}",
+      "noSystem": "No se ha elegido sistema de nómina"
+    },
+    "status": {
+      "active": "Activo",
+      "ended": "De baja"
+    },
+    "empty": "Todavía no hay trabajadores.",
+    "noMatch": "Ningún trabajador coincide con «{query}».",
+    "noActive": "No hay trabajadores activos. Los dados de baja están ocultos.",
+    "clearSearch": "Borrar búsqueda",
+    "systems": {
+      "gusto": "Gusto",
+      "qbd": "QuickBooks Desktop",
+      "qbo": "QuickBooks Online",
+      "adp_wfn": "ADP Workforce Now",
+      "adp_run": "RUN",
+      "spreadsheet": "Hoja de cálculo"
+    },
+    "new": {
+      "title": "Agregar trabajador",
+      "description": "Su nombre como lo tiene la nómina, el idioma de sus mensajes y el día en que fue contratado.",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "language": "Idioma preferido",
+      "hireDate": "Fecha de contratación",
+      "save": "Agregar trabajador",
+      "added": "Se agregó a {name}."
+    },
+    "fields": {
+      "firstName": "Escriba un nombre, de hasta 100 caracteres.",
+      "lastName": "Escriba un apellido, de hasta 100 caracteres.",
+      "preferredLanguage": "Elija inglés o español.",
+      "hireDate": "Escriba una fecha.",
+      "endedOn": "Escriba un día entre la fecha de contratación y hoy.",
+      "reason": "El motivo debe tener menos de 500 caracteres.",
+      "reasonSsn": "No escriba el número en el motivo: el motivo se guarda para siempre."
+    },
+    "errors": {
+      "not_allowed": "Solo el Propietario y los coordinadores cambian trabajadores.",
+      "too_many": "Demasiados números de Seguro Social ingresados en la última hora. Inténtelo más tarde.",
+      "not_found": "Este trabajador ya no está aquí. Vuelva a cargar la página.",
+      "generic": "No se guardó. Inténtelo de nuevo.",
+      "busy": "Shiftbook está ocupado. Inténtelo de nuevo en un momento.",
+      "ended": "El empleo de este trabajador ya terminó.",
+      "active": "Este trabajador ya está activo.",
+      "none": "No hay número de Seguro Social registrado para este trabajador.",
+      "reason_required": "Escriba el motivo de negocio.",
+      "confirm": "Primero confirme que es usted."
+    },
+    "profile": {
+      "back": "Trabajadores",
+      "tabs": {
+        "profile": "Perfil",
+        "employment": "Empleo",
+        "documents": "Documentos"
+      },
+      "edit": "Editar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "saved": "Guardado.",
+      "readOnly": "Puede ver este perfil; el Propietario y los coordinadores lo cambian.",
+      "personal": {
+        "title": "Datos personales",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "language": "Idioma preferido"
+      },
+      "ssn": {
+        "title": "Número de Seguro Social",
+        "label": "Número de Seguro Social",
+        "masked": "•••-••-{last4}",
+        "notOnFile": "No registrado",
+        "hint": "Nueve dígitos. Al guardar, solo se ven los últimos cuatro.",
+        "retrieve": "Ver número de Seguro Social",
+        "rules": {
+          "format": "Escriba nueve dígitos.",
+          "area": "No puede ser un número de Seguro Social: ninguno empieza con 000 ni con 666.",
+          "group": "No puede ser un número de Seguro Social: los dos dígitos del medio nunca son 00.",
+          "serial": "No puede ser un número de Seguro Social: los últimos cuatro dígitos nunca son 0000."
+        },
+        "duplicate": "Ese número ya está en el perfil de {name}.",
+        "saved": "Número guardado. Solo se ven los últimos cuatro."
+      },
+      "reveal": {
+        "title": "Ver número de Seguro Social",
+        "description": "Solo con fines de negocio. La consulta queda registrada con su motivo y aparece abajo.",
+        "reason": "Motivo de negocio",
+        "reasonHint": "Por ejemplo: dar de alta en la nómina o corregir un W-2.",
+        "show": "Mostrar",
+        "number": "Número de Seguro Social",
+        "hidden": "Al cerrar, el número vuelve a ocultarse.",
+        "activity": "Quién lo vio o lo cambió",
+        "noActivity": "Nadie lo ha visto ni cambiado todavía.",
+        "viewed": "Visto por {who}",
+        "changed": "Cambiado por {who}",
+        "opened": "{file} abierto por {who}",
+        "matched": "Ingresado en otro trabajador por {who}; rechazado",
+        "close": "Cerrar"
+      },
+      "payroll": {
+        "title": "Números de nómina",
+        "inUse": "En uso",
+        "notSet": "Sin registrar",
+        "noSystem": "Todavía no se ha elegido sistema de nómina; igual se puede guardar el número de cada uno.",
+        "numberLabel": "Número en {system}",
+        "titleLabel": "Puesto en Gusto",
+        "taken": "Ya lo usa {name}."
+      },
+      "employment": {
+        "status": "Estado",
+        "activeSince": "Activo desde el {date}",
+        "active": "Activo",
+        "endedOn": "De baja desde el {date}",
+        "end": "Dar de baja…",
+        "rehire": "Volver a contratar",
+        "rehired": "{name} está activo de nuevo.",
+        "ended": "Empleo terminado el {date}.",
+        "endTitle": "Dar de baja a {name}",
+        "endDescription": "El perfil y su historial se conservan. Sus asignaciones quedan como están.",
+        "endedOnLabel": "Último día",
+        "currentPlacements": "{count, plural, one {Tiene # asignación vigente; termínela en su orden de trabajo.} other {Tiene # asignaciones vigentes; termínelas en sus órdenes de trabajo.}}",
+        "endConfirm": "Dar de baja",
+        "i9": {
+          "title": "Fecha de contratación y Formulario I-9",
+          "hint": "Solo fechas: Shiftbook no guarda copia del formulario ni de documentos de identidad.",
+          "hireDate": "Fecha de contratación",
+          "section1On": "Sección 1 completada",
+          "section2On": "Sección 2 completada",
+          "workAuthExpiresOn": "Fin de la autorización de trabajo",
+          "rules": {
+            "hireDate": "Escriba una fecha.",
+            "section1On": "Escriba un día que no sea posterior a hoy.",
+            "section2On": "Escriba un día que no sea posterior a hoy ni anterior a la Sección 1.",
+            "workAuthExpiresOn": "Escriba una fecha."
+          }
+        },
+        "placements": {
+          "title": "Asignaciones",
+          "job": "Puesto",
+          "client": "Cliente",
+          "dates": "Fechas",
+          "status": "Estado",
+          "current": "Vigente",
+          "past": "Anterior",
+          "upcoming": "Próxima",
+          "cancelled": "Cancelada",
+          "from": "Desde el {date}",
+          "between": "{from} – {to}",
+          "none": "Todavía no tiene asignaciones."
+        }
+      },
+      "documents": {
+        "title": "Documentos",
+        "add": "Agregar documento",
+        "name": "Nombre",
+        "kind": "Tipo",
+        "effectiveOn": "Fecha de vigencia",
+        "added": "Agregado",
+        "addedBy": "{who}, {date}",
+        "open": "Abrir {name}",
+        "openTitle": "Abrir {name}",
+        "openDescription": "Los archivos de un trabajador contienen su número de Seguro Social o sus datos bancarios. Solo con fines de negocio: la apertura queda registrada con su motivo y aparece junto a las consultas del número.",
+        "openConfirm": "Abrir archivo",
+        "remove": "Quitar",
+        "removeTitle": "¿Quitar {name}?",
+        "removeBody": "Sale de este perfil. El archivo se conserva como registro.",
+        "removed": "Documento quitado.",
+        "saved": "Documento agregado.",
+        "empty": "Todavía no hay documentos.",
+        "openOnly": "Solo el Propietario abre los archivos de un trabajador, con un motivo: contienen el número de Seguro Social o datos bancarios.",
+        "file": "Archivo",
+        "hint": "PDF, imagen, hoja de cálculo, documento o texto, de hasta 20 MB. Sin copias del Formulario I-9 ni de documentos de identidad (del I-9 solo se guardan fechas), y sin número de Seguro Social ni fecha de nacimiento en el nombre del archivo.",
+        "kinds": {
+          "w4": "Formulario W-4",
+          "state_w4": "Formulario estatal de retención",
+          "direct_deposit": "Formulario de depósito directo",
+          "other": "Otro"
+        },
+        "rules": {
+          "form": "Elija un archivo, su tipo y su fecha de vigencia.",
+          "kind": "Elija un tipo.",
+          "file_type": "Ese tipo de archivo no se puede guardar: use PDF, imagen, hoja de cálculo, documento o texto.",
+          "file_size": "El archivo está vacío o pesa más de 20 MB.",
+          "file_name": "Quite el número de Seguro Social del nombre del archivo.",
+          "effective_on": "Escriba la fecha en que el archivo entró en vigor."
+        }
+      }
+    }
   }
 }
