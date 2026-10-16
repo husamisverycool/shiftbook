@@ -619,7 +619,8 @@
       "billing": "Facturación",
       "staffing": "Personal",
       "oversight": "Supervisión"
-    }
+    },
+    "sso": "Inicio de sesión único"
   },
   "list": {
     "filter": "Filtrar",
@@ -3212,7 +3213,12 @@
       "signed_out": "Cerró la sesión.",
       "expired": "Su sesión terminó. Inicie sesión de nuevo.",
       "password_changed": "Su contraseña cambió. Inicie sesión con la nueva.",
-      "link_expired": "Ese enlace ya no funciona."
+      "link_expired": "Ese enlace ya no funciona.",
+      "provider_failed": "El proveedor no inició su sesión. Inténtelo de nuevo, o use otra forma de entrar.",
+      "no_account": "Ningún miembro de Shiftbook usa esa cuenta. Pida una invitación al Propietario de su agencia.",
+      "not_verified": "El proveedor no confirmó el correo de esa cuenta. Inicie sesión de otra forma y conéctela desde Su cuenta.",
+      "suspended": "Su acceso a esta agencia está suspendido. Consulte al Propietario de la agencia.",
+      "too_many": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo."
     },
     "demoTitle": "Pruebe la demostración como",
     "demoHint": "Las personas de la demostración no necesitan contraseña ni código.",
@@ -3746,7 +3752,9 @@
       "refuse": "Rechazado",
       "ssn_viewed": "Número de Seguro Social consultado",
       "file_opened": "Archivo abierto",
-      "ssn_changed": "Número de Seguro Social cambiado"
+      "ssn_changed": "Número de Seguro Social cambiado",
+      "identity_connected": "Cuenta conectada",
+      "identity_disconnected": "Cuenta desconectada"
     },
     "types": {
       "aca_monthly_hours": "Horas ACA",
@@ -4310,5 +4318,139 @@
     "whatPoMany": "la orden de compra {po} en el depósito (facturas {invoices})",
     "whyNamed": "; el cliente aparece en el depósito",
     "whyOnlyClient": "; es el único cliente con facturas que suman eso"
+  },
+  "identities": {
+    "connectedTitle": "Cuentas conectadas",
+    "connectedBody": "Otra forma de iniciar sesión. Si su rol necesita el código del autenticador, se le sigue pidiendo después.",
+    "providers": {
+      "google": "Google",
+      "microsoft": "Microsoft"
+    },
+    "connect": "Conectar",
+    "connecting": "Conectando…",
+    "disconnect": "Desconectar",
+    "connectedOn": "Conectada el {date}",
+    "notConnected": "Sin conectar",
+    "disconnectTitle": "¿Desconectar {provider}?",
+    "disconnectBody": "Ya no podrá iniciar sesión con esta cuenta de {provider}. Puede conectarla de nuevo más adelante.",
+    "cancel": "Cancelar",
+    "result": {
+      "connected": "{provider} conectada. Ya puede iniciar sesión con ella.",
+      "disconnected": "{provider} desconectada.",
+      "taken": "Esa cuenta ya está conectada a otra persona de Shiftbook.",
+      "already": "Primero desconecte la cuenta que tiene conectada.",
+      "failed": "{provider} no se conectó. Inténtelo de nuevo.",
+      "confirm": "Confirme que es usted y vuelva a conectar.",
+      "unavailable": "{provider} no está configurado en este Shiftbook."
+    },
+    "demo": {
+      "title": "Inicio de sesión de demostración: {provider}",
+      "providerNames": {
+        "google": "Google",
+        "microsoft": "Microsoft",
+        "sso": "el SSO de su agencia"
+      },
+      "body": "Esta página reemplaza a {provider} en la demostración. Nada sale de Shiftbook y no se pide contraseña: elija quién es usted.",
+      "choose": "Elija una cuenta",
+      "notMember": "Alguien que no es miembro",
+      "cancel": "Cancelar",
+      "working": "Iniciando sesión…",
+      "badTitle": "Este no es un inicio de sesión que Shiftbook haya empezado",
+      "badBody": "Empiece de nuevo desde la página de inicio de sesión.",
+      "back": "Volver a iniciar sesión"
+    },
+    "join": {
+      "google": "Unirme con Google",
+      "microsoft": "Unirme con Microsoft"
+    },
+    "or": "o",
+    "inviteNotice": {
+      "provider_failed": "El proveedor no inició su sesión. Inténtelo de nuevo, o cree una contraseña.",
+      "not_verified": "El proveedor no confirmó el correo de esa cuenta. Cree una contraseña, o use otra cuenta.",
+      "email_mismatch": "El correo de esa cuenta no es el invitado ({email}). Use el correo invitado, o cree una contraseña.",
+      "taken": "Esa cuenta ya está conectada a otra persona de Shiftbook."
+    }
+  },
+  "emailCode": {
+    "title": "Enviarme un código de acceso por correo",
+    "body": "Se envía un código de seis dígitos al correo con el que inicia sesión.",
+    "email": "Correo electrónico",
+    "send": "Enviar código",
+    "sending": "Enviando…",
+    "sentTitle": "Revise su correo",
+    "sentBody": "Si un miembro usa {email}, va en camino un código de seis dígitos. Funciona una vez, durante 10 minutos.",
+    "code": "Código de seis dígitos",
+    "submit": "Iniciar sesión",
+    "submitting": "Iniciando sesión…",
+    "invalid": "Ese código no funciona. Revíselo, o pida uno nuevo.",
+    "locked": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
+    "resend": "Enviar un código nuevo",
+    "resent": "Si un miembro usa ese correo, va en camino un código nuevo (uno por minuto como máximo).",
+    "otherEmail": "Usar otro correo",
+    "demoCopy": "Demostración: no se envía ningún correo. Esta es la copia del buzón de la demostración:",
+    "back": "Volver a iniciar sesión",
+    "mail": {
+      "subject": "{code} es su código de acceso a Shiftbook",
+      "greeting": "Hola, {name}:",
+      "intro": "Alguien pidió iniciar sesión en {agency} en Shiftbook con este correo. Su código:",
+      "expires": "Funciona una vez, durante 10 minutos.",
+      "unexpected": "Si no fue usted, ignore este correo: nadie puede iniciar sesión sin el código.",
+      "footer": "Enviado por Shiftbook en nombre de {agency}."
+    }
+  },
+  "sso": {
+    "signIn": {
+      "title": "Iniciar sesión con SSO",
+      "body": "Escriba su correo de trabajo. Después pasa al inicio de sesión de su agencia.",
+      "email": "Correo de trabajo",
+      "submit": "Continuar",
+      "submitting": "Continuando…",
+      "notSetUp": "El inicio de sesión único no está configurado para ese correo.",
+      "failed": "No se pudo llegar al inicio de sesión de su agencia. Inténtelo de nuevo en un momento, o use otra forma de entrar.",
+      "otherWay": "Iniciar sesión de otra forma",
+      "emailCode": "Enviarme un código de acceso por correo",
+      "back": "Volver a iniciar sesión"
+    },
+    "settings": {
+      "eyebrow": "Configuración",
+      "title": "Inicio de sesión único",
+      "body": "Las personas de su agencia pueden iniciar sesión con el proveedor de identidad propio de su agencia (OpenID Connect), además de sus otras formas de entrar.",
+      "status": "Inicio de sesión único",
+      "on": "Activado. Los miembros eligen SSO en la página de inicio de sesión y escriben su correo de trabajo.",
+      "off": "Desactivado. Nadie puede iniciar sesión con SSO.",
+      "turnedOn": "El inicio de sesión único está activado.",
+      "turnedOff": "El inicio de sesión único está desactivado.",
+      "forProvider": "Para su proveedor de identidad",
+      "redirect": "Dirección de redirección del inicio de sesión",
+      "redirectHint": "Registre esta dirección en su proveedor de identidad como la dirección de redirección (callback) de la aplicación.",
+      "copy": "Copiar",
+      "copied": "Dirección copiada.",
+      "details": "Datos del proveedor",
+      "issuer": "Dirección del emisor",
+      "issuerHint": "Una dirección https. Su documento de descubrimiento se lee al guardar.",
+      "clientId": "ID de cliente",
+      "clientSecret": "Secreto de cliente",
+      "secretSet": "Guardado, termina en ····{last4}",
+      "replaceSecret": "Reemplazar el secreto",
+      "replaceHint": "Déjelo vacío para conservar el secreto guardado. Un secreto nunca se vuelve a mostrar una vez guardado.",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado.",
+      "lastChange": "Último cambio de {name}, {date}.",
+      "ownerOnly": "Solo el Propietario cambia el inicio de sesión único.",
+      "notSetUp": "Todavía no está configurado.",
+      "demoNote": "Demostración: el inicio de sesión único apunta al proveedor sustituto de la demostración; no se puede guardar otro emisor.",
+      "errors": {
+        "invalid_issuer": "Escriba una dirección https, sin nada después de un ? o #.",
+        "invalid_client_id": "Escriba el ID de cliente que muestra su proveedor.",
+        "secret_required": "Escriba el secreto de cliente.",
+        "invalid_secret": "Ese secreto es demasiado largo.",
+        "issuer_unreachable": "Esa dirección no respondió como un proveedor OpenID Connect. Revísela e inténtelo de nuevo.",
+        "demo_issuer_only": "En la demostración, el inicio de sesión único solo puede apuntar al sustituto de la demostración.",
+        "not_set_up": "Guarde primero los datos del proveedor.",
+        "not_allowed": "Solo el Propietario cambia el inicio de sesión único.",
+        "generic": "Eso no funcionó. Inténtelo de nuevo."
+      }
+    }
   }
 }

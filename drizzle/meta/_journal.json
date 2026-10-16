@@ -267,6 +267,13 @@
       "when": 1792092800000,
       "tag": "0037_engine_say",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1792093000000,
+      "tag": "0039_identities",
+      "breakpoints": true
     }
   ]
 }

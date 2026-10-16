@@ -2,10 +2,12 @@
 
 // Patterns: docs/patterns/sign-in/reset.md (GitHub: request a new password by email),
 // sign-in/reset/[token].md (GitHub: the reset link — the code first when two-factor is on, then the new
-// password twice) and invite/[token].md (Stripe/GitHub invites: the role, then join).
-import { useTranslations } from "next-intl";
+// password twice) and invite/[token].md (Stripe/GitHub invites: the role, then join; Join with Google or
+// Microsoft, decision 0033).
+import { useLocale, useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { redeemLinkAction, requestResetAction, verifyResetCodeAction } from "@/app/[locale]/(auth)/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +15,7 @@ import { Link } from "@/i18n/navigation";
 import type { Role } from "@/server/permissions";
 import { LinkedText } from "../linked-text";
 import { CodeFields, NewPasswordFields } from "./fields";
+import { GoogleMark, MicrosoftMark } from "./provider-marks";
 
 export function ResetRequestView({ email: initialEmail }: { email: string }) {
   const t = useTranslations("reset");
@@ -151,9 +154,22 @@ export function NewPasswordView({ token, email, needsCode }: { token: string; em
   );
 }
 
-export function InviteView({ token, invite }: { token: string; invite: { agencyName: string; byLabel: string; role: Role; email: string } }) {
+export function InviteView({
+  token,
+  invite,
+  providers = { google: false, microsoft: false },
+  notice = null,
+}: {
+  token: string;
+  invite: { agencyName: string; byLabel: string; role: Role; email: string };
+  providers?: { google: boolean; microsoft: boolean };
+  notice?: "provider_failed" | "not_verified" | "email_mismatch" | "taken" | null;
+}) {
   const t = useTranslations("invite");
   const tr = useTranslations("roles");
+  const ti = useTranslations("identities");
+  const locale = useLocale();
+  const offered = (["google", "microsoft"] as const).filter((p) => providers[p]);
   const [gone, setGone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -167,6 +183,31 @@ export function InviteView({ token, invite }: { token: string; invite: { agencyN
         <p className="text-sm text-muted-foreground">{tr(`${invite.role}.line`)}</p>
         <p className="text-sm text-muted-foreground">{t("email", { email: invite.email })}</p>
       </div>
+      {notice && (
+        <Alert data-testid="invite-notice">
+          <AlertDescription>{ti(`inviteNotice.${notice}`, { email: invite.email })}</AlertDescription>
+        </Alert>
+      )}
+      {offered.length > 0 && (
+        <>
+          <div className="flex flex-col gap-2.5">
+            {offered.map((p) => {
+              const Mark = p === "google" ? GoogleMark : MicrosoftMark;
+              return (
+                <a key={p} href={`/api/auth/oidc/${p}/start?${new URLSearchParams({ locale, invite: token }).toString()}`} className={buttonVariants({ variant: "outline", className: "h-10 w-full gap-2 bg-background" })} data-testid={`join-${p}`}>
+                  <Mark className="size-4" />
+                  {ti(`join.${p}`)}
+                </a>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground" role="separator" aria-label={ti("or")}>
+            <span className="h-px flex-1 bg-border" aria-hidden />
+            <span aria-hidden>{ti("or")}</span>
+            <span className="h-px flex-1 bg-border" aria-hidden />
+          </div>
+        </>
+      )}
       <NewPasswordFields
         email={invite.email}
         pending={pending}

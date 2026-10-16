@@ -1,8 +1,11 @@
 // Pattern: docs/patterns/settings/account.md — Slack's Language & region; GitHub's Password and
-// authentication.
+// authentication; Vercel's Login Connections (decision 0033).
 import { setRequestLocale } from "next-intl/server";
 import { AccountView } from "@/components/shiftbook/settings/account";
+import { ConnectedAccountsData } from "@/components/shiftbook/settings/connected-accounts";
 import { authDeps } from "@/server/auth/deps";
+import { identitiesOf } from "@/server/auth/identities";
+import { providerOffered } from "@/server/auth/oidc-flow";
 import { accountOf, requiresSecondStep } from "@/server/auth/service";
 import { currentActor, currentSession } from "@/server/session";
 
@@ -14,7 +17,13 @@ export default async function AccountPage(props: { params: Promise<{ locale: str
   await currentActor();
   const session = (await currentSession())!;
   const account = await accountOf(authDeps(), session.userId);
+  const identities = await identitiesOf(authDeps(), session.userId);
+  const connected = {
+    offered: { google: providerOffered("google"), microsoft: providerOffered("microsoft") },
+    identities: identities.map((i) => ({ id: i.id, provider: i.provider, email: i.email, createdAt: i.createdAt.toISOString() })),
+  };
   return (
+    <ConnectedAccountsData value={connected}>
     <AccountView
       name={session.name}
       email={session.email}
@@ -26,5 +35,6 @@ export default async function AccountPage(props: { params: Promise<{ locale: str
       authenticatorSince={account.authenticatorSince?.toISOString() ?? null}
       recoveryCodesLeft={account.recoveryCodesLeft}
     />
+    </ConnectedAccountsData>
   );
 }

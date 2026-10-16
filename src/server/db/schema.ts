@@ -178,6 +178,8 @@ export const sessions = pgTable("sessions", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
   userAgent: text("user_agent"),
+  /** How the session began: password, google, microsoft, sso, email_code (decision 0033; null before it). */
+  firstFactor: text("first_factor"),
 });
 
 /** One-time links: an invite or a password reset (digests only). */
@@ -1355,7 +1357,7 @@ export const clientDisputes = pgTable(
   ],
 );
 
-export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset";
+export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset" | "sign_in_code";
 
 /** Every email sent, with any approval link hidden (Stripe keeps a log of customer emails). */
 export const emailMessages = pgTable(
@@ -1640,4 +1642,51 @@ export const TENANT_TABLES = [
   "hours_opening_balances",
   "equal_pay_rates",
   "aca_monthly_hours",
+  "user_identities",
+  "email_sign_in_codes",
+  "agency_sso",
 ] as const;
+
+// ---------- other ways in: Google, Microsoft, an agency's single sign-on, emailed codes (decision 0033; drizzle/0039) ----------
+
+/** An identity at a provider (issuer + subject), linked to one person; readable across agencies only in sign-in mode. */
+export const userIdentities = pgTable("user_identities", {
+  id: id(),
+  agencyId: agencyId(),
+  // With agency_id, a foreign key to the person in that agency (drizzle/0039).
+  userId: uuid("user_id").notNull(),
+  provider: text("provider").$type<"google" | "microsoft" | "sso">().notNull(),
+  issuer: text("issuer").notNull(),
+  subject: text("subject").notNull(),
+  /** The email the provider gave when it was linked (shown; never a key). */
+  email: text("email"),
+  createdAt: createdAt(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  removedAt: timestamp("removed_at", { withTimezone: true }),
+});
+
+/** A six-digit sign-in code sent by email: only its HMAC, 10 minutes, once, five wrong tries. */
+export const emailSignInCodes = pgTable("email_sign_in_codes", {
+  id: uuid("id").primaryKey(),
+  agencyId: agencyId(),
+  userId: uuid("user_id").notNull(),
+  codeHash: text("code_hash").notNull(),
+  createdAt: createdAt(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  failures: integer("failures").notNull().default(0),
+});
+
+/** An agency's own OpenID Connect provider; the client secret sealed under the app key, bound to the agency. */
+export const agencySso = pgTable("agency_sso", {
+  agencyId: uuid("agency_id")
+    .primaryKey()
+    .references(() => agencies.id),
+  enabled: boolean("enabled").notNull().default(false),
+  issuer: text("issuer").notNull(),
+  clientId: text("client_id").notNull(),
+  clientSecret: jsonb("client_secret").$type<{ v: number; iv: string; tag: string; data: string }>().notNull(),
+  secretLast4: text("secret_last4").notNull(),
+  updatedAt: updatedAt(),
+  updatedByLabel: text("updated_by_label").notNull(),
+});

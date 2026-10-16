@@ -619,7 +619,8 @@
       "billing": "Billing",
       "staffing": "Staffing",
       "oversight": "Oversight"
-    }
+    },
+    "sso": "Single sign-on"
   },
   "list": {
     "filter": "Filter",
@@ -3212,7 +3213,12 @@
       "signed_out": "You signed out.",
       "expired": "Your session ended. Sign in again.",
       "password_changed": "Your password was changed. Sign in with the new one.",
-      "link_expired": "That link no longer works."
+      "link_expired": "That link no longer works.",
+      "provider_failed": "The provider did not sign you in. Try again, or use another way in.",
+      "no_account": "No Shiftbook member uses that account. Ask your agency's Owner for an invite.",
+      "not_verified": "The provider did not confirm that account's email. Sign in another way, then connect it from Your account.",
+      "suspended": "Your access to this agency is suspended. Ask the agency's Owner.",
+      "too_many": "Too many tries. Wait 15 minutes and try again."
     },
     "demoTitle": "Try the demo as",
     "demoHint": "The demo people need no password and no code.",
@@ -3746,7 +3752,9 @@
       "refuse": "Refused",
       "ssn_viewed": "SSN viewed",
       "file_opened": "File opened",
-      "ssn_changed": "SSN changed"
+      "ssn_changed": "SSN changed",
+      "identity_connected": "Account connected",
+      "identity_disconnected": "Account disconnected"
     },
     "types": {
       "aca_monthly_hours": "ACA hours",
@@ -4310,5 +4318,139 @@
     "whatPoMany": "PO {po} on the deposit (invoices {invoices})",
     "whyNamed": "; the client is named on the deposit",
     "whyOnlyClient": "; the only client with invoices adding up to it"
+  },
+  "identities": {
+    "connectedTitle": "Connected accounts",
+    "connectedBody": "Another way to sign in. When your role needs the authenticator code, it is still asked after.",
+    "providers": {
+      "google": "Google",
+      "microsoft": "Microsoft"
+    },
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "disconnect": "Disconnect",
+    "connectedOn": "Connected {date}",
+    "notConnected": "Not connected",
+    "disconnectTitle": "Disconnect {provider}?",
+    "disconnectBody": "You can no longer sign in with this {provider} account. You can connect it again later.",
+    "cancel": "Cancel",
+    "result": {
+      "connected": "{provider} connected. You can sign in with it now.",
+      "disconnected": "{provider} disconnected.",
+      "taken": "That account is already connected to another Shiftbook person.",
+      "already": "Disconnect the account you have connected first.",
+      "failed": "{provider} did not connect. Try again.",
+      "confirm": "Confirm it's you, then connect again.",
+      "unavailable": "{provider} is not set up for this Shiftbook."
+    },
+    "demo": {
+      "title": "Demo sign-in: {provider}",
+      "providerNames": {
+        "google": "Google",
+        "microsoft": "Microsoft",
+        "sso": "your agency's SSO"
+      },
+      "body": "This page stands in for {provider} in the demo. Nothing leaves Shiftbook and no password is asked: choose who you are.",
+      "choose": "Choose an account",
+      "notMember": "Someone who is not a member",
+      "cancel": "Cancel",
+      "working": "Signing in…",
+      "badTitle": "This is not a sign-in Shiftbook started",
+      "badBody": "Start again from the sign-in page.",
+      "back": "Back to sign in"
+    },
+    "join": {
+      "google": "Join with Google",
+      "microsoft": "Join with Microsoft"
+    },
+    "or": "or",
+    "inviteNotice": {
+      "provider_failed": "The provider did not sign you in. Try again, or set a password.",
+      "not_verified": "The provider did not confirm that account's email. Set a password instead, or use another account.",
+      "email_mismatch": "That account's email is not the invited one ({email}). Use the invited email, or set a password.",
+      "taken": "That account is already connected to another Shiftbook person."
+    }
+  },
+  "emailCode": {
+    "title": "Email me a sign-in code",
+    "body": "A six-digit code is sent to the email you sign in with.",
+    "email": "Email",
+    "send": "Send code",
+    "sending": "Sending…",
+    "sentTitle": "Check your email",
+    "sentBody": "If a member uses {email}, a six-digit code is on its way. It works once, for 10 minutes.",
+    "code": "Six-digit code",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "invalid": "That code does not work. Check it, or send a new one.",
+    "locked": "Too many tries. Wait 15 minutes and try again.",
+    "resend": "Send a new code",
+    "resent": "If a member uses that email, a new code is on its way (one a minute at most).",
+    "otherEmail": "Use a different email",
+    "demoCopy": "Demo: no email is sent. This is the copy in the demo mailbox:",
+    "back": "Back to sign in",
+    "mail": {
+      "subject": "{code} is your Shiftbook sign-in code",
+      "greeting": "Hello {name},",
+      "intro": "Someone asked to sign in to {agency} on Shiftbook with this email. Your code:",
+      "expires": "It works once, for 10 minutes.",
+      "unexpected": "If it was not you, ignore this email: nobody can sign in without the code.",
+      "footer": "Sent by Shiftbook on behalf of {agency}."
+    }
+  },
+  "sso": {
+    "signIn": {
+      "title": "Sign in with SSO",
+      "body": "Type your work email. You go to your agency's sign-in next.",
+      "email": "Work email",
+      "submit": "Continue",
+      "submitting": "Continuing…",
+      "notSetUp": "Single sign-on is not set up for that email.",
+      "failed": "Your agency's sign-in could not be reached. Try again in a moment, or use another way in.",
+      "otherWay": "Sign in another way",
+      "emailCode": "Email me a sign-in code",
+      "back": "Back to sign in"
+    },
+    "settings": {
+      "eyebrow": "Settings",
+      "title": "Single sign-on",
+      "body": "Your agency's people can sign in through your agency's own identity provider (OpenID Connect), as well as their other ways in.",
+      "status": "Single sign-on",
+      "on": "On. Members choose SSO on the sign-in page and type their work email.",
+      "off": "Off. Nobody can sign in with SSO.",
+      "turnedOn": "Single sign-on is on.",
+      "turnedOff": "Single sign-on is off.",
+      "forProvider": "For your identity provider",
+      "redirect": "Sign-in redirect address",
+      "redirectHint": "Register this address with your identity provider as the app's redirect (callback) address.",
+      "copy": "Copy",
+      "copied": "Address copied.",
+      "details": "Provider details",
+      "issuer": "Issuer address",
+      "issuerHint": "An https address. Its discovery document is read when you save.",
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "secretSet": "Set, ends in ····{last4}",
+      "replaceSecret": "Replace the secret",
+      "replaceHint": "Leave it empty to keep the saved secret. A secret is never shown again once saved.",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "lastChange": "Last changed by {name}, {date}.",
+      "ownerOnly": "Only the Owner changes single sign-on.",
+      "notSetUp": "Not set up yet.",
+      "demoNote": "Demo: single sign-on points at the demo's stand-in provider; another issuer cannot be saved.",
+      "errors": {
+        "invalid_issuer": "Type an https address, with nothing after a ? or #.",
+        "invalid_client_id": "Type the client ID your provider shows.",
+        "secret_required": "Type the client secret.",
+        "invalid_secret": "That secret is too long.",
+        "issuer_unreachable": "That address did not answer as an OpenID Connect provider. Check it and try again.",
+        "demo_issuer_only": "In the demo, single sign-on can only point at the demo's stand-in.",
+        "not_set_up": "Save the provider's details first.",
+        "not_allowed": "Only the Owner changes single sign-on.",
+        "generic": "That did not work. Try again."
+      }
+    }
   }
 }
