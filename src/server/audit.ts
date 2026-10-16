@@ -13,12 +13,17 @@ export interface AuditInput {
 }
 
 export async function audit(tx: Tx, actor: Actor, events: AuditInput[]): Promise<void> {
+  await auditBy(tx, { agencyId: actor.agencyId, userId: actor.userId, label: actor.label }, events);
+}
+
+/** Someone who is not an agency user (a client's approver, by link): no user id, a label that names them. */
+export async function auditBy(tx: Tx, who: { agencyId: string; userId: string | null; label: string }, events: AuditInput[]): Promise<void> {
   if (events.length === 0) return;
   await tx.insert(auditEvents).values(
     events.map((e) => ({
-      agencyId: actor.agencyId,
-      actorUserId: actor.userId,
-      actorLabel: actor.label,
+      agencyId: who.agencyId,
+      actorUserId: who.userId,
+      actorLabel: who.label,
       action: e.action,
       entityType: e.entityType,
       entityId: e.entityId,

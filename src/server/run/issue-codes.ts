@@ -4,6 +4,7 @@ import { ISSUE_CODES } from "@shiftbook/rules";
 export const RUN_ISSUE_CODES = [
   ...ISSUE_CODES,
   "entry_needs_review",
+  "client_dispute_open",
   "unmatched_entry",
   "entry_incomplete",
   "outside_period",

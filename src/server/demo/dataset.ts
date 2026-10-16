@@ -171,4 +171,8 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   // A cell is accepted without review only when both passes agree, every check passes, and — for
   // handwriting — the agreement is exact. Printed values may be accepted at the same bar.
   { key: "extraction.auto_accept", value: { handwritten: "never_without_exact_agreement", printed: "exact_agreement" } },
+  // Client approval (slice d, decisions D3 and D4): links last 14 days; reminders 24 and 48 hours
+  // after a request while the client has not acted.
+  { key: "approval_link_days", value: 14 },
+  { key: "approval_reminder_hours", value: [24, 48] },
 ];

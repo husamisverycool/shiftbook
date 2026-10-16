@@ -36,6 +36,35 @@
     "footer": "Hours are from the approved timesheets for the service period. Amounts are computed from whole minutes and rounded once per line.",
     "weekOf": "week of {date}"
   },
+  "approvalEmail": {
+    "subject": {
+      "approval_request": "Hours to approve: {client}, {period}",
+      "approval_reminder": "Reminder: hours to approve for {client}, {period}",
+      "approval_renewal": "New link: hours to approve for {client}, {period}",
+      "approval_confirmation": "{disputed, plural, =0 {You approved hours for {client}, {period}} other {Hours approved and disputed for {client}, {period}}}",
+      "approval_notice": "{disputed, plural, =0 {{client} approved hours for {period}} other {{client} disputed {disputed, plural, one {# shift} other {# shifts}} for {period}}}"
+    },
+    "greeting": "Hello {name},",
+    "intro": {
+      "approval_request": "{agency} asks you to review and approve the hours your temporary workers worked for {client} from {start} to {end}.",
+      "approval_reminder": "A reminder: {agency} is still waiting for your approval of the hours worked for {client} from {start} to {end}.",
+      "approval_renewal": "Here is the new link you asked for, to review the hours worked for {client} from {start} to {end}."
+    },
+    "summary": "Waiting for approval: {workers, plural, one {# worker} other {# workers}}, {shifts, plural, one {# shift} other {# shifts}}, {hours} hours.",
+    "open": "Review the hours",
+    "expires": "The link works until {date}. It is meant for you only, so please do not forward it.",
+    "decided": "On {when}, {name} ({email}) approved {shifts, plural, one {# shift} other {# shifts}} ({hours} hours) worked for {client} from {start} to {end}.",
+    "nothingApproved": "On {when}, {name} ({email}) approved no shifts for {client} from {start} to {end}.",
+    "disputedTitle": "Disputed, waiting for {agency}:",
+    "disputedLine": "{worker}, {date}: {reason}",
+    "changeHint": "To change anything, contact {agency}.",
+    "noticeOpen": "Open the request in Shiftbook: {link}",
+    "contact": "Questions? Contact {agency}: {contact}.",
+    "footer": "Sent by Shiftbook on behalf of {agency}."
+  },
+  "portal": {
+    "attestation": "I confirm that the shifts I am approving were worked as shown, and I approve them for {client}."
+  },
   "meta": {
     "title": "Shiftbook"
   },
@@ -320,6 +349,7 @@
       "warningsTitle": "Warnings",
       "blockers": {
         "entry_needs_review": "Entries still need review",
+        "client_dispute_open": "Shifts the client disputed",
         "unmatched_entry": "Entries not matched to a worker",
         "entry_incomplete": "Entries are missing a date or hours",
         "outside_assignment": "Dates outside the assignment",

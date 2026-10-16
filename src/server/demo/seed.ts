@@ -28,6 +28,12 @@ const SINCE = "2026-01-01";
 /** Tenant tables in delete-safe order. audit_events is append-only and is never cleared. */
 const CLEAR_ORDER = [
   "jobs",
+  "demo_mailbox",
+  "email_messages",
+  "client_disputes",
+  "approval_decisions",
+  "approval_links",
+  "approval_requests",
   "placement_imports",
   "premium_confirmations",
   "bonuses",

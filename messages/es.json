@@ -36,6 +36,35 @@
     "footer": "Las horas provienen de las hojas de horas aprobadas del periodo de servicio. Los importes se calculan con minutos enteros y se redondean una sola vez por línea.",
     "weekOf": "semana del {date}"
   },
+  "approvalEmail": {
+    "subject": {
+      "approval_request": "Horas por aprobar: {client}, {period}",
+      "approval_reminder": "Recordatorio: horas por aprobar de {client}, {period}",
+      "approval_renewal": "Nuevo enlace: horas por aprobar de {client}, {period}",
+      "approval_confirmation": "{disputed, plural, =0 {Aprobaste horas de {client}, {period}} other {Horas aprobadas y disputadas de {client}, {period}}}",
+      "approval_notice": "{disputed, plural, =0 {{client} aprobó horas del {period}} other {{client} disputó {disputed, plural, one {# turno} other {# turnos}} del {period}}}"
+    },
+    "greeting": "Hola, {name}:",
+    "intro": {
+      "approval_request": "{agency} te pide revisar y aprobar las horas que trabajaron tus trabajadores temporales para {client} del {start} al {end}.",
+      "approval_reminder": "Un recordatorio: {agency} todavía espera tu aprobación de las horas trabajadas para {client} del {start} al {end}.",
+      "approval_renewal": "Aquí tienes el nuevo enlace que pediste para revisar las horas trabajadas para {client} del {start} al {end}."
+    },
+    "summary": "Por aprobar: {workers, plural, one {# trabajador} other {# trabajadores}}, {shifts, plural, one {# turno} other {# turnos}}, {hours} horas.",
+    "open": "Revisar las horas",
+    "expires": "El enlace funciona hasta el {date}. Es solo para ti, así que no lo reenvíes.",
+    "decided": "El {when}, {name} ({email}) aprobó {shifts, plural, one {# turno} other {# turnos}} ({hours} horas) trabajados para {client} del {start} al {end}.",
+    "nothingApproved": "El {when}, {name} ({email}) no aprobó ningún turno de {client} del {start} al {end}.",
+    "disputedTitle": "Disputados, a la espera de {agency}:",
+    "disputedLine": "{worker}, {date}: {reason}",
+    "changeHint": "Para cambiar algo, comunícate con {agency}.",
+    "noticeOpen": "Abre la solicitud en Shiftbook: {link}",
+    "contact": "¿Preguntas? Comunícate con {agency}: {contact}.",
+    "footer": "Enviado por Shiftbook en nombre de {agency}."
+  },
+  "portal": {
+    "attestation": "Confirmo que los turnos que apruebo se trabajaron como se muestran, y los apruebo en nombre de {client}."
+  },
   "meta": {
     "title": "Shiftbook"
   },
@@ -320,6 +349,7 @@
       "warningsTitle": "Avisos",
       "blockers": {
         "entry_needs_review": "Hay registros por revisar",
+        "client_dispute_open": "Turnos que el cliente disputó",
         "unmatched_entry": "Registros sin trabajador asignado",
         "entry_incomplete": "Registros sin fecha u horas",
         "outside_assignment": "Fechas fuera de la asignación",

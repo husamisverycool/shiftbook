@@ -268,6 +268,10 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       blockers.push({ code: "document_failed", message: `${d.filename} could not be read${d.error ? ` (${d.error})` : ""}. Read it again, or archive it with a reason if its hours are elsewhere.` });
     }
   }
+  const disputedIds = entries.filter((e) => e.status === "disputed").map((e) => e.id);
+  const disputeReasons = new Map(
+    (disputedIds.length > 0 ? await tx.select({ entryId: s.clientDisputes.timeEntryId, reason: s.clientDisputes.reason }).from(s.clientDisputes).where(and(inArray(s.clientDisputes.timeEntryId, disputedIds), eq(s.clientDisputes.status, "open"))) : []).map((d) => [d.entryId, d.reason]),
+  );
   const shifts: Shift[] = [];
   const paidWorkers = new Set<string>();
   const ordered = [...entries].sort((a, b) => cmp(a.workerNameRaw, b.workerNameRaw) || cmp(a.workDate ?? "", b.workDate ?? "") || (a.inMinute ?? -1) - (b.inMinute ?? -1) || cmp(a.id, b.id));
@@ -275,6 +279,11 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     const worker = e.workerId ? workersById.get(e.workerId) : undefined;
     const name = worker ? `${worker.firstName} ${worker.lastName}` : e.workerNameRaw;
     const issue = (code: RunIssueCode, message: string) => blockers.push({ code, workerId: worker?.id, workerName: name, date: e.workDate ?? undefined, entryIds: [e.id], message });
+    if (e.status === "disputed") {
+      // A shift the client disputed is neither paid nor billed until the agency settles it (slice d).
+      issue("client_dispute_open", `${name}${e.workDate ? ` on ${e.workDate}` : ""}: the client disputed this shift${disputeReasons.has(e.id) ? ` ("${disputeReasons.get(e.id)}")` : ""}; settle it in Client approvals.`);
+      continue;
+    }
     if (!PAYABLE.includes(e.status)) {
       issue("entry_needs_review", `${name}${e.workDate ? ` on ${e.workDate}` : ""}: this entry still needs review (${e.reviewReasons.join(", ") || e.status}).`);
       continue;

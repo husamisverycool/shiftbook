@@ -7,6 +7,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { settleDisputesByEdit } from "../approvals/service";
 import { StaleRequestError } from "../errors";
 import { openPeriod, PeriodLockedError } from "../run/period-lock";
 import type { Actor } from "../session";
@@ -49,7 +50,8 @@ export interface EntryChange {
   minutes?: number | null;
 }
 
-const EDITABLE: (typeof s.timeEntryStatus.enumValues)[number][] = ["extracted", "needs_review", "reviewed"];
+// A disputed shift can be changed or set aside: that settles the client's dispute (slice d).
+const EDITABLE: (typeof s.timeEntryStatus.enumValues)[number][] = ["extracted", "needs_review", "reviewed", "disputed"];
 const FIELD_OF: Record<keyof EntryChange, keyof s.EntryFields> = {
   workerId: "worker",
   workDate: "date",
@@ -229,7 +231,7 @@ export async function editEntry(
   change: EntryChange,
   reasons: string[],
   note: string,
-  opts: { attachToClientId?: string | null } = {},
+  opts: { attachToClientId?: string | null; clientTimesAccepted?: boolean } = {},
 ): Promise<{ ok: true } | EditFailure> {
   const reason = checkedReason(reasons, note);
   if (!reason.ok) return reason;
@@ -274,6 +276,8 @@ export async function editEntry(
     .set({ ...next, fields: editedFields(entry.fields, before, next), reviewReasons: [], distinctConfirmed: false, updatedAt: new Date() })
     .where(eq(s.timeEntries.id, entryId));
   await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: entryId, before, after: { ...next, ...attached }, reason: reason.text }]);
+  // Accepting the client's own times is settled by Client approvals itself.
+  if (entry.status === "disputed" && !opts.clientTimesAccepted) await settleDisputesByEdit(tx, actor, [entryId]);
   return { ok: true };
 }
 
@@ -370,6 +374,7 @@ export async function rejectEntry(tx: Tx, actor: Actor, id: string): Promise<boo
     .where(and(eq(s.timeEntries.id, id), inArray(s.timeEntries.status, EDITABLE)))
     .returning({ id: s.timeEntries.id });
   if (done.length > 0) await audit(tx, actor, [{ action: "update", entityType: "time_entry", entityId: id, before: { status: before?.status }, after: { status: "rejected" }, reason: "rejected in review" }]);
+  if (done.length > 0 && before?.status === "disputed") await settleDisputesByEdit(tx, actor, [id]);
   return done.length > 0;
 }
 

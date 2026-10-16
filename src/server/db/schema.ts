@@ -801,6 +801,157 @@ export const obligations = pgTable(
   (t) => [index("obligations_due").on(t.agencyId, t.status, t.dueOn), unique("obligations_once").on(t.agencyId, t.kind, t.workerId, t.clientId)],
 );
 
+// ---------- client approval (SPEC §10; drizzle/0022; decisions 0012, 0013) ----------
+export type ApprovalLocale = "en" | "es";
+
+/** One approver at a client asked to approve the client's shifts in one pay period. */
+export const approvalRequests = pgTable(
+  "approval_requests",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    clientId: uuid("client_id").notNull().references(() => clients.id),
+    payPeriodId: uuid("pay_period_id").notNull().references(() => payPeriods.id),
+    approverName: text("approver_name").notNull(),
+    approverEmail: text("approver_email").notNull(),
+    locale: text("locale").$type<ApprovalLocale>().notNull(),
+    agencyLocale: text("agency_locale").$type<ApprovalLocale>().notNull(),
+    status: text("status").$type<"open" | "replaced">().notNull().default("open"),
+    cycleStartedAt: timestamp("cycle_started_at", { withTimezone: true }).notNull(),
+    remindersSent: integer("reminders_sent").notNull().default(0),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [uniqueIndex("approval_requests_one_open").on(t.agencyId, t.clientId, t.payPeriodId).where(sql`status = 'open'`)],
+);
+
+/** A link sent by email; only the SHA-256 of its token is kept (decision 0013). */
+export const approvalLinks = pgTable(
+  "approval_links",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    requestId: uuid("request_id").notNull().references(() => approvalRequests.id),
+    tokenHash: text("token_hash").notNull().unique("approval_links_token_hash"),
+    purpose: text("purpose").$type<"request" | "reminder" | "renewal">().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    renewalRequestedAt: timestamp("renewal_requested_at", { withTimezone: true }),
+    firstOpenedAt: timestamp("first_opened_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("approval_links_request").on(t.agencyId, t.requestId)],
+);
+
+/** A shift as the client saw it (no rates, no amounts). */
+export interface ApprovedShift {
+  entryId: string;
+  workerId: string;
+  workerName: string;
+  workDate: string;
+  inMinute: number | null;
+  outMinute: number | null;
+  breakMinutes: number | null;
+  minutes: number;
+}
+
+/** The approver's decision: evidence, append-only (drizzle/0022). */
+export const approvalDecisions = pgTable(
+  "approval_decisions",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    requestId: uuid("request_id").notNull().references(() => approvalRequests.id),
+    linkId: uuid("link_id").notNull().references(() => approvalLinks.id),
+    approverEmail: text("approver_email").notNull(),
+    typedName: text("typed_name").notNull(),
+    attestation: text("attestation").notNull(),
+    attestationVersion: text("attestation_version").notNull(),
+    locale: text("locale").$type<ApprovalLocale>().notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    snapshotSha256: text("snapshot_sha256").notNull(),
+    approved: jsonb("approved").$type<ApprovedShift[]>().notNull(),
+    disputed: jsonb("disputed").$type<{ entryId: string; disputeId: string; reason: string }[]>().notNull(),
+    decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("approval_decisions_request").on(t.agencyId, t.requestId)],
+);
+
+export type DisputeStatus = "draft" | "open" | "accepted" | "edited" | "kept";
+
+/** One shift the client questioned; the agency settles it (accept, edit, keep). */
+export const clientDisputes = pgTable(
+  "client_disputes",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    requestId: uuid("request_id").notNull().references(() => approvalRequests.id),
+    decisionId: uuid("decision_id").references(() => approvalDecisions.id),
+    timeEntryId: uuid("time_entry_id").notNull().references(() => timeEntries.id),
+    shift: jsonb("shift").$type<ApprovedShift>().notNull(),
+    proposedInMinute: integer("proposed_in_minute"),
+    proposedOutMinute: integer("proposed_out_minute"),
+    proposedBreakMinutes: integer("proposed_break_minutes"),
+    reason: text("reason").notNull(),
+    status: text("status").$type<DisputeStatus>().notNull().default("draft"),
+    reply: text("reply"),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolvedBy: uuid("resolved_by"),
+    resolvedByLabel: text("resolved_by_label"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("client_disputes_one_draft").on(t.agencyId, t.requestId, t.timeEntryId).where(sql`status = 'draft'`),
+    uniqueIndex("client_disputes_one_open").on(t.agencyId, t.timeEntryId).where(sql`status = 'open'`),
+  ],
+);
+
+export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice";
+
+/** Every email sent, with any approval link hidden (Stripe keeps a log of customer emails). */
+export const emailMessages = pgTable(
+  "email_messages",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    requestId: uuid("request_id").references(() => approvalRequests.id),
+    kind: text("kind").$type<EmailKind>().notNull(),
+    toEmail: text("to_email").notNull(),
+    toName: text("to_name"),
+    subject: text("subject").notNull(),
+    textBody: text("text_body").notNull(),
+    status: text("status").$type<"sending" | "sent" | "failed">().notNull().default("sending"),
+    providerId: text("provider_id"),
+    error: text("error"),
+    createdAt: createdAt(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+  },
+  (t) => [index("email_messages_request").on(t.agencyId, t.requestId, t.createdAt)],
+);
+
+/** Demo mode's stand-in inbox: the delivered copy, with its working link (decision 0012). */
+export const demoMailbox = pgTable("demo_mailbox", {
+  id: id(),
+  agencyId: agencyId(),
+  emailMessageId: uuid("email_message_id")
+    .notNull()
+    .references(() => emailMessages.id)
+    .unique("demo_mailbox_one"),
+  toEmail: text("to_email").notNull(),
+  subject: text("subject").notNull(),
+  textBody: text("text_body").notNull(),
+  htmlBody: text("html_body").notNull(),
+  createdAt: createdAt(),
+});
+
+export type PayPeriodRow = typeof payPeriods.$inferSelect;
+export type ApprovalRequestRow = typeof approvalRequests.$inferSelect;
+export type ApprovalLinkRow = typeof approvalLinks.$inferSelect;
+export type ClientDisputeRow = typeof clientDisputes.$inferSelect;
+export type EmailMessageRow = typeof emailMessages.$inferSelect;
+
 export const TENANT_TABLES = [
   "branches",
   "users",
@@ -831,4 +982,10 @@ export const TENANT_TABLES = [
   "exports",
   "audit_events",
   "jobs",
+  "approval_requests",
+  "approval_links",
+  "approval_decisions",
+  "client_disputes",
+  "email_messages",
+  "demo_mailbox",
 ] as const;
