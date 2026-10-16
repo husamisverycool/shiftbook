@@ -637,14 +637,19 @@ export function computePay(input: PayInput): PayResult {
     const californiaDaily = caSplits !== null && !federalGoverns;
     // A client billed overtime only for its own sites: the overtime and double time its own hours
     // alone would make this week (by the same rules), billed at its multipliers; the rest at straight time.
-    const ownSites = new Map<string, { worked: number; budget: Record<"OT" | "DT", number> }>();
+    // Each line keeps the premium minutes its own shifts carry in that client-alone split.
+    const ownWorked = new Map<string, number>();
+    const ownBudget = new Map<string, Record<"OT" | "DT", number>>();
     for (const clientId of [...new Set(shifts.filter((s) => s.otBillingRule === "own_sites_only").map((s) => s.clientId))].sort(cmp)) {
       const own = shifts.filter((s) => s.clientId === clientId);
-      const ownSplits: { premiums: { type: "OT" | "DT"; minutes: number }[] }[] =
-        californiaDaily && caRules ? splitCalifornia(own, week, caRules, { ...weekly, citation: citations }) : splitAtThreshold(own, weekly.thresholdMinutes).map(({ overtime }) => ({ premiums: [{ type: "OT" as const, minutes: overtime }] }));
-      const budget = { OT: 0, DT: 0 };
-      for (const x of ownSplits) for (const p of x.premiums) budget[p.type] += p.minutes;
-      ownSites.set(clientId, { worked: own.reduce((sum, s) => sum + s.minutes, 0), budget });
+      const ownSplits: { shift: Shift; premiums: { type: "OT" | "DT"; minutes: number }[] }[] =
+        californiaDaily && caRules ? splitCalifornia(own, week, caRules, { ...weekly, citation: citations }) : splitAtThreshold(own, weekly.thresholdMinutes).map(({ shift, overtime }) => ({ shift, premiums: [{ type: "OT" as const, minutes: overtime }] }));
+      for (const x of ownSplits) {
+        const budget = ownBudget.get(lineKey(x.shift)) ?? { OT: 0, DT: 0 };
+        for (const p of x.premiums) budget[p.type] += p.minutes;
+        ownBudget.set(lineKey(x.shift), budget);
+      }
+      ownWorked.set(clientId, own.reduce((sum, s) => sum + s.minutes, 0));
     }
     const weeklyMinutes = splits.reduce((sum, x) => sum + x.premiums.filter((p) => p.ruleCode === WEEKLY_OVERTIME).reduce((s2, p) => s2 + p.minutes, 0), 0);
     const straightEligible = splits.reduce((sum, x) => sum + x.regular, 0) + weeklyMinutes;
@@ -807,10 +812,10 @@ export function computePay(input: PayInput): PayResult {
           } else if (rule === "straight_time") {
             atStraightTime(bp.minutes, "bill_overtime_straight", `Client bills ${what} at straight time`);
           } else if (rule === "own_sites_only") {
-            const own = ownSites.get(b.clientId)!;
-            const ownMinutes = Math.min(own.budget[bp.type], bp.minutes);
-            own.budget[bp.type] -= ownMinutes;
-            const worked = `${formatDuration(own.worked)} worked at this client's own sites this week`;
+            const budget = ownBudget.get(b.key) ?? { OT: 0, DT: 0 };
+            const ownMinutes = Math.min(budget[bp.type], bp.minutes);
+            budget[bp.type] -= ownMinutes;
+            const worked = `${formatDuration(ownWorked.get(b.clientId) ?? 0)} worked at this client's own sites this week`;
             if (ownMinutes > 0) atMultiplier(ownMinutes, `Client bills ${what} at the rate-card ${what} multiplier only for hours that are ${what} at its own sites (${worked})`);
             if (bp.minutes > ownMinutes) {
               atStraightTime(bp.minutes - ownMinutes, "bill_overtime_own_sites_straight", `Client bills ${what} only for hours that are ${what} at its own sites: ${worked}, so these hours, ${what} only because of work elsewhere, are billed at straight time and the agency bears the premium`);
@@ -964,10 +969,12 @@ export function computePay(input: PayInput): PayResult {
       const why = `Rule ${HOLIDAY_NOT_WORKED}: ${c.date} is a holiday under the holiday policy "${terms.notWorked!.name}", the worker did not work that day, and a person confirmed the worker is eligible; it is pay, not hours worked, so it counts toward neither overtime nor the regular rate (${HOLIDAY_NOT_WORKED_CITATION}).`;
       const line = { workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type: "HOL_NOT_WORKED" as const, minutes, entryIds: [] };
       weekPay.push({ ...line, rate, amountCents: pay.amountCents, ruleId: HOLIDAY_NOT_WORKED, explain: `${pay.text} ${why}` });
-      if (terms.bill?.billNotWorked) {
+      // Billed by the client's own policy (or the agency's when it has none): its minutes, if any.
+      const billMinutes = terms.bill?.billNotWorked ? terms.bill.notWorkedMinutes : 0;
+      if (terms.bill && billMinutes > 0) {
         const billRate: Fraction = { num: sample.billRateCents, den: 1 };
-        const bill = arithmetic("Billed holiday not worked", minutes, billRate, "");
-        weekBill.push({ ...line, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_holiday_not_worked", explain: `${bill.text} Client billed for a holiday not worked under the holiday policy "${terms.bill.name}", at the bill rate from the rate card.` });
+        const bill = arithmetic("Billed holiday not worked", billMinutes, billRate, "");
+        weekBill.push({ ...line, minutes: billMinutes, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_holiday_not_worked", explain: `${bill.text} Client billed for a holiday not worked under the holiday policy "${terms.bill.name}", at the bill rate from the rate card.` });
       }
     }
 

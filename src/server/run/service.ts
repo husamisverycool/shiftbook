@@ -24,6 +24,7 @@ import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
 import { payrollFixture } from "../files/payroll-fixture";
 import type { Actor } from "../session";
+import type { RunIssueCode } from "./issue-codes";
 import { openPeriod, PeriodLockedError } from "./period-lock";
 
 export { PeriodLockedError } from "./period-lock";
@@ -32,25 +33,7 @@ export { settingOn } from "../settings";
 /** The payroll system this slice exports to; its employee id must be on every paid worker. */
 export const TARGET_PAYROLL_SYSTEM = "gusto" as const;
 
-export type RunIssueCode =
-  | Issue["code"]
-  | "entry_needs_review"
-  | "unmatched_entry"
-  | "entry_incomplete"
-  | "outside_period"
-  | "outside_assignment"
-  | "missing_rate"
-  | "missing_billing_profile"
-  | "crosses_midnight"
-  | "missing_payroll_id"
-  | "pay_bill_mismatch"
-  | "possible_duplicate_day"
-  | "export_refused"
-  | "period_not_aligned"
-  | "no_entries"
-  | "documents_pending"
-  | "document_failed"
-  | "invoice_problem";
+export type { RunIssueCode } from "./issue-codes";
 
 export interface RunIssue extends Omit<Issue, "code"> {
   code: RunIssueCode;
@@ -425,7 +408,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       .filter((r): r is { workerId: string; clientId: string; date: string; minutes: number } => r.workerId !== null && r.date !== null)
       .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.date, b.date));
   }
-  const obligationsOnFile = (await tx.select().from(s.obligations).where(or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id))))
+  // This run's own obligations are recomputed, except one a person already marked done.
+  const obligationsOnFile = (await tx.select().from(s.obligations).where(or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), eq(s.obligations.status, "done"))))
     .map((o) => ({ kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn }))
     .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.kind, b.kind));
   const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, hoursWorked, obligationsOnFile, ...tables };
@@ -533,7 +517,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     );
   }
   // The obligations this run's hours create (Illinois equal pay), kept in step with the run and audited.
-  const dueOn = addDays(period.endsOn, 1);
+  // Due before the next pay period begins: by this period's last day (56 Ill. Adm. Code 260.505(b));
+  // a crossing found in earlier periods' hours is already overdue.
   const mine = await tx.select().from(s.obligations).where(eq(s.obligations.payRunId, run.id));
   const keyOf = (o: { kind: string; workerId: string; clientId: string; crossedOn: string }) => `${o.kind}|${o.workerId}|${o.clientId}|${o.crossedOn}`;
   const wanted = new Set(result.obligations.map(keyOf));
@@ -543,18 +528,28 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     await audit(tx, actor, gone.map((m) => ({ action: "delete" as const, entityType: "obligation", entityId: m.id, before: { kind: m.kind, workerId: m.workerId, clientId: m.clientId, crossedOn: m.crossedOn }, reason: "the run's hours changed" })));
   }
   for (const o of result.obligations) {
-    const evidence: s.ObligationEvidence = { ruleCode: o.ruleCode, citation: o.citation, crossedAtMinute: o.crossedAtMinute, windowStart: o.windowStart, thresholdMinutes: o.thresholdMinutes, minutesAfter: o.minutesAfter, entryIds: o.entryIds };
-    const existing = mine.find((m) => keyOf(m) === keyOf(o));
-    if (existing) {
-      await tx.update(s.obligations).set({ evidence, message: o.message, dueOn }).where(eq(s.obligations.id, existing.id));
+    const overdue = o.crossedOn < period.startsOn;
+    const dueOn = overdue ? period.startsOn : period.endsOn;
+    const evidence: s.ObligationEvidence = { ruleCode: o.ruleCode, citation: o.citation, crossedAtMinute: o.crossedAtMinute, windowStart: o.windowStart, thresholdMinutes: o.thresholdMinutes, minutesAfter: o.minutesAfter, earlierMinutesAfter: o.earlierMinutesAfter, overdue, entryIds: o.entryIds };
+    const same = mine.find((m) => keyOf(m) === keyOf(o));
+    if (same) {
+      await tx.update(s.obligations).set({ evidence, message: o.message, dueOn }).where(eq(s.obligations.id, same.id));
+      continue;
+    }
+    // One obligation per worker, client and kind: the engine records one only when it crosses earlier
+    // than the one on file (a late timesheet), and then the row moves to this run's earlier crossing.
+    const [held] = await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, o.kind), eq(s.obligations.workerId, o.workerId), eq(s.obligations.clientId, o.clientId)));
+    if (held) {
+      if (o.crossedOn >= held.crossedOn) throw new Error(`Obligation ${held.id} is already on file from ${held.crossedOn}; the run found ${o.crossedOn}.`);
+      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, evidence, message: o.message }).where(eq(s.obligations.id, held.id));
+      await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: held.id, before: { crossedOn: held.crossedOn }, after: { crossedOn: o.crossedOn }, reason: "hours in an earlier week cross first" }]);
       continue;
     }
     const [row] = await tx
       .insert(s.obligations)
       .values({ agencyId: actor.agencyId, kind: o.kind, jurisdiction: o.jurisdiction, workerId: o.workerId, clientId: o.clientId, payRunId: run.id, crossedOn: o.crossedOn, dueOn, evidence, message: o.message })
-      .onConflictDoNothing()
       .returning();
-    if (row) await audit(tx, actor, [{ action: "create", entityType: "obligation", entityId: row.id, after: { kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn, dueOn } }]);
+    await audit(tx, actor, [{ action: "create", entityType: "obligation", entityId: row!.id, after: { kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn, dueOn } }]);
   }
   const snapshot = { rulesVersion: result.rulesVersion, fingerprint, input, entryIds: ordered.map((e) => e.id), skipped: run.skipped, blockers, warnings: result.warnings };
   await tx

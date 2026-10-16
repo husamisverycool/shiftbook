@@ -346,6 +346,7 @@
         "document_failed": "Timesheets that could not be read",
         "invoice_problem": "An invoice cannot be created",
         "premium_not_applicable": "A confirmed premium that does not apply here",
+        "bonus_kind_check": "A California bonus to check",
         "approaching_equal_pay_hours": "Nearing 720 hours at one Illinois client",
         "equal_pay_obligation": "Illinois equal pay now applies",
         "equal_pay_rate_missing": "Hours after 720 at one client without an equal-pay rate"

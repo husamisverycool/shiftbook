@@ -66,11 +66,10 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
     const prefix = [0];
     for (const e of events) prefix.push(prefix[prefix.length - 1]! + e.minutes);
 
-    const onFile = new Map(args.onFile.filter((o) => o.workerId === workerId && o.clientId === clientId).map((o) => [o.kind, o.crossedOn]));
-    const state = new Map<ObligationKind, { obligation: Obligation | null; crossedOn: string | null }>();
-    for (const kind of ["il_equal_pay_720h", "il_equal_pay_4160h"] as const) state.set(kind, { obligation: null, crossedOn: onFile.get(kind) ?? null });
-    const weeks = new Map<string, { after: number; lastDate: string; window: number; crossed: boolean; rule: EqualPayRule }>();
-
+    // Pass 1: the first crossing of each threshold, from the hours alone.
+    type Found = { index: number; date: string; offset: number; at: number | null; windowStart: string; rule: EqualPayRule; months: number; threshold: number };
+    const found = new Map<ObligationKind, Found>();
+    const window12 = new Map<number, number>();
     events.forEach((e, i) => {
       const rule = ruleOn(args.rules, jurisdiction, e.date);
       if (!rule || e.date < rule.countsFrom) return;
@@ -78,58 +77,89 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
         { kind: "il_equal_pay_720h", months: rule.windowMonths, threshold: rule.triggerMinutes },
         { kind: "il_equal_pay_4160h", months: rule.longWindowMonths, threshold: rule.longTriggerMinutes },
       ];
-      let window12 = 0;
       for (const tier of tiers) {
         const windowStart = [addDays(addMonths(e.date, -tier.months), 1), rule.countsFrom].sort(cmp)[1]!;
         const before = prefix[i]! - prefix[lowerBound(events, windowStart)]!;
-        if (tier.kind === "il_equal_pay_720h") window12 = before + e.minutes;
-        const st = state.get(tier.kind)!;
-        let after = 0;
-        if (st.crossedOn === null && before + e.minutes > tier.threshold) {
-          const offset = Math.max(0, tier.threshold - before);
-          st.crossedOn = e.date;
-          const at = e.shift && e.shift.startMinute !== null && before <= tier.threshold ? e.shift.startMinute + offset : null;
-          const where = `${workerName} passed ${formatHours(tier.threshold)} of work at ${client} on ${e.date}${at !== null ? ` at ${formatClock(at)}` : ""} (the ${tier.months} months from ${windowStart})`;
-          const duty =
-            tier.kind === "il_equal_pay_720h"
-              ? "from then on the Illinois equal-pay rule applies: at least the pay of the client's comparable direct hires, with equal benefits or their hourly cash value (820 ILCS 175/42). Get the client's pay, seniority and benefits data before the next pay period begins (56 Ill. Adm. Code 260.505(b)), then enter the equal-pay rate."
-              : "if the client chose the wage-survey method, pay is now at least the 75th percentile for the job in the area (820 ILCS 175/42(a)(2)(B)). Get the client's data before the next pay period begins (56 Ill. Adm. Code 260.505(b)).";
-          st.obligation = { kind: tier.kind, jurisdiction, ruleCode: rule.ruleCode, workerId, workerName, clientId, crossedOn: e.date, crossedAtMinute: at, windowStart, thresholdMinutes: tier.threshold, minutesAfter: 0, entryIds: [], citation: rule.citation, message: `${where}: ${duty}` };
-          obligations.push(st.obligation);
-          warnings.push({ code: "equal_pay_obligation", workerId, workerName, workweekStart: workweekStart(e.date, args.workweekStartsOn), clientId, jurisdiction, ruleCode: rule.ruleCode, date: e.date, message: st.obligation.message });
-          after = e.minutes - offset;
-        } else if (st.crossedOn !== null && (st.obligation !== null || e.date > st.crossedOn)) {
-          after = e.minutes;
+        if (tier.kind === "il_equal_pay_720h") window12.set(i, before + e.minutes);
+        if (found.has(tier.kind) || before + e.minutes <= tier.threshold) continue;
+        const offset = Math.max(0, tier.threshold - before);
+        const at = e.shift && e.shift.startMinute !== null && before <= tier.threshold ? e.shift.startMinute + offset : null;
+        found.set(tier.kind, { index: i, date: e.date, offset, at, windowStart, rule, months: tier.months, threshold: tier.threshold });
+      }
+    });
+
+    // The crossing that counts is the earliest: the one found, or the one on file. A crossing found
+    // before the one on file is recorded (a late timesheet moves it earlier); once on file, it stays.
+    const onFile = new Map(args.onFile.filter((o) => o.workerId === workerId && o.clientId === clientId).map((o) => [o.kind, o.crossedOn]));
+    const weeks = new Map<string, { after: number; lastDate: string; lastIndex: number; rule: EqualPayRule }>();
+    let crossed720: string | null = null;
+    for (const kind of ["il_equal_pay_720h", "il_equal_pay_4160h"] as const) {
+      const f = found.get(kind) ?? null;
+      const fileDate = onFile.get(kind) ?? null;
+      const recorded = f !== null && (fileDate === null || f.date < fileDate);
+      const crossingDate = recorded ? f.date : fileDate;
+      if (crossingDate === null) continue;
+      if (kind === "il_equal_pay_720h") crossed720 = crossingDate;
+      // Minutes after the crossing, per event: on the crossing day the found minute splits it, or —
+      // with only the date on file — the whole day counts.
+      const sameDay = f !== null && f.date === crossingDate ? f : null;
+      const afterOf = (e: Event, i: number) =>
+        e.date > crossingDate ? e.minutes : e.date < crossingDate ? 0 : sameDay === null ? e.minutes : i > sameDay.index ? e.minutes : i === sameDay.index ? e.minutes - sameDay.offset : 0;
+      let obligation: Obligation | null = null;
+      if (recorded) {
+        obligation = { kind, jurisdiction, ruleCode: f.rule.ruleCode, workerId, workerName, clientId, crossedOn: f.date, crossedAtMinute: f.at, windowStart: f.windowStart, thresholdMinutes: f.threshold, minutesAfter: 0, earlierMinutesAfter: 0, entryIds: [], citation: f.rule.citation, message: "" };
+        obligations.push(obligation);
+      }
+      events.forEach((e, i) => {
+        const after = afterOf(e, i);
+        if (after <= 0) return;
+        if (!e.shift) {
+          if (obligation) obligation.earlierMinutesAfter += after;
+          return;
         }
-        if (!e.shift || after <= 0) continue;
-        if (st.obligation) {
-          st.obligation.minutesAfter += after;
-          st.obligation.entryIds.push(...e.shift.entryIds);
+        if (obligation) {
+          obligation.minutesAfter += after;
+          obligation.entryIds.push(...e.shift.entryIds);
         }
-        if (tier.kind === "il_equal_pay_720h") {
+        if (kind === "il_equal_pay_720h") {
+          const rule = ruleOn(args.rules, jurisdiction, e.date) ?? f?.rule;
           const week = workweekStart(e.date, args.workweekStartsOn);
-          const w = weeks.get(week) ?? { after: 0, lastDate: e.date, window: 0, crossed: true, rule };
+          const w = weeks.get(week) ?? { after: 0, lastDate: e.date, lastIndex: i, rule: rule! };
           w.after += after;
           weeks.set(week, w);
         }
+      });
+      if (obligation && f) {
+        const where = `${workerName} passed ${formatHours(f.threshold)} of work at ${client} on ${f.date}${f.at !== null ? ` at ${formatClock(f.at)}` : ""} (the ${f.months} months from ${f.windowStart})`;
+        const duty =
+          kind === "il_equal_pay_720h"
+            ? "from then on the Illinois equal-pay rule applies: at least the pay of the client's comparable direct hires, with equal benefits or their hourly cash value (820 ILCS 175/42). Get the client's pay, seniority and benefits data before the next pay period begins (56 Ill. Adm. Code 260.505(b)), then enter the equal-pay rate."
+            : "if the client chose the wage-survey method, pay is now at least the 75th percentile for the job in the area (820 ILCS 175/42(a)(2)(B)). Get the client's data before the next pay period begins (56 Ill. Adm. Code 260.505(b)).";
+        const earlier = obligation.earlierMinutesAfter > 0 ? ` ${formatDuration(obligation.earlierMinutesAfter)} were worked there after it before this pay period.` : "";
+        obligation.message = `${where}: ${duty}${earlier}`;
+        warnings.push({ code: "equal_pay_obligation", workerId, workerName, workweekStart: workweekStart(f.date, args.workweekStartsOn), clientId, jurisdiction, ruleCode: f.rule.ruleCode, date: f.date, message: obligation.message });
       }
-      if (e.shift) {
-        const week = workweekStart(e.date, args.workweekStartsOn);
-        const w = weeks.get(week) ?? { after: 0, lastDate: e.date, window: 0, crossed: false, rule };
-        w.lastDate = e.date;
-        w.window = window12;
-        w.crossed = state.get("il_equal_pay_720h")!.crossedOn !== null;
-        w.rule = rule;
-        weeks.set(week, w);
-      }
+    }
+    // Every week of this run with hours there: the last day, the 12-month total then, its rule.
+    events.forEach((e, i) => {
+      if (!e.shift || !window12.has(i)) return;
+      const week = workweekStart(e.date, args.workweekStartsOn);
+      const w = weeks.get(week) ?? { after: 0, lastDate: e.date, lastIndex: i, rule: ruleOn(args.rules, jurisdiction, e.date)! };
+      w.lastDate = e.date;
+      w.lastIndex = i;
+      w.rule = ruleOn(args.rules, jurisdiction, e.date)!;
+      weeks.set(week, w);
     });
 
     for (const [week, w] of [...weeks].sort((a, b) => cmp(a[0], b[0]))) {
       const who = { workerId, workerName, workweekStart: week, clientId, jurisdiction, ruleCode: w.rule.ruleCode };
+      const total = window12.get(w.lastIndex) ?? 0;
+      // The heads-up stops only from the crossing on (a crossing on file for a later date does not hide it).
+      const crossedBy = crossed720 !== null && crossed720 <= w.lastDate;
       if (w.after > 0) {
         warnings.push({ code: "equal_pay_rate_missing", ...who, message: `${workerName}, workweek starting ${week}: ${formatDuration(w.after)} worked at ${client} after passing ${formatHours(w.rule.triggerMinutes)} there are paid at the placement rate; the equal-pay rate and benefits (or their hourly cash value) are not on file, so back pay may be due once they are (820 ILCS 175/42).` });
-      } else if (!w.crossed && w.window > w.rule.warnMinutes) {
-        warnings.push({ code: "approaching_equal_pay_hours", ...who, date: w.lastDate, message: `${workerName}, workweek starting ${week}: ${formatDuration(w.window)} worked at ${client} in the ${w.rule.windowMonths} months to ${w.lastDate}; past ${formatHours(w.rule.triggerMinutes)} the Illinois equal-pay rule applies (820 ILCS 175/42), so ask the client now for the pay of its comparable direct hires.` });
+      } else if (!crossedBy && total > w.rule.warnMinutes) {
+        warnings.push({ code: "approaching_equal_pay_hours", ...who, date: w.lastDate, message: `${workerName}, workweek starting ${week}: ${formatDuration(total)} worked at ${client} in the ${w.rule.windowMonths} months to ${w.lastDate}; past ${formatHours(w.rule.triggerMinutes)} the Illinois equal-pay rule applies (820 ILCS 175/42), so ask the client now for the pay of its comparable direct hires.` });
       }
     }
   }

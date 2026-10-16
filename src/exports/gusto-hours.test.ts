@@ -281,6 +281,7 @@ describe("Gusto hours CSV — pay the engine now computes but this file cannot c
       ],
     });
     expect(() => renderGustoHours(fixture)).toThrowError(expect.objectContaining({ code: "several_pay_rates" }));
+    expect(() => renderGustoHours(base({ payLines: [{ workerId: "w1", type: "REG", minutes: 2400, amountCents: 73_000, rate: { num: 1825, den: 1 } }, { workerId: "w1", type: "OT", minutes: 240, amountCents: 11_177, rate: { num: 61_475, den: 22 } }] }))).toThrowError("because the week's regular rate includes more than the hourly rate (a second pay rate, a bonus");
     const huge = base({ payLines: [{ workerId: "w1", type: "OT", minutes: 10_000, amountCents: 1, rate: { num: 200_000_000_000_007, den: 10_079 } }] });
     expect(() => renderGustoHours(huge)).toThrowError(ExportError);
   });

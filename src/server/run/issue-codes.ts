@@ -1,0 +1,24 @@
+import { ISSUE_CODES } from "@shiftbook/rules";
+
+/** Every code a run can give: the engine's, and the run's own checks (a screen needs a label for each). */
+export const RUN_ISSUE_CODES = [
+  ...ISSUE_CODES,
+  "entry_needs_review",
+  "unmatched_entry",
+  "entry_incomplete",
+  "outside_period",
+  "outside_assignment",
+  "missing_rate",
+  "missing_billing_profile",
+  "crosses_midnight",
+  "missing_payroll_id",
+  "pay_bill_mismatch",
+  "possible_duplicate_day",
+  "export_refused",
+  "period_not_aligned",
+  "no_entries",
+  "documents_pending",
+  "document_failed",
+  "invoice_problem",
+] as const;
+export type RunIssueCode = (typeof RUN_ISSUE_CODES)[number];

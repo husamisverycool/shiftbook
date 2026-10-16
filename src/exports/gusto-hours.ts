@@ -237,7 +237,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
     if (!sameRate(line.rate, { num: reg.num * m.num, den: reg.den * m.den })) {
       throw new ExportError(
         "several_pay_rates",
-        `${w.lastName}, ${w.firstName}: ${line.column} is paid at ${formatRate(line.rate)}, but Gusto pays it at ${exactDecimal(m.num, m.den)} × the regular rate (${formatRate({ num: reg.num * m.num, den: reg.den * m.den })}).`,
+        `${w.lastName}, ${w.firstName}: ${line.column} is paid at ${formatRate(line.rate)}, because the week's regular rate includes more than the hourly rate (a second pay rate, a bonus, a holiday premium below 1.5× or a minimum-wage top-up), but Gusto pays it at ${exactDecimal(m.num, m.den)} × the stored rate (${formatRate({ num: reg.num * m.num, den: reg.den * m.den })}). Skip this worker and pay them by hand, or enter the difference in Gusto as a separate amount.`,
         line.workerId,
       );
     }

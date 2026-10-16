@@ -153,5 +153,17 @@ weeks (e); other states; alternative workweek schedules; split-shift premiums (f
   once, never below an independent federal amount, the same in any input order, every line's
   amount its minutes × rate rounded once, bill minutes mirroring pay minutes, and the regular rate
   never rounded.
-- Next: the second-opinion review of steps 5–7, Playwright (a California week and a two-rate week),
-  then the owner's approval of the new answer keys.
+- A refusal by the Gusto file names its worker, and every such worker at once, so the person can
+  skip them and pay them by hand (a two-rate overtime week no longer stops the run).
+- Playwright: a California seven-day week and a two-rate overtime week, in English and Spanish;
+  the accessibility test makes its blocked state on purpose (California workers are now paid).
+- Second opinion on steps 5–7 fixed: the earliest crossing wins (a late timesheet moves the
+  obligation on file earlier, logged; hours after it on the crossing day count from the crossing
+  minute; the heads-up stops only from the crossing on; hours already worked after a crossing found
+  in earlier periods are counted, and such an obligation is marked overdue); obligations are due
+  by the last day of the period; "own sites only" keeps each line's own overtime at that line's
+  rate; a holiday not worked is billed by the client's own policy minutes; every issue code has an
+  English and Spanish label (tested); the Gusto refusal for overtime on a raised regular rate says
+  why and what to do.
+- Next: land slice (c) on the branch with slice (b)'s latest fixes, then the owner's approval of the
+  new answer keys.

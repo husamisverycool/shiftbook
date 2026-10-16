@@ -346,6 +346,7 @@
         "document_failed": "Hojas de horas que no se pudieron leer",
         "invoice_problem": "No se puede crear una factura",
         "premium_not_applicable": "Una prima confirmada que no aplica aquí",
+        "bonus_kind_check": "Un bono de California por revisar",
         "approaching_equal_pay_hours": "Cerca de 720 horas con un cliente de Illinois",
         "equal_pay_obligation": "Ahora aplica la igualdad salarial de Illinois",
         "equal_pay_rate_missing": "Horas después de 720 con un cliente sin tarifa de igualdad salarial"

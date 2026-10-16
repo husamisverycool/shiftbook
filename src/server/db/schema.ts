@@ -771,6 +771,10 @@ export interface ObligationEvidence {
   windowStart: string;
   thresholdMinutes: number;
   minutesAfter: number;
+  /** Minutes worked after the crossing in earlier periods (a crossing found in earlier hours). */
+  earlierMinutesAfter: number;
+  /** The crossing was before this period, so the deadline has already passed. */
+  overdue: boolean;
   entryIds: string[];
 }
 

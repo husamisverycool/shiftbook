@@ -1304,7 +1304,8 @@ describe("computePay — the Illinois equal-pay counter (820 ILCS 175/42): hours
   });
 
   it("does not record a crossing twice: with one on file, it warns about the hours worked after it", () => {
-    const r = run(work(), days("2025-11-02", 120, 400), { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2026-09-30" }] });
+    // The hours alone cross on 2026-02-18; the crossing on file is earlier, so it stands.
+    const r = run(work(), days("2025-11-02", 120, 400), { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2026-02-01" }] });
     expect(r.obligations).toEqual([]);
     expect(r.warnings.filter((w) => w.code === "equal_pay_rate_missing").map((w) => w.message).join(" ")).toContain("40h 00m worked at Prairie Line after passing 720 hours");
   });
@@ -1318,6 +1319,32 @@ describe("computePay — the Illinois equal-pay counter (820 ILCS 175/42): hours
   it("finds a crossing that happened in earlier hours not yet on file, and dates it there", () => {
     const r = run(work(), days("2025-11-02", 110, 400)); // 44,000 minutes before the week: crossed on day 109
     expect(r.obligations.map((o) => [o.kind, o.crossedOn, o.crossedAtMinute, o.minutesAfter])).toEqual([["il_equal_pay_720h", "2026-02-18", null, 2400]]);
+  });
+
+  it("a later crossing on file never hides an earlier one found in the hours (a late timesheet)", () => {
+    const r = run(work(), days("2025-11-02", 105, 400), { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2026-10-21" }] });
+    expect(r.obligations.map((o) => [o.kind, o.crossedOn, o.crossedAtMinute, o.minutesAfter])).toEqual([["il_equal_pay_720h", "2026-10-14", 660, 1200]]);
+  });
+
+  it("with the crossing on file on a day of this run, counts the hours after it that day, not the whole day or none", () => {
+    const sameDay = run(work(), days("2025-11-02", 105, 400), { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2026-10-14" }] });
+    expect(sameDay.obligations).toEqual([]);
+    expect(sameDay.warnings.filter((w) => w.code === "equal_pay_rate_missing").map((w) => w.message).join(" ")).toContain("20h 00m worked at Prairie Line after passing 720 hours");
+    // On file a day before the hours alone would cross: that whole day and every later one count.
+    const earlier = run(work(), days("2025-11-02", 105, 400), { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2026-10-13" }] });
+    expect(earlier.obligations).toEqual([]);
+    expect(earlier.warnings.filter((w) => w.code === "equal_pay_rate_missing").map((w) => w.message).join(" ")).toContain("32h 00m worked at Prairie Line after passing 720 hours");
+  });
+
+  it("still warns ahead of 720 hours when the crossing on file is later than this week", () => {
+    const r = run(work(), days("2025-11-02", 100, 350), { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2026-12-01" }] });
+    expect(r.warnings.map((w) => w.code)).toContain("approaching_equal_pay_hours");
+  });
+
+  it("counts the earlier hours worked after a crossing found in them", () => {
+    const r = run(work(), days("2025-11-02", 110, 400));
+    expect(r.obligations[0]).toMatchObject({ crossedOn: "2026-02-18", minutesAfter: 2400, earlierMinutesAfter: 800 });
+    expect(r.obligations[0]!.message).toContain("13h 20m were worked there after it before this pay period");
   });
 
   it("gives the same answer whatever order the history and shifts arrive in", () => {
@@ -1509,5 +1536,39 @@ describe("computePay — second opinion on holidays and bonuses", () => {
     const line = r.payLines.find((l) => l.type === "HOL_NOT_WORKED")!;
     expect(line.explain).toContain("29 U.S.C. § 207(e)(2)");
     expect(line.explain).not.toContain("207(e)(6)");
+  });
+});
+
+describe("computePay — second opinion on steps 5–7", () => {
+  it("own-sites billing gives each line its own overtime: the client's last hours, at that line's bill rate", () => {
+    const r = computePay(
+      input([
+        shift(WEEK[0]!, 600, { assignmentId: "aB", clientId: "cB" }),
+        ...WEEK.slice(1, 4).map((d) => shift(d, 720, { assignmentId: "aF", clientId: "cA", payRateCents: 2500, billRateCents: 5000, otBillingRule: "own_sites_only" })),
+        shift(WEEK[4]!, 600, { assignmentId: "aG", clientId: "cA", payRateCents: 1800, billRateCents: 3000, otBillingRule: "own_sites_only" }),
+      ]),
+    );
+    expect(r.blockers).toEqual([]);
+    const a = r.billLines.filter((l) => l.clientId === "cA");
+    expect(a.map((l) => [l.assignmentId, l.type, l.ruleId, l.minutes, l.amountCents])).toEqual([
+      ["aF", "REG", "bill_regular", 1800, 150_000],
+      ["aF", "OT", "bill_overtime_own_sites_straight", 360, 30_000],
+      ["aG", "OT", "bill_overtime_multiplier", 360, 27_000],
+      ["aG", "OT", "bill_overtime_own_sites_straight", 240, 12_000],
+    ]);
+    expect(a.reduce((sum, l) => sum + l.amountCents, 0)).toBe(219_000);
+  });
+
+  it("bills a holiday not worked by the client's own policy: its minutes, or nothing when it pays none", () => {
+    const MA_SITE = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const;
+    const ma = (date: string, minutes: number, over: Partial<Shift> = {}) => shift(date, minutes, { ...MA_SITE, payRateCents: 1900, billRateCents: 2700, ...over });
+    const agency: HolidayPolicy = { clientId: null, name: "Agency holidays", dates: ["2026-11-26"], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false };
+    const shifts = [...["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-27"].map((d) => ma(d, 480)), ma("2026-11-26", 0, { entryIds: [], reportedOnly: true })];
+    const confirmations: Confirmation[] = [{ id: "h1", kind: "holiday_not_worked", workerId: "w1", assignmentId: "a1", date: "2026-11-26" }];
+    const half = computePay({ ...input(shifts), holidayPolicies: [agency, { ...agency, clientId: "c1", name: "Client holidays", notWorkedMinutes: 240, billNotWorked: true }], confirmations });
+    expect(half.payLines.filter((l) => l.type === "HOL_NOT_WORKED").map((l) => [l.minutes, l.amountCents])).toEqual([[480, 15_200]]);
+    expect(half.billLines.filter((l) => l.type === "HOL_NOT_WORKED").map((l) => [l.minutes, l.amountCents])).toEqual([[240, 10_800]]);
+    const none = computePay({ ...input(shifts), holidayPolicies: [agency, { ...agency, clientId: "c1", name: "Client holidays", notWorkedMinutes: 0, billNotWorked: true }], confirmations });
+    expect(none.billLines.filter((l) => l.type === "HOL_NOT_WORKED")).toEqual([]);
   });
 });

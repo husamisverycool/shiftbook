@@ -286,6 +286,8 @@ export interface Obligation {
   thresholdMinutes: number;
   /** Minutes worked after the crossing in this run, and their time entries. */
   minutesAfter: number;
+  /** Minutes worked after the crossing in earlier periods (a crossing found in earlier hours). */
+  earlierMinutesAfter: number;
   entryIds: string[];
   citation: string;
   message: string;
@@ -325,22 +327,25 @@ export interface Line {
   entryIds: string[];
 }
 
-export type IssueCode =
-  | "invalid_input"
-  | "unknown_jurisdiction"
-  | "rule_not_supported_yet"
-  | "rule_data_missing"
-  | "rule_data_invalid"
-  | "below_minimum_wage"
-  | "multiple_pay_rates_with_overtime"
-  | "zero_or_negative_pay"
+/** Every issue code the engine can give (a screen needs a label for each, in every language). */
+export const ISSUE_CODES = [
+  "invalid_input",
+  "unknown_jurisdiction",
+  "rule_not_supported_yet",
+  "rule_data_missing",
+  "rule_data_invalid",
+  "below_minimum_wage",
+  "multiple_pay_rates_with_overtime",
+  "zero_or_negative_pay",
   // warnings (do not block):
-  | "allocation_order_assumed"
-  | "premium_not_applicable"
-  | "bonus_kind_check"
-  | "approaching_equal_pay_hours"
-  | "equal_pay_obligation"
-  | "equal_pay_rate_missing";
+  "allocation_order_assumed",
+  "premium_not_applicable",
+  "bonus_kind_check",
+  "approaching_equal_pay_hours",
+  "equal_pay_obligation",
+  "equal_pay_rate_missing",
+] as const;
+export type IssueCode = (typeof ISSUE_CODES)[number];
 
 export interface Issue {
   code: IssueCode;

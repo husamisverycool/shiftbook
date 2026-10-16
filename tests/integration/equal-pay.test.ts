@@ -68,7 +68,8 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     expect(codes).toContain("equal_pay_rate_missing");
     const rows = await inAgency((tx) => tx.select().from(obligations));
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ kind: "il_equal_pay_720h", jurisdiction: "IL", workerId: marcus, clientId: clientId("il"), payRunId: run.runId, crossedOn: "2026-10-07", dueOn: "2026-10-12", status: "open" });
+    // Due before the next pay period begins: by the last day of this one.
+    expect(rows[0]).toMatchObject({ kind: "il_equal_pay_720h", jurisdiction: "IL", workerId: marcus, clientId: clientId("il"), payRunId: run.runId, crossedOn: "2026-10-07", dueOn: "2026-10-11", status: "open" });
     expect(rows[0]!.evidence).toMatchObject({ crossedAtMinute: 660, windowStart: "2025-10-08", thresholdMinutes: 43_200, minutesAfter: 1200, entryIds: ids.slice(2).sort() });
     expect(rows[0]!.message).toContain("Prairie Line");
 
@@ -90,6 +91,29 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     expect(rows.map((r) => [r.crossedOn, r.evidence.crossedAtMinute, r.evidence.minutesAfter])).toEqual([["2026-10-08", 660, 720]]);
     const actions = (await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "obligation"), gte(auditEvents.occurredAt, since))))).map((e) => e.action).sort();
     expect(actions).toEqual(["create", "create", "delete"]);
+  });
+
+  it("a late timesheet that crosses earlier moves the obligation on file to the earlier crossing, logged", async () => {
+    const since = new Date();
+    await earlierHours();
+    const [later] = await inAgency((tx) => tx.insert(payPeriods).values({ agencyId: actor.agencyId, startsOn: "2026-10-12", endsOn: "2026-10-18" }).returning());
+    for (const day of ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"]) {
+      const added = await inAgency((tx) => addEntry(tx, actor, later!.id, { workerId: marcus, workDate: day, inMinute: 420, outMinute: 900, breakMinutes: 0 }, ["other"], "later week"));
+      if (!added.ok) throw new Error(added.error);
+    }
+    await inAgency((tx) => computeRun(tx, actor, later!.id));
+    expect((await inAgency((tx) => tx.select().from(obligations))).map((r) => r.crossedOn)).toEqual(["2026-10-14"]);
+    // The earlier week's timesheet arrives late: the hours cross on October 7 at 11:00.
+    await weekOfWork();
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    const rows = await inAgency((tx) => tx.select().from(obligations));
+    expect(rows.map((r) => [r.crossedOn, r.payRunId, r.evidence.crossedAtMinute, r.evidence.minutesAfter])).toEqual([["2026-10-07", run.runId, 660, 1200]]);
+    const moved = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "obligation"), eq(auditEvents.action, "update"), gte(auditEvents.occurredAt, since))));
+    expect(moved.map((e) => [e.before, e.after])).toEqual([[{ crossedOn: "2026-10-14" }, { crossedOn: "2026-10-07" }]]);
+    // The later week, computed again, keeps the earlier crossing and flags all its hours.
+    const again = await inAgency((tx) => computeRun(tx, actor, later!.id));
+    expect(await inAgency((tx) => tx.select().from(obligations))).toHaveLength(1);
+    expect(again.warnings.filter((w) => w.code === "equal_pay_rate_missing").map((w) => w.message).join(" ")).toContain("40h 00m");
   });
 
   it("does not count earlier hours on clerical work, or warn without earlier hours", async () => {
