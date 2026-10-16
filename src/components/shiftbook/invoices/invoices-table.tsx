@@ -86,7 +86,7 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
                   <Checkbox checked={props.selected!.has(r.id)} onCheckedChange={(on) => props.onSelect!([r.id], on === true)} aria-label={t("select", { number: r.number })} data-testid="invoice-select" />
                 </TableCell>
               )}
-              <TableCell className="text-right font-medium tabular-nums">{money(r.totalCents, locale)}</TableCell>
+              <TableCell className="text-right font-semibold tabular-nums">{money(r.totalCents, locale)}</TableCell>
               <TableCell>
                 <InvoiceStatusBadge status={r.status} />
               </TableCell>

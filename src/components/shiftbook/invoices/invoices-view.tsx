@@ -51,45 +51,43 @@ export function InvoicesView({ rows }: { rows: InvoiceRow[] }) {
 
   return (
     <Page>
-      {/* Stripe's invoices list: the title, then the statuses as underline tabs with their counts. */}
+      {/* Stripe's invoices list: the title, then the statuses as underline tabs with their counts and the
+          client filter beside them; they stay in place when there is nothing yet (_components/empty-state.md). */}
       <PageHeader
         title={t("title")}
         tabs={
-          rows.length > 0 ? (
-            <PageTabs
-              label={t("filterStatus")}
-              current={status || "all"}
-              tabs={(["", ...STATUSES] as const).map((s) => ({
-                key: s || "all",
-                label: s === "" ? t("all") : t(`status.${s}`),
-                count: rows.filter((r) => (s === "" || r.status === s) && (client === "" || r.clientId === client)).length,
-                href: { pathname: "/invoices", query: { ...(s ? { status: s } : {}), ...(client ? { client } : {}) } },
-                testId: `status-chip-${s || "all"}`,
-              }))}
-            />
-          ) : undefined
+          <PageTabs
+            label={t("filterStatus")}
+            current={status || "all"}
+            tabs={(["", ...STATUSES] as const).map((s) => ({
+              key: s || "all",
+              label: s === "" ? t("all") : t(`status.${s}`),
+              count: rows.filter((r) => (s === "" || r.status === s) && (client === "" || r.clientId === client)).length,
+              href: { pathname: "/invoices", query: { ...(s ? { status: s } : {}), ...(client ? { client } : {}) } },
+              testId: `status-chip-${s || "all"}`,
+            }))}
+            end={
+              <>
+                {(status || client) && (
+                  <Button size="sm" variant="ghost" onClick={clear}>
+                    {t("clearFilters")}
+                  </Button>
+                )}
+                <NativeSelect aria-label={t("filterClient")} value={client} onChange={(e) => setParam("client", e.target.value)} className="w-64">
+                  <NativeSelectOption value="">
+                    {t("filterClient")}: {t("any")}
+                  </NativeSelectOption>
+                  {clients.map(([id, name]) => (
+                    <NativeSelectOption key={id} value={id}>
+                      {name}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </>
+            }
+          />
         }
       />
-
-      {rows.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <NativeSelect aria-label={t("filterClient")} value={client} onChange={(e) => setParam("client", e.target.value)} className="w-64">
-            <NativeSelectOption value="">
-              {t("filterClient")}: {t("any")}
-            </NativeSelectOption>
-            {clients.map(([id, name]) => (
-              <NativeSelectOption key={id} value={id}>
-                {name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-          {(status || client) && (
-            <Button size="sm" variant="ghost" onClick={clear}>
-              {t("clearFilters")}
-            </Button>
-          )}
-        </div>
-      )}
 
       {chosen.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2 text-sm" role="region" aria-label={t("selection")} data-testid="selection-bar">

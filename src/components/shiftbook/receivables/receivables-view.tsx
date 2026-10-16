@@ -172,7 +172,7 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                                           <TableCell>{longDate(i.dueOn, locale)}</TableCell>
                                           <TableCell className="text-right tabular-nums">{i.daysLate}</TableCell>
                                           <TableCell className="text-right tabular-nums">{money(i.totalCents, locale)}</TableCell>
-                                          <TableCell className="text-right tabular-nums">{money(i.balanceCents, locale)}</TableCell>
+                                          <TableCell className="text-right font-semibold tabular-nums">{money(i.balanceCents, locale)}</TableCell>
                                         </TableRow>
                                       ))}
                                     </TableBody>
@@ -190,9 +190,10 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                 <TableFooter>
                   <TableRow>
                     <TableCell className="font-semibold">{t("total")}</TableCell>
+                    {/* An empty bucket reads "—" here as in the clients' rows (_components/table.md). */}
                     {BUCKETS.map((b) => (
-                      <TableCell key={b} className="text-right font-semibold tabular-nums">
-                        {money(view.totals[b], locale)}
+                      <TableCell key={b} className="text-right font-semibold tabular-nums" data-testid={`total-${b}`}>
+                        {view.totals[b] === 0 ? <span className="font-normal text-muted-foreground">—</span> : money(view.totals[b], locale)}
                       </TableCell>
                     ))}
                     <TableCell className="text-right font-semibold tabular-nums">{money(view.totalCents, locale)}</TableCell>
@@ -228,7 +229,7 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                     </Link>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{money(r.paidCents, locale)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{money(r.balanceCents, locale)}</TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">{money(r.balanceCents, locale)}</TableCell>
                   <TableCell>{r.reason ? t(`shortReasons.${r.reason}`) : <span className="text-muted-foreground">{t("noReason")}</span>}</TableCell>
                   <TableCell>{r.remindedAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(r.remindedAt)) : "—"}</TableCell>
                 </TableRow>

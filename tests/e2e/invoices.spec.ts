@@ -36,6 +36,12 @@ for (const locale of ["en", "es"] as const) {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
 
+    // No invoices yet: the empty state, under the status tabs and the client filter, which stay in place.
+    await page.goto(`/${locale}/invoices`);
+    await expect(page.getByTestId("invoices-empty")).toBeVisible();
+    await expect(page.getByTestId("status-chip-all")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: m.invoices.filterClient })).toBeVisible();
+
     // Anita Patel's placement carries the client's PO-77001 (Assignments, side panel).
     await page.goto(`/${locale}/assignments`);
     const anita = page.getByTestId("record-row").filter({ hasText: "Anita Patel" });
@@ -81,6 +87,11 @@ for (const locale of ["en", "es"] as const) {
     await expect(prairie).toHaveCount(2);
     await expect(prairie.filter({ hasText: "PLM-20261005-1" })).toHaveCount(1);
     await expect(prairie.filter({ hasText: "PLM-20261005-2" })).toHaveCount(1);
+    // The client filter sits beside the status tabs, on their line.
+    const tabs = (await page.getByRole("navigation", { name: m.invoices.filterStatus }).boundingBox())!;
+    const filter = (await page.getByRole("combobox", { name: m.invoices.filterClient }).boundingBox())!;
+    expect(filter.x).toBeGreaterThan(tabs.x + tabs.width);
+    expect(Math.abs(filter.y + filter.height - (tabs.y + tabs.height))).toBeLessThan(12);
     await check(page, "invoices list");
 
     // A statement of the two: a first page listing them, then each invoice as issued.
