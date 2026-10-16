@@ -120,3 +120,17 @@ disputed shift until it is settled. Reminders go out on their own while a client
 Requiring approval per client before a run (e); a second approver or escalation; editable email
 text; approving on the client's behalf; client reports; email bounce webhooks (with the production
 email setup); bill amounts on the page.
+
+## Progress
+- Built (2026-10-16): data and migration 0022 (requests, links stored as SHA-256 only, decisions
+  append-only, disputes, the email log with links hidden, the demo mailbox), the link and the mail
+  transport (demo mailbox; Resend when live), the services (send and send again, reminders sent
+  once even by two sweeps at once, the client's page, dispute drafts, the decision with its evidence
+  and both emails, a new link for an expired one, settling disputes, withdrawing an approval), the
+  run's hold on disputed shifts, and the screens (Client approvals list and request page, the
+  client's page with every state, English and Spanish).
+- Tests: 27 integration tests for the flow (including another agency trying every action by id),
+  unit tests for the token, emails and transport, and browser tests in English and Spanish with
+  accessibility checks. All 26 browser tests, 509 unit and 163 integration tests pass.
+- Screens compared in `docs/screens/slice-d.md`.
+- Next: the second-opinion review (security and the run change), fixes, then screenshots again.
