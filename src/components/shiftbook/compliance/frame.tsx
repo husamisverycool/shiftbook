@@ -18,12 +18,15 @@ import { cn } from "@/lib/utils";
 import type { Area } from "@/server/compliance/queries";
 import { typing } from "../app-sidebar";
 
-export type ComplianceTab = "list" | "calendar" | "workersComp";
+export type ComplianceTab = "list" | "calendar" | "counters" | "workersComp";
 const TABS: { tab: ComplianceTab; href: string }[] = [
   { tab: "list", href: "/compliance" },
   { tab: "calendar", href: "/compliance/calendar" },
+  { tab: "counters", href: "/compliance/counters" },
   { tab: "workersComp", href: "/compliance/workers-comp" },
 ];
+/** The tabs that share the list's filters. */
+const FILTERED: ComplianceTab[] = ["list", "calendar"];
 const AREAS: (Area | "all")[] = [
   "all",
   "registrations",
@@ -114,7 +117,7 @@ export function ComplianceFrame({
           <Link
             key={x.tab}
             href={
-              kept.size > 0 && x.tab !== "workersComp"
+              kept.size > 0 && FILTERED.includes(x.tab)
                 ? `${x.href}?${kept.toString()}`
                 : x.href
             }

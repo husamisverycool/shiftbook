@@ -26,7 +26,7 @@ import { StatusBadge } from "./status-badge";
 export type DetailTab = "overview" | "evidence" | "history" | "notes";
 const TABS: DetailTab[] = ["overview", "evidence", "history", "notes"];
 
-function useAct() {
+export function useAct() {
   const te = useTranslations("compliance.errors");
   const router = useRouter();
   const [pending, run] = useTransition();

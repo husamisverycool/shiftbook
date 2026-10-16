@@ -140,3 +140,26 @@ Screens: `j21-make-proof-page.png` (again), `j22-proof-page-made.png` (again), `
   empty-files line is gone there.
 - The employer's phone label read "Harborview Events & Hospitality (demo)'s phone"; it is now
   "Worksite employer's phone (Harborview Events & Hospitality (demo))".
+
+## Step 3a — hours counters with opening balances
+
+### Counters — `docs/patterns/compliance/counters.md` (TempWorks ACA Employee Cycles; 820 ILCS 175/42)
+Screens: `j30-counters.png`, `j31-counter-balances.png`, `j32-add-balance.png`, `j33-counters-no-match.png`,
+`es-j30-counters.png`.
+- ✓ The Counters tab; a line with the rule's thresholds (720 hours in 12 months, 4,160 in 48, near
+  past 600) and that balances count in the run too.
+- ✓ Search by worker; Client; Show (all, near, crossed) in the address; no match says so with Clear
+  filters (`j33`).
+- ✓ One row per worker and Illinois client, most hours first: hours in the 12 and 48 months with each
+  window's first day, the hours before Shiftbook, and the state — crossed on a date (a link to its
+  duty), near with hours to go (Fatima Haddad, from the demo's 590 hours before Shiftbook), or hours to
+  go (`j30`).
+- ✓ A row opens its balances: hours up to a date, the note, who added them; Remove asks for a reason
+  and keeps it listed, struck through (`j31`; browser test).
+- ✓ Add balance from a row (worker and client set) or from the page (chosen); hours as 620 or 620:30,
+  the date not after today, a note (`j32`). Read only for everyone but the Owner.
+- ✓ The run counts the balances: a balance and a week of work record the crossing at the right minute
+  (integration test).
+
+### Differences found and what was done
+- The intro and limits read "720:00 hours"; thresholds are now whole hours ("720 h", "4,160 h").

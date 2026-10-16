@@ -2365,7 +2365,8 @@
     "tabs": {
       "list": "List",
       "calendar": "Calendar",
-      "workersComp": "Workers' comp"
+      "workersComp": "Workers' comp",
+      "counters": "Counters"
     },
     "areasLabel": "Areas",
     "areas": {
@@ -2624,7 +2625,11 @@
         "agency_phone": "The agency has no phone number on file, and the job order must give it.",
         "employerPhone": "Enter the worksite employer's phone number.",
         "carrierContact": "Keep the insurer's address and phone under 500 characters.",
-        "days": "Choose Saturday, Sunday, both or neither."
+        "days": "Choose Saturday, Sunday, both or neither.",
+        "minutes": "Enter hours like 620 or 620:30.",
+        "throughOn": "Enter a date not after today.",
+        "workerId": "Choose the worker and client.",
+        "clientId": "Choose the worker and client."
       },
       "closed_by_data": "Shiftbook closed this duty from the data; it opens again by itself if the data calls for it."
     },
@@ -2680,6 +2685,59 @@
       "intro": "Pay by state and class with the overtime premium apart, for the pay dates in the range (the policy's period by default).",
       "apply": "Apply",
       "tieSettled": "Ties to the payroll files with these pay dates ({files}): gross {gross}, and {settled} that corrections settled outside the files ({decisions, plural, one {# decision} other {# decisions}})."
+    },
+    "counters": {
+      "intro": "Hours of day and temporary labor at each Illinois client. Equal pay applies after more than {trigger} hours there in {months} months (or {longTrigger} in {longMonths}); past {warn} the worker is near. Hours worked before Shiftbook are added as opening balances, and the run counts them too.",
+      "search": "Search",
+      "searchPlaceholder": "Worker",
+      "client": "Client",
+      "anyClient": "Any client",
+      "show": "Show",
+      "shows": {
+        "all": "All",
+        "near": "Near the threshold",
+        "crossed": "Crossed"
+      },
+      "add": "Add balance",
+      "nothing": "No Illinois day and temporary labor has been worked or entered yet.",
+      "noRule": "The counters need the Illinois equal-pay rule, and none is in force today.",
+      "noMatch": "No worker matches these filters.",
+      "clear": "Clear filters",
+      "tableLabel": "Hours toward Illinois equal pay, by worker and client",
+      "balances": "Opening balances",
+      "cols": {
+        "worker": "Worker",
+        "client": "Client",
+        "twelve": "{months} months",
+        "fortyEight": "{months} months",
+        "before": "Before Shiftbook",
+        "state": "Equal pay"
+      },
+      "of": "{hours} of {limit} h",
+      "since": "from {date}",
+      "crossed": "Crossed on {date}",
+      "crossedLong": "Crossed {limit} hours on {date}",
+      "near": "Near: {hours} to go",
+      "toGo": "{hours} to go",
+      "toggle": "Opening balances of {worker} at {client}",
+      "balancesTitle": "Hours before Shiftbook",
+      "noBalances": "No opening balances.",
+      "balance": "{hours} up to {date}",
+      "addedBy": "added by {by}, {date}",
+      "removed": "removed by {by}, {date}: {reason}",
+      "remove": "Remove",
+      "removeTitle": "Remove this balance",
+      "removeBody": "It stays listed as removed, with your reason; the next run no longer counts it.",
+      "addTitle": "Add hours worked before Shiftbook",
+      "addBody": "The hours the worker did for this client before Shiftbook. They count on the date they run to, the latest they could have been worked.",
+      "fields": {
+        "pair": "Worker and client",
+        "choose": "Choose…",
+        "hours": "Hours (620 or 620:30)",
+        "throughOn": "Up to",
+        "note": "Note (where the hours come from)"
+      },
+      "saved": "Saved. The next run counts it."
     }
   },
   "complianceSettings": {

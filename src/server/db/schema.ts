@@ -1026,6 +1026,53 @@ export const obligationDocuments = pgTable("obligation_documents", {
   unlinkedByLabel: text("unlinked_by_label"),
 });
 
+/** Hours a worker did for a client before Shiftbook, for the Illinois equal-pay counter (slice j, J5). */
+export const hoursOpeningBalances = pgTable("hours_opening_balances", {
+  id: id(),
+  agencyId: agencyId(),
+  workerId: uuid("worker_id")
+    .notNull()
+    .references(() => workers.id),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  minutes: integer("minutes").notNull(),
+  throughOn: isoDate("through_on").notNull(),
+  note: text("note").notNull(),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+  removedAt: timestamp("removed_at", { withTimezone: true }),
+  removedByLabel: text("removed_by_label"),
+  removedReason: text("removed_reason"),
+});
+
+export type EqualPayMethod = "comparator" | "closest_seniority" | "survey_median" | "survey_75th";
+
+/** The Illinois equal-pay rate for a worker at a client, from a date, or that the client was asked (slice j, J6). */
+export const equalPayRates = pgTable("equal_pay_rates", {
+  id: id(),
+  agencyId: agencyId(),
+  workerId: uuid("worker_id")
+    .notNull()
+    .references(() => workers.id),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  kind: text("kind").$type<"rate" | "asked">().notNull(),
+  rateCents: integer("rate_cents"),
+  benefitsCents: integer("benefits_cents"),
+  method: text("method").$type<EqualPayMethod>(),
+  comparator: text("comparator"),
+  note: text("note"),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+  removedAt: timestamp("removed_at", { withTimezone: true }),
+  removedByLabel: text("removed_by_label"),
+});
+
 export const obligationNotes = pgTable("obligation_notes", {
   id: id(),
   agencyId: agencyId(),
@@ -1424,4 +1471,6 @@ export const TENANT_TABLES = [
   "wc_policies",
   "obligation_documents",
   "obligation_notes",
+  "hours_opening_balances",
+  "equal_pay_rates",
 ] as const;

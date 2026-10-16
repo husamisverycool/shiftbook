@@ -218,6 +218,13 @@
       "when": 1792092100000,
       "tag": "0030_job_order_notice",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792092200000,
+      "tag": "0031_counters_equal_pay",
+      "breakpoints": true
     }
   ]
 }

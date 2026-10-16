@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { addObligationFile, addObligationNote, addPolicy, addRegistration, closeObligation, mayChangeComplianceSettings, recordI9, recordReverification, reopenObligation, setMaContact, setMaStatement, setObligationOwner, setOpenWeekendDays, storeComplianceDocument, unlinkObligationFile, type ComplianceResult } from "@/server/compliance/service";
+import { addOpeningBalance, removeOpeningBalance } from "@/server/compliance/counter-balances";
 import { createJobOrderNotice, createPacketDocument, createProofPage, saveNoticeDetails } from "@/server/compliance/documents";
 import { withAgency } from "@/server/db";
 import { PeriodBusyError } from "@/server/run/period-lock";
@@ -24,7 +25,7 @@ async function guarded(fn: () => Promise<ComplianceResult>): Promise<ComplianceA
     if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
     throw error;
   } finally {
-    for (const path of ["/[locale]/(app)/compliance", "/[locale]/(app)/compliance/[id]", "/[locale]/(app)/compliance/calendar", "/[locale]/(app)/settings/compliance"]) revalidatePath(path, "page");
+    for (const path of ["/[locale]/(app)/compliance", "/[locale]/(app)/compliance/[id]", "/[locale]/(app)/compliance/calendar", "/[locale]/(app)/compliance/counters", "/[locale]/(app)/settings/compliance"]) revalidatePath(path, "page");
     revalidatePath("/[locale]/(app)", "layout");
   }
 }
@@ -169,4 +170,18 @@ export async function setMaContactAction(contact: string): Promise<ComplianceAct
 export async function setOpenDaysAction(days: unknown): Promise<ComplianceActionResult> {
   if (!Array.isArray(days) || days.length > 2) return { ok: false, error: "generic" };
   return run((tx, actor, today) => setOpenWeekendDays(tx, actor, days, today));
+}
+
+const BalanceSchema = z.object({ workerId: id, clientId: id, minutes: z.number().int(), throughOn: isoDate, note: z.string().max(1000) }).strict();
+
+/** Hours a worker did for a client before Shiftbook (the Owner). */
+export async function addBalanceAction(input: unknown): Promise<ComplianceActionResult> {
+  const parsed = BalanceSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid", field: String(parsed.error.issues[0]?.path[0] ?? "form") };
+  return run((tx, actor, today) => addOpeningBalance(tx, actor, parsed.data, today));
+}
+
+export async function removeBalanceAction(balanceId: string, reason: string): Promise<ComplianceActionResult> {
+  if (!id.safeParse(balanceId).success || typeof reason !== "string" || reason.length > 1000) return { ok: false, error: "generic" };
+  return run((tx, actor) => removeOpeningBalance(tx, actor, balanceId, reason));
 }

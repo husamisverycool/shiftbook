@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centsToInput, parseDollars, parsePercentBp, parseMultiplier, bpToInput } from "./amounts";
+import { bpToInput, centsToInput, parseDollars, parseHoursToMinutes, parseMultiplier, parsePercentBp } from "./amounts";
 
 describe("typed amounts become integers exactly", () => {
   it("reads dollars as cents", () => {
@@ -53,3 +53,12 @@ describe("rates to four decimals (margin settings, review finding 7)", () => {
   });
 });
 
+
+describe("hours typed as whole hours or h:mm → minutes exactly", () => {
+  it("reads whole hours and hours and minutes; refuses decimals, seconds and minutes past 59", () => {
+    expect(parseHoursToMinutes("620")).toBe(37_200);
+    expect(parseHoursToMinutes(" 1,620:30 ")).toBe(97_230);
+    expect(parseHoursToMinutes("0:45")).toBe(45);
+    for (const bad of ["620.5", "620:60", "620:5", "-3", "", "12:30:00", "abc"]) expect(parseHoursToMinutes(bad)).toBeNull();
+  });
+});

@@ -60,3 +60,14 @@ export function multiplierToInput(m: { num: number; den: number }): string {
   const frac = String(mod(hundredths, 100)).padStart(2, "0").replace(/0+$/, "");
   return frac ? `${floorDiv(hundredths, 100)}.${frac}` : String(floorDiv(hundredths, 100));
 }
+
+const HOURS = /^(\d{1,3}(?:,\d{3})+|\d+)(?::([0-5]\d))?$/;
+
+/** "620" / "1,620:30" → minutes (37,200 / 97,230); whole hours or h:mm; null otherwise. */
+export function parseHoursToMinutes(text: string): number | null {
+  const m = HOURS.exec(text.trim());
+  if (!m) return null;
+  const whole = m[1]!.replace(/,/g, "");
+  if (whole.length > 7) return null;
+  return mul(Number(whole), 60) + Number(m[2] ?? "0");
+}

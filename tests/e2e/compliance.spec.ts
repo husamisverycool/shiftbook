@@ -204,3 +204,52 @@ for (const locale of ["en", "es"] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+for (const locale of ["en", "es"] as const) {
+  test(`compliance counters: who is near 720 hours, an opening balance added and removed (${locale})`, async ({ page }) => {
+    test.setTimeout(180_000);
+    const m = MESSAGES[locale];
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (msg) => msg.type() === "error" && /MISSING_MESSAGE|FORMATTING_ERROR/.test(msg.text()) && errors.push(msg.text()));
+    const dialog = page.getByRole("dialog");
+    const rows = page.getByTestId("counter-row");
+
+    await page.goto(`/${locale}/compliance`);
+    await page.getByTestId("compliance-tab-counters").click();
+    await expect(page).toHaveURL(/\/compliance\/counters/);
+    await expect(rows.first()).toContainText("Fatima Haddad");
+    await expect(rows.first()).toContainText(m.compliance.counters.near.split("{hours}")[0]!.trim());
+    await check(page, "counters");
+    await page.getByTestId("counters-show").selectOption("near");
+    await expect(page).toHaveURL(/show=near/);
+    await expect(rows).toHaveCount(1);
+    // Her balance from before Shiftbook.
+    await rows.first().getByTestId("counter-toggle").click();
+    await expect(page.getByTestId("balance")).toContainText("590:00");
+    await check(page, "counter balances");
+
+    // Marcus Bell's hours before Shiftbook, added and then removed.
+    await page.getByTestId("counters-show").selectOption("all");
+    await expect(page).not.toHaveURL(/show=/);
+    await page.getByTestId("add-balance").click();
+    await dialog.getByTestId("balance-pair").selectOption({ label: "Marcus Bell · Prairie Line Manufacturing (demo)" });
+    await dialog.getByTestId("balance-hours").fill("100:30");
+    await dialog.getByTestId("balance-through").fill("2026-06-30");
+    await dialog.getByTestId("balance-note").fill(locale === "en" ? "Old timekeeping export" : "Exportación del sistema anterior");
+    await check(page, "add balance");
+    await dialog.getByTestId("save-balance").click();
+    await expect(dialog).toBeHidden();
+    const marcus = rows.filter({ hasText: "Marcus Bell" });
+    await expect(marcus).toContainText("100:30");
+    await marcus.getByTestId("counter-toggle").click();
+    await page.getByTestId("remove-balance").click();
+    await dialog.getByTestId("balance-reason").fill(locale === "en" ? "Wrong worker" : "Trabajador equivocado");
+    await dialog.getByTestId("confirm-remove-balance").click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId("balance")).toContainText(locale === "en" ? "Wrong worker" : "Trabajador equivocado");
+    await expect(marcus.locator("td").nth(5)).toHaveText("—");
+    expect(errors).toEqual([]);
+  });
+}

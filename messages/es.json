@@ -2365,7 +2365,8 @@
     "tabs": {
       "list": "Lista",
       "calendar": "Calendario",
-      "workersComp": "Compensación laboral"
+      "workersComp": "Compensación laboral",
+      "counters": "Contadores"
     },
     "areasLabel": "Áreas",
     "areas": {
@@ -2624,7 +2625,11 @@
         "agency_phone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo.",
         "employerPhone": "Escriba el teléfono del empleador del lugar de trabajo.",
         "carrierContact": "La dirección y el teléfono de la aseguradora deben tener menos de 500 caracteres.",
-        "days": "Elija sábado, domingo, ambos o ninguno."
+        "days": "Elija sábado, domingo, ambos o ninguno.",
+        "minutes": "Escriba horas como 620 o 620:30.",
+        "throughOn": "Escriba una fecha que no sea posterior a hoy.",
+        "workerId": "Elija el trabajador y el cliente.",
+        "clientId": "Elija el trabajador y el cliente."
       },
       "closed_by_data": "Shiftbook cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
     },
@@ -2680,6 +2685,59 @@
       "intro": "Pago por estado y clase con la prima de horas extra aparte, para las fechas de pago del rango (el periodo de la póliza por defecto).",
       "apply": "Aplicar",
       "tieSettled": "Cuadra con los archivos de nómina con estas fechas de pago ({files}): bruto {gross}, y {settled} que las correcciones liquidaron fuera de los archivos ({decisions, plural, one {# decisión} other {# decisiones}})."
+    },
+    "counters": {
+      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Shiftbook se agregan como saldos iniciales, y la nómina también las cuenta.",
+      "search": "Buscar",
+      "searchPlaceholder": "Trabajador",
+      "client": "Cliente",
+      "anyClient": "Cualquier cliente",
+      "show": "Mostrar",
+      "shows": {
+        "all": "Todos",
+        "near": "Cerca del límite",
+        "crossed": "Superado"
+      },
+      "add": "Agregar saldo",
+      "nothing": "Aún no se ha trabajado ni registrado trabajo diario y temporal en Illinois.",
+      "noRule": "Los contadores necesitan la regla de igualdad salarial de Illinois, y hoy no hay ninguna vigente.",
+      "noMatch": "Ningún trabajador coincide con estos filtros.",
+      "clear": "Quitar filtros",
+      "tableLabel": "Horas hacia la igualdad salarial de Illinois, por trabajador y cliente",
+      "balances": "Saldos iniciales",
+      "cols": {
+        "worker": "Trabajador",
+        "client": "Cliente",
+        "twelve": "{months} meses",
+        "fortyEight": "{months} meses",
+        "before": "Antes de Shiftbook",
+        "state": "Igualdad salarial"
+      },
+      "of": "{hours} de {limit} h",
+      "since": "desde el {date}",
+      "crossed": "Superado el {date}",
+      "crossedLong": "Superó {limit} horas el {date}",
+      "near": "Cerca: faltan {hours}",
+      "toGo": "Faltan {hours}",
+      "toggle": "Saldos iniciales de {worker} en {client}",
+      "balancesTitle": "Horas antes de Shiftbook",
+      "noBalances": "No hay saldos iniciales.",
+      "balance": "{hours} hasta el {date}",
+      "addedBy": "agregado por {by}, {date}",
+      "removed": "quitado por {by}, {date}: {reason}",
+      "remove": "Quitar",
+      "removeTitle": "Quitar este saldo",
+      "removeBody": "Queda en la lista como quitado, con su motivo; la próxima nómina ya no lo cuenta.",
+      "addTitle": "Agregar horas trabajadas antes de Shiftbook",
+      "addBody": "Las horas que el trabajador hizo para este cliente antes de Shiftbook. Cuentan en la fecha hasta la que llegan, la más tardía en que pudieron trabajarse.",
+      "fields": {
+        "pair": "Trabajador y cliente",
+        "choose": "Elija…",
+        "hours": "Horas (620 o 620:30)",
+        "throughOn": "Hasta",
+        "note": "Nota (de dónde salen las horas)"
+      },
+      "saved": "Guardado. La próxima nómina lo cuenta."
     }
   },
   "complianceSettings": {

@@ -15,13 +15,14 @@
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
 import { addDays, addMonths, computePay, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
-import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, or } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { fieldglassUpload } from "../../exports/invoice-files";
 import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import { EQUAL_PAY_KINDS } from "../compliance/kinds";
+import { coveredHours, openingBalances } from "../compliance/hours";
 import { SYSTEM } from "../compliance/sync";
 import * as s from "../db/schema";
 import type { ExportPayLine } from "../../exports/registry";
@@ -466,40 +467,24 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const tables = await ruleTables(tx);
   // Hours worked before this period that count toward a rolling equal-pay counter (Illinois § 42):
   // covered work at a worksite in a state with a counter, on timesheets not set aside, as far back as
-  // the longest window; and the obligations already on file from other runs (a crossing never resets).
+  // the longest window, and the hours worked before Shiftbook (opening balances, on the date each runs
+  // to); and the obligations already on file from other runs (a crossing never resets). The compliance
+  // lock keeps the balances and duties still until this run has written its own (slice j).
+  await lockCompliance(tx, actor.agencyId);
   const counterStates = [...new Set((tables.equalPayRules ?? []).map((r) => r.jurisdiction))].sort(cmp);
   const longest = Math.max(0, ...(tables.equalPayRules ?? []).map((r) => r.longWindowMonths));
   const runWorkers = [...new Set(shifts.map((sh) => sh.workerId))].sort(cmp);
   let hoursWorked: HoursWorked[] = [];
   if (counterStates.length > 0 && runWorkers.length > 0) {
-    const rows = await tx
-      .select({ workerId: s.timeEntries.workerId, clientId: s.jobOrders.clientId, date: s.timeEntries.workDate, minutes: sql<number>`sum(${s.timeEntries.minutes})::int` })
-      .from(s.timeEntries)
-      .innerJoin(s.assignments, eq(s.assignments.id, s.timeEntries.assignmentId))
-      .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
-      .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId))
-      .leftJoin(s.sourceDocuments, eq(s.sourceDocuments.id, s.timeEntries.sourceDocumentId))
-      .where(
-        and(
-          inArray(s.timeEntries.workerId, runWorkers),
-          gte(s.timeEntries.workDate, addMonths(period.startsOn, -longest)),
-          lt(s.timeEntries.workDate, period.startsOn),
-          ne(s.timeEntries.status, "rejected"),
-          isNotNull(s.timeEntries.minutes),
-          inArray(s.worksites.state, counterStates),
-          eq(s.jobOrders.dayAndTemporaryLabor, true),
-          or(isNull(s.sourceDocuments.id), ne(s.sourceDocuments.status, "archived")),
-        ),
-      )
-      .groupBy(s.timeEntries.workerId, s.jobOrders.clientId, s.timeEntries.workDate);
-    hoursWorked = rows
-      .filter((r): r is { workerId: string; clientId: string; date: string; minutes: number } => r.workerId !== null && r.date !== null)
-      .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.date, b.date));
+    const from = addMonths(period.startsOn, -longest);
+    const worked = await coveredHours(tx, { states: counterStates, from, through: addDays(period.startsOn, -1), workerIds: runWorkers });
+    const balances = await openingBalances(tx, { from, through: period.endsOn, workerIds: runWorkers });
+    hoursWorked = [...worked, ...balances.map((b) => ({ workerId: b.workerId, clientId: b.clientId, date: b.throughOn, minutes: b.minutes }))].sort(
+      (a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.date, b.date) || a.minutes - b.minutes,
+    );
   }
   // This run's own obligations are recomputed, except one a person already closed; one Shiftbook set
-  // aside (the hours that crossed changed) is not on file. The compliance lock keeps the duties still
-  // until this run has written its own (slice j second opinion).
-  await lockCompliance(tx, actor.agencyId);
+  // aside (the hours that crossed changed) is not on file.
   const obligationsOnFile = equalPayRows(await tx.select().from(s.obligations).where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), eq(s.obligations.closedBySystem, false), or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), ne(s.obligations.status, "open")))))
     .map((o) => ({ kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn }))
     .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.kind, b.kind));

@@ -25,6 +25,7 @@ import {
   MA_DEPARTMENT_CONTACT,
   MA_JOB_ORDER_OPEN,
   MA_NOTICE_DETAILS,
+  OPENING_BALANCES,
   REGISTRATIONS,
   WC_POLICY,
   WC_RATES,
@@ -62,6 +63,8 @@ const CLEAR_ORDER = [
   "bonuses",
   "holiday_policies",
   "obligation_notes",
+  "hours_opening_balances",
+  "equal_pay_rates",
   "obligation_documents",
   "obligations",
   "agency_registrations",
@@ -223,6 +226,7 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
   await tx.insert(s.wcPolicies).values({ id: demoUuid("policy:2026"), agencyId, ...WC_POLICY, createdByLabel: SETUP });
   await tx.update(s.jobOrders).set({ noticeDetails: MA_NOTICE_DETAILS }).where(eq(s.jobOrders.id, jobOrderId("ma-server")));
   await tx.insert(s.agencySettings).values({ agencyId, key: "compliance.ma_department_contact", value: MA_DEPARTMENT_CONTACT, effectiveFrom: SINCE });
+  await tx.insert(s.hoursOpeningBalances).values(OPENING_BALANCES.map((b) => ({ agencyId, workerId: workerId(b.worker), clientId: clientId(b.client), minutes: b.minutes, throughOn: b.throughOn, note: b.note, createdByLabel: SETUP })));
   await syncObligations(tx, agencyId, await agencyToday(tx));
   const done = { status: "done" as const, doneAt: new Date(), doneByLabel: SETUP };
   await tx
