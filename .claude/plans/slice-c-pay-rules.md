@@ -165,5 +165,7 @@ weeks (e); other states; alternative workweek schedules; split-shift premiums (f
   rate; a holiday not worked is billed by the client's own policy minutes; every issue code has an
   English and Spanish label (tested); the Gusto refusal for overtime on a raised regular rate says
   why and what to do.
-- Next: land slice (c) on the branch with slice (b)'s latest fixes, then the owner's approval of the
-  new answer keys.
+- Landed on top of slice (b)'s seventh review: 493 unit, 137 integration, 27 proposed answer-key
+  and 23 browser tests pass; typecheck and lint clean; screens recorded in `docs/screens/slice-c.md`.
+- Next: the owner's approval of the new answer keys, which replace the approved ones (the three
+  held cases they describe are now paid).
