@@ -43,5 +43,21 @@ export const needsAttention = (r: Pick<GridRow, "status" | "workerId" | "minutes
   r.status === "needs_review" || (r.status !== "rejected" && r.status !== "locked" && (r.workerId === null || r.minutes === null));
 
 /** A refusal from a converter action, and its message under "convert.errors". */
-export type ActionRefusal = "period_locked" | "busy" | "stale" | "generic";
-export const REFUSAL_MESSAGE = { period_locked: "periodLocked", busy: "busy", stale: "stale", generic: "generic" } as const satisfies Record<ActionRefusal, string>;
+export type ActionRefusal = "period_locked" | "busy" | "stale" | "skip_refused" | "generic";
+export const REFUSAL_MESSAGE = { period_locked: "periodLocked", busy: "busy", stale: "stale", skip_refused: "skipRefused", generic: "generic" } as const satisfies Record<ActionRefusal, string>;
+
+/** A correction action's refusal (slice e), and its message under "convert.errors". */
+export const CORRECTION_MESSAGE = {
+  not_allowed: "ownerOnly",
+  reason_required: "generic",
+  not_paid: "notPaid",
+  not_correction: "stale",
+  has_differences: "hasDifferences",
+  has_decisions: "hasDecisions",
+  note_required: "generic",
+  wrong_kind: "stale",
+  not_needed: "stale",
+  period_locked: "periodLocked",
+  busy: "busy",
+  generic: "generic",
+} as const;

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
 import { withAgency } from "@/server/db";
-import { auditEvents } from "@/server/db/schema";
+import { auditEvents, CORRECTION_DECISIONS } from "@/server/db/schema";
 import { StaleRequestError } from "@/server/errors";
 import { createRunFiles, RunNotApprovedError, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
 import { PeriodBusyError, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
@@ -13,7 +13,8 @@ import { archiveDocument, NotArchivableError, retryDocument } from "@/server/int
 import { receiveUploads, type UploadResult } from "@/server/intake/upload";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { approveRun, unapproveRun } from "@/server/run/approval";
-import { computeRun, setSkipped } from "@/server/run/service";
+import { discardCorrection, recordCorrectionDecision, removeCorrectionDecision, startCorrection, type CorrectionError } from "@/server/run/corrections";
+import { computeRun, setSkipped, SkipRefusedError } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
 import { agencyToday } from "@/server/settings";
@@ -22,7 +23,7 @@ import { documentStore } from "@/server/storage";
 const refresh = () => revalidatePath("/[locale]/(app)/convert", "page");
 
 export type { UploadResult } from "@/server/intake/upload";
-export type ActionError = "period_locked" | "busy" | "stale" | "generic";
+export type ActionError = "period_locked" | "busy" | "stale" | "skip_refused" | "generic";
 
 // Every input is checked against its shape: a hand-made request gets a plain refusal, never a crash.
 const id = z.uuid();
@@ -43,6 +44,7 @@ function refusal(error: unknown): ActionError | null {
   if (error instanceof PeriodBusyError) return "busy";
   if (error instanceof StaleRequestError || error instanceof NotArchivableError) return "stale";
   if (error instanceof PeriodNotFoundError) return "generic";
+  if (error instanceof SkipRefusedError) return "skip_refused";
   return null;
 }
 
@@ -255,6 +257,53 @@ export async function createFilesAction(
     if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
     return { ok: false, error: "generic" };
   }
+}
+
+export type CorrectionActionError = CorrectionError | "period_locked" | "busy" | "generic";
+
+/** Corrections report their own refusals; a locked or busy period is one more. */
+async function corrected(fn: () => Promise<{ ok: true } | { ok: false; error: CorrectionError }>): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (error instanceof PeriodLockedError) return { ok: false, error: "period_locked" };
+    if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
+    if (error instanceof PeriodNotFoundError) return { ok: false, error: "generic" };
+    throw error;
+  } finally {
+    refresh();
+  }
+}
+
+/** The Owner starts a correction of a paid period, with a reason (slice e, decision E8). */
+export async function startCorrectionAction(payPeriodId: string, reason: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
+  const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(text, reason)) return { ok: false, error: "generic" };
+  return corrected(async () => {
+    const r = await withAgency(actor.agencyId, (tx) => startCorrection(tx, actor, payPeriodId, reason));
+    return r.ok ? { ok: true } : r;
+  });
+}
+
+/** The Owner discards a correction in which nothing differs (decision E12). */
+export async function discardCorrectionAction(payPeriodId: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
+  const actor = currentActor();
+  if (!ok(id, payPeriodId)) return { ok: false, error: "generic" };
+  return corrected(() => withAgency(actor.agencyId, (tx) => discardCorrection(tx, actor, payPeriodId)));
+}
+
+/** The Owner records how a worker's difference is settled outside the payroll file (decision E9). */
+export async function recordDecisionAction(payPeriodId: string, workerId: string, decision: string, note: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
+  const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(id, workerId) || !ok(z.enum(CORRECTION_DECISIONS), decision) || !ok(text, note)) return { ok: false, error: "generic" };
+  return corrected(() => withAgency(actor.agencyId, (tx) => recordCorrectionDecision(tx, actor, payPeriodId, workerId, decision as (typeof CORRECTION_DECISIONS)[number], note)));
+}
+
+/** The Owner removes a decision when nothing was done outside the files after all. */
+export async function removeDecisionAction(payPeriodId: string, workerId: string): Promise<{ ok: true } | { ok: false; error: CorrectionActionError }> {
+  const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(id, workerId)) return { ok: false, error: "generic" };
+  return corrected(() => withAgency(actor.agencyId, (tx) => removeCorrectionDecision(tx, actor, payPeriodId, workerId)));
 }
 
 export interface HistoryEvent {

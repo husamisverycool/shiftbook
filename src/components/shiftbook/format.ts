@@ -27,6 +27,18 @@ export function money(cents: number, locale: string): string {
   return new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }).format(exact as Intl.StringNumericLiteral);
 }
 
+/** A difference: "+$36.50", "-$54.75", "$0.00" (slice e corrections). */
+export function signedMoney(cents: number, locale: string): string {
+  const abs = Math.abs(cents);
+  const exact = `${cents < 0 ? "-" : ""}${Math.trunc(abs / 100)}.${pad2(abs % 100)}`;
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "USD", signDisplay: "exceptZero" }).format(exact as Intl.StringNumericLiteral);
+}
+
+/** A difference in hours: "+2:00", "-1:30", "0:00". */
+export function signedHours(minutes: number): string {
+  return minutes > 0 ? `+${hoursMinutes(minutes)}` : hoursMinutes(minutes);
+}
+
 /** "2026-10-05" → "Mon, Oct 5". */
 export function shortDate(iso: string | null, locale: string): string {
   if (!iso) return "—";

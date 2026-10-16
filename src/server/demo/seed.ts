@@ -39,6 +39,7 @@ const CLEAR_ORDER = [
   "bonuses",
   "holiday_policies",
   "obligations",
+  "correction_decisions",
   "exports",
   "invoices",
   "bill_lines",

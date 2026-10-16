@@ -2,11 +2,13 @@
  * What each step of the converter shows (docs/patterns/convert.md). Read-only, except that the
  * totals step recomputes the run when hours changed since it was last computed.
  */
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, and } from "drizzle-orm";
 import { WORKED_TIME } from "@shiftbook/rules";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { isStuck } from "../intake/service";
+import { clientNets } from "../files/invoice-plan";
+import { correctionPlanFor, decisionText, paidBase } from "../run/corrections";
 import { PeriodLockedError, periodState } from "../run/period-lock";
 import { computeRun, type RunIssue } from "../run/service";
 import type { Actor } from "../session";
@@ -27,7 +29,7 @@ export async function listPeriods(tx: Tx) {
     if ((await periodState(tx, p.id)) === "history") continue;
     const run = await latestRun(tx, p.id);
     const docs = await tx.select({ id: s.sourceDocuments.id }).from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, p.id)).limit(1);
-    out.push({ id: p.id, startsOn: p.startsOn, endsOn: p.endsOn, runStatus: run?.status ?? null, started: docs.length > 0 || run !== null });
+    out.push({ id: p.id, startsOn: p.startsOn, endsOn: p.endsOn, runStatus: run?.status ?? null, correcting: run?.kind === "correction" && run.status !== "exported" && run.status !== "closed", started: docs.length > 0 || run !== null });
   }
   return out;
 }
@@ -225,6 +227,7 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
   const workers = [...perWorker.values()].sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase()));
   const sum = <T>(rows: T[], f: (r: T) => number) => rows.reduce((t, r) => t + f(r), 0);
   return {
+    correction: run.kind === "correction" ? await correctionView(tx, run, clients) : null,
     run: { id: run.id, version: run.version, status: run.status, fingerprint },
     approval: run.approvedAt ? { by: run.approvedByLabel ?? "", at: run.approvedAt } : null,
     canApprove: actor.role === "owner",
@@ -244,14 +247,131 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
   };
 }
 
-export async function filesStep(tx: Tx, payPeriodId: string) {
+/**
+ * A correction's review (docs/patterns/convert.md: was / now / difference per worker and per client),
+ * the decisions on file, and the workers it cannot skip (paid in the version it corrects; decision E10).
+ */
+async function correctionView(tx: Tx, run: typeof s.payRuns.$inferSelect, clients: { id: string; name: string }[]) {
+  const base = (await paidBase(tx, run.payPeriodId, run.version))!;
+  const plan = await correctionPlanFor(tx, run);
+  const ids = [...new Set([...plan.pay.map((l) => l.workerId), ...base.pay.map((l) => l.workerId)])];
+  const people = ids.length > 0 ? await tx.select().from(s.workers).where(inArray(s.workers.id, ids)) : [];
+  const nameOf = new Map(people.map((w) => [w.id, fullName(w)]));
+  // Was and now are each worker's (and client's) whole pay (bill) for the period in each version.
+  const now = await tx.select({ workerId: s.payLines.workerId, amountCents: s.payLines.amountCents }).from(s.payLines).where(eq(s.payLines.payRunId, run.id));
+  const nowBill = await tx.select({ clientId: s.billLines.clientId, amountCents: s.billLines.amountCents }).from(s.billLines).where(eq(s.billLines.payRunId, run.id));
+  const total = <T,>(rows: T[], keep: (r: T) => boolean, cents: (r: T) => number) => rows.filter(keep).reduce((sum, r) => sum + cents(r), 0);
+  const byWorker = new Map<string, { workerId: string; name: string; wasCents: number; nowCents: number; diffCents: number; regular: number; overtime: number; double: number }>();
+  for (const l of plan.pay) {
+    const row = byWorker.get(l.workerId) ?? {
+      workerId: l.workerId,
+      name: nameOf.get(l.workerId) ?? "",
+      wasCents: total(base.pay, (x) => x.workerId === l.workerId, (x) => x.amountCents),
+      nowCents: total(now, (x) => x.workerId === l.workerId, (x) => x.amountCents),
+      diffCents: 0,
+      regular: 0,
+      overtime: 0,
+      double: 0,
+    };
+    row.diffCents += l.amountCents;
+    if (l.type === "REG") row.regular += l.minutes;
+    else if (l.type === "OT") row.overtime += l.minutes;
+    else if (l.type === "DT") row.double += l.minutes;
+    byWorker.set(l.workerId, row);
+  }
+  const byClient = new Map<string, { clientId: string; name: string; wasCents: number; nowCents: number; diffCents: number; minutes: number }>();
+  for (const l of plan.bill) {
+    const row = byClient.get(l.clientId!) ?? {
+      clientId: l.clientId!,
+      name: clients.find((c) => c.id === l.clientId)?.name ?? "",
+      wasCents: total(base.bill, (x) => x.clientId === l.clientId, (x) => x.amountCents),
+      nowCents: total(nowBill, (x) => x.clientId === l.clientId, (x) => x.amountCents),
+      diffCents: 0,
+      minutes: 0,
+    };
+    row.diffCents += l.amountCents;
+    if (WORKED_TIME.includes(l.type)) row.minutes += l.minutes;
+    byClient.set(l.clientId!, row);
+  }
+  const decisions = plan.workers
+    .filter((w) => w.decision)
+    .map((w) => ({ workerId: w.workerId, name: nameOf.get(w.workerId) ?? "", decision: w.decision!.decision, differenceCents: w.decision!.differenceCents, note: w.decision!.note, by: w.decision!.decidedByLabel, fits: w.decisionFits }));
+  const workers = [...byWorker.values()].sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase()));
+  const clientRows = [...byClient.values()].sort((a, b) => cmp(a.name, b.name));
+  return {
+    version: run.version,
+    baseVersion: base.run.version,
+    reason: run.reason ?? "",
+    workers,
+    clients: clientRows,
+    decisions: decisions.sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase())),
+    summary: {
+      workers: workers.length,
+      regular: workers.reduce((t, w) => t + w.regular, 0),
+      overtime: workers.reduce((t, w) => t + w.overtime, 0),
+      double: workers.reduce((t, w) => t + w.double, 0),
+      payDiffCents: workers.reduce((t, w) => t + w.diffCents, 0),
+      billDiffCents: clientRows.reduce((t, c) => t + c.diffCents, 0),
+    },
+    noSkip: [...new Set(base.pay.map((l) => l.workerId))].sort(cmp),
+    noBringBack: base.run.skipped.map((x) => x.workerId).sort(cmp),
+  };
+}
+
+/** The open correction's version, reason and the version it corrects, for the step frame; or null. */
+export async function openCorrectionOf(tx: Tx, payPeriodId: string) {
+  const run = await latestRun(tx, payPeriodId);
+  if (!run || run.kind !== "correction" || run.status === "exported" || run.status === "closed") return null;
+  const base = await paidBase(tx, payPeriodId, run.version);
+  return { version: run.version, baseVersion: base?.run.version ?? run.version - 1, reason: run.reason ?? "" };
+}
+
+/** Every paid version of the period, newest first, each with its files (docs/patterns/convert.md, Files: versions). */
+export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
   const run = await latestRun(tx, payPeriodId);
   if (!run || run.status !== "exported") return null;
-  const [payroll] = await tx.select().from(s.exports).where(eq(s.exports.payRunId, run.id)).orderBy(desc(s.exports.createdAt)).limit(1);
-  const invoices = await tx
-    .select({ id: s.invoices.id, number: s.invoices.number, totalCents: s.invoices.totalCents, dueOn: s.invoices.dueOn, clientName: s.clients.name })
-    .from(s.invoices)
-    .innerJoin(s.clients, eq(s.clients.id, s.invoices.clientId))
-    .where(eq(s.invoices.payRunId, run.id));
-  return { run: { id: run.id, version: run.version }, payroll: payroll ?? null, invoices: invoices.sort((a, b) => cmp(a.number, b.number)) };
+  const paid = await tx
+    .select()
+    .from(s.payRuns)
+    .where(and(eq(s.payRuns.payPeriodId, payPeriodId), inArray(s.payRuns.status, ["exported", "closed"])))
+    .orderBy(desc(s.payRuns.version));
+  const versions = [];
+  for (const v of paid) {
+    const [payroll] = await tx.select().from(s.exports).where(eq(s.exports.payRunId, v.id)).orderBy(desc(s.exports.createdAt)).limit(1);
+    const invoices = await tx
+      .select({ id: s.invoices.id, number: s.invoices.number, kind: s.invoices.kind, originalInvoiceId: s.invoices.originalInvoiceId, totalCents: s.invoices.totalCents, dueOn: s.invoices.dueOn, clientName: s.clients.name })
+      .from(s.invoices)
+      .innerJoin(s.clients, eq(s.clients.id, s.invoices.clientId))
+      .where(eq(s.invoices.payRunId, v.id));
+    const originals = invoices.some((i) => i.originalInvoiceId)
+      ? await tx.select({ id: s.invoices.id, number: s.invoices.number }).from(s.invoices).where(inArray(s.invoices.id, invoices.map((i) => i.originalInvoiceId).filter((x): x is string => x !== null)))
+      : [];
+    // A correction: clients whose differences net to zero get no document (decision E11); say so.
+    const netZero: string[] = [];
+    if (v.kind === "correction") {
+      const plan = await correctionPlanFor(tx, v);
+      const zero = [...clientNets(plan.bill)].filter(([, c]) => c.real && c.netCents === 0).map(([id]) => id);
+      if (zero.length > 0) netZero.push(...(await tx.select({ name: s.clients.name }).from(s.clients).where(inArray(s.clients.id, zero))).map((c) => c.name).sort(cmp));
+    }
+    const decided = await tx
+      .select({ decision: s.correctionDecisions.decision, differenceCents: s.correctionDecisions.differenceCents, note: s.correctionDecisions.note, by: s.correctionDecisions.decidedByLabel, firstName: s.workers.firstName, lastName: s.workers.lastName })
+      .from(s.correctionDecisions)
+      .innerJoin(s.workers, eq(s.workers.id, s.correctionDecisions.workerId))
+      .where(eq(s.correctionDecisions.payRunId, v.id));
+    versions.push({
+      id: v.id,
+      version: v.version,
+      kind: v.kind,
+      reason: v.reason,
+      payroll: payroll ? { id: payroll.id, filename: payroll.filename, sha256: payroll.sha256, controlTotals: payroll.controlTotals, notes: payroll.notes } : null,
+      invoices: invoices
+        .map((i) => ({ id: i.id, number: i.number, kind: i.kind, originalNumber: originals.find((o) => o.id === i.originalInvoiceId)?.number ?? null, totalCents: i.totalCents, dueOn: i.dueOn, clientName: i.clientName }))
+        .sort((a, b) => cmp(a.number, b.number)),
+      decisions: decided
+        .map((d) => ({ name: fullName(d), text: decisionText(d), note: d.note, by: d.by }))
+        .sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase())),
+      netZero,
+    });
+  }
+  return { run: { id: run.id, version: run.version }, versions, canCorrect: actor.role === "owner" };
 }

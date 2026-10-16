@@ -156,11 +156,11 @@ describe("pay rules through the weekly run", () => {
     expect(run.blockers).toEqual([]);
     await inAgency((tx) => approveAsOwner(tx, actor, period));
     const files = await inAgency((tx) => createRunFiles(tx, actor, store, period, { today: "2026-10-12" }));
-    const csv = new TextDecoder().decode(await store.get(files.payroll.storageKey));
+    const csv = new TextDecoder().decode(await store.get(files.payroll!.storageKey));
     const [header, row] = csv.split("\n");
     expect(header!.split(",").at(-1)).toBe("bonus");
     expect(row!.split(",").at(-1)).toBe("25.00");
-    expect(files.payroll.controlTotals.amountsByType).toEqual({ BONUS: 2500 });
+    expect(files.payroll!.controlTotals.amountsByType).toEqual({ BONUS: 2500 });
   });
 
   it("a payroll file refusal names its worker, every such worker at once, and skipping them clears the run", async () => {

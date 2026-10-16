@@ -36,6 +36,23 @@ QuickBooks Online divides the same template into Header (company info, custom fi
 Activity table (product/service, description, quantity, rate, service date) · Footer (message,
 footer text); Shiftbook's sections map onto those three parts.
 
+## Correction documents (slice e, decision E11)
+Source URL: https://docs.stripe.com/invoicing/dashboard/credit-notes
+Source URL: https://docs.stripe.com/api/credit_notes/object
+Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/settingRebillInvoiceNumber.htm
+A correction never changes an issued invoice (Stripe: a credit note adjusts an invoice "without
+voiding and replacing the original"; Bullhorn: finalized invoices are adjusted, not edited). The
+same hierarchy as above, with these differences only:
+- **Supplemental invoice** (more billed; Bullhorn rebill: the original number plus a suffix that
+  starts with a special character): title "Supplemental invoice"; number `{original}-S{n}`; one more
+  custom field naming the invoice it adds to; the lines are the differences (hours and amount with
+  their sign; the second line under the description says what it was and what it is now); totals
+  and amount due as an invoice.
+- **Credit note** (less billed; Stripe: credit note number `…-CN-01`, the invoice it adjusts, date
+  of issue, line-level credits, total credited): title "Credit note"; number `{original}-CN-{nn}`; no
+  due date; a custom field naming the invoice it credits; the large line says the amount credited to
+  that invoice; the last totals row is "Total credited". Amounts below zero carry a minus sign.
+
 ## Interactions
 None (static document). Page size Letter by default; A4 selectable (Stripe docs).
 

@@ -13,6 +13,8 @@ export interface ExportCase {
   fixture: ExportFixture;
   expectedFile: string;
   expectedControlTotals: unknown;
+  /** The notes for the payroll clerk, when the case pins them. */
+  notes?: string[];
 }
 
 export function loadExportCases(root: string): ExportCase[] {
@@ -27,6 +29,7 @@ export function loadExportCases(root: string): ExportCase[] {
         fixture: ExportFixture;
         expectedFile: string;
         expectedControlTotals: unknown;
+        notes?: string[];
       };
       return { name, dir, ...spec };
     });
@@ -36,5 +39,7 @@ export function checkExportCase(c: ExportCase): void {
   const result = renderExport(c.fixture);
   const expectedBytes = readFileSync(join(c.dir, c.expectedFile));
   expect(Buffer.from(result.bytes).equals(expectedBytes)).toBe(true);
+  expect(result.filename).toBe(c.expectedFile);
   expect(result.controlTotals).toEqual(c.expectedControlTotals);
+  if (c.notes) expect(result.notes).toEqual(c.notes);
 }

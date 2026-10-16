@@ -391,3 +391,27 @@ exportCase(
   },
   { workers: 3, minutesByType: { REG: 7080, OT: 277 }, grossCents: 227988, payrollSystemGrossCents: 227997, payrollSystemDifferenceCents: 9 },
 );
+
+exportCase(
+  "gusto-hours-correction",
+  "Correction 2 of the week of 2026-10-05, against version 1 (slice e, decision E9): only additions. Lucía 2 more regular hours (120 min × $18.25/h = $36.50). Marcus 2 more hours that are all overtime, with no regular hours in the file: checked against his regular rate in the whole period ($18.25 → 1.5× = $27.375/h; 120 min = $54.75). Tran 60 more overtime minutes: 97 min ($44.26, from $44.25625) minus 37 min ($16.88, from $16.875) = $27.38 — the difference of two amounts each rounded once (two stored lines), so within a cent of 60 min × $27.375/h = $27.375. Every line is checked against each worker's one regular rate in the whole period ($18.25/h), the rate Gusto pays. Control totals: 3 workers, 120 regular minutes, 180 overtime minutes, gross $118.63; Gusto computes the same ($36.50 + $54.75 + $27.38 from 1.00 h × $27.375 = $27.375 rounded half up). The note says the file only adds to version 1's.",
+  {
+    format: "gusto_hours_csv",
+    mappingVersion: "gusto-core-v1",
+    period: { startsOn: "2026-10-05", endsOn: "2026-10-11" },
+    earningCodeMap: { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours" },
+    workers: [
+      { workerId: "w1", firstName: "Lucía", lastName: "Fernández Ruiz", payrollIds: { gusto: { id: "9a1b2c", title: "Picker (Primary)" } } },
+      { workerId: "w2", firstName: "Marcus", lastName: "Bell", payrollIds: { gusto: { id: "9d3e4f", title: "Loader (Primary)" } } },
+      { workerId: "w3", firstName: "Tran", lastName: "Nguyen", payrollIds: { gusto: { id: "9f5a6b", title: "Machine Operator (Primary)" } } },
+    ],
+    payLines: [
+      { workerId: "w1", type: "REG", minutes: 120, amountCents: 3650, rate: { num: 1825, den: 1 }, parts: 2 },
+      { workerId: "w2", type: "OT", minutes: 120, amountCents: 5475, rate: { num: 5475, den: 2 }, parts: 2 },
+      { workerId: "w3", type: "OT", minutes: 60, amountCents: 2738, rate: { num: 5475, den: 2 }, parts: 2 },
+    ],
+    correction: { version: 2, baseVersion: 1 },
+    referenceRates: { w1: { num: 1825, den: 1 }, w2: { num: 1825, den: 1 }, w3: { num: 1825, den: 1 } },
+  },
+  { workers: 3, minutesByType: { REG: 120, OT: 180 }, grossCents: 11863, payrollSystemGrossCents: 11863, payrollSystemDifferenceCents: 0 },
+);

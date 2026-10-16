@@ -437,6 +437,8 @@ export const timeEntries = pgTable(
     fields: jsonb("fields").$type<EntryFields>().notNull().default(sql`'{}'::jsonb`),
     confidence: confidenceLevel("confidence").notNull().default("low"),
     status: timeEntryStatus("status").notNull().default("extracted"),
+    /** The status it had when its run's files locked it, so a correction opens it again as it was (drizzle/0024). */
+    paidStatus: timeEntryStatus("paid_status"),
     reviewReasons: jsonb("review_reasons").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     // A person confirmed this entry is not the same work as another entry for the worker that day
     // (cleared whenever the entry changes).
@@ -483,6 +485,8 @@ export interface RunApproval {
   /** The warnings shown when approving (acknowledged by approving). */
   warnings: { code: string; message: string }[];
   totals: { workers: number; grossCents: number; billedCents: number; payLines: number; billLines: number };
+  /** A correction: the differences approved, against the paid version it corrects (slice e). */
+  differences?: { baseVersion: number; payCents: number; billCents: number; workers: number };
 }
 
 export const payLines = pgTable("pay_lines", {
@@ -534,11 +538,16 @@ export const invoices = pgTable(
     subtotalCents: integer("subtotal_cents").notNull(),
     totalCents: integer("total_cents").notNull(),
     pdfStorageKey: text("pdf_storage_key"),
+    /** A correction's documents (drizzle/0024): a supplemental invoice or a credit note (negative total), naming the original. */
+    kind: text("kind").$type<InvoiceKind>().notNull().default("invoice"),
+    originalInvoiceId: uuid("original_invoice_id"),
     createdAt: createdAt(),
   },
   // An invoice number is issued once per agency.
   (t) => [uniqueIndex("invoices_number").on(t.agencyId, t.number)],
 );
+
+export type InvoiceKind = "invoice" | "supplemental" | "credit_note";
 
 export type ControlTotals = {
   workers: number;
@@ -570,6 +579,28 @@ export const exports = pgTable(
   },
   // One file per run and format: a run is exported once.
   (t) => [uniqueIndex("exports_run_format").on(t.payRunId, t.format)],
+);
+
+/** How a worker's differences in a correction were settled when the payroll file cannot carry them (decision E9). */
+export const CORRECTION_DECISIONS = ["paid_by_hand", "offset_earlier_overpayment", "repaid_outside_payroll", "consent_to_deduct", "written_off"] as const;
+export type CorrectionDecisionKind = (typeof CORRECTION_DECISIONS)[number];
+
+export const correctionDecisions = pgTable(
+  "correction_decisions",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    payRunId: uuid("pay_run_id").notNull().references(() => payRuns.id),
+    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    decision: text("decision").$type<CorrectionDecisionKind>().notNull(),
+    /** The worker's net pay difference the decision was made for; a different one asks again. */
+    differenceCents: integer("difference_cents").notNull(),
+    note: text("note").notNull(),
+    decidedBy: uuid("decided_by"),
+    decidedByLabel: text("decided_by_label").notNull(),
+    decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("correction_decisions_one").on(t.payRunId, t.workerId)],
 );
 
 // ---------- audit (append-only; a trigger rejects UPDATE and DELETE) ----------
@@ -1008,4 +1039,5 @@ export const TENANT_TABLES = [
   "client_disputes",
   "email_messages",
   "demo_mailbox",
+  "correction_decisions",
 ] as const;

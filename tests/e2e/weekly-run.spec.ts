@@ -1,15 +1,16 @@
 /**
  * Slice (e) through the screens, in English and Spanish (plan "Done means" 2): a client that requires
  * approval holds the week at Exceptions until it approves; the Owner approves the run, takes the
- * approval back with a reason, approves again and creates the files. Then the accessibility check on
- * the new and changed screens.
+ * approval back with a reason, approves again and creates the files; then a correction adds two
+ * hours and makes a differences-only payroll file and a supplemental invoice. Then the accessibility
+ * check on the new and changed screens.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { money } from "../../src/components/shiftbook/format";
-import { toExceptions, toTotals, uploadPrairieWeek } from "./flow";
+import { money, signedMoney } from "../../src/components/shiftbook/format";
+import { approveAndCreateFiles, toExceptions, toTotals, uploadPrairieWeek } from "./flow";
 
 const en = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
 const es = JSON.parse(readFileSync("messages/es.json", "utf8")) as typeof import("../../messages/en.json");
@@ -105,6 +106,80 @@ for (const locale of ["en", "es"] as const) {
   });
 }
 
+/** The Prairie week paid: hours → exceptions → totals → approve → files. */
+async function paidPrairieWeek(page: Page, locale: "en" | "es") {
+  const m = MESSAGES[locale];
+  const period = await uploadPrairieWeek(page, locale);
+  await page.goto(`/${locale}/convert?period=${period}&step=hours`);
+  await toExceptions(page, m);
+  await toTotals(page, m);
+  await approveAndCreateFiles(page, m);
+  return period;
+}
+
+/** On Review hours: Anita's Wednesday ends at 5 pm instead of 3 pm (two more hours). */
+async function anitaWorkedTwoMoreHours(page: Page, locale: "en" | "es") {
+  const h = MESSAGES[locale].convert.hours;
+  await page.getByRole("button", { name: new RegExp(`^${h.filterAll.split(" (")[0]}`) }).click();
+  const wednesday = page.getByTestId("hours-row").filter({ hasText: "Anita Patel" }).nth(2);
+  await wednesday.getByRole("button", { name: h.edit }).click();
+  await page.getByLabel(h.colOut, { exact: true }).fill("17:00");
+  await page.getByTestId("reason-trigger").click();
+  await page.getByRole("menuitemcheckbox", { name: h.editReasons.misread_corrected }).click();
+  await page.keyboard.press("Escape");
+  await page.getByTestId("save-edit").click();
+  await expect(page.getByTestId("reason-row")).toHaveCount(0);
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`a correction pays and bills only the differences, and the original files never change (${locale})`, async ({ page }) => {
+    const m = MESSAGES[locale];
+    const tr = m.convert.correction;
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await paidPrairieWeek(page, locale);
+
+    // Files: version 1; the Owner starts a correction with a reason.
+    await expect(page.getByTestId("version")).toHaveCount(1);
+    await page.getByTestId("start-correction").click();
+    await expect(page.getByTestId("confirm-start-correction")).toBeDisabled();
+    const reason = locale === "en" ? "Anita stayed until 5 pm on Wednesday" : "Anita se quedó hasta las 5 pm el miércoles";
+    await page.getByLabel(tr.reasonLabel).fill(reason);
+    await page.getByTestId("confirm-start-correction").click();
+
+    // The period is open again as version 2: every step says so.
+    await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.hours })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("correction-banner")).toContainText(reason);
+    await anitaWorkedTwoMoreHours(page, locale);
+
+    // Exceptions: nothing blocks; more pay is due (a warning that never blocks).
+    await toExceptions(page, m);
+    await expect(page.getByTestId("exceptions-summary")).toContainText(m.convert.exceptions.summaryNone);
+    await expect(page.getByTestId("warning").filter({ hasText: m.convert.totals.blockers.correction_pay_due })).toContainText("Anita Patel");
+
+    // Review totals shows the differences: 2 h × $18.25 = $36.50 paid, 2 h × $26.50 = $53.00 billed.
+    await toTotals(page, m);
+    await expect(page.getByTestId("summary")).toContainText(signedMoney(3650, locale));
+    await expect(page.getByTestId("summary")).toContainText(signedMoney(5300, locale));
+    await approveAndCreateFiles(page, m);
+
+    // Files: version 2 first, with only the differences; version 1 below, unchanged.
+    const versions = page.getByTestId("version");
+    await expect(versions).toHaveCount(2);
+    const v2 = versions.first();
+    const [download] = await Promise.all([page.waitForEvent("download"), v2.getByTestId("payroll-file").getByRole("link", { name: m.common.download }).click()]);
+    const csv = readFileSync((await download.path())!, "utf8").trim().split("\n");
+    expect(csv).toHaveLength(2);
+    expect(csv[1]).toMatch(/^Patel,Anita,.*,2\.00,0\.00,0\.00$/);
+    await expect(v2.getByTestId("invoice-row")).toContainText("PLM-20261005-S1");
+    await expect(v2.getByTestId("invoice-row")).toContainText(tr.kind.supplemental);
+    await expect(v2.getByTestId("invoice-row")).toContainText(money(5300, locale));
+    await expect(versions.nth(1).getByTestId("invoice-row")).toContainText("PLM-20261005");
+    expect(errors).toEqual([]);
+  });
+}
+
 test("exceptions, approval and the row menu have no serious accessibility problems", async ({ page }) => {
   execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
   const period = await uploadPrairieWeek(page, "en");
@@ -129,4 +204,25 @@ test("exceptions, approval and the row menu have no serious accessibility proble
   await check(page, "review totals (approved)");
   await page.getByTestId("unapprove").click();
   await check(page, "unapprove dialog");
+});
+
+test("the correction screens have no serious accessibility problems", async ({ page }) => {
+  execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+  await paidPrairieWeek(page, "en");
+  await check(page, "files (one version)");
+  await page.getByTestId("start-correction").click();
+  await check(page, "start a correction dialog");
+  await page.getByLabel(en.convert.correction.reasonLabel).fill("Checking the week again");
+  await page.getByTestId("confirm-start-correction").click();
+  await expect(page.getByTestId("correction-banner")).toBeVisible({ timeout: 60_000 });
+  await check(page, "review hours (correction)");
+  await toExceptions(page, en);
+  // Nothing changed yet: the correction can be discarded.
+  await expect(page.getByTestId("discard-correction")).toBeVisible();
+  await check(page, "exceptions (nothing to correct)");
+  await page.getByTestId("discard-correction").click();
+  await check(page, "discard dialog");
+  await page.getByTestId("confirm-discard-correction").click();
+  await expect(page.getByRole("heading", { level: 1, name: en.convert.steps.files })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("version")).toHaveCount(1);
 });

@@ -62,8 +62,8 @@ describe("creating the run's files", () => {
     await inAgency((tx) => approveAsOwner(tx, actor, period));
     const files = await inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY }));
 
-    const bytes = await store.get(files.payroll.storageKey);
-    const [row] = await inAgency((tx) => tx.select().from(exports).where(eq(exports.id, files.payroll.exportId)));
+    const bytes = await store.get(files.payroll!.storageKey);
+    const [row] = await inAgency((tx) => tx.select().from(exports).where(eq(exports.id, files.payroll!.exportId)));
     expect(row!.sha256).toBe(createHash("sha256").update(bytes).digest("hex"));
     expect(row!.format).toBe("gusto_hours_csv");
 

@@ -8,23 +8,27 @@
  *
  * One working run per period, computed under the period's lock: computing again with nothing
  * changed keeps the same lines (same fingerprint); a change replaces them. Once the run is exported
- * the period is locked (period-lock.ts) — in this slice a period is paid once.
+ * the period is locked (period-lock.ts) until a correction opens it again: a correction version is
+ * computed for the whole period like any run, and settles only its differences against the latest
+ * paid version (corrections.ts).
  */
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
-import { addDays, addMonths, computePay, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, addMonths, computePay, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
-import { fileTextInputs, planInvoices } from "../files/invoice-plan";
+import type { ExportPayLine } from "../../exports/registry";
+import { fileTextInputs, planCorrectionInvoices, planInvoices } from "../files/invoice-plan";
 import { billFromMarkup } from "../catalog/versions";
 import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
 import { payrollFixture } from "../files/payroll-fixture";
 import type { Actor } from "../session";
+import { billForDiff, describeMoves, fileWorkers, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
 import type { RunIssueCode } from "./issue-codes";
 import { openPeriod, PeriodLockedError } from "./period-lock";
 
@@ -38,13 +42,17 @@ export type { RunIssueCode } from "./issue-codes";
 
 export interface RunIssue extends Omit<Issue, "code"> {
   code: RunIssueCode;
-  /** export_refused: the worker's gross pay this period, so a person skipping them knows what to pay by hand. */
+  /** export_refused: the worker's gross pay this period, so a person skipping them knows what to pay by hand. In a correction: their difference. */
   grossCents?: number;
+  /** A correction: pay an earlier correction of the period left with the worker (an offset may cover more pay). */
+  heldCents?: number;
 }
 
 export interface RunResult {
   runId: string;
   version: number;
+  /** "correction": a later version of a paid period, settling only its differences (slice e). */
+  kind: "regular" | "correction";
   /** "approved": the Owner approved it and nothing has changed since (slice e). */
   status: "ready" | "blocked" | "approved";
   blockers: RunIssue[];
@@ -78,12 +86,32 @@ async function workingRun(tx: Tx, actor: Actor, payPeriodId: string) {
   return created!;
 }
 
+/** In a correction, a worker paid in the version it corrects cannot be skipped (decision E10). */
+export class SkipRefusedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SkipRefusedError";
+  }
+}
+
 /** Leaves a worker out of (or puts them back into) the period's working run. A reason is required. */
 export async function setSkipped(tx: Tx, actor: Actor, payPeriodId: string, workerId: string, change: { skipped: boolean; reason: string }): Promise<void> {
   const reason = change.reason.trim();
   if (reason === "") throw new Error("A reason is required to skip a worker or to bring them back.");
   await openPeriod(tx, payPeriodId);
   const run = await workingRun(tx, actor, payPeriodId);
+  if (run.kind === "correction") {
+    const base = await paidBase(tx, payPeriodId, run.version);
+    const [w] = await tx.select().from(s.workers).where(eq(s.workers.id, workerId));
+    const name = w ? `${w.firstName} ${w.lastName}` : "This worker";
+    if (change.skipped && base?.pay.some((l) => l.workerId === workerId)) {
+      throw new SkipRefusedError(`${name} was paid in version ${base.run.version}, so skipping them in this correction would read as all their pay taken back. Fix what holds them, or record a decision for their difference.`);
+    }
+    // Skipped then means paid separately: through this correction's file it would be paid again.
+    if (!change.skipped && base?.run.skipped.some((x) => x.workerId === workerId)) {
+      throw new SkipRefusedError(`${name} was skipped in version ${base.run.version} and paid separately, so a correction cannot bring them back into the payroll file. Settle any difference for them by hand.`);
+    }
+  }
   const others = run.skipped.filter((x) => x.workerId !== workerId);
   const next = change.skipped ? [...others, { workerId, reason, by: actor.label, at: new Date().toISOString() }] : others;
   await tx.update(s.payRuns).set({ skipped: next, status: "draft", updatedAt: new Date() }).where(eq(s.payRuns.id, run.id));
@@ -400,12 +428,19 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       });
     }
   }
-  for (const id of [...paidWorkers].sort(cmp)) {
+  // (A correction checks only the workers its file will carry: the file's dry run below names them.)
+  for (const id of run.kind === "correction" ? [] : [...paidWorkers].sort(cmp)) {
     const w = workersById.get(id)!;
     if (!w.payrollIds[TARGET_PAYROLL_SYSTEM]?.id) {
       blockers.push({ code: "missing_payroll_id", workerId: id, workerName: `${w.firstName} ${w.lastName}`, message: `${w.firstName} ${w.lastName} has no Gusto employee id, so the payroll file could not match them.` });
     }
   }
+
+  // A correction settles only its differences against the latest paid version (decisions E8, E9).
+  const base = run.kind === "correction" ? await paidBase(tx, payPeriodId, run.version) : null;
+  if (run.kind === "correction" && !base) throw new Error(`Run ${run.id} is a correction with no paid version before it.`);
+  const decisions = base ? await tx.select().from(s.correctionDecisions).where(eq(s.correctionDecisions.payRunId, run.id)) : [];
+  const held = base ? await heldFor(tx, payPeriodId, run.version) : new Map<string, number>();
 
   const tables = await ruleTables(tx);
   // Hours worked before this period that count toward a rolling equal-pay counter (Illinois § 42):
@@ -463,23 +498,86 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       blockers.push({ code: "invalid_input", workerId: l.workerId, message: `A ${l.type} line for the workweek starting ${l.workweekStart} is too large to store; check the rates.` });
     }
   }
+  // A correction: what differs, and how each worker's difference is settled.
+  const correction: CorrectionPlan | null = base
+    ? planCorrection({
+        baseVersion: base.run.version,
+        basePay: base.pay.map(payForDiff),
+        baseBill: base.bill.map(billForDiff),
+        nowPay: result.payLines.map((l) => ({ workerId: l.workerId, assignmentId: l.assignmentId, workweekStart: l.workweekStart, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, timeEntryIds: l.entryIds })),
+        nowBill: result.billLines.map((l) => ({ clientId: l.clientId, workerId: l.workerId, assignmentId: l.assignmentId, workweekStart: l.workweekStart, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, timeEntryIds: l.entryIds, ruleId: l.ruleId })),
+        decisions,
+        held,
+      })
+    : null;
+  if (correction) {
+    for (const w of correction.workers) {
+      const name = workerNameOf(w.workerId) ?? w.workerId;
+      const paidNet = w.netCents - w.leftoverCents;
+      if (paidNet > 0) {
+        warnings.push({
+          code: "correction_pay_due",
+          workerId: w.workerId,
+          workerName: name,
+          grossCents: paidNet,
+          message: `${name}: ${formatCents(paidNet)} more pay is due than version ${correction.baseVersion} paid. Pay it as soon as possible, no later than the next regular payday: pay that was missed is already late. Overtime that could not be computed in time is due no later than the next payday after it can be computed (29 C.F.R. § 778.106). State pay-day laws also apply.`,
+        });
+      }
+      if (w.decisionFits) continue;
+      if (!w.decision && !w.needsDecision) continue;
+      // A decision stands for money moved outside the files: when the difference changed, ask again.
+      const stale = w.decision
+        ? `The difference changed since the decision (${formatCents(w.decision.differenceCents)} then, ${formatCents(w.netCents)} now); record a new decision, or remove it if nothing was done outside the files. `
+        : "";
+      const kept = w.heldCents > 0 ? ` ${formatCents(w.heldCents)} of pay an earlier correction of this period left with them (written off, or to be recovered) may already cover it.` : "";
+      blockers.push({
+        code: "correction_decision_needed",
+        workerId: w.workerId,
+        workerName: name,
+        grossCents: w.netCents,
+        ...(w.heldCents > 0 ? { heldCents: w.heldCents } : {}),
+        message:
+          stale +
+          (w.netCents < 0
+            ? `${name}: ${formatCents(-w.netCents)} less pay than version ${correction.baseVersion} paid. The payroll file never takes pay back: record how it is settled (repaid outside payroll, recovered under the worker's state rules, or written off).`
+            : !w.additionsOnly
+              ? `${name}: ${formatCents(w.netCents)} more pay, but it moves pay between rates, kinds of hours or workweeks (${describeMoves(w.fileLines)}), which the payroll file cannot carry as additions. Pay it by hand and record that here.`
+              : w.netCents > 0
+                ? `${name}: ${formatCents(w.netCents)} more pay than version ${correction.baseVersion} paid.${kept} Record whether that covers it, or that it is paid by hand.`
+                : `${name}: no difference any more.`),
+      });
+    }
+    if (correction.pay.length === 0 && correction.bill.length === 0 && blockers.length === 0) {
+      blockers.push({ code: "correction_no_differences", message: `Nothing differs from version ${correction.baseVersion}, so there is nothing to correct. Change the hours or rates, or discard this correction.` });
+    }
+  }
+
   // Dry run of the files: anything the payroll file or an invoice would refuse is a blocker now,
   // not an error after "Create files".
-  const invoicePlan = await planInvoices(tx, period, result.billLines.map((l) => ({ clientId: l.clientId, amountCents: l.amountCents })));
-  if (blockers.length === 0 && result.payLines.length > 0) {
-    // A refusal about one worker's pay names that worker (they can be skipped and paid by hand); the
-    // file is tried again without them, so every such worker is named at once.
-    let lines = result.payLines;
+  const invoicePlan = correction
+    ? await planCorrectionInvoices(tx, period, correction.bill)
+    : await planInvoices(tx, period, result.billLines.map((l) => ({ clientId: l.clientId, amountCents: l.amountCents })));
+  // A correction's file carries the additions of the workers it settles (decision E9).
+  const fileLines: ExportPayLine[] = correction
+    ? fileWorkers(correction).flatMap((w) => w.fileLines.map((l) => ({ workerId: w.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, parts: l.parts })))
+    : result.payLines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate }));
+  const grossOf = (workerId: string) =>
+    correction ? (correction.workers.find((w) => w.workerId === workerId)?.netCents ?? 0) : result.payLines.filter((l) => l.workerId === workerId).reduce((sum, l) => sum + l.amountCents, 0);
+  if (blockers.length === 0) {
+    // A refusal about one worker's pay names that worker (they can be skipped, or in a correction
+    // settled by a decision, and paid by hand); the file is tried again without them, so every such
+    // worker is named at once.
+    let lines = fileLines;
+    const extra = correction ? { correction: { version: run.version, baseVersion: correction.baseVersion }, referenceRates: regularRates(result.payLines) } : {};
     for (let tries = 0; lines.length > 0 && tries <= workersById.size; tries++) {
       try {
-        renderExport(await payrollFixture(tx, period, lines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate }))));
+        renderExport({ ...(await payrollFixture(tx, period, lines)), ...extra });
         break;
       } catch (error) {
         if (!(error instanceof ExportError)) throw error;
         const workerId = error.workerId;
         const w = workerId ? workersById.get(workerId) : undefined;
-        const grossCents = workerId ? result.payLines.filter((l) => l.workerId === workerId).reduce((sum, l) => sum + l.amountCents, 0) : undefined;
-        blockers.push({ code: "export_refused", workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, message: error.message, ...(grossCents !== undefined ? { grossCents } : {}) });
+        blockers.push({ code: "export_refused", workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, message: error.message, ...(workerId ? { grossCents: grossOf(workerId) } : {}) });
         if (!workerId) break;
         lines = lines.filter((l) => l.workerId !== workerId);
       }
@@ -488,6 +586,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   }
   // Everything the files will say, so a change after the totals were shown is caught at "Create files".
   const textInputs = await fileTextInputs(tx, actor.agencyId, invoicePlan.plans, [...new Set(result.payLines.map((l) => l.workerId))], [...new Set(result.billLines.map((l) => l.assignmentId))]);
+  const decided = decisions.map((d) => [d.workerId, d.decision, d.differenceCents, d.note]).sort((a, b) => cmp(String(a[0]), String(b[0])));
 
   const status = blockers.length > 0 ? "blocked" : "ready";
   const fingerprint = createHash("sha256")
@@ -502,13 +601,14 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         skipped: run.skipped.map((x) => x.workerId).sort(cmp),
         documents: documents.map((d) => [d.id, d.status]),
         text: textInputs,
+        correction: base ? { base: base.run.id, decisions: decided } : null,
       }),
     )
     .digest("hex");
   const previous = (run.snapshot as { fingerprint?: string } | null)?.fingerprint;
   // Nothing changed: the same lines stand, and an approval of them stands too.
   if (previous === fingerprint && (run.status === status || (run.status === "approved" && status === "ready"))) {
-    return { runId: run.id, version: run.version, status: run.status === "approved" ? "approved" : status, blockers, warnings, skipped: run.skipped, fingerprint };
+    return { runId: run.id, version: run.version, kind: run.kind, status: run.status === "approved" ? "approved" : status, blockers, warnings, skipped: run.skipped, fingerprint };
   }
   await tx.delete(s.payLines).where(eq(s.payLines.payRunId, run.id));
   await tx.delete(s.billLines).where(eq(s.billLines.payRunId, run.id));
@@ -603,7 +703,23 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       reason: "computed",
     },
   ]);
-  return { runId: run.id, version: run.version, status, blockers, warnings, skipped: run.skipped, fingerprint };
+  return { runId: run.id, version: run.version, kind: run.kind, status, blockers, warnings, skipped: run.skipped, fingerprint };
+}
+
+/**
+ * Each worker's single regular rate in the whole period, for a correction file that adds overtime
+ * alone (the payroll system multiplies its stored base rate); none when a worker has several.
+ */
+export function regularRates(lines: { workerId: string; type: string; rate: { num: number; den: number } }[]): Record<string, { num: number; den: number }> {
+  const out: Record<string, { num: number; den: number }> = {};
+  const several = new Set<string>();
+  for (const l of lines.filter((x) => x.type === "REG")) {
+    const had = out[l.workerId];
+    if (had && BigInt(had.num) * BigInt(l.rate.den) !== BigInt(l.rate.num) * BigInt(had.den)) several.add(l.workerId);
+    out[l.workerId] ??= l.rate;
+  }
+  for (const id of several) delete out[id];
+  return out;
 }
 
 /**
@@ -623,8 +739,14 @@ async function overtimeSpikes(
   if (typeof floor !== "number" || typeof percent !== "number" || !Number.isInteger(floor) || !Number.isInteger(percent)) return [];
   const earlier = await tx.select().from(s.payPeriods).where(lt(s.payPeriods.endsOn, period.startsOn)).orderBy(desc(s.payPeriods.endsOn)).limit(1);
   if (earlier.length === 0) return [];
-  const [prior] = await tx.select().from(s.payRuns).where(eq(s.payRuns.payPeriodId, earlier[0]!.id)).orderBy(desc(s.payRuns.version)).limit(1);
-  if (!prior || (prior.status !== "exported" && prior.status !== "closed")) return [];
+  // The latest paid version of that period (a correction still open there does not count yet).
+  const [prior] = await tx
+    .select()
+    .from(s.payRuns)
+    .where(and(eq(s.payRuns.payPeriodId, earlier[0]!.id), inArray(s.payRuns.status, ["exported", "closed"])))
+    .orderBy(desc(s.payRuns.version))
+    .limit(1);
+  if (!prior) return [];
   const overtime = (rows: { workerId: string; type: string; minutes: number }[]) => {
     const out = new Map<string, number>();
     for (const l of rows) if (l.type === "OT" || l.type === "DT") out.set(l.workerId, (out.get(l.workerId) ?? 0) + l.minutes);

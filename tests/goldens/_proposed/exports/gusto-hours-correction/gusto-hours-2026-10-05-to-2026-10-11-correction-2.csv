@@ -1,0 +1,4 @@
+last_name,first_name,title,gusto_employee_id,regular_hours,overtime_hours,double_overtime_hours
+Bell,Marcus,Loader (Primary),9d3e4f,0.00,2.00,0.00
+Fernández Ruiz,Lucía,Picker (Primary),9a1b2c,2.00,0.00,0.00
+Nguyen,Tran,Machine Operator (Primary),9f5a6b,0.00,1.00,0.00

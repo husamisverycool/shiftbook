@@ -30,7 +30,8 @@ export interface InvoiceData {
   };
   number: string;
   issuedOn: string;
-  dueOn: string;
+  /** None on a credit note (docs/patterns/_documents/invoice.md, correction documents). */
+  dueOn: string | null;
   fields: { label: string; value: string }[];
   from: { name: string; lines: string[] };
   billTo: { name: string; lines: string[] };
@@ -76,7 +77,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
           {[
             { label: l.number, value: data.number },
             { label: l.issued, value: data.issuedOn },
-            { label: l.due, value: data.dueOn },
+            ...(data.dueOn !== null ? [{ label: l.due, value: data.dueOn }] : []),
             ...data.fields,
           ].map((f) => (
             <View key={f.label} style={styles.metaRow}>

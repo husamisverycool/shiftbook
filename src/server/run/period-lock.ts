@@ -3,8 +3,9 @@
  *
  * Every action that changes a period's hours, its run or its files first takes a transaction-scoped
  * advisory lock on the period, so two clicks (or two tabs) run one after the other, never
- * interleaved. Once the period's run is exported the period is locked: in this slice a period is
- * paid once, and corrections (a new run version paying only the differences) come later.
+ * interleaved. Once the period's run is exported the period is locked, until the Owner starts a
+ * correction (a new run version paying only the differences; run/corrections.ts), which opens it
+ * again until that version's files exist.
  */
 import { desc, eq, sql } from "drizzle-orm";
 import type { Tx } from "../db/client";
@@ -75,10 +76,13 @@ export async function lockCatalog(tx: Tx, agencyId: string, mode: "exclusive" | 
 /**
  * "exported": its files were created here (the latest run is exported or closed).
  * "history": paid before Shiftbook — no exported run here, and hours already locked by that payment.
+ * A correction in progress (an earlier version exported, the latest not yet) is "open".
  */
 export async function periodState(tx: Tx, payPeriodId: string): Promise<"open" | "exported" | "history"> {
-  const [latest] = await tx.select({ status: s.payRuns.status }).from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
-  if (latest && (latest.status === "exported" || latest.status === "closed")) return "exported";
+  const runs = await tx.select({ status: s.payRuns.status }).from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version));
+  const paid = (status: string) => status === "exported" || status === "closed";
+  if (runs[0] && paid(runs[0].status)) return "exported";
+  if (runs.some((r) => paid(r.status))) return "open";
   // Entries are locked only by an export (which also marks its run exported), so a locked entry
   // without an exported run here was paid elsewhere — even if a draft run was started on it.
   const [locked] = await tx

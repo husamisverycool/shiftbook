@@ -5,6 +5,8 @@
  * kind of problem with its title, its description and the action that fixes it at the right;
  * TempWorks proofing: all errors resolved to continue, checked again on return; Rise People and
  * Staffology: warnings never block). Skipped workers are listed with "bring back" as before.
+ * In a correction (slice e), a worker's difference the payroll file cannot carry is settled by a
+ * recorded decision instead of a skip, and a correction with nothing to correct can be discarded.
  */
 import { CircleAlertIcon, CircleCheckIcon, InfoIcon, XIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -18,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import { money } from "../format";
+import { DecisionButton, DiscardCorrectionButton } from "./correction-actions";
 import type { TotalsData } from "./totals-review";
 import { REFUSAL_MESSAGE } from "./types";
 
@@ -27,8 +30,9 @@ const TO_APPROVALS = new Set(["client_dispute_open", "client_approval_missing"])
 
 type Group = TotalsData["blockers"][number];
 
-export function ExceptionsStep({ periodId, data, locked }: { periodId: string; data: Pick<TotalsData, "blockers" | "warnings" | "skipped">; locked: boolean }) {
+export function ExceptionsStep({ periodId, data, locked }: { periodId: string; data: Pick<TotalsData, "blockers" | "warnings" | "skipped" | "correction" | "canApprove">; locked: boolean }) {
   const t = useTranslations("convert.totals");
+  const tr = useTranslations("convert.correction");
   const te = useTranslations("convert.exceptions");
   const tc = useTranslations("common");
   const tx = useTranslations("convert");
@@ -40,6 +44,21 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
   const [confirmReason, setConfirmReason] = useState("");
   const [reason, setReason] = useState("");
   const blocking = data.blockers.length;
+  const correction = data.correction;
+  // In a correction, a worker paid in the version it corrects is settled by a decision, not skipped (E10).
+  const skippable = (ids: string[]) => ids.filter((id) => !correction?.noSkip.includes(id));
+  const decide = (i: Group["issues"][number]) =>
+    correction && data.canApprove && !locked && i.workerId && i.grossCents !== undefined ? (
+      <DecisionButton
+        periodId={periodId}
+        workerId={i.workerId}
+        name={i.workerName ?? ""}
+        netCents={i.grossCents}
+        heldCents={i.heldCents ?? 0}
+        hasDecision={correction.decisions.some((d) => d.workerId === i.workerId)}
+        baseVersion={correction.baseVersion}
+      />
+    ) : null;
 
   const confirmSkip = () =>
     skipping &&
@@ -80,6 +99,16 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
           </li>
         ))}
       </ul>
+    ) : g.code === "correction_decision_needed" || (correction && g.code === "export_refused") ? (
+      // A correction: each worker's difference is settled by a recorded decision.
+      <ul className="flex flex-col gap-2">
+        {g.issues.map((i, n) => (
+          <li key={n} className="flex flex-col gap-1">
+            <span>{i.message}</span>
+            <span className="w-fit">{decide(i)}</span>
+          </li>
+        ))}
+      </ul>
     ) : g.code === "export_refused" ? (
       // What a person skipping the worker pays by hand (the run computed it; the file cannot carry it).
       <ul className="flex flex-col gap-2">
@@ -107,9 +136,11 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
       <Link href={{ pathname: "/approvals", query: { period: periodId, ...(g.code === "client_dispute_open" ? { status: "disputed" } : {}) } }} className={buttonVariants({ size: "sm", variant: "outline" })}>
         {t("openApprovals")}
       </Link>
-    ) : g.workerIds.length > 0 ? (
-      <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: g.workerIds })} data-testid="skip-workers">
-        {t("skipWorkers", { count: g.workerIds.length })}
+    ) : g.code === "correction_no_differences" ? (
+      correction && data.canApprove ? <DiscardCorrectionButton periodId={periodId} baseVersion={correction.baseVersion} /> : null
+    ) : g.code === "correction_decision_needed" || (correction && g.code === "export_refused") ? null : skippable(g.workerIds).length > 0 ? (
+      <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: skippable(g.workerIds) })} data-testid="skip-workers">
+        {t("skipWorkers", { count: skippable(g.workerIds).length })}
       </Button>
     ) : null;
 
@@ -165,6 +196,23 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
         {data.warnings.length > 0 ? rows(data.warnings, "warning") : <p className="text-sm text-muted-foreground">{te("noWarnings")}</p>}
       </section>
 
+      {correction && correction.decisions.length > 0 && (
+        <Alert data-testid="decisions">
+          <InfoIcon />
+          <AlertTitle>{tr("decisionsTitle")}</AlertTitle>
+          <AlertDescription>
+            <ul className="flex flex-col gap-1">
+              {correction.decisions.map((d) => (
+                <li key={d.workerId}>
+                  <span className="text-foreground">{d.name}</span>: {tr("decisionOnFile", { decision: tr(`options.${d.decision}` as "options.paid_by_hand"), note: d.note, by: d.by })}
+                  {!d.fits && <span className="text-destructive"> {tr("decisionStale")}</span>}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {data.skipped.length > 0 && (
         <Alert>
           <InfoIcon />
@@ -179,7 +227,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
                     {people.map((s) => (
                       <span key={s.workerId} className="inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-xs">
                         {s.name}
-                        {!locked && (
+                        {!locked && !correction?.noBringBack.includes(s.workerId) && (
                           <Button
                             size="icon-xs"
                             variant="ghost"
@@ -197,14 +245,14 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
                         )}
                       </span>
                     ))}
-                    {!locked && people.length > 1 && (
+                    {!locked && people.filter((p) => !correction?.noBringBack.includes(p.workerId)).length > 1 && (
                       <Button
                         size="xs"
                         variant="ghost"
                         disabled={pending}
                         onClick={() =>
                           start(async () => {
-                            await skipAction(periodId, people.map((p) => p.workerId), false, "brought back");
+                            await skipAction(periodId, people.filter((p) => !correction?.noBringBack.includes(p.workerId)).map((p) => p.workerId), false, "brought back");
                             router.refresh();
                           })
                         }

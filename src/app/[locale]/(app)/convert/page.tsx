@@ -1,6 +1,6 @@
 // Pattern: docs/patterns/convert.md — Gusto payroll-run flow: landing list, then one step at a time
 // (upload → review hours → exceptions → review totals → files) inside the step frame.
-import { CircleAlertIcon } from "lucide-react";
+import { CircleAlertIcon, InfoIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { after } from "next/server";
@@ -14,8 +14,8 @@ import { TotalsReview } from "@/components/shiftbook/convert/totals-review";
 import { needsAttention, STEPS, type GridRow, type Step } from "@/components/shiftbook/convert/types";
 import { UploadStep } from "@/components/shiftbook/convert/upload-step";
 import { longDate } from "@/components/shiftbook/format";
-import { Alert, AlertTitle } from "@/components/ui/alert";
-import { filesStep, getPeriod, hoursStep, latestRun, listPeriods, totalsStep, uploadStep } from "@/server/convert/queries";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { filesStep, getPeriod, hoursStep, latestRun, listPeriods, openCorrectionOf, totalsStep, uploadStep } from "@/server/convert/queries";
 import { withAgency } from "@/server/db";
 import { PeriodBusyError, periodState } from "@/server/run/period-lock";
 import { processQueuedDocuments } from "@/server/services";
@@ -47,6 +47,15 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
   const t = await getTranslations("convert");
   const periodLine = t.rich("periodLine", { start: longDate(period.startsOn, locale), end: longDate(period.endsOn, locale), b: (chunks) => <b>{chunks}</b> });
   const frame = { periodId, step, locked, title: t(`steps.${step}`), periodLine };
+  // A correction in progress says so on every step (slice e): only its differences are paid and billed.
+  const correcting = locked ? null : await inAgency((tx) => openCorrectionOf(tx, periodId));
+  const correctionAlert = correcting ? (
+    <Alert data-testid="correction-banner">
+      <InfoIcon />
+      <AlertTitle>{t("correction.bannerTitle", { version: correcting.version, reason: correcting.reason })}</AlertTitle>
+      <AlertDescription>{t("correction.bannerBody", { base: correcting.baseVersion })}</AlertDescription>
+    </Alert>
+  ) : null;
 
   if (step === "upload") {
     const documents = await inAgency((tx) => uploadStep(tx, periodId));
@@ -54,7 +63,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     // Waiting uploads are read now; a reading cut off by a restart is picked up again.
     if (documents.some((d) => d.status === "received" || d.stuck)) after(() => processQueuedDocuments(actor).catch(() => undefined));
     return (
-      <ConvertFrame {...frame} forward={{ kind: "link", step: "hours", disabled: documents.length === 0 || reading }}>
+      <ConvertFrame {...frame} alerts={correctionAlert} forward={{ kind: "link", step: "hours", disabled: documents.length === 0 || reading }}>
         <UploadStep periodId={periodId} documents={documents} />
       </ConvertFrame>
     );
@@ -68,11 +77,16 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
         {...frame}
         forward={{ kind: "computeTotals", disabled: attention > 0 || rows.length === 0 }}
         alerts={
-          attention > 0 ? (
-            <Alert variant="destructive" data-testid="hours-blocker">
-              <CircleAlertIcon />
-              <AlertTitle>{t("hours.blockersTitle", { count: attention })}</AlertTitle>
-            </Alert>
+          correctionAlert || attention > 0 ? (
+            <>
+              {correctionAlert}
+              {attention > 0 && (
+                <Alert variant="destructive" data-testid="hours-blocker">
+                  <CircleAlertIcon />
+                  <AlertTitle>{t("hours.blockersTitle", { count: attention })}</AlertTitle>
+                </Alert>
+              )}
+            </>
           ) : null
         }
       >
@@ -108,7 +122,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     if (step === "totals" && blocked) redirect(`/${locale}/convert?period=${periodId}&step=exceptions`);
     if (step === "exceptions") {
       return (
-        <ConvertFrame {...frame} editHref forward={{ kind: "link", step: "totals", disabled: blocked }}>
+        <ConvertFrame {...frame} editHref alerts={correctionAlert} forward={{ kind: "link", step: "totals", disabled: blocked }}>
           <ExceptionsStep periodId={periodId} data={data} locked={locked} />
         </ConvertFrame>
       );
@@ -118,6 +132,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
       <ConvertFrame
         {...frame}
         editHref
+        alerts={correctionAlert}
         forward={approved ? { kind: "createFiles", disabled: false, fingerprint: data.run.fingerprint } : { kind: "approve", disabled: !data.canApprove, fingerprint: data.run.fingerprint }}
       >
         <TotalsReview periodId={periodId} data={data} locked={locked} />
@@ -125,17 +140,11 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     );
   }
 
-  const files = await inAgency((tx) => filesStep(tx, periodId));
+  const files = await inAgency((tx) => filesStep(tx, actor, periodId));
   if (!files) notFound();
   return (
     <ConvertFrame {...frame} forward={null}>
-      <FilesStep
-        data={{
-          payroll: files.payroll ? { id: files.payroll.id, filename: files.payroll.filename, sha256: files.payroll.sha256, controlTotals: files.payroll.controlTotals } : null,
-          notes: files.payroll?.notes ?? [],
-          invoices: files.invoices,
-        }}
-      />
+      <FilesStep data={{ periodId, versions: files.versions, canCorrect: files.canCorrect }} />
     </ConvertFrame>
   );
 }

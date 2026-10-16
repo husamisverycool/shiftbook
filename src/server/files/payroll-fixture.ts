@@ -16,7 +16,7 @@ const effective = (date: string, from: string, to: string | null) => from <= dat
 export async function payrollFixture(
   tx: Tx,
   period: { startsOn: string; endsOn: string },
-  lines: { workerId: string; type: EarningType; minutes: number; amountCents: number; rate: Fraction }[],
+  lines: { workerId: string; type: EarningType; minutes: number; amountCents: number; rate: Fraction; parts?: number }[],
 ): Promise<ExportFixture> {
   const settings = (await tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, `earning_code_map.${PAYROLL_FORMAT}`))).filter((r) =>
     effective(period.startsOn, r.effectiveFrom, r.effectiveTo),
@@ -30,6 +30,6 @@ export async function payrollFixture(
     period: { startsOn: period.startsOn, endsOn: period.endsOn },
     earningCodeMap: (settings[0]?.value as ExportFixture["earningCodeMap"] | undefined) ?? {},
     workers: people.map((w) => ({ workerId: w.id, firstName: w.firstName, lastName: w.lastName, payrollIds: w.payrollIds })),
-    payLines: lines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate })),
+    payLines: lines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, ...(l.parts !== undefined ? { parts: l.parts } : {}) })),
   };
 }

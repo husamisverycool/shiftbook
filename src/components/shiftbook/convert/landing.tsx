@@ -12,6 +12,8 @@ export interface LandingPeriod {
   startsOn: string;
   endsOn: string;
   runStatus: string | null;
+  /** A correction of a paid period is open (slice e). */
+  correcting: boolean;
   started: boolean;
 }
 
@@ -34,7 +36,7 @@ export async function Landing({ periods }: { periods: LandingPeriod[] }) {
           </TableHeader>
           <TableBody>
             {periods.map((p) => {
-              const status = p.runStatus ?? (p.started ? "draft" : "none");
+              const status = p.correcting ? "correcting" : (p.runStatus ?? (p.started ? "draft" : "none"));
               const exported = p.runStatus === "exported" || p.runStatus === "closed";
               const step = exported ? "files" : "upload";
               return (

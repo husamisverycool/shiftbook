@@ -286,3 +286,67 @@ describe("Gusto hours CSV — pay the engine now computes but this file cannot c
     expect(() => renderGustoHours(huge)).toThrowError(ExportError);
   });
 });
+
+describe("Gusto hours CSV — a correction's differences (slice e, decision E9)", () => {
+  const correction = { version: 2, baseVersion: 1 };
+  const code = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (e) {
+      return e instanceof ExportError ? e.code : "not an export error";
+    }
+    return "no error";
+  };
+  const reg = (minutes: number, amountCents: number, rate = { num: 1825, den: 1 }) => ({ workerId: "w1", type: "REG" as const, minutes, amountCents, rate });
+  /** A correction file for Ana, whose one regular rate this period is $18.25/h unless told otherwise. */
+  const corr = (payLines: ExportFixture["payLines"], referenceRates: ExportFixture["referenceRates"] = { w1: { num: 1825, den: 1 } }) => base({ correction, referenceRates, payLines });
+
+  it("is named as the period's correction, and its note says it only adds to the earlier file", () => {
+    const r = renderGustoHours(corr([reg(120, 3650)]));
+    expect(r.filename).toBe("gusto-hours-2026-10-05-to-2026-10-11-correction-2.csv");
+    expect(text(r.bytes).trim().split("\n")).toEqual([
+      "last_name,first_name,title,gusto_employee_id,regular_hours,overtime_hours,double_overtime_hours",
+      "Álvarez,Ana,Picker (Primary),a1b2c3,2.00,0.00,0.00",
+    ]);
+    expect(r.notes[0]).toBe(
+      "Correction 2 of this pay period: only the differences against version 1, all of them additions. Import it into the payroll that pays them (the next regular payroll or an off-cycle payroll); it does not replace the file for version 1.",
+    );
+  });
+
+  it("carries overtime added without regular hours, checked against the worker's regular rate in the whole period", () => {
+    const r = renderGustoHours(corr([{ workerId: "w1", type: "OT", minutes: 120, amountCents: 5475, rate: { num: 5475, den: 2 } }]));
+    expect(text(r.bytes).trim().split("\n")[1]).toBe("Álvarez,Ana,Picker (Primary),a1b2c3,0.00,2.00,0.00");
+    expect(r.controlTotals).toMatchObject({ workers: 1, minutesByType: { OT: 120 }, grossCents: 5475, payrollSystemDifferenceCents: 0 });
+  });
+
+  it("refuses overtime when the worker has no single regular rate in the whole period to check it against", () => {
+    expect(code(() => renderGustoHours(corr([{ workerId: "w1", type: "OT", minutes: 120, amountCents: 5475, rate: { num: 5475, den: 2 } }], {})))).toBe("several_pay_rates");
+  });
+
+  it("refuses overtime that is not 1.5 × the worker's regular rate in the whole period", () => {
+    const fixture = corr([{ workerId: "w1", type: "OT", minutes: 120, amountCents: 5475, rate: { num: 5475, den: 2 } }], { w1: { num: 1900, den: 1 } });
+    expect(() => renderGustoHours(fixture)).toThrow(/1\.5/);
+  });
+
+  it("refuses regular hours at any rate but the worker's one rate in the whole period (Gusto pays its stored rate)", () => {
+    // A rate raised from Thursday: the added Thursday is at $19.00/h, but Gusto would pay $18.25/h.
+    expect(code(() => renderGustoHours(corr([reg(480, 15_200, { num: 1900, den: 1 })])))).toBe("several_pay_rates");
+    expect(code(() => renderGustoHours(corr([reg(480, 15_200, { num: 1900, den: 1 })], {})))).toBe("several_pay_rates");
+  });
+
+  it("takes a difference of amounts each rounded once: within half a cent per stored line", () => {
+    // 1 min × $18.25/h = 30.41…¢. A difference of two lines (the default) may be off by up to a cent.
+    expect(renderGustoHours(corr([reg(1, 31)])).controlTotals.grossCents).toBe(31);
+    expect(renderGustoHours(corr([reg(1, 30)])).controlTotals.grossCents).toBe(30);
+    expect(code(() => renderGustoHours(corr([reg(1, 32)])))).toBe("invalid_pay_line");
+    // Adding up four stored lines: up to two cents.
+    expect(renderGustoHours(corr([{ ...reg(1, 32), parts: 4 }])).controlTotals.grossCents).toBe(32);
+    expect(code(() => renderGustoHours(corr([{ ...reg(1, 33), parts: 4 }])))).toBe("invalid_pay_line");
+    // A regular file still needs each amount to be its minutes × rate rounded once.
+    expect(code(() => renderGustoHours(base({ payLines: [reg(1, 31)] })))).toBe("invalid_pay_line");
+  });
+
+  it("refuses hours taken off (an hours file can only add)", () => {
+    expect(code(() => renderGustoHours(corr([reg(-60, -1825)])))).toBe("invalid_pay_line");
+  });
+});

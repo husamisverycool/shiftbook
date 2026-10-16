@@ -18,6 +18,8 @@ export interface ExportPayLine {
   minutes: number;
   amountCents: number;
   rate: Fraction;
+  /** A correction's line: how many stored lines, each rounded once, its amount adds up (default 2: was and now). */
+  parts?: number;
 }
 
 /** Everything an export needs, frozen from one pay run. Pure data: no database access. */
@@ -29,6 +31,16 @@ export interface ExportFixture {
   earningCodeMap: Partial<Record<EarningType, string>>;
   workers: ExportWorker[];
   payLines: ExportPayLine[];
+  /**
+   * A correction's file (slice e): the lines are differences against an earlier version, each the
+   * difference of two amounts rounded once on their own lines (so within a cent of minutes × rate).
+   */
+  correction?: { version: number; baseVersion: number };
+  /**
+   * A worker's single regular rate in the whole period, for a correction that adds overtime or double
+   * time without regular hours (the payroll system multiplies its stored base rate).
+   */
+  referenceRates?: Record<string, Fraction>;
 }
 
 export interface ExportResult {

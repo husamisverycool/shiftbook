@@ -12,6 +12,7 @@ import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
+import { correctionPlanFor } from "./corrections";
 import { openPeriod } from "./period-lock";
 import { computeRun } from "./service";
 
@@ -30,6 +31,7 @@ export async function approveRun(tx: Tx, actor: Actor, payPeriodId: string, expe
   const [run] = await tx.select().from(s.payRuns).where(eq(s.payRuns.id, computed.runId));
   const pay = await tx.select({ workerId: s.payLines.workerId, amountCents: s.payLines.amountCents }).from(s.payLines).where(eq(s.payLines.payRunId, computed.runId));
   const bill = await tx.select({ amountCents: s.billLines.amountCents }).from(s.billLines).where(eq(s.billLines.payRunId, computed.runId));
+  const plan = run!.kind === "correction" ? await correctionPlanFor(tx, run!) : null;
   const approval: s.RunApproval = {
     fingerprint: computed.fingerprint,
     rulesVersion: run!.rulesVersion,
@@ -41,6 +43,16 @@ export async function approveRun(tx: Tx, actor: Actor, payPeriodId: string, expe
       payLines: pay.length,
       billLines: bill.length,
     },
+    ...(plan
+      ? {
+          differences: {
+            baseVersion: plan.baseVersion,
+            payCents: plan.pay.reduce((sum, l) => sum + l.amountCents, 0),
+            billCents: plan.bill.reduce((sum, l) => sum + l.amountCents, 0),
+            workers: plan.workers.length,
+          },
+        }
+      : {}),
   };
   const now = new Date();
   await tx.update(s.payRuns).set({ status: "approved", approvedAt: now, approvedBy: actor.userId, approvedByLabel: actor.label, approval, updatedAt: now }).where(eq(s.payRuns.id, computed.runId));

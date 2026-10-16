@@ -20,6 +20,12 @@
  *
  * Reconciliation: the file is read back and must give the run's workers and minutes by type exactly
  * (two-decimal hours rounded up are within 0.4 minutes, so they round back to the exact minute).
+ *
+ * A correction's file (slice e, decision E9) carries differences against an earlier version, all of
+ * them additions: it is named for its version and says it adds to the earlier file. Each line adds up
+ * amounts that were each rounded once on their own stored line, so it is within half a cent per
+ * stored line of minutes × rate. Gusto pays every hour at its stored rate, so every line is checked
+ * against the worker's one regular rate in the whole period, even overtime added without regular hours.
  */
 import { ceilDiv, exactDecimal, floorDiv, formatCents, formatRate, mod, roundHalfUp, roundHalfUpBig, type EarningType, type Fraction } from "@shiftbook/rules";
 import type { ControlTotals } from "../server/db/schema";
@@ -136,12 +142,31 @@ function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
   return byId;
 }
 
-/** A pay line must be whole minutes ≥ 0 at a positive rate, with amount = minutes × rate ÷ 60 rounded once. */
-function checkLine(line: ExportFixture["payLines"][number], who: string): void {
+/** |amount − minutes × rate ÷ 60| ≤ parts ÷ 2 cents (half a cent per stored line), in exact integers. */
+function withinRounding(amountCents: number, minutes: number, rate: Fraction, parts: number): boolean {
+  const den = 60n * BigInt(rate.den);
+  const gap = BigInt(amountCents) * den - BigInt(minutes) * BigInt(rate.num);
+  return 2n * (gap < 0n ? -gap : gap) <= BigInt(parts) * den;
+}
+
+/**
+ * A pay line must be whole minutes ≥ 0 at a positive rate, with amount = minutes × rate ÷ 60 rounded
+ * once. In a correction it adds up `parts` stored lines' amounts (a difference: was and now), each
+ * rounded once, so it must be within half a cent per stored line.
+ */
+function checkLine(line: ExportFixture["payLines"][number], who: string, correction: boolean): void {
+  const validRate = Number.isSafeInteger(line.rate.num) && Number.isSafeInteger(line.rate.den) && line.rate.num > 0 && line.rate.den > 0;
+  const parts = line.parts ?? 2;
   const problem =
     (!Number.isSafeInteger(line.minutes) || line.minutes < 0) ? `${line.minutes} minutes is not a whole number ≥ 0`
     : !Number.isSafeInteger(line.amountCents) ? `${line.amountCents} is not a whole number of cents`
-    : (!Number.isSafeInteger(line.rate.num) || !Number.isSafeInteger(line.rate.den) || line.rate.num <= 0 || line.rate.den <= 0) ? "its rate is not a positive amount"
+    : !validRate ? "its rate is not a positive amount"
+    : correction
+      ? !Number.isSafeInteger(parts) || parts < 1
+        ? `it adds up ${parts} differences`
+        : !withinRounding(line.amountCents, line.minutes, line.rate, parts)
+          ? `the difference ${formatCents(line.amountCents)} is further from ${line.minutes} min × ${formatRate(line.rate)} than rounding ${parts} stored line${parts === 1 ? "" : "s"} can explain`
+          : null
     : lineCents(line.minutes, line.rate) !== line.amountCents
       ? `${formatCents(line.amountCents)} is not ${line.minutes} min × ${formatRate(line.rate)} rounded once (${formatCents(lineCents(line.minutes, line.rate))})`
       : null;
@@ -195,7 +220,18 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
       return;
     }
     const column = target.column;
-    checkLine(line, `${worker.lastName}, ${worker.firstName}`);
+    checkLine(line, `${worker.lastName}, ${worker.firstName}`, fixture.correction !== undefined);
+    // A correction adds to what Gusto already pays at its stored rate: the worker's one regular rate
+    // in the whole period (a rate changed within the period, or a second rate, cannot be added as hours).
+    const reference = fixture.correction ? fixture.referenceRates?.[line.workerId] : undefined;
+    if (line.type === "REG" && fixture.correction && (!reference || !sameRate(line.rate, reference))) {
+      throw new ExportError(
+        "several_pay_rates",
+        reference
+          ? `${worker.lastName}, ${worker.firstName}: this correction adds regular hours at ${formatRate(line.rate)}, but Gusto pays this worker's stored rate (${formatRate(reference)} this period). Pay the difference by hand.`
+          : `${worker.lastName}, ${worker.firstName} has more than one pay rate this period, so the hours this correction adds cannot be matched to the rate Gusto pays. Pay the difference by hand.`,
+      );
+    }
     if (line.type === "REG") {
       const rates = baseRates.get(line.workerId) ?? new Set<string>();
       rates.add(`${line.rate.num}/${line.rate.den}`);
@@ -225,7 +261,8 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   // premium line must be exactly that multiple of the worker's single regular rate.
   for (const line of premiumLines) {
     const w = workersById.get(line.workerId)!;
-    const reg = columnRates.get(line.workerId)?.regular_hours;
+    // A correction's base is the worker's one regular rate in the whole period (overtime may be added alone).
+    const reg = fixture.correction ? fixture.referenceRates?.[line.workerId] : columnRates.get(line.workerId)?.regular_hours;
     if (!reg) {
       throw new ExportError(
         "several_pay_rates",
@@ -247,7 +284,11 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
     .map((id) => workersById.get(id)!)
     .sort((a, b) => cmp(sortKey(a.lastName), sortKey(b.lastName)) || cmp(sortKey(a.firstName), sortKey(b.firstName)) || cmp(a.payrollIds.gusto!.id, b.payrollIds.gusto!.id));
 
-  const notes: string[] = [];
+  const notes: string[] = fixture.correction
+    ? [
+        `Correction ${fixture.correction.version} of this pay period: only the differences against version ${fixture.correction.baseVersion}, all of them additions. Import it into the payroll that pays them (the next regular payroll or an off-cycle payroll); it does not replace the file for version ${fixture.correction.baseVersion}.`,
+      ]
+    : [];
   const withBonus = bonusCents.size > 0;
   const rows: string[][] = [[...GUSTO_HEADER, ...(withBonus ? AMOUNT_COLUMNS : [])]];
   let payrollSystemGrossCents = 0;
@@ -291,7 +332,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   reconcile(bytes, controlTotals);
 
   return {
-    filename: `gusto-hours-${fixture.period.startsOn}-to-${fixture.period.endsOn}.csv`,
+    filename: `gusto-hours-${fixture.period.startsOn}-to-${fixture.period.endsOn}${fixture.correction ? `-correction-${fixture.correction.version}` : ""}.csv`,
     mediaType: "text/csv",
     bytes,
     controlTotals,
