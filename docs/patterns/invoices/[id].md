@@ -1,0 +1,49 @@
+# Pattern: Invoice page (`/invoices/[id]`)
+
+Status: adopted — slice (g) plan (2026-10-16, under the owner's "just keep going")
+Reference product and screen: Stripe Dashboard — Invoice details (a header with the number, the
+status badge and the actions that apply, the amount and dates, the line items, a history section
+with related invoices and credit notes); TempWorks — "Preview Invoice w/ Timecards" (the timecard
+images that go with the invoice); SAP Fieldglass — the invoice's "Related" tab (the time sheets and
+documents behind it); Bullhorn One — credit invoices link to the original
+Source URL: https://docs.stripe.com/invoicing/dashboard/manage-invoices
+Source URL: https://docs.stripe.com/invoicing/invoice-edits?testing-method=without-code
+Source URL: https://docs.stripe.com/invoicing/dashboard/credit-notes
+Source URL: https://kb.tempworks.com/help/timecard-linker
+Source URL: https://assets.cdn.sap.com/agreements/supplier-portal/fieldglass-supplier-enablement/supplier-quick-reference-guide-invoices-and-reporting-english-global.pdf
+Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/creditVSCreditReinstate.htm
+Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §5.2). Confidence: high for the
+sections and actions; the exact placement on Stripe's page is not documented.
+
+## Purpose in Shiftbook
+One invoice (or supplemental invoice, or credit note) with everything sent with it: its PDF with the
+backup, its CSV, the Fieldglass upload file, the timesheets behind it and the documents related to
+it. Invoices are made only by the weekly run; this page changes nothing in them (SPEC §11).
+
+## Hierarchy
+1. **Header** (Stripe): "Invoice" (or the document's kind) and the number; the status badge; the
+   client's name linking to the client page; at the right the actions: **Download PDF** (primary)
+   and a ⋯ menu with Download CSV and, for a Fieldglass client, Download VMS file.
+2. **Summary row:** amount due (credited, for a credit note), issued, due, pay period, PO, template.
+3. **Line items** (Stripe): the table the PDF shows — description with its detail line, hours,
+   rate, amount — with the subtotal and total under it.
+4. **Backup** (TempWorks preview with timecards; Fieldglass "Related"): what the PDF carries after
+   the invoice — line detail on or off, and the timesheets whose pictures are included (file name,
+   pages), each opening the timesheet in the converter.
+5. **Related documents** (Stripe history; Bullhorn credit links): the invoice this one corrects, or
+   the supplemental invoices and credit notes that correct it, each linking to its page; and the
+   week's run (link to the Files step).
+
+## Interactions
+- Download PDF / CSV / VMS file download the stored files (made with the run; never regenerated).
+- Back to Invoices keeps the list's filters (the address).
+
+## States
+- **An invoice made before line detail was kept** (before slice g): the summary and the PDF only,
+  with a line saying the line items are in the PDF.
+- **No backup:** the section says the client's settings send no backup.
+
+## Never copy
+Stripe's, TempWorks', SAP's or Bullhorn's wording, icons, colors or logos.
+
+Deviations allowed: none

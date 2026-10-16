@@ -21,14 +21,14 @@ between areas, the same on every page, inside the root frame (demo banner above 
       (slice f), the first settings page.
    2. The personal and workspace areas as a vertical list of links (Linear: Inbox, My issues, then
       the workspace's views). In Shiftbook, in build order: Convert timesheets, Job orders,
-      Assignments, Client approvals (slice d).
+      Assignments, Client approvals (slice d), Invoices, Clients (slice g).
    3. The current area's link is highlighted.
 2. **Page** to the right of the sidebar: the route's own pattern.
 
 ## Interactions
 - Click a sidebar link → that area.
 - Keyboard (Linear "G then a letter" to jump): G then C → Convert timesheets, G then J → Job orders,
-  G then A → Assignments, G then P → Client approvals (A is taken; P as in "approval"). Not
+  G then A → Assignments, G then P → Client approvals (A is taken; P as in "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"). Not
   active while typing in a field.
 - `?` opens the list of keyboard shortcuts (Linear).
 
