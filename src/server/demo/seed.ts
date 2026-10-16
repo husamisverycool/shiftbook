@@ -32,6 +32,7 @@ const CLEAR_ORDER = [
   "premium_confirmations",
   "bonuses",
   "holiday_policies",
+  "obligations",
   "exports",
   "invoices",
   "bill_lines",

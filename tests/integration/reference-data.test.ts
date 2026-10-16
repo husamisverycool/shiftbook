@@ -1,13 +1,7 @@
 import { sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
-import { guaranteeRules, jurisdictionRules, minimumWageRules, overtimeRules, premiumRules } from "../../src/server/db/schema";
-import {
-  REFERENCE_JURISDICTION_RULES,
-  REFERENCE_MINIMUM_WAGE_RULES,
-  REFERENCE_OVERTIME_RULES,
-  REFERENCE_GUARANTEE_RULES,
-  REFERENCE_PREMIUM_RULES,
-} from "../../src/server/rules/reference-data";
+import { equalPayRules, guaranteeRules, jurisdictionRules, minimumWageRules, overtimeRules, premiumRules } from "../../src/server/db/schema";
+import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../../src/server/rules/reference-data";
 import { openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
@@ -96,6 +90,12 @@ describe("reference wage-rule data in the database matches src/server/rules/refe
     }));
     const key = (r: { jurisdiction: string; ruleCode: string }) => `${r.jurisdiction}:${r.ruleCode}`;
     expect(sortBy(fromDb, key)).toEqual(sortBy(REFERENCE_GUARANTEE_RULES, key));
+  });
+
+  it("the Illinois equal-pay counter", async () => {
+    const rows = await app.db.select().from(equalPayRules);
+    const fromDb = rows.map((r) => ({ jurisdiction: r.jurisdiction, ruleCode: r.ruleCode, countsFrom: r.countsFrom, warnMinutes: r.warnMinutes, windowMonths: r.windowMonths, triggerMinutes: r.triggerMinutes, longWindowMonths: r.longWindowMonths, longTriggerMinutes: r.longTriggerMinutes, effectiveFrom: r.effectiveFrom, effectiveTo: r.effectiveTo, citation: r.citation }));
+    expect(fromDb).toEqual(REFERENCE_EQUAL_PAY_RULES);
   });
 
   it("refuses malformed place codes in the rule tables", async () => {

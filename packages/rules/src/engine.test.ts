@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { computePay } from "./engine";
+import { addDays as addDaysIso } from "./dates";
 import { NO_PLACE } from "./places";
-import type { Confirmation, GuaranteeRule, HolidayPolicy, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule, Shift } from "./types";
+import type { Confirmation, EqualPayRule, GuaranteeRule, HolidayPolicy, HoursWorked, JurisdictionRule, MinimumWageRule, OvertimeRule, PayInput, PremiumRule, Shift } from "./types";
 
 // Census FIPS codes: county = state (2) + county (3); place = state (2) + place (5).
 const COOK = "17031";
@@ -1232,5 +1233,96 @@ describe("computePay — holidays and bonuses: what is refused, and which policy
     expect(byType.BONUS_OT).toMatchObject({ ruleId: "ca_flat_sum_bonus", minutes: 1380, amountCents: 4500 });
     expect(byType.BONUS_OT!.explain).toContain("$50.00 ÷ 40h 00m not paid at a premium = $1.25/h; 20h 00m × 1.5 × $1.25 + 3h 00m × 2 × $1.25 = 4500¢ exactly → $45.00");
     expect(r.payLines.find((l) => l.type === "OT")!.explain).toContain("The flat-sum bonus is not in this rate");
+  });
+});
+
+describe("computePay — the Illinois equal-pay counter (820 ILCS 175/42): hours per worker at one client, rolling", () => {
+  const RULE: EqualPayRule = { jurisdiction: "IL", ruleCode: "il_dtlsa_equal_pay", countsFrom: "2024-04-01", warnMinutes: 36_000, windowMonths: 12, triggerMinutes: 43_200, longWindowMonths: 48, longTriggerMinutes: 249_600, effectiveFrom: "2024-04-01", effectiveTo: null, citation: "820 ILCS 175/42" };
+  // Research golden G3: Joliet, $17.00, bill $24.00; week of Monday 2026-10-12, 07:00–15:00 each day.
+  const WEEK3 = ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"];
+  const work = (over: Partial<Shift> = {}) => WEEK3.map((d) => shift(d, 480, { payRateCents: 1700, billRateCents: 2400, clientName: "Prairie Line", ...over }));
+  const days = (from: string, count: number, minutes: number, over: Partial<HoursWorked> = {}): HoursWorked[] =>
+    Array.from({ length: count }, (_, i) => ({ workerId: "w1", clientId: "c1", date: addDaysIso(from, i), minutes, ...over }));
+  const run = (shifts: Shift[], hoursWorked: HoursWorked[], extra: Partial<PayInput> = {}) => computePay({ ...input(shifts), equalPayRules: [RULE], hoursWorked, ...extra });
+
+  it("records the crossing of 720 hours mid-week as an obligation, with the hours worked after it (G3)", () => {
+    const shifts = work();
+    const r = run(shifts, days("2025-11-02", 105, 400)); // 42,000 minutes (700 h) earlier in the 12 months
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([["REG", 2400, 68_000]]);
+    expect(r.obligations).toHaveLength(1);
+    expect(r.obligations[0]).toMatchObject({
+      kind: "il_equal_pay_720h",
+      jurisdiction: "IL",
+      workerId: "w1",
+      clientId: "c1",
+      crossedOn: "2026-10-14",
+      crossedAtMinute: 660,
+      windowStart: "2025-10-15",
+      thresholdMinutes: 43_200,
+      minutesAfter: 1200,
+      entryIds: shifts.slice(2).flatMap((s) => s.entryIds).sort(),
+    });
+    expect(r.obligations[0]!.message).toContain("Prairie Line");
+    expect(r.obligations[0]!.message).toContain("before the next pay period begins");
+    expect(r.warnings.filter((w) => w.code === "equal_pay_obligation").map((w) => w.message)).toEqual([r.obligations[0]!.message]);
+    expect(r.obligations[0]!.message).toContain("passed 720 hours of work at Prairie Line on 2026-10-14 at 11:00 (the 12 months from 2025-10-15)");
+    const missing = r.warnings.filter((w) => w.code === "equal_pay_rate_missing");
+    expect(missing).toHaveLength(1);
+    expect(missing[0]).toMatchObject({ workerId: "w1", clientId: "c1", workweekStart: "2026-10-12" });
+    expect(missing[0]!.message).toContain("20h 00m worked at Prairie Line after passing 720 hours");
+  });
+
+  it("warns as a worker approaches 720 hours at a client (past 600 hours), without an obligation", () => {
+    const r = run(work(), days("2025-11-02", 100, 350)); // 35,000 + 2,400 = 37,400 minutes
+    expect(r.obligations).toEqual([]);
+    const near = r.warnings.filter((w) => w.code === "approaching_equal_pay_hours");
+    expect(near).toHaveLength(1);
+    expect(near[0]!.message).toContain("623h 20m worked at Prairie Line in the 12 months to 2026-10-16");
+  });
+
+  it("counts only covered Illinois work at the same client, from April 1, 2024, within the rolling window", () => {
+    const history = [
+      ...days("2025-11-02", 105, 400, { clientId: "c2" }), // another client
+      ...days("2024-01-02", 60, 480), // before the count starts
+      ...days("2025-09-01", 40, 480), // older than 12 months on Monday 2026-10-12
+    ];
+    expect(run(work(), history).obligations).toEqual([]);
+    expect(run(work({ dayAndTemporaryLabor: false }), days("2025-11-02", 105, 400)).obligations).toEqual([]);
+    const ma = work({ jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" });
+    expect(run(ma, days("2025-11-02", 105, 400)).obligations).toEqual([]);
+  });
+
+  it("does not record a crossing twice: with one on file, it warns about the hours worked after it", () => {
+    const r = run(work(), days("2025-11-02", 120, 400), { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2026-09-30" }] });
+    expect(r.obligations).toEqual([]);
+    expect(r.warnings.filter((w) => w.code === "equal_pay_rate_missing").map((w) => w.message).join(" ")).toContain("40h 00m worked at Prairie Line after passing 720 hours");
+  });
+
+  it("records the 4,160-hour crossing in 48 months as its own obligation", () => {
+    const history = [...days("2024-04-01", 519, 480), { workerId: "w1", clientId: "c1", date: "2025-09-02", minutes: 180 }]; // 249,300 minutes
+    const r = run(work(), history, { obligationsOnFile: [{ kind: "il_equal_pay_720h", workerId: "w1", clientId: "c1", crossedOn: "2024-06-30" }] });
+    expect(r.obligations.map((o) => [o.kind, o.crossedOn, o.crossedAtMinute, o.minutesAfter])).toEqual([["il_equal_pay_4160h", "2026-10-12", 720, 2100]]);
+  });
+
+  it("finds a crossing that happened in earlier hours not yet on file, and dates it there", () => {
+    const r = run(work(), days("2025-11-02", 110, 400)); // 44,000 minutes before the week: crossed on day 109
+    expect(r.obligations.map((o) => [o.kind, o.crossedOn, o.crossedAtMinute, o.minutesAfter])).toEqual([["il_equal_pay_720h", "2026-02-18", null, 2400]]);
+  });
+
+  it("gives the same answer whatever order the history and shifts arrive in", () => {
+    const shifts = work();
+    const history = days("2025-11-02", 105, 400);
+    const a = run(shifts, history);
+    const b = run([...shifts].reverse(), [...history].reverse());
+    expect(b).toEqual(a);
+  });
+
+  it("holds a worker whose earlier hours are not usable, and stops on bad counter rule data", () => {
+    const bad = run(work(), [{ workerId: "w1", clientId: "c1", date: "2026-02-30", minutes: 400 }]);
+    expect(bad.payLines).toEqual([]);
+    expect(bad.blockers.map((b) => b.code)).toEqual(["invalid_input"]);
+    const rule = computePay({ ...input(work()), equalPayRules: [{ ...RULE, triggerMinutes: 0 }] });
+    expect(rule.blockers.map((b) => b.code)).toEqual(["rule_data_invalid"]);
   });
 });

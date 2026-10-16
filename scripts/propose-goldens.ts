@@ -6,9 +6,9 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { computePay, type PayInput, type Shift } from "@shiftbook/rules";
+import { addDays, computePay, type PayInput, type Shift } from "@shiftbook/rules";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
-import { REFERENCE_GUARANTEE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
+import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
 const WEEK = ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"];
@@ -44,20 +44,23 @@ const input = (shifts: Shift[]): PayInput => ({
   minimumWageRules: REFERENCE_MINIMUM_WAGE_RULES,
   premiumRules: REFERENCE_PREMIUM_RULES,
   guaranteeRules: REFERENCE_GUARANTEE_RULES,
+  equalPayRules: REFERENCE_EQUAL_PAY_RULES,
 });
 const MA = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const; // Worcester County; Worcester
 const CA = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const; // San Bernardino County; Ontario
 
-type Expect = { pay: [string, number, number][]; bill: [string, number, number][]; blockers?: string[] };
+type Expect = { pay: [string, number, number][]; bill: [string, number, number][]; blockers?: string[]; obligations?: [string, string, number | null, number][]; warnings?: string[] };
 
 function ruleCase(name: string, summary: string, inp: PayInput, hand: Expect) {
   const result = computePay(inp);
   const pay = result.payLines.map((l) => [l.type, l.minutes, l.amountCents]);
   const bill = result.billLines.map((l) => [l.type, l.minutes, l.amountCents]);
   const blockers = result.blockers.map((b) => b.code);
-  const same = JSON.stringify([pay, bill, blockers]) === JSON.stringify([hand.pay, hand.bill, hand.blockers ?? []]);
-  if (!same) {
-    throw new Error(`${name}: engine disagrees with the hand-computed answer\nengine: ${JSON.stringify([pay, bill, blockers])}\nhand:   ${JSON.stringify([hand.pay, hand.bill, hand.blockers ?? []])}`);
+  const obligations = result.obligations.map((o) => [o.kind, o.crossedOn, o.crossedAtMinute, o.minutesAfter]);
+  const engine = [pay, bill, blockers, obligations, ...(hand.warnings ? [result.warnings.map((w) => w.code)] : [])];
+  const handAnswer = [hand.pay, hand.bill, hand.blockers ?? [], hand.obligations ?? [], ...(hand.warnings ? [hand.warnings] : [])];
+  if (JSON.stringify(engine) !== JSON.stringify(handAnswer)) {
+    throw new Error(`${name}: engine disagrees with the hand-computed answer\nengine: ${JSON.stringify(engine)}\nhand:   ${JSON.stringify(handAnswer)}`);
   }
   mkdirSync(join(OUT, "rules"), { recursive: true });
   writeFileSync(join(OUT, "rules", `${name}.json`), JSON.stringify({ name, summary, input: inp, expected: result }, null, 2) + "\n");
@@ -323,6 +326,16 @@ ruleCase(
     pay: [["REG", 2400, 72000], ["OT", 360, 16200], ["OT", 360, 16200], ["OT", 480, 21600], ["DT", 60, 3600], ["DT", 120, 7200], ["BONUS", 0, 5000], ["BONUS_OT", 1380, 4500]],
     bill: [["REG", 2400, 104000], ["OT", 360, 23400], ["OT", 360, 23400], ["OT", 480, 31200], ["DT", 60, 5200], ["DT", 120, 10400]],
   },
+);
+
+ruleCase(
+  "il-s42-720h-crossing-midweek",
+  "An Illinois day laborer in Joliet at $17.00/h, billed at $24.00/h, has already worked 700 hours (42,000 minutes) at the same client in the past 12 months (105 days of 6 h 40 m from November 2, 2025). In the week of Monday October 12, 2026 the worker works 8 hours a day, 7:00 to 15:00. The counter after each day: Monday 42,480, Tuesday 42,960; on Wednesday it reaches 43,200 minutes (720 hours) at 11:00, so the minute from 11:00 is the first over 720 hours in the 12 months from October 15, 2025 (820 ILCS 175/42(a)). Hours after the crossing this week: 4 h on Wednesday + 8 h + 8 h = 20 h. The equal-pay rate needs the client's comparator data, so pay is unchanged — 40 h × $17.00 = $680.00; bill 40 h × $24.00 = $960.00 — and the result records an obligation (crossed on October 14 at 11:00, client data due before the next pay period: 56 Ill. Adm. Code 260.505(b)) with warnings that equal pay now applies and that 20 h were paid at the placement rate.",
+  {
+    ...input(["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"].map((d) => shift(d, 480, { payRateCents: 1700, billRateCents: 2400, clientName: "Client X" }))),
+    hoursWorked: Array.from({ length: 105 }, (_, i) => ({ workerId: "worker-1", clientId: "client-1", date: addDays("2025-11-02", i), minutes: 400 })),
+  },
+  { pay: [["REG", 2400, 68000]], bill: [["REG", 2400, 96000]], obligations: [["il_equal_pay_720h", "2026-10-14", 660, 1200]], warnings: ["equal_pay_obligation", "equal_pay_rate_missing"] },
 );
 
 // ---------- export goldens ----------

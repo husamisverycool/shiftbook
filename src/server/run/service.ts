@@ -11,8 +11,8 @@
  * the period is locked (period-lock.ts) — in this slice a period is paid once.
  */
 import { createHash } from "node:crypto";
-import { addDays, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { addDays, addMonths, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { renderExport } from "../../exports/registry";
 import { audit } from "../audit";
@@ -103,7 +103,8 @@ export async function setSkipped(tx: Tx, actor: Actor, payPeriodId: string, work
   await audit(tx, actor, [{ action: "update", entityType: "pay_run", entityId: run.id, before: { skipped: run.skipped.map((x) => x.workerId) }, after: { skipped: next.map((x) => x.workerId) }, reason }]);
 }
 
-async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules" | "premiumRules" | "guaranteeRules">> {
+async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jurisdictionRules" | "minimumWageRules" | "premiumRules" | "guaranteeRules" | "equalPayRules">> {
+  const ep = await tx.select().from(s.equalPayRules);
   const ot = await tx.select().from(s.overtimeRules);
   const jr = await tx.select().from(s.jurisdictionRules);
   const mw = await tx.select().from(s.minimumWageRules);
@@ -162,6 +163,19 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
         citation: r.citation,
       }),
     ),
+    equalPayRules: ep.map((r) => ({
+      jurisdiction: r.jurisdiction,
+      ruleCode: r.ruleCode,
+      countsFrom: r.countsFrom,
+      warnMinutes: r.warnMinutes,
+      windowMonths: r.windowMonths,
+      triggerMinutes: r.triggerMinutes,
+      longWindowMonths: r.longWindowMonths,
+      longTriggerMinutes: r.longTriggerMinutes,
+      effectiveFrom: r.effectiveFrom,
+      effectiveTo: r.effectiveTo,
+      citation: r.citation,
+    })),
   };
 }
 
@@ -194,6 +208,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId));
   const assignmentsById = new Map(assignmentRows.map((r) => [r.assignment.id, r]));
   const rateCards = await tx.select().from(s.rateCards);
+  const clientNames = new Map((await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients)).map((c) => [c.id, c.name]));
   const profiles = await tx.select().from(s.clientBillingProfiles);
 
   // What a person confirmed for days in this period: missed meal or rest periods, short days (the engine computes, a person confirms).
@@ -237,6 +252,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       ...base,
       assignmentId: a.assignment.id,
       clientId: a.jobOrder.clientId,
+      clientName: clientNames.get(a.jobOrder.clientId),
       jurisdiction: a.worksite.state,
       countyFips: a.worksite.countyFips ?? "",
       placeFips: a.worksite.placeFips ?? (a.worksite.outsideAnyPlace ? NO_PLACE : null),
@@ -368,7 +384,43 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     }
   }
 
-  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, ...(await ruleTables(tx)) };
+  const tables = await ruleTables(tx);
+  // Hours worked before this period that count toward a rolling equal-pay counter (Illinois § 42):
+  // covered work at a worksite in a state with a counter, on timesheets not set aside, as far back as
+  // the longest window; and the obligations already on file from other runs (a crossing never resets).
+  const counterStates = [...new Set((tables.equalPayRules ?? []).map((r) => r.jurisdiction))].sort(cmp);
+  const longest = Math.max(0, ...(tables.equalPayRules ?? []).map((r) => r.longWindowMonths));
+  const runWorkers = [...new Set(shifts.map((sh) => sh.workerId))].sort(cmp);
+  let hoursWorked: HoursWorked[] = [];
+  if (counterStates.length > 0 && runWorkers.length > 0) {
+    const rows = await tx
+      .select({ workerId: s.timeEntries.workerId, clientId: s.jobOrders.clientId, date: s.timeEntries.workDate, minutes: sql<number>`sum(${s.timeEntries.minutes})::int` })
+      .from(s.timeEntries)
+      .innerJoin(s.assignments, eq(s.assignments.id, s.timeEntries.assignmentId))
+      .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
+      .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId))
+      .leftJoin(s.sourceDocuments, eq(s.sourceDocuments.id, s.timeEntries.sourceDocumentId))
+      .where(
+        and(
+          inArray(s.timeEntries.workerId, runWorkers),
+          gte(s.timeEntries.workDate, addMonths(period.startsOn, -longest)),
+          lt(s.timeEntries.workDate, period.startsOn),
+          ne(s.timeEntries.status, "rejected"),
+          isNotNull(s.timeEntries.minutes),
+          inArray(s.worksites.state, counterStates),
+          eq(s.jobOrders.dayAndTemporaryLabor, true),
+          or(isNull(s.sourceDocuments.id), ne(s.sourceDocuments.status, "archived")),
+        ),
+      )
+      .groupBy(s.timeEntries.workerId, s.jobOrders.clientId, s.timeEntries.workDate);
+    hoursWorked = rows
+      .filter((r): r is { workerId: string; clientId: string; date: string; minutes: number } => r.workerId !== null && r.date !== null)
+      .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.date, b.date));
+  }
+  const obligationsOnFile = (await tx.select().from(s.obligations).where(or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id))))
+    .map((o) => ({ kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn }))
+    .sort((a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.kind, b.kind));
+  const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, hoursWorked, obligationsOnFile, ...tables };
   const result = computePay(input);
   blockers.push(...result.blockers);
 
@@ -410,6 +462,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         bill: result.billLines,
         blockers,
         warnings: result.warnings,
+        obligations: result.obligations,
         skipped: run.skipped.map((x) => x.workerId).sort(cmp),
         documents: documents.map((d) => [d.id, d.status]),
         text: textInputs,
@@ -460,6 +513,30 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         explain: l.explain,
       })),
     );
+  }
+  // The obligations this run's hours create (Illinois equal pay), kept in step with the run and audited.
+  const dueOn = addDays(period.endsOn, 1);
+  const mine = await tx.select().from(s.obligations).where(eq(s.obligations.payRunId, run.id));
+  const keyOf = (o: { kind: string; workerId: string; clientId: string; crossedOn: string }) => `${o.kind}|${o.workerId}|${o.clientId}|${o.crossedOn}`;
+  const wanted = new Set(result.obligations.map(keyOf));
+  const gone = mine.filter((m) => m.status === "open" && !wanted.has(keyOf(m)));
+  if (gone.length > 0) {
+    await tx.delete(s.obligations).where(inArray(s.obligations.id, gone.map((m) => m.id)));
+    await audit(tx, actor, gone.map((m) => ({ action: "delete" as const, entityType: "obligation", entityId: m.id, before: { kind: m.kind, workerId: m.workerId, clientId: m.clientId, crossedOn: m.crossedOn }, reason: "the run's hours changed" })));
+  }
+  for (const o of result.obligations) {
+    const evidence: s.ObligationEvidence = { ruleCode: o.ruleCode, citation: o.citation, crossedAtMinute: o.crossedAtMinute, windowStart: o.windowStart, thresholdMinutes: o.thresholdMinutes, minutesAfter: o.minutesAfter, entryIds: o.entryIds };
+    const existing = mine.find((m) => keyOf(m) === keyOf(o));
+    if (existing) {
+      await tx.update(s.obligations).set({ evidence, message: o.message, dueOn }).where(eq(s.obligations.id, existing.id));
+      continue;
+    }
+    const [row] = await tx
+      .insert(s.obligations)
+      .values({ agencyId: actor.agencyId, kind: o.kind, jurisdiction: o.jurisdiction, workerId: o.workerId, clientId: o.clientId, payRunId: run.id, crossedOn: o.crossedOn, dueOn, evidence, message: o.message })
+      .onConflictDoNothing()
+      .returning();
+    if (row) await audit(tx, actor, [{ action: "create", entityType: "obligation", entityId: row.id, after: { kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn, dueOn } }]);
   }
   const snapshot = { rulesVersion: result.rulesVersion, fingerprint, input, entryIds: ordered.map((e) => e.id), skipped: run.skipped, blockers, warnings: result.warnings };
   await tx

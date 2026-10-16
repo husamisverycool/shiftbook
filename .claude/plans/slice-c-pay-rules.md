@@ -87,6 +87,10 @@ files unchanged). Screens to confirm premiums, enter bonuses and holiday policy 
   with its source (paying 40¢ more is lawful; paying less is not).
 - C3 Illinois equal pay crossed with no equal-pay rate on file: a warning that week, then that
   worker's weeks at that client are held from the next week until a rate is entered.
+  Revised 2026-10-16 while building: there is no screen to enter an equal-pay rate until slice (j),
+  so a hold now would stop payroll with no way forward (a dead end). Until then: an obligation due
+  before the next pay period, and a warning every week with hours after the crossing; the hold
+  arrives with that screen.
 - C4 Holiday premium and overtime in the same hours: both paid in full (no credit of one against
   the other).
 - C5 Illinois 4-hour and Massachusetts reporting pay: the shortfall is paid in full, without
@@ -115,5 +119,12 @@ weeks (e); other states; alternative workweek schedules; split-shift premiums (f
   - The flat-sum divisor is a method (hours not paid at a premium), not a number, so it has no
     data row; the multiples come from the overtime rows.
   - Integration tests can run per checkout: `SHIFTBOOK_TEST_DB=shiftbook_test_<x>`.
-- Next: step 5 (Illinois § 42 counter), step 6 (billing per client), step 7 (lines and exports),
-  the random-week property test, the second-opinion review, Playwright.
+- Step 5 (Illinois § 42 counter): minutes worked per worker and client on covered Illinois work
+  from April 1, 2024, over rolling 12 and 48 months (earlier periods' hours read from the stored
+  timesheets, set-aside ones excluded); a heads-up past 600 hours; past 720 hours (and 4,160) an
+  obligation with its crossing minute, window and the hours after it, due before the next pay
+  period, audited, kept in step when the run's hours change and never recorded twice. Golden G3.
+  Known limit: the counter knows only hours kept in Shiftbook; hours an agency worked at a client
+  before it started using Shiftbook need an opening balance (with the obligations screen, slice j).
+- Next: step 6 (billing per client), step 7 (lines and exports), the random-week property test,
+  the second-opinion reviews, Playwright.

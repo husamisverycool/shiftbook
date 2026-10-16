@@ -30,9 +30,10 @@ import { MA_REPORTING_PAY, maReportingPay } from "./rules/ma-reporting-pay";
 import { guaranteeRuleFor, PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
 import { HOLIDAY_CITATION, HOLIDAY_NOT_WORKED, HOLIDAY_WORKED, holidayPolicyFor, premiumCountsInRegularRate } from "./rules/holiday-pay";
 import { addWorth, alvaradoWorth, BONUS, BONUS_CITATION, CA_FLAT_SUM_BONUS, CA_FLAT_SUM_CITATION } from "./rules/bonus";
+import { equalPayCounter } from "./rules/il-equal-pay";
 import type { Bonus, Confirmation, ConfirmationKind, EarningType, Fraction, HolidayPolicy, Issue, JurisdictionRule, Line, PayInput, PayResult, PremiumRule, Shift } from "./types";
 
-export const RULES_VERSION = "2026.10-c7";
+export const RULES_VERSION = "2026.10-c8";
 
 /** Rule codes this engine version implements. Any other applicable rule code blocks the run. */
 export const IMPLEMENTED_RULE_CODES = new Set<string>([WEEKLY_OVERTIME, MINIMUM_WAGE, ...CALIFORNIA_RULE_CODES]);
@@ -188,7 +189,7 @@ const noteWorking = (w: BillRateWorking, explain: string | undefined) => {
 const billRateNote = (w: BillRateWorking) => (w.explains.length === 0 ? "" : ` (${w.typed ? "some shifts: " : ""}${w.explains.join("; ")})`);
 
 function emptyResult(blockers: Issue[]): PayResult {
-  return { rulesVersion: RULES_VERSION, payLines: [], billLines: [], blockers, warnings: [] };
+  return { rulesVersion: RULES_VERSION, payLines: [], billLines: [], blockers, warnings: [], obligations: [] };
 }
 
 export function computePay(input: PayInput): PayResult {
@@ -291,6 +292,19 @@ export function computePay(input: PayInput): PayResult {
       continue;
     }
     confirmationsOf.set(key, [...(confirmationsOf.get(key) ?? []), c]);
+  }
+
+  // Earlier hours and obligations on file feed the Illinois equal-pay counter: one that cannot be
+  // read holds its worker (a wrong count could hide a crossing).
+  for (const h of [...(input.hoursWorked ?? [])].sort((a, b) => cmp(String(a.workerId), String(b.workerId)) || cmp(String(a.date), String(b.date)))) {
+    if (typeof h.clientId !== "string" || !isIsoDate(h.date) || !Number.isSafeInteger(h.minutes) || h.minutes < 0) {
+      holdWorker(h.workerId, `earlier hours on file for ${String(h.date)} cannot be read (${String(h.minutes)} minutes), so the Illinois equal-pay counter cannot be checked`);
+    }
+  }
+  for (const o of [...(input.obligationsOnFile ?? [])].sort((a, b) => cmp(String(a.workerId), String(b.workerId)))) {
+    if ((o.kind !== "il_equal_pay_720h" && o.kind !== "il_equal_pay_4160h") || !isIsoDate(o.crossedOn) || typeof o.clientId !== "string") {
+      holdWorker(o.workerId, `an equal-pay obligation on file cannot be read ("${String(o.kind)}", ${String(o.crossedOn)})`);
+    }
   }
 
   // 1. classify minutes: group by worker and fixed workweek; remember invalid shifts per week.
@@ -962,6 +976,12 @@ export function computePay(input: PayInput): PayResult {
     warnings.push(...weekWarnings);
   }
 
+  // The Illinois equal-pay counter runs over every usable shift of every worker not held: the hours
+  // were worked whether or not something else holds their week.
+  const counted = shiftsInOrder.filter((s) => !heldWorkers.has(s.workerId) && validShift(s) === null);
+  const equalPay = equalPayCounter({ rules: rules.equalPayRules, shifts: counted, hoursWorked: input.hoursWorked ?? [], onFile: input.obligationsOnFile ?? [], workweekStartsOn: input.workweekStartsOn });
+  warnings.push(...equalPay.warnings);
+
   const order = (a: Line, b: Line) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
   return {
     rulesVersion: RULES_VERSION,
@@ -969,6 +989,7 @@ export function computePay(input: PayInput): PayResult {
     billLines: sortLines(billLines, order),
     blockers,
     warnings,
+    obligations: equalPay.obligations,
   };
 }
 

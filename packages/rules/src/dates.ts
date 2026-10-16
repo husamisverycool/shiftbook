@@ -58,6 +58,16 @@ export function addDays(date: IsoDate, n: number): IsoDate {
   return fromDayNumber(toDayNumber(date) + n);
 }
 
+/** The same day n calendar months later (n < 0: earlier); a day past that month's end becomes its last day. */
+export function addMonths(date: IsoDate, n: number): IsoDate {
+  const [y, m, d] = civilFromDays(toDayNumber(date));
+  const index = y * 12 + (m - 1) + n;
+  const year = floorDiv(index, 12);
+  const month = mod(index, 12) + 1;
+  const last = civilFromDays(month === 12 ? daysFromCivil(year + 1, 1, 1) - 1 : daysFromCivil(year, month + 1, 1) - 1)[2];
+  return fromDayNumber(daysFromCivil(year, month, Math.min(d, last)));
+}
+
 /** First day of the workweek (fixed, recurring 7-day period, 29 C.F.R. § 778.105) containing `date`. */
 export function workweekStart(date: IsoDate, startsOn: Weekday): IsoDate {
   const days = toDayNumber(date);

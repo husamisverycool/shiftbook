@@ -65,6 +65,8 @@ export interface Shift {
   reportedOnly?: boolean;
   /** Illinois day and temporary labor (820 ILCS 175): false for clerical or professional work. Default true. */
   dayAndTemporaryLabor?: boolean;
+  /** The client's name, for messages a person reads (the id is used when it is missing). */
+  clientName?: string;
 }
 
 export interface OvertimeRule {
@@ -195,6 +197,67 @@ export interface Bonus {
   kind: "nondiscretionary" | "flat_sum";
 }
 
+/**
+ * Illinois equal pay (820 ILCS 175/42): the counter's numbers as a dated rule row. Minutes worked by
+ * one laborer at one third-party client on covered work, from `countsFrom` on, in rolling windows.
+ */
+export interface EqualPayRule {
+  jurisdiction: string;
+  ruleCode: string;
+  /** Work before this date does not count. */
+  countsFrom: IsoDate;
+  /** A heads-up before the trigger (600 hours: Shiftbook's choice, not law). */
+  warnMinutes: number;
+  windowMonths: number;
+  /** "More than 720 hours within a 12-month period". */
+  triggerMinutes: number;
+  longWindowMonths: number;
+  /** "More than 4,160 hours within a 48-month period". */
+  longTriggerMinutes: number;
+  effectiveFrom: IsoDate;
+  effectiveTo: IsoDate | null;
+  citation: string;
+}
+
+/** Covered minutes a worker worked at a client on one day before this run (rolling counters need them). */
+export interface HoursWorked {
+  workerId: string;
+  clientId: string;
+  date: IsoDate;
+  minutes: number;
+}
+
+export type ObligationKind = "il_equal_pay_720h" | "il_equal_pay_4160h";
+
+/** An obligation already on file from an earlier run: once a counter has crossed, it does not reset. */
+export interface ObligationOnFile {
+  kind: ObligationKind;
+  workerId: string;
+  clientId: string;
+  crossedOn: IsoDate;
+}
+
+/** Something the agency must now do because of the hours worked (SPEC §4 Obligation). */
+export interface Obligation {
+  kind: ObligationKind;
+  jurisdiction: string;
+  ruleCode: string;
+  workerId: string;
+  workerName: string;
+  clientId: string;
+  /** The day of the first minute over the threshold; its minute of the day when the shift's start is known. */
+  crossedOn: IsoDate;
+  crossedAtMinute: number | null;
+  /** The first day of the rolling window on that day. */
+  windowStart: IsoDate;
+  thresholdMinutes: number;
+  /** Minutes worked after the crossing in this run, and their time entries. */
+  minutesAfter: number;
+  entryIds: string[];
+  citation: string;
+  message: string;
+}
+
 export interface PayInput {
   workweekStartsOn: Weekday;
   shifts: Shift[];
@@ -206,6 +269,10 @@ export interface PayInput {
   confirmations?: Confirmation[];
   holidayPolicies?: HolidayPolicy[];
   bonuses?: Bonus[];
+  equalPayRules?: EqualPayRule[];
+  /** Covered minutes worked before this run, per worker, client and day. */
+  hoursWorked?: HoursWorked[];
+  obligationsOnFile?: ObligationOnFile[];
 }
 
 export interface Line {
@@ -235,13 +302,17 @@ export type IssueCode =
   | "zero_or_negative_pay"
   // warnings (do not block):
   | "allocation_order_assumed"
-  | "premium_not_applicable";
+  | "premium_not_applicable"
+  | "approaching_equal_pay_hours"
+  | "equal_pay_obligation"
+  | "equal_pay_rate_missing";
 
 export interface Issue {
   code: IssueCode;
   workerId?: string;
   workerName?: string;
   workweekStart?: IsoDate;
+  clientId?: string;
   jurisdiction?: string;
   ruleCode?: string;
   date?: IsoDate;
@@ -255,4 +326,5 @@ export interface PayResult {
   billLines: Line[];
   blockers: Issue[];
   warnings: Issue[];
+  obligations: Obligation[];
 }

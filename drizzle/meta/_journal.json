@@ -134,6 +134,13 @@
       "when": 1792091600690,
       "tag": "0018_holiday_policies_and_bonuses",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792091600691,
+      "tag": "0019_illinois_equal_pay_counter",
+      "breakpoints": true
     }
   ]
 }

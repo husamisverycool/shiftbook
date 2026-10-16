@@ -5,7 +5,7 @@
  * so tests and goldens that use this module can never drift from what the app computes with.
  * Sources: docs/research/minimum-wage-2026.md and the citations on each row.
  */
-import type { GuaranteeRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PremiumRule } from "@shiftbook/rules";
+import type { EqualPayRule, GuaranteeRule, JurisdictionRule, MinimumWageRule, OvertimeRule, PremiumRule } from "@shiftbook/rules";
 
 const since = "2000-01-01";
 
@@ -140,3 +140,21 @@ export const REFERENCE_GUARANTEE_RULES: GuaranteeRule[] = [
   guarantee({ jurisdiction: "IL", ruleCode: "il_day_labor_minimum", dueMinutes: 240, reassignedDueMinutes: 120, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: null, basis: "pay_rate", citation: "Day and Temporary Labor Services Act, 820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b) — sent and not utilized: at least 4 hours at the agreed rate; placed elsewhere the same shift: at least 2 hours" }),
 ];
 
+
+/** The Illinois equal-pay counter (drizzle/0019). */
+export const REFERENCE_EQUAL_PAY_RULES: EqualPayRule[] = [
+  {
+    jurisdiction: "IL",
+    ruleCode: "il_dtlsa_equal_pay",
+    countsFrom: "2024-04-01",
+    warnMinutes: 36_000,
+    windowMonths: 12,
+    triggerMinutes: 43_200,
+    longWindowMonths: 48,
+    longTriggerMinutes: 249_600,
+    effectiveFrom: "2024-08-09",
+    effectiveTo: null,
+    citation:
+      "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Shiftbook's (SPEC §9), not law.",
+  },
+];

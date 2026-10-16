@@ -36,3 +36,13 @@ export function formatMoney(cents: Fraction): string {
 export function formatMultiplier(m: Fraction): string {
   return exactDecimal(m.num, m.den);
 }
+
+/** 43200 → "720 hours"; 249600 → "4,160 hours"; a part hour as a duration. */
+export function formatHours(minutes: number): string {
+  return mod(minutes, 60) === 0 ? `${withThousands(String(floorDiv(minutes, 60)))} hours` : formatDuration(minutes);
+}
+
+/** 660 → "11:00" (minutes after midnight). */
+export function formatClock(minute: number): string {
+  return `${String(floorDiv(minute, 60)).padStart(2, "0")}:${String(mod(minute, 60)).padStart(2, "0")}`;
+}

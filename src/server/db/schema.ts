@@ -19,6 +19,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -726,6 +727,58 @@ export const bonuses = pgTable(
   (t) => [index("bonuses_week").on(t.agencyId, t.workerId, t.workweekStart)],
 );
 
+/** The Illinois equal-pay counter's numbers as a dated rule row (drizzle/0019). */
+export const equalPayRules = pgTable("equal_pay_rules", {
+  id: id(),
+  jurisdiction: text("jurisdiction").notNull(),
+  ruleCode: text("rule_code").notNull(),
+  countsFrom: isoDate("counts_from").notNull(),
+  warnMinutes: integer("warn_minutes").notNull(),
+  windowMonths: integer("window_months").notNull(),
+  triggerMinutes: integer("trigger_minutes").notNull(),
+  longWindowMonths: integer("long_window_months").notNull(),
+  longTriggerMinutes: integer("long_trigger_minutes").notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+  citation: text("citation").notNull(),
+});
+
+export const obligationKind = pgEnum("obligation_kind", ["il_equal_pay_720h", "il_equal_pay_4160h"]);
+
+/** What the evidence of an obligation holds (the engine's Obligation, less what has its own column). */
+export interface ObligationEvidence {
+  ruleCode: string;
+  citation: string;
+  crossedAtMinute: number | null;
+  windowStart: string;
+  thresholdMinutes: number;
+  minutesAfter: number;
+  entryIds: string[];
+}
+
+/** Something the agency must do because of the hours worked (SPEC §4; drizzle/0019): one per worker, client and kind. */
+export const obligations = pgTable(
+  "obligations",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    kind: obligationKind("kind").notNull(),
+    jurisdiction: text("jurisdiction").notNull(),
+    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    clientId: uuid("client_id").notNull().references(() => clients.id),
+    payRunId: uuid("pay_run_id").references(() => payRuns.id),
+    crossedOn: isoDate("crossed_on").notNull(),
+    dueOn: isoDate("due_on").notNull(),
+    status: text("status").$type<"open" | "done">().notNull().default("open"),
+    evidence: jsonb("evidence").$type<ObligationEvidence>().notNull(),
+    message: text("message").notNull(),
+    createdAt: createdAt(),
+    doneAt: timestamp("done_at", { withTimezone: true }),
+    doneBy: uuid("done_by"),
+  },
+  (t) => [index("obligations_due").on(t.agencyId, t.status, t.dueOn), unique("obligations_once").on(t.agencyId, t.kind, t.workerId, t.clientId)],
+);
+
 export const TENANT_TABLES = [
   "branches",
   "users",
@@ -744,6 +797,7 @@ export const TENANT_TABLES = [
   "premium_confirmations",
   "holiday_policies",
   "bonuses",
+  "obligations",
   "source_documents",
   "document_pages",
   "extraction_passes",
