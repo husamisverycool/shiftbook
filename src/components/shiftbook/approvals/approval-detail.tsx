@@ -9,7 +9,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { sendReminderAction, settleDisputeAction, withdrawApprovalAction, type ApprovalActionResult } from "@/app/[locale]/(app)/approvals/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -23,10 +22,14 @@ import { Crumbs, Page, PageHeader, Section } from "../page";
 import { ApprovalStateBadge } from "./approvals-view";
 import { HoursTable } from "./hours-table";
 import { SendDialog, type SendTarget } from "./send-dialog";
+import { Status, type Tone } from "../status";
 import { useDateTime } from "../agency-zone";
 
 type Email = ApprovalDetail["emails"][number];
 type Dispute = ApprovalDetail["disputes"][number];
+
+/** One status language (_components/status.md): an email going out waits, sent is done, one not sent failed. */
+const EMAIL_TONE: Record<Email["status"], Tone> = { sending: "info", sent: "success", failed: "critical" };
 
 /** Text with its web links clickable (the demo copy's approval link). */
 export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; demo: boolean }) {
@@ -93,7 +96,9 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
           <span>
             {td(`emailKind.${e.kind}`)} → {e.toEmail}
           </span>
-          <Badge variant={e.status === "failed" ? "destructive" : "outline"}>{td(`emailStatus.${e.status}`)}</Badge>
+          <Status tone={EMAIL_TONE[e.status]} data-testid="email-status">
+            {td(`emailStatus.${e.status}`)}
+          </Status>
           <Button size="sm" variant="ghost" onClick={() => setEmail(e)} data-testid="view-email">
             {td("viewEmail")}
           </Button>
