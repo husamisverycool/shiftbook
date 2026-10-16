@@ -22,9 +22,9 @@ export function useReaderFormat(): ExplainFormat {
   }, [locale, units]);
 }
 
-export function useSay(): (e: Explain) => string {
+export function useSay(): (e: Explain, opts?: { withoutCitation?: boolean }) => string {
   const t = useTranslations("compliance.explain");
   const cite = useCite();
   const format = useReaderFormat();
-  return (e) => renderExplain(e, (key, values) => t(key as "reverify", values), format, cite);
+  return (e, opts) => renderExplain(e, (key, values) => t(key as "reverify", values), format, cite, opts);
 }

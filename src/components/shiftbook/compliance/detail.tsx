@@ -23,6 +23,7 @@ import { longDate, money } from "../format";
 import { Crumbs, Facts, Page, PageHeader, PageTabs, RecordLayout, Section } from "../page";
 import { useCite, useSay } from "./explain";
 import { dueIn, OwnerPicker } from "./list";
+import { Status } from "../status";
 import { StatusBadge } from "./status-badge";
 import { useDateTime } from "../agency-zone";
 
@@ -64,8 +65,16 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
       <PageHeader
         context={<Crumbs label={tc("breadcrumb")} items={[{ label: td("back"), href: "/compliance", testId: "back-to-compliance" }]} />}
         title={t(`kinds.${i.kind}` as "kinds.ma_job_order")}
-        status={<StatusBadge status={i.status} size="lg" />}
-        description={`${i.subject} · ${t(`states.${i.jurisdiction}` as "states.IL")}`}
+        // Badges for the status and the state (compliance/[id].md header).
+        status={
+          <>
+            <StatusBadge status={i.status} size="lg" />
+            <Status tone="neutral" size="lg" data-testid="obligation-state">
+              {t(`states.${i.jurisdiction}` as "states.IL")}
+            </Status>
+          </>
+        }
+        description={i.subject}
         actions={
           <>
             {i.mayAct && open && (
@@ -183,7 +192,8 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
           )}
           <dt className="text-muted-foreground">{td("workedOut")}</dt>
           <dd className="text-muted-foreground" data-testid="obligation-message">
-            {d.explain ? say(d.explain) : d.message}
+            {/* The citation is under What the law asks already; here the facts alone. */}
+            {d.explain ? say(d.explain, { withoutCitation: d.rule !== null && d.explain.citation === d.rule.citation }) : d.message}
           </dd>
         </dl>
         {i.kind === "aca_offer" && (
@@ -254,7 +264,8 @@ function NoticeForm({ d }: { d: ObligationDetail }) {
       <Label htmlFor={`notice-${key}`} className="text-xs text-muted-foreground">
         {label}
       </Label>
-      <Input id={`notice-${key}`} value={v[key]} maxLength={300} disabled={!can} onChange={(e) => setV({ ...v, [key]: e.target.value })} data-testid={`notice-${key}`} />
+      {/* Up to 300 characters: the text wraps and the field grows, so none of it is cut off. */}
+      <Textarea id={`notice-${key}`} rows={1} className="min-h-9" value={v[key]} maxLength={300} disabled={!can} onChange={(e) => setV({ ...v, [key]: e.target.value })} data-testid={`notice-${key}`} />
     </div>
   );
   return (

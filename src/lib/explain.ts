@@ -84,10 +84,13 @@ function valueText(v: ExplainValue, f: ExplainFormat): string {
 
 /**
  * The line in a language: `t` reads `compliance.explain.<key>` in it; `cite`, when given, says a rule's
- * citation in it (the stored text otherwise).
+ * citation in it (the stored text otherwise). `withoutCitation`: the facts alone, as one sentence, for a
+ * page that gives the rule's citation beside them (compliance/[id].md: About lists what the duty was
+ * worked out from; What the law asks gives the citation).
  */
-export function renderExplain(e: Explain, t: (key: string, values: Record<string, string>) => string, f: ExplainFormat, cite?: (code: string, stored: string) => string): string {
+export function renderExplain(e: Explain, t: (key: string, values: Record<string, string>) => string, f: ExplainFormat, cite?: (code: string, stored: string) => string, opts: { withoutCitation?: boolean } = {}): string {
   const said = e.parts.map((p) => t(p.key, Object.fromEntries(Object.entries(p.values ?? {}).map(([k, v]) => [k, valueText(v, f)])))).join("");
   if (!e.citation) return said;
+  if (opts.withoutCitation) return `${said}.`;
   return `${said} (${cite && e.citationCode ? cite(e.citationCode, e.citation) : e.citation}).`;
 }
