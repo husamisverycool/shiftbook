@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { SignInView, type SignInNotice } from "@/components/shiftbook/auth/sign-in";
+import { signInMethods } from "@/server/auth/methods";
 import { localePath, safeNext } from "@/server/auth/next-path";
 import { nextStep } from "@/server/auth/service";
 import { DEMO_PEOPLE } from "@/server/demo/people";
@@ -29,5 +30,5 @@ export default async function SignInPage(props: { params: Promise<{ locale: stri
   }
   const notice = NOTICES.find((n) => n === one(query.notice)) ?? null;
   const email = (one(query.email) ?? "").slice(0, 254);
-  return <SignInView notice={notice} next={next} email={email} demoPeople={isDemo() ? DEMO_PEOPLE.map(({ id, name, role }) => ({ id, name, role })) : []} />;
+  return <SignInView notice={notice} next={next} email={email} demoPeople={isDemo() ? DEMO_PEOPLE.map(({ id, name, role }) => ({ id, name, role })) : []} methods={signInMethods()} />;
 }

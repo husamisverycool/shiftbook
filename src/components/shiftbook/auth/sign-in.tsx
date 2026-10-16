@@ -4,7 +4,8 @@
 // in as one filled full-width button and the others outlined under it (in the demo, the demo people);
 // an "or" rule between ways in (GitHub, Stripe, Notion); then GitHub's form (email, password with
 // "Forgot password?", Sign in; the code comes on its own page).
-import { useTranslations } from "next-intl";
+import { Building2Icon, KeyRoundIcon, MailIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { demoSignInAction, signInAction } from "@/app/[locale]/(auth)/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,12 +14,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import type { SignInMethods } from "@/server/auth/methods";
 import type { Role } from "@/server/permissions";
 import { initialsOf, withoutNote } from "../person";
+import { PasskeySignIn } from "./passkey";
+import { GoogleMark, MicrosoftMark } from "./provider-marks";
 
 export type SignInNotice = "signed_out" | "expired" | "password_changed" | "link_expired";
 
-export function SignInView({ notice, next, email: initialEmail, demoPeople }: { notice: SignInNotice | null; next: string | null; email: string; demoPeople: { id: string; name: string; role: Role }[] }) {
+/** Notion's sign-in tiles: the mark over the name, in a two-column grid. */
+const TILE = "flex h-16 flex-col items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50";
+
+export function SignInView({ notice, next, email: initialEmail, demoPeople, methods }: { notice: SignInNotice | null; next: string | null; email: string; demoPeople: { id: string; name: string; role: Role }[]; methods: SignInMethods }) {
   const t = useTranslations("signIn");
   const tr = useTranslations("roles");
   const id = useId();
@@ -29,6 +36,9 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople }: { 
   const [demoPending, startDemo] = useTransition();
 
   const demo = demoPeople.length > 0;
+  const locale = useLocale();
+  const others = [methods.google, methods.microsoft, methods.passkey, methods.sso].filter(Boolean).length;
+  const providerHref = (provider: "google" | "microsoft") => `/api/auth/oidc/${provider}/start?${new URLSearchParams({ locale, ...(next ? { next } : {}) }).toString()}`;
   return (
     <>
       <div className="flex flex-col gap-2 text-center">
@@ -123,6 +133,49 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople }: { 
           {pending ? t("submitting") : t("submit")}
         </Button>
       </form>
+      {methods.emailCode && (
+        <Link href={{ pathname: "/sign-in/email", query: next ? { next } : {} }} className="-mt-2 inline-flex items-center justify-center gap-1.5 self-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline" data-testid="sign-in-email-code">
+          <MailIcon className="size-4" aria-hidden />
+          {t("emailCode")}
+        </Link>
+      )}
+      {others > 0 && (
+        <section aria-labelledby={`${id}-others`} className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" aria-hidden />
+            <h2 id={`${id}-others`} className="font-normal">
+              {t("orContinueWith")}
+            </h2>
+            <span className="h-px flex-1 bg-border" aria-hidden />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {methods.google && (
+              <a href={providerHref("google")} className={TILE} data-testid="sign-in-google">
+                <GoogleMark className="size-5" />
+                {t("providers.google")}
+              </a>
+            )}
+            {methods.microsoft && (
+              <a href={providerHref("microsoft")} className={TILE} data-testid="sign-in-microsoft">
+                <MicrosoftMark className="size-5" />
+                {t("providers.microsoft")}
+              </a>
+            )}
+            {methods.passkey && (
+              <PasskeySignIn next={next} className={TILE}>
+                <KeyRoundIcon className="size-5" aria-hidden />
+                {t("providers.passkey")}
+              </PasskeySignIn>
+            )}
+            {methods.sso && (
+              <Link href={{ pathname: "/sign-in/sso", query: next ? { next } : {} }} className={TILE} data-testid="sign-in-sso">
+                <Building2Icon className="size-5" aria-hidden />
+                {t("providers.sso")}
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
     </>
   );
 }

@@ -191,6 +191,8 @@ export function AccountView(props: AccountProps) {
           </div>
         )}
       </Section>
+      {/* Sign-in methods: passkeys (decision 0032) go here. */}
+      {/* Sign-in methods: Google and Microsoft (decision 0033) go here. */}
 
       <div className="border-t pt-6">
         <Button variant="outline" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="account-sign-out">

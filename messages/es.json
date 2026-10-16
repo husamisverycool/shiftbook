@@ -3219,7 +3219,15 @@
     "continueAs": "Continuar como {name}",
     "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento.",
     "demoSubtitle": "Explore una semana en una agencia de personal inventada. Elija quién es usted.",
-    "or": "o"
+    "or": "o",
+    "emailCode": "Enviarme un código de acceso por correo",
+    "orContinueWith": "o continúe con",
+    "providers": {
+      "google": "Google",
+      "microsoft": "Microsoft",
+      "passkey": "Llave de acceso",
+      "sso": "SSO"
+    }
   },
   "signInCode": {
     "title": "Escriba su código",

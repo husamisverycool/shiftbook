@@ -3219,7 +3219,15 @@
     "continueAs": "Continue as {name}",
     "busy": "Too many people are signing in right now. Try again in a moment.",
     "demoSubtitle": "Explore a week at a made-up staffing agency. Choose who you are.",
-    "or": "or"
+    "or": "or",
+    "emailCode": "Email me a sign-in code",
+    "orContinueWith": "or continue with",
+    "providers": {
+      "google": "Google",
+      "microsoft": "Microsoft",
+      "passkey": "Passkey",
+      "sso": "SSO"
+    }
   },
   "signInCode": {
     "title": "Enter your code",
