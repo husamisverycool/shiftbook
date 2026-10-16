@@ -1,4 +1,5 @@
 import type { EqualPayRate } from "./rules/il-equal-pay-rate";
+import type { Say } from "./say";
 
 /** ISO calendar date, "YYYY-MM-DD". */
 export type IsoDate = string;
@@ -71,8 +72,12 @@ export interface Shift {
   billRateCents: number;
   /** How the bill rate came about when the rate card worked it out (a markup rounded to the cent), for the explanation. */
   billRateExplain?: string;
+  /** The same working as message keys (decision 0030); used only while it says exactly billRateExplain. */
+  billRateSay?: Say;
   /** Why the pay rate is above the rate card's (the Illinois equal-pay rate), for the explanation; set by the engine. */
   payRateExplain?: string;
+  /** The same reason as message keys; set by the engine with payRateExplain. */
+  payRateSay?: Say;
   billOtMultiplier: Fraction;
   /** The rate card's double-time bill multiplier (California double time). */
   billDtMultiplier: Fraction;
@@ -295,6 +300,8 @@ export interface Obligation {
   entryIds: string[];
   citation: string;
   message: string;
+  /** The message as keys for the reader's language (decision 0030); `message` is english(say). */
+  say?: Say;
 }
 
 export interface PayInput {
@@ -330,6 +337,8 @@ export interface Line {
   ruleId: string;
   /** Plain-English trace a payroll clerk can check: inputs, rule, arithmetic, rounding. */
   explain: string;
+  /** The explanation as keys for the reader's language (decision 0030); `explain` is english(say). */
+  say?: Say;
   entryIds: string[];
 }
 
@@ -364,6 +373,8 @@ export interface Issue {
   date?: IsoDate;
   entryIds?: string[];
   message: string;
+  /** The message as keys for the reader's language (decision 0030); `message` is english(say). */
+  say?: Say;
 }
 
 export interface PayResult {

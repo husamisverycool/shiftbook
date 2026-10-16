@@ -7,6 +7,7 @@
  *             A missing place code is unknown, never "outside": a city ordinance could be missed.
  * Source: U.S. Census Bureau, ANSI/FIPS codes for states, counties and places.
  */
+import { part, type SayPart } from "./say";
 
 /** Two-letter USPS state code → 2-digit FIPS state code (50 states and DC). */
 export const STATE_FIPS: Readonly<Record<string, string>> = {
@@ -24,33 +25,29 @@ export const NO_PLACE = "none";
 const COUNTY = /^\d{5}$/;
 const PLACE = /^\d{7}$/;
 
-/** Why a worksite's state, county and place codes cannot be used, or null when they can. */
-export function placeProblem(state: string, countyFips: unknown, placeFips: unknown): string | null {
+/** Why a worksite's state, county and place codes cannot be used (as message keys), or null when they can. */
+export function placeProblem(state: string, countyFips: unknown, placeFips: unknown): SayPart | null {
   const prefix = Object.hasOwn(STATE_FIPS, state) ? STATE_FIPS[state] : undefined;
-  if (prefix === undefined) return `worksite state "${state}" is not a US state or DC`;
-  if (typeof countyFips !== "string" || !COUNTY.test(countyFips)) {
-    return "the worksite's county code (5-digit FIPS) is needed to check local ordinances";
-  }
-  if (!countyFips.startsWith(prefix)) return `county code ${countyFips} is not a county in ${state}`;
+  if (prefix === undefined) return part("problemWorksiteState", { state: String(state) });
+  if (typeof countyFips !== "string" || !COUNTY.test(countyFips)) return part("problemCountyNeeded");
+  if (!countyFips.startsWith(prefix)) return part("problemCountyNotInState", { code: countyFips, state });
   if (placeFips === NO_PLACE) return null;
-  if (typeof placeFips !== "string" || !PLACE.test(placeFips)) {
-    return "the worksite's city or town code (7-digit FIPS) is needed to check city ordinances, or it must be marked as outside any city or town";
-  }
-  if (!placeFips.startsWith(prefix)) return `place code ${placeFips} is not a place in ${state}`;
+  if (typeof placeFips !== "string" || !PLACE.test(placeFips)) return part("problemPlaceNeeded");
+  if (!placeFips.startsWith(prefix)) return part("problemPlaceNotInState", { code: placeFips, state });
   return null;
 }
 
-/** Why a rule row's local scope is malformed, or null when it is fine (both null = statewide). */
-export function scopeProblem(jurisdiction: string, countyFips: unknown, placeFips: unknown): string | null {
+/** Why a rule row's local scope is malformed (as message keys), or null when it is fine (both null = statewide). */
+export function scopeProblem(jurisdiction: string, countyFips: unknown, placeFips: unknown): SayPart | null {
   const county = countyFips ?? null;
   const place = placeFips ?? null;
   if (county === null && place === null) return null;
-  if (jurisdiction === "US") return "a federal row cannot have a local scope";
-  if (county !== null && place !== null) return "a local row is scoped to a county or a place, not both";
+  if (jurisdiction === "US") return part("problemFederalScope");
+  if (county !== null && place !== null) return part("problemCountyAndPlace");
   const prefix = Object.hasOwn(STATE_FIPS, jurisdiction) ? STATE_FIPS[jurisdiction] : undefined;
-  if (prefix === undefined) return `"${jurisdiction}" is not a US state or DC`;
-  if (county !== null && (typeof county !== "string" || !COUNTY.test(county) || !county.startsWith(prefix))) return `county code "${String(county)}" is not a 5-digit code in ${jurisdiction}`;
-  if (place !== null && (typeof place !== "string" || !PLACE.test(place) || !place.startsWith(prefix))) return `place code "${String(place)}" is not a 7-digit code in ${jurisdiction}`;
+  if (prefix === undefined) return part("problemNotAState", { jurisdiction: String(jurisdiction) });
+  if (county !== null && (typeof county !== "string" || !COUNTY.test(county) || !county.startsWith(prefix))) return part("problemScopeCounty", { code: String(county), jurisdiction });
+  if (place !== null && (typeof place !== "string" || !PLACE.test(place) || !place.startsWith(prefix))) return part("problemScopePlace", { code: String(place), jurisdiction });
   return null;
 }
 

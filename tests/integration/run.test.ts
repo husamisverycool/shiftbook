@@ -1,4 +1,4 @@
-import { RULES_VERSION } from "@shiftbook/rules";
+import { english, RULES_VERSION } from "@shiftbook/rules";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -71,6 +71,11 @@ describe("computing a pay run from the period's time entries", () => {
     const pedro = await lines(run.runId, "pedro-alcantara");
     expect(brief(pedro.pay)).toEqual([["REG", 2400, 70_000], ["OT", 120, 5250]]);
     expect(pedro.pay.every((l) => l.explain.length > 0 && l.timeEntryIds.length > 0)).toBe(true);
+    // Each line keeps its explanation as message keys beside the English (decision 0030), saying exactly it.
+    const stored = await inAgency(async (tx) => [...(await tx.select().from(payLines).where(eq(payLines.payRunId, run.runId))), ...(await tx.select().from(billLines).where(eq(billLines.payRunId, run.runId)))]);
+    expect(stored.length).toBeGreaterThan(0);
+    for (const l of stored) expect(english(l.say!)).toBe(l.explain);
+    expect(daniel.pay[1]!.say![0]).toMatchObject({ key: "arithmeticRounded", values: { exact: "1688.125", amount: "$16.88" } });
   });
 
   it("keeps one working run per period: computing again replaces its lines", async () => {

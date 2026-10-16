@@ -3,7 +3,7 @@
  * hours paid, billed, pay, estimated burden and gross margin = billed − pay − burden. Margin % is of
  * what was billed, in tenths of a percent, rounded half up once; none when nothing was billed.
  */
-import { addDays, exactDecimal, roundHalfUp } from "@shiftbook/rules";
+import { addDays, exactDecimal, roundHalfUp, type Say } from "@shiftbook/rules";
 
 export type GroupBy = "client" | "worker" | "recruiter" | "branch" | "week";
 export type SortBy = "margin" | "percent";
@@ -16,6 +16,8 @@ export interface MarginDetail {
   amountCents: number;
   burdenCents: number;
   explain: string;
+  /** The run's explanation as message keys (decision 0030); null on lines written before. */
+  say: Say | null;
   burdenExplain: string | null;
 }
 

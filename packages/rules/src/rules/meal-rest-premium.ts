@@ -14,14 +14,26 @@
  * Minutes per premium and the per-workday cap are rule data.
  */
 import { isEffective } from "../dates";
+import type { EngineKey } from "../say";
 import type { ConfirmationKind, GuaranteeRule, IsoDate, PremiumRule } from "../types";
 
 export const CA_MEAL_PREMIUM = "ca_meal_premium";
 export const CA_REST_PREMIUM = "ca_rest_premium";
 
-export const PREMIUM_OF: Partial<Record<ConfirmationKind, { ruleCode: string; type: "MEAL_PREMIUM" | "REST_PREMIUM"; label: string; what: string }>> = {
-  meal_period_missed: { ruleCode: CA_MEAL_PREMIUM, type: "MEAL_PREMIUM", label: "Meal-period premium", what: "a meal period was not provided" },
-  rest_period_missed: { ruleCode: CA_REST_PREMIUM, type: "REST_PREMIUM", label: "Rest-period premium", what: "a rest period was not provided" },
+/** Each premium's rule, line and messages (as message keys: decision 0030). */
+export const PREMIUM_OF: Partial<
+  Record<ConfirmationKind, { ruleCode: string; type: "MEAL_PREMIUM" | "REST_PREMIUM"; say: Record<"label" | "billedLabel" | "notApplicable" | "why" | "confirmedNoHours", EngineKey> }>
+> = {
+  meal_period_missed: {
+    ruleCode: CA_MEAL_PREMIUM,
+    type: "MEAL_PREMIUM",
+    say: { label: "labelMealPremium", billedLabel: "labelBilledMealPremium", notApplicable: "mealNotApplicable", why: "whyMealPremium", confirmedNoHours: "mealConfirmedNoHours" },
+  },
+  rest_period_missed: {
+    ruleCode: CA_REST_PREMIUM,
+    type: "REST_PREMIUM",
+    say: { label: "labelRestPremium", billedLabel: "labelBilledRestPremium", notApplicable: "restNotApplicable", why: "whyRestPremium", confirmedNoHours: "restConfirmedNoHours" },
+  },
 };
 
 /** The premium rule in effect for a worksite's state on a date, if that state has one. */

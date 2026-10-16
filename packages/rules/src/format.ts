@@ -7,7 +7,7 @@ export function formatDuration(minutes: number): string {
   return `${floorDiv(minutes, 60)}h ${String(mod(minutes, 60)).padStart(2, "0")}m`;
 }
 
-function withThousands(digits: string): string {
+export function withThousands(digits: string): string {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 

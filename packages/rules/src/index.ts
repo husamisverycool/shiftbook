@@ -8,3 +8,4 @@ export { coveredByEqualPay } from "./rules/il-equal-pay";
 export { addDays, addMonths, isEffective, isIsoDate, toDayNumber, weekdayOf, workweekStart } from "./dates";
 export { formatCents, formatClock, formatDuration, formatHours, formatMoney, formatRate } from "./format";
 export { ceilDiv, exactDecimal, floorDiv, lowestTermsBig, mod, mul, roundHalfUp, roundHalfUpBig } from "./int";
+export { ENGINE_EN, english, fill, keysOf, placeholders, PLAIN_SAY, renderSay, type EngineKey, type Say, type SayFormat, type SayPart, type SayValue } from "./say";

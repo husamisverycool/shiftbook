@@ -7,12 +7,15 @@ import { useLocale, useTranslations } from "next-intl";
 import { Fragment, useState } from "react";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { OvertimeView } from "@/server/margin/queries";
+import { useEngineSay } from "../engine-say";
 import { hoursMinutes, longDate, money } from "../format";
 
 export function MarginOvertime({ view }: { view: OvertimeView }) {
   const t = useTranslations("margin.overtime");
   const tm = useTranslations("margin");
   const locale = useLocale();
+  // The run's explanations in the reader's language (decision 0030); the English is the record.
+  const say = useEngineSay();
   const [open, setOpen] = useState<string | null>(null);
   if (view.rows.length === 0) {
     return (
@@ -72,7 +75,7 @@ export function MarginOvertime({ view }: { view: OvertimeView }) {
                         <ul className="mt-2 flex flex-col gap-1">
                           {r.lines.map((d, i) => (
                             <li key={i} data-testid="overtime-line">
-                              <span className="font-medium">{d.kind === "pay" ? tm("payLine", { type: d.type }) : tm("billLine", { type: d.type })}</span> {d.explain}
+                              <span className="font-medium">{d.kind === "pay" ? tm("payLine", { type: d.type }) : tm("billLine", { type: d.type })}</span> {say(d)}
                             </li>
                           ))}
                         </ul>

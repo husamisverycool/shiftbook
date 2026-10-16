@@ -58,7 +58,12 @@ describe("rate card versions (Bullhorn: a version ends the day before the next o
 describe("bill rate from a markup, rounded once and explained", () => {
   it("rounds half up to the cent and says so", () => {
     // $18.25 × 145% = 2646.25 cents → $26.46
-    expect(billFromMarkup(1825, 4500)).toEqual({ rateCents: 2646, explain: "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46" });
+    expect(billFromMarkup(1825, 4500)).toEqual({
+      rateCents: 2646,
+      explain: "$18.25 × (100% + 45.00%) = 2646.25¢, rounded half up to $26.46",
+      // The same working as message keys for the reader's language (decision 0030).
+      say: [{ key: "billRateMarkup", values: { pay: "$18.25", percent: "45.00%", exact: "2646.25", bill: "$26.46" } }],
+    });
     // $18.25 × 150% = 2737.5 cents → $27.38
     expect(billFromMarkup(1825, 5000).rateCents).toBe(2738);
   });

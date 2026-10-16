@@ -9,7 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { agencies, assignments, billLines, bonuses, clientBillingProfiles, holidayPolicies, jobOrders, payLines, payPeriods, premiumConfirmations, rateCards, timeEntries } from "../../src/server/db/schema";
+import { english } from "@shiftbook/rules";
+import { agencies, assignments, billLines, bonuses, clientBillingProfiles, holidayPolicies, jobOrders, payLines, payPeriods, payRuns, premiumConfirmations, rateCards, timeEntries } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { createAssignment } from "../../src/server/catalog/assignments";
 import { clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
@@ -17,7 +18,7 @@ import { readStoredDocument, receiveDocument, type ImageReader } from "../../src
 import { addEntry } from "../../src/server/review/service";
 import { totalsStep } from "../../src/server/convert/queries";
 import { createRunFiles } from "../../src/server/files/service";
-import { computeRun, setSkipped } from "../../src/server/run/service";
+import { computeRun, setSkipped, type RunIssue } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { approveAsOwner, inLineOrder, openAppDb, openOwnerDb } from "./helpers";
@@ -58,6 +59,12 @@ describe("pay rules through the weekly run", () => {
     const topUps = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.type, "MW_TRUEUP"))));
     expect(topUps.length).toBeGreaterThan(0);
     expect(topUps.every((l) => l.rateNum === 50 && l.rateDen === 1)).toBe(true);
+    // The warning is stored with its message as keys (decision 0030), saying exactly its English.
+    const [stored] = await inAgency((tx) => tx.select().from(payRuns).where(eq(payRuns.id, run.runId)));
+    const below = (stored!.warnings as RunIssue[]).find((w) => w.code === "below_minimum_wage")!;
+    expect(below.say![0]!.key).toBe("belowMinimumWage");
+    expect(english(below.say!)).toBe(below.message);
+    expect(topUps.every((l) => l.say![1]!.key === "whyTopUp" && english(l.say!) === l.explain)).toBe(true);
   });
 
   it("pays a confirmed missed meal period in California one hour at the week's regular rate", async () => {

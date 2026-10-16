@@ -16,7 +16,7 @@ import { equalPayExplain, sayInEnglish } from "../compliance/explain-keys";
 import type { Explain } from "../../lib/explain";
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
-import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Say, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, or } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { fieldglassUpload } from "../../exports/invoice-files";
@@ -82,6 +82,8 @@ const equalPayRows = (rows: (typeof s.obligations.$inferSelect)[]): EqualPayRow[
   rows.filter((o): o is EqualPayRow => (EQUAL_PAY_KINDS as readonly string[]).includes(o.kind) && o.workerId !== null && o.clientId !== null && o.crossedOn !== null);
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+/** JSON.stringify's replacer leaving out every `say` (decision 0030). */
+const withoutSay = (key: string, value: unknown) => (key === "say" ? undefined : value);
 const effective = (date: string, from: string, to: string | null) => from <= date && (to === null || date <= to);
 /**
  * Entries that may be paid: read cleanly (high confidence), reviewed or client-approved. Locked
@@ -212,11 +214,11 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
   };
 }
 
-/** A bill rate the rate card worked out from a markup carries its working onto the bill line. */
-function billRateExplain(card: typeof s.rateCards.$inferSelect): { billRateExplain?: string } {
+/** A bill rate the rate card worked out from a markup carries its working onto the bill line (with its keys: decision 0030). */
+function billRateExplain(card: typeof s.rateCards.$inferSelect): { billRateExplain?: string; billRateSay?: Say } {
   if (card.markupBp === null) return {};
   const worked = billFromMarkup(card.payRateCents, card.markupBp);
-  return worked.rateCents === card.billRateCents ? { billRateExplain: worked.explain } : {};
+  return worked.rateCents === card.billRateCents ? { billRateExplain: worked.explain, billRateSay: worked.say } : {};
 }
 
 export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Promise<RunResult> {
@@ -682,6 +684,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const decided = decisions.map((d) => [d.workerId, d.decision, d.differenceCents, d.note]).sort((a, b) => cmp(String(a[0]), String(b[0])));
 
   const status = blockers.length > 0 ? "blocked" : "ready";
+  // The message keys beside the English (decision 0030) are left out: they say exactly the English, so
+  // a run computed before them keeps its fingerprint, and an approval of it stands.
   const fingerprint = createHash("sha256")
     .update(
       JSON.stringify({
@@ -696,7 +700,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         text: textInputs,
         correction: base ? { base: base.run.id, decisions: decided } : null,
         payroll,
-      }),
+      }, withoutSay),
     )
     .digest("hex");
   const previous = (run.snapshot as { fingerprint?: string } | null)?.fingerprint;
@@ -722,6 +726,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         amountCents: l.amountCents,
         ruleId: l.ruleId,
         explain: l.explain,
+        say: l.say ?? null,
       })),
     );
   }
@@ -742,6 +747,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         amountCents: l.amountCents,
         ruleId: l.ruleId,
         explain: l.explain,
+        say: l.say ?? null,
       })),
     );
   }

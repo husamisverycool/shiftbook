@@ -14,7 +14,8 @@
  * Every number (start, windows, thresholds, the 600-hour heads-up) is rule data.
  */
 import { addDays, addMonths, isEffective, workweekStart } from "../dates";
-import { formatClock, formatDuration, formatHours } from "../format";
+import { formatClock } from "../format";
+import { english, hoursValue, nested, part, type Say, type SayValue } from "../say";
 import type { EqualPayRule, HoursWorked, Issue, Obligation, ObligationKind, ObligationOnFile, Shift, Weekday } from "../types";
 import { latestRequest, rateInForce, type EqualPayRate } from "./il-equal-pay-rate";
 
@@ -55,7 +56,8 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
   for (const key of [...pairs.keys()].sort(cmp)) {
     const current = pairs.get(key)!;
     const { workerId, clientId, jurisdiction, workerName } = current[0]!;
-    const client = current.find((s) => s.clientName)?.clientName ?? `client ${clientId}`;
+    const clientName = current.find((s) => s.clientName)?.clientName;
+    const client: SayValue = clientName ?? nested(part("clientById", { id: clientId }));
     const events: Event[] = [
       ...args.hoursWorked.filter((h) => h.workerId === workerId && h.clientId === clientId && h.minutes > 0).map((h) => ({ date: h.date, minutes: h.minutes, shift: null })),
       ...current.map((s) => ({ date: s.date, minutes: s.minutes, shift: s })),
@@ -138,14 +140,15 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
         }
       });
       if (obligation && f) {
-        const where = `${workerName} passed ${formatHours(f.threshold)} of work at ${client} on ${f.date}${f.at !== null ? ` at ${formatClock(f.at)}` : ""} (the ${f.months} months from ${f.windowStart})`;
-        const duty =
-          kind === "il_equal_pay_720h"
-            ? "from then on the Illinois equal-pay rule applies: at least the pay of the client's comparable direct hires, with equal benefits or their hourly cash value (820 ILCS 175/42). Get the client's pay, seniority and benefits data before the next pay period begins (56 Ill. Adm. Code 260.505(b)), then enter the equal-pay rate."
-            : "if the client chose the wage-survey method, pay is now at least the 75th percentile for the job in the area (820 ILCS 175/42(a)(2)(B)). Get the client's data before the next pay period begins (56 Ill. Adm. Code 260.505(b)).";
-        const earlier = obligation.earlierMinutesAfter > 0 ? ` ${formatDuration(obligation.earlierMinutesAfter)} were worked there after it before this pay period.` : "";
-        obligation.message = `${where}: ${duty}${earlier}`;
-        warnings.push({ code: "equal_pay_obligation", workerId, workerName, workweekStart: workweekStart(f.date, args.workweekStartsOn), clientId, jurisdiction, ruleCode: f.rule.ruleCode, date: f.date, message: obligation.message });
+        const where = { name: workerName, threshold: hoursValue(f.threshold), client, date: { date: f.date }, months: String(f.months), windowStart: { date: f.windowStart } };
+        const say: Say = [
+          f.at !== null ? part("equalPayWhereAt", { ...where, clock: formatClock(f.at) }) : part("equalPayWhere", where),
+          part(kind === "il_equal_pay_720h" ? "equalPayDuty720" : "equalPayDuty4160"),
+          ...(obligation.earlierMinutesAfter > 0 ? [part("equalPayEarlier", { duration: { duration: obligation.earlierMinutesAfter } })] : []),
+        ];
+        obligation.message = english(say);
+        obligation.say = say;
+        warnings.push({ code: "equal_pay_obligation", workerId, workerName, workweekStart: workweekStart(f.date, args.workweekStartsOn), clientId, jurisdiction, ruleCode: f.rule.ruleCode, date: f.date, message: obligation.message, say });
       }
     }
     // Every week of this run with hours there: the last day, the 12-month total then, its rule.
@@ -165,10 +168,12 @@ export function equalPayCounter(args: { rules: EqualPayRule[]; shifts: Shift[]; 
       // The heads-up stops only from the crossing on (a crossing on file for a later date does not hide it).
       const crossedBy = crossed720 !== null && crossed720 <= w.lastDate;
       if (w.after > 0) {
-        const why = w.asked !== null ? `the client was asked for its figures on ${w.asked} and they are not in yet` : "the equal-pay rate and benefits (or their hourly cash value) are not on file";
-        warnings.push({ code: "equal_pay_rate_missing", ...who, message: `${workerName}, workweek starting ${week}: ${formatDuration(w.after)} worked at ${client} after passing ${formatHours(w.rule.triggerMinutes)} there are paid at the placement rate; ${why}, so back pay may be due once they are (820 ILCS 175/42).` });
+        const values = { name: workerName, week: { date: week }, duration: { duration: w.after }, client, threshold: hoursValue(w.rule.triggerMinutes) };
+        const say = [w.asked !== null ? part("equalPayRateMissingAsked", { ...values, asked: { date: w.asked } }) : part("equalPayRateMissing", values)];
+        warnings.push({ code: "equal_pay_rate_missing", ...who, message: english(say), say });
       } else if (!crossedBy && total > w.rule.warnMinutes) {
-        warnings.push({ code: "approaching_equal_pay_hours", ...who, date: w.lastDate, message: `${workerName}, workweek starting ${week}: ${formatDuration(total)} worked at ${client} in the ${w.rule.windowMonths} months to ${w.lastDate}; past ${formatHours(w.rule.triggerMinutes)} the Illinois equal-pay rule applies (820 ILCS 175/42), so ask the client now for the pay of its comparable direct hires.` });
+        const say = [part("approachingEqualPay", { name: workerName, week: { date: week }, duration: { duration: total }, client, months: String(w.rule.windowMonths), date: { date: w.lastDate }, threshold: hoursValue(w.rule.triggerMinutes) })];
+        warnings.push({ code: "approaching_equal_pay_hours", ...who, date: w.lastDate, message: english(say), say });
       }
     }
   }

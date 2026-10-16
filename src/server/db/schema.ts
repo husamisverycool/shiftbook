@@ -256,6 +256,7 @@ export const worksites = pgTable(
 export { INVOICE_TEMPLATES, SEPARATE_BY, VMS_FORMATS, type InvoiceTemplate, type SeparateBy, type VmsFormat } from "../../lib/invoice-options";
 import type { InvoiceTemplate, SeparateBy, VmsFormat } from "../../lib/invoice-options";
 import type { Explain } from "../../lib/explain";
+import type { Say } from "@shiftbook/rules";
 import type { WorkerDocumentKind } from "../../lib/worker-documents";
 
 export const clientBillingProfiles = pgTable(
@@ -666,6 +667,8 @@ export const payLines = pgTable("pay_lines", {
   amountCents: integer("amount_cents").notNull(),
   ruleId: text("rule_id").notNull(),
   explain: text("explain").notNull(),
+  /** The explanation as message keys for the reader's language (decision 0030); null on lines written before. */
+  say: jsonb("say").$type<Say>(),
 });
 
 export const billLines = pgTable("bill_lines", {
@@ -684,6 +687,8 @@ export const billLines = pgTable("bill_lines", {
   amountCents: integer("amount_cents").notNull(),
   ruleId: text("rule_id").notNull(),
   explain: text("explain").notNull(),
+  /** The explanation as message keys for the reader's language (decision 0030); null on lines written before. */
+  say: jsonb("say").$type<Say>(),
 });
 
 export const invoices = pgTable(

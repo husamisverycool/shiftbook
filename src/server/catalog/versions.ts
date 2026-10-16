@@ -6,7 +6,7 @@
  * A version that starts on or before the last paid day of the card's work is frozen: it is never
  * edited or deleted, only followed by a new version (SPEC §8; Stripe: a used price is replaced).
  */
-import { addDays, exactDecimal, floorDiv, formatCents, isIsoDate, mod, mul, roundHalfUp } from "@shiftbook/rules";
+import { addDays, english, exactDecimal, floorDiv, formatCents, isIsoDate, mod, mul, roundHalfUp, type Say } from "@shiftbook/rules";
 
 export interface Dated {
   id: string;
@@ -74,11 +74,13 @@ export function billOf(input: Pick<RateInput, "bill">): { rateCents: number } | 
 }
 
 /** Bill rate = pay × (10000 + markup) / 10000 cents an hour, rounded once, half up, with the working. */
-export function billFromMarkup(payRateCents: number, markupBp: number): { rateCents: number; explain: string } {
+export function billFromMarkup(payRateCents: number, markupBp: number): { rateCents: number; explain: string; say: Say } {
   const num = mul(payRateCents, 10_000 + markupBp);
   const rateCents = roundHalfUp(num, 10_000);
   const percent = `${floorDiv(markupBp, 100)}.${String(mod(markupBp, 100)).padStart(2, "0")}%`;
-  return { rateCents, explain: `${formatCents(payRateCents)} × (100% + ${percent}) = ${exactDecimal(num, 10_000)}¢, rounded half up to ${formatCents(rateCents)}` };
+  // The working as message keys (decision 0030): the bill line and the rate form say it in the reader's language.
+  const say: Say = [{ key: "billRateMarkup", values: { pay: formatCents(payRateCents), percent, exact: exactDecimal(num, 10_000), bill: formatCents(rateCents) } }];
+  return { rateCents, explain: english(say), say };
 }
 
 /** The version in force on a date, or null. */

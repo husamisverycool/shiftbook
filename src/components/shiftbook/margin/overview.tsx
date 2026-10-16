@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { formatPermille, GROUP_BYS, totalsOf, type GroupBy, type MarginLine, type MarginTotals, type SortBy } from "@/server/margin/margin";
 import type { MarginView } from "@/server/margin/queries";
+import { useEngineSay } from "../engine-say";
 import { hoursMinutes, longDate, money } from "../format";
 import { WeeklyChart } from "./weekly-chart";
 
@@ -25,6 +26,8 @@ type Metric = "billed" | "pay" | "burden" | "margin" | "percent";
 export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: MarginView; groupBy: GroupBy; sort: SortBy; floatingCents: number }) {
   const t = useTranslations("margin");
   const locale = useLocale();
+  // The run's explanations in the reader's language (decision 0030); the English is the record.
+  const say = useEngineSay();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -98,7 +101,7 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
               {l.details.map((d, i) => (
                 <li key={i} className="flex flex-col gap-0.5">
                   <span>
-                    <span className="font-medium">{d.kind === "pay" ? t("payLine", { type: d.type }) : t("billLine", { type: d.type })}</span> {d.explain}
+                    <span className="font-medium">{d.kind === "pay" ? t("payLine", { type: d.type }) : t("billLine", { type: d.type })}</span> {say(d)}
                   </span>
                   {d.burdenExplain && <span className="text-muted-foreground">{t("burdenOf", { explain: d.burdenExplain })}</span>}
                 </li>

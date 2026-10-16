@@ -26,6 +26,7 @@ import type { RateVersionView } from "@/server/catalog/queries";
 import { billFromMarkup, inForce, type RateInput } from "@/server/catalog/versions";
 import { bpToInput, centsToInput, multiplierToInput, parseDollars, parseMultiplier, parsePercentBp } from "@/lib/amounts";
 import { useCan } from "../abilities";
+import { useEngineSay } from "../engine-say";
 import { longDate, money } from "../format";
 
 const REASONS = ["wrong_from_start", "client_agreed", "data_entry", "other"] as const;
@@ -270,6 +271,8 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
 function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRef: Ref; mode: "add" | "edit"; base: RateVersionView | null; paidThrough: string | null; today: string; onClose: () => void }) {
   const t = useTranslations("rates");
   const te = useTranslations("convert.errors");
+  // The markup working in the reader's language (decision 0030), as the bill line will say it.
+  const say = useEngineSay();
   const locale = useLocale();
   const router = useRouter();
   const [pending, run] = useTransition();
@@ -375,7 +378,7 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
             ) : (
               <Input aria-label={t("markupPercent")} inputMode="decimal" value={markup} onChange={(e) => setMarkup(e.target.value)} {...aria("markup")} />
             )}
-            {err("bill_rate") ?? err("markup") ?? (preview ? <p className="text-xs text-muted-foreground" data-testid="markup-preview">{t("markupPreview", { working: preview.explain })}</p> : null)}
+            {err("bill_rate") ?? err("markup") ?? (preview ? <p className="text-xs text-muted-foreground" data-testid="markup-preview">{t("markupPreview", { working: say(preview) })}</p> : null)}
           </fieldset>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="rate-ot">{t("ot")}</Label>
