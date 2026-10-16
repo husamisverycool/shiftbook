@@ -187,7 +187,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
           </section>
 
           <Tabs defaultValue="hours">
-            <TabsList>
+            <TabsList variant="line" className="h-10! w-full justify-start border-b">
               <TabsTrigger value="hours">{t("tabHours")}</TabsTrigger>
               <TabsTrigger value="pay">{t("tabPay")}</TabsTrigger>
               <TabsTrigger value="billing">{t("tabBilling")}</TabsTrigger>
@@ -283,7 +283,7 @@ function CorrectionTotals({ c }: { c: CorrectionData }) {
       </section>
 
       <Tabs defaultValue="pay">
-        <TabsList>
+        <TabsList variant="line" className="h-10! w-full justify-start border-b">
           <TabsTrigger value="hours">{t("tabHours")}</TabsTrigger>
           <TabsTrigger value="pay">{t("tabPay")}</TabsTrigger>
           <TabsTrigger value="billing">{t("tabBilling")}</TabsTrigger>
