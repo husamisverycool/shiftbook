@@ -1415,7 +1415,6 @@
     "title": "Configuración",
     "payroll": {
       "title": "Archivo de nómina",
-      "description": "El sistema de nómina para el que se prepara el archivo semanal, sus códigos y el número de cada trabajador en él.",
       "systemTitle": "Sistema de nómina",
       "systemHint": "Un sistema a la vez. Un cambio se aplica a todos los archivos de nómina que aún no se han preparado; los ya preparados conservan su formato.",
       "inUse": "En uso",

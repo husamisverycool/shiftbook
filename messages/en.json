@@ -1415,7 +1415,6 @@
     "title": "Settings",
     "payroll": {
       "title": "Payroll file",
-      "description": "The payroll system your weekly payroll file is made for, its codes, and each worker's id there.",
       "systemTitle": "Payroll system",
       "systemHint": "One system at a time. A change applies to every payroll file not made yet; files already made keep their format.",
       "inUse": "In use",

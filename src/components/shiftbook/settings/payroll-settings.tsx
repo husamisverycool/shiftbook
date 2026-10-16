@@ -187,7 +187,6 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
       <header className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("title")}</p>
         <h1 className="text-[28px] leading-9 font-bold tracking-tight">{tp("title")}</h1>
-        <p className="text-sm text-muted-foreground">{tp("description")}</p>
       </header>
 
       {!view.canEdit && (
@@ -203,7 +202,8 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
         </Alert>
       )}
 
-      <section className="flex flex-col gap-4 rounded-xl border bg-card p-4" aria-labelledby="system-title">
+      {/* A section as a heading with one muted line under it, no box (decision 0029 rule 11). */}
+      <section className="flex flex-col gap-4" aria-labelledby="system-title">
         <div className="flex flex-col gap-1">
           <h2 id="system-title" className="text-lg font-semibold">
             {tp("systemTitle")}
@@ -283,7 +283,7 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
 
       {inUse && view.codes && view.system && (
         <Tabs value={tab} onValueChange={(v) => setTab(v as PayrollTab)}>
-          <TabsList>
+          <TabsList variant="line" className="h-10! w-full justify-start border-b">
             <TabsTrigger value="codes">{tp("tabs.codes")}</TabsTrigger>
             <TabsTrigger value="workers">{tp("tabs.workers")}</TabsTrigger>
             {inUse === "spreadsheet_csv" && <TabsTrigger value="columns">{tp("tabs.columns")}</TabsTrigger>}
