@@ -1,0 +1,1581 @@
+{
+  "name": "ma-thanksgiving-holiday-policy",
+  "summary": "Three Worcester, Massachusetts workers at $19.00/h, billed at $27.00/h, in Thanksgiving week 2026 (Thursday November 26). The agency's holiday policy (agency data: no law here requires holiday pay) pays 1.5× for hours worked on the holiday and 8 hours for a holiday not worked when a person confirms the worker is eligible; it bills worked holiday hours at 1.5× and does not bill a holiday not worked. Worker A works 8 hours Monday to Friday: 40 h × $19 = $760.00 plus the holiday premium 8 h × 0.5 × $19 = $76.00 = $836.00; billed 40 h × $27 + 8 h × $13.50 = $1,188.00. Worker B works 8 hours on the four other days and is confirmed eligible for the holiday: 32 h × $19 = $608.00 plus 8 h of holiday pay × $19 = $152.00 = $760.00, which is not hours worked (no overtime from it); billed 32 h × $27 = $864.00. Worker C works 9 hours a day (45 h): 40 h × $19 = $760.00, overtime 5 h × $28.50 = $142.50, and the holiday premium on Thursday's 9 hours, 9 h × $9.50 = $85.50, paid on top of the overtime (a 1.5× holiday premium stays out of the regular rate: 29 U.S.C. § 207(e)(6)) = $988.00; billed 40 h × $27 + 5 h × $40.50 + 9 h × $13.50 = $1,404.00.",
+  "input": {
+    "workweekStartsOn": 1,
+    "shifts": [
+      {
+        "entryIds": [
+          "entry-115"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-23",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-116"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-24",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-117"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-25",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-118"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-26",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-119"
+        ],
+        "workerId": "worker-A",
+        "workerName": "Worker A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-27",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-120"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-23",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-121"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-24",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-122"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-25",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-123"
+        ],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-27",
+        "startMinute": 420,
+        "minutes": 480,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [],
+        "workerId": "worker-B",
+        "workerName": "Worker B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-26",
+        "startMinute": null,
+        "minutes": 0,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier",
+        "reportedOnly": true
+      },
+      {
+        "entryIds": [
+          "entry-125"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-23",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-126"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-24",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-127"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-25",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-128"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-26",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      },
+      {
+        "entryIds": [
+          "entry-129"
+        ],
+        "workerId": "worker-C",
+        "workerName": "Worker C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "jurisdiction": "MA",
+        "countyFips": "25027",
+        "placeFips": "2582000",
+        "date": "2026-11-27",
+        "startMinute": 420,
+        "minutes": 540,
+        "payRateCents": 1900,
+        "billRateCents": 2700,
+        "billOtMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billDtMultiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "otBillingRule": "multiplier"
+      }
+    ],
+    "overtimeRules": [
+      {
+        "jurisdiction": "US",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4a(1) — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "MA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Massachusetts Minimum Fair Wage Law, M.G.L. c. 151, § 1A — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "weekly_overtime",
+        "kind": "weekly",
+        "thresholdMinutes": 2400,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 40 hours in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_overtime",
+        "kind": "daily",
+        "thresholdMinutes": 480,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 8 hours in a workday at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_daily_double_time",
+        "kind": "daily_double",
+        "thresholdMinutes": 720,
+        "multiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "earningType": "DT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a) — over 12 hours in a workday at not less than 2x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day",
+        "kind": "seventh_day",
+        "thresholdMinutes": 0,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "earningType": "OT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a); IWC Wage Orders § 3(A) — first 8 hours on the seventh day of work in a workweek at not less than 1.5x the regular rate"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_seventh_day_double_time",
+        "kind": "seventh_day",
+        "thresholdMinutes": 480,
+        "multiplier": {
+          "num": 2,
+          "den": 1
+        },
+        "earningType": "DT",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a); IWC Wage Orders § 3(A) — over 8 hours on the seventh day of work in a workweek at not less than 2x the regular rate"
+      }
+    ],
+    "jurisdictionRules": [
+      {
+        "jurisdiction": "US",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "29 U.S.C. § 207(a)(1)"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "820 ILCS 105/4a"
+      },
+      {
+        "jurisdiction": "MA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1A"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "weekly_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "ca_daily_overtime",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "ca_daily_double_time",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "ca_seventh_day",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "ca_seventh_day_double_time",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 510(a)"
+      },
+      {
+        "jurisdiction": "US",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "29 U.S.C. § 206(a)(1)"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "820 ILCS 105/4"
+      },
+      {
+        "jurisdiction": "MA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 1182.12"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": "17031",
+        "placeFips": null,
+        "scopeName": "Cook County",
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Cook County Minimum Wage Ordinance, Cook County Code § 42-13 (Ord. 16-5768)"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": null,
+        "placeFips": "1714000",
+        "scopeName": "City of Chicago",
+        "ruleCode": "minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Chicago Minimum Wage Ordinance, Chicago Municipal Code ch. 6-105"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0600562",
+        "scopeName": "City of Alameda",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0605108",
+        "scopeName": "City of Belmont",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0606000",
+        "scopeName": "City of Berkeley",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0609066",
+        "scopeName": "City of Burlingame",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0617610",
+        "scopeName": "City of Cupertino",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0617918",
+        "scopeName": "Daly City",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0620956",
+        "scopeName": "City of East Palo Alto",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0621796",
+        "scopeName": "City of El Cerrito",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0622594",
+        "scopeName": "City of Emeryville",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0625338",
+        "scopeName": "Foster City",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0626000",
+        "scopeName": "City of Fremont",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0631708",
+        "scopeName": "City of Half Moon Bay",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0633000",
+        "scopeName": "City of Hayward",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0643280",
+        "scopeName": "City of Los Altos",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0644000",
+        "scopeName": "City of Los Angeles",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0645246",
+        "scopeName": "City of Malibu",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0646870",
+        "scopeName": "City of Menlo Park",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0647766",
+        "scopeName": "City of Milpitas",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0649670",
+        "scopeName": "City of Mountain View",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0652582",
+        "scopeName": "City of Novato",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0653000",
+        "scopeName": "City of Oakland",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0655282",
+        "scopeName": "City of Palo Alto",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0656000",
+        "scopeName": "City of Pasadena",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0656784",
+        "scopeName": "City of Petaluma",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0660102",
+        "scopeName": "Redwood City",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0660620",
+        "scopeName": "City of Richmond",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0665070",
+        "scopeName": "City of San Carlos",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0666000",
+        "scopeName": "City of San Diego",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0667000",
+        "scopeName": "City and County of San Francisco",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0668000",
+        "scopeName": "City of San Jose",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0668252",
+        "scopeName": "City of San Mateo",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0669084",
+        "scopeName": "City of Santa Clara",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0670000",
+        "scopeName": "City of Santa Monica",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0670098",
+        "scopeName": "City of Santa Rosa",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0673262",
+        "scopeName": "City of South San Francisco",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0672646",
+        "scopeName": "City of Sonoma",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0677000",
+        "scopeName": "City of Sunnyvale",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": "0684410",
+        "scopeName": "City of West Hollywood",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": "06037",
+        "placeFips": null,
+        "scopeName": "Los Angeles County (its ordinance covers unincorporated areas; cities there are held too until checked)",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": "06081",
+        "placeFips": null,
+        "scopeName": "San Mateo County (its ordinance covers unincorporated areas; cities there are held too until checked)",
+        "ruleCode": "local_minimum_wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "Local minimum wage ordinance listed in the UC Berkeley Labor Center inventory linked by the California Department of Industrial Relations (2026); its rates are not on file yet"
+      }
+    ],
+    "minimumWageRules": [
+      {
+        "jurisdiction": "US",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 725,
+        "effectiveFrom": "2009-07-24",
+        "effectiveTo": null,
+        "citation": "Fair Labor Standards Act, 29 U.S.C. § 206(a)(1)(C) — $7.25 per hour"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1400,
+        "effectiveFrom": "2024-01-01",
+        "effectiveTo": "2024-12-31",
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4(a)(1) — $14.00 per hour in 2024"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1500,
+        "effectiveFrom": "2025-01-01",
+        "effectiveTo": null,
+        "citation": "Illinois Minimum Wage Law, 820 ILCS 105/4(a)(1) — $15.00 per hour from January 1, 2025"
+      },
+      {
+        "jurisdiction": "MA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1425,
+        "effectiveFrom": "2022-01-01",
+        "effectiveTo": "2022-12-31",
+        "citation": "M.G.L. c. 151, § 1 (St. 2018, c. 121) — $14.25 per hour in 2022"
+      },
+      {
+        "jurisdiction": "MA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1500,
+        "effectiveFrom": "2023-01-01",
+        "effectiveTo": null,
+        "citation": "M.G.L. c. 151, § 1 (St. 2018, c. 121) — $15.00 per hour from January 1, 2023"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1650,
+        "effectiveFrom": "2025-01-01",
+        "effectiveTo": "2025-12-31",
+        "citation": "Cal. Lab. Code § 1182.12 — $16.50 per hour in 2025"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1690,
+        "effectiveFrom": "2026-01-01",
+        "effectiveTo": "2026-12-31",
+        "citation": "Cal. Lab. Code § 1182.12 — $16.90 per hour in 2026"
+      },
+      {
+        "jurisdiction": "CA",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1740,
+        "effectiveFrom": "2027-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 1182.12 — $17.40 per hour from January 1, 2027 (certified July 31, 2026)"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": null,
+        "placeFips": "1714000",
+        "scopeName": "City of Chicago",
+        "rateCents": 1660,
+        "effectiveFrom": "2025-07-01",
+        "effectiveTo": "2026-06-30",
+        "citation": "Chicago Municipal Code ch. 6-105; OLS Rule MW 2.01 — $16.60 per hour from July 1, 2025 (employers with 4 or more employees)"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": null,
+        "placeFips": "1714000",
+        "scopeName": "City of Chicago",
+        "rateCents": 1705,
+        "effectiveFrom": "2026-07-01",
+        "effectiveTo": null,
+        "citation": "Chicago Municipal Code ch. 6-105; OLS Rule MW 2.01 — $17.05 per hour from July 1, 2026 (employers with 4 or more employees)"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": "17031",
+        "placeFips": null,
+        "scopeName": "Cook County",
+        "rateCents": 1500,
+        "effectiveFrom": "2025-07-01",
+        "effectiveTo": "2026-06-30",
+        "citation": "Cook County Code § 42-13 — $15.00 per hour from July 1, 2025 (held at the state rate)"
+      },
+      {
+        "jurisdiction": "IL",
+        "countyFips": "17031",
+        "placeFips": null,
+        "scopeName": "Cook County",
+        "rateCents": 1540,
+        "effectiveFrom": "2026-07-01",
+        "effectiveTo": null,
+        "citation": "Cook County Code § 42-13 — $15.40 per hour from July 1, 2026"
+      }
+    ],
+    "premiumRules": [
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_meal_premium",
+        "premiumMinutes": 60,
+        "perWorkdayMax": 1,
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": "2026-12-31",
+        "citation": "Cal. Lab. Code § 226.7(c) (version in effect through December 31, 2026) — one additional hour of pay at the regular rate for each workday a meal period is not provided; Ferra v. Loews Hollywood Hotel, LLC (2021) 11 Cal.5th 858; UPS v. Superior Court (2011) 196 Cal.App.4th 57"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_meal_premium",
+        "premiumMinutes": 60,
+        "perWorkdayMax": 1,
+        "effectiveFrom": "2027-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 226.7(c) (version operative January 1, 2027; Stats. 2020, ch. 343) — one additional hour of pay at the regular rate for each workday a meal period is not provided; Ferra; UPS"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_rest_premium",
+        "premiumMinutes": 60,
+        "perWorkdayMax": 1,
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": "2026-12-31",
+        "citation": "Cal. Lab. Code § 226.7(c) (version in effect through December 31, 2026) — one additional hour of pay at the regular rate for each workday a rest period is not provided; Ferra v. Loews Hollywood Hotel, LLC (2021) 11 Cal.5th 858; UPS v. Superior Court (2011) 196 Cal.App.4th 57"
+      },
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_rest_premium",
+        "premiumMinutes": 60,
+        "perWorkdayMax": 1,
+        "effectiveFrom": "2027-01-01",
+        "effectiveTo": null,
+        "citation": "Cal. Lab. Code § 226.7(c) (version operative January 1, 2027; Stats. 2020, ch. 343) — one additional hour of pay at the regular rate for each workday a rest period is not provided; Ferra; UPS"
+      }
+    ],
+    "guaranteeRules": [
+      {
+        "jurisdiction": "CA",
+        "ruleCode": "ca_reporting_time",
+        "dueMinutes": null,
+        "reassignedDueMinutes": null,
+        "scheduledFraction": {
+          "num": 1,
+          "den": 2
+        },
+        "minMinutes": 120,
+        "maxMinutes": 240,
+        "minScheduledMinutes": null,
+        "basis": "regular_rate",
+        "citation": "IWC wage orders § 5(A) (e.g. 8 CCR § 11070) — reporting time pay: half the usual or scheduled day's work, at least two and at most four hours, at the regular rate of pay",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null
+      },
+      {
+        "jurisdiction": "MA",
+        "ruleCode": "ma_reporting_pay",
+        "dueMinutes": 180,
+        "reassignedDueMinutes": null,
+        "scheduledFraction": null,
+        "minMinutes": null,
+        "maxMinutes": null,
+        "minScheduledMinutes": 180,
+        "basis": "pay_rate",
+        "citation": "454 CMR 27.04(1) — a worker scheduled for three or more hours who reports and is not given the expected hours is paid for at least three hours, at no less than the minimum wage",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null
+      },
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "il_day_labor_minimum",
+        "dueMinutes": 240,
+        "reassignedDueMinutes": 120,
+        "scheduledFraction": null,
+        "minMinutes": null,
+        "maxMinutes": null,
+        "minScheduledMinutes": null,
+        "basis": "pay_rate",
+        "citation": "Day and Temporary Labor Services Act, 820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b) — sent and not utilized: at least 4 hours at the agreed rate; placed elsewhere the same shift: at least 2 hours",
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null
+      }
+    ],
+    "equalPayRules": [
+      {
+        "jurisdiction": "IL",
+        "ruleCode": "il_dtlsa_equal_pay",
+        "countsFrom": "2024-04-01",
+        "warnMinutes": 36000,
+        "windowMonths": 12,
+        "triggerMinutes": 43200,
+        "longWindowMonths": 48,
+        "longTriggerMinutes": 249600,
+        "effectiveFrom": "2024-08-09",
+        "effectiveTo": null,
+        "citation": "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Shiftbook's (SPEC §9), not law."
+      }
+    ],
+    "regularRateRules": [
+      {
+        "jurisdiction": "US",
+        "ruleCode": "premium_excluded_from_regular_rate",
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "effectiveFrom": "2000-01-01",
+        "effectiveTo": null,
+        "citation": "29 U.S.C. § 207(e)(6) — a premium rate for work on holidays, Saturdays, Sundays or regular days of rest of not less than one and one-half times the rate for like work on other days stays out of the regular rate; a smaller premium counts in it (29 C.F.R. § 778.203); California follows (DLSE Enforcement Manual 49.1.2.4)"
+      }
+    ],
+    "holidayPolicies": [
+      {
+        "clientId": null,
+        "name": "Agency holidays",
+        "dates": [
+          "2026-11-26"
+        ],
+        "workedMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "notWorkedMinutes": 480,
+        "billWorkedMultiplier": {
+          "num": 3,
+          "den": 2
+        },
+        "billNotWorked": false
+      }
+    ],
+    "confirmations": [
+      {
+        "id": "confirmation-1",
+        "kind": "holiday_not_worked",
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "date": "2026-11-26"
+      }
+    ]
+  },
+  "expected": {
+    "rulesVersion": "2026.10-c8",
+    "payLines": [
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 1900,
+          "den": 1
+        },
+        "amountCents": 76000,
+        "ruleId": "straight_time",
+        "explain": "Regular: 40h 00m (2400 min) × $19.00/h = 76000¢ exactly → $760.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-11-23.",
+        "entryIds": [
+          "entry-115",
+          "entry-116",
+          "entry-117",
+          "entry-118",
+          "entry-119"
+        ]
+      },
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "HOL",
+        "minutes": 480,
+        "rate": {
+          "num": 950,
+          "den": 1
+        },
+        "amountCents": 7600,
+        "ruleId": "holiday_worked",
+        "explain": "Holiday premium: 8h 00m (480 min) × $9.50/h (0.5 × $19.00) = 7600¢ exactly → $76.00. Rule holiday_worked: 2026-11-26 is a holiday under the holiday policy \"Agency holidays\", which pays 1.5 × the pay rate for hours worked; straight time is on the regular and overtime lines, and this premium is paid on top of any overtime, never credited toward it. A holiday premium of 1.5× or more is not counted in the regular rate (29 U.S.C. § 207(e)(6); 29 C.F.R. §§ 778.203, 778.219).",
+        "entryIds": [
+          "entry-118"
+        ]
+      },
+      {
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "REG",
+        "minutes": 1920,
+        "rate": {
+          "num": 1900,
+          "den": 1
+        },
+        "amountCents": 60800,
+        "ruleId": "straight_time",
+        "explain": "Regular: 32h 00m (1920 min) × $19.00/h = 60800¢ exactly → $608.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-11-23.",
+        "entryIds": [
+          "entry-120",
+          "entry-121",
+          "entry-122",
+          "entry-123"
+        ]
+      },
+      {
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "HOL_NOT_WORKED",
+        "minutes": 480,
+        "entryIds": [],
+        "rate": {
+          "num": 1900,
+          "den": 1
+        },
+        "amountCents": 15200,
+        "ruleId": "holiday_not_worked",
+        "explain": "Holiday pay (not worked): 8h 00m (480 min) × $19.00/h (the agreed pay rate) = 15200¢ exactly → $152.00. Rule holiday_not_worked: 2026-11-26 is a holiday under the holiday policy \"Agency holidays\", the worker did not work that day, and a person confirmed the worker is eligible; it is pay, not hours worked, so it counts toward neither overtime nor the regular rate (29 U.S.C. § 207(e)(2); 29 C.F.R. §§ 778.218, 778.219)."
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 1900,
+          "den": 1
+        },
+        "amountCents": 76000,
+        "ruleId": "straight_time",
+        "explain": "Regular: 40h 00m (2400 min) × $19.00/h = 76000¢ exactly → $760.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-11-23.",
+        "entryIds": [
+          "entry-125",
+          "entry-126",
+          "entry-127",
+          "entry-128",
+          "entry-129"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "OT",
+        "minutes": 300,
+        "rate": {
+          "num": 2850,
+          "den": 1
+        },
+        "amountCents": 14250,
+        "ruleId": "weekly_overtime",
+        "explain": "Overtime: 5h 00m (300 min) × $28.50/h (1.5 × $19.00) = 14250¢ exactly → $142.50. Rule weekly_overtime: 45h 00m worked in the workweek starting 2026-11-23 is 5h 00m over the 40h 00m threshold (Massachusetts Minimum Fair Wage Law, M.G.L. c. 151, § 1A — over 40 hours in a workweek at not less than 1.5x the regular rate; Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate).",
+        "entryIds": [
+          "entry-129"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "HOL",
+        "minutes": 540,
+        "rate": {
+          "num": 950,
+          "den": 1
+        },
+        "amountCents": 8550,
+        "ruleId": "holiday_worked",
+        "explain": "Holiday premium: 9h 00m (540 min) × $9.50/h (0.5 × $19.00) = 8550¢ exactly → $85.50. Rule holiday_worked: 2026-11-26 is a holiday under the holiday policy \"Agency holidays\", which pays 1.5 × the pay rate for hours worked; straight time is on the regular and overtime lines, and this premium is paid on top of any overtime, never credited toward it. A holiday premium of 1.5× or more is not counted in the regular rate (29 U.S.C. § 207(e)(6); 29 C.F.R. §§ 778.203, 778.219).",
+        "entryIds": [
+          "entry-128"
+        ]
+      }
+    ],
+    "billLines": [
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 2700,
+          "den": 1
+        },
+        "amountCents": 108000,
+        "ruleId": "bill_regular",
+        "explain": "Billed regular: 40h 00m (2400 min) × $27.00/h = 108000¢ exactly → $1,080.00. Bill rate from the rate card.",
+        "entryIds": [
+          "entry-115",
+          "entry-116",
+          "entry-117",
+          "entry-118",
+          "entry-119"
+        ]
+      },
+      {
+        "workerId": "worker-A",
+        "assignmentId": "assignment-A",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "HOL",
+        "minutes": 480,
+        "rate": {
+          "num": 1350,
+          "den": 1
+        },
+        "amountCents": 10800,
+        "ruleId": "bill_holiday_premium",
+        "explain": "Billed holiday premium: 8h 00m (480 min) × $13.50/h (0.5 × $27.00 bill rate) = 10800¢ exactly → $108.00. Client billed 1.5 × the bill rate for hours worked on a holiday under the holiday policy \"Agency holidays\"; straight time is on the regular and overtime bill lines.",
+        "entryIds": [
+          "entry-118"
+        ]
+      },
+      {
+        "workerId": "worker-B",
+        "assignmentId": "assignment-B",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "REG",
+        "minutes": 1920,
+        "rate": {
+          "num": 2700,
+          "den": 1
+        },
+        "amountCents": 86400,
+        "ruleId": "bill_regular",
+        "explain": "Billed regular: 32h 00m (1920 min) × $27.00/h = 86400¢ exactly → $864.00. Bill rate from the rate card.",
+        "entryIds": [
+          "entry-120",
+          "entry-121",
+          "entry-122",
+          "entry-123"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "REG",
+        "minutes": 2400,
+        "rate": {
+          "num": 2700,
+          "den": 1
+        },
+        "amountCents": 108000,
+        "ruleId": "bill_regular",
+        "explain": "Billed regular: 40h 00m (2400 min) × $27.00/h = 108000¢ exactly → $1,080.00. Bill rate from the rate card.",
+        "entryIds": [
+          "entry-125",
+          "entry-126",
+          "entry-127",
+          "entry-128",
+          "entry-129"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "OT",
+        "minutes": 300,
+        "rate": {
+          "num": 4050,
+          "den": 1
+        },
+        "amountCents": 20250,
+        "ruleId": "bill_overtime_multiplier",
+        "explain": "Billed overtime: 5h 00m (300 min) × $40.50/h (1.5 × $27.00 bill rate) = 20250¢ exactly → $202.50. Client bills overtime at the rate-card overtime multiplier; bill rate from the rate card.",
+        "entryIds": [
+          "entry-129"
+        ]
+      },
+      {
+        "workerId": "worker-C",
+        "assignmentId": "assignment-C",
+        "clientId": "client-1",
+        "workweekStart": "2026-11-23",
+        "type": "HOL",
+        "minutes": 540,
+        "rate": {
+          "num": 1350,
+          "den": 1
+        },
+        "amountCents": 12150,
+        "ruleId": "bill_holiday_premium",
+        "explain": "Billed holiday premium: 9h 00m (540 min) × $13.50/h (0.5 × $27.00 bill rate) = 12150¢ exactly → $121.50. Client billed 1.5 × the bill rate for hours worked on a holiday under the holiday policy \"Agency holidays\"; straight time is on the regular and overtime bill lines.",
+        "entryIds": [
+          "entry-128"
+        ]
+      }
+    ],
+    "blockers": [],
+    "warnings": [],
+    "obligations": []
+  }
+}
