@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bankRows, fingerprints, guessMapping, readBankLines, readCents, readDate } from "./bank-csv";
+import { bankRows, guessMapping, readBankLines, readCents, readDate } from "./bank-csv";
+import { fingerprints } from "./bank-fingerprint";
 
 describe("reading a bank CSV (H5)", () => {
   it("reads amounts as exact cents: thousands, signs, parentheses, a dollar sign; refuses three decimals", () => {

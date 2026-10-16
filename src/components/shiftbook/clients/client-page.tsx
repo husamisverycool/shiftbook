@@ -18,9 +18,11 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Link, useRouter } from "@/i18n/navigation";
 import type { BillingProblem, BillingSettings } from "@/server/catalog/billing";
 import type { ClientDetail } from "@/server/clients/queries";
+import type { ClientReceivables, PaymentClients } from "@/server/receivables/queries";
 import { INVOICE_TEMPLATES, OT_BILLING_RULES, SEPARATE_BY, VMS_FORMATS } from "@/lib/invoice-options";
 import { longDate } from "../format";
 import { InvoicesTable } from "../invoices/invoices-table";
+import { ClientOwes } from "../receivables/client-owes";
 
 type Profile = NonNullable<ClientDetail["current"]>;
 
@@ -38,7 +40,7 @@ const settingsOf = (p: Profile | null): BillingSettings => ({
   billGuarantees: p?.billGuarantees ?? true,
 });
 
-export function ClientPage({ detail, mayChange, today }: { detail: ClientDetail; mayChange: boolean; today: string }) {
+export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect }: { detail: ClientDetail; mayChange: boolean; today: string; owes: ClientReceivables; clients: PaymentClients; mayCollect: boolean }) {
   const t = useTranslations("clients");
   const ti = useTranslations("invoices");
   const locale = useLocale();
@@ -129,6 +131,8 @@ export function ClientPage({ detail, mayChange, today }: { detail: ClientDetail;
           </div>
         )}
       </section>
+
+      <ClientOwes clientId={detail.client.id} owes={owes} clients={clients} today={today} canChange={mayCollect} />
 
       <section className="flex flex-col gap-3" aria-labelledby="client-invoices-title">
         <h2 id="client-invoices-title" className="text-lg font-semibold">

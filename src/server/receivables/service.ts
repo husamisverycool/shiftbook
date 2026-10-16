@@ -12,7 +12,8 @@ import * as s from "../db/schema";
 import { lockReceivables } from "../run/period-lock";
 import type { Actor } from "../session";
 import { agencyToday } from "../settings";
-import { BANK_FILE_LIMITS, bankRows, fingerprints, readBankLines } from "./bank-csv";
+import { BANK_FILE_LIMITS, bankRows, readBankLines } from "./bank-csv";
+import { fingerprints } from "./bank-fingerprint";
 import { invoiceBalances, settleStatuses, unappliedOf } from "./balances";
 
 const INT4_MAX = 2_147_483_647;

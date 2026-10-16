@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { BriefcaseIcon, Building2Icon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, ReceiptTextIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, ReceiptTextIcon, SettingsIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +16,9 @@ const AREAS = [
   { href: "/approvals", key: "approvals", jump: "p", icon: ClipboardCheckIcon },
   { href: "/invoices", key: "invoices", jump: "i", icon: ReceiptTextIcon },
   { href: "/clients", key: "clients", jump: "l", icon: Building2Icon },
+  { href: "/receivables", key: "receivables", jump: "r", icon: WalletIcon },
+  { href: "/payments", key: "payments", jump: "y", icon: BanknoteIcon },
+  { href: "/bank", key: "bank", jump: "b", icon: LandmarkIcon },
 ] as const;
 
 /** True while the person is typing, so single-letter shortcuts stay out of the way. */

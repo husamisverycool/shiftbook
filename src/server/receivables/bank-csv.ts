@@ -5,7 +5,6 @@
  * withdrawals column, or an amount and a type. Amounts become integer cents by reading the digits,
  * never through floating point.
  */
-import { createHash } from "node:crypto";
 import { isIsoDate } from "@shiftbook/rules";
 import { readCsv } from "../../exports/csv";
 import type { BankMapping } from "../db/schema";
@@ -176,18 +175,4 @@ export function readBankLines(rows: string[][], mapping: BankMapping): { lines: 
     lines.push({ rowNumber, postedOn, description: description.slice(0, 500), reference: cell(mapping.reference).slice(0, 100) || null, amountCents });
   }
   return { lines, problems };
-}
-
-/**
- * A line's identity across imports: its date, amount, description and reference, and which of the
- * file's identical lines it is (two identical deposits on one day are two lines).
- */
-export function fingerprints(lines: BankFileLine[]): string[] {
-  const seen = new Map<string, number>();
-  return lines.map((l) => {
-    const key = [l.postedOn, l.amountCents, l.description.toLowerCase(), (l.reference ?? "").toLowerCase()].join("|");
-    const n = (seen.get(key) ?? 0) + 1;
-    seen.set(key, n);
-    return createHash("sha256").update(`${key}|${n}`).digest("hex");
-  });
 }

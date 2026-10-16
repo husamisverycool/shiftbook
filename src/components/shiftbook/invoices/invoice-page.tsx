@@ -12,12 +12,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "@/i18n/navigation";
 import type { InvoiceDetail } from "@/server/invoices/queries";
+import type { InvoiceReceivables, PaymentClients } from "@/server/receivables/queries";
 import { dateRange, longDate, money } from "../format";
+import { InvoicePayments } from "../receivables/invoice-payments";
 import { downloadHref, InvoiceStatusBadge } from "./invoices-table";
 
 type Line = NonNullable<InvoiceDetail["printed"]>["lines"][number];
 
-export function InvoicePage({ detail, back }: { detail: InvoiceDetail; back: string }) {
+export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { detail: InvoiceDetail; back: string; ar: InvoiceReceivables | null; clients: PaymentClients; today: string; canCollect: boolean }) {
   const t = useTranslations("invoices");
   const td = useTranslations("invoices.detail");
   const locale = useLocale();
@@ -180,6 +182,8 @@ export function InvoicePage({ detail, back }: { detail: InvoiceDetail; back: str
           </ul>
         )}
       </section>
+
+      {ar && !credit && <InvoicePayments invoiceId={r.id} number={r.number} clientId={detail.client.id} ar={ar} clients={clients} today={today} canChange={canCollect} />}
 
       <section className="flex flex-col gap-3" aria-labelledby="related-title">
         <h2 id="related-title" className="text-lg font-semibold">
