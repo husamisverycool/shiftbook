@@ -10,4 +10,9 @@ describe("initialsOf", () => {
     expect(initialsOf("  ")).toBe("?");
     expect(initialsOf("(demo) Owner")).toBe("DO");
   });
+
+  it("leaves out a note in brackets after the name", () => {
+    expect(initialsOf("Lena Ortiz (demo)")).toBe("LO");
+    expect(initialsOf("Cedar Row Staffing (demo)")).toBe("CS");
+  });
 });

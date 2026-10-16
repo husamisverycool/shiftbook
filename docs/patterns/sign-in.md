@@ -1,6 +1,6 @@
 # Pattern: Sign in (`/sign-in`)
 
-Status: adopted — slice (k) plan, decisions K1 and K3 (2026-10-16, under the owner's "just keep going")
+Status: adopted — slice (k); revised by decision 0031 (2026-10-16)
 Reference product and screen: GitHub — sign-in (email and password, then a separate two-factor step;
 "Forgot password?" leads to the password reset page); Linear — login page (each way to sign in is a
 full-width "Continue with …" button, one under another)
@@ -18,7 +18,8 @@ whose role needs one, the code page. In demo mode the page also lists the demo p
 opens with no password (decision K3).
 
 ## Hierarchy
-1. **H1** "Sign in to Shiftbook".
+1. **H1** "Sign in to Shiftbook", centred; in demo mode one muted line under it saying what the demo
+   is (Notion's two-line heading).
 2. **Notice** (only when there is one): signed out; the session ended (timed out or signed out
    elsewhere); the password was changed; the link used has expired.
 3. **Form** (GitHub sign-in):
@@ -27,13 +28,17 @@ opens with no password (decision K3).
       label, linking to `/sign-in/reset` (GitHub: the password reset page).
    3. **Sign in** button (primary, full width).
    4. Under the button, a refusal in place when there is one (see States).
-4. **Demo only — "Try the demo as"** (Linear: one full-width "Continue with …" button per way in):
-   one button per demo person, "Continue as <name>" with their role under the name: the Owner,
-   Lena (coordinator), Rosa (billing), Morgan (accountant). The demo has no phones, so these skip
-   the code (decision K3).
+4. **Demo only — the demo people, before the form** (Linear: the main way in first, one filled
+   full-width button, the other ways outlined under it): "Continue as Demo Owner" filled; Lena
+   (coordinator), Rosa (billing) and Morgan (accountant) outlined; each with the person's initials
+   on the left and the role on the right; one muted line under them (no password, no code). Then a
+   rule with "or" (GitHub, Stripe, Notion) and the form, whose Sign in is outlined in demo mode
+   (the demo people are the main way in). The demo has no phones, so these skip the code (decision
+   K3). Outside demo mode the form is the page and Sign in is filled.
 
 ## Interactions
-- Enter in either field submits. Focus starts in Email.
+- Enter in either field submits. Focus starts in Email, except in demo mode (the demo people come
+  first).
 - Sign in → the code page when the person has an authenticator; the authenticator setup page when
   their role needs one and they have none; otherwise the page they were going to (or Convert
   timesheets).
@@ -51,6 +56,6 @@ opens with no password (decision K3).
 - Already signed in: the page opens the app instead.
 
 ## Never copy
-GitHub's or Linear's wording, icons, colors or logos.
+GitHub's, Linear's or Notion's wording, icons, colors or logos.
 
 Deviations allowed: none

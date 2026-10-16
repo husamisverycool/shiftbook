@@ -15,8 +15,8 @@ export function SetupView({ email, next }: { email: string; next: string }) {
   const [, finish] = useTransition();
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      <div className="flex flex-col gap-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("required")}</p>
       </div>
       <AuthenticatorSetup
@@ -29,7 +29,7 @@ export function SetupView({ email, next }: { email: string; next: string }) {
           })
         }
       />
-      <p className="border-t pt-4 text-sm">
+      <p className="border-t pt-4 text-center text-sm">
         <button type="button" className="text-primary underline-offset-4 hover:underline" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="setup-sign-out">
           {t("signOut")}
         </button>

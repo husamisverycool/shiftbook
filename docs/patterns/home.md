@@ -25,10 +25,11 @@ quarter at a glance.
    1. Choose the payroll system → payroll file settings. Done: a payroll system is chosen.
    2. Add clients and job orders → Job orders. Done: a worker is on an assignment.
    3. Convert a week's timesheets → the pay period's upload. Done: a pay period not paid before
-      Shiftbook has a timesheet or hours. (In the demo it names the sample timesheets.)
+      Shiftbook has a timesheet or hours. (In the demo it points at "Use the sample timesheets".)
    4. Ask a client to approve the hours → Client approvals. Done: an approval request was sent.
    5. Approve the week and create the files → the pay period. Done: a week has its files.
-   6. Match a bank file to the invoices → Bank. Done: a bank file was imported.
+   6. Match a bank file to the invoices → Bank. Done: a bank file was imported. (In the demo it
+      points at "Use the sample bank file".)
    7. Look up a worker's SSN → Workers. Done: the Owner looked one up since the agency last started
       over.
 2. **Today** (Stripe Home "Today"): the heading, large and bold, over a hairline. On the left the

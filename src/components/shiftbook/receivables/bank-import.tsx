@@ -60,6 +60,29 @@ export function BankImport({ demo }: { demo: boolean }) {
     setError(null);
   };
 
+  // Demo only (decision 0031): the sample bank file read as a chosen file is.
+  const loadSample = () =>
+    start(async () => {
+      const response = await fetch("/api/demo/bank-sample");
+      if (!response.ok) return setError(t("errors.generic"));
+      const name = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? "demo-bank-activity.csv";
+      await readFile(new File([await response.text()], name, { type: "text/csv" }));
+    });
+
+  const readFile = async (f: File) => {
+    setFile(f);
+    setError(null);
+    if (!/\.(csv|txt)$/i.test(f.name)) return setError(t("errors.type"));
+    if (f.size > LIMIT_BYTES) return setError(t("errors.size"));
+    const body = await f.text();
+    const r = await previewBankFileAction(body);
+    if (!r.ok) return setError(t(`errors.${r.error}`));
+    setText(body);
+    setPreview(r);
+    setMapping(r.mapping);
+    setStep("map");
+  };
+
   const read = () =>
     start(async () => {
       if (!file) return;
@@ -141,7 +164,11 @@ export function BankImport({ demo }: { demo: boolean }) {
           {demo && (
             <p className="text-sm text-muted-foreground">
               {t("demoSample")}{" "}
-              <a href="/api/demo/bank-sample" download className="text-foreground underline underline-offset-4" data-testid="bank-sample">
+              <Button variant="link" className="h-auto p-0 text-foreground underline underline-offset-4" onClick={loadSample} disabled={pending} data-testid="use-bank-sample">
+                {t("useSample")}
+              </Button>{" "}
+              ·{" "}
+              <a href="/api/demo/bank-sample" download className="underline underline-offset-4" data-testid="bank-sample">
                 {t("demoSampleLink")}
               </a>
             </p>

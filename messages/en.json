@@ -195,7 +195,9 @@
       "archiveBody": "Its hours are not paid or billed. Say why, for example that the same hours are in another file.",
       "archiveReason": "Reason",
       "archiveConfirm": "Archive",
-      "stuck": "Reading stopped before it finished. Read it again, or archive it if its hours are elsewhere."
+      "stuck": "Reading stopped before it finished. Read it again, or archive it if its hours are elsewhere.",
+      "demoSamples": "Trying the demo?",
+      "useSamples": "Use the sample timesheets"
     },
     "hours": {
       "sectionTitle": "Hours",
@@ -2069,7 +2071,7 @@
     "limits": "A CSV file, up to 1,000 lines and 1 MB.",
     "choose": "Choose file",
     "demoSample": "Trying the demo?",
-    "demoSampleLink": "Download a sample bank file",
+    "demoSampleLink": "download it",
     "next": "Next",
     "back": "Back",
     "headerRow": "Header row",
@@ -2129,7 +2131,8 @@
       "generic": "That didn't work. Try again.",
       "busy": "Someone else is saving payments right now. Try again in a moment.",
       "not_allowed": "Only the Owner and Billing can do this."
-    }
+    },
+    "useSample": "Use the sample bank file"
   },
   "invoicePayments": {
     "title": "Payments",
@@ -3214,7 +3217,9 @@
     "demoTitle": "Try the demo as",
     "demoHint": "The demo people need no password and no code.",
     "continueAs": "Continue as {name}",
-    "busy": "Too many people are signing in right now. Try again in a moment."
+    "busy": "Too many people are signing in right now. Try again in a moment.",
+    "demoSubtitle": "Explore a week at a made-up staffing agency. Choose who you are.",
+    "or": "or"
   },
   "signInCode": {
     "title": "Enter your code",
@@ -3802,7 +3807,7 @@
         "convert": {
           "title": "Convert a week of timesheets",
           "body": "Drop in photos, PDFs and time-clock exports, then check only the rows Shiftbook flags.",
-          "demo": "In this demo, download the sample timesheets from the banner at the top and drop them all in.",
+          "demo": "In this demo, choose “Use the sample timesheets” on the upload page.",
           "action": "Convert timesheets"
         },
         "approval": {
@@ -3818,7 +3823,8 @@
         "bank": {
           "title": "Match a bank file to the invoices",
           "body": "Import your bank's CSV and each deposit is matched to the invoices it pays.",
-          "action": "Open bank"
+          "action": "Open bank",
+          "demo": "In this demo, choose “Use the sample bank file” on the import page."
         },
         "ssn": {
           "title": "Look up a worker's SSN",

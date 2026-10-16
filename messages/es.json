@@ -195,7 +195,9 @@
       "archiveBody": "Sus horas no se pagan ni se facturan. Explique por qué, por ejemplo, que las mismas horas están en otro archivo.",
       "archiveReason": "Motivo",
       "archiveConfirm": "Archivar",
-      "stuck": "La lectura se detuvo antes de terminar. Vuelva a leerlo, o archívelo si sus horas están en otro archivo."
+      "stuck": "La lectura se detuvo antes de terminar. Vuelva a leerlo, o archívelo si sus horas están en otro archivo.",
+      "demoSamples": "¿Probando la demostración?",
+      "useSamples": "Usar las hojas de horas de ejemplo"
     },
     "hours": {
       "sectionTitle": "Horas",
@@ -2069,7 +2071,7 @@
     "limits": "Un archivo CSV, hasta 1,000 líneas y 1 MB.",
     "choose": "Elegir archivo",
     "demoSample": "¿Probando la demostración?",
-    "demoSampleLink": "Descargar un archivo de banco de ejemplo",
+    "demoSampleLink": "descargarlo",
     "next": "Siguiente",
     "back": "Atrás",
     "headerRow": "Fila de encabezados",
@@ -2129,7 +2131,8 @@
       "generic": "No funcionó. Intente de nuevo.",
       "busy": "Alguien más está guardando pagos ahora. Intente de nuevo en un momento.",
       "not_allowed": "Solo el Propietario y Facturación pueden hacer esto."
-    }
+    },
+    "useSample": "Usar el archivo de banco de ejemplo"
   },
   "invoicePayments": {
     "title": "Pagos",
@@ -3214,7 +3217,9 @@
     "demoTitle": "Pruebe la demostración como",
     "demoHint": "Las personas de la demostración no necesitan contraseña ni código.",
     "continueAs": "Continuar como {name}",
-    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento."
+    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento.",
+    "demoSubtitle": "Explore una semana en una agencia de personal inventada. Elija quién es usted.",
+    "or": "o"
   },
   "signInCode": {
     "title": "Escriba su código",
@@ -3802,7 +3807,7 @@
         "convert": {
           "title": "Convierta una semana de hojas de horas",
           "body": "Suelte fotos, PDF y exportaciones del reloj checador, y revise solo las filas que Shiftbook marca.",
-          "demo": "En esta demostración, descargue las hojas de horas de ejemplo desde el aviso de arriba y suéltelas todas.",
+          "demo": "En esta demostración, elija «Usar las hojas de horas de ejemplo» en la página de carga.",
           "action": "Convertir hojas de horas"
         },
         "approval": {
@@ -3818,7 +3823,8 @@
         "bank": {
           "title": "Empareje un archivo del banco con las facturas",
           "body": "Importe el CSV de su banco y cada depósito se empareja con las facturas que paga.",
-          "action": "Abrir banco"
+          "action": "Abrir banco",
+          "demo": "En esta demostración, elija «Usar el archivo de banco de ejemplo» en la página de importación."
         },
         "ssn": {
           "title": "Consulte el SSN de un trabajador",

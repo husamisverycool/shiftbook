@@ -79,6 +79,7 @@ export function SetupGuide({ steps, demo }: { steps: GuideStep[]; demo: boolean 
                     <p className="text-muted-foreground">
                       {t(`steps.${s.key}.body`)}
                       {s.key === "convert" && demo && <> {t("steps.convert.demo")}</>}
+                      {s.key === "bank" && demo && <> {t("steps.bank.demo")}</>}
                     </p>
                     <Link href={s.href} className={buttonVariants({ size: "sm", variant: s.done ? "outline" : "default" })} data-testid={`setup-action-${s.key}`}>
                       {t(`steps.${s.key}.action`)}

@@ -1,13 +1,20 @@
 # Pattern: Sign-in frame (`src/app/[locale]/(auth)/layout.tsx`)
 
-Status: adopted — slice (k) plan (2026-10-16, under the owner's "just keep going")
-Reference product and screen: GitHub — sign-in, two-factor sign-in, password reset and invitation
-pages (a page of its own before the app opens: one narrow column, one task per page, no app
-navigation); Linear — login page (the ways to sign in listed one under another); Square — the
-person's language applies to the login page too
+Status: adopted — slice (k) plan; revised by decision 0031 (2026-10-16, the owner's "very
+sophisticated … seamless" sign-in)
+Reference product and screen: Linear — login page (light grey page, the mark above "Log in to
+Linear", the ways in as full-width buttons); Vercel — login page (one narrow column on a light page);
+Notion — login page (the language choice at the foot); GitHub — sign-in, two-factor sign-in,
+password reset and invitation pages (one task per page, before the app); shadcn/ui login blocks (the
+product as a mark in a small rounded square); Square — the person's language applies to the login
+page too
 Source URL: https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/accessing-github-using-two-factor-authentication
 Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/updating-your-github-access-credentials
 Source URL: https://linear.app/docs/login-methods
+Source URL: https://linear.app/login
+Source URL: https://vercel.com/login
+Source URL: https://www.notion.so/login
+Source URL: https://ui.shadcn.com/blocks/login
 Source URL: https://squareup.com/help/us/en/article/5234
 Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3–4). Confidence: high
 for "one task per page, before the app"; the exact widths and spacing are not documented.
@@ -19,10 +26,13 @@ agency navigation here: the person is not signed in yet (or not all the way).
 
 ## Hierarchy
 1. **Demo banner** (root frame, demo mode only) — unchanged.
-2. **Header:** the product's name ("Shiftbook") on the left, and the language switch on the right
-   (SPEC §20; Square: the language setting applies to the login page). The switch keeps the same
-   page and changes only the language.
-3. **Page content:** one narrow column centred on the page, the page's own pattern inside it.
+2. **The page** in the app's light sidebar tone (Linear's and Vercel's light page), no header bar.
+3. **One narrow column** (about 22rem), its top a little below the page's top: the Shiftbook mark
+   centred (Linear, GitHub, Notion: the product's mark above the heading), then the page's own
+   pattern; every page's heading centred.
+4. **The foot of the page:** the language switch — a globe, then English · Español, the current one
+   darker (Notion's "Language" at the foot; SPEC §20; Square: the language setting applies to the
+   login page). The switch keeps the same page and changes only the language.
 
 ## Interactions
 - Language switch → the same page in the other language (a sign-in link keeps working).
@@ -32,6 +42,7 @@ agency navigation here: the person is not signed in yet (or not all the way).
 - None of its own: each page handles its states.
 
 ## Never copy
-GitHub's, Linear's or Square's wording, icons, colors or logos.
+GitHub's, Linear's, Vercel's, Notion's or Square's wording, icons, colors or logos; any product's
+background art.
 
 Deviations allowed: none

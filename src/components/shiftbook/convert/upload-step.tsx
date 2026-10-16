@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { unzipSync } from "fflate";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { MAX_TIMESHEET_BYTES } from "@/lib/limits";
@@ -34,7 +35,9 @@ export interface UploadDoc {
   needsReview: number;
 }
 
-export function UploadStep({ periodId, documents }: { periodId: string; documents: UploadDoc[] }) {
+const MEDIA_TYPES: Record<string, string> = { csv: "text/csv", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", heic: "image/heic", heif: "image/heif", pdf: "application/pdf", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+
+export function UploadStep({ periodId, documents, demo = false }: { periodId: string; documents: UploadDoc[]; demo?: boolean }) {
   const t = useTranslations("convert.upload");
   const tcommon = useTranslations("common");
   const tc = useTranslations("convert.errors");
@@ -62,6 +65,19 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
     const timer = setInterval(() => router.refresh(), 1500);
     return () => clearInterval(timer);
   }, [processing.length, router]);
+
+  // Demo only (decision 0031): the sample timesheets go into the same upload as dropped files.
+  const [fetchingSamples, startSamples] = useTransition();
+  const loadSamples = () =>
+    startSamples(async () => {
+      const response = await fetch("/api/demo/samples");
+      if (!response.ok) return void toast.error(tcommon("retry"));
+      const zip = unzipSync(new Uint8Array(await response.arrayBuffer()));
+      const files = Object.entries(zip)
+        .filter(([path, bytes]) => !path.endsWith("/") && bytes.length > 0)
+        .map(([path, bytes]) => new File([bytes as BlobPart], path.split("/").pop()!, { type: MEDIA_TYPES[path.split(".").pop()!.toLowerCase()] ?? "application/octet-stream" }));
+      send(files);
+    });
 
   // One file per request, so a batch never meets the request size limit; files over the limit are
   // refused here with the same reason the server gives.
@@ -132,6 +148,14 @@ export function UploadStep({ periodId, documents }: { periodId: string; document
               {t("select")}
             </Button>
           </div>
+          {demo && documents.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {t("demoSamples")}{" "}
+              <Button variant="link" className="h-auto p-0 text-foreground underline underline-offset-4" onClick={loadSamples} disabled={uploading || fetchingSamples} data-testid="use-samples">
+                {t("useSamples")}
+              </Button>
+            </p>
+          )}
           {refused.length > 0 && (
             <div className="flex flex-col gap-1 rounded-xl border bg-card p-3 text-sm" data-testid="refused">
               <p className="font-medium">{t("refused")}</p>

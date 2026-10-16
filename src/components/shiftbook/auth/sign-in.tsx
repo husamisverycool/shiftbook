@@ -1,7 +1,9 @@
 "use client";
 
-// Pattern: docs/patterns/sign-in.md — GitHub sign-in (email, password with "Forgot password?", Sign in;
-// the code comes on its own page); Linear's login list ("Continue with …") for the demo people.
+// Pattern: docs/patterns/sign-in.md (decision 0031) — Linear's sign-in: the heading centred, the main way
+// in as one filled full-width button and the others outlined under it (in the demo, the demo people);
+// an "or" rule between ways in (GitHub, Stripe, Notion); then GitHub's form (email, password with
+// "Forgot password?", Sign in; the code comes on its own page).
 import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { demoSignInAction, signInAction } from "@/app/[locale]/(auth)/actions";
@@ -10,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import type { Role } from "@/server/permissions";
+import { initialsOf, withoutNote } from "../person";
 
 export type SignInNotice = "signed_out" | "expired" | "password_changed" | "link_expired";
 
@@ -24,13 +28,48 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople }: { 
   const [pending, start] = useTransition();
   const [demoPending, startDemo] = useTransition();
 
+  const demo = demoPeople.length > 0;
   return (
     <>
-      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      <div className="flex flex-col gap-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        {demo && <p className="text-sm text-balance text-muted-foreground">{t("demoSubtitle")}</p>}
+      </div>
       {notice && (
         <Alert data-testid="sign-in-notice">
           <AlertDescription>{t(`notice.${notice}`)}</AlertDescription>
         </Alert>
+      )}
+      {demo && (
+        <section aria-labelledby={`${id}-demo`} className="flex flex-col gap-2.5" data-testid="demo-people">
+          <h2 id={`${id}-demo`} className="sr-only">
+            {t("demoTitle")}
+          </h2>
+          {demoPeople.map((p, i) => (
+            <Button
+              key={p.id}
+              variant={i === 0 ? "default" : "outline"}
+              className={cn("h-11 w-full justify-start gap-3 px-3 text-left", i > 0 && "bg-background")}
+              disabled={demoPending}
+              onClick={() => startDemo(async () => void (await demoSignInAction(p.id, next)))}
+              data-testid={`continue-${p.role}`}
+            >
+              <span aria-hidden className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold", i === 0 ? "bg-primary-foreground/15" : "bg-muted text-foreground/70")}>
+                {initialsOf(p.name)}
+              </span>
+              <span className="min-w-0 flex-1 truncate">{t("continueAs", { name: withoutNote(p.name) })}</span>
+              <span className={cn("shrink-0 text-xs font-normal", i === 0 ? "text-primary-foreground/70" : "text-muted-foreground")}>{tr(`${p.role}.name`)}</span>
+            </Button>
+          ))}
+          <p className="pt-1 text-center text-xs text-muted-foreground">{t("demoHint")}</p>
+        </section>
+      )}
+      {demo && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground" role="separator" aria-label={t("or")}>
+          <span className="h-px flex-1 bg-border" aria-hidden />
+          <span aria-hidden>{t("or")}</span>
+          <span className="h-px flex-1 bg-border" aria-hidden />
+        </div>
       )}
       <form
         className="flex flex-col gap-4"
@@ -47,7 +86,7 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople }: { 
       >
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${id}-email`}>{t("email")}</Label>
-          <Input id={`${id}-email`} type="email" autoComplete="username" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus={!initialEmail} required data-testid="email" />
+          <Input id={`${id}-email`} className="bg-background" type="email" autoComplete="username" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus={!initialEmail && !demo} required data-testid="email" />
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between gap-2">
@@ -58,6 +97,7 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople }: { 
           </div>
           <Input
             id={`${id}-password`}
+            className="bg-background"
             type="password"
             autoComplete="current-password"
             value={password}
@@ -79,33 +119,10 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople }: { 
             )}
           </p>
         )}
-        <Button type="submit" disabled={pending || !email || !password} className="w-full" data-testid="sign-in">
+        <Button type="submit" variant={demo ? "outline" : "default"} disabled={pending || !email || !password} className={cn("w-full", demo && "bg-background")} data-testid="sign-in">
           {pending ? t("submitting") : t("submit")}
         </Button>
       </form>
-      {demoPeople.length > 0 && (
-        <section aria-labelledby={`${id}-demo`} className="flex flex-col gap-3 border-t pt-6" data-testid="demo-people">
-          <div className="flex flex-col gap-1">
-            <h2 id={`${id}-demo`} className="font-semibold">
-              {t("demoTitle")}
-            </h2>
-            <p className="text-sm text-muted-foreground">{t("demoHint")}</p>
-          </div>
-          {demoPeople.map((p) => (
-            <Button
-              key={p.id}
-              variant="outline"
-              className="h-auto w-full flex-col items-start gap-0.5 py-2 text-left"
-              disabled={demoPending}
-              onClick={() => startDemo(async () => void (await demoSignInAction(p.id, next)))}
-              data-testid={`continue-${p.role}`}
-            >
-              <span>{t("continueAs", { name: p.name })}</span>
-              <span className="text-xs font-normal text-muted-foreground">{tr(`${p.role}.name`)}</span>
-            </Button>
-          ))}
-        </section>
-      )}
     </>
   );
 }

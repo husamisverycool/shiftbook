@@ -13,6 +13,7 @@ import { ExceptionsStep } from "@/components/shiftbook/convert/exceptions-step";
 import { TotalsReview } from "@/components/shiftbook/convert/totals-review";
 import { needsAttention, STEPS, type GridRow, type Step } from "@/components/shiftbook/convert/types";
 import { UploadStep } from "@/components/shiftbook/convert/upload-step";
+import { isDemo } from "@/server/session";
 import { longDate } from "@/components/shiftbook/format";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { filesStep, getPeriod, hoursStep, latestRun, listPeriods, openCorrectionOf, totalsStep, uploadStep } from "@/server/convert/queries";
@@ -64,7 +65,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     if (documents.some((d) => d.status === "received" || d.stuck)) after(() => processQueuedDocuments(actor).catch(() => undefined));
     return (
       <ConvertFrame {...frame} alerts={correctionAlert} forward={{ kind: "link", step: "hours", disabled: documents.length === 0 || reading }}>
-        <UploadStep periodId={periodId} documents={documents} />
+        <UploadStep periodId={periodId} documents={documents} demo={isDemo()} />
       </ConvertFrame>
     );
   }

@@ -11,6 +11,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupConte
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { Role } from "@/server/permissions";
 import { useCan } from "./abilities";
+import { initialsOf, withoutNote } from "./person";
 
 // Home first, then the areas in groups under short labels (decision 0029: Stripe's sidebar sections,
 // Apple's two levels at most). The G-then-letter keys stay as they were.
@@ -85,13 +86,20 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
               render={
                 <button
                   type="button"
-                  className="flex w-full min-w-0 items-center gap-1 rounded-md px-2 py-1 text-left text-sm font-semibold outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                  className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-semibold outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                   aria-label={t("agencyMenu")}
                   data-testid="agency-menu"
                 />
               }
             >
-              <span className="truncate">{agencyName}</span>
+              {/* The workspace's initials in a small square before its name (Linear's workspace menu; shadcn's team switcher). */}
+              <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">
+                {initialsOf(agencyName)}
+              </span>
+              {/* The demo banner says it is a demo; the name stays readable beside its mark. */}
+              <span className="truncate" title={agencyName}>
+                {withoutNote(agencyName)}
+              </span>
               <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">

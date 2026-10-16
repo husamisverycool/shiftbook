@@ -104,6 +104,7 @@ period is the first row.
    - A correction's Review totals shows was / now / difference per worker and per client.
 
 ## Interactions
+- **Demo only (decision 0031):** under the drop zone, while nothing is uploaded, "Trying the demo? Use the sample timesheets" puts the demo's sample folder into the same upload as dropped files (the download in the banner stays).
 - **Gating (Gusto hours step):** the forward action is disabled while any blocker exists, while
   files are still being read, and while totals are being computed. While computing, its label
   changes to the in-progress form and the body is replaced by a loading panel (title + one line

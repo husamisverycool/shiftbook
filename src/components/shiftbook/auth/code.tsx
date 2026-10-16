@@ -14,8 +14,8 @@ export function CodeView({ next }: { next: string | null }) {
   const [leaving, leave] = useTransition();
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      <div className="flex flex-col gap-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("body")}</p>
       </div>
       <CodeFields
@@ -28,7 +28,7 @@ export function CodeView({ next }: { next: string | null }) {
           })
         }
       />
-      <p className="border-t pt-4 text-sm text-muted-foreground">
+      <p className="border-t pt-4 text-center text-sm text-muted-foreground">
         {t("notYou")}{" "}
         <button type="button" className="text-primary underline-offset-4 hover:underline" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="code-sign-out">
           {t("signOut")}

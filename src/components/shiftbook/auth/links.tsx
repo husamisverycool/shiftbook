@@ -23,8 +23,8 @@ export function ResetRequestView({ email: initialEmail }: { email: string }) {
   if (sent)
     return (
       <>
-        <div className="flex flex-col gap-2" role="status">
-          <h1 className="text-2xl font-semibold">{t("sentTitle")}</h1>
+        <div className="flex flex-col gap-2 text-center" role="status">
+          <h1 className="text-2xl font-semibold tracking-tight">{t("sentTitle")}</h1>
           <p className="text-sm text-muted-foreground">{t("sentBody", { email: sent.email })}</p>
         </div>
         {sent.demoCopy && (
@@ -35,15 +35,15 @@ export function ResetRequestView({ email: initialEmail }: { email: string }) {
             </div>
           </div>
         )}
-        <Link href="/sign-in" className="text-sm text-primary underline-offset-4 hover:underline">
+        <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline">
           {t("back")}
         </Link>
       </>
     );
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      <div className="flex flex-col gap-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("body")}</p>
       </div>
       <form
@@ -66,7 +66,7 @@ export function ResetRequestView({ email: initialEmail }: { email: string }) {
           {pending ? t("sending") : t("submit")}
         </Button>
       </form>
-      <Link href="/sign-in" className="text-sm text-primary underline-offset-4 hover:underline">
+      <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline">
         {t("back")}
       </Link>
     </>
@@ -80,7 +80,7 @@ export function LinkGone({ kind }: { kind: "reset" | "invite" }) {
   return (
     <>
       <div className="flex flex-col gap-2" data-testid="link-gone">
-        <h1 className="text-2xl font-semibold">{kind === "reset" ? tn("expiredTitle") : ti("expiredTitle")}</h1>
+        <h1 className="text-center text-2xl font-semibold tracking-tight">{kind === "reset" ? tn("expiredTitle") : ti("expiredTitle")}</h1>
         <p className="text-sm text-muted-foreground">{kind === "reset" ? tn("expiredBody") : ti("expiredBody")}</p>
       </div>
       <div className="flex flex-col gap-2">
@@ -108,7 +108,7 @@ export function NewPasswordView({ token, email, needsCode }: { token: string; em
   return (
     <>
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <h1 className="text-center text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("forEmail", { email })}</p>
       </div>
       {!codeGiven ? (
@@ -144,7 +144,7 @@ export function NewPasswordView({ token, email, needsCode }: { token: string; em
           }
         />
       )}
-      <Link href="/sign-in" className="text-sm text-primary underline-offset-4 hover:underline">
+      <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline">
         {t("back")}
       </Link>
     </>
@@ -161,8 +161,8 @@ export function InviteView({ token, invite }: { token: string; invite: { agencyN
   const needsApp = invite.role === "owner" || invite.role === "coordinator";
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">{t("title", { agency: invite.agencyName })}</h1>
+      <div className="flex flex-col gap-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title", { agency: invite.agencyName })}</h1>
         <p className="text-sm">{t("body", { by: invite.byLabel, role: tr(`${invite.role}.name`) })}</p>
         <p className="text-sm text-muted-foreground">{tr(`${invite.role}.line`)}</p>
         <p className="text-sm text-muted-foreground">{t("email", { email: invite.email })}</p>

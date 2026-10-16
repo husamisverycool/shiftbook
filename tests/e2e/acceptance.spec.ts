@@ -28,6 +28,8 @@ const MESSAGES = {
   es: JSON.parse(readFileSync("messages/es.json", "utf8")) as Messages,
 };
 const SAMPLES = "demo/samples/2026-10-05";
+/** A test photo with a hand-written recorded reading (fixtures/make-photo-fixture.ts): the photo path, until the demo's own photos have recorded readings. */
+const PHOTO = "tests/e2e/fixtures/photo-sign-in-2026-10-06.jpg";
 const PRAIRIE = "Prairie Line Manufacturing (demo)";
 const TIMECLOCK = "IL-prairie-line-timeclock-2026-10-05.csv";
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -74,12 +76,12 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.upload })).toBeVisible();
     const period = new URL(page.url()).searchParams.get("period")!;
 
-    // 1. The whole sample folder at once.
+    // 1. The whole sample folder at once, and one photographed sheet the test can read.
     const files = readdirSync(SAMPLES);
-    await page.getByTestId("file-input").setInputFiles(files.map((f) => `${SAMPLES}/${f}`));
-    await expect(page.getByTestId("document-row")).toHaveCount(files.length, { timeout: 180_000 });
+    await page.getByTestId("file-input").setInputFiles([...files.map((f) => `${SAMPLES}/${f}`), PHOTO]);
+    await expect(page.getByTestId("document-row")).toHaveCount(files.length + 1, { timeout: 180_000 });
     await expect(page.getByTestId("processing")).toHaveCount(0, { timeout: 180_000 });
-    for (const name of ["timeclock", "fieldglass"]) await expect(page.getByTestId("document-row").filter({ hasText: name })).toContainText(m.convert.upload.status.read);
+    for (const name of ["timeclock", "fieldglass", "photo-sign-in"]) await expect(page.getByTestId("document-row").filter({ hasText: name })).toContainText(m.convert.upload.status.read);
     await expect(page.getByTestId("document-row").filter({ hasText: "timeclock" })).toContainText("51");
     for (let i = 0; i < 10 && (await page.getByTestId("archive").count()) > 0; i++) {
       await page.getByTestId("archive").first().click();
@@ -93,20 +95,43 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.hours })).toBeVisible();
     const needs = page.getByRole("button", { name: new RegExp(`^${escape(h.filterNeedsReview.split(" (")[0]!)}`) });
     const all = page.getByRole("button", { name: new RegExp(`^${escape(h.filterAll.split(" (")[0]!)}`) });
-    await expect(needs).toHaveAttribute("aria-pressed", "true");
     const count = async (b: typeof needs) => Number(/\((\d+)\)/.exec((await b.textContent()) ?? "")?.[1]);
     const needCount = await count(needs);
     const allCount = await count(all);
     expect(allCount).toBeGreaterThan(needCount);
-    if (needCount === 0) await expect(page.getByText(h.noRows)).toBeVisible();
-    else await expect(page.getByTestId("hours-row")).toHaveCount(needCount);
+    if (needCount > 0) {
+      await expect(needs).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByTestId("hours-row")).toHaveCount(needCount);
+    } else {
+      // Nothing to check: the grid opens on every row.
+      await expect(all).toHaveAttribute("aria-pressed", "true");
+    }
 
-    // 2. Every value read says where it came from: a time-clock row opens its file and row.
+    // 2. Every value read says where it came from: a time-clock row names its file and row; a
+    // photographed row shows the page with a box around each value read.
     await all.click();
     await page.getByTestId("hours-row").filter({ hasText: "Marcus Bell" }).first().getByRole("button", { name: h.openSource }).click();
-    await expect(page.getByTestId("source-panel")).toContainText(new RegExp(escape(h.noImage.split("{file}")[0]!) + escape(TIMECLOCK)));
+    const panel = page.getByTestId("source-panel");
+    await expect(panel).toContainText(new RegExp(escape(h.noImage.split("{file}")[0]!) + escape(TIMECLOCK)));
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("source-panel")).toBeHidden();
+    await expect(panel).toBeHidden();
+    await page.getByTestId("hours-row").filter({ hasText: "Robert Jones" }).first().getByRole("button", { name: h.openSource }).click();
+    await expect(panel.getByRole("img")).toBeVisible();
+    await expect(panel.locator("[data-state]")).toHaveCount(5); // worker, in, out, break, total
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+
+    // The rows a person must check: approved when the reading is right, rejected when it is no one's.
+    if (needCount > 0) {
+      await needs.click();
+      for (let i = 0; i < needCount + 2 && (await page.getByTestId("hours-row").count()) > 0; i++) {
+        const row = page.getByTestId("hours-row").first();
+        const approve = row.getByRole("button", { name: h.approve, exact: true });
+        if ((await approve.count()) > 0 && (await approve.isEnabled())) await approve.click();
+        else await row.getByRole("button", { name: h.reject, exact: true }).click();
+      }
+      await expect(page.getByText(h.noRows)).toBeVisible();
+    }
 
     // 4. Prairie Line's approver approves the week by the emailed link.
     await page.goto(`/${locale}/approvals?period=${period}`);
@@ -239,13 +264,16 @@ for (const locale of ["en", "es"] as const) {
         await page.goto(`/${locale}/convert?period=${period}&step=hours`);
         await toExceptions(page, m);
       }
+      // QuickBooks Online takes regular hours only: Marcus's overtime week is paid there by hand.
+      await skipAllBlocked(page, locale === "en" ? "Paid by hand in the payroll system" : "Pagado a mano en el sistema de nómina");
       await toTotals(page, m);
       await approveAndCreateFiles(page, m);
       await expect(page.getByTestId("payroll-file")).toContainText(m.convert.files.formats[system.id]);
       const file = await downloadPayroll(page);
-      // Marcus Bell 46 h (40 + 6 overtime) and Anita Patel 24 h: the file carries exactly the hours shown.
+      // Marcus Bell 46 h (40 + 6 overtime) and Anita Patel 24 h, Marcus left out where skipped: the
+      // file carries exactly the hours the control totals show.
       expect(system.minutes(file.text)).toBe(await shownMinutes(page));
-      expect(await shownMinutes(page)).toBe(70 * 60);
+      expect(await shownMinutes(page)).toBe(system.id === "qbo_time_csv" ? 24 * 60 : 70 * 60);
     }
   });
 }

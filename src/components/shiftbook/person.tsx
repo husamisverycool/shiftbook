@@ -3,8 +3,12 @@ import type { ReactNode } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-/** "Marcus Bell" → "MB"; "Bell, Marcus" → "MB"; one word → its first letter. */
-export function initialsOf(name: string): string {
+/** The name without a note in brackets after it: "Lena Ortiz (demo)" → "Lena Ortiz". */
+export const withoutNote = (name: string): string => name.replace(/\s*\([^()]*\)\s*$/, "").trim() || name;
+
+/** "Marcus Bell" → "MB"; "Bell, Marcus" → "MB"; one word → its first letter; a bracketed note after the name is left out. */
+export function initialsOf(full: string): string {
+  const name = withoutNote(full);
   const [last, first] = name.includes(",") ? name.split(",").map((s) => s.trim()) : [null, null];
   const words = (first !== null && last !== null ? `${first} ${last}` : name).split(/\s+/).filter((w) => /\p{L}/u.test(w));
   if (words.length === 0) return "?";

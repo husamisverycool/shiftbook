@@ -91,7 +91,9 @@ export async function demoSignInAction(userId: string, next: string | null): Pro
   const r = await demoSignIn(authDeps(), person.agencyId, person.id, await userAgent());
   if (!r.ok) return { ok: false };
   await keepSession(r.token);
-  onward("done", r.locale, next);
+  // The demo people are shared: the language the visitor chose on the sign-in page wins over the
+  // demo person's saved one (decision 0031).
+  onward("done", await getLocale(), next);
 }
 
 export async function verifyCodeAction(input: { code: string; next: string | null }): Promise<{ ok: false; error: "invalid" | "locked" }> {

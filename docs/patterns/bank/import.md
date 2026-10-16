@@ -26,6 +26,7 @@ Bring the bank's activity CSV in, so its deposits can be matched to invoices (de
    and lines already imported unticked and marked; **Import** with the count.
 
 ## Interactions
+- **Demo only (decision 0031):** "Trying the demo? Use the sample bank file · download it" — using it reads the sample as a chosen file and goes straight to Map columns.
 - Back and Next between steps; Import ends on the Bank page, For review.
 - A column choice that cannot be read (a date or an amount) shows which line failed and why.
 
