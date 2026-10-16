@@ -24,6 +24,19 @@ References used inside the steps (each has its own pattern file):
 Researched: 2026-10-15. Confidence: HIGH for the frame, gating, blocker alerts and review layout
 (read in Gusto's source); Gusto's own web app may differ in visual detail from its embedded UI.
 
+Slice (e) additions (research: `docs/research/weekly-run-slice-e.md`):
+Source URL: https://github.com/Gusto/embedded-react-sdk/blob/main/src/components/Payroll/PayrollBlocker/components/PayrollBlockerList.tsx
+Source URL: https://docs.gusto.com/embedded-payroll/docs/payroll-statuses
+Source URL: https://docs.checkhq.com/docs/payroll-preview-and-approval
+Source URL: https://docs.checkhq.com/reference/reopen-payroll
+Source URL: https://docs.checkhq.com/docs/correcting-pay-history
+Source URL: https://kb.tempworks.com/help/proofing-time-entry-sessions
+Source URL: https://support.risepeople.com/portal/kb/articles/how-to-finish-approve-a-pay-run
+Source URL: https://help.staffology.co.uk/payroll/payrun/step-by-step/step-9-warnings.htm
+Source URL: https://help.powerpay.ca/en/pphelp/Content/Procedures/PayrollPreviewDashboard.htm
+Source URL: https://docs.stripe.com/invoicing/dashboard/credit-notes
+Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/settingRebillInvoiceNumber.htm
+
 ## Purpose in Shiftbook
 The smallest end-to-end product: take last week's timesheets for one period, read them, let a
 person fix what needs review, and hand back the payroll file and one client invoice.
@@ -49,18 +62,40 @@ period is the first row.
 1. **Upload timesheets** — body from `inbox.md`. Forward action: "Review hours".
 2. **Review hours** (Gusto hours step) — blocker alerts above the body; then an H2 section heading
    with a one-line description; then the grid from `review.md`, filtered by default to entries that
-   need review (SPEC §24 step 3), with the source panel. Forward action: "Review totals".
-3. **Review totals** (Gusto review step):
+   need review (SPEC §24 step 3), with the source panel. Forward action: "Check exceptions" (the
+   rules are computed on the way: SPEC "rules computed").
+3. **Exceptions** (Gusto blocker list; TempWorks proofing "check for errors"; Rise People and
+   Staffology warnings):
+   - A summary alert first: the count of blocking problems (error), or that none were found.
+   - H2 "Blocking", then one row per kind of problem: title (the kind) and description (the people
+     or entries, the count), and the row's action at the right — the Fix that applies (back to
+     Review hours, skip the workers for this run with a reason, both are real, open Client
+     approvals, back to Upload).
+   - H2 "Warnings", the same rows without blocking (they never stop the run; Rise: "warnings do not
+     block approval").
+   - Forward action "Review totals", disabled while any blocking row remains (Gusto: calculate is
+     disabled while blockers exist; TempWorks: all errors resolved to continue). Coming back here
+     checks again (TempWorks "Refresh").
+4. **Review totals** (Gusto review step):
    - Actions at the right of the heading row: **Edit** (secondary; back to step 2) and the forward
-     action (primary: "Create files").
-   - Alerts, then blockers (each an error alert; see Interactions).
+     action (primary: **Approve** — Owner only; Gusto Submit, Check approve). Once approved, an
+     "approved by … on …" success alert with **Unapprove** (a reason; Rise "unapprove until
+     posted", Check "reopen"), and the forward action becomes "Create files".
+   - Warnings shown again as alerts (acknowledged by approving).
    - H2 "Summary", then a one-row table of the run's figures: workers · regular hours · overtime
      hours · gross pay · billed amount.
    - Tabs, each a table with a **totals footer row**, 25 rows per page:
      hours worked (worker · regular · overtime · double time · total), pay (worker · gross pay),
      billing (client · hours · billed amount).
-4. **Files** (Gusto receipt step; sections from `exports.md`) — a success alert, then one section
+5. **Files** (Gusto receipt step; sections from `exports.md`) — a success alert, then one section
    per file (payroll file, invoice), each with its control totals and Download at its upper right.
+   - **Versions** (Check: a paid payroll is immutable, a correction is a new unit; Stripe "older
+     versions"): the period's versions listed newest first, each with its files. **Start a
+     correction** (Owner, a required reason) opens the period again as the next version.
+   - A correction version's files: the payroll file with only the differences, and per client a
+     supplemental invoice (Bullhorn rebill: the original number with a suffix) or a credit note
+     (Stripe: the original number with `-CN-` and a count), each naming the original.
+   - A correction's Review totals shows was / now / difference per worker and per client.
 
 ## Interactions
 - **Gating (Gusto hours step):** the forward action is disabled while any blocker exists, while
@@ -79,8 +114,11 @@ period is the first row.
 - **Download** → the file goes straight to the device (Stripe, `exports.md`).
 
 ## States
-Run states (Gusto: editable → calculated → submitting → processed): Shiftbook PayRun `draft` →
-`ready` / `blocked` → `exported` (SPEC §4). Loading panels while reading files, computing totals and
+Run states (Gusto: editable → calculated → submitting → processed; Check: draft → preview →
+approved): Shiftbook PayRun `draft` → `ready` / `blocked` → `approved` → `exported` (SPEC §4). A
+change after approval returns the run to `ready`/`blocked` (Gusto: preparing again cancels the
+calculations; Check: a change resets the preview). A correction is the next version of the same
+period, through the same steps. Loading panels while reading files, computing totals and
 creating files. A load failure shows an error alert with a retry action (Gusto "processing failed"
 with recalculate).
 

@@ -12,6 +12,7 @@ Source URL: https://docs.stripe.com/invoicing/dashboard/manage-invoices.md
 Source URL: https://help.instawork.com/en/articles/3758225-how-to-review-disputes
 Source URL: https://linear.app/docs/issue-property
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/timesheetApprovalReminders.htm
+Source URL: https://kb.tempworks.com/help/customer-portal-reviewing-and-approving-webcenter-timecards
 Researched: 2026-10-16. Confidence: high for Harvest and Stripe list mechanics; medium for
 Instawork's banner (one article).
 
@@ -29,7 +30,9 @@ who has not, and which shifts a client disputed.
    email, or "No approver yet"), shifts and hours in the period, status badge with a tooltip
    (Stripe), last activity (sent, reminded, approved) with its time.
 5. **Row actions** (Harvest per-row actions; Stripe ⋯ menu): Send for approval (Not sent), Send a
-   reminder (Waiting), Open.
+   reminder (Waiting), Open; in the row's ⋯ menu, **Approval required before payroll** on or off
+   for the client (TempWorks: "every client may be set up differently"; slice e), audited. A client
+   that requires approval shows it beside its name.
 
 ## Interactions
 - A row opens `/approvals/[id]` for that client and period (Stripe: row opens the detail page). A
