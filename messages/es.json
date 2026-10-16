@@ -197,7 +197,10 @@
       "archiveConfirm": "Archivar",
       "stuck": "La lectura se detuvo antes de terminar. Vuelva a leerlo, o archívelo si sus horas están en otro archivo.",
       "demoSamples": "¿Probando la demostración?",
-      "useSamples": "Usar las hojas de horas de ejemplo"
+      "useSamples": "Usar las hojas de horas de ejemplo",
+      "archiveUnreadable": "{count, plural, one {Archivar la hoja de horas que no se pudo leer} other {Archivar las # que no se pudieron leer}}",
+      "archiveAllTitle": "{count, plural, one {¿Archivar esta hoja de horas?} other {¿Archivar estas # hojas de horas?}}",
+      "noRecording": "Esta demostración aún no tiene una lectura guardada de este archivo, así que aquí no se puede leer. Archívelo para continuar."
     },
     "hours": {
       "sectionTitle": "Horas",

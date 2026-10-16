@@ -197,7 +197,10 @@
       "archiveConfirm": "Archive",
       "stuck": "Reading stopped before it finished. Read it again, or archive it if its hours are elsewhere.",
       "demoSamples": "Trying the demo?",
-      "useSamples": "Use the sample timesheets"
+      "useSamples": "Use the sample timesheets",
+      "archiveUnreadable": "{count, plural, one {Archive the timesheet that could not be read} other {Archive the # that could not be read}}",
+      "archiveAllTitle": "{count, plural, one {Archive this timesheet?} other {Archive these # timesheets?}}",
+      "noRecording": "This demo has no saved reading of this file yet, so it cannot be read here. Archive it to go on."
     },
     "hours": {
       "sectionTitle": "Hours",

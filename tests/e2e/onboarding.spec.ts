@@ -65,6 +65,14 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByTestId("document-row")).toHaveCount(SAMPLES.length, { timeout: 180_000 });
     await expect(page.getByTestId("use-samples")).toHaveCount(0);
     await expect(page.getByTestId("document-row").filter({ hasText: "timeclock" })).toContainText(m.convert.upload.status.read, { timeout: 120_000 });
+    // The photos and the PDF have no recorded reading in this demo yet: one archive, one reason, for all six.
+    await expect(page.getByTestId("archive-unreadable")).toContainText("6", { timeout: 120_000 });
+    await expect(page.getByTestId("document-row").first()).toContainText(m.convert.upload.noRecording);
+    await page.getByTestId("archive-unreadable").click();
+    await page.locator("#archive-reason").fill(locale === "en" ? "No recorded reading in this demo" : "Sin lectura grabada en esta demostración");
+    await page.getByTestId("confirm-archive").click();
+    await expect(page.getByTestId("archive")).toHaveCount(0);
+    await expect(page.getByTestId("archive-unreadable")).toHaveCount(0);
 
     // The sample bank file in one click: straight to its columns.
     await page.goto(`/${locale}/bank/import`);

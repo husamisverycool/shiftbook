@@ -5,6 +5,7 @@
  *   Demo mode and tests use it, so the demo makes no outside calls yet runs the same code path.
  * - RecordingTransport: wraps a live transport and saves each answer for later replay.
  */
+import { NO_RECORDING_PREFIX } from "@/lib/no-recording";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -75,7 +76,7 @@ export class RecordingMissingError extends Error {
   readonly permanent = true;
   constructor(hash: string) {
     super(
-      `Demo mode makes no outside calls, so photos and PDFs are read only from readings recorded earlier, and there is no recorded reading for this page (${hash.slice(0, 12)}…).`,
+      `${NO_RECORDING_PREFIX}, and there is no recorded reading for this page (${hash.slice(0, 12)}…).`,
     );
     this.name = "RecordingMissingError";
   }

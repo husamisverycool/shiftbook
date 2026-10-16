@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { unzipSync } from "fflate";
+import { isNoRecording } from "@/lib/no-recording";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { MAX_TIMESHEET_BYTES } from "@/lib/limits";
@@ -50,7 +51,9 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
   const failed = (d: UploadDoc) => d.status === "failed" || d.stuck;
   const processing = documents.filter((d) => (d.status === "received" || d.status === "reading") && !d.stuck);
   const done = documents.filter((d) => d.status === "read" || d.status === "archived" || failed(d));
-  const [archiving, setArchiving] = useState<UploadDoc | null>(null);
+  // One timesheet, or every one that could not be read (Dext's inbox: a bulk action with one reason).
+  const [archiving, setArchiving] = useState<UploadDoc | "unreadable" | null>(null);
+  const unreadable = documents.filter(failed);
   const [archiveReason, setArchiveReason] = useState("");
   const run = (fn: () => Promise<{ ok: true } | { error: ActionRefusal }>) =>
     start(async () => {
@@ -187,7 +190,14 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">{t("documents")}</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="mr-auto text-lg font-semibold">{t("documents")}</h2>
+          {mayChange && unreadable.length >= 2 && (
+            <Button size="sm" variant="outline" onClick={() => setArchiving("unreadable")} disabled={uploading} data-testid="archive-unreadable">
+              {t("archiveUnreadable", { count: unreadable.length })}
+            </Button>
+          )}
+        </div>
         {done.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-12 text-sm text-muted-foreground">
             <FileTextIcon className="size-5" />
@@ -220,7 +230,7 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
                             <CircleAlertIcon className="size-4" />
                             {t("status.failed")}
                           </span>
-                          {(d.stuck || d.error) && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.stuck ? t("stuck") : d.error}</span>}
+                          {(d.stuck || d.error) && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.stuck ? t("stuck") : isNoRecording(d.error) ? t("noRecording") : d.error}</span>}
                           {mayChange && (
                             <div className="flex gap-3">
                               <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => run(() => retryAction(d.id))}>
@@ -250,7 +260,7 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
       <Dialog open={archiving !== null} onOpenChange={(open) => !open && setArchiving(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("archiveTitle")}</DialogTitle>
+            <DialogTitle>{archiving === "unreadable" ? t("archiveAllTitle", { count: unreadable.length }) : t("archiveTitle")}</DialogTitle>
             <DialogDescription>{t("archiveBody")}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
@@ -265,11 +275,20 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
               disabled={uploading || archiveReason.trim() === ""}
               data-testid="confirm-archive"
               onClick={() => {
-                const doc = archiving;
-                if (!doc) return;
+                const target = archiving;
+                const reason = archiveReason;
+                if (!target) return;
                 setArchiving(null);
                 setArchiveReason("");
-                run(() => archiveAction(doc.id, archiveReason));
+                if (target !== "unreadable") return run(() => archiveAction(target.id, reason));
+                // Each through the same archive as one at a time; the first refusal stops the rest.
+                run(async () => {
+                  for (const doc of unreadable) {
+                    const r = await archiveAction(doc.id, reason);
+                    if ("error" in r) return r;
+                  }
+                  return { ok: true as const };
+                });
               }}
             >
               {t("archiveConfirm")}
