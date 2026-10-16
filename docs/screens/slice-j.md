@@ -288,3 +288,13 @@ Screen: `j43-aca-offer-duty.png`.
 9. Spreadsheet months (10/2025, Oct-25), decimal hours and a Payroll ID column are read.
 - Nits: the duty shows the test's arithmetic; read-only users see no settings link; a file over
   5,000 rows says so.
+
+## Answer keys (plan "Done means" 5)
+Proposed in `tests/goldens/_proposed/compliance/`, each checked against hand arithmetic before it was
+written (`scripts/propose-compliance-goldens.ts`), from the rule rows the migrations store
+(`scripts/data/compliance-rules.json`, kept equal by `tests/integration/compliance-reference.test.ts`):
+`duties-registration-renewals`, `duties-illinois-client-proof`, `duties-placement-notices`,
+`duties-form-i9`, `duties-workers-comp`, `duties-aca-offer`, `aca-full-time-at-the-line`,
+`aca-new-worker-administrative-days`, `wc-packet-premium-split`; with `rules/il-s42-equal-pay-rate-paid`.
+They wait for the owner's approval.
+

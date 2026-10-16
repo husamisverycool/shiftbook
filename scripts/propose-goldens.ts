@@ -12,6 +12,7 @@ import { ExportError } from "../src/exports/errors";
 import type { InvoiceFileInput } from "../src/exports/invoice-files";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
 import { INVOICE_FILES, type InvoiceFileFormat } from "../tests/golden-runners/exports";
+import { proposeCompliance } from "./propose-compliance-goldens";
 import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_REGULAR_RATE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
 const OUT = "tests/goldens/_proposed";
@@ -821,3 +822,6 @@ invoiceFileRefusal(
   { number: "PLM-20261005", issuedOn: "2026-10-13", period: PERIOD, lines: [INVOICE_LINES[2]!, { ...INVOICE_LINES[3]!, timeSheetIds: ["9TS0000002", "9TS0000004"] }] },
   { code: "unsupported_earning_type", message: "Tran Nguyen: the OT line for the week ending 2026-10-11 has hours from two SAP Fieldglass time sheets (9TS0000002, 9TS0000004), and its amount cannot be split between them." },
 );
+
+// The compliance answer keys: the duties' dates, the ACA full-time test, the workers' comp premium split.
+proposeCompliance(OUT, writes);

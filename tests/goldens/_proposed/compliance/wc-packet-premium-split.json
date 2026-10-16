@@ -1,0 +1,182 @@
+{
+  "name": "wc-packet-premium-split",
+  "summary": "The workers' comp packet keeps the overtime premium apart by worker and class (NCRB Basic Manual Rule 2-C-2-a). Marcus Bell (IL 3632): overtime $164.25 at 1.5 has a premium of one third, $54.75; straight time $730.00 + $109.50 = $839.50. Jasmine Carter (CA 8292): overtime $58.50 at 1.5, premium $19.50; double time $39.00 at 2, premium half, $19.50; straight time $780.00 + $39.00 + $19.50 = $838.50; holiday pay $156.00 is other pay. Anita Patel: $438.00 straight. Kevin Tran has no class: listed apart, out of the totals ($100.00), but in all pay for the tie-out: $2,365.75 + $100.00 = $2,465.75.",
+  "kind": "wc_packet",
+  "input": {
+    "lines": [
+      {
+        "workerId": "mb",
+        "workerName": "Marcus Bell",
+        "state": "IL",
+        "classCode": "3632",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "multiplier": null
+      },
+      {
+        "workerId": "mb",
+        "workerName": "Marcus Bell",
+        "state": "IL",
+        "classCode": "3632",
+        "type": "OT",
+        "minutes": 360,
+        "amountCents": 16425,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        }
+      },
+      {
+        "workerId": "ap",
+        "workerName": "Anita Patel",
+        "state": "IL",
+        "classCode": "3632",
+        "type": "REG",
+        "minutes": 1440,
+        "amountCents": 43800,
+        "multiplier": null
+      },
+      {
+        "workerId": "jc",
+        "workerName": "Jasmine Carter",
+        "state": "CA",
+        "classCode": "8292",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 78000,
+        "multiplier": null
+      },
+      {
+        "workerId": "jc",
+        "workerName": "Jasmine Carter",
+        "state": "CA",
+        "classCode": "8292",
+        "type": "OT",
+        "minutes": 120,
+        "amountCents": 5850,
+        "multiplier": {
+          "num": 3,
+          "den": 2
+        }
+      },
+      {
+        "workerId": "jc",
+        "workerName": "Jasmine Carter",
+        "state": "CA",
+        "classCode": "8292",
+        "type": "DT",
+        "minutes": 60,
+        "amountCents": 3900,
+        "multiplier": {
+          "num": 2,
+          "den": 1
+        }
+      },
+      {
+        "workerId": "jc",
+        "workerName": "Jasmine Carter",
+        "state": "CA",
+        "classCode": "8292",
+        "type": "HOL_NOT_WORKED",
+        "minutes": 480,
+        "amountCents": 15600,
+        "multiplier": null
+      },
+      {
+        "workerId": "kt",
+        "workerName": "Kevin Tran",
+        "state": "CA",
+        "classCode": null,
+        "type": "REG",
+        "minutes": 300,
+        "amountCents": 10000,
+        "multiplier": null
+      }
+    ],
+    "order": "state"
+  },
+  "expected": {
+    "rows": [
+      {
+        "state": "CA",
+        "classCode": "8292",
+        "workerId": "jc",
+        "workerName": "Jasmine Carter",
+        "minutes": 2580,
+        "straightCents": 83850,
+        "otPremiumCents": 1950,
+        "dtPremiumCents": 1950,
+        "otherCents": 15600,
+        "totalCents": 103350,
+        "explain": "Regular $780.00; overtime $58.50 at 3/2, its premium (1/3) $19.50; double time $39.00 at 2/1, its premium (1/2) $19.50; other pay $156.00 (HOL_NOT_WORKED); straight time $838.50 + overtime premium $19.50 + double-time premium $19.50 + other pay $156.00 = $1,033.50, each premium rounded half up once."
+      },
+      {
+        "state": "IL",
+        "classCode": "3632",
+        "workerId": "ap",
+        "workerName": "Anita Patel",
+        "minutes": 1440,
+        "straightCents": 43800,
+        "otPremiumCents": 0,
+        "dtPremiumCents": 0,
+        "otherCents": 0,
+        "totalCents": 43800,
+        "explain": "Regular $438.00; straight time $438.00 = $438.00, each premium rounded half up once."
+      },
+      {
+        "state": "IL",
+        "classCode": "3632",
+        "workerId": "mb",
+        "workerName": "Marcus Bell",
+        "minutes": 2760,
+        "straightCents": 83950,
+        "otPremiumCents": 5475,
+        "dtPremiumCents": 0,
+        "otherCents": 0,
+        "totalCents": 89425,
+        "explain": "Regular $730.00; overtime $164.25 at 3/2, its premium (1/3) $54.75; straight time $839.50 + overtime premium $54.75 = $894.25, each premium rounded half up once."
+      }
+    ],
+    "missing": [
+      {
+        "workerId": "kt",
+        "workerName": "Kevin Tran",
+        "state": "CA",
+        "minutes": 300,
+        "totalCents": 10000
+      }
+    ],
+    "classes": [
+      {
+        "state": "CA",
+        "classCode": "8292",
+        "minutes": 2580,
+        "straightCents": 83850,
+        "otPremiumCents": 1950,
+        "dtPremiumCents": 1950,
+        "otherCents": 15600,
+        "totalCents": 103350
+      },
+      {
+        "state": "IL",
+        "classCode": "3632",
+        "minutes": 4200,
+        "straightCents": 127750,
+        "otPremiumCents": 5475,
+        "dtPremiumCents": 0,
+        "otherCents": 0,
+        "totalCents": 133225
+      }
+    ],
+    "totals": {
+      "minutes": 6780,
+      "straightCents": 211600,
+      "otPremiumCents": 7425,
+      "dtPremiumCents": 1950,
+      "otherCents": 15600,
+      "totalCents": 236575
+    },
+    "allPayCents": 246575
+  }
+}

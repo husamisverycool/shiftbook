@@ -27,7 +27,7 @@ export default defineConfig({
         },
       },
       {
-        // Approved goldens only (tests/goldens/rules + exports). Read-only answer key.
+        // Approved goldens only (tests/goldens/rules, exports and compliance). Read-only answer key.
         extends: true,
         test: { name: "goldens", include: ["tests/golden-runners/approved.test.ts"] },
       },
