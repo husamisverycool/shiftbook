@@ -263,6 +263,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       billOtMultiplier: { num: card.otMultiplierNum, den: card.otMultiplierDen },
       billDtMultiplier: { num: card.dtMultiplierNum, den: card.dtMultiplierDen },
       otBillingRule: profile[0]!.overtimeBillingRule,
+      billsPremiums: profile[0]!.billPremiums,
+      billsGuarantees: profile[0]!.billGuarantees,
       dayAndTemporaryLabor: a.jobOrder.dayAndTemporaryLabor,
     };
   };

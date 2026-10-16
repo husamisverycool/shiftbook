@@ -126,5 +126,10 @@ weeks (e); other states; alternative workweek schedules; split-shift premiums (f
   period, audited, kept in step when the run's hours change and never recorded twice. Golden G3.
   Known limit: the counter knows only hours kept in Shiftbook; hours an agency worked at a client
   before it started using Shiftbook need an opening balance (with the obligations screen, slice j).
-- Next: step 6 (billing per client), step 7 (lines and exports), the random-week property test,
+- Step 6 (billing per client): "overtime only at the client's own sites" (overtime and double time
+  the client's own hours alone would make, by the same rules, at its multipliers; the rest at
+  straight time, the agency bearing the premium), and profile settings to bill confirmed meal and
+  rest premiums and minimum pay for a short day at the bill rate (default: not billed, as before).
+  Golden G4d. The double-time bill multiplier and holiday billing came earlier (steps 3 and 4).
+- Next: the step 4 review's findings, step 7 (lines and exports), the random-week property test,
   the second-opinion reviews, Playwright.

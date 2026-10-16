@@ -1326,3 +1326,104 @@ describe("computePay — the Illinois equal-pay counter (820 ILCS 175/42): hours
     expect(rule.blockers.map((b) => b.code)).toEqual(["rule_data_invalid"]);
   });
 });
+
+describe("computePay — billing per client: overtime only for hours over 40 at the client's own sites, and billed premiums and minimum pay", () => {
+  const bills = (r: ReturnType<typeof computePay>) => r.billLines.map((l) => [l.clientId, l.type, l.ruleId, l.minutes, l.amountCents]);
+  // Research golden G2 (Joliet): 30 h forklift for client A, then 16 h general labor for client B.
+  const g2 = (ruleB: Shift["otBillingRule"]) => [
+    ...WEEK.slice(0, 3).map((d) => shift(d, 600, { assignmentId: "aA", clientId: "cA", payRateCents: 2000, billRateCents: 2800 })),
+    ...WEEK.slice(3, 5).map((d) => shift(d, 480, { assignmentId: "aB", clientId: "cB", payRateCents: 1700, billRateCents: 2400, otBillingRule: ruleB })),
+  ];
+
+  it("bills overtime caused by another client's hours at straight time (G4d: client B worked 16 h, so none is its overtime)", () => {
+    const r = computePay(input(g2("own_sites_only")));
+    expect(r.blockers).toEqual([]);
+    expect(r.payLines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
+      ["REG", 1800, 60_000],
+      ["REG", 600, 17_000],
+      ["OT", 360, 15_887],
+    ]);
+    expect(bills(r)).toEqual([
+      ["cA", "REG", "bill_regular", 1800, 84_000],
+      ["cB", "REG", "bill_regular", 600, 24_000],
+      ["cB", "OT", "bill_overtime_own_sites_straight", 360, 14_400],
+    ]);
+    expect(r.billLines[2]!.explain).toContain("16h 00m worked at this client's own sites this week");
+  });
+
+  it("bills a client's own overtime at its multiplier, and only the part caused elsewhere at straight time", () => {
+    const all = computePay(input(g2("own_sites_only").map((s) => ({ ...s, assignmentId: "aB", clientId: "cB", payRateCents: 1700, billRateCents: 2400 }))));
+    expect(bills(all).filter(([, t]) => t === "OT")).toEqual([["cB", "OT", "bill_overtime_multiplier", 360, 21_600]]);
+    // 2 h at A first on Monday, then 44 h at B: 6 h of overtime, 4 h of it B's own.
+    const mixed = computePay(
+      input([
+        shift(WEEK[0]!, 120, { startMinute: 300, assignmentId: "aA", clientId: "cA", billRateCents: 2800 }),
+        shift(WEEK[0]!, 480, { startMinute: 420, assignmentId: "aB", clientId: "cB", billRateCents: 2400, otBillingRule: "own_sites_only" }),
+        ...WEEK.slice(1, 5).map((d) => shift(d, 540, { assignmentId: "aB", clientId: "cB", billRateCents: 2400, otBillingRule: "own_sites_only" })),
+      ]),
+    );
+    expect(bills(mixed)).toEqual([
+      ["cA", "REG", "bill_regular", 120, 5600],
+      ["cB", "REG", "bill_regular", 2280, 91_200],
+      ["cB", "OT", "bill_overtime_multiplier", 240, 14_400],
+      ["cB", "OT", "bill_overtime_own_sites_straight", 120, 4800],
+    ]);
+  });
+
+  it("California: a day's overtime that comes from another client's hours that day is billed at straight time", () => {
+    const CA_SITE = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const;
+    const caJ: JurisdictionRule[] = [
+      ...JURISDICTIONS.filter((j) => j.jurisdiction !== "CA"),
+      ...["weekly_overtime", "ca_daily_overtime", "ca_daily_double_time", "ca_seventh_day", "ca_seventh_day_double_time"].map((ruleCode) => ({ jurisdiction: "CA", ruleCode, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" })),
+    ];
+    const row = (ruleCode: string, kind: OvertimeRule["kind"], thresholdMinutes: number, num: number, den: number, earningType: "OT" | "DT"): OvertimeRule => ({ jurisdiction: "CA", ruleCode, kind, thresholdMinutes, multiplier: { num, den }, earningType, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" });
+    const caOt = [...OT_RULES.filter((o) => o.jurisdiction !== "CA"), row("weekly_overtime", "weekly", 2400, 3, 2, "OT"), row("ca_daily_overtime", "daily", 480, 3, 2, "OT"), row("ca_daily_double_time", "daily_double", 720, 2, 1, "DT"), row("ca_seventh_day", "seventh_day", 0, 3, 2, "OT"), row("ca_seventh_day_double_time", "seventh_day", 480, 2, 1, "DT")];
+    const r = computePay(
+      input(
+        [
+          shift("2026-10-05", 240, { ...CA_SITE, startMinute: 360, assignmentId: "aA", clientId: "cA", payRateCents: 1800, billRateCents: 2600 }),
+          shift("2026-10-05", 360, { ...CA_SITE, startMinute: 600, assignmentId: "aB", clientId: "cB", payRateCents: 1800, billRateCents: 2600, otBillingRule: "own_sites_only" }),
+        ],
+        { workweekStartsOn: 0, overtimeRules: caOt, jurisdictionRules: caJ },
+      ),
+    );
+    expect(r.blockers).toEqual([]);
+    expect(bills(r)).toEqual([
+      ["cA", "REG", "bill_regular", 240, 10_400],
+      ["cB", "REG", "bill_regular", 240, 10_400],
+      ["cB", "OT", "bill_overtime_own_sites_straight", 120, 5200],
+    ]);
+  });
+
+  it("bills confirmed meal and rest premiums, and minimum pay for a short day, when the client's profile says so", () => {
+    const CA_SITE = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const;
+    const caJ: JurisdictionRule[] = [
+      ...JURISDICTIONS.filter((j) => j.jurisdiction !== "CA"),
+      ...["weekly_overtime", "ca_daily_overtime", "ca_daily_double_time", "ca_seventh_day", "ca_seventh_day_double_time"].map((ruleCode) => ({ jurisdiction: "CA", ruleCode, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" })),
+    ];
+    const row = (ruleCode: string, kind: OvertimeRule["kind"], thresholdMinutes: number, num: number, den: number, earningType: "OT" | "DT"): OvertimeRule => ({ jurisdiction: "CA", ruleCode, kind, thresholdMinutes, multiplier: { num, den }, earningType, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 510(a)" });
+    const caOt = [...OT_RULES.filter((o) => o.jurisdiction !== "CA"), row("weekly_overtime", "weekly", 2400, 3, 2, "OT"), row("ca_daily_overtime", "daily", 480, 3, 2, "OT"), row("ca_daily_double_time", "daily_double", 720, 2, 1, "DT"), row("ca_seventh_day", "seventh_day", 0, 3, 2, "OT"), row("ca_seventh_day_double_time", "seventh_day", 480, 2, 1, "DT")];
+    const premiums: PremiumRule[] = [{ jurisdiction: "CA", ruleCode: "ca_meal_premium", premiumMinutes: 60, perWorkdayMax: 1, effectiveFrom: "2000-01-01", effectiveTo: null, citation: "Cal. Lab. Code § 226.7(c)" }];
+    const meal = computePay({
+      ...input([shift("2026-10-05", 480, { ...CA_SITE, payRateCents: 1800, billRateCents: 2600, billsPremiums: true })], { workweekStartsOn: 0, overtimeRules: caOt, jurisdictionRules: caJ, premiumRules: premiums }),
+      confirmations: [{ id: "m1", kind: "meal_period_missed", workerId: "w1", assignmentId: "a1", date: "2026-10-05" }],
+    });
+    expect(bills(meal)).toEqual([
+      ["c1", "REG", "bill_regular", 480, 20_800],
+      ["c1", "MEAL_PREMIUM", "bill_premium", 60, 2600],
+    ]);
+    const guarantee: GuaranteeRule = { jurisdiction: "IL", ruleCode: "il_day_labor_minimum", dueMinutes: 240, reassignedDueMinutes: 120, scheduledFraction: null, minMinutes: null, maxMinutes: null, minScheduledMinutes: null, basis: "pay_rate", effectiveFrom: "2000-01-01", effectiveTo: null, citation: "820 ILCS 175/30(g)" };
+    const short = computePay({
+      ...input([shift(WEEK[0]!, 90, { billsGuarantees: true })]),
+      guaranteeRules: [guarantee],
+      confirmations: [{ id: "r1", kind: "reported_short", workerId: "w1", assignmentId: "a1", date: WEEK[0]! }],
+    });
+    expect(bills(short)).toEqual([
+      ["c1", "REG", "bill_regular", 90, 3975],
+      ["c1", "MIN_GUARANTEE", "bill_minimum_pay", 150, 6625],
+    ]);
+    // Without the setting, neither is billed (as before).
+    const unbilled = computePay({ ...input([shift(WEEK[0]!, 90)]), guaranteeRules: [guarantee], confirmations: [{ id: "r1", kind: "reported_short", workerId: "w1", assignmentId: "a1", date: WEEK[0]! }] });
+    expect(bills(unbilled)).toEqual([["c1", "REG", "bill_regular", 90, 3975]]);
+  });
+});

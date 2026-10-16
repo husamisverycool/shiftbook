@@ -39,7 +39,7 @@ const placeCodeChecks = (name: string, t: { countyFips: unknown; placeFips: unkn
 
 // ---------- enums ----------
 export const userRole = pgEnum("user_role", ["owner", "coordinator", "billing", "accountant"]);
-export const otBillingRule = pgEnum("ot_billing_rule", ["multiplier", "straight_time", "not_billable"]);
+export const otBillingRule = pgEnum("ot_billing_rule", ["multiplier", "straight_time", "not_billable", "own_sites_only"]);
 export const assignmentStatus = pgEnum("assignment_status", ["active", "ended", "cancelled"]);
 export const documentKind = pgEnum("document_kind", [
   "image",
@@ -186,6 +186,10 @@ export const clientBillingProfiles = pgTable(
     consolidate: boolean("consolidate").notNull().default(false),
     vmsName: text("vms_name"),
     overtimeBillingRule: otBillingRule("overtime_billing_rule").notNull().default("multiplier"),
+    /** Bill confirmed meal and rest premiums at the bill rate (drizzle/0020). */
+    billPremiums: boolean("bill_premiums").notNull().default(false),
+    /** Bill minimum pay for a short day at the bill rate (drizzle/0020). */
+    billGuarantees: boolean("bill_guarantees").notNull().default(false),
     paymentTermsDays: integer("payment_terms_days").notNull().default(30),
     effectiveFrom: isoDate("effective_from").notNull(),
     effectiveTo: isoDate("effective_to"),

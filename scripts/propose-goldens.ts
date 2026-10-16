@@ -338,6 +338,19 @@ ruleCase(
   { pay: [["REG", 2400, 68000]], bill: [["REG", 2400, 96000]], obligations: [["il_equal_pay_720h", "2026-10-14", 660, 1200]], warnings: ["equal_pay_obligation", "equal_pay_rate_missing"] },
 );
 
+ruleCase(
+  "multi-rate-own-sites-overtime-billing",
+  "The two-rate week of multi-rate-regular-rate (pay unchanged: $928.87), with client B billed overtime only for hours that are overtime at its own sites. The worker spent only 16 hours at B's site (Thursday and Friday), so none of the 6 overtime hours on B's line would be overtime had the worker worked only there: they are billed at straight time, 6 h × $24.00 = $144.00, and the agency bears the $56.87 premium. Bill: A 30 h × $28.00 = $840.00; B 10 h × $24.00 + 6 h × $24.00 = $384.00.",
+  input([
+    ...WEEK.slice(0, 3).map((d) => shift(d, 600, { assignmentId: "assignment-A", clientId: "client-A", payRateCents: 2000, billRateCents: 2800 })),
+    ...WEEK.slice(3, 5).map((d) => shift(d, 480, { assignmentId: "assignment-B", clientId: "client-B", payRateCents: 1700, billRateCents: 2400, otBillingRule: "own_sites_only" })),
+  ]),
+  {
+    pay: [["REG", 1800, 60000], ["REG", 600, 17000], ["OT", 360, 15887]],
+    bill: [["REG", 1800, 84000], ["REG", 600, 24000], ["OT", 360, 14400]],
+  },
+);
+
 // ---------- export goldens ----------
 function exportCase(name: string, summary: string, fixture: ExportFixture, handTotals: unknown) {
   const result = renderExport(fixture);

@@ -22,7 +22,7 @@ import { isLocal, placeProblem, scopeMatches } from "./places";
 import { canonicalRules, ruleDataProblems } from "./rule-data";
 import { hasLocalRate, MINIMUM_WAGE, selectMinimumWage } from "./rules/minimum-wage";
 import { CA_REGULAR_RATE_CITATION, overtimeRate, premiumBase, premiumWorth, RATE_FLOOR_CITATION, REGULAR_RATE_CITATION, regularRateWith, worthMore } from "./rules/regular-rate";
-import { CA_DAILY_DOUBLE_TIME, CA_DAILY_OVERTIME, CA_SEVENTH_DAY, CALIFORNIA_RULE_CODES, selectCaliforniaRules, splitCalifornia, type PremiumSplit } from "./rules/california-overtime";
+import { CA_DAILY_DOUBLE_TIME, CA_DAILY_OVERTIME, CA_SEVENTH_DAY, CALIFORNIA_RULE_CODES, selectCaliforniaRules, splitCalifornia, type CaliforniaRules, type PremiumSplit } from "./rules/california-overtime";
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import { CA_REPORTING_TIME, caReportingTime } from "./rules/ca-reporting-time";
 import { IL_DAY_LABOR_MINIMUM, ilDayLaborMinimum } from "./rules/il-day-labor-minimum";
@@ -45,7 +45,7 @@ const MINUTES_PER_DAY = 1440;
 /** Bounds that keep every product inside safe integers: $100,000/h, factors up to 1000. */
 const MAX_RATE_CENTS = 10_000_000;
 const MAX_FACTOR = 1000;
-const BILLING_RULES = new Set(["multiplier", "straight_time", "not_billable"]);
+const BILLING_RULES = new Set(["multiplier", "straight_time", "not_billable", "own_sites_only"]);
 /** A bonus above $100,000 for one week is a typo, not an amount to pay. */
 const MAX_BONUS_CENTS = 10_000_000;
 const CONFIRMED: Record<ConfirmationKind, string> = {
@@ -117,7 +117,7 @@ function validShift(s: Shift): string | null {
       return `the ${what} bill multiplier must be a positive whole-number fraction`;
     }
   }
-  if (!BILLING_RULES.has(s.otBillingRule)) return `overtime billing rule "${String(s.otBillingRule)}" is not one of multiplier, straight time or not billable`;
+  if (!BILLING_RULES.has(s.otBillingRule)) return `overtime billing rule "${String(s.otBillingRule)}" is not one of multiplier, straight time, not billable or own sites only`;
   return null;
 }
 
@@ -472,6 +472,7 @@ export function computePay(input: PayInput): PayResult {
     }));
     let splits: PremiumSplit[] = weeklySplits;
     let caSplits: PremiumSplit[] | null = null;
+    let caRules: CaliforniaRules | null = null;
     if (california) {
       const others = states.filter((st) => st !== "CA");
       if (others.length > 0) {
@@ -490,6 +491,7 @@ export function computePay(input: PayInput): PayResult {
         blockers.push(...weekBlockers);
         continue;
       }
+      caRules = ca.rules;
       caSplits = splitCalifornia(shifts, week, ca.rules, { ...weekly, citation: citations });
     }
     const totalMinutes = shifts.reduce((sum, s) => sum + s.minutes, 0);
@@ -616,6 +618,17 @@ export function computePay(input: PayInput): PayResult {
       premiumRateNote = `, with the ${formatCents(flatCents)} flat-sum bonus spread over the ${formatDuration(nonOvertime)} not paid at a premium (${CA_FLAT_SUM_CITATION})`;
     }
     const californiaDaily = caSplits !== null && !federalGoverns;
+    // A client billed overtime only for its own sites: the overtime and double time its own hours
+    // alone would make this week (by the same rules), billed at its multipliers; the rest at straight time.
+    const ownSites = new Map<string, { worked: number; budget: Record<"OT" | "DT", number> }>();
+    for (const clientId of [...new Set(shifts.filter((s) => s.otBillingRule === "own_sites_only").map((s) => s.clientId))].sort(cmp)) {
+      const own = shifts.filter((s) => s.clientId === clientId);
+      const ownSplits: { premiums: { type: "OT" | "DT"; minutes: number }[] }[] =
+        californiaDaily && caRules ? splitCalifornia(own, week, caRules, { ...weekly, citation: citations }) : splitAtThreshold(own, weekly.thresholdMinutes).map(({ overtime }) => ({ premiums: [{ type: "OT" as const, minutes: overtime }] }));
+      const budget = { OT: 0, DT: 0 };
+      for (const x of ownSplits) for (const p of x.premiums) budget[p.type] += p.minutes;
+      ownSites.set(clientId, { worked: own.reduce((sum, s) => sum + s.minutes, 0), budget });
+    }
     const weeklyMinutes = splits.reduce((sum, x) => sum + x.premiums.filter((p) => p.ruleCode === WEEKLY_OVERTIME).reduce((s2, p) => s2 + p.minutes, 0), 0);
     const straightEligible = splits.reduce((sum, x) => sum + x.regular, 0) + weeklyMinutes;
 
@@ -753,14 +766,29 @@ export function computePay(input: PayInput): PayResult {
           const note = bp.ruleCode === WEEKLY_OVERTIME ? elsewhereNote : "";
           // In California a line can carry several rules' hours: the bill line says whose it mirrors.
           const forRule = caSplits !== null ? ` (${bp.ruleCode} hours)` : "";
-          if (rule === "multiplier") {
+          const atMultiplier = (minutes: number, why: string) => {
             const m = bp.type === "DT" ? b.sample.billDtMultiplier : b.sample.billOtMultiplier;
             const rate = reduce({ num: mul(b.sample.billRateCents, m.num), den: m.den });
-            const bill = arithmetic(`${bp.type === "DT" ? "Billed double time" : "Billed overtime"}${forRule}`, bp.minutes, rate, ` (${formatMultiplier(m)} × ${formatRate(billRate).replace("/h", "")} bill rate)`);
-            weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} Client bills ${what} at the rate-card ${what} multiplier; bill rate from the rate card${billRateNote(b.billRate.overtime)}.${note}`, entryIds: uniqueSorted(bp.entries) });
+            const bill = arithmetic(`${bp.type === "DT" ? "Billed double time" : "Billed overtime"}${forRule}`, minutes, rate, ` (${formatMultiplier(m)} × ${formatRate(billRate).replace("/h", "")} bill rate)`);
+            weekBill.push({ ...base, type: bp.type, minutes, rate, amountCents: bill.amountCents, ruleId: "bill_overtime_multiplier", explain: `${bill.text} ${why}; bill rate from the rate card${billRateNote(b.billRate.overtime)}.${note}`, entryIds: uniqueSorted(bp.entries) });
+          };
+          const atStraightTime = (minutes: number, ruleId: string, why: string) => {
+            const bill = arithmetic(`Billed ${what} at straight time${forRule}`, minutes, billRate, "");
+            weekBill.push({ ...base, type: bp.type, minutes, rate: billRate, amountCents: bill.amountCents, ruleId, explain: `${bill.text} ${why}; bill rate from the rate card${billRateNote(b.billRate.overtime)}.${note}`, entryIds: uniqueSorted(bp.entries) });
+          };
+          if (rule === "multiplier") {
+            atMultiplier(bp.minutes, `Client bills ${what} at the rate-card ${what} multiplier`);
           } else if (rule === "straight_time") {
-            const bill = arithmetic(`Billed ${what} at straight time${forRule}`, bp.minutes, billRate, "");
-            weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_overtime_straight", explain: `${bill.text} Client bills ${what} at straight time; bill rate from the rate card${billRateNote(b.billRate.overtime)}.${note}`, entryIds: uniqueSorted(bp.entries) });
+            atStraightTime(bp.minutes, "bill_overtime_straight", `Client bills ${what} at straight time`);
+          } else if (rule === "own_sites_only") {
+            const own = ownSites.get(b.clientId)!;
+            const ownMinutes = Math.min(own.budget[bp.type], bp.minutes);
+            own.budget[bp.type] -= ownMinutes;
+            const worked = `${formatDuration(own.worked)} worked at this client's own sites this week`;
+            if (ownMinutes > 0) atMultiplier(ownMinutes, `Client bills ${what} at the rate-card ${what} multiplier only for hours that are ${what} at its own sites (${worked})`);
+            if (bp.minutes > ownMinutes) {
+              atStraightTime(bp.minutes - ownMinutes, "bill_overtime_own_sites_straight", `Client bills ${what} only for hours that are ${what} at its own sites: ${worked}, so these hours, ${what} only because of work elsewhere, are billed at straight time and the agency bears the premium`);
+            }
           } else {
             weekBill.push({ ...base, type: bp.type, minutes: bp.minutes, rate: { num: 0, den: 1 }, amountCents: 0, ruleId: "bill_overtime_not_billable", explain: `${bp.type === "DT" ? "Double time" : "Overtime"} not billed${forRule}: ${formatDuration(bp.minutes)} (${bp.minutes} min) → ${formatCents(0)}. Client profile marks overtime not billable.${note}`, entryIds: uniqueSorted(bp.entries) });
           }
@@ -800,7 +828,7 @@ export function computePay(input: PayInput): PayResult {
     }
 
     // 6. confirmed premiums: an hour at the week's regular rate per confirmed missed period, capped per workday.
-    const premiums = new Map<string, { assignmentId: string; clientId: string; kind: ConfirmationKind; rule: PremiumRule; minutes: number; dates: string[]; entries: string[] }>();
+    const premiums = new Map<string, { assignmentId: string; clientId: string; kind: ConfirmationKind; rule: PremiumRule; billRateCents: number; billed: boolean; minutes: number; dates: string[]; entries: string[] }>();
     const perDay = new Map<string, number>();
     const notApplicable = new Set<string>();
     for (const c of confirmed.filter((x) => x.kind === "meal_period_missed" || x.kind === "rest_period_missed")) {
@@ -818,8 +846,9 @@ export function computePay(input: PayInput): PayResult {
       const dayKey = `${c.date}|${rule.ruleCode}`;
       if ((perDay.get(dayKey) ?? 0) >= rule.perWorkdayMax) continue;
       perDay.set(dayKey, (perDay.get(dayKey) ?? 0) + 1);
-      const k = `${c.assignmentId}|${rule.ruleCode}`;
-      const p = premiums.get(k) ?? { assignmentId: c.assignmentId, clientId: day[0]!.clientId, kind: c.kind, rule, minutes: 0, dates: [], entries: [] };
+      const billed = day[0]!.billsPremiums === true;
+      const k = `${c.assignmentId}|${rule.ruleCode}|${billed ? day[0]!.billRateCents : 0}`;
+      const p = premiums.get(k) ?? { assignmentId: c.assignmentId, clientId: day[0]!.clientId, kind: c.kind, rule, billRateCents: day[0]!.billRateCents, billed, minutes: 0, dates: [], entries: [] };
       p.minutes += rule.premiumMinutes;
       if (!p.dates.includes(c.date)) p.dates.push(c.date);
       for (const s of day) p.entries.push(...s.entryIds);
@@ -830,6 +859,11 @@ export function computePay(input: PayInput): PayResult {
       const pay = arithmetic(what.label, p.minutes, premiumRate, ` (the week's regular rate${premiumRateNote})`);
       const why = `Rule ${p.rule.ruleCode}: ${what.what} on ${p.dates.join(", ")}, as a person confirmed; one hour of pay at the regular rate, not hours worked, at most ${p.rule.perWorkdayMax} per workday (${p.rule.citation}).`;
       weekPay.push({ workerId: first.workerId, assignmentId: p.assignmentId, clientId: p.clientId, workweekStart: week, type: what.type, minutes: p.minutes, rate: premiumRate, amountCents: pay.amountCents, ruleId: p.rule.ruleCode, explain: `${pay.text} ${why}`, entryIds: uniqueSorted(p.entries) });
+      if (p.billed) {
+        const billRate: Fraction = { num: p.billRateCents, den: 1 };
+        const bill = arithmetic(`Billed ${what.label.toLowerCase()}`, p.minutes, billRate, "");
+        weekBill.push({ workerId: first.workerId, assignmentId: p.assignmentId, clientId: p.clientId, workweekStart: week, type: what.type, minutes: p.minutes, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_premium", explain: `${bill.text} The client's billing profile bills confirmed meal and rest premiums, at the bill rate from the rate card.`, entryIds: uniqueSorted(p.entries) });
+      }
     }
 
     // 6. minimum pay for a confirmed short day: California reporting time, Massachusetts reporting pay,
@@ -888,6 +922,11 @@ export function computePay(input: PayInput): PayResult {
       const basisNote = rule.basis === "regular_rate" ? ` (the week's regular rate${premiumRateNote})` : sample.payRateCents < effective(sample) ? " (the minimum wage that day)" : " (the agreed pay rate)";
       const pay = arithmetic(label, shortfall, rate, basisNote);
       weekPay.push({ workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type, minutes: shortfall, rate, amountCents: pay.amountCents, ruleId: rule.ruleCode, explain: `${pay.text} Rule ${rule.ruleCode}: ${story}, not as hours worked (${rule.citation}).`, entryIds: uniqueSorted(day.flatMap((s) => s.entryIds)) });
+      if (sample.billsGuarantees === true) {
+        const billRate: Fraction = { num: sample.billRateCents, den: 1 };
+        const bill = arithmetic(`Billed ${label.toLowerCase()}`, shortfall, billRate, "");
+        weekBill.push({ workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type, minutes: shortfall, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_minimum_pay", explain: `${bill.text} The client's billing profile bills minimum pay for a short day, at the bill rate from the rate card.`, entryIds: uniqueSorted(day.flatMap((s) => s.entryIds)) });
+      }
     }
     if (blockers.some((b) => b.workerId === first.workerId && b.workweekStart === week)) continue;
 

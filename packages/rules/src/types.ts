@@ -28,7 +28,12 @@ export type EarningType =
 /** 0 = Sunday … 6 = Saturday. */
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export type OvertimeBillingRule = "multiplier" | "straight_time" | "not_billable";
+/**
+ * How a client is billed for overtime and double time: at the rate card's multiplier, at straight
+ * time, not at all, or at the multiplier only for the hours that would be overtime had the worker
+ * worked only at this client's sites (the rest at straight time; the agency bears that premium).
+ */
+export type OvertimeBillingRule = "multiplier" | "straight_time" | "not_billable" | "own_sites_only";
 
 /** Worked time on one assignment on one day: the engine's only input about hours. */
 export interface Shift {
@@ -67,6 +72,10 @@ export interface Shift {
   dayAndTemporaryLabor?: boolean;
   /** The client's name, for messages a person reads (the id is used when it is missing). */
   clientName?: string;
+  /** The client's billing profile bills confirmed meal and rest premiums (at the bill rate). Default no. */
+  billsPremiums?: boolean;
+  /** The client's billing profile bills minimum pay for a short day (at the bill rate). Default no. */
+  billsGuarantees?: boolean;
 }
 
 export interface OvertimeRule {

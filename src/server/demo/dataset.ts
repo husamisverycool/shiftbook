@@ -41,7 +41,7 @@ export const CLIENTS: Record<
     addressLines: string[];
     billingEmail: string;
     worksite: { name: string; addressLine: string; city: string; county: string; state: string; postalCode: string; countyFips: string; placeFips: string | null };
-    billing: { overtimeBillingRule: "multiplier" | "straight_time" | "not_billable"; poNumber: string | null; vmsName: string | null; paymentTermsDays: number };
+    billing: { overtimeBillingRule: "multiplier" | "straight_time" | "not_billable" | "own_sites_only"; poNumber: string | null; vmsName: string | null; paymentTermsDays: number };
   }
 > = {
   ca: {

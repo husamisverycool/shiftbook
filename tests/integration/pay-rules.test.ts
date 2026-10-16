@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { agencies, assignments, billLines, bonuses, holidayPolicies, jobOrders, payLines, payPeriods, premiumConfirmations, rateCards, timeEntries } from "../../src/server/db/schema";
+import { agencies, assignments, billLines, bonuses, clientBillingProfiles, holidayPolicies, jobOrders, payLines, payPeriods, premiumConfirmations, rateCards, timeEntries } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
@@ -67,6 +67,21 @@ describe("pay rules through the weekly run", () => {
     expect(lines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
       ["REG", 480, 15_600],
       ["MEAL_PREMIUM", 60, 1950],
+    ]);
+  });
+
+  it("bills a confirmed meal premium at the bill rate when the client's billing profile says so", async () => {
+    await inAgency((tx) => tx.update(clientBillingProfiles).set({ billPremiums: true }).where(eq(clientBillingProfiles.clientId, clientId("ca"))));
+    const added = await inAgency((tx) => addEntry(tx, actor, period, { workerId: workerId("luis-hernandez"), workDate: "2026-10-08", inMinute: 420, outMinute: 930, breakMinutes: 30 }, ["other"], "test week"));
+    if (!added.ok) throw new Error(added.error);
+    const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, added.entryId)));
+    await inAgency((tx) => tx.insert(premiumConfirmations).values({ agencyId: actor.agencyId, workerId: workerId("luis-hernandez"), assignmentId: entry!.assignmentId!, workDate: "2026-10-08", kind: "meal_period_missed", confirmedBy: actor.userId }));
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.blockers.map((b) => b.code)).not.toContain("pay_bill_mismatch");
+    const bill = await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.workerId, workerId("luis-hernandez")))));
+    expect(bill.map((l) => [l.type, l.minutes, l.ruleId])).toEqual([
+      ["REG", 480, "bill_regular"],
+      ["MEAL_PREMIUM", 60, "bill_premium"],
     ]);
   });
 
