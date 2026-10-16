@@ -1652,6 +1652,26 @@ describe("computePay — the Illinois equal-pay rate (820 ILCS 175/42(a), (b); s
     expect(sneaky.payLines[0]!.explain).not.toContain("Paid double");
   });
 
+  it("a rate row whose method is a JavaScript property name, not one of the four methods, holds its worker: the method must be named", () => {
+    // "toString" and "__proto__" are properties every object inherits; the method must be one of its own four.
+    const other = WEEK.map((d) => shift(d, 480, { workerId: "w2", workerName: "Other Worker", assignmentId: "a2", payRateCents: 1700, billRateCents: 2400 }));
+    for (const method of ["toString", "__proto__"]) {
+      const r = computePay({
+        ...input([...WEEK.map((d) => shift(d, 540, { payRateCents: 1700, billRateCents: 2400 })), ...other]),
+        equalPayRules: [RULE],
+        obligationsOnFile: onFile,
+        equalPayRates: [{ workerId: "w1", clientId: "c1", effectiveFrom: "2026-10-19", kind: "rate", rateCents: 1850, benefitsCents: 0, method: method as "comparator" }],
+      });
+      expect(r.blockers.map((b) => [b.code, b.workerId, b.message]), method).toEqual([
+        ["invalid_input", "w1", "The Illinois equal-pay rate from 2026-10-19: the method must be named. All of this worker's weeks are held until it is fixed."],
+      ]);
+      expect(r.payLines.filter((l) => l.workerId === "w1"), method).toEqual([]);
+      expect(r.billLines.filter((l) => l.workerId === "w1"), method).toEqual([]);
+      // The other worker is paid as usual: 40 h × $17.00 = $680.00.
+      expect(r.payLines.filter((l) => l.workerId === "w2").map((l) => [l.type, l.minutes, l.amountCents]), method).toEqual([["REG", 2400, 68_000]]);
+    }
+  });
+
   it("only covered work is raised: a shift in Indiana and clerical work at the same client keep the rate card", () => {
     // Monday to Wednesday 8 h of day labor in Illinois; Thursday 8 h in Indiana; Friday 8 h of clerical work in Illinois. 40 h, no overtime.
     const shifts = [

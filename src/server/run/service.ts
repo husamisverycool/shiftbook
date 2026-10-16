@@ -87,7 +87,7 @@ const equalPayRows = (rows: (typeof s.obligations.$inferSelect)[]): EqualPayRow[
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 /** JSON.stringify's replacer leaving out every `say` and `said` (decision 0030). */
-const withoutSay = (key: string, value: unknown) => (key === "say" || key === "said" ? undefined : value);
+export const withoutSay = (key: string, value: unknown) => (key === "say" || key === "said" ? undefined : value);
 /** "<name> has no <the system's id>, so <its file> could not match them." for each payroll system. */
 const NO_PAYROLL_ID: Record<PayrollSystem, SaidKey> = {
   gusto: "noPayrollIdGusto",

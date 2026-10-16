@@ -344,17 +344,25 @@ export function fill(template: string, values: Record<string, string>, key = "?"
 }
 
 /**
+ * A nested fragment: exactly `{ say: [...] }`. An input field holding some other list or object (a
+ * citation, a scope's or a person's name) is text, never a fragment.
+ */
+function isFragment<K extends string>(v: unknown): v is { say: SayPart<K>[] } {
+  return typeof v === "object" && v !== null && !Array.isArray(v) && Array.isArray((v as { say?: unknown }).say);
+}
+
+/**
  * The parts in a language: `t` says a key with its values already written out; dates and lengths of
  * time are written by `f`; a nested fragment is said the same way first.
  */
 export function renderSay<K extends string>(say: Say<K>, t: (key: K, values: Record<string, string>) => string, f: SayFormat): string {
   const text = (v: SayValue<K>): string => {
     // Anything but a date, a length of time or a fragment is text, as a template literal writes it
-    // (a name entered as a number is still said).
-    if (typeof v !== "object" || v === null) return String(v);
+    // (a name entered as a number, or a citation entered as a list, is still said as it was before keys).
+    if (typeof v !== "object" || v === null || Array.isArray(v)) return String(v);
     if ("date" in v) return f.date(v.date);
     if ("duration" in v) return f.duration(v.duration);
-    return renderSay(v.say, t, f);
+    return isFragment<K>(v) ? renderSay(v.say, t, f) : String(v);
   };
   return say.map((p) => t(p.key, Object.fromEntries(Object.entries(p.values ?? {}).map(([k, v]) => [k, text(v)])))).join("");
 }
@@ -366,7 +374,7 @@ export function english(say: Say): string {
 
 /** Every key a say uses, nested fragments included. */
 export function keysOf<K extends string>(say: Say<K>): K[] {
-  return say.flatMap((p) => [p.key, ...Object.values(p.values ?? {}).flatMap((v) => (typeof v === "object" && "say" in v ? keysOf(v.say) : []))]);
+  return say.flatMap((p) => [p.key, ...Object.values(p.values ?? {}).flatMap((v) => (isFragment<K>(v) ? keysOf(v.say) : []))]);
 }
 
 // Building says (the engine's own helpers).

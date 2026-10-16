@@ -25,8 +25,10 @@ The English is the record — the answer keys pin it byte for byte, and exports,
   payroll words: tarifa de cobro, horas extra, tiempo doble, tarjeta de tarifas, igualdad salarial).
 - **Screens**: `useEngineSay()` (`src/components/shiftbook/engine-say.ts`) renders a say with next-intl's
   `engine` namespace in the reader's language, dates and lengths of time the reader's way (the same
-  `readerFormat` as the duties); anything without a say — or with a key these messages lack — shows
-  its stored English. Used on Exceptions, Review totals, the margin lines, overtime not billed and the
+  `readerFormat` as the duties); anything without a say — or with a key these messages lack, or a say
+  that today's English templates do not turn into exactly its stored English (a missing, renamed or
+  malformed value: next-intl as the app sets it up reports such a problem and says "engine.<key>"
+  rather than throwing) — shows its stored English. Used on Exceptions, Review totals, the margin lines, overtime not billed and the
   rate form's markup preview (`billFromMarkup` returns the working's keys too, and the bill line uses
   them while they say exactly the stored working).
 - **Shiftbook's own messages** the same way, under a second namespace `said` (`src/server/said.ts`,
@@ -45,7 +47,8 @@ The English is the record — the answer keys pin it byte for byte, and exports,
   `computePay`), that each say says exactly its record with keys `ENGINE_EN` has, that every template
   is valid ICU in both languages, and that each answer key renders in English through next-intl exactly
   as stored; the server's workings are checked the same way, and stored run issues and lines in the
-  integration tests.
+  integration tests. For every approved answer key, the result as JSON through the fingerprint's own
+  replacer is pinned to the SHA-256 the engine wrote before the keys (src/server/run/fingerprint.test.ts).
 
 ## Alternatives considered
 - Translating the stored English with patterns on the screen: brittle, and silently wrong when a
