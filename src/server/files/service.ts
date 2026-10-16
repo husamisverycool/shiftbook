@@ -97,8 +97,8 @@ export async function createRunFiles(
     return w ? `${w.firstName} ${w.lastName}` : id;
   };
   const fileLines = correction
-    ? correctionFileWorkers(correction).flatMap((w) => w.fileLines.map((l) => ({ workerId: w.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, parts: l.parts })))
-    : pay.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: { num: l.rateNum, den: l.rateDen } }));
+    ? correctionFileWorkers(correction).flatMap((w) => w.weekLines.map((l) => ({ workerId: w.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, parts: l.parts, workweekStart: l.workweekStart })))
+    : pay.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: { num: l.rateNum, den: l.rateDen }, workweekStart: l.workweekStart }));
   let payroll: RunFiles["payroll"] = null;
   if (fileLines.length > 0) {
     const fixture = {

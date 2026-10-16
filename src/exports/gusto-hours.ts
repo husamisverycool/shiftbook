@@ -27,10 +27,11 @@
  * stored line of minutes × rate. Gusto pays every hour at its stored rate, so every line is checked
  * against the worker's one regular rate in the whole period, even overtime added without regular hours.
  */
-import { ceilDiv, exactDecimal, floorDiv, formatCents, formatRate, mod, roundHalfUp, roundHalfUpBig, type EarningType, type Fraction } from "@shiftbook/rules";
+import { exactDecimal, formatCents, formatRate, roundHalfUpBig, type EarningType, type Fraction } from "@shiftbook/rules";
 import type { ControlTotals } from "../server/db/schema";
 import { readCsv, writeCsv } from "./csv";
 import { ExportError } from "./errors";
+import { checkAmountLine, checkLine, cmp, hundredthsToMinutes, sameRate, signedCents, sortKey, toHundredths, twoDecimals } from "./lines";
 import type { ExportFixture, ExportResult, ExportWorker } from "./registry";
 
 export const GUSTO_HEADER = [
@@ -59,24 +60,14 @@ type AmountColumn = (typeof AMOUNT_COLUMNS)[number];
 /** The earning types this format can carry as an amount, and the template column each one may map to. */
 export const GUSTO_AMOUNT_CAPABILITY: Partial<Record<EarningType, AmountColumn>> = { BONUS: "bonus" };
 
-/** minutes → hundredths of an hour, rounded up (37 → 62 = 0.62 h; 38 → 64 = 0.64 h). */
-const toHundredths = (minutes: number) => ceilDiv(minutes * 100, 60);
-/** hundredths → minutes; exact for every value written by toHundredths (error ≤ 0.4 min). */
-const toMinutes = (hundredths: number) => roundHalfUp(hundredths * 60, 100);
-const hoursText = (hundredths: number) => `${floorDiv(hundredths, 100)}.${String(mod(hundredths, 100)).padStart(2, "0")}`;
+const toMinutes = hundredthsToMinutes;
+const hoursText = twoDecimals;
 /** Gusto's multiplier per column, applied to the employee's base rate. */
 const GUSTO_MULTIPLIER: Record<HourColumn, Fraction> = {
   regular_hours: { num: 1, den: 1 },
   overtime_hours: { num: 3, den: 2 },
   double_overtime_hours: { num: 2, den: 1 },
 };
-const sameRate = (a: Fraction, b: Fraction) => BigInt(a.num) * BigInt(b.den) === BigInt(b.num) * BigInt(a.den);
-/** minutes × rate ÷ 60 rounded once, in big integers (a weighted overtime rate has a large denominator). */
-const lineCents = (minutes: number, rate: Fraction) => roundHalfUpBig(BigInt(minutes) * BigInt(rate.num), 60n * BigInt(rate.den));
-/** Name order that is the same on every machine: accents folded, case folded, plain comparison. */
-const sortKey = (name: string) => name.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const signedCents = (c: number) => (c >= 0 ? `+${formatCents(c)}` : `−${formatCents(-c)}`);
 
 /** Plain names for the earning types this file cannot carry, and what to do instead. */
 const NOT_CARRIED: Partial<Record<EarningType, string>> = {
@@ -107,14 +98,7 @@ function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"], who:
   );
 }
 
-/** An amount line (a bonus) is money, not time: no minutes and a positive whole number of cents. */
-function checkAmountLine(line: ExportFixture["payLines"][number], who: string): void {
-  const problem = line.minutes !== 0 ? `it carries ${line.minutes} minutes, but it is an amount, not hours` : !Number.isSafeInteger(line.amountCents) || line.amountCents <= 0 ? `${line.amountCents} is not a positive whole number of cents` : null;
-  if (problem) throw new ExportError("invalid_pay_line", `${who}: the ${line.type} pay line cannot be exported because ${problem}.`);
-}
-
-/** 6234 → "62.34". */
-const dollarsText = (cents: number) => `${floorDiv(cents, 100)}.${String(mod(cents, 100)).padStart(2, "0")}`;
+const dollarsText = twoDecimals;
 
 /** Each worker once, and each Gusto employee id on one worker only (Gusto would merge their hours). */
 function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
@@ -140,37 +124,6 @@ function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
     byGustoId.set(gid.toLowerCase(), w);
   }
   return byId;
-}
-
-/** |amount − minutes × rate ÷ 60| ≤ parts ÷ 2 cents (half a cent per stored line), in exact integers. */
-function withinRounding(amountCents: number, minutes: number, rate: Fraction, parts: number): boolean {
-  const den = 60n * BigInt(rate.den);
-  const gap = BigInt(amountCents) * den - BigInt(minutes) * BigInt(rate.num);
-  return 2n * (gap < 0n ? -gap : gap) <= BigInt(parts) * den;
-}
-
-/**
- * A pay line must be whole minutes ≥ 0 at a positive rate, with amount = minutes × rate ÷ 60 rounded
- * once. In a correction it adds up `parts` stored lines' amounts (a difference: was and now), each
- * rounded once, so it must be within half a cent per stored line.
- */
-function checkLine(line: ExportFixture["payLines"][number], who: string, correction: boolean): void {
-  const validRate = Number.isSafeInteger(line.rate.num) && Number.isSafeInteger(line.rate.den) && line.rate.num > 0 && line.rate.den > 0;
-  const parts = line.parts ?? 2;
-  const problem =
-    (!Number.isSafeInteger(line.minutes) || line.minutes < 0) ? `${line.minutes} minutes is not a whole number ≥ 0`
-    : !Number.isSafeInteger(line.amountCents) ? `${line.amountCents} is not a whole number of cents`
-    : !validRate ? "its rate is not a positive amount"
-    : correction
-      ? !Number.isSafeInteger(parts) || parts < 1
-        ? `it adds up ${parts} differences`
-        : !withinRounding(line.amountCents, line.minutes, line.rate, parts)
-          ? `the difference ${formatCents(line.amountCents)} is further from ${line.minutes} min × ${formatRate(line.rate)} than rounding ${parts} stored line${parts === 1 ? "" : "s"} can explain`
-          : null
-    : lineCents(line.minutes, line.rate) !== line.amountCents
-      ? `${formatCents(line.amountCents)} is not ${line.minutes} min × ${formatRate(line.rate)} rounded once (${formatCents(lineCents(line.minutes, line.rate))})`
-      : null;
-  if (problem) throw new ExportError("invalid_pay_line", `${who}: the ${line.type} pay line cannot be exported because ${problem}.`);
 }
 
 export function renderGustoHours(fixture: ExportFixture): ExportResult {

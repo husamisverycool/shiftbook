@@ -5,7 +5,8 @@ export type ExportErrorCode =
   | "invalid_pay_line"
   | "several_pay_rates"
   | "does_not_reconcile"
-  | "unknown_format";
+  | "unknown_format"
+  | "unsupported_period";
 
 /**
  * An export that cannot be produced correctly is refused, never written partially (SPEC §13). A

@@ -1,0 +1,135 @@
+{
+  "summary": "IIF time activities carry hours only (research §1.6), so a $150.00 bonus cannot travel in the QuickBooks Desktop file: the export is refused naming Marcus, so the run can offer to skip him and pay him by hand.",
+  "fixture": {
+    "format": "qbd_iif",
+    "mappingVersion": "qbd-iif-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "qbd_iif",
+      "version": "2022_or_later"
+    },
+    "codes": {
+      "REG": {
+        "code": "Hourly Rate",
+        "as": "hours"
+      },
+      "OT": {
+        "code": "Overtime Rate",
+        "as": "hours"
+      },
+      "DT": {
+        "code": "Double-time Rate",
+        "as": "hours"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "qbd": {
+            "id": "Fernandez Ruiz, Lucia"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "qbd": {
+            "id": "Bell, Marcus"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "qbd": {
+            "id": "Nguyen, Tran"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "OT",
+        "minutes": 240,
+        "amountCents": 10950,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w3",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w3",
+        "type": "OT",
+        "minutes": 37,
+        "amountCents": 1688,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "BONUS",
+        "minutes": 0,
+        "amountCents": 15000,
+        "rate": {
+          "num": 15000,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      }
+    ]
+  },
+  "expectedError": {
+    "code": "unsupported_earning_type",
+    "workerId": "w2",
+    "message": "Bell, Marcus: the QuickBooks Desktop file carries hours (regular, overtime, double time, holiday not worked) only, so it cannot carry a bonus. Skip this worker and pay it in QuickBooks Desktop by hand."
+  }
+}

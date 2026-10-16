@@ -12,7 +12,7 @@ import {
   DEMO_AGENCY,
   DEMO_OWNER,
   demoUuid,
-  gustoIdFor,
+  demoPayrollIds,
   JOB_ORDERS,
   NICKNAMES,
   PERIODS,
@@ -135,7 +135,7 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
       firstName: w.firstName,
       lastName: w.lastName,
       preferredLanguage: w.preferredLanguage,
-      payrollIds: { gusto: { id: gustoIdFor(w.key), title: `${job.position} (Primary)` } },
+      payrollIds: demoPayrollIds(w.key, `${job.position} (Primary)`),
       wcState: CLIENTS[job.client].worksite.state,
     });
     await tx.insert(s.assignments).values({

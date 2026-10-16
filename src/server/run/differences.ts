@@ -141,6 +141,11 @@ export interface FileLine {
   parts: number;
 }
 
+/** A file line within one workweek. */
+export interface WeekLine extends FileLine {
+  workweekStart: string;
+}
+
 /** Amount lines are exact cents, never rounded from minutes. */
 const AMOUNT_TYPES = new Set<EarningType>(["BONUS"]);
 
@@ -158,19 +163,19 @@ const AMOUNT_TYPES = new Set<EarningType>(["BONUS"]);
  */
 export function settlement(
   lines: { type: EarningType; rate: Fraction; minutes: number; amountCents: number; workweekStart: string; wasLines: number; nowLines: number }[],
-): { netCents: number; additionsOnly: boolean; fileLines: FileLine[]; leftoverCents: number } {
-  const weeks = new Map<string, FileLine>();
+): { netCents: number; additionsOnly: boolean; fileLines: FileLine[]; weekLines: WeekLine[]; leftoverCents: number } {
+  const weeks = new Map<string, WeekLine>();
   for (const l of lines) {
     const r = lowestTerms(l.rate);
     const k = `${l.type}|${r.num}/${r.den}|${l.workweekStart}`;
-    const g = weeks.get(k) ?? { type: l.type, rate: { num: Number(r.num), den: Number(r.den) }, minutes: 0, amountCents: 0, parts: 0 };
+    const g = weeks.get(k) ?? { type: l.type, rate: { num: Number(r.num), den: Number(r.den) }, minutes: 0, amountCents: 0, parts: 0, workweekStart: l.workweekStart };
     g.minutes += l.minutes;
     g.amountCents += l.amountCents;
     g.parts += l.wasLines + l.nowLines;
     weeks.set(k, g);
   }
   let leftoverCents = 0;
-  const real: FileLine[] = [];
+  const real: WeekLine[] = [];
   for (const g of weeks.values()) {
     if (g.minutes === 0 && g.amountCents === 0) continue;
     if (g.minutes === 0 && !AMOUNT_TYPES.has(g.type) && Math.abs(g.amountCents) * 2 <= g.parts) {
@@ -192,5 +197,9 @@ export function settlement(
   const fileLines = [...byRate.values()]
     .filter((f) => f.minutes !== 0 || f.amountCents !== 0)
     .sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || rateOrder(a.rate, b.rate));
-  return { netCents: lines.reduce((sum, l) => sum + l.amountCents, 0), additionsOnly, fileLines, leftoverCents };
+  // The same additions week by week, for files dated by the week they were worked (slice f, F8).
+  const weekLines = real
+    .filter((g) => g.minutes !== 0 || g.amountCents !== 0)
+    .sort((a, b) => cmp(a.workweekStart, b.workweekStart) || TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || rateOrder(a.rate, b.rate));
+  return { netCents: lines.reduce((sum, l) => sum + l.amountCents, 0), additionsOnly, fileLines, weekLines, leftoverCents };
 }

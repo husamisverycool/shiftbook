@@ -4,6 +4,7 @@
  * Ids are derived from stable keys so recordings and goldens stay valid across demo resets.
  */
 import { createHash } from "node:crypto";
+import type { PayrollIds } from "../db/schema";
 
 export function demoUuid(key: string): string {
   const h = createHash("sha256").update(`shiftbook-demo:${key}`).digest("hex");
@@ -145,6 +146,26 @@ export function gustoIdFor(workerKey: string): string {
   return createHash("sha256").update(`gusto:${workerKey}`).digest("hex").slice(0, 6);
 }
 
+/**
+ * A demo worker's id in every payroll system (slice f), so switching systems in the demo works at
+ * once: QuickBooks names as "Last, First" in plain letters, ADP file numbers and RUN employee ids by
+ * roster order. One worker (Anita Patel) has no ADP Workforce Now file number yet, so the demo shows
+ * a partly set-up system and the run's "no id" fix.
+ */
+export function demoPayrollIds(workerKey: string, title: string): PayrollIds {
+  const at = WORKERS.findIndex((w) => w.key === workerKey);
+  const w = WORKERS[at]!;
+  const plain = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "");
+  return {
+    gusto: { id: gustoIdFor(workerKey), title },
+    qbd: { id: `${plain(w.lastName)}, ${plain(w.firstName)}` },
+    qbo: { id: `${w.firstName} ${w.lastName}` },
+    ...(workerKey === "anita-patel" ? {} : { adp_wfn: { id: String(100_101 + at) } }),
+    adp_run: { id: String(101 + at) },
+    spreadsheet: { id: `SB-${String(at + 1).padStart(4, "0")}` },
+  };
+}
+
 export const NICKNAMES: [string, string][] = [
   ["Bob", "Robert"],
   ["Rob", "Robert"],
@@ -165,7 +186,30 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   { key: "workweek_starts_on", value: 1 }, // Monday
   { key: "time_zone", value: "America/Chicago" }, // where "today" is for the agency
   { key: "rounding_mode", value: "half_up" },
+  // The payroll file (slice f, decision F1): Gusto in the demo; every system's codes ready to switch to.
+  { key: "payroll.target", value: { format: "gusto_hours_csv" } },
   { key: "earning_code_map.gusto_hours_csv", value: { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours", BONUS: "bonus" } },
+  {
+    key: "earning_code_map.qbd_iif",
+    value: { REG: { code: "Hourly Rate", as: "hours" }, OT: { code: "Overtime Rate", as: "hours" }, DT: { code: "Double-time Rate", as: "hours" }, HOL_NOT_WORKED: { code: "Holiday Hourly", as: "hours" } },
+  },
+  { key: "earning_code_map.qbo_time_csv", value: { REG: { code: "Hours", as: "hours" } } },
+  {
+    key: "earning_code_map.adp_wfn_paydata",
+    value: {
+      REG: { code: "Reg Hours", as: "hours" },
+      OT: { code: "O/T Hours", as: "hours", factor: { num: 3, den: 2 } },
+      DT: { code: "D", as: "hours", factor: { num: 2, den: 1 } },
+      HOL_NOT_WORKED: { code: "H", as: "hours", factor: { num: 1, den: 1 } },
+      BONUS: { code: "B", as: "dollars" },
+      MEAL_PREMIUM: { code: "MP", as: "dollars" },
+      REST_PREMIUM: { code: "RP", as: "dollars" },
+    },
+  },
+  {
+    key: "earning_code_map.adp_run_csv",
+    value: { REG: { code: "REG", as: "hours" }, OT: { code: "OT", as: "hours" }, DT: { code: "DT", as: "hours" }, HOL_NOT_WORKED: { code: "HOL", as: "hours" }, BONUS: { code: "BONUS", as: "dollars" } },
+  },
   // Bill multipliers a new rate card starts with (imported placements, a job order's first card).
   { key: "rate_card.default_bill_multipliers", value: { ot: { num: 3, den: 2 }, dt: { num: 2, den: 1 } } },
   // A cell is accepted without review only when both passes agree, every check passes, and — for

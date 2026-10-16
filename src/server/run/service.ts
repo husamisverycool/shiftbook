@@ -26,7 +26,8 @@ import { fileTextInputs, planCorrectionInvoices, planInvoices } from "../files/i
 import { billFromMarkup } from "../catalog/versions";
 import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
-import { payrollFixture } from "../files/payroll-fixture";
+import { payrollFixture, payrollSettings } from "../files/payroll-fixture";
+import { SYSTEM_NAME, SYSTEM_OF, WORKER_ID_NAME } from "../../exports/targets";
 import type { Actor } from "../session";
 import { billForDiff, decisionText, describeMoves, fileWorkers, hasRealDifferences, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
 import type { RunIssueCode } from "./issue-codes";
@@ -36,7 +37,6 @@ export { PeriodLockedError } from "./period-lock";
 export { settingOn } from "../settings";
 
 /** The payroll system this slice exports to; its employee id must be on every paid worker. */
-export const TARGET_PAYROLL_SYSTEM = "gusto" as const;
 
 export type { RunIssueCode } from "./issue-codes";
 
@@ -428,11 +428,20 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       });
     }
   }
+  // The payroll file goes to the system in the agency's payroll file settings (slice f, F1).
+  const payroll = await payrollSettings(tx);
+  if (!payroll) blockers.push({ code: "no_payroll_target", message: "No payroll system is chosen yet, so there is no payroll file to make. Choose it in the payroll file settings." });
   // (A correction checks only the workers its file will carry: the file's dry run below names them.)
-  for (const id of run.kind === "correction" ? [] : [...paidWorkers].sort(cmp)) {
+  const system = payroll ? SYSTEM_OF[payroll.target.format] : null;
+  for (const id of run.kind === "correction" || !system ? [] : [...paidWorkers].sort(cmp)) {
     const w = workersById.get(id)!;
-    if (!w.payrollIds[TARGET_PAYROLL_SYSTEM]?.id) {
-      blockers.push({ code: "missing_payroll_id", workerId: id, workerName: `${w.firstName} ${w.lastName}`, message: `${w.firstName} ${w.lastName} has no Gusto employee id, so the payroll file could not match them.` });
+    if (!w.payrollIds[system!]?.id) {
+      blockers.push({
+        code: "missing_payroll_id",
+        workerId: id,
+        workerName: `${w.firstName} ${w.lastName}`,
+        message: `${w.firstName} ${w.lastName} has no ${WORKER_ID_NAME[system!]}, so the ${SYSTEM_NAME[system!]} payroll file could not match them.`,
+      });
     }
   }
 
@@ -563,8 +572,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     : await planInvoices(tx, period, result.billLines.map((l) => ({ clientId: l.clientId, amountCents: l.amountCents })));
   // A correction's file carries the additions of the workers it settles (decision E9).
   const fileLines: ExportPayLine[] = correction
-    ? fileWorkers(correction).flatMap((w) => w.fileLines.map((l) => ({ workerId: w.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, parts: l.parts })))
-    : result.payLines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate }));
+    ? fileWorkers(correction).flatMap((w) => w.weekLines.map((l) => ({ workerId: w.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, parts: l.parts, workweekStart: l.workweekStart })))
+    : result.payLines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, workweekStart: l.workweekStart }));
   const grossOf = (workerId: string) =>
     correction ? (correction.workers.find((w) => w.workerId === workerId)?.netCents ?? 0) : result.payLines.filter((l) => l.workerId === workerId).reduce((sum, l) => sum + l.amountCents, 0);
   if (blockers.length === 0) {
@@ -606,6 +615,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         documents: documents.map((d) => [d.id, d.status]),
         text: textInputs,
         correction: base ? { base: base.run.id, decisions: decided } : null,
+        payroll,
       }),
     )
     .digest("hex");

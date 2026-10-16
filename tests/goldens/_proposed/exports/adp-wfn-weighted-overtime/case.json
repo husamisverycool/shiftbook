@@ -1,0 +1,100 @@
+{
+  "summary": "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Shiftbook's ($365.00 + $400.00 + $57.50). Only the multiples note.",
+  "fixture": {
+    "format": "adp_wfn_paydata",
+    "mappingVersion": "adp-wfn-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "adp_wfn_paydata",
+      "companyCode": "XYZ"
+    },
+    "codes": {
+      "REG": {
+        "code": "Reg Hours",
+        "as": "hours"
+      },
+      "OT": {
+        "code": "O/T Hours",
+        "as": "hours",
+        "factor": {
+          "num": 3,
+          "den": 2
+        }
+      },
+      "DT": {
+        "code": "D",
+        "as": "hours",
+        "factor": {
+          "num": 2,
+          "den": 1
+        }
+      },
+      "BONUS": {
+        "code": "B",
+        "as": "dollars"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Ben",
+        "lastName": "Okafor",
+        "payrollIds": {
+          "adp_wfn": {
+            "id": "000456"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 1200,
+        "amountCents": 36500,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        }
+      },
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 1200,
+        "amountCents": 40000,
+        "rate": {
+          "num": 2000,
+          "den": 1
+        }
+      },
+      {
+        "workerId": "w1",
+        "type": "OT",
+        "minutes": 120,
+        "amountCents": 5750,
+        "rate": {
+          "num": 5750,
+          "den": 2
+        }
+      }
+    ]
+  },
+  "expectedFile": "PRXYZEPI.csv",
+  "expectedControlTotals": {
+    "workers": 1,
+    "minutesByType": {
+      "REG": 2400,
+      "OT": 120
+    },
+    "grossCents": 82250,
+    "payrollSystemGrossCents": 82250,
+    "payrollSystemDifferenceCents": 0
+  },
+  "notes": [
+    "ADP prices O/T Hours at Temp Rate × 1.5: the multiples in the payroll file settings. If ADP is set up with other multiples, its gross will differ."
+  ]
+}

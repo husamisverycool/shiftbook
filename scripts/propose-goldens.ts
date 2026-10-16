@@ -7,6 +7,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addDays, computePay, type PayInput, type Shift } from "@shiftbook/rules";
+import { ExportError } from "../src/exports/errors";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
 import { REFERENCE_EQUAL_PAY_RULES, REFERENCE_GUARANTEE_RULES, REFERENCE_REGULAR_RATE_RULES, REFERENCE_JURISDICTION_RULES, REFERENCE_MINIMUM_WAGE_RULES, REFERENCE_OVERTIME_RULES, REFERENCE_PREMIUM_RULES } from "../src/server/rules/reference-data";
 
@@ -414,4 +415,305 @@ exportCase(
     referenceRates: { w1: { num: 1825, den: 1 }, w2: { num: 1825, den: 1 }, w3: { num: 1825, den: 1 } },
   },
   { workers: 3, minutesByType: { REG: 120, OT: 180 }, grossCents: 11863, payrollSystemGrossCents: 11863, payrollSystemDifferenceCents: 0 },
+);
+
+// ---------- slice f: every other payroll system ----------
+
+/** A case whose answer is a refusal naming the worker (the run offers to skip them; pay by hand). */
+function exportRefusal(name: string, summary: string, fixture: ExportFixture, hand: { code: string; workerId?: string; message: string }) {
+  let error: unknown = null;
+  try {
+    renderExport(fixture);
+  } catch (e) {
+    error = e;
+  }
+  if (!(error instanceof ExportError) || error.code !== hand.code || error.workerId !== hand.workerId || error.message !== hand.message) {
+    throw new Error(`${name}: expected refusal ${JSON.stringify(hand)}, got ${error instanceof Error ? `${(error as ExportError).code}: ${error.message}` : "a file"}`);
+  }
+  const dir = join(OUT, "exports", name);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "case.json"), JSON.stringify({ summary, fixture, expectedError: hand }, null, 2) + "\n");
+  console.log(`proposed exports/${name}`);
+}
+
+/** Checks the file's text against the hand-written rows before proposing the case. */
+function exportCaseWithText(name: string, summary: string, fixture: ExportFixture, handTotals: unknown, handText: string) {
+  const got = new TextDecoder().decode(renderExport(fixture).bytes);
+  if (got !== handText) throw new Error(`${name}: file\n${JSON.stringify(got)}\n≠ hand\n${JSON.stringify(handText)}`);
+  exportCase(name, summary, fixture, handTotals);
+}
+
+const R1825 = { num: 1825, den: 1 };
+const OT1825 = { num: 5475, den: 2 };
+const THREE = (system: "qbd" | "qbo" | "adp_wfn" | "adp_run" | "spreadsheet", ids: [string, string, string]): ExportFixture["workers"] => [
+  { workerId: "w1", firstName: "Lucía", lastName: "Fernández Ruiz", payrollIds: { [system]: { id: ids[0] } } },
+  { workerId: "w2", firstName: "Marcus", lastName: "Bell", payrollIds: { [system]: { id: ids[1] } } },
+  { workerId: "w3", firstName: "Tran", lastName: "Nguyen", payrollIds: { [system]: { id: ids[2] } } },
+];
+const WEEK_LINES: ExportFixture["payLines"] = [
+  { workerId: "w1", type: "REG", minutes: 2280, amountCents: 69350, rate: R1825, workweekStart: "2026-10-05" },
+  { workerId: "w2", type: "REG", minutes: 2400, amountCents: 73000, rate: R1825, workweekStart: "2026-10-05" },
+  { workerId: "w2", type: "OT", minutes: 240, amountCents: 10950, rate: OT1825, workweekStart: "2026-10-05" },
+  { workerId: "w3", type: "REG", minutes: 2400, amountCents: 73000, rate: R1825, workweekStart: "2026-10-05" },
+  { workerId: "w3", type: "OT", minutes: 37, amountCents: 1688, rate: OT1825, workweekStart: "2026-10-05" },
+];
+const PERIOD = { startsOn: "2026-10-05", endsOn: "2026-10-11" };
+const QBD_CODES = { REG: { code: "Hourly Rate", as: "hours" as const }, OT: { code: "Overtime Rate", as: "hours" as const }, DT: { code: "Double-time Rate", as: "hours" as const } };
+const iifRow = (emp: string, item: string, duration: string) => `TIMEACT\t10/11/26\t\t${emp}\t\t${item}\t${duration}\t\t\tY\t0`;
+const IIF_HEAD = "!TIMEACT\tDATE\tJOB\tEMP\tITEM\tPITEM\tDURATION\tPROJ\tNOTE\tXFERTOPAYROLL\tBILLINGSTATUS";
+
+exportCaseWithText(
+  "qbd-iif-basic",
+  "QuickBooks Desktop 2022 and later (decision F2), the gusto-hours-basic week: Lucía 38 h, Marcus 40 h + 4 h overtime, Tran 40 h + 37 overtime minutes. Each worker's week per payroll item goes on the week's last day (10/11/26), split into the fewest rows of at most 23:59, as equal as whole minutes allow: 38 h → 19:00 + 19:00; 40 h → 20:00 + 20:00. Durations are exact minutes, so QuickBooks pays exactly what Shiftbook computed at the stored rate × the item's multiple: 2,280 min × $18.25/h = $693.50; 2,400 min × $18.25/h = $730.00 (twice); 240 min × $27.375/h = $109.50; 37 min × $27.375/h = $16.88125 → $16.88. Gross $2,279.88 both ways; no notes.",
+  { format: "qbd_iif", mappingVersion: "qbd-iif-v1", period: PERIOD, earningCodeMap: {}, target: { format: "qbd_iif", version: "2022_or_later" }, codes: QBD_CODES, workers: THREE("qbd", ["Fernandez Ruiz, Lucia", "Bell, Marcus", "Nguyen, Tran"]), payLines: WEEK_LINES },
+  { workers: 3, minutesByType: { REG: 7080, OT: 277 }, grossCents: 227988, payrollSystemGrossCents: 227988, payrollSystemDifferenceCents: 0 },
+  [
+    IIF_HEAD,
+    iifRow("Bell, Marcus", "Hourly Rate", "20:00"),
+    iifRow("Bell, Marcus", "Hourly Rate", "20:00"),
+    iifRow("Bell, Marcus", "Overtime Rate", "4:00"),
+    iifRow("Fernandez Ruiz, Lucia", "Hourly Rate", "19:00"),
+    iifRow("Fernandez Ruiz, Lucia", "Hourly Rate", "19:00"),
+    iifRow("Nguyen, Tran", "Hourly Rate", "20:00"),
+    iifRow("Nguyen, Tran", "Hourly Rate", "20:00"),
+    iifRow("Nguyen, Tran", "Overtime Rate", "0:37"),
+    "",
+  ].join("\r\n"),
+);
+
+exportCaseWithText(
+  "qbd-iif-2021-timer-header",
+  "QuickBooks Desktop 2021 and earlier (decision F2): the same file starts with the Timer header naming the company file (VER 8, REL 0, the company name, IMPORTEDBEFORE N, FROMTIMER Y, the company file number from a Timer Lists export). One worker: Lucía 38 h = 19:00 + 19:00 on 10/11/26, $693.50 both ways.",
+  {
+    format: "qbd_iif",
+    mappingVersion: "qbd-iif-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "qbd_iif", version: "2021_or_earlier", companyName: "Sample Staffing LLC", companyCreateTime: "1208544781" },
+    codes: QBD_CODES,
+    workers: THREE("qbd", ["Fernandez Ruiz, Lucia", "Bell, Marcus", "Nguyen, Tran"]).slice(0, 1),
+    payLines: WEEK_LINES.slice(0, 1),
+  },
+  { workers: 1, minutesByType: { REG: 2280 }, grossCents: 69350, payrollSystemGrossCents: 69350, payrollSystemDifferenceCents: 0 },
+  ["!TIMERHDR\tVER\tREL\tCOMPANYNAME\tIMPORTEDBEFORE\tFROMTIMER\tCOMPANYCREATETIME", "TIMERHDR\t8\t0\tSample Staffing LLC\tN\tY\t1208544781", IIF_HEAD, iifRow("Fernandez Ruiz, Lucia", "Hourly Rate", "19:00"), iifRow("Fernandez Ruiz, Lucia", "Hourly Rate", "19:00"), ""].join("\r\n"),
+);
+
+exportRefusal(
+  "qbd-iif-refuses-bonus",
+  "IIF time activities carry hours only (research §1.6), so a $150.00 bonus cannot travel in the QuickBooks Desktop file: the export is refused naming Marcus, so the run can offer to skip him and pay him by hand.",
+  {
+    format: "qbd_iif",
+    mappingVersion: "qbd-iif-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "qbd_iif", version: "2022_or_later" },
+    codes: QBD_CODES,
+    workers: THREE("qbd", ["Fernandez Ruiz, Lucia", "Bell, Marcus", "Nguyen, Tran"]),
+    payLines: [...WEEK_LINES, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 }, workweekStart: "2026-10-05" }],
+  },
+  {
+    code: "unsupported_earning_type",
+    workerId: "w2",
+    message: "Bell, Marcus: the QuickBooks Desktop file carries hours (regular, overtime, double time, holiday not worked) only, so it cannot carry a bonus. Skip this worker and pay it in QuickBooks Desktop by hand.",
+  },
+);
+
+exportCaseWithText(
+  "qbo-time-basic",
+  "QuickBooks Online through the documented importers (decision F3): regular hours only, one row per worker and week (rows of at most 23:59) on the week's last day, as H:MM, against the customer the agency set, not billable. Lucía 38 h (19:00 + 19:00) and Marcus 40 h (20:00 + 20:00). QuickBooks Online pays exact minutes × the stored rate: $693.50 + $730.00 = $1,423.50 both ways. Names with a comma are quoted.",
+  {
+    format: "qbo_time_csv",
+    mappingVersion: "qbo-time-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "qbo_time_csv", customer: "Payroll time" },
+    codes: {},
+    workers: THREE("qbo", ["Lucía Fernández Ruiz", "Bell, Marcus", "Tran Nguyen"]),
+    payLines: [WEEK_LINES[0]!, WEEK_LINES[1]!],
+  },
+  { workers: 2, minutesByType: { REG: 4680 }, grossCents: 142350, payrollSystemGrossCents: 142350, payrollSystemDifferenceCents: 0 },
+  ["Date,Name,Customer,Hours,Billable", '10/11/2026,"Bell, Marcus",Payroll time,20:00,No', '10/11/2026,"Bell, Marcus",Payroll time,20:00,No', "10/11/2026,Lucía Fernández Ruiz,Payroll time,19:00,No", "10/11/2026,Lucía Fernández Ruiz,Payroll time,19:00,No", ""].join("\r\n"),
+);
+
+exportRefusal(
+  "qbo-time-refuses-overtime",
+  "The QuickBooks Online importers set no payroll item, so every row lands as regular pay (research §2.2): Marcus's 4 overtime hours cannot travel in the file. The export is refused naming Marcus (pay his week by hand in QuickBooks Online).",
+  { format: "qbo_time_csv", mappingVersion: "qbo-time-v1", period: PERIOD, earningCodeMap: {}, target: { format: "qbo_time_csv", customer: "Payroll time" }, codes: {}, workers: THREE("qbo", ["Lucía Fernández Ruiz", "Bell, Marcus", "Tran Nguyen"]), payLines: WEEK_LINES.slice(0, 3) },
+  { code: "unsupported_earning_type", workerId: "w2", message: "Bell, Marcus: the QuickBooks Online file carries regular hours only, so it cannot carry overtime. Skip this worker and pay it in QuickBooks Online by hand." },
+);
+
+const ADP_CODES = { REG: { code: "Reg Hours", as: "hours" as const }, OT: { code: "O/T Hours", as: "hours" as const, factor: { num: 3, den: 2 } }, DT: { code: "D", as: "hours" as const, factor: { num: 2, den: 1 } }, BONUS: { code: "B", as: "dollars" as const } };
+exportCaseWithText(
+  "adp-wfn-basic",
+  "ADP Workforce Now paydata (decision F4), the gusto-hours-basic week plus a $150.00 bonus for Marcus. One row per worker and Temp Rate ($18.2500), hours to two decimals rounded up, dollars under code B on their own row, blanks never zeros, CRLF, batch 26101101 (period end 10/11/26, version 01), file PRXYZEPI.csv. Shiftbook: $2,279.88 + $150.00 = $2,429.88. ADP: 40.00 × 18.25 = $730.00 and 4.00 × 18.25 × 1.5 = $109.50 and $150.00 (Marcus); 38.00 × 18.25 = $693.50 (Lucía); 40.00 × 18.25 = $730.00 and 0.62 × 18.25 × 1.5 = $16.9725 → $16.97 (Tran: 37 min written as 0.62 h, rounded up) = $2,429.97, 9 cents more; the notes say so and name the multiples assumed.",
+  { format: "adp_wfn_paydata", mappingVersion: "adp-wfn-v1", period: PERIOD, earningCodeMap: {}, target: { format: "adp_wfn_paydata", companyCode: "XYZ" }, codes: ADP_CODES, workers: THREE("adp_wfn", ["000101", "000102", "000103"]), payLines: [...WEEK_LINES, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 } }] },
+  { workers: 3, minutesByType: { REG: 7080, OT: 277 }, amountsByType: { BONUS: 15000 }, grossCents: 242988, payrollSystemGrossCents: 242997, payrollSystemDifferenceCents: 9 },
+  ["Co Code,Batch ID,File #,Temp Rate,Reg Hours,O/T Hours,Earnings 3 Code,Earnings 3 Amount", "XYZ,26101101,000102,18.2500,40.00,4.00,,", "XYZ,26101101,000102,,,,B,150.00", "XYZ,26101101,000101,18.2500,38.00,,,", "XYZ,26101101,000103,18.2500,40.00,0.62,,", ""].join("\r\n"),
+);
+
+exportCaseWithText(
+  "adp-wfn-weighted-overtime",
+  "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Shiftbook's ($365.00 + $400.00 + $57.50). Only the multiples note.",
+  {
+    format: "adp_wfn_paydata",
+    mappingVersion: "adp-wfn-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "adp_wfn_paydata", companyCode: "XYZ" },
+    codes: ADP_CODES,
+    workers: [{ workerId: "w1", firstName: "Ben", lastName: "Okafor", payrollIds: { adp_wfn: { id: "000456" } } }],
+    payLines: [
+      { workerId: "w1", type: "REG", minutes: 1200, amountCents: 36500, rate: R1825 },
+      { workerId: "w1", type: "REG", minutes: 1200, amountCents: 40000, rate: { num: 2000, den: 1 } },
+      { workerId: "w1", type: "OT", minutes: 120, amountCents: 5750, rate: { num: 5750, den: 2 } },
+    ],
+  },
+  { workers: 1, minutesByType: { REG: 2400, OT: 120 }, grossCents: 82250, payrollSystemGrossCents: 82250, payrollSystemDifferenceCents: 0 },
+  ["Co Code,Batch ID,File #,Temp Rate,Reg Hours,O/T Hours", "XYZ,26101101,000456,18.2500,20.00,", "XYZ,26101101,000456,19.1667,,2.00", "XYZ,26101101,000456,20.0000,20.00,", ""].join("\r\n"),
+);
+
+exportRefusal(
+  "adp-wfn-refuses-unmapped-code",
+  "A holiday premium (8 h × $9.125/h = $73.00) has no ADP code in the agency's settings, so the file cannot say what it pays: the export is refused naming Lucía, with the fix (set the code, or skip her and pay it by hand).",
+  {
+    format: "adp_wfn_paydata",
+    mappingVersion: "adp-wfn-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "adp_wfn_paydata", companyCode: "XYZ" },
+    codes: ADP_CODES,
+    workers: THREE("adp_wfn", ["000101", "000102", "000103"]),
+    payLines: [WEEK_LINES[0]!, { workerId: "w1", type: "HOL", minutes: 480, amountCents: 7300, rate: { num: 1825, den: 2 } }],
+  },
+  { code: "unsupported_earning_type", workerId: "w1", message: "Fernández Ruiz, Lucía: a holiday premium for hours worked on a holiday has no ADP Workforce Now code. Set it in the payroll file settings, or skip this worker and pay it by hand." },
+);
+
+const RUN_CODES = { REG: { code: "REG", as: "hours" as const }, OT: { code: "OT", as: "hours" as const }, DT: { code: "DT", as: "hours" as const }, BONUS: { code: "BONUS", as: "dollars" as const } };
+const runRow = (id: string, code: string, hours: string, dollars: string) => `ABC1234,W,10/05/2026,10/11/2026,${id},${code},${hours},${dollars},0,,BASE`;
+exportCaseWithText(
+  "adp-run-basic",
+  "RUN Powered by ADP time sheet import (decision F5), the gusto-hours-basic week plus Marcus's $150.00 bonus: the version row, the headings, then one row per worker and earnings code at rate code BASE, weekly (W, a 7-day period). RUN pays the stored rate × 1 or 1.5: Marcus 40.00 × $18.25 = $730.00, 4.00 × $18.25 × 1.5 = $109.50, $150.00; Lucía 38.00 × $18.25 = $693.50; Tran $730.00 and 0.62 × $18.25 × 1.5 = $16.9725 → $16.97 (37 min rounded up to 0.62 h). RUN $2,429.97 against Shiftbook's $2,429.88: 9 cents, in the notes.",
+  { format: "adp_run_csv", mappingVersion: "adp-run-v1", period: PERIOD, earningCodeMap: {}, target: { format: "adp_run_csv", companyCode: "ABC1234" }, codes: RUN_CODES, workers: THREE("adp_run", ["101", "102", "103"]), payLines: [...WEEK_LINES, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 } }] },
+  { workers: 3, minutesByType: { REG: 7080, OT: 277 }, amountsByType: { BONUS: 15000 }, grossCents: 242988, payrollSystemGrossCents: 242997, payrollSystemDifferenceCents: 9 },
+  [
+    "##GENERIC## V1.0",
+    "Company Code,Pay Frequency,Pay Period Start,Pay Period End,Employee ID,Earnings Code,Pay Hours,Dollars,Separate Check,Worked Department,Rate Code",
+    runRow("102", "REG", "40.00", ""),
+    runRow("102", "OT", "4.00", ""),
+    runRow("102", "BONUS", "", "150.00"),
+    runRow("101", "REG", "38.00", ""),
+    runRow("103", "REG", "40.00", ""),
+    runRow("103", "OT", "0.62", ""),
+    "",
+  ].join("\r\n"),
+);
+
+exportRefusal(
+  "adp-run-refuses-weighted-overtime",
+  "RUN pays overtime hours at 1.5 × the stored BASE rate and takes rate codes, not rates (research §4.4). Marcus's overtime is at $28.00/h because his week's regular rate includes more than $18.25 (1.5 × $18.25 = $27.375), so the hours cannot be carried: the export is refused naming him (pay by hand, or map overtime as dollars).",
+  {
+    format: "adp_run_csv",
+    mappingVersion: "adp-run-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "adp_run_csv", companyCode: "ABC1234" },
+    codes: RUN_CODES,
+    workers: THREE("adp_run", ["101", "102", "103"]),
+    payLines: [WEEK_LINES[1]!, { workerId: "w2", type: "OT", minutes: 60, amountCents: 2800, rate: { num: 2800, den: 1 } }],
+  },
+  {
+    code: "several_pay_rates",
+    workerId: "w2",
+    message: "Bell, Marcus: overtime is paid at $28.00/h, because the week's regular rate includes more than the hourly rate (a second pay rate, a bonus, a holiday premium or a minimum-wage top-up), but RUN Powered by ADP pays it at 1.5 × the stored rate ($27.375/h). Skip this worker and pay them by hand.",
+  },
+);
+
+const SHEET = {
+  fileName: "payroll-{start}-to-{end}.csv",
+  delimiter: "comma" as const,
+  header: true,
+  dateFormat: "MM/DD/YYYY" as const,
+  columns: [
+    { field: "worker_id" as const, header: "Worker ID" },
+    { field: "last_name" as const, header: "Last name" },
+    { field: "first_name" as const, header: "First name" },
+    { field: "week_end" as const, header: "Week ending" },
+    { field: "earning_code" as const, header: "Earning code" },
+    { field: "hours" as const, header: "Hours" },
+    { field: "rate" as const, header: "Rate" },
+    { field: "amount" as const, header: "Amount" },
+  ],
+};
+exportCaseWithText(
+  "spreadsheet-basic",
+  "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Shiftbook's own (REG), overtime under the agency's code OT15. The amount column carries Shiftbook's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
+  {
+    format: "spreadsheet_csv",
+    mappingVersion: "spreadsheet-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "spreadsheet_csv", layout: SHEET },
+    codes: { REG: { code: "", as: "hours" }, OT: { code: "OT15", as: "hours" } },
+    workers: THREE("spreadsheet", ["SB-0001", "SB-0002", "SB-0003"]),
+    payLines: WEEK_LINES,
+  },
+  { workers: 3, minutesByType: { REG: 7080, OT: 277 }, grossCents: 227988, payrollSystemGrossCents: 227988, payrollSystemDifferenceCents: 0 },
+  [
+    "Worker ID,Last name,First name,Week ending,Earning code,Hours,Rate,Amount",
+    "SB-0002,Bell,Marcus,10/11/2026,REG,40.00,18.2500,730.00",
+    "SB-0002,Bell,Marcus,10/11/2026,OT15,4.00,27.3750,109.50",
+    "SB-0001,Fernández Ruiz,Lucía,10/11/2026,REG,38.00,18.2500,693.50",
+    "SB-0003,Nguyen,Tran,10/11/2026,REG,40.00,18.2500,730.00",
+    "SB-0003,Nguyen,Tran,10/11/2026,OT15,0.62,27.3750,16.88",
+    "",
+  ].join("\r\n"),
+);
+
+exportCaseWithText(
+  "spreadsheet-tab-no-header",
+  "A factoring company's layout: TAB-delimited, no header row, ISO dates, a fixed client column first, the file named for the period's end; with no amount column the receiver pays hours × the written rate: Lucía 38.00 × 18.2500 = $693.50 (exact).",
+  {
+    format: "spreadsheet_csv",
+    mappingVersion: "spreadsheet-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: {
+      format: "spreadsheet_csv",
+      layout: {
+        fileName: "factor-{end}.txt",
+        delimiter: "tab",
+        header: false,
+        dateFormat: "YYYY-MM-DD",
+        columns: [
+          { field: "fixed", header: "Client", value: "SAMPLE STAFFING" },
+          { field: "worker_id", header: "Employee" },
+          { field: "week_start", header: "Week" },
+          { field: "earning_code", header: "Code" },
+          { field: "hours", header: "Hours" },
+          { field: "rate", header: "Rate" },
+        ],
+      },
+    },
+    codes: { REG: { code: "ST", as: "hours" } },
+    workers: THREE("spreadsheet", ["SB-0001", "SB-0002", "SB-0003"]),
+    payLines: WEEK_LINES.slice(0, 1),
+  },
+  { workers: 1, minutesByType: { REG: 2280 }, grossCents: 69350, payrollSystemGrossCents: 69350, payrollSystemDifferenceCents: 0 },
+  "SAMPLE STAFFING\tSB-0001\t2026-10-05\tST\t38.00\t18.2500\r\n",
+);
+
+exportRefusal(
+  "spreadsheet-refuses-dollars-without-amount",
+  "A layout with no amount column cannot carry money that is not hours × a rate: Marcus's $150.00 bonus is refused, naming him, with the fix (add an amount column, or skip him and pay it by hand).",
+  {
+    format: "spreadsheet_csv",
+    mappingVersion: "spreadsheet-v1",
+    period: PERIOD,
+    earningCodeMap: {},
+    target: { format: "spreadsheet_csv", layout: { ...SHEET, columns: SHEET.columns.filter((c) => c.field !== "amount") } },
+    codes: {},
+    workers: THREE("spreadsheet", ["SB-0001", "SB-0002", "SB-0003"]),
+    payLines: [WEEK_LINES[1]!, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 }, workweekStart: "2026-10-05" }],
+  },
+  { code: "unsupported_earning_type", workerId: "w2", message: "Bell, Marcus: the spreadsheet has no amount column, so it cannot carry a bonus. Add an amount column, or skip this worker and pay it by hand." },
 );

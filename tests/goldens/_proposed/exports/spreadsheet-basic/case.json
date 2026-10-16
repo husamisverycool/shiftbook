@@ -1,0 +1,166 @@
+{
+  "summary": "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Shiftbook's own (REG), overtime under the agency's code OT15. The amount column carries Shiftbook's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
+  "fixture": {
+    "format": "spreadsheet_csv",
+    "mappingVersion": "spreadsheet-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "spreadsheet_csv",
+      "layout": {
+        "fileName": "payroll-{start}-to-{end}.csv",
+        "delimiter": "comma",
+        "header": true,
+        "dateFormat": "MM/DD/YYYY",
+        "columns": [
+          {
+            "field": "worker_id",
+            "header": "Worker ID"
+          },
+          {
+            "field": "last_name",
+            "header": "Last name"
+          },
+          {
+            "field": "first_name",
+            "header": "First name"
+          },
+          {
+            "field": "week_end",
+            "header": "Week ending"
+          },
+          {
+            "field": "earning_code",
+            "header": "Earning code"
+          },
+          {
+            "field": "hours",
+            "header": "Hours"
+          },
+          {
+            "field": "rate",
+            "header": "Rate"
+          },
+          {
+            "field": "amount",
+            "header": "Amount"
+          }
+        ]
+      }
+    },
+    "codes": {
+      "REG": {
+        "code": "",
+        "as": "hours"
+      },
+      "OT": {
+        "code": "OT15",
+        "as": "hours"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "spreadsheet": {
+            "id": "SB-0001"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "spreadsheet": {
+            "id": "SB-0002"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "spreadsheet": {
+            "id": "SB-0003"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "OT",
+        "minutes": 240,
+        "amountCents": 10950,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w3",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w3",
+        "type": "OT",
+        "minutes": 37,
+        "amountCents": 1688,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "workweekStart": "2026-10-05"
+      }
+    ]
+  },
+  "expectedFile": "payroll-2026-10-05-to-2026-10-11.csv",
+  "expectedControlTotals": {
+    "workers": 3,
+    "minutesByType": {
+      "REG": 7080,
+      "OT": 277
+    },
+    "grossCents": 227988,
+    "payrollSystemGrossCents": 227988,
+    "payrollSystemDifferenceCents": 0
+  },
+  "notes": []
+}

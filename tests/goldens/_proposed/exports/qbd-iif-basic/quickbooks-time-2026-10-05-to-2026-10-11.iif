@@ -1,0 +1,9 @@
+!TIMEACT	DATE	JOB	EMP	ITEM	PITEM	DURATION	PROJ	NOTE	XFERTOPAYROLL	BILLINGSTATUS
+TIMEACT	10/11/26		Bell, Marcus		Hourly Rate	20:00			Y	0
+TIMEACT	10/11/26		Bell, Marcus		Hourly Rate	20:00			Y	0
+TIMEACT	10/11/26		Bell, Marcus		Overtime Rate	4:00			Y	0
+TIMEACT	10/11/26		Fernandez Ruiz, Lucia		Hourly Rate	19:00			Y	0
+TIMEACT	10/11/26		Fernandez Ruiz, Lucia		Hourly Rate	19:00			Y	0
+TIMEACT	10/11/26		Nguyen, Tran		Hourly Rate	20:00			Y	0
+TIMEACT	10/11/26		Nguyen, Tran		Hourly Rate	20:00			Y	0
+TIMEACT	10/11/26		Nguyen, Tran		Overtime Rate	0:37			Y	0

@@ -1,0 +1,89 @@
+{
+  "summary": "The QuickBooks Online importers set no payroll item, so every row lands as regular pay (research §2.2): Marcus's 4 overtime hours cannot travel in the file. The export is refused naming Marcus (pay his week by hand in QuickBooks Online).",
+  "fixture": {
+    "format": "qbo_time_csv",
+    "mappingVersion": "qbo-time-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "qbo_time_csv",
+      "customer": "Payroll time"
+    },
+    "codes": {},
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "qbo": {
+            "id": "Lucía Fernández Ruiz"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "qbo": {
+            "id": "Bell, Marcus"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "qbo": {
+            "id": "Tran Nguyen"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "OT",
+        "minutes": 240,
+        "amountCents": 10950,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "workweekStart": "2026-10-05"
+      }
+    ]
+  },
+  "expectedError": {
+    "code": "unsupported_earning_type",
+    "workerId": "w2",
+    "message": "Bell, Marcus: the QuickBooks Online file carries regular hours only, so it cannot carry overtime. Skip this worker and pay it in QuickBooks Online by hand."
+  }
+}

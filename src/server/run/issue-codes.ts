@@ -18,6 +18,7 @@ export const RUN_ISSUE_CODES = [
   "missing_billing_profile",
   "crosses_midnight",
   "missing_payroll_id",
+  "no_payroll_target",
   "pay_bill_mismatch",
   "possible_duplicate_day",
   "export_refused",

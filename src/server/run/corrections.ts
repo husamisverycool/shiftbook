@@ -20,7 +20,7 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
 import { clientNets } from "../files/invoice-plan";
-import { differences, settlement, type DiffLine, type FileLine, type LineForDiff } from "./differences";
+import { differences, settlement, type DiffLine, type FileLine, type LineForDiff, type WeekLine } from "./differences";
 import { lockPeriod, openPeriod, periodState } from "./period-lock";
 import { computeRun } from "./service";
 
@@ -79,6 +79,8 @@ export interface WorkerSettlement {
   /** Every difference is an addition the payroll file can carry. */
   additionsOnly: boolean;
   fileLines: FileLine[];
+  /** The same additions week by week (what the payroll file carries, dated by workweek). */
+  weekLines: WeekLine[];
   /** Cents rounding left over when hours moved at one rate: not settled (noted with the file). */
   leftoverCents: number;
   /** Something besides rounding differs for this worker. */

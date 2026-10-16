@@ -1,0 +1,102 @@
+{
+  "summary": "A holiday premium (8 h × $9.125/h = $73.00) has no ADP code in the agency's settings, so the file cannot say what it pays: the export is refused naming Lucía, with the fix (set the code, or skip her and pay it by hand).",
+  "fixture": {
+    "format": "adp_wfn_paydata",
+    "mappingVersion": "adp-wfn-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "adp_wfn_paydata",
+      "companyCode": "XYZ"
+    },
+    "codes": {
+      "REG": {
+        "code": "Reg Hours",
+        "as": "hours"
+      },
+      "OT": {
+        "code": "O/T Hours",
+        "as": "hours",
+        "factor": {
+          "num": 3,
+          "den": 2
+        }
+      },
+      "DT": {
+        "code": "D",
+        "as": "hours",
+        "factor": {
+          "num": 2,
+          "den": 1
+        }
+      },
+      "BONUS": {
+        "code": "B",
+        "as": "dollars"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "adp_wfn": {
+            "id": "000101"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "adp_wfn": {
+            "id": "000102"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "adp_wfn": {
+            "id": "000103"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w1",
+        "type": "HOL",
+        "minutes": 480,
+        "amountCents": 7300,
+        "rate": {
+          "num": 1825,
+          "den": 2
+        }
+      }
+    ]
+  },
+  "expectedError": {
+    "code": "unsupported_earning_type",
+    "workerId": "w1",
+    "message": "Fernández Ruiz, Lucía: a holiday premium for hours worked on a holiday has no ADP Workforce Now code. Set it in the payroll file settings, or skip this worker and pay it by hand."
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "summary": "QuickBooks Desktop 2021 and earlier (decision F2): the same file starts with the Timer header naming the company file (VER 8, REL 0, the company name, IMPORTEDBEFORE N, FROMTIMER Y, the company file number from a Timer Lists export). One worker: Lucía 38 h = 19:00 + 19:00 on 10/11/26, $693.50 both ways.",
+  "fixture": {
+    "format": "qbd_iif",
+    "mappingVersion": "qbd-iif-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "qbd_iif",
+      "version": "2021_or_earlier",
+      "companyName": "Sample Staffing LLC",
+      "companyCreateTime": "1208544781"
+    },
+    "codes": {
+      "REG": {
+        "code": "Hourly Rate",
+        "as": "hours"
+      },
+      "OT": {
+        "code": "Overtime Rate",
+        "as": "hours"
+      },
+      "DT": {
+        "code": "Double-time Rate",
+        "as": "hours"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "qbd": {
+            "id": "Fernandez Ruiz, Lucia"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      }
+    ]
+  },
+  "expectedFile": "quickbooks-time-2026-10-05-to-2026-10-11.iif",
+  "expectedControlTotals": {
+    "workers": 1,
+    "minutesByType": {
+      "REG": 2280
+    },
+    "grossCents": 69350,
+    "payrollSystemGrossCents": 69350,
+    "payrollSystemDifferenceCents": 0
+  },
+  "notes": []
+}

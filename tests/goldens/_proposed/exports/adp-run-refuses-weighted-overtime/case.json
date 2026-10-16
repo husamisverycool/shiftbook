@@ -1,0 +1,94 @@
+{
+  "summary": "RUN pays overtime hours at 1.5 × the stored BASE rate and takes rate codes, not rates (research §4.4). Marcus's overtime is at $28.00/h because his week's regular rate includes more than $18.25 (1.5 × $18.25 = $27.375), so the hours cannot be carried: the export is refused naming him (pay by hand, or map overtime as dollars).",
+  "fixture": {
+    "format": "adp_run_csv",
+    "mappingVersion": "adp-run-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "adp_run_csv",
+      "companyCode": "ABC1234"
+    },
+    "codes": {
+      "REG": {
+        "code": "REG",
+        "as": "hours"
+      },
+      "OT": {
+        "code": "OT",
+        "as": "hours"
+      },
+      "DT": {
+        "code": "DT",
+        "as": "hours"
+      },
+      "BONUS": {
+        "code": "BONUS",
+        "as": "dollars"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "adp_run": {
+            "id": "101"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "adp_run": {
+            "id": "102"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "adp_run": {
+            "id": "103"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w2",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "OT",
+        "minutes": 60,
+        "amountCents": 2800,
+        "rate": {
+          "num": 2800,
+          "den": 1
+        }
+      }
+    ]
+  },
+  "expectedError": {
+    "code": "several_pay_rates",
+    "workerId": "w2",
+    "message": "Bell, Marcus: overtime is paid at $28.00/h, because the week's regular rate includes more than the hourly rate (a second pay rate, a bonus, a holiday premium or a minimum-wage top-up), but RUN Powered by ADP pays it at 1.5 × the stored rate ($27.375/h). Skip this worker and pay them by hand."
+  }
+}

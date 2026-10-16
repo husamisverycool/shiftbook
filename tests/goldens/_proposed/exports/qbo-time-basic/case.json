@@ -1,0 +1,84 @@
+{
+  "summary": "QuickBooks Online through the documented importers (decision F3): regular hours only, one row per worker and week (rows of at most 23:59) on the week's last day, as H:MM, against the customer the agency set, not billable. Lucía 38 h (19:00 + 19:00) and Marcus 40 h (20:00 + 20:00). QuickBooks Online pays exact minutes × the stored rate: $693.50 + $730.00 = $1,423.50 both ways. Names with a comma are quoted.",
+  "fixture": {
+    "format": "qbo_time_csv",
+    "mappingVersion": "qbo-time-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "qbo_time_csv",
+      "customer": "Payroll time"
+    },
+    "codes": {},
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "qbo": {
+            "id": "Lucía Fernández Ruiz"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "qbo": {
+            "id": "Bell, Marcus"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "qbo": {
+            "id": "Tran Nguyen"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      }
+    ]
+  },
+  "expectedFile": "quickbooks-online-time-2026-10-05-to-2026-10-11.csv",
+  "expectedControlTotals": {
+    "workers": 2,
+    "minutesByType": {
+      "REG": 4680
+    },
+    "grossCents": 142350,
+    "payrollSystemGrossCents": 142350,
+    "payrollSystemDifferenceCents": 0
+  },
+  "notes": []
+}

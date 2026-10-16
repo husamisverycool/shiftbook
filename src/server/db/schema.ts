@@ -202,7 +202,7 @@ export const clientBillingProfiles = pgTable(
 );
 
 // ---------- workers ----------
-export type PayrollIds = Partial<Record<"gusto" | "adp_wfn" | "adp_run" | "qbo" | "qbd", { id: string; title?: string }>>;
+export type PayrollIds = Partial<Record<"gusto" | "qbd" | "qbo" | "adp_wfn" | "adp_run" | "spreadsheet", { id: string; title?: string }>>;
 
 export const workers = pgTable("workers", {
   id: id(),

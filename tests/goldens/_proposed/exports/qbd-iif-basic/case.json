@@ -1,0 +1,131 @@
+{
+  "summary": "QuickBooks Desktop 2022 and later (decision F2), the gusto-hours-basic week: Lucía 38 h, Marcus 40 h + 4 h overtime, Tran 40 h + 37 overtime minutes. Each worker's week per payroll item goes on the week's last day (10/11/26), split into the fewest rows of at most 23:59, as equal as whole minutes allow: 38 h → 19:00 + 19:00; 40 h → 20:00 + 20:00. Durations are exact minutes, so QuickBooks pays exactly what Shiftbook computed at the stored rate × the item's multiple: 2,280 min × $18.25/h = $693.50; 2,400 min × $18.25/h = $730.00 (twice); 240 min × $27.375/h = $109.50; 37 min × $27.375/h = $16.88125 → $16.88. Gross $2,279.88 both ways; no notes.",
+  "fixture": {
+    "format": "qbd_iif",
+    "mappingVersion": "qbd-iif-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "qbd_iif",
+      "version": "2022_or_later"
+    },
+    "codes": {
+      "REG": {
+        "code": "Hourly Rate",
+        "as": "hours"
+      },
+      "OT": {
+        "code": "Overtime Rate",
+        "as": "hours"
+      },
+      "DT": {
+        "code": "Double-time Rate",
+        "as": "hours"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "qbd": {
+            "id": "Fernandez Ruiz, Lucia"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "qbd": {
+            "id": "Bell, Marcus"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "qbd": {
+            "id": "Nguyen, Tran"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w2",
+        "type": "OT",
+        "minutes": 240,
+        "amountCents": 10950,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w3",
+        "type": "REG",
+        "minutes": 2400,
+        "amountCents": 73000,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      },
+      {
+        "workerId": "w3",
+        "type": "OT",
+        "minutes": 37,
+        "amountCents": 1688,
+        "rate": {
+          "num": 5475,
+          "den": 2
+        },
+        "workweekStart": "2026-10-05"
+      }
+    ]
+  },
+  "expectedFile": "quickbooks-time-2026-10-05-to-2026-10-11.iif",
+  "expectedControlTotals": {
+    "workers": 3,
+    "minutesByType": {
+      "REG": 7080,
+      "OT": 277
+    },
+    "grossCents": 227988,
+    "payrollSystemGrossCents": 227988,
+    "payrollSystemDifferenceCents": 0
+  },
+  "notes": []
+}

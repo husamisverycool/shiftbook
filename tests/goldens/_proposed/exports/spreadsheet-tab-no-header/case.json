@@ -1,0 +1,110 @@
+{
+  "summary": "A factoring company's layout: TAB-delimited, no header row, ISO dates, a fixed client column first, the file named for the period's end; with no amount column the receiver pays hours × the written rate: Lucía 38.00 × 18.2500 = $693.50 (exact).",
+  "fixture": {
+    "format": "spreadsheet_csv",
+    "mappingVersion": "spreadsheet-v1",
+    "period": {
+      "startsOn": "2026-10-05",
+      "endsOn": "2026-10-11"
+    },
+    "earningCodeMap": {},
+    "target": {
+      "format": "spreadsheet_csv",
+      "layout": {
+        "fileName": "factor-{end}.txt",
+        "delimiter": "tab",
+        "header": false,
+        "dateFormat": "YYYY-MM-DD",
+        "columns": [
+          {
+            "field": "fixed",
+            "header": "Client",
+            "value": "SAMPLE STAFFING"
+          },
+          {
+            "field": "worker_id",
+            "header": "Employee"
+          },
+          {
+            "field": "week_start",
+            "header": "Week"
+          },
+          {
+            "field": "earning_code",
+            "header": "Code"
+          },
+          {
+            "field": "hours",
+            "header": "Hours"
+          },
+          {
+            "field": "rate",
+            "header": "Rate"
+          }
+        ]
+      }
+    },
+    "codes": {
+      "REG": {
+        "code": "ST",
+        "as": "hours"
+      }
+    },
+    "workers": [
+      {
+        "workerId": "w1",
+        "firstName": "Lucía",
+        "lastName": "Fernández Ruiz",
+        "payrollIds": {
+          "spreadsheet": {
+            "id": "SB-0001"
+          }
+        }
+      },
+      {
+        "workerId": "w2",
+        "firstName": "Marcus",
+        "lastName": "Bell",
+        "payrollIds": {
+          "spreadsheet": {
+            "id": "SB-0002"
+          }
+        }
+      },
+      {
+        "workerId": "w3",
+        "firstName": "Tran",
+        "lastName": "Nguyen",
+        "payrollIds": {
+          "spreadsheet": {
+            "id": "SB-0003"
+          }
+        }
+      }
+    ],
+    "payLines": [
+      {
+        "workerId": "w1",
+        "type": "REG",
+        "minutes": 2280,
+        "amountCents": 69350,
+        "rate": {
+          "num": 1825,
+          "den": 1
+        },
+        "workweekStart": "2026-10-05"
+      }
+    ]
+  },
+  "expectedFile": "factor-2026-10-11.txt",
+  "expectedControlTotals": {
+    "workers": 1,
+    "minutesByType": {
+      "REG": 2280
+    },
+    "grossCents": 69350,
+    "payrollSystemGrossCents": 69350,
+    "payrollSystemDifferenceCents": 0
+  },
+  "notes": []
+}

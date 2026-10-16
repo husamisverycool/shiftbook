@@ -87,8 +87,19 @@ describe("how a worker's differences are settled (decision E9)", () => {
         { type: "REG", rate: { num: 1825, den: 1 }, minutes: 120, amountCents: 3650, parts: 2 },
         { type: "BONUS", rate: { num: 2500, den: 1 }, minutes: 0, amountCents: 2500, parts: 1 },
       ],
+      weekLines: [
+        { type: "REG", rate: { num: 1825, den: 1 }, minutes: 120, amountCents: 3650, parts: 2, workweekStart: "2026-10-05" },
+        { type: "BONUS", rate: { num: 2500, den: 1 }, minutes: 0, amountCents: 2500, parts: 1, workweekStart: "2026-10-05" },
+      ],
       leftoverCents: 0,
     });
+  });
+
+  it("keeps each week's additions on their own for files dated by the week worked", () => {
+    expect(settlement([at("REG", 1825, 60, 1825, { week: "2026-10-12" }), at("REG", 1825, 120, 3650)]).weekLines).toEqual([
+      { type: "REG", rate: { num: 1825, den: 1 }, minutes: 120, amountCents: 3650, parts: 2, workweekStart: "2026-10-05" },
+      { type: "REG", rate: { num: 1825, den: 1 }, minutes: 60, amountCents: 1825, parts: 2, workweekStart: "2026-10-12" },
+    ]);
   });
 
   it("hours moved between days or assignments of one week at one rate add up to what the file needs, or to nothing", () => {
@@ -103,7 +114,7 @@ describe("how a worker's differences are settled (decision E9)", () => {
   it("a cent left over from rounding when hours move at one rate is not a difference to settle", () => {
     // Was 4 min on each of two assignments (4 min × $18.25/h = 121.66…¢ → 122¢ each); now 8 min on a third (243.33…¢ → 243¢).
     const r = settlement([at("REG", 1825, -4, -122, { now: 0 }), at("REG", 1825, -4, -122, { now: 0 }), at("REG", 1825, 8, 243, { was: 0 })]);
-    expect(r).toEqual({ netCents: -1, additionsOnly: true, fileLines: [], leftoverCents: -1 });
+    expect(r).toEqual({ netCents: -1, additionsOnly: true, fileLines: [], weekLines: [], leftoverCents: -1 });
   });
 
   it("each workweek stands alone: overtime moved from one week to the next is not netted (29 C.F.R. § 778.104)", () => {
