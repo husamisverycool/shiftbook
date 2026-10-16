@@ -417,18 +417,17 @@
       "bothRealBody": "Confirma que estos registros son trabajos distintos del mismo día, no las mismas horas leídas dos veces. Si alguno cambia después, se volverá a preguntar.",
       "bothRealConfirm": "Confirmar",
       "goToUpload": "Ir a las hojas de horas",
-      "openApprovals": "Abrir Aprobaciones de clientes"
+      "openApprovals": "Abrir Aprobaciones de clientes",
+      "openPayrollSettings": "Abrir la configuración del archivo de nómina"
     },
     "files": {
       "successTitle": "Archivos creados",
       "successBody": "El archivo de nómina y las facturas de este periodo están listos. El periodo queda bloqueado; los cambios crean una nueva versión.",
       "payrollTitle": "Archivo de nómina",
-      "payrollFormat": "Importación de horas de Gusto",
       "controlTotals": "Totales de control",
       "workers": "Trabajadores",
       "minutes": "Horas {type}",
       "gross": "Pago bruto (Shiftbook)",
-      "gustoGross": "Pago bruto que calculará Gusto",
       "difference": "Diferencia",
       "notes": "Notas",
       "fingerprint": "SHA-256",
@@ -441,7 +440,25 @@
         "REG": "normales",
         "OT": "extra",
         "DT": "de tiempo doble"
-      }
+      },
+      "formats": {
+        "gusto_hours_csv": "Importación de horas de Gusto",
+        "qbd_iif": "Archivo de tiempo de QuickBooks Desktop (IIF)",
+        "qbo_time_csv": "Importación de tiempo de QuickBooks Online",
+        "adp_wfn_paydata": "Datos de pago de ADP Workforce Now",
+        "adp_run_csv": "Importación de hojas de tiempo de RUN Powered by ADP",
+        "spreadsheet_csv": "Hoja de cálculo"
+      },
+      "systems": {
+        "gusto_hours_csv": "Gusto",
+        "qbd_iif": "QuickBooks Desktop",
+        "qbo_time_csv": "QuickBooks Online",
+        "adp_wfn_paydata": "ADP",
+        "adp_run_csv": "RUN",
+        "spreadsheet_csv": "quien lo recibe"
+      },
+      "systemGross": "Pago bruto que calculará {system}",
+      "dollars": "Pagado en dólares"
     },
     "errors": {
       "busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtalo de nuevo en un momento.",
@@ -548,7 +565,9 @@
     "jobOrders": "Órdenes de trabajo",
     "assignments": "Asignaciones",
     "approvals": "Aprobaciones de clientes",
-    "shortcuts": "Atajos de teclado"
+    "shortcuts": "Atajos de teclado",
+    "settings": "Configuración",
+    "agencyMenu": "Menú de la agencia"
   },
   "list": {
     "filter": "Filtrar",
@@ -1307,5 +1326,222 @@
       "disputed": "Disputado"
     },
     "minutes": "{count} min"
+  },
+  "settings": {
+    "title": "Configuración",
+    "payroll": {
+      "title": "Archivo de nómina",
+      "description": "El sistema de nómina para el que se prepara el archivo semanal, sus códigos y el número de cada trabajador en él.",
+      "systemTitle": "Sistema de nómina",
+      "systemHint": "Un sistema a la vez. Un cambio se aplica a todos los archivos de nómina que aún no se han preparado; los ya preparados conservan su formato.",
+      "inUse": "En uso",
+      "systems": {
+        "gusto_hours_csv": {
+          "name": "Gusto",
+          "carries": "Horas (regulares, extra, tiempo doble) y bonos."
+        },
+        "qbd_iif": {
+          "name": "QuickBooks Desktop",
+          "carries": "Solo horas, con sus conceptos de nómina, a la tarifa guardada en QuickBooks."
+        },
+        "qbo_time_csv": {
+          "name": "QuickBooks Online",
+          "carries": "Solo horas regulares, para una aplicación de importación; lo demás se paga a mano."
+        },
+        "adp_wfn_paydata": {
+          "name": "ADP Workforce Now",
+          "carries": "Horas con su tarifa en cada fila, y dólares con sus códigos."
+        },
+        "adp_run_csv": {
+          "name": "RUN Powered by ADP",
+          "carries": "Horas a la tarifa guardada, o dólares, con sus códigos de ingreso."
+        },
+        "spreadsheet_csv": {
+          "name": "Hoja de cálculo",
+          "carries": "Cada línea de pago, en las columnas que elija (la plantilla de una PEO o empresa de factoraje)."
+        }
+      },
+      "fields": {
+        "companyCode": "Código de empresa",
+        "version": "Versión de QuickBooks Desktop",
+        "version2022": "2022 o posterior",
+        "version2021": "2021 o anterior",
+        "companyName": "Nombre de la empresa",
+        "companyCreateTime": "Número del archivo de la empresa",
+        "customer": "Cliente",
+        "fileName": "Nombre del archivo: {name}"
+      },
+      "help": {
+        "adpCompanyCode": "El código de empresa de ADP: 2 o 3 letras mayúsculas o dígitos.",
+        "runCompanyCode": "El código de empresa de RUN: hasta 10 letras o dígitos.",
+        "companyName": "Exactamente como aparece en la información de la empresa en QuickBooks.",
+        "companyCreateTime": "El número en la segunda línea de una exportación de listas de Timer desde QuickBooks.",
+        "customer": "El cliente de QuickBooks Online con el que se registra cada fila; las aplicaciones de importación lo necesitan. Use uno que reserve para horas de nómina.",
+        "spreadsheetFileName": "El nombre del archivo se define en Columnas de la hoja."
+      },
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "lastChanged": "Último cambio {date} por {who}.",
+      "neverChanged": "Definido al configurar la agencia.",
+      "noneChosen": "Aún no se eligió un sistema de nómina. Elija uno y luego defina sus códigos y el número de cada trabajador.",
+      "readOnly": "Solo el Propietario cambia la configuración de nómina.",
+      "tabs": {
+        "codes": "Códigos de ingreso",
+        "workers": "Números de trabajadores",
+        "columns": "Columnas de la hoja"
+      },
+      "codes": {
+        "hint": "El código que usa {system} para cada tipo de pago que Shiftbook puede producir.",
+        "colKind": "Tipo de pago",
+        "colCode": "Código",
+        "colAs": "Se envía como",
+        "colFactor": "Múltiplo",
+        "colBlank": "Si queda en blanco",
+        "hours": "Horas",
+        "dollars": "Dólares",
+        "fixedColumn": "Columna “{column}”",
+        "notCarried": "Este sistema no lo admite.",
+        "blank": {
+          "refused": "La nómina se detiene y nombra al trabajador, para pagarlo a mano.",
+          "own_code": "Se usa el código de Shiftbook ({code}).",
+          "fixed": "Siempre en su columna.",
+          "not_carried": "La nómina nombra al trabajador, para pagarlo a mano."
+        },
+        "factorFixed": "× {factor}",
+        "factorLabel": "Múltiplo para {kind}",
+        "codeLabel": "Código para {kind}",
+        "asLabel": "Cómo se envía {kind}",
+        "kinds": {
+          "REG": "Horas regulares",
+          "OT": "Horas extra",
+          "DT": "Tiempo doble",
+          "MW_TRUEUP": "Ajuste al salario mínimo",
+          "REPORTING_PAY": "Pago por presentarse",
+          "HOL": "Prima de feriado (trabajado)",
+          "HOL_NOT_WORKED": "Pago de feriado (no trabajado)",
+          "DIFF": "Diferencial de turno",
+          "MEAL_PREMIUM": "Prima por comida",
+          "REST_PREMIUM": "Prima por descanso",
+          "MIN_GUARANTEE": "Mínimo de jornada",
+          "BONUS": "Bono",
+          "BONUS_OT": "Horas extra sobre un bono"
+        }
+      },
+      "workers": {
+        "hint": "El {idName} de cada trabajador en {system}.",
+        "all": "Todos",
+        "missing": "Faltan",
+        "set": "Definidos",
+        "search": "Buscar trabajadores",
+        "progress": "{set} de {total} trabajadores tienen número",
+        "colWorker": "Trabajador",
+        "colId": "Número",
+        "colTitle": "Puesto",
+        "colStatus": "Estado",
+        "idLabel": "{idName} de {name}",
+        "titleLabel": "Puesto en Gusto de {name}",
+        "none": "Ningún trabajador coincide.",
+        "taken": "Ya lo usa {name}.",
+        "idNames": {
+          "gusto": "número de empleado de Gusto",
+          "qbd": "nombre de empleado en QuickBooks",
+          "qbo": "nombre visible en QuickBooks Online",
+          "adp_wfn": "número de archivo de ADP",
+          "adp_run": "número de empleado de RUN",
+          "spreadsheet": "número de trabajador"
+        }
+      },
+      "columns": {
+        "hint": "Las columnas del archivo, en orden, como lo pide la plantilla de quien lo recibe.",
+        "fileName": "Nombre del archivo",
+        "fileNameHelp": "'{start}' y '{end}' se reemplazan por las fechas del periodo; termina en .csv o .txt.",
+        "delimiter": "Separador",
+        "delimiters": {
+          "comma": "Coma",
+          "tab": "Tabulador",
+          "semicolon": "Punto y coma",
+          "pipe": "Barra vertical"
+        },
+        "header": "Empezar el archivo con una fila de encabezados",
+        "dateFormat": "Formato de fecha",
+        "included": "Columnas incluidas",
+        "headerText": "Encabezado de {field}",
+        "fixedValue": "Texto de {field}",
+        "moveUp": "Subir {field}",
+        "moveDown": "Bajar {field}",
+        "remove": "Quitar {field}",
+        "add": "Agregar una columna",
+        "searchFields": "Buscar campos",
+        "addField": "Agregar {field}",
+        "noFields": "Ningún campo coincide.",
+        "fields": {
+          "worker_id": "Número de trabajador",
+          "last_name": "Apellido",
+          "first_name": "Nombre",
+          "period_start": "Inicio del periodo",
+          "period_end": "Fin del periodo",
+          "week_start": "Inicio de semana",
+          "week_end": "Fin de semana",
+          "earning_code": "Código de ingreso",
+          "hours": "Horas",
+          "rate": "Tarifa",
+          "amount": "Importe",
+          "fixed": "Texto fijo"
+        }
+      },
+      "rules": {
+        "choose_system": "Elija un sistema de nómina.",
+        "qbd_version": "Elija la versión de QuickBooks Desktop.",
+        "company_name": "El nombre de la empresa exactamente como aparece en QuickBooks, con letras, dígitos y signos simples.",
+        "company_file_number": "Solo dígitos: el número en la segunda línea de una exportación de listas de Timer.",
+        "qbo_customer": "Un cliente que exista en QuickBooks Online, de hasta 100 caracteres.",
+        "adp_company_code": "2 o 3 letras mayúsculas o dígitos.",
+        "run_company_code": "Hasta 10 letras o dígitos.",
+        "layout": "Configure las columnas de la hoja.",
+        "file_name": "Letras, dígitos, puntos, guiones y guiones bajos, terminando en .csv o .txt; entre llaves solo '{start}' y '{end}'.",
+        "delimiter": "Elija un separador.",
+        "header_row": "Elija si el archivo empieza con una fila de encabezados.",
+        "date_format": "Elija un formato de fecha.",
+        "columns_count": "Entre 1 y 30 columnas.",
+        "column_field": "Elija qué contiene la columna.",
+        "column_header": "Un encabezado de hasta 64 caracteres.",
+        "column_value": "Hasta 64 caracteres.",
+        "needs_worker_id": "Incluya el número de trabajador, para que quien lo recibe sepa de quién es cada fila.",
+        "needs_code": "Incluya el código de ingreso, para que quien lo recibe sepa qué paga cada fila.",
+        "needs_price": "Incluya el importe, o las horas y la tarifa, para que quien lo recibe pueda calcular cada fila.",
+        "set_codes": "Defina los códigos.",
+        "not_carried": "El archivo de este sistema no admite este tipo de pago.",
+        "dollars_only": "Este sistema recibe este tipo de pago solo en dólares.",
+        "hours_only": "Este sistema recibe este tipo de pago solo como horas.",
+        "fixed_column": "Este tipo de pago va en la columna propia del archivo.",
+        "code_form_qbd_iif": "El nombre del concepto de nómina exactamente como aparece en QuickBooks (hasta 31 caracteres simples).",
+        "code_form_adp_wfn_paydata": "1 o 2 letras mayúsculas, un número de 0 a 79 (salvo 40, 50, 60 o 61), o 3 letras y dígitos si ADP tiene activados los campos ampliados.",
+        "code_form_adp_run_csv": "Hasta 10 letras, dígitos, guiones o guiones bajos.",
+        "code_form_spreadsheet_csv": "Hasta 20 caracteres.",
+        "code_form_gusto_hours_csv": "El archivo de Gusto tiene columnas fijas.",
+        "code_form_qbo_time_csv": "Este archivo tiene columnas fijas.",
+        "factor_needed": "El múltiplo que aplica el sistema a estas horas, por ejemplo 1.5.",
+        "factor_fixed": "El múltiplo de este sistema es fijo.",
+        "code_reused": "Este código ya se usa para otro tipo de pago enviado de otra forma.",
+        "id_spaces": "Escriba el número sin espacios alrededor.",
+        "gusto_id": "El número de empleado de Gusto, de hasta 64 caracteres.",
+        "gusto_title": "El puesto como aparece en Gusto; Gusto asigna las horas a un puesto.",
+        "qbd_name": "El nombre exactamente como aparece en QuickBooks, con letras, dígitos y signos simples (hasta 41).",
+        "qbo_name": "El nombre visible exactamente como aparece en QuickBooks Online (hasta 100 caracteres).",
+        "adp_file_number": "Dígitos, de 51 a 999999.",
+        "run_employee_id": "Hasta 15 letras, dígitos o guiones.",
+        "sheet_id": "Hasta 50 caracteres.",
+        "code_text": "Un código es texto.",
+        "choose_as": "Elija horas o dólares."
+      },
+      "errors": {
+        "stale": "Esta configuración cambió en otra pestaña o ventana. La página ya muestra lo más reciente.",
+        "not_allowed": "Solo el Propietario cambia la configuración de nómina.",
+        "not_found": "Ese trabajador ya no existe.",
+        "generic": "No se pudo guardar. Inténtelo de nuevo.",
+        "invalid": "Revise los campos marcados abajo."
+      }
+    }
   }
 }

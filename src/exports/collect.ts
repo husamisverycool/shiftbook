@@ -8,7 +8,7 @@ import { addDays, exactDecimal, formatRate, type EarningType, type Fraction } fr
 import { ExportError } from "./errors";
 import { checkAmountLine, checkLine, cmp, eachLine, sameRate, sortKey, times } from "./lines";
 import type { ExportFixture, ExportPayLine, ExportWorker } from "./registry";
-import { KIND_RULES, SYSTEM_NAME, SYSTEM_OF, WORKER_ID_NAME, workerIdProblem, type CarriedAs, type ExportFormat, type PayrollTarget } from "./targets";
+import { defaultAs, FILE_OF, idKey, KIND_RULES, SYSTEM_NAME, SYSTEM_OF, WORKER_ID_NAME, workerIdProblem, type CarriedAs, type ExportFormat, type PayrollTarget } from "./targets";
 
 /** Plain names for the kinds of pay, used in refusals. */
 export const KIND_TEXT: Record<EarningType, string> = {
@@ -75,6 +75,7 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
   const system = SYSTEM_OF[format];
   const name = SYSTEM_NAME[system];
   const rules = KIND_RULES[format];
+  const byHand = system === "spreadsheet" ? "pay it by hand" : `pay it in ${name} by hand`;
   const byId = new Map<string, ExportWorker>();
   const bySystemId = new Map<string, ExportWorker>();
   for (const w of fixture.workers) {
@@ -82,7 +83,7 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
     byId.set(w.workerId, w);
     const id = w.payrollIds[system]?.id;
     if (!id) continue;
-    const key = id.toLowerCase();
+    const key = idKey(system, id);
     const other = bySystemId.get(key);
     if (other) {
       throw new ExportError("duplicate_payroll_id", `${who(other)} and ${who(w)} both have ${WORKER_ID_NAME[system]} ${id}; ${name} would put both workers' pay on one person.`);
@@ -101,19 +102,22 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
     if (!worker) throw new ExportError("missing_payroll_id", `Pay line for unknown worker ${line.workerId}.`);
     const rule = rules[line.type];
     if (!rule) {
-      throw new ExportError("unsupported_earning_type", `${who(worker)}: the ${name} file carries ${opts.carries} only, so it cannot carry ${KIND_TEXT[line.type]}. Skip this worker and pay it in ${name} by hand.`);
+      throw new ExportError("unsupported_earning_type", `${who(worker)}: ${FILE_OF[system]} carries ${opts.carries} only, so it cannot carry ${KIND_TEXT[line.type]}. Skip this worker and ${byHand}.`);
     }
-    const mapped = rule.blank === "fixed" ? { code: (rule.hours?.column ?? rule.dollars?.column)!, as: rule.hours ? ("hours" as const) : ("dollars" as const) } : fixture.codes?.[line.type];
+    const saved = fixture.codes?.[line.type];
+    // A fixed column keeps the multiple the agency declared for it (ADP's O/T Hours).
+    const mapped = rule.blank === "fixed" ? { code: (rule.hours?.column ?? rule.dollars?.column)!, as: rule.hours ? ("hours" as const) : ("dollars" as const), factor: saved?.factor } : saved;
+    const savedCode = typeof mapped?.code === "string" ? mapped.code : "";
     // A line with no minutes is money only (a bonus): it can only travel as dollars.
-    // With no code set, a format that falls back to Shiftbook's own code sends hours as hours.
-    const fallback: CarriedAs | undefined = rule.blank === "own_code" ? (rule.hours && line.minutes > 0 ? "hours" : "dollars") : undefined;
+    // With no code set, a format that falls back to Shiftbook's own code sends the kind its default way.
+    const fallback: CarriedAs | undefined = rule.blank === "own_code" ? (line.minutes > 0 ? defaultAs(format, line.type) : "dollars") : undefined;
     const as: CarriedAs | undefined = line.minutes === 0 && rule.dollars ? "dollars" : (mapped?.as ?? fallback);
     const way = as === "hours" ? rule.hours : as === "dollars" ? rule.dollars : undefined;
-    const code = way?.column ?? (mapped?.code || (rule.blank === "own_code" ? line.type : ""));
+    const code = way?.column ?? (savedCode || (rule.blank === "own_code" ? line.type : ""));
     if (!way || !code) {
       throw new ExportError(
         "unsupported_earning_type",
-        `${who(worker)}: ${KIND_TEXT[line.type]} has no ${name} code${mapped?.code && !way ? " for the way it is paid" : ""}. Set it in the payroll file settings, or skip this worker and pay it by hand.`,
+        `${who(worker)}: ${KIND_TEXT[line.type]} has no ${name} code${savedCode && !way ? " for the way it is paid" : ""}. Set it in the payroll file settings, or skip this worker and pay it by hand.`,
       );
     }
     const id = worker.payrollIds[system]?.id;
@@ -139,9 +143,23 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
       if (correction && !reference) {
         throw new ExportError("several_pay_rates", `${who(entry.worker)} has more than one pay rate this period, so the hours this correction adds cannot be matched to the rate ${name} pays. Pay the difference by hand.`, entry.worker.workerId);
       }
-      // The rate the target stores: the regular rate (or, with no regular hours, what the other lines imply).
+      // The rate the target stores is the regular rate, however regular pay travels; with no regular
+      // pay at all only kinds paid at the stored rate × 1 (holiday pay) can say what it is.
       const baseOf = (l: CollectedLine) => ({ num: l.line.rate.num * l.bucket.factor.den, den: l.line.rate.den * l.bucket.factor.num });
-      const base = reference ?? baseOf(hours.find((l) => l.line.type === "REG") ?? hours[0]!);
+      const regular = entry.lines.filter((l) => l.line.type === "REG");
+      const premium = hours.find((l) => !sameRate(l.bucket.factor, { num: 1, den: 1 }));
+      if (!reference && regular.length === 0 && premium) {
+        throw new ExportError(
+          "several_pay_rates",
+          `${who(entry.worker)} has ${KIND_TEXT[premium.line.type]} but no regular hours, so the stored rate ${name} multiplies is unknown. Skip this worker and pay them by hand.`,
+          entry.worker.workerId,
+        );
+      }
+      const reg = regular[0];
+      if (!reference && reg && regular.some((l) => !sameRate(l.line.rate, reg.line.rate))) {
+        throw new ExportError("several_pay_rates", `${who(entry.worker)} has more than one pay rate this period; ${name} pays one stored rate per worker, so this worker cannot go in the file. Skip them and pay them by hand.`, entry.worker.workerId);
+      }
+      const base = reference ?? (reg ? reg.line.rate : baseOf(hours[0]!));
       for (const l of hours) {
         if (sameRate(baseOf(l), base)) continue;
         const expected = times(base, l.bucket.factor);
@@ -208,3 +226,6 @@ export function totalsByCode(w: CollectedWorker): CodeTotal[] {
   const rank = (t: CodeTotal) => Math.min(...t.types.map((k) => KIND_ORDER.indexOf(k)));
   return [...out.values()].sort((a, b) => rank(a) - rank(b) || cmp(a.code, b.code));
 }
+
+/** Something of this worker's goes in the file: hours to carry, or dollars that are not zero. */
+export const writesSomething = (w: CollectedWorker) => w.lines.some((l) => (l.bucket.as === "hours" ? l.line.minutes : l.line.amountCents) !== 0);

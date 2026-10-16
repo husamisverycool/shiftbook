@@ -135,6 +135,18 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
       <Link href={{ pathname: "/approvals", query: { period: periodId, ...(g.code === "client_dispute_open" ? { status: "disputed" } : {}) } }} className={buttonVariants({ size: "sm", variant: "outline" })}>
         {t("openApprovals")}
       </Link>
+    ) : g.code === "missing_payroll_id" || g.code === "no_payroll_target" ? (
+      // Workyard maps missing ids inside the export; ClickTime names them: open the settings on them.
+      <div className="flex flex-wrap gap-2 sm:justify-end">
+        <Link href={{ pathname: "/settings/payroll", query: g.code === "missing_payroll_id" ? { tab: "workers", filter: "missing" } : {} }} className={buttonVariants({ size: "sm", variant: "outline" })} data-testid="open-payroll-settings">
+          {t("openPayrollSettings")}
+        </Link>
+        {skippable(g.workerIds).length > 0 && (
+          <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: skippable(g.workerIds) })} data-testid="skip-workers">
+            {t("skipWorkers", { count: skippable(g.workerIds).length })}
+          </Button>
+        )}
+      </div>
     ) : g.code === "correction_no_differences" ? (
       correction && data.canApprove ? <DiscardCorrectionButton periodId={periodId} baseVersion={correction.baseVersion} /> : null
     ) : g.code === "correction_decision_needed" || (correction && g.code === "export_refused") ? null : skippable(g.workerIds).length > 0 ? (

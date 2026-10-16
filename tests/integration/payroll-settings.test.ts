@@ -77,16 +77,24 @@ describe("the payroll system in use", () => {
     expect(events.map((e) => [e.action, e.actorLabel])).toEqual([["update", "Test owner"]]);
   });
 
-  it("updates in place when changed again the same day, and keeps only the fields the system uses", async () => {
+  it("replaces the day's row when changed again the same day, and keeps only the fields the system uses", async () => {
     await switchTo(ADP);
+    const seen = (await history())[1]!.id;
     expect(await switchTo({ format: "adp_run_csv", companyCode: "ABC1234", stray: "kept?" })).toEqual({ ok: true });
     expect(await target()).toEqual({ format: "adp_run_csv", companyCode: "ABC1234" });
     expect((await history()).length).toBe(2);
+    // A page drawn before the second save is stale, even though both saves were today.
+    await expect(inAgency((tx) => setPayrollTarget(tx, theOwner, ADP, "2026-10-16", seen))).rejects.toBeInstanceOf(StaleRequestError);
+  });
+
+  it("refuses codes that are not text instead of storing them", async () => {
+    const r = await inAgency(async (tx) => setPayrollCodes(tx, theOwner, "adp_wfn_paydata", { BONUS: { code: 12, as: "dollars" } }, "2026-10-16", (await payrollCodes(tx, "adp_wfn_paydata")).id));
+    expect(r).toMatchObject({ ok: false, error: "invalid", problems: [{ field: "codes.BONUS", rule: "code_text" }] });
   });
 
   it("refuses anyone but the Owner, an invalid choice, and a change made from a stale page", async () => {
     expect(await switchTo(ADP, "2026-10-16", coordinator)).toEqual({ ok: false, error: "not_allowed" });
-    expect(await switchTo({ format: "adp_wfn_paydata", companyCode: "toolong" })).toEqual({ ok: false, error: "invalid", problems: [{ field: "companyCode", message: "ADP's company code: 2 or 3 capital letters or digits." }] });
+    expect(await switchTo({ format: "adp_wfn_paydata", companyCode: "toolong" })).toEqual({ ok: false, error: "invalid", problems: [{ field: "companyCode", rule: "adp_company_code", message: "ADP's company code: 2 or 3 capital letters or digits." }] });
     await expect(inAgency((tx) => setPayrollTarget(tx, theOwner, ADP, "2026-10-16", null))).rejects.toBeInstanceOf(StaleRequestError);
     expect(await target()).toEqual({ format: "gusto_hours_csv" });
   });
@@ -108,6 +116,9 @@ describe("codes and worker ids", () => {
     const set = (worker: string, id: string, who: Actor = theOwner) => inAgency((tx) => setWorkerPayrollId(tx, who, worker, "adp_wfn", id));
     expect(await set(anita, "12")).toMatchObject({ ok: false, error: "invalid", problems: [{ field: "id" }] });
     expect(await set(anita, "100113")).toEqual({ ok: false, error: "taken", by: "Marcus Bell" });
+    // ADP's file number is a number: leading zeros name the same person.
+    expect(await set(workerId("olivia-hart"), "51")).toEqual({ ok: true });
+    expect(await set(anita, "000051")).toEqual({ ok: false, error: "taken", by: "Olivia Hart" });
     expect(await set(anita, "100114", coordinator)).toEqual({ ok: false, error: "not_allowed" });
     expect(await set(anita, "100114")).toEqual({ ok: true });
     const ids = async () => (await inAgency((tx) => tx.select().from(s.workers).where(eq(s.workers.id, anita))))[0]!.payrollIds;
@@ -123,7 +134,7 @@ describe("the run and the files follow the system in use", () => {
     await switchTo(ADP);
     const blocked = await compute();
     expect(blocked.blockers).toEqual([
-      expect.objectContaining({ code: "missing_payroll_id", workerId: anita, message: "Anita Patel has no ADP file number, so the ADP Workforce Now payroll file could not match them." }),
+      expect.objectContaining({ code: "missing_payroll_id", workerId: anita, message: "Anita Patel has no ADP file number, so the ADP Workforce Now file could not match them." }),
     ]);
     await inAgency((tx) => setWorkerPayrollId(tx, theOwner, anita, "adp_wfn", "100114"));
     expect((await compute()).blockers).toEqual([]);

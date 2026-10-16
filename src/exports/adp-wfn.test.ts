@@ -127,4 +127,42 @@ describe("ADP Workforce Now paydata file", () => {
     const r = () => renderAdpWfn(base({ payLines: [{ workerId: "w1", type: "REG", minutes: 60, amountCents: 100_001, rate: { num: 100_001, den: 1 } }] }));
     expect(r).toThrowError(expect.objectContaining({ code: "invalid_pay_line", workerId: "w1" }));
   });
+
+  it("uses the overtime multiple the agency declared for the Temp Rate (review finding 1)", () => {
+    const r = renderAdpWfn(
+      base({
+        codes: { ...base().codes, OT: { code: "O/T Hours", as: "hours", factor: { num: 1, den: 1 } } },
+        payLines: [
+          { workerId: "w1", type: "REG", minutes: 2400, amountCents: 80_000, rate: { num: 2000, den: 1 } },
+          { workerId: "w1", type: "OT", minutes: 120, amountCents: 6000, rate: { num: 3000, den: 1 } },
+        ],
+      }),
+    );
+    expect(text(r.bytes).split("\r\n").slice(1, 3)).toEqual(["XYZ,26101101,000123,20.0000,40.00,", "XYZ,26101101,000123,30.0000,,2.00"]);
+    expect(r.controlTotals.payrollSystemDifferenceCents).toBe(0);
+    expect(r.notes[0]).toBe("ADP prices O/T Hours at Temp Rate × 1: the multiples in the payroll file settings. If ADP is set up with other multiples, its gross will differ.");
+  });
+
+  it("leaves out a dollars code that adds up to nothing (blanks, never zeros)", () => {
+    const r = renderAdpWfn(
+      base({
+        codes: { ...base().codes, DIFF: { code: "SD", as: "dollars" } },
+        payLines: [
+          { workerId: "w1", type: "REG", minutes: 60, amountCents: 1825, rate: REG },
+          { workerId: "w1", type: "DIFF", minutes: 1, amountCents: 0, rate: { num: 10, den: 1 } },
+        ],
+      }),
+    );
+    expect(text(r.bytes)).toBe(["Co Code,Batch ID,File #,Temp Rate,Reg Hours,O/T Hours", "XYZ,26101101,000123,18.2500,1.00,", ""].join("\r\n"));
+  });
+
+  it("refuses a batch id longer than ADP's 8 characters (version 100 and later)", () => {
+    const r = () => renderAdpWfn(base({ payLines: [{ workerId: "w1", type: "REG", minutes: 60, amountCents: 1825, rate: REG, parts: 2 }], correction: { version: 100, baseVersion: 99 } }));
+    expect(r).toThrowError(expect.objectContaining({ code: "file_limit" }));
+  });
+
+  it("treats file numbers that differ only by leading zeros as the same person", () => {
+    const r = () => renderAdpWfn(base({ workers: [base().workers[0]!, { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: { adp_wfn: { id: "123" } } }] }));
+    expect(r).toThrowError(expect.objectContaining({ code: "duplicate_payroll_id" }));
+  });
 });

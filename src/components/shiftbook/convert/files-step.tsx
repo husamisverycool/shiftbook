@@ -17,7 +17,7 @@ export interface FilesVersion {
   version: number;
   kind: "regular" | "correction";
   reason: string | null;
-  payroll: { id: string; filename: string; sha256: string; controlTotals: ControlTotals; notes: string[] } | null;
+  payroll: { id: string; format: string; filename: string; sha256: string; controlTotals: ControlTotals; notes: string[] } | null;
   invoices: { id: string; number: string; kind: InvoiceKind; originalNumber: string | null; clientName: string; dueOn: string; totalCents: number }[];
   decisions: { name: string; text: string; note: string; by: string }[];
   /** A correction's clients whose differences net to zero: no document (decision E11). */
@@ -79,7 +79,7 @@ async function Version({ v }: { v: FilesVersion }) {
             <div>
               <h4 className="text-lg font-semibold">{t("payrollTitle")}</h4>
               <p className="text-sm text-muted-foreground">
-                {t("payrollFormat")} · {v.payroll.filename}
+                {t.has(`formats.${v.payroll.format}`) ? t(`formats.${v.payroll.format}` as "formats.gusto_hours_csv") : v.payroll.format} · {v.payroll.filename}
               </p>
             </div>
             <a href={`/api/files/export/${v.payroll.id}`} download className={buttonVariants({ variant: "outline" })}>
@@ -97,7 +97,8 @@ async function Version({ v }: { v: FilesVersion }) {
                   <Figure key={k} label={t("minutes", { type: t(`earning.${k}`) })} value={hoursMinutes(ct.minutesByType[k] ?? 0)} />
                 ))}
               <Figure label={t("gross")} value={money(ct.grossCents, locale)} />
-              {ct.payrollSystemGrossCents !== undefined && <Figure label={t("gustoGross")} value={money(ct.payrollSystemGrossCents, locale)} />}
+              {Object.values(ct.amountsByType ?? {}).some((c) => c !== 0) && <Figure label={t("dollars")} value={money(Object.values(ct.amountsByType ?? {}).reduce((sum, c) => sum + c, 0), locale)} />}
+              {ct.payrollSystemGrossCents !== undefined && <Figure label={t("systemGross", { system: t.has(`systems.${v.payroll.format}`) ? t(`systems.${v.payroll.format}` as "systems.gusto_hours_csv") : "" })} value={money(ct.payrollSystemGrossCents, locale)} />}
               {ct.payrollSystemDifferenceCents !== undefined && <Figure label={t("difference")} value={money(ct.payrollSystemDifferenceCents, locale)} />}
             </dl>
             <p className="mt-3 truncate font-mono text-xs text-muted-foreground" title={v.payroll.sha256}>

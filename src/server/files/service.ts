@@ -22,7 +22,7 @@ import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { correctionPlanFor, decisionText, fileWorkers as correctionFileWorkers } from "../run/corrections";
-import { lockCatalog, openPeriod } from "../run/period-lock";
+import { lockCatalog, lockPayrollSettings, openPeriod } from "../run/period-lock";
 import { computeRun, regularRates, type RunIssue } from "../run/service";
 import { planCorrectionInvoices, planInvoices } from "./invoice-plan";
 import { payrollFixture } from "./payroll-fixture";
@@ -77,6 +77,8 @@ export async function createRunFiles(
   await openPeriod(tx, payPeriodId);
   // Rates and assignments cannot change while this period is paid with them.
   await lockCatalog(tx, actor.agencyId, "shared");
+  // Nor the payroll file settings: the file is made with the ones the Owner approved (slice f).
+  await lockPayrollSettings(tx, actor.agencyId, "shared");
   const computed = await computeRun(tx, actor, payPeriodId);
   if (computed.status === "blocked") throw new RunNotReadyError(computed.blockers);
   if (opts.expectedFingerprint !== undefined && opts.expectedFingerprint !== computed.fingerprint) throw new TotalsChangedError();

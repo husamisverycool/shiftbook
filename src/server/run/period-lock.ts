@@ -74,6 +74,15 @@ export async function lockCatalog(tx: Tx, agencyId: string, mode: "exclusive" | 
 }
 
 /**
+ * The payroll file settings (slice f): changed under the exclusive lock, so two saves cannot both
+ * start a row; read under the shared lock while files are made, so the file uses the settings the
+ * Owner approved.
+ */
+export async function lockPayrollSettings(tx: Tx, agencyId: string, mode: "exclusive" | "shared"): Promise<void> {
+  await advisoryLock(tx, `payroll-settings:${agencyId}`, mode);
+}
+
+/**
  * "exported": its files were created here (the latest run is exported or closed).
  * "history": paid before Shiftbook — no exported run here, and hours already locked by that payment.
  * A correction in progress (an earlier version exported, the latest not yet) is "open".

@@ -125,7 +125,7 @@ export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
   const bytes = writeCsv(lines, { eol: "\r\n", delimiter });
 
   // What the receiver pays: the amount when the file has one; otherwise hours × the written rate.
-  const notes = correctionNote(fixture, "the receiver's");
+  const notes = correctionNote(fixture, "receiver's");
   let payrollSystemGrossCents = 0;
   for (const row of ordered) {
     if (has("amount")) {

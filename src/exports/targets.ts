@@ -31,8 +31,23 @@ export const SYSTEM_NAME: Record<PayrollSystem, string> = {
   qbo: "QuickBooks Online",
   adp_wfn: "ADP Workforce Now",
   adp_run: "RUN Powered by ADP",
+  spreadsheet: "the spreadsheet's receiver",
+};
+
+/** How refusals name each system's file. */
+export const FILE_OF: Record<PayrollSystem, string> = {
+  gusto: "the Gusto file",
+  qbd: "the QuickBooks Desktop file",
+  qbo: "the QuickBooks Online file",
+  adp_wfn: "the ADP Workforce Now file",
+  adp_run: "the RUN Powered by ADP file",
   spreadsheet: "the spreadsheet",
 };
+
+/** One person per id: ADP's file number is a number ("000123" is 123); other ids ignore case. */
+export function idKey(system: PayrollSystem, id: string): string {
+  return system === "adp_wfn" && /^\d+$/.test(id) ? String(Number(id)) : id.toLowerCase();
+}
 
 /** What the worker's id is called in each system (the run's "no id" check and the refusals). */
 export const WORKER_ID_NAME: Record<PayrollSystem, string> = {
@@ -103,6 +118,8 @@ export type PayrollTarget =
 /** A field of the settings and what is wrong with it (shown under the field). */
 export interface SettingProblem {
   field: string;
+  /** What rule it breaks, for the page to say in the person's language. */
+  rule: string;
   message: string;
 }
 
@@ -115,28 +132,28 @@ export const adpWfnFileName = (companyCode: string) => `PR${companyCode.length =
 /** Everything wrong with a payroll target (empty when it can be saved). */
 export function targetProblems(value: unknown): SettingProblem[] {
   const t = value as Partial<Record<string, unknown>> | null;
-  if (!t || typeof t !== "object" || !EXPORT_FORMATS.includes(t.format as ExportFormat)) return [{ field: "format", message: "Choose a payroll system." }];
+  if (!t || typeof t !== "object" || !EXPORT_FORMATS.includes(t.format as ExportFormat)) return [{ field: "format", rule: "choose_system", message: "Choose a payroll system." }];
   const text = (key: string) => (typeof t[key] === "string" ? (t[key] as string) : "");
   switch (t.format as ExportFormat) {
     case "gusto_hours_csv":
       return [];
     case "qbd_iif": {
       if (t.version === "2022_or_later") return [];
-      if (t.version !== "2021_or_earlier") return [{ field: "version", message: "Choose the QuickBooks Desktop version." }];
+      if (t.version !== "2021_or_earlier") return [{ field: "version", rule: "qbd_version", message: "Choose the QuickBooks Desktop version." }];
       const problems: SettingProblem[] = [];
       const name = text("companyName");
-      if (!name || !isTrimmed(name) || badCharacter(name)) problems.push({ field: "companyName", message: "The company name exactly as QuickBooks shows it, in plain letters, digits and punctuation." });
-      if (!/^\d{1,12}$/.test(text("companyCreateTime"))) problems.push({ field: "companyCreateTime", message: "The number on the second line of QuickBooks' Timer Lists export (digits only)." });
+      if (!name || !isTrimmed(name) || badCharacter(name)) problems.push({ field: "companyName", rule: "company_name", message: "The company name exactly as QuickBooks shows it, in plain letters, digits and punctuation." });
+      if (!/^\d{1,12}$/.test(text("companyCreateTime"))) problems.push({ field: "companyCreateTime", rule: "company_file_number", message: "The number on the second line of QuickBooks' Timer Lists export (digits only)." });
       return problems;
     }
     case "qbo_time_csv": {
       const customer = text("customer");
-      return !customer || !isTrimmed(customer) || controlCharacter(customer) || customer.length > 100 ? [{ field: "customer", message: "A customer that exists in QuickBooks Online, up to 100 characters." }] : [];
+      return !customer || !isTrimmed(customer) || controlCharacter(customer) || customer.length > 100 ? [{ field: "customer", rule: "qbo_customer", message: "A customer that exists in QuickBooks Online, up to 100 characters." }] : [];
     }
     case "adp_wfn_paydata":
-      return /^[A-Z0-9]{2,3}$/.test(text("companyCode")) ? [] : [{ field: "companyCode", message: "ADP's company code: 2 or 3 capital letters or digits." }];
+      return /^[A-Z0-9]{2,3}$/.test(text("companyCode")) ? [] : [{ field: "companyCode", rule: "adp_company_code", message: "ADP's company code: 2 or 3 capital letters or digits." }];
     case "adp_run_csv":
-      return /^[A-Za-z0-9]{1,10}$/.test(text("companyCode")) ? [] : [{ field: "companyCode", message: "RUN's company code: up to 10 letters or digits." }];
+      return /^[A-Za-z0-9]{1,10}$/.test(text("companyCode")) ? [] : [{ field: "companyCode", rule: "run_company_code", message: "RUN's company code: up to 10 letters or digits." }];
     case "spreadsheet_csv":
       return layoutProblems(t.layout);
   }
@@ -145,25 +162,25 @@ export function targetProblems(value: unknown): SettingProblem[] {
 /** Everything wrong with a spreadsheet layout. */
 export function layoutProblems(value: unknown): SettingProblem[] {
   const l = value as Partial<SpreadsheetLayout> | null;
-  if (!l || typeof l !== "object") return [{ field: "layout", message: "Set up the spreadsheet's columns." }];
+  if (!l || typeof l !== "object") return [{ field: "layout", rule: "layout", message: "Set up the spreadsheet's columns." }];
   const problems: SettingProblem[] = [];
   if (typeof l.fileName !== "string" || !/^[A-Za-z0-9._{}-]{1,80}\.(csv|txt)$/.test(l.fileName) || l.fileName.replace(/\{(start|end)\}/g, "").includes("{") || l.fileName.replace(/\{(start|end)\}/g, "").includes("}")) {
-    problems.push({ field: "fileName", message: "A file name of letters, digits, dots, dashes and underscores ending in .csv or .txt; {start} and {end} become the period's dates." });
+    problems.push({ field: "fileName", rule: "file_name", message: "A file name of letters, digits, dots, dashes and underscores ending in .csv or .txt; {start} and {end} become the period's dates." });
   }
-  if (!l.delimiter || !(l.delimiter in DELIMITERS)) problems.push({ field: "delimiter", message: "Choose a delimiter." });
-  if (typeof l.header !== "boolean") problems.push({ field: "header", message: "Choose whether the file starts with a header row." });
-  if (!DATE_FORMATS.includes(l.dateFormat as DateFormat)) problems.push({ field: "dateFormat", message: "Choose a date format." });
+  if (!l.delimiter || !(l.delimiter in DELIMITERS)) problems.push({ field: "delimiter", rule: "delimiter", message: "Choose a delimiter." });
+  if (typeof l.header !== "boolean") problems.push({ field: "header", rule: "header_row", message: "Choose whether the file starts with a header row." });
+  if (!DATE_FORMATS.includes(l.dateFormat as DateFormat)) problems.push({ field: "dateFormat", rule: "date_format", message: "Choose a date format." });
   const columns = Array.isArray(l.columns) ? l.columns : [];
-  if (columns.length === 0 || columns.length > 30) problems.push({ field: "columns", message: "Between 1 and 30 columns." });
+  if (columns.length === 0 || columns.length > 30) problems.push({ field: "columns", rule: "columns_count", message: "Between 1 and 30 columns." });
   columns.forEach((c, i) => {
-    if (!c || !SPREADSHEET_FIELDS.includes(c.field)) problems.push({ field: `columns.${i}`, message: "Choose what the column holds." });
-    else if (typeof c.header !== "string" || c.header.length > 64 || controlCharacter(c.header) || (l.header === true && c.header.trim() === "")) problems.push({ field: `columns.${i}.header`, message: "A header of up to 64 characters." });
-    else if (c.field === "fixed" && (typeof c.value !== "string" || c.value.length > 64 || controlCharacter(c.value))) problems.push({ field: `columns.${i}.value`, message: "Fixed text of up to 64 characters." });
+    if (!c || !SPREADSHEET_FIELDS.includes(c.field)) problems.push({ field: `columns.${i}`, rule: "column_field", message: "Choose what the column holds." });
+    else if (typeof c.header !== "string" || c.header.length > 64 || controlCharacter(c.header) || (l.header === true && c.header.trim() === "")) problems.push({ field: `columns.${i}.header`, rule: "column_header", message: "A header of up to 64 characters." });
+    else if (c.field === "fixed" && (typeof c.value !== "string" || c.value.length > 64 || controlCharacter(c.value))) problems.push({ field: `columns.${i}.value`, rule: "column_value", message: "Fixed text of up to 64 characters." });
   });
   const has = (field: SpreadsheetField) => columns.some((c) => c?.field === field);
-  if (!has("worker_id")) problems.push({ field: "columns", message: "Include the worker id, so the receiver can match each row to a person." });
-  if (!has("earning_code")) problems.push({ field: "columns", message: "Include the earning code, so the receiver knows what each row pays." });
-  if (!has("amount") && !(has("hours") && has("rate"))) problems.push({ field: "columns", message: "Include the amount, or the hours and the rate, so the receiver can price every row." });
+  if (!has("worker_id")) problems.push({ field: "columns", rule: "needs_worker_id", message: "Include the worker id, so the receiver can match each row to a person." });
+  if (!has("earning_code")) problems.push({ field: "columns", rule: "needs_code", message: "Include the earning code, so the receiver knows what each row pays." });
+  if (!has("amount") && !(has("hours") && has("rate"))) problems.push({ field: "columns", rule: "needs_price", message: "Include the amount, or the hours and the rate, so the receiver can price every row." });
   return problems;
 }
 
@@ -235,12 +252,18 @@ export const KIND_RULES: Record<ExportFormat, Partial<Record<EarningType, KindRu
   },
 };
 
+/** How a kind of pay travels when no code says otherwise: money kinds as dollars, time as hours. */
+export function defaultAs(format: ExportFormat, kind: EarningType): CarriedAs {
+  const rule = KIND_RULES[format][kind];
+  return rule?.hours && (!rule.dollars || !MONEY_KINDS.includes(kind)) ? "hours" : "dollars";
+}
+
 /** The map a new agency (or a newly chosen system) starts with: fixed columns filled, codes blank. */
 export function defaultCodes(format: ExportFormat): CodeMap {
   const out: CodeMap = {};
   for (const [kind, rule] of Object.entries(KIND_RULES[format]) as [EarningType, KindRule][]) {
     if (rule.hours?.column) out[kind] = { code: rule.hours.column, as: "hours", ...(rule.hours.declared ? { factor: rule.hours.factor } : {}) };
-    else if (format === "spreadsheet_csv") out[kind] = { code: "", as: rule.hours && !MONEY_KINDS.includes(kind) ? "hours" : "dollars" };
+    else if (format === "spreadsheet_csv") out[kind] = { code: "", as: defaultAs(format, kind) };
     else if (format === "adp_wfn_paydata" && rule.hours?.declared && !rule.dollars) out[kind] = { code: "", as: "hours", factor: rule.hours.factor };
   }
   return out;
@@ -257,7 +280,10 @@ function codeProblem(format: ExportFormat, code: string): string | null {
     case "qbd_iif":
       return isTrimmed(code) && !badCharacter(code) && code.length <= 31 ? null : "The payroll item's name exactly as QuickBooks shows it (up to 31 plain characters).";
     case "adp_wfn_paydata":
-      return /^[A-Z0-9]{1,3}$/.test(code) ? null : "ADP's code: 1 to 3 capital letters or digits.";
+      // Without expanded fields: 1–2 letters, or a number 0–79 but 40, 50, 60, 61; with them, 3 (research §3.4).
+      return /^[A-Z]{1,2}$/.test(code) || (/^\d{1,2}$/.test(code) && Number(code) <= 79 && ![40, 50, 60, 61].includes(Number(code))) || /^[A-Z0-9]{3}$/.test(code)
+        ? null
+        : "ADP's code: 1 or 2 letters, a number from 0 to 79 (not 40, 50, 60 or 61), or 3 letters and digits with ADP's expanded fields.";
     case "adp_run_csv":
       return /^[A-Za-z0-9_-]{1,10}$/.test(code) ? null : "RUN's earnings code: up to 10 letters, digits, dashes or underscores.";
     case "spreadsheet_csv":
@@ -269,7 +295,7 @@ function codeProblem(format: ExportFormat, code: string): string | null {
 
 /** Everything wrong with a code map for a format (empty when it can be saved). */
 export function codeMapProblems(format: ExportFormat, value: unknown): SettingProblem[] {
-  if (!value || typeof value !== "object") return [{ field: "codes", message: "Set the codes." }];
+  if (!value || typeof value !== "object") return [{ field: "codes", rule: "set_codes", message: "Set the codes." }];
   const map = value as Record<string, Partial<EarningCode> | undefined>;
   const rules = KIND_RULES[format];
   const problems: SettingProblem[] = [];
@@ -278,30 +304,38 @@ export function codeMapProblems(format: ExportFormat, value: unknown): SettingPr
     if (!entry) continue;
     const rule = rules[kind as EarningType];
     if (!rule) {
-      problems.push({ field: `codes.${kind}`, message: "This system's file cannot carry this kind of pay." });
+      problems.push({ field: `codes.${kind}`, rule: "not_carried", message: "This system's file cannot carry this kind of pay." });
       continue;
     }
     const as = entry.as;
-    const way = as === "hours" ? rule.hours : as === "dollars" ? rule.dollars : undefined;
+    if (entry.code !== undefined && typeof entry.code !== "string") {
+      problems.push({ field: `codes.${kind}`, rule: "code_text", message: "A code is text." });
+      continue;
+    }
+    if (as !== "hours" && as !== "dollars") {
+      problems.push({ field: `codes.${kind}`, rule: "choose_as", message: "Choose hours or dollars." });
+      continue;
+    }
+    const way = as === "hours" ? rule.hours : rule.dollars;
     if (!way) {
-      problems.push({ field: `codes.${kind}`, message: as === "hours" ? "This system takes this kind of pay in dollars only." : "This system takes this kind of pay as hours only." });
+      problems.push({ field: `codes.${kind}`, rule: as === "hours" ? "dollars_only" : "hours_only", message: as === "hours" ? "This system takes this kind of pay in dollars only." : "This system takes this kind of pay as hours only." });
       continue;
     }
     const code = typeof entry.code === "string" ? entry.code : "";
     if (way.column !== undefined) {
-      if (code !== way.column) problems.push({ field: `codes.${kind}`, message: `This kind of pay goes in the file's "${way.column}" column.` });
+      if (code !== way.column) problems.push({ field: `codes.${kind}`, rule: "fixed_column", message: `This kind of pay goes in the file's "${way.column}" column.` });
     } else if (code !== "") {
       const problem = codeProblem(format, code);
-      if (problem) problems.push({ field: `codes.${kind}`, message: problem });
+      if (problem) problems.push({ field: `codes.${kind}`, rule: `code_form_${format}`, message: problem });
     }
-    if (as === "hours" && rule.hours?.declared && !positiveFraction(entry.factor)) problems.push({ field: `codes.${kind}.factor`, message: "The multiple the system applies to these hours (for example 1.5)." });
-    if (as === "hours" && !rule.hours?.declared && entry.factor !== undefined) problems.push({ field: `codes.${kind}.factor`, message: "This system's multiple is fixed." });
+    if (as === "hours" && rule.hours?.declared && !positiveFraction(entry.factor)) problems.push({ field: `codes.${kind}.factor`, rule: "factor_needed", message: "The multiple the system applies to these hours (for example 1.5)." });
+    if (as === "hours" && !rule.hours?.declared && entry.factor !== undefined) problems.push({ field: `codes.${kind}.factor`, rule: "factor_fixed", message: "This system's multiple is fixed." });
     // One code means one thing in the file: the same code for two kinds must travel the same way.
     if (code !== "" && way.column === undefined) {
       const factor = as === "hours" ? (rule.hours?.declared ? entry.factor : rule.hours?.factor) : undefined;
       const other = used.get(code);
       if (other && (other.as !== as || (factor && other.factor && BigInt(factor.num) * BigInt(other.factor.den) !== BigInt(other.factor.num) * BigInt(factor.den)))) {
-        problems.push({ field: `codes.${kind}`, message: `"${code}" is already used for another kind of pay carried differently.` });
+        problems.push({ field: `codes.${kind}`, rule: "code_reused", message: `"${code}" is already used for another kind of pay carried differently.` });
       }
       used.set(code, { as: as as CarriedAs, ...(factor ? { factor } : {}) });
     }
@@ -312,22 +346,22 @@ export function codeMapProblems(format: ExportFormat, value: unknown): SettingPr
 // ---------- the worker's id in the system ----------
 
 /** What is wrong with a worker's id (and Gusto's job title), or null. */
-export function workerIdProblem(system: PayrollSystem, id: string, title?: string): { field: "id" | "title"; message: string } | null {
-  if (id === "" || !isTrimmed(id)) return { field: "id", message: "Enter the id with no spaces around it." };
+export function workerIdProblem(system: PayrollSystem, id: string, title?: string): { field: "id" | "title"; rule: string; message: string } | null {
+  if (id === "" || !isTrimmed(id)) return { field: "id", rule: "id_spaces", message: "Enter the id with no spaces around it." };
   switch (system) {
     case "gusto":
-      if (id.length > 64 || controlCharacter(id)) return { field: "id", message: "Gusto's employee id, up to 64 characters." };
-      if (!title || !isTrimmed(title) || controlCharacter(title)) return { field: "title", message: "The job title as Gusto shows it; Gusto matches hours to a job." };
+      if (id.length > 64 || controlCharacter(id)) return { field: "id", rule: "gusto_id", message: "Gusto's employee id, up to 64 characters." };
+      if (!title || !isTrimmed(title) || controlCharacter(title)) return { field: "title", rule: "gusto_title", message: "The job title as Gusto shows it; Gusto matches hours to a job." };
       return null;
     case "qbd":
-      return !badCharacter(id) && id.length <= 41 ? null : { field: "id", message: "The employee's name exactly as QuickBooks shows it, in plain letters, digits and punctuation (up to 41)." };
+      return !badCharacter(id) && id.length <= 41 ? null : { field: "id", rule: "qbd_name", message: "The employee's name exactly as QuickBooks shows it, in plain letters, digits and punctuation (up to 41)." };
     case "qbo":
-      return !controlCharacter(id) && id.length <= 100 ? null : { field: "id", message: "The display name exactly as QuickBooks Online shows it (up to 100 characters)." };
+      return !controlCharacter(id) && id.length <= 100 ? null : { field: "id", rule: "qbo_name", message: "The display name exactly as QuickBooks Online shows it (up to 100 characters)." };
     case "adp_wfn":
-      return /^\d{1,6}$/.test(id) && Number(id) >= 51 ? null : { field: "id", message: "ADP's file number: digits, from 51 to 999999." };
+      return /^\d{1,6}$/.test(id) && Number(id) >= 51 ? null : { field: "id", rule: "adp_file_number", message: "ADP's file number: digits, from 51 to 999999." };
     case "adp_run":
-      return /^[A-Za-z0-9-]{1,15}$/.test(id) ? null : { field: "id", message: "RUN's employee id: up to 15 letters, digits or dashes." };
+      return /^[A-Za-z0-9-]{1,15}$/.test(id) ? null : { field: "id", rule: "run_employee_id", message: "RUN's employee id: up to 15 letters, digits or dashes." };
     case "spreadsheet":
-      return id.length <= 50 && !controlCharacter(id) ? null : { field: "id", message: "Up to 50 characters." };
+      return id.length <= 50 && !controlCharacter(id) ? null : { field: "id", rule: "sheet_id", message: "Up to 50 characters." };
   }
 }

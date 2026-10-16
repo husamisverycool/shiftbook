@@ -96,4 +96,14 @@ describe("Spreadsheet (the agency's own layout)", () => {
     expect(r.filename).toBe("payroll-2026-10-05-to-2026-10-11-correction-2.csv");
     expect(r.notes[0]).toContain("Correction 2 of this pay period");
   });
+
+  it("sends a kind of pay with no saved code the way its defaults say (a top-up as dollars), under Shiftbook's code", () => {
+    const r = renderSpreadsheet(fixtureWith(DEFAULT_LAYOUT, { codes: {}, payLines: [{ workerId: "w1", type: "MW_TRUEUP", minutes: 60, amountCents: 75, rate: { num: 75, den: 1 }, workweekStart: "2026-10-05" }] }));
+    expect(text(r.bytes).split("\r\n")[1]).toBe("A-001,Álvarez,Ana,10/11/2026,MW_TRUEUP,,,0.75");
+  });
+
+  it("says plainly what to do when the layout cannot carry a line", () => {
+    const layout: SpreadsheetLayout = { ...DEFAULT_LAYOUT, columns: DEFAULT_LAYOUT.columns.filter((c) => c.field !== "amount") };
+    expect(() => renderSpreadsheet(fixtureWith(layout))).toThrowError(expect.objectContaining({ message: "Álvarez, Ana: the spreadsheet has no amount column, so it cannot carry a bonus. Add an amount column, or skip this worker and pay it by hand." }));
+  });
 });

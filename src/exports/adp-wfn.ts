@@ -19,7 +19,7 @@
  */
 import { exactDecimal, formatCents, formatRate, roundHalfUpBig, type Fraction } from "@shiftbook/rules";
 import type { ControlTotals } from "../server/db/schema";
-import { collect, correctionNote, KIND_ORDER, targetOf, who, type CollectedWorker } from "./collect";
+import { collect, correctionNote, KIND_ORDER, targetOf, who, writesSomething, type CollectedWorker } from "./collect";
 import { readCsv, writeCsv } from "./csv";
 import { ExportError } from "./errors";
 import { hundredthsToMinutes, readTwoDecimals, sameRate, signedCents, toHundredths, twoDecimals } from "./lines";
@@ -61,6 +61,8 @@ export function renderAdpWfn(fixture: ExportFixture): ExportResult {
   const version = fixture.correction?.version ?? 1;
   const [yy, mm, dd] = [fixture.period.endsOn.slice(2, 4), fixture.period.endsOn.slice(5, 7), fixture.period.endsOn.slice(8, 10)];
   const batch = `${yy}${mm}${dd}${String(version).padStart(2, "0")}`;
+  // ADP's Batch ID is at most 8 characters: the date and a two-digit version.
+  if (batch.length > 8) throw new ExportError("file_limit", `ADP's batch id holds at most 8 characters, so version ${version} of this period cannot be numbered (${batch}). Pay this correction by hand.`);
 
   // Each worker's rows: one per Temp Rate (hours), then dollars by code.
   const plans = c.workers.map((w) => planWorker(w));
@@ -93,12 +95,13 @@ export function renderAdpWfn(fixture: ExportFixture): ExportResult {
       cell.types.add(line.type);
       row.cells.set(bucket.code, cell);
     }
-    const rateRows = [...rows].sort((a, b) => {
+    // Blanks, never zeros: a row or a dollars code that adds up to nothing is left out.
+    const rateRows = [...rows].filter((r) => [...r.cells.values()].some((c) => c.minutes > 0)).sort((a, b) => {
       const x = BigInt(a.rate.num) * BigInt(b.rate.den);
       const y = BigInt(b.rate.num) * BigInt(a.rate.den);
       return x < y ? -1 : x > y ? 1 : 0;
     });
-    const dollarCodes = [...dollars.entries()].sort((a, b) => a[1].rank - b[1].rank || (a[0] < b[0] ? -1 : 1));
+    const dollarCodes = [...dollars.entries()].filter(([, d]) => d.amountCents !== 0).sort((a, b) => a[1].rank - b[1].rank || (a[0] < b[0] ? -1 : 1));
     return { w, rateRows, dollarCodes };
   }
 
@@ -173,7 +176,7 @@ export function renderAdpWfn(fixture: ExportFixture): ExportResult {
     if (b !== 13 && b !== 10 && (b < 32 || b > 122 || b === 92)) throw new ExportError("does_not_reconcile", `The ADP file would hold a character ADP refuses (byte ${b}).`);
   }
   const controlTotals: ControlTotals = {
-    workers: c.workers.length,
+    workers: c.workers.filter(writesSomething).length,
     minutesByType: c.minutesByType,
     ...(Object.keys(c.amountsByType).length > 0 ? { amountsByType: c.amountsByType } : {}),
     grossCents: c.grossCents,
@@ -209,7 +212,8 @@ export function parseAdpWfn(text: string): Map<string, { minutes: Map<string, nu
 function reconcile(text: string, workers: CollectedWorker[]): void {
   const parsed = parseAdpWfn(text);
   const problems: string[] = [];
-  if (parsed.size !== workers.length) problems.push(`workers ${parsed.size} ≠ ${workers.length}`);
+  const written = workers.filter(writesSomething).length;
+  if (parsed.size !== written) problems.push(`workers ${parsed.size} ≠ ${written}`);
   for (const w of workers) {
     const minutes = new Map<string, number>();
     const cents = new Map<string, number>();

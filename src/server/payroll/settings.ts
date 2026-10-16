@@ -8,12 +8,13 @@
  */
 import type { EarningType } from "@shiftbook/rules";
 import { and, eq, isNull } from "drizzle-orm";
-import { codeMapProblems, defaultCodes, EXPORT_FORMATS, SYSTEM_OF, targetProblems, workerIdProblem, type CodeMap, type ExportFormat, type PayrollSystem, type PayrollTarget, type SettingProblem } from "../../exports/targets";
+import { codeMapProblems, defaultCodes, EXPORT_FORMATS, idKey, SYSTEM_OF, targetProblems, workerIdProblem, type CodeMap, type ExportFormat, type PayrollSystem, type PayrollTarget, type SettingProblem } from "../../exports/targets";
 import { addDays } from "@shiftbook/rules";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { StaleRequestError } from "../errors";
+import { lockPayrollSettings } from "../run/period-lock";
 import type { Actor } from "../session";
 
 export const TARGET_KEY = "payroll.target";
@@ -36,11 +37,16 @@ export async function currentSetting(tx: Tx, key: string): Promise<{ id: string;
  * person saw (null: none); anything else in use means another tab changed it first.
  */
 async function changeSetting(tx: Tx, actor: Actor, key: string, value: unknown, today: string, expectedId: string | null | undefined): Promise<void> {
+  // One save at a time: a second save waits, then sees the first one's row and is refused as stale.
+  await lockPayrollSettings(tx, actor.agencyId, "exclusive");
   const current = await currentSetting(tx, key);
   if (expectedId !== undefined && (current?.id ?? null) !== expectedId) throw new StaleRequestError();
   if (current && current.effectiveFrom >= today) {
-    await tx.update(s.agencySettings).set({ value }).where(eq(s.agencySettings.id, current.id));
-    await audit(tx, actor, [{ action: "update", entityType: "agency_setting", entityId: current.id, before: { key, value: current.value }, after: { key, value } }]);
+    // Changed again the same day: the row is replaced (a new id, so a page drawn from the old one is
+    // stale); the audit log keeps what it held.
+    await tx.delete(s.agencySettings).where(eq(s.agencySettings.id, current.id));
+    const [row] = await tx.insert(s.agencySettings).values({ agencyId: actor.agencyId, key, value, effectiveFrom: current.effectiveFrom }).returning();
+    await audit(tx, actor, [{ action: "update", entityType: "agency_setting", entityId: row!.id, before: { key, value: current.value, settingId: current.id }, after: { key, value, effectiveFrom: current.effectiveFrom } }]);
     return;
   }
   if (current) await tx.update(s.agencySettings).set({ effectiveTo: addDays(today, -1) }).where(eq(s.agencySettings.id, current.id));
@@ -71,7 +77,11 @@ function fromCodes(format: ExportFormat, codes: CodeMap): unknown {
 /** The codes in use for a format (its defaults when none were saved), with the row they came from. */
 export async function payrollCodes(tx: Tx, format: ExportFormat): Promise<{ id: string | null; codes: CodeMap }> {
   const row = await currentSetting(tx, codesKey(format));
-  return row ? { id: row.id, codes: toCodes(format, row.value) } : { id: null, codes: defaultCodes(format) };
+  if (!row) return { id: null, codes: defaultCodes(format) };
+  const codes = toCodes(format, row.value);
+  // Checked as when saved: stored codes the file cannot use would only fail later, without a name.
+  if (codeMapProblems(format, codes).length > 0) throw new Error(`The stored ${format} codes are not valid: ${JSON.stringify(row.value)}`);
+  return { id: row.id, codes };
 }
 
 /** Gusto's stored map as the Gusto exporter reads it. */
@@ -116,11 +126,13 @@ function normalTarget(t: PayrollTarget): PayrollTarget {
 
 export async function setPayrollCodes(tx: Tx, actor: Actor, format: ExportFormat, codes: unknown, today: string, expectedId: string | null): Promise<SettingsResult> {
   if (!mayChange(actor)) return { ok: false, error: "not_allowed" };
-  if (!EXPORT_FORMATS.includes(format)) return { ok: false, error: "invalid", problems: [{ field: "format", message: "Choose a payroll system." }] };
+  if (!EXPORT_FORMATS.includes(format)) return { ok: false, error: "invalid", problems: [{ field: "format", rule: "choose_system", message: "Choose a payroll system." }] };
   // A blank code is "not set": dropped, so the kind's fallback applies.
   const cleaned: CodeMap = {};
-  for (const [kind, c] of Object.entries((codes ?? {}) as CodeMap)) {
+  if (!codes || typeof codes !== "object" || Array.isArray(codes)) return { ok: false, error: "invalid", problems: [{ field: "codes", rule: "set_codes", message: "Set the codes." }] };
+  for (const [kind, c] of Object.entries(codes as CodeMap)) {
     if (!c) continue;
+    if (typeof c !== "object" || typeof c.code !== "string") return { ok: false, error: "invalid", problems: [{ field: `codes.${kind}`, rule: "code_text", message: "A code is text." }] };
     const fixed = defaultCodes(format)[kind as EarningType];
     if (c.code === "" && !(format === "spreadsheet_csv") && !fixed) continue;
     cleaned[kind as EarningType] = { code: c.code, as: c.as, ...(c.factor ? { factor: c.factor } : {}) };
@@ -136,7 +148,9 @@ export type WorkerIdResult = SettingsResult | { ok: false; error: "taken"; by: s
 /** Sets (or, with an empty id, clears) a worker's id in a payroll system. */
 export async function setWorkerPayrollId(tx: Tx, actor: Actor, workerId: string, system: PayrollSystem, id: string, title?: string): Promise<WorkerIdResult> {
   if (!mayChange(actor)) return { ok: false, error: "not_allowed" };
-  if (!Object.values(SYSTEM_OF).includes(system)) return { ok: false, error: "invalid", problems: [{ field: "system", message: "Choose a payroll system." }] };
+  // Two people setting the same id on two workers at once: the second waits and sees the first.
+  await lockPayrollSettings(tx, actor.agencyId, "exclusive");
+  if (!Object.values(SYSTEM_OF).includes(system)) return { ok: false, error: "invalid", problems: [{ field: "system", rule: "choose_system", message: "Choose a payroll system." }] };
   const workers = await tx.select().from(s.workers);
   const worker = workers.find((w) => w.id === workerId);
   if (!worker) return { ok: false, error: "not_found" };
@@ -146,9 +160,9 @@ export async function setWorkerPayrollId(tx: Tx, actor: Actor, workerId: string,
     delete next[system];
   } else {
     const problem = workerIdProblem(system, id, title);
-    if (problem) return { ok: false, error: "invalid", problems: [{ field: problem.field, message: problem.message }] };
+    if (problem) return { ok: false, error: "invalid", problems: [problem] };
     // One id, one person: the system would put both workers' pay on one record.
-    const other = workers.find((w) => w.id !== workerId && w.payrollIds[system]?.id.toLowerCase() === id.toLowerCase());
+    const other = workers.find((w) => w.id !== workerId && w.payrollIds[system] && idKey(system, w.payrollIds[system]!.id) === idKey(system, id));
     if (other) return { ok: false, error: "taken", by: `${other.firstName} ${other.lastName}` };
     next[system] = { id, ...(system === "gusto" && title ? { title } : {}) };
   }

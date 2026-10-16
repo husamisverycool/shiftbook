@@ -27,7 +27,7 @@ import { billFromMarkup } from "../catalog/versions";
 import { settingOn } from "../settings";
 import { isStuck } from "../intake/service";
 import { payrollFixture, payrollSettings } from "../files/payroll-fixture";
-import { SYSTEM_NAME, SYSTEM_OF, WORKER_ID_NAME } from "../../exports/targets";
+import { FILE_OF, SYSTEM_OF, WORKER_ID_NAME } from "../../exports/targets";
 import type { Actor } from "../session";
 import { billForDiff, decisionText, describeMoves, fileWorkers, hasRealDifferences, heldFor, paidBase, payForDiff, planCorrection, type CorrectionPlan } from "./corrections";
 import type { RunIssueCode } from "./issue-codes";
@@ -440,7 +440,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         code: "missing_payroll_id",
         workerId: id,
         workerName: `${w.firstName} ${w.lastName}`,
-        message: `${w.firstName} ${w.lastName} has no ${WORKER_ID_NAME[system!]}, so the ${SYSTEM_NAME[system!]} payroll file could not match them.`,
+        message: `${w.firstName} ${w.lastName} has no ${WORKER_ID_NAME[system!]}, so ${FILE_OF[system!]} could not match them.`,
       });
     }
   }

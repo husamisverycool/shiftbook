@@ -145,4 +145,11 @@ describe("QuickBooks Desktop IIF time file", () => {
     expect(r.notes[0]).toContain("Correction 2 of this pay period: only the differences against version 1");
     expect(() => renderQbdIif({ ...fixture, referenceRates: { w1: { num: 2000, den: 1 } } })).toThrowError(expect.objectContaining({ code: "several_pay_rates", workerId: "w1" }));
   });
+
+  it("refuses overtime with no regular hours, whose stored rate is unknown; holiday pay alone is at the stored rate", () => {
+    const r = () => renderQbdIif(base({ payLines: [{ workerId: "w1", type: "OT", minutes: 60, amountCents: 2738, rate: OT }] }));
+    expect(r).toThrowError(expect.objectContaining({ code: "several_pay_rates", workerId: "w1", message: expect.stringContaining("has overtime but no regular hours") }));
+    const holiday = renderQbdIif(base({ codes: { ...base().codes, HOL_NOT_WORKED: { code: "Holiday Hourly", as: "hours" } }, payLines: [{ workerId: "w1", type: "HOL_NOT_WORKED", minutes: 480, amountCents: 14_600, rate: REG }] }));
+    expect(holiday.controlTotals.payrollSystemDifferenceCents).toBe(0);
+  });
 });

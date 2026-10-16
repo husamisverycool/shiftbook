@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AGENCY_SETTINGS, demoPayrollIds, WORKERS } from "../server/demo/dataset";
-import { adpWfnFileName, codeMapProblems, DEFAULT_LAYOUT, defaultCodes, EXPORT_FORMATS, layoutProblems, SYSTEM_OF, targetProblems, workerIdProblem, type PayrollSystem } from "./targets";
+import { adpWfnFileName, codeMapProblems, DEFAULT_LAYOUT, defaultCodes, EXPORT_FORMATS, idKey, layoutProblems, SYSTEM_OF, targetProblems, workerIdProblem, type PayrollSystem } from "./targets";
 
 describe("payroll targets", () => {
   it("accepts each system with what its file needs, and names the field that is wrong", () => {
@@ -70,5 +70,19 @@ describe("payroll targets", () => {
         if (entry) expect(workerIdProblem(system, entry.id, entry.title), `${w.key} ${system}`).toBeNull();
       }
     }
+  });
+
+  it("refuses codes that are not text, and ADP codes ADP would refuse", () => {
+    expect(codeMapProblems("adp_wfn_paydata", { BONUS: { code: 12, as: "dollars" } }).map((p) => p.rule)).toEqual(["code_text"]);
+    expect(codeMapProblems("qbd_iif", { REG: { code: ["Hourly", "Rate"], as: "hours" } }).map((p) => p.rule)).toEqual(["code_text"]);
+    expect(codeMapProblems("adp_run_csv", { REG: { code: "REG", as: "weekly" } }).map((p) => p.rule)).toEqual(["choose_as"]);
+    const adp = (code: string) => codeMapProblems("adp_wfn_paydata", { BONUS: { code, as: "dollars" } }).length;
+    expect(["B", "SD", "7", "79", "ABC", "B12"].map(adp)).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(["40", "50", "60", "61", "80", "D1", "ABCD", "b"].map(adp)).toEqual([1, 1, 1, 1, 1, 1, 1, 1]);
+  });
+
+  it("compares ADP file numbers as numbers", () => {
+    expect(idKey("adp_wfn", "000123")).toBe(idKey("adp_wfn", "123"));
+    expect(idKey("qbd", "Bell, Marcus")).toBe(idKey("qbd", "bell, marcus"));
   });
 });

@@ -6,7 +6,8 @@ export type ExportErrorCode =
   | "several_pay_rates"
   | "does_not_reconcile"
   | "unknown_format"
-  | "unsupported_period";
+  | "unsupported_period"
+  | "file_limit";
 
 /**
  * An export that cannot be produced correctly is refused, never written partially (SPEC §13). A

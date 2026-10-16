@@ -370,7 +370,7 @@ export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
       version: v.version,
       kind: v.kind,
       reason: v.reason,
-      payroll: payroll ? { id: payroll.id, filename: payroll.filename, sha256: payroll.sha256, controlTotals: payroll.controlTotals, notes: payroll.notes } : null,
+      payroll: payroll ? { id: payroll.id, format: payroll.format, filename: payroll.filename, sha256: payroll.sha256, controlTotals: payroll.controlTotals, notes: payroll.notes } : null,
       invoices: invoices
         .map((i) => ({ id: i.id, number: i.number, kind: i.kind, originalNumber: originals.find((o) => o.id === i.originalInvoiceId)?.number ?? null, totalCents: i.totalCents, dueOn: i.dueOn, clientName: i.clientName }))
         .sort((a, b) => cmp(a.number, b.number)),

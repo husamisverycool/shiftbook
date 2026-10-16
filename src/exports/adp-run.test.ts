@@ -84,4 +84,23 @@ describe("RUN Powered by ADP time sheet import", () => {
     expect(r.filename).toBe("adp-run-2026-10-05-to-2026-10-11-correction-2.csv");
     expect(r.notes[0]).toContain("Correction 2 of this pay period");
   });
+
+  it("checks overtime hours against the regular rate even when regular pay goes as dollars (review finding 2)", () => {
+    const r = () =>
+      renderAdpRun(
+        base({
+          codes: { ...base().codes, REG: { code: "REGD", as: "dollars" } },
+          payLines: [
+            { workerId: "w1", type: "REG", minutes: 2400, amountCents: 80_000, rate: { num: 2000, den: 1 } },
+            { workerId: "w1", type: "OT", minutes: 120, amountCents: 6300, rate: { num: 3150, den: 1 } },
+          ],
+        }),
+      );
+    expect(r).toThrowError(expect.objectContaining({ code: "several_pay_rates", workerId: "w1", message: expect.stringContaining("pays it at 1.5 × the stored rate ($30.00/h)") }));
+  });
+
+  it("writes no row for dollars that add up to nothing", () => {
+    const r = renderAdpRun(base({ codes: { ...base().codes, DIFF: { code: "SD", as: "dollars" } }, payLines: [{ workerId: "w1", type: "REG", minutes: 60, amountCents: 1825, rate: REG }, { workerId: "w1", type: "DIFF", minutes: 1, amountCents: 0, rate: { num: 10, den: 1 } }] }));
+    expect(text(r.bytes).split("\r\n").slice(2)).toEqual(["ABC1234,W,10/05/2026,10/11/2026,123,REG,1.00,,0,,BASE", ""]);
+  });
 });

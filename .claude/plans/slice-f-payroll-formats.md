@@ -113,3 +113,12 @@ Shiftbook's own, so a difference is seen before payday.
 ## Out of this slice
 Live connections to payroll systems (API); invoice backup and templates (g); importing the target's
 employee list to match names (a later convenience).
+
+## Progress (2026-10-16)
+- Steps 1–2 done (commit 8b225a1): settings service and five exporters, tests first; thirteen proposed
+  answer keys checked against hand arithmetic.
+- Second-opinion review of the exporters: two blockers (ADP's declared overtime multiple ignored on
+  `O/T Hours`; the stored-rate check skipped when a worker had no regular hours line) and nine
+  smaller findings — all fixed with tests (decision record 0015).
+- Step 3: `/settings/payroll` (system, earning codes, worker ids, spreadsheet columns), the agency
+  menu's Settings, the Exceptions fix, the Files step naming the format.

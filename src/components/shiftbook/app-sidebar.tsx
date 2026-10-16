@@ -1,10 +1,11 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { BriefcaseIcon, ClipboardCheckIcon, FileSpreadsheetIcon, UsersIcon } from "lucide-react";
+import { BriefcaseIcon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, SettingsIcon, UsersIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 
@@ -56,7 +57,28 @@ export function AppSidebar({ agencyName }: { agencyName: string }) {
     <>
       <Sidebar className="sticky top-0 h-svh">
         <SidebarHeader>
-          <p className="truncate px-2 py-1 text-sm font-semibold">{agencyName}</p>
+          {/* Linear: the workspace name opens the menu that holds Settings. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex w-full min-w-0 items-center gap-1 rounded-md px-2 py-1 text-left text-sm font-semibold outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                  aria-label={t("agencyMenu")}
+                  data-testid="agency-menu"
+                />
+              }
+            >
+              <span className="truncate">{agencyName}</span>
+              <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem render={<Link href="/settings/payroll" />} data-testid="menu-settings">
+                <SettingsIcon />
+                {t("settings")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>

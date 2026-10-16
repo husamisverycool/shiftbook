@@ -15,7 +15,7 @@
  */
 import { addDays, exactDecimal, formatCents, formatRate, roundHalfUpBig } from "@shiftbook/rules";
 import type { ControlTotals } from "../server/db/schema";
-import { collect, correctionNote, targetOf, totalsByCode, who } from "./collect";
+import { collect, correctionNote, targetOf, totalsByCode, who, writesSomething } from "./collect";
 import { readCsv, writeCsv } from "./csv";
 import { ExportError } from "./errors";
 import { formatDate, hundredthsToMinutes, readTwoDecimals, signedCents, times, toHundredths, twoDecimals } from "./lines";
@@ -38,7 +38,8 @@ export function renderAdpRun(fixture: ExportFixture): ExportResult {
   let payrollSystemGrossCents = 0;
   for (const w of c.workers) {
     for (const t of totalsByCode(w)) {
-      if (t.minutes === 0 && t.amountCents === 0) continue;
+      // Blanks, never zeros: nothing to carry, no row.
+      if (t.as === "hours" ? t.minutes === 0 : t.amountCents === 0) continue;
       if (t.as === "dollars") {
         rows.push([target.companyCode, frequency, start, end, w.id, t.code, "", twoDecimals(t.amountCents), "0", "", "BASE"]);
         payrollSystemGrossCents += t.amountCents;
@@ -60,7 +61,7 @@ export function renderAdpRun(fixture: ExportFixture): ExportResult {
   }
   const bytes = writeCsv(rows, { eol: "\r\n" });
   const controlTotals: ControlTotals = {
-    workers: c.workers.length,
+    workers: c.workers.filter(writesSomething).length,
     minutesByType: c.minutesByType,
     ...(Object.keys(c.amountsByType).length > 0 ? { amountsByType: c.amountsByType } : {}),
     grossCents: c.grossCents,
@@ -68,7 +69,8 @@ export function renderAdpRun(fixture: ExportFixture): ExportResult {
     payrollSystemDifferenceCents: payrollSystemGrossCents - c.grossCents,
   };
   const parsed = parseAdpRun(new TextDecoder().decode(bytes));
-  const problems: string[] = parsed.size !== c.workers.length ? [`workers ${parsed.size} ≠ ${c.workers.length}`] : [];
+  const written = c.workers.filter(writesSomething).length;
+  const problems: string[] = parsed.size !== written ? [`workers ${parsed.size} ≠ ${written}`] : [];
   for (const w of c.workers) {
     for (const t of totalsByCode(w)) {
       const got = t.as === "hours" ? parsed.get(w.id)?.minutes.get(t.code) : parsed.get(w.id)?.cents.get(t.code);

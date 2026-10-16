@@ -417,18 +417,17 @@
       "bothRealBody": "Confirm these entries are different work on the same day, not the same hours read twice. If either entry changes later, this is asked again.",
       "bothRealConfirm": "Confirm",
       "goToUpload": "Go to timesheets",
-      "openApprovals": "Open Client approvals"
+      "openApprovals": "Open Client approvals",
+      "openPayrollSettings": "Open payroll file settings"
     },
     "files": {
       "successTitle": "Files created",
       "successBody": "The payroll file and invoices for this period are ready. The period is now locked; changes start a new version.",
       "payrollTitle": "Payroll file",
-      "payrollFormat": "Gusto hours import",
       "controlTotals": "Control totals",
       "workers": "Workers",
       "minutes": "{type} hours",
       "gross": "Gross pay (Shiftbook)",
-      "gustoGross": "Gross Gusto will compute",
       "difference": "Difference",
       "notes": "Notes",
       "fingerprint": "SHA-256",
@@ -441,7 +440,25 @@
         "REG": "Regular",
         "OT": "Overtime",
         "DT": "Double time"
-      }
+      },
+      "formats": {
+        "gusto_hours_csv": "Gusto hours import",
+        "qbd_iif": "QuickBooks Desktop time file (IIF)",
+        "qbo_time_csv": "QuickBooks Online time import",
+        "adp_wfn_paydata": "ADP Workforce Now paydata",
+        "adp_run_csv": "RUN Powered by ADP time sheet import",
+        "spreadsheet_csv": "Spreadsheet"
+      },
+      "systems": {
+        "gusto_hours_csv": "Gusto",
+        "qbd_iif": "QuickBooks Desktop",
+        "qbo_time_csv": "QuickBooks Online",
+        "adp_wfn_paydata": "ADP",
+        "adp_run_csv": "RUN",
+        "spreadsheet_csv": "the receiver"
+      },
+      "systemGross": "Gross {system} will compute",
+      "dollars": "Paid as dollars"
     },
     "errors": {
       "busy": "Someone else is changing this pay period right now. Try again in a moment.",
@@ -548,7 +565,9 @@
     "jobOrders": "Job orders",
     "assignments": "Assignments",
     "approvals": "Client approvals",
-    "shortcuts": "Keyboard shortcuts"
+    "shortcuts": "Keyboard shortcuts",
+    "settings": "Settings",
+    "agencyMenu": "Agency menu"
   },
   "list": {
     "filter": "Filter",
@@ -1307,5 +1326,222 @@
       "disputed": "Disputed"
     },
     "minutes": "{count} min"
+  },
+  "settings": {
+    "title": "Settings",
+    "payroll": {
+      "title": "Payroll file",
+      "description": "The payroll system your weekly payroll file is made for, its codes, and each worker's id there.",
+      "systemTitle": "Payroll system",
+      "systemHint": "One system at a time. A change applies to every payroll file not made yet; files already made keep their format.",
+      "inUse": "In use",
+      "systems": {
+        "gusto_hours_csv": {
+          "name": "Gusto",
+          "carries": "Hours (regular, overtime, double time) and bonuses."
+        },
+        "qbd_iif": {
+          "name": "QuickBooks Desktop",
+          "carries": "Hours only, under your payroll items, at the rate stored in QuickBooks."
+        },
+        "qbo_time_csv": {
+          "name": "QuickBooks Online",
+          "carries": "Regular hours only, for a time-import app; other pay is paid by hand."
+        },
+        "adp_wfn_paydata": {
+          "name": "ADP Workforce Now",
+          "carries": "Hours with their rate on each row, and dollars under your codes."
+        },
+        "adp_run_csv": {
+          "name": "RUN Powered by ADP",
+          "carries": "Hours at the stored rate, or dollars, under your earnings codes."
+        },
+        "spreadsheet_csv": {
+          "name": "Spreadsheet",
+          "carries": "Every pay line, in the columns you choose (a PEO's or factoring company's template)."
+        }
+      },
+      "fields": {
+        "companyCode": "Company code",
+        "version": "QuickBooks Desktop version",
+        "version2022": "2022 or later",
+        "version2021": "2021 or earlier",
+        "companyName": "Company name",
+        "companyCreateTime": "Company file number",
+        "customer": "Customer",
+        "fileName": "File name: {name}"
+      },
+      "help": {
+        "adpCompanyCode": "ADP's company code: 2 or 3 capital letters or digits.",
+        "runCompanyCode": "RUN's company code: up to 10 letters or digits.",
+        "companyName": "Exactly as QuickBooks shows it in Company Information.",
+        "companyCreateTime": "The number on the second line of a Timer Lists export from QuickBooks.",
+        "customer": "The QuickBooks Online customer every row is recorded against; import apps need one. Use one you keep for payroll time.",
+        "spreadsheetFileName": "Set the file name in Spreadsheet columns."
+      },
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "lastChanged": "Last changed {date} by {who}.",
+      "neverChanged": "Set when the agency was set up.",
+      "noneChosen": "No payroll system is chosen yet. Choose one, then set its codes and each worker's id.",
+      "readOnly": "Only the Owner changes payroll settings.",
+      "tabs": {
+        "codes": "Earning codes",
+        "workers": "Worker ids",
+        "columns": "Spreadsheet columns"
+      },
+      "codes": {
+        "hint": "The code {system} uses for each kind of pay Shiftbook can produce.",
+        "colKind": "Kind of pay",
+        "colCode": "Code",
+        "colAs": "Sent as",
+        "colFactor": "Multiple",
+        "colBlank": "When blank",
+        "hours": "Hours",
+        "dollars": "Dollars",
+        "fixedColumn": "Column “{column}”",
+        "notCarried": "Not carried by this system.",
+        "blank": {
+          "refused": "The run stops and names the worker, to pay it by hand.",
+          "own_code": "Shiftbook's code ({code}) is used.",
+          "fixed": "Always in its column.",
+          "not_carried": "The run names the worker, to pay it by hand."
+        },
+        "factorFixed": "× {factor}",
+        "factorLabel": "Multiple for {kind}",
+        "codeLabel": "Code for {kind}",
+        "asLabel": "How {kind} is sent",
+        "kinds": {
+          "REG": "Regular hours",
+          "OT": "Overtime",
+          "DT": "Double time",
+          "MW_TRUEUP": "Minimum-wage top-up",
+          "REPORTING_PAY": "Reporting-time pay",
+          "HOL": "Holiday premium (worked)",
+          "HOL_NOT_WORKED": "Holiday pay (not worked)",
+          "DIFF": "Shift differential",
+          "MEAL_PREMIUM": "Meal-period premium",
+          "REST_PREMIUM": "Rest-period premium",
+          "MIN_GUARANTEE": "Day-labor minimum",
+          "BONUS": "Bonus",
+          "BONUS_OT": "Overtime on a bonus"
+        }
+      },
+      "workers": {
+        "hint": "Each worker's {idName} in {system}.",
+        "all": "All",
+        "missing": "Missing",
+        "set": "Set",
+        "search": "Search workers",
+        "progress": "{set} of {total} workers have an id",
+        "colWorker": "Worker",
+        "colId": "Id",
+        "colTitle": "Job title",
+        "colStatus": "Status",
+        "idLabel": "{idName} for {name}",
+        "titleLabel": "Gusto job title for {name}",
+        "none": "No workers match.",
+        "taken": "Already used by {name}.",
+        "idNames": {
+          "gusto": "Gusto employee id",
+          "qbd": "QuickBooks employee name",
+          "qbo": "QuickBooks Online display name",
+          "adp_wfn": "ADP file number",
+          "adp_run": "RUN employee id",
+          "spreadsheet": "worker id"
+        }
+      },
+      "columns": {
+        "hint": "The columns of the file, in order, as the receiver's template asks.",
+        "fileName": "File name",
+        "fileNameHelp": "'{start}' and '{end}' become the pay period's dates; ends in .csv or .txt.",
+        "delimiter": "Delimiter",
+        "delimiters": {
+          "comma": "Comma",
+          "tab": "Tab",
+          "semicolon": "Semicolon",
+          "pipe": "Pipe"
+        },
+        "header": "Start the file with a header row",
+        "dateFormat": "Date format",
+        "included": "Included columns",
+        "headerText": "Header for {field}",
+        "fixedValue": "Text for {field}",
+        "moveUp": "Move {field} up",
+        "moveDown": "Move {field} down",
+        "remove": "Remove {field}",
+        "add": "Add a column",
+        "searchFields": "Search fields",
+        "addField": "Add {field}",
+        "noFields": "No field matches.",
+        "fields": {
+          "worker_id": "Worker id",
+          "last_name": "Last name",
+          "first_name": "First name",
+          "period_start": "Pay period start",
+          "period_end": "Pay period end",
+          "week_start": "Week starting",
+          "week_end": "Week ending",
+          "earning_code": "Earning code",
+          "hours": "Hours",
+          "rate": "Pay rate",
+          "amount": "Amount",
+          "fixed": "Fixed text"
+        }
+      },
+      "rules": {
+        "choose_system": "Choose a payroll system.",
+        "qbd_version": "Choose the QuickBooks Desktop version.",
+        "company_name": "The company name exactly as QuickBooks shows it, in plain letters, digits and punctuation.",
+        "company_file_number": "Digits only: the number on the second line of a Timer Lists export.",
+        "qbo_customer": "A customer that exists in QuickBooks Online, up to 100 characters.",
+        "adp_company_code": "2 or 3 capital letters or digits.",
+        "run_company_code": "Up to 10 letters or digits.",
+        "layout": "Set up the spreadsheet's columns.",
+        "file_name": "Letters, digits, dots, dashes and underscores, ending in .csv or .txt; only '{start}' and '{end}' in braces.",
+        "delimiter": "Choose a delimiter.",
+        "header_row": "Choose whether the file starts with a header row.",
+        "date_format": "Choose a date format.",
+        "columns_count": "Between 1 and 30 columns.",
+        "column_field": "Choose what the column holds.",
+        "column_header": "A header of up to 64 characters.",
+        "column_value": "Up to 64 characters.",
+        "needs_worker_id": "Include the worker id, so the receiver can match each row to a person.",
+        "needs_code": "Include the earning code, so the receiver knows what each row pays.",
+        "needs_price": "Include the amount, or the hours and the pay rate, so the receiver can price every row.",
+        "set_codes": "Set the codes.",
+        "not_carried": "This system's file cannot carry this kind of pay.",
+        "dollars_only": "This system takes this kind of pay in dollars only.",
+        "hours_only": "This system takes this kind of pay as hours only.",
+        "fixed_column": "This kind of pay goes in the file's own column.",
+        "code_form_qbd_iif": "The payroll item's name exactly as QuickBooks shows it (up to 31 plain characters).",
+        "code_form_adp_wfn_paydata": "1 or 2 capital letters, a number from 0 to 79 (not 40, 50, 60 or 61), or 3 letters and digits if ADP's expanded fields are on.",
+        "code_form_adp_run_csv": "Up to 10 letters, digits, dashes or underscores.",
+        "code_form_spreadsheet_csv": "Up to 20 characters.",
+        "code_form_gusto_hours_csv": "Gusto's file has fixed columns.",
+        "code_form_qbo_time_csv": "This file has fixed columns.",
+        "factor_needed": "The multiple the system applies to these hours, for example 1.5.",
+        "factor_fixed": "This system's multiple is fixed.",
+        "code_reused": "This code is already used for another kind of pay sent differently.",
+        "id_spaces": "Enter the id with no spaces around it.",
+        "gusto_id": "Gusto's employee id, up to 64 characters.",
+        "gusto_title": "The job title as Gusto shows it; Gusto matches hours to a job.",
+        "qbd_name": "The name exactly as QuickBooks shows it, in plain letters, digits and punctuation (up to 41).",
+        "qbo_name": "The display name exactly as QuickBooks Online shows it (up to 100 characters).",
+        "adp_file_number": "Digits, from 51 to 999999.",
+        "run_employee_id": "Up to 15 letters, digits or dashes.",
+        "sheet_id": "Up to 50 characters.",
+        "code_text": "A code is text.",
+        "choose_as": "Choose hours or dollars."
+      },
+      "errors": {
+        "stale": "These settings changed in another tab or window. The page now shows the latest.",
+        "not_allowed": "Only the Owner changes payroll settings.",
+        "not_found": "That worker no longer exists.",
+        "generic": "That could not be saved. Try again.",
+        "invalid": "Check the fields marked below."
+      }
+    }
   }
 }
