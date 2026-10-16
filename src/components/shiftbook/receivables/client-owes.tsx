@@ -5,11 +5,13 @@
 // pay, with how many invoices it counts); QuickBooks Online Receive payment.
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { ClientReceivables, PaymentClients } from "@/server/receivables/queries";
 import { useEngineSay } from "../engine-say";
 import { money } from "../format";
+import { KeyFigure, KeyFigures } from "../key-figures";
+import { Section } from "../page";
 import { PaymentDialog } from "./payment-dialog";
 
 export function ClientOwes({ clientId, owes, clients, today, canChange }: { clientId: string; owes: ClientReceivables; clients: PaymentClients; today: string; canChange: boolean }) {
@@ -18,7 +20,7 @@ export function ClientOwes({ clientId, owes, clients, today, canChange }: { clie
   const say = useEngineSay();
   const locale = useLocale();
   const [paying, setPaying] = useState(false);
-  const facts: { key: string; label: string; value: string; title?: string }[] = [
+  const facts: { key: string; label: string; value: string }[] = [
     { key: "owed", label: t("owed"), value: money(owes.owedCents, locale) },
     { key: "overdue", label: t("overdue"), value: money(owes.overdueCents, locale) },
     { key: "notDue", label: t("notDue"), value: money(owes.notDueCents, locale) },
@@ -27,36 +29,33 @@ export function ClientOwes({ clientId, owes, clients, today, canChange }: { clie
       key: "daysToPay",
       label: t("daysToPay"),
       value: owes.daysToPay.averageDays === null ? "—" : t("days", { days: owes.daysToPay.averageDays, count: owes.daysToPay.invoices }),
-      title: say(owes.daysToPay),
     },
   ];
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="owes-title" data-testid="client-owes">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 id="owes-title" className="mr-auto text-lg font-semibold">
-          {t("title")}
-        </h2>
-        <Link href={`/payments?client=${clientId}`} className="text-sm underline-offset-4 hover:underline">
-          {t("payments")}
-        </Link>
-        {canChange && (
-          <Button size="sm" onClick={() => setPaying(true)} data-testid="client-record-payment">
-            {t("recordPayment")}
-          </Button>
-        )}
-      </div>
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-5">
+    <Section
+      id="owes-title"
+      title={t("title")}
+      testId="client-owes"
+      actions={
+        <>
+          <Link href={`/payments?client=${clientId}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+            {t("payments")}
+          </Link>
+          {canChange && (
+            <Button size="sm" onClick={() => setPaying(true)} data-testid="client-record-payment">
+              {t("recordPayment")}
+            </Button>
+          )}
+        </>
+      }
+    >
+      <KeyFigures className="gap-x-12 pt-1">
         {facts.map((f) => (
-          <div key={f.key} className="flex flex-col gap-0.5" data-testid={`owes-${f.key}`}>
-            <dt className="text-muted-foreground">{f.label}</dt>
-            <dd className={f.key === "owed" ? "text-base font-semibold tabular-nums" : "font-medium tabular-nums"} title={f.title}>
-              {f.value}
-            </dd>
-          </div>
+          <KeyFigure key={f.key} label={f.label} value={f.value} size={f.key === "owed" ? "default" : "sm"} testId={`owes-${f.key}`} />
         ))}
-      </dl>
-      {owes.daysToPay.averageDays !== null && <p className="text-xs text-muted-foreground">{say(owes.daysToPay)}</p>}
+      </KeyFigures>
+      {owes.daysToPay.averageDays !== null && <p className="text-[13px] text-muted-foreground">{say(owes.daysToPay)}</p>}
       {paying && <PaymentDialog clients={clients} mode={{ kind: "record", clientId }} today={today} onClose={() => setPaying(false)} />}
-    </section>
+    </Section>
   );
 }

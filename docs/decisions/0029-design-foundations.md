@@ -40,15 +40,28 @@ One look, three products, each where SPEC §26 points to it.
    a row with space between (Stripe Home "Today", Stripe's "Program summary", Mercury's headline
    figure with its money-in/money-out rows). Only where the page's own reference shows figures:
    Home, Margin, Receivables.
-7. **Charts — Stripe and Mercury**: in white cards on a light grey band (Stripe's "Your overview"),
-   each with a semibold title, the figure, a line or bars with hairline gridlines, and a "View more"
-   link.
+7. **Charts — Stripe and Mercury**: on Home, in white cards on a light grey band (Stripe's "Your
+   overview"), each with a semibold title, the figure, a line or bars with hairline gridlines, and a
+   "View more" link; elsewhere (Margin) the same chart under its heading without the card. Gridline
+   values on the right; bars from zero, a loss below the zero line.
 8. **Home — Stripe Home, with Polaris's setup guide** (`home.md`): the setup guide on top for the
    Owner; "Today" (the pay period now, its figures, and a right column of balances with View links);
    "Your overview" (the 13-week charts); what needs attention as Stripe surfaces notifications.
 9. **Empty states — Linear and Stripe** (`_components/empty-state.md`): an icon, one line saying what
    is missing and what to do, and the one action — no box, no tinted circle.
-10. **Type**: Geist (already the app's font). Title 28px bold; section headings 18–20px semibold;
+10. **Record pages — Stripe detail page** (`_components/record-page.md`, added after the owner asked
+    on 2026-10-16 for pages that fill comfortably, drawn only from references): ancestors above the
+    title (never a back arrow), the title with its status, one line of facts, the actions on the
+    right; the record's content on the left and its details as label-over-value on the right; each
+    module a heading over a hairline, never a card. Invoice, client, job order, worker, compliance
+    duty and client approval pages all use it, so every record behaves the same.
+11. **Settings — Linear settings** (Linear's own Preferences screenshot): one centred column at the
+    same width on every settings page, the title in the same place, sections as headings with one
+    muted line under them.
+12. **Wizards — Attio import and QuickBooks Online upload**: ancestors and title as rule 10, then the
+    numbered steps (done ones ticked, the current one bold), one step at a time; the bank import and
+    the placement import share it.
+13. **Type**: Geist (already the app's font). Title 28px bold; section headings 18–20px semibold;
     body 14px; labels 13px muted; figures 24–28px semibold with tabular digits (Stripe; Mercury).
 
 ## Alternatives considered

@@ -51,4 +51,7 @@ and the client's invoices.
 ## Never copy
 Stripe's, Bullhorn's or Avionté's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+Laid out as `_components/record-page.md`: "Clients" above the name and code. What the client owes (plain figures) and the client's invoices are modules on the left; the invoice settings, with Edit, are the details column on the right (Stripe customer details: "Details" with Edit), each group's fields as label over value, then the versions.
+
 Deviations allowed: none

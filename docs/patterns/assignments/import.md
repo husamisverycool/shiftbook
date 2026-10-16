@@ -70,4 +70,7 @@ A step frame, one step at a time, with Back and Next (Attio's import steps):
 ## Never copy
 Wording, icons, colors or logos of Attio, Linear, Flatfile, Bullhorn, JobAdder or Spott.
 
+## Look (decision 0029, from the products' own screenshots)
+Laid out as `_components/record-page.md`'s header ("Assignments" above the title) with the shared numbered steps of decision 0029 rule 12.
+
 Deviations allowed: none

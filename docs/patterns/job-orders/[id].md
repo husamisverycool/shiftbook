@@ -83,6 +83,6 @@ create/edit with effective dating; rate changes never rewrite locked periods).
 Wording, icons, colors or logos of Attio, Bullhorn, Gusto, Stripe or Linear.
 
 ## Look (decision 0029, from the products' own screenshots)
-The header as Stripe's detail header: breadcrumb, the title with its state (Open or Filled) as a badge beside it, the facts line, the buttons on the right; the tabs underlined.
+Laid out as `_components/record-page.md`: "Job orders" above the title; the tabs and their content on the left; Details on the right. The overview's rates and workers are modules with plain figures (pay rate, bill rate since their date; workers on it of those wanted) and a button to the tab that holds them.
 
 Deviations allowed: none

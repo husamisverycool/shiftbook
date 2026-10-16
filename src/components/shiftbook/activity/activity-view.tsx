@@ -26,7 +26,7 @@ type Props = { today: string; filters: ActivityFilters; page: ActivityPage; sele
 export function NotForActivity() {
   const t = useTranslations("activityLog");
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6 md:px-8 md:py-8">
       <div className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>
         <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
@@ -114,7 +114,7 @@ export function ActivityView({ today, filters, page, selected: initial, options,
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-5 px-4 py-6 md:px-8 md:py-8">
       <header className="flex flex-wrap items-end gap-3">
         <div className="mr-auto flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>

@@ -3,7 +3,7 @@
  * sending, the link, the client's page, approving and disputing, settling, withdrawing, reminders.
  */
 import { createHash } from "node:crypto";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
   approvalDetail,
@@ -357,6 +357,55 @@ describe("the approver's decision", () => {
     expect((await loadPortal(deps, token)).state).toBe("closed");
     expect(await submitDecision(deps, token, { typedName: "Dana Approver", confirmed: true, snapshot: "x", locale: "en", ipAddress: null, userAgent: null })).toEqual({ ok: false, error: "period_locked" });
     await owner.db.delete(s.payRuns).where(eq(s.payRuns.payPeriodId, period));
+  });
+});
+
+describe("a week whose files exist", () => {
+  beforeEach(async () => {
+    await fresh();
+  });
+
+  it("still shows what the client approved: locked shifts paid as approved count as approved; one changed after the approval does not", async () => {
+    const x = await fresh();
+    await send();
+    expect((await decide(await latestToken())).ok).toBe(true);
+    // After the approval the agency changes Anita's Monday; the files are then made and every shift locks.
+    await owner.db.update(s.timeEntries).set({ outMinute: 930, minutes: 510 }).where(eq(s.timeEntries.id, x.anitaMon.id));
+    await owner.db.update(s.timeEntries).set({ status: "locked" }).where(inArray(s.timeEntries.id, [x.marcusMon.id, x.marcusTue.id, x.marcusWed.id, x.anitaMon.id, x.anitaTue.id]));
+    await owner.db.insert(s.payRuns).values({ agencyId: actor.agencyId, payPeriodId: period, version: 1, status: "exported", rulesVersion: "test", skipped: [] });
+
+    const row = (await inAgency((tx) => listApprovals(tx, period, clock))).find((r) => r.clientId === IL)!;
+    expect(row.state).toBe("approved");
+    expect(row.counts).toEqual({ waiting: 0, approved: 4, disputed: 0, needsReview: 0 });
+    // The changed shift was paid all the same: it counts in the week's shifts and hours.
+    expect(row.shifts).toBe(5);
+    expect(row.workers).toBe(2);
+    expect(row.minutes).toBe(3 * 600 + 480 + 510);
+
+    const [request] = await inAgency((tx) => tx.select().from(s.approvalRequests).where(eq(s.approvalRequests.clientId, IL)));
+    const detail = (await inAgency((tx) => approvalDetail(tx, request!.id, { demoCopies: false, now: clock })))!;
+    expect(detail.state).toBe("approved");
+    expect(detail.periodOpen).toBe(false);
+    expect(detail.shifts.map((v) => [v.entryId, v.state]).sort()).toEqual(
+      [
+        [x.marcusMon.id, "approved"],
+        [x.marcusTue.id, "approved"],
+        [x.marcusWed.id, "approved"],
+        [x.anitaTue.id, "approved"],
+      ].sort(),
+    );
+    await owner.db.delete(s.payRuns).where(eq(s.payRuns.payPeriodId, period));
+  });
+
+  it("a locked shift is not taken as approved after the approval was withdrawn", async () => {
+    const x = await fresh();
+    await send();
+    expect((await decide(await latestToken())).ok).toBe(true);
+    expect((await withdrawApproval(deps, actor, (await inAgency((tx) => tx.select().from(s.approvalRequests)))[0]!.id, "Rate was wrong")).ok).toBe(true);
+    await owner.db.update(s.timeEntries).set({ status: "locked" }).where(inArray(s.timeEntries.id, [x.marcusMon.id, x.marcusTue.id, x.marcusWed.id, x.anitaMon.id, x.anitaTue.id]));
+    const row = (await inAgency((tx) => listApprovals(tx, period, clock))).find((r) => r.clientId === IL)!;
+    expect(row.counts.approved).toBe(0);
+    expect(row.state).not.toBe("approved");
   });
 });
 

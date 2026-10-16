@@ -4,31 +4,50 @@
 // the week's numbers on hover, and the same numbers in a table for screen readers.
 import { useLocale, useTranslations } from "next-intl";
 import { longDate, money } from "../format";
+import { niceTop } from "../home/charts";
 
 export function WeeklyChart({ weeks }: { weeks: { week: string; billedCents: number; marginCents: number }[] }) {
   const t = useTranslations("margin");
   const locale = useLocale();
-  const max = Math.max(1, ...weeks.map((w) => Math.abs(w.marginCents)));
-  const hasNegative = weeks.some((w) => w.marginCents < 0);
-  const H = 160;
-  const zero = hasNegative ? H / 2 : H;
-  const scale = (hasNegative ? H / 2 : H) / max;
-  const bar = 100 / Math.max(weeks.length, 1);
+  // Drawn as Home draws its charts (decision 0029): hairline gridlines with their values on the
+  // right, bars from zero, a loss below the zero line.
+  const top = niceTop(Math.max(0, ...weeks.map((w) => w.marginCents)));
+  const bottom = niceTop(Math.max(0, ...weeks.map((w) => -w.marginCents)));
+  const range = top + bottom || 1;
+  const y = (v: number) => ((top - v) / range) * 100;
+  const lines = bottom > 0 ? [top, 0, -bottom] : top > 0 ? [top, top / 2, 0] : [0];
+  // Axis values are round (1, 2 or 5 times a power of ten), so whole thousands or millions say them;
+  // written out here so the server and the browser print the same text.
+  const compact = (cents: number) => {
+    const dollars = Math.abs(cents) / 100;
+    const text = dollars >= 1_000_000 ? `${dollars / 1_000_000}M` : dollars >= 1_000 ? `${dollars / 1_000}K` : `${dollars}`;
+    return `${cents < 0 ? "−" : ""}$${text}`;
+  };
   return (
-    <figure className="flex flex-col gap-2 rounded-lg bg-card p-5 shadow-xs ring-1 ring-foreground/5" data-testid="weekly-chart">
-      <figcaption className="text-sm font-medium">{t("chartTitle")}</figcaption>
-      <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" className="h-40 w-full" aria-hidden="true">
-        <line x1="0" x2="100" y1={zero} y2={zero} className="stroke-border" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-        {weeks.map((w, i) => {
-          const h = Math.abs(w.marginCents) * scale;
-          return (
-            <rect key={w.week} x={i * bar + bar * 0.15} width={bar * 0.7} y={w.marginCents >= 0 ? zero - h : zero} height={Math.max(h, w.marginCents === 0 ? 0 : 0.5)} className={w.marginCents >= 0 ? "fill-primary" : "fill-destructive"}>
-              <title>{`${longDate(w.week, locale)}: ${t("chartBar", { billed: money(w.billedCents, locale), margin: money(w.marginCents, locale) })}`}</title>
-            </rect>
-          );
-        })}
-      </svg>
-      <div className="flex justify-between text-xs text-muted-foreground">
+    <figure className="flex flex-col gap-3" data-testid="weekly-chart">
+      <figcaption className="text-base font-semibold">{t("chartTitle")}</figcaption>
+      <div className="relative h-44">
+        {lines.map((v) => (
+          <div key={v} className="absolute inset-x-0 flex items-center gap-2" style={{ top: `${y(v)}%`, transform: "translateY(-50%)" }} aria-hidden>
+            <div className={v === 0 ? "h-px flex-1 bg-foreground/25" : "h-px flex-1 bg-border"} />
+            <span className="w-14 text-right text-xs text-muted-foreground tabular-nums">{compact(v)}</span>
+          </div>
+        ))}
+        <div className="absolute inset-y-0 right-16 left-0 flex gap-[2%] px-[1%]" aria-hidden>
+          {weeks.map((w) => {
+            const from = y(Math.max(w.marginCents, 0));
+            const to = y(Math.min(w.marginCents, 0));
+            return (
+              <div key={w.week} className="relative flex-1" title={`${longDate(w.week, locale)}: ${t("chartBar", { billed: money(w.billedCents, locale), margin: money(w.marginCents, locale) })}`}>
+                {w.marginCents !== 0 && (
+                  <div className={w.marginCents > 0 ? "absolute inset-x-[18%] rounded-t-[3px] bg-foreground/80" : "absolute inset-x-[18%] rounded-b-[3px] bg-destructive/80"} style={{ top: `${from}%`, height: `${Math.max(to - from, 0.5)}%` }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mr-16 flex justify-between text-xs text-muted-foreground" aria-hidden>
         <span>{weeks[0] ? longDate(weeks[0].week, locale) : ""}</span>
         <span>{weeks.length > 1 ? longDate(weeks.at(-1)!.week, locale) : ""}</span>
       </div>

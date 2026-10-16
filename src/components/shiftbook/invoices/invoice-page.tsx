@@ -3,9 +3,9 @@
 // Pattern: docs/patterns/invoices/[id].md — Stripe invoice details (header with the number, status
 // and actions; amount and dates; line items; history with related documents); TempWorks "Preview
 // Invoice w/ Timecards" and SAP Fieldglass "Related" for the backup; Bullhorn One credit links.
-import { ArrowLeftIcon, EllipsisIcon, FileImageIcon } from "lucide-react";
+import { EllipsisIcon, FileImageIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -14,6 +14,7 @@ import { Link } from "@/i18n/navigation";
 import type { InvoiceDetail } from "@/server/invoices/queries";
 import type { InvoiceReceivables, PaymentClients } from "@/server/receivables/queries";
 import { dateRange, longDate, money } from "../format";
+import { Crumbs, Facts, Page, PageHeader, RecordLayout, Section } from "../page";
 import { InvoicePayments } from "../receivables/invoice-payments";
 import { downloadHref, InvoiceStatusBadge } from "./invoices-table";
 
@@ -22,6 +23,7 @@ type Line = NonNullable<InvoiceDetail["printed"]>["lines"][number];
 export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { detail: InvoiceDetail; back: string; ar: InvoiceReceivables | null; clients: PaymentClients; today: string; canCollect: boolean }) {
   const t = useTranslations("invoices");
   const td = useTranslations("invoices.detail");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const r = detail.row;
   const credit = r.kind === "credit_note";
@@ -38,7 +40,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
       <TableCell className="text-right tabular-nums">{l.amount}</TableCell>
     </TableRow>
   );
-  const summary: { label: string; value: string }[] = [
+  const summary: { label: string; value: ReactNode }[] = [
     { label: credit ? td("credited") : td("amountDue"), value: money(credit ? -r.totalCents : r.totalCents, locale) },
     { label: td("issued"), value: longDate(r.issuedOn, locale) },
     ...(credit ? [] : [{ label: td("due"), value: longDate(r.dueOn, locale) }]),
@@ -46,24 +48,29 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
     { label: td("po"), value: detail.poNumber ?? "—" },
     ...(detail.worksite ? [{ label: td("worksite"), value: detail.worksite }] : []),
     { label: td("template"), value: t(`template.${detail.template}`) },
+    {
+      label: td("client"),
+      value: (
+        <Link href={`/clients/${detail.client.id}`} className="underline-offset-4 hover:underline">
+          {detail.client.name}
+        </Link>
+      ),
+    },
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-6 px-4 py-6">
-      <div className="flex flex-col gap-3">
-        <Link href={back ? `/invoices?${back}` : "/invoices"} className={buttonVariants({ variant: "link", size: "sm", className: "w-fit px-0" })} data-testid="back-to-invoices">
-          <ArrowLeftIcon />
-          {td("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[28px] leading-9 font-bold tracking-tight">
-            {t(`kindTitle.${r.kind}`)} {r.number}
-          </h1>
-          <InvoiceStatusBadge status={r.status} />
-          <div className="ml-auto flex items-center gap-2">
-            <a href={downloadHref(r.id, "pdf")} download className={buttonVariants({ size: "sm" })} data-testid="download-pdf">
-              {t("downloadPdf")}
-            </a>
+    <Page>
+      <PageHeader
+        context={<Crumbs label={tc("breadcrumb")} items={[{ label: td("back"), href: back ? `/invoices?${back}` : "/invoices", testId: "back-to-invoices" }]} />}
+        title={`${t(`kindTitle.${r.kind}`)} ${r.number}`}
+        status={<InvoiceStatusBadge status={r.status} />}
+        description={
+          <span className="tabular-nums">
+            {money(credit ? -r.totalCents : r.totalCents, locale)} · {detail.client.name}
+          </span>
+        }
+        actions={
+          <>
             <DropdownMenu>
               <DropdownMenuTrigger render={<Button size="icon-sm" variant="outline" aria-label={t("rowMenu", { number: r.number })} data-testid="invoice-menu" />}>
                 <EllipsisIcon />
@@ -74,28 +81,21 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
                 {!r.hasCsv && !r.hasVms && <DropdownMenuItem disabled>{td("noOtherFiles")}</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </div>
-        <p className="text-sm">
-          <Link href={`/clients/${detail.client.id}`} className="font-medium underline-offset-4 hover:underline">
-            {detail.client.name}
-          </Link>
-        </p>
-      </div>
+            <a href={downloadHref(r.id, "pdf")} download className={buttonVariants({ size: "sm" })} data-testid="download-pdf">
+              {t("downloadPdf")}
+            </a>
+          </>
+        }
+      />
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-xl border bg-card p-4 text-sm sm:grid-cols-3 lg:grid-cols-7" data-testid="invoice-summary">
-        {summary.map((f) => (
-          <div key={f.label} className="flex flex-col gap-0.5">
-            <dt className="text-muted-foreground">{f.label}</dt>
-            <dd className="font-medium tabular-nums">{f.value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      <section className="flex flex-col gap-3" aria-labelledby="lines-title">
-        <h2 id="lines-title" className="text-lg font-semibold">
-          {td("lines")}
-        </h2>
+      <RecordLayout
+        aside={
+          <Section id="summary-title" title={td("summary")} testId="invoice-summary">
+            <Facts items={summary} />
+          </Section>
+        }
+      >
+      <Section id="lines-title" title={td("lines")}>
         {detail.printed ? (
           <div className="min-w-0">
             <Table aria-labelledby="lines-title">
@@ -148,24 +148,21 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
             {td("linesInPdf")}
           </p>
         )}
-      </section>
+      </Section>
 
-      <section className="flex flex-col gap-3" aria-labelledby="backup-title">
-        <h2 id="backup-title" className="text-lg font-semibold">
-          {td("backup")}
-        </h2>
+      <Section id="backup-title" title={td("backup")}>
         {!detail.backup || (!detail.backup.detail && detail.backup.images.length === 0) ? (
           <p className="text-sm text-muted-foreground" data-testid="no-backup">
             {detail.backup ? td("noBackup") : td("linesInPdf")}
           </p>
         ) : (
-          <ul className="flex flex-col divide-y border-y text-sm" data-testid="backup-list">
-            <li className="flex items-center justify-between gap-3 p-3">
+          <ul className="flex flex-col divide-y text-sm" data-testid="backup-list">
+            <li className="flex items-center justify-between gap-3 py-3">
               <span>{td("hoursDetail")}</span>
               <Badge variant="outline">{detail.backup.detail ? td("included") : td("notIncluded")}</Badge>
             </li>
             {detail.backup.images.map((img) => (
-              <li key={img.documentId} className="flex flex-wrap items-center justify-between gap-3 p-3" data-testid="backup-timesheet">
+              <li key={img.documentId} className="flex flex-wrap items-center justify-between gap-3 py-3" data-testid="backup-timesheet">
                 <span className="inline-flex items-center gap-2">
                   <FileImageIcon className="size-4 text-muted-foreground" />
                   {img.filename}
@@ -181,17 +178,14 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
             ))}
           </ul>
         )}
-      </section>
+      </Section>
 
       {ar && !credit && <InvoicePayments invoiceId={r.id} number={r.number} clientId={detail.client.id} ar={ar} clients={clients} today={today} canChange={canCollect} />}
 
-      <section className="flex flex-col gap-3" aria-labelledby="related-title">
-        <h2 id="related-title" className="text-lg font-semibold">
-          {td("related")}
-        </h2>
-        <ul className="flex flex-col divide-y border-y text-sm" data-testid="related-list">
+      <Section id="related-title" title={td("related")}>
+        <ul className="flex flex-col divide-y text-sm" data-testid="related-list">
           {detail.original && (
-            <li className="flex flex-wrap items-center justify-between gap-3 p-3">
+            <li className="flex flex-wrap items-center justify-between gap-3 py-3">
               <span className="text-muted-foreground">{credit ? td("credits") : td("addsTo")}</span>
               <Link href={`/invoices/${detail.original.id}`} className="font-medium underline-offset-4 hover:underline">
                 {detail.original.number}
@@ -199,7 +193,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
             </li>
           )}
           {detail.corrections.map((c) => (
-            <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-3" data-testid="related-correction">
+            <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3" data-testid="related-correction">
               <span className="inline-flex items-center gap-2">
                 <Link href={`/invoices/${c.id}`} className="font-medium underline-offset-4 hover:underline">
                   {c.number}
@@ -211,14 +205,15 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
               </span>
             </li>
           ))}
-          <li className="flex flex-wrap items-center justify-between gap-3 p-3">
+          <li className="flex flex-wrap items-center justify-between gap-3 py-3">
             <span className="text-muted-foreground">{td("run", { version: detail.run.version })}</span>
             <Link href={{ pathname: "/convert", query: { period: r.period.id, step: "files" } }} className="font-medium underline-offset-4 hover:underline">
               {td("openFiles")}
             </Link>
           </li>
         </ul>
-      </section>
-    </div>
+      </Section>
+      </RecordLayout>
+    </Page>
   );
 }

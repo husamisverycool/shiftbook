@@ -4,7 +4,7 @@
 // timeline, the emails sent); Bullhorn One activity; Harvest approvals log and "withdraw approval";
 // Instawork hour disputes (recorded against proposed hours, the reason, the change); Stripe dispute
 // response (accept, or reply).
-import { ArrowLeftIcon, MailIcon } from "lucide-react";
+import { MailIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import type { ApprovalDetail } from "@/server/approvals/service";
 import { useCan } from "../abilities";
 import { clock, hoursMinutes, longDate, shortDate } from "../format";
 import { LinkedText } from "../linked-text";
+import { Crumbs, Page, PageHeader, Section } from "../page";
 import { ApprovalStateBadge } from "./approvals-view";
 import { HoursTable } from "./hours-table";
 import { SendDialog, type SendTarget } from "./send-dialog";
@@ -30,6 +31,7 @@ type Dispute = ApprovalDetail["disputes"][number];
 export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; demo: boolean }) {
   const t = useTranslations("approvals");
   const td = useTranslations("approvals.detail");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   // Decision 0026: reminding, changing the approver, withdrawing and settling disputes are the hours ability.
@@ -101,57 +103,54 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
   const times = (x: { inMinute: number | null; outMinute: number | null; breakMinutes: number | null }) => `${clock(x.inMinute, locale)} – ${clock(x.outMinute, locale)} · ${x.breakMinutes ?? 0} min`;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-6 px-4 py-6">
-      <div className="flex flex-col gap-3">
-        <Link href={{ pathname: "/approvals", query: { period: detail.period.id } }} className={buttonVariants({ variant: "link", size: "sm", className: "w-fit px-0" })}>
-          <ArrowLeftIcon />
-          {td("back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[28px] leading-9 font-bold tracking-tight">
-            {detail.clientName} · {t("periodOption", { start: longDate(detail.period.startsOn, locale), end: longDate(detail.period.endsOn, locale) })}
-          </h1>
-          <ApprovalStateBadge state={detail.state} />
-        </div>
-        <p className="text-sm text-muted-foreground">{td("sentTo", { name: r.approverName, email: r.approverEmail, language: t(r.locale === "es" ? "spanish" : "english") })}</p>
-        {active && mayAsk && (
-          <div className="flex flex-wrap gap-2">
-            {detail.state === "waiting" && (
-              <Button variant="outline" disabled={pending} onClick={() => run(() => sendReminderAction(r.id), t("done.reminded"))}>
-                {t("remind")}
-              </Button>
-            )}
-            {detail.state === "send_again" && (
-              <Button disabled={pending} onClick={() => setSending(target({ name: r.approverName, email: r.approverEmail, locale: r.locale }))} data-testid="send-again">
-                {t("sendAgain")}
-              </Button>
-            )}
-            {waiting.length > 0 && (
-              <Button variant="outline" disabled={pending} onClick={() => setSending(target(null))}>
-                {td("changeApprover")}
-              </Button>
-            )}
-            {approved.length > 0 && (
-              <Button variant="outline" disabled={pending} onClick={() => setWithdrawing(true)}>
-                {td("withdraw")}
-              </Button>
-            )}
-          </div>
-        )}
-        {!mayAsk && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
-        {detail.needsReview > 0 && <p className="text-sm text-destructive">{td("needsReview", { count: detail.needsReview })}</p>}
-      </div>
+    <Page>
+      <PageHeader
+        context={<Crumbs label={tc("breadcrumb")} items={[{ label: td("back"), href: { pathname: "/approvals", query: { period: detail.period.id } } }]} />}
+        title={`${detail.clientName} · ${t("periodOption", { start: longDate(detail.period.startsOn, locale), end: longDate(detail.period.endsOn, locale) })}`}
+        status={<ApprovalStateBadge state={detail.state} />}
+        description={
+          <span className="flex flex-col gap-1">
+            <span>{td("sentTo", { name: r.approverName, email: r.approverEmail, language: t(r.locale === "es" ? "spanish" : "english") })}</span>
+            {!mayAsk && <span>{t("readOnly")}</span>}
+            {detail.needsReview > 0 && <span className="text-destructive">{td("needsReview", { count: detail.needsReview })}</span>}
+          </span>
+        }
+        actions={
+          active && mayAsk ? (
+            <>
+              {waiting.length > 0 && (
+                <Button variant="outline" size="sm" disabled={pending} onClick={() => setSending(target(null))}>
+                  {td("changeApprover")}
+                </Button>
+              )}
+              {approved.length > 0 && (
+                <Button variant="outline" size="sm" disabled={pending} onClick={() => setWithdrawing(true)}>
+                  {td("withdraw")}
+                </Button>
+              )}
+              {detail.state === "waiting" && (
+                <Button variant="outline" size="sm" disabled={pending} onClick={() => run(() => sendReminderAction(r.id), t("done.reminded"))}>
+                  {t("remind")}
+                </Button>
+              )}
+              {detail.state === "send_again" && (
+                <Button size="sm" disabled={pending} onClick={() => setSending(target({ name: r.approverName, email: r.approverEmail, locale: r.locale }))} data-testid="send-again">
+                  {t("sendAgain")}
+                </Button>
+              )}
+            </>
+          ) : undefined
+        }
+      />
 
       {detail.disputes.length > 0 && (
-        <section className="flex flex-col gap-3" aria-labelledby="disputes-title">
-          <h2 id="disputes-title" className="text-lg font-semibold">
-            {td("disputesTitle")}
-          </h2>
+        <Section id="disputes-title" title={td("disputesTitle")}>
+          <div className="flex flex-col divide-y">
           {open.map((d) => {
             const proposed = d.proposedInMinute !== null && d.proposedOutMinute !== null && d.proposedBreakMinutes !== null ? { inMinute: d.proposedInMinute, outMinute: d.proposedOutMinute, breakMinutes: d.proposedBreakMinutes } : null;
             const proposedMinutes = proposed ? proposed.outMinute - proposed.inMinute - proposed.breakMinutes : null;
             return (
-              <article key={d.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4" data-testid="dispute-card">
+              <article key={d.id} className="flex flex-col gap-3 py-4 first:pt-1" data-testid="dispute-card">
                 <h3 className="font-medium">
                   {d.workerName} · {shortDate(d.shift.workDate, locale)}
                 </h3>
@@ -206,10 +205,11 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
               </article>
             );
           })}
+          </div>
           {settled.length > 0 && (
-            <ul className="flex flex-col gap-2 text-sm">
+            <ul className="flex flex-col divide-y border-t text-sm">
               {settled.map((d) => (
-                <li key={d.id} className="rounded-xl border bg-card px-4 py-2">
+                <li key={d.id} className="py-2.5">
                   <span className="font-medium">
                     {d.workerName} · {shortDate(d.shift.workDate, locale)}
                   </span>
@@ -220,29 +220,23 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
               ))}
             </ul>
           )}
-        </section>
+        </Section>
       )}
 
-      <section className="flex flex-col gap-3" aria-labelledby="hours-title">
-        <h2 id="hours-title" className="text-lg font-semibold">
-          {td("hoursTitle")}
-        </h2>
+      <Section id="hours-title" title={td("hoursTitle")}>
         <HoursTable shifts={detail.shifts} period={detail.period} />
-      </section>
+      </Section>
 
-      <section className="flex flex-col gap-3" aria-labelledby="history-title">
-        <h2 id="history-title" className="text-lg font-semibold">
-          {td("historyTitle")}
-        </h2>
-        <ol className="flex flex-col divide-y border-y" data-testid="history">
+      <Section id="history-title" title={td("historyTitle")}>
+        <ol className="flex flex-col divide-y" data-testid="history">
           {timeline.map((item) => (
-            <li key={item.key} className="flex flex-col gap-1 px-4 py-3 text-sm sm:flex-row sm:gap-6">
+            <li key={item.key} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:gap-6">
               <time className="w-44 shrink-0 text-muted-foreground tabular-nums">{when(item.at)}</time>
               <div className="min-w-0">{item.node}</div>
             </li>
           ))}
         </ol>
-      </section>
+      </Section>
 
       {sending && <SendDialog target={sending} onClose={() => setSending(null)} />}
 
@@ -323,6 +317,6 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </Page>
   );
 }

@@ -851,6 +851,8 @@ export interface ClientApprovalRow {
   /** Prefill for the send dialog: this request's approver, or the client's latest approver. */
   lastApprover: { name: string; email: string; locale: s.ApprovalLocale } | null;
   counts: { waiting: number; approved: number; disputed: number; needsReview: number };
+  /** The week's shifts shown: waiting, approved, disputed and (once its files exist) paid. */
+  shifts: number;
   workers: number;
   minutes: number;
   /** What a send would ask the client to approve now. */
@@ -915,7 +917,8 @@ export async function listApprovals(tx: Tx, payPeriodId: string, now: Date = new
       const [decision] = await tx.select({ at: s.approvalDecisions.decidedAt }).from(s.approvalDecisions).where(eq(s.approvalDecisions.requestId, request.id)).orderBy(desc(s.approvalDecisions.decidedAt)).limit(1);
       lastActivity = decision && (!mail || decision.at >= mail.at) ? { kind: "decided", at: decision.at } : mail ? { kind: mail.kind, at: mail.at } : null;
     }
-    const visible = shifts.filter((x) => x.state !== "needs_review" && x.state !== "locked");
+    // A week whose files exist still shows its shifts: the locked ones were paid.
+    const visible = shifts.filter((x) => x.state !== "needs_review");
     rows.push({
       clientId: client.id,
       clientName: client.name,
@@ -924,6 +927,7 @@ export async function listApprovals(tx: Tx, payPeriodId: string, now: Date = new
       request: request ? { id: request.id, approverName: request.approverName, approverEmail: request.approverEmail, locale: request.locale } : null,
       lastApprover: latest ? { name: latest.approverName, email: latest.approverEmail, locale: latest.locale } : null,
       counts,
+      shifts: visible.length,
       workers: new Set(visible.map((x) => x.workerId)).size,
       minutes: visible.reduce((sum, x) => sum + x.minutes, 0),
       waitingMinutes: shifts.filter((x) => x.state === "waiting").reduce((sum, x) => sum + x.minutes, 0),

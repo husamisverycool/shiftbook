@@ -82,7 +82,7 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
     </section>
   );
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-8 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-8 px-4 py-6 md:px-8 md:py-8">
       <header className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("settings")}</p>
         <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>

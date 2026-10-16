@@ -24,7 +24,14 @@ both languages, the way a stranger would.
    titles and dashed empty boxes were removed because no reference shows them.
 3. **Screen by screen**: each list, detail, settings and analytics screen moves to the shared pieces
    as its pattern file says (pattern files updated first where a documented rule adds to them);
-   before/after screenshots in `docs/screens/slice-l.md` with differences listed.
+   before/after screenshots in `docs/screens/slice-l.md` with differences listed. Owner, 2026-10-16
+   again: "very professional … NOT by your own volition but purely by inspiration … comfortably fill
+   pages … not too radical". The screens are judged with the demo week run through them (a fresh
+   demo has no run, as SPEC §18 sets two pay periods), and the record pages share Stripe's
+   documented detail layout (`_components/record-page.md`): ancestors above the title, the record on
+   the left, its details on the right, modules under hairlines — no boxes. Wizards share one set of
+   numbered steps; settings pages one column; empty pages centre their empty state as Linear does.
+   A client approval stays approved once the week's files exist (it showed "send again" before).
 4. **Every message in the reader's language** (task 50): the rules engine's blockers, warnings and
    line explanations, the run's own blockers, bank suggestions, days-to-pay and the workers' comp
    packet carry keys beside their English (the English stays the record; parity tests as in decision

@@ -40,8 +40,9 @@ function ScreenReaderTable({ caption, points, format }: { caption: string; point
   );
 }
 
-export function LineChart({ points, format, caption, height = 140 }: { points: Point[]; format: (n: number) => string; caption: string; height?: number }) {
-  const top = niceTop(Math.max(0, ...points.map((p) => p.value)));
+/** `unit`: the size of one displayed unit (60 for minutes shown as hours), so the gridlines fall on round numbers of it. */
+export function LineChart({ points, format, caption, height = 140, unit = 1 }: { points: Point[]; format: (n: number) => string; caption: string; height?: number; unit?: number }) {
+  const top = niceTop(Math.max(0, ...points.map((p) => p.value)) / unit) * unit;
   const n = Math.max(points.length - 1, 1);
   const path = points.map((p, i) => `${i === 0 ? "M" : "L"}${(i / n) * 100},${top > 0 ? 100 - (Math.max(p.value, 0) / top) * 100 : 100}`).join(" ");
   return (
@@ -60,8 +61,8 @@ export function LineChart({ points, format, caption, height = 140 }: { points: P
   );
 }
 
-export function BarChart({ points, format, caption, height = 140 }: { points: Point[]; format: (n: number) => string; caption: string; height?: number }) {
-  const top = niceTop(Math.max(0, ...points.map((p) => p.value)));
+export function BarChart({ points, format, caption, height = 140, unit = 1 }: { points: Point[]; format: (n: number) => string; caption: string; height?: number; unit?: number }) {
+  const top = niceTop(Math.max(0, ...points.map((p) => p.value)) / unit) * unit;
   return (
     <figure className="flex flex-col gap-2">
       <Grid top={top} format={format} height={height}>

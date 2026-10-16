@@ -19,7 +19,7 @@ only for the Owner, with a reason, every look recorded), their payroll numbers p
 documents, and their employment (hire date, I-9 dates, assignments, end of employment).
 
 ## Hierarchy
-1. **Back link** "Workers"; **H1** the worker's name with a status badge (Active / Ended).
+1. **"Workers" above** the title; **H1** the worker's name with a status badge (Active / Ended).
 2. **Tabs** (Toast): **Profile** · **Employment** · **Documents**.
 3. **Profile** tab — sections in order, each with its heading and its own **Edit** on the right:
    1. **Personal** — first name, last name, preferred language (English, Spanish).
@@ -65,6 +65,6 @@ documents, and their employment (hire date, I-9 dates, assignments, end of emplo
 Toast's or Square's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-The header as Stripe's detail header: back link, the name with its status badge beside it; Profile, Employment and Documents as underline tabs.
+Laid out as `_components/record-page.md`: "Workers" above the name with its status; the tabs and their sections on the left, each section a module with its own Edit; Details on the right (status, assignment linking to its job order, hired, preferred language).
 
 Deviations allowed: none

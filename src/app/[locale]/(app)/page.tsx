@@ -47,7 +47,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   // What needs someone now, most urgent first (Stripe Home "surfaces important notifications").
   const rows: { tone: Tone; status: string; text: ReactNode; href: GuideStep["href"]; action: string; testId: string }[] = [];
-  if (period) {
+  // A week whose files are made needs no one; every other state of it does.
+  if (period && period.state !== "exported" && period.state !== "closed") {
     rows.push({
       tone: PERIOD_TONE[period.state] ?? "neutral",
       status: tl(`runStatus.${period.state}`),
@@ -72,11 +73,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // Gridline values short, as Stripe's charts write them ("$1.5K").
   const compact = (cents: number) => new Intl.NumberFormat(numberLocale(locale), { style: "currency", currency: "USD", notation: "compact", minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(cents / 100);
   type Week = NonNullable<typeof o>["weeks"][number];
-  const widgets: { key: string; title: string; total: number; previous: number; of: (w: Week) => number; full: (n: number) => string; axis: (n: number) => string }[] = o
+  const widgets: { key: string; title: string; total: number; previous: number; of: (w: Week) => number; full: (n: number) => string; axis: (n: number) => string; unit?: number }[] = o
     ? [
         { key: "billed", title: t("overview.billed"), total: o.weeks.reduce((n, w) => n + w.billedCents, 0), previous: o.previous.billedCents, of: (w) => w.billedCents, full: (n) => money(n, locale), axis: compact },
         { key: "margin", title: t("overview.margin"), total: o.weeks.reduce((n, w) => n + w.marginCents, 0), previous: o.previous.marginCents, of: (w) => w.marginCents, full: (n) => money(n, locale), axis: compact },
-        { key: "hours", title: t("overview.hours"), total: o.weeks.reduce((n, w) => n + w.minutesPaid, 0), previous: o.previous.minutesPaid, of: (w) => w.minutesPaid, full: hoursMinutes, axis: (m) => `${Math.trunc(m / 60)}h` },
+        { key: "hours", title: t("overview.hours"), total: o.weeks.reduce((n, w) => n + w.minutesPaid, 0), previous: o.previous.minutesPaid, of: (w) => w.minutesPaid, full: hoursMinutes, axis: (m) => `${Math.trunc(m / 60)}h`, unit: 60 },
       ]
     : [];
 
@@ -112,6 +113,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <BarChart
                     points={view.today.days.map((d) => ({ label: new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d.date}T00:00:00Z`)), value: d.minutes }))}
                     format={(m) => (m === 0 ? "0" : `${Math.trunc(m / 60)}h`)}
+                    unit={60}
                     caption={t("todayChart", { period: dateRange(period.startsOn, period.endsOn, locale) })}
                   />
                 )}
@@ -178,7 +180,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <span className="text-xl font-semibold tracking-tight tabular-nums">{w.full(w.total)}</span>
                   <span className="text-[13px] text-muted-foreground">{t("overview.previous", { value: w.full(w.previous) })}</span>
                 </div>
-                <LineChart points={o.weeks.map((x) => ({ label: shortDate(x.week, locale), value: w.of(x) }))} format={w.axis} caption={t("overview.chart", { title: w.title, range })} />
+                <LineChart points={o.weeks.map((x) => ({ label: shortDate(x.week, locale), value: w.of(x) }))} format={w.axis} unit={w.unit} caption={t("overview.chart", { title: w.title, range })} />
                 <div className="flex justify-end border-t pt-3">
                   <Link href="/margin" className="text-[13px] font-medium underline-offset-4 hover:underline">
                     {t("overview.viewMore")}

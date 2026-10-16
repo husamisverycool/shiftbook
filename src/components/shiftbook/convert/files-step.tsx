@@ -91,9 +91,9 @@ async function Version({ v }: { v: FilesVersion }) {
               {tc("download")}
             </a>
           </div>
-          <div className="rounded-xl border bg-card p-4">
-            <h5 className="mb-3 text-sm font-medium">{t("controlTotals")}</h5>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+          <div className="flex flex-col gap-4 border-y py-4">
+            <h5 className="text-sm font-medium">{t("controlTotals")}</h5>
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm sm:grid-cols-3">
               <Figure label={t("workers")} value={String(ct.workers)} />
               {(["REG", "OT", "DT"] as const)
                 .filter((k) => (ct.minutesByType[k] ?? 0) > 0)
@@ -105,7 +105,7 @@ async function Version({ v }: { v: FilesVersion }) {
               {ct.payrollSystemGrossCents !== undefined && <Figure label={t("systemGross", { system: t.has(`systems.${v.payroll.format}`) ? t(`systems.${v.payroll.format}` as "systems.gusto_hours_csv") : "" })} value={money(ct.payrollSystemGrossCents, locale)} />}
               {ct.payrollSystemDifferenceCents !== undefined && <Figure label={t("difference")} value={money(ct.payrollSystemDifferenceCents, locale)} />}
             </dl>
-            <p className="mt-3 truncate font-mono text-xs text-muted-foreground" title={v.payroll.sha256}>
+            <p className="truncate font-mono text-xs text-muted-foreground" title={v.payroll.sha256}>
               {t("fingerprint")} {v.payroll.sha256}
             </p>
           </div>
@@ -207,9 +207,9 @@ async function Version({ v }: { v: FilesVersion }) {
 
 function Figure({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium tabular-nums">{value}</dd>
+    <div className="flex flex-col gap-1">
+      <dt className="text-[13px] text-muted-foreground">{label}</dt>
+      <dd className="text-xl font-semibold tracking-tight tabular-nums">{value}</dd>
     </div>
   );
 }

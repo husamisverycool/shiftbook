@@ -26,7 +26,8 @@ export function EmptyState({
 }) {
   const Shown = kind === "error" ? CircleAlertIcon : Icon;
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)} data-testid={testId} data-kind={kind} role={kind === "error" ? "alert" : undefined}>
+    // Centred in the content area (Linear's empty views sit in the middle of the list's space).
+    <div className={cn("flex min-h-[50svh] flex-col items-center justify-center gap-3 px-6 py-16 text-center", className)} data-testid={testId} data-kind={kind} role={kind === "error" ? "alert" : undefined}>
       {Shown && <Shown className={cn("size-6", kind === "error" ? "text-destructive" : "text-muted-foreground")} aria-hidden />}
       <div className="flex max-w-md flex-col gap-1">
         <p className="text-sm font-medium text-foreground">{title}</p>

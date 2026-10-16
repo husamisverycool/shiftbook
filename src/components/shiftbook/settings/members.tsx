@@ -74,7 +74,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
     });
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
       <header className="flex flex-wrap items-end gap-3">
         <div className="mr-auto flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>

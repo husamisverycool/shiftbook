@@ -80,6 +80,6 @@ attachments").
 Drata's or Vanta's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-The header as Stripe's detail header: back link, the duty's name with its status badge beside it, then whom it is for and its state; Overview, Evidence, History and Notes as underline tabs.
+Laid out as `_components/record-page.md`: "Compliance" above the duty's name with its status; the tabs on the left; the summary (due, owner, evidence, status — Drata's summary cards) as the details column on the right. Evidence, history and notes are lists between hairlines, never boxes.
 
 Deviations allowed: none

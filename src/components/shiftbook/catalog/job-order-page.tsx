@@ -12,7 +12,6 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { cancelAssignmentAction, createAssignmentAction, endAssignmentsAction } from "@/app/[locale]/(app)/job-orders/actions";
 import { Badge } from "@/components/ui/badge";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,12 +21,13 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import type { JobOrderPage } from "@/server/catalog/queries";
 import { inForce } from "@/server/catalog/versions";
 import { useCan } from "../abilities";
 import { longDate, money } from "../format";
-import { Facts, Page, PageHeader } from "../page";
+import { KeyFigure, KeyFigures } from "../key-figures";
+import { Crumbs, Facts, Page, PageHeader, RecordLayout, Section } from "../page";
 import { Status } from "../status";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
@@ -38,6 +38,8 @@ type Tab = (typeof TABS)[number];
 
 export function JobOrderPageView({ data, options, today }: { data: JobOrderPage; options: CatalogOptions; today: string }) {
   const t = useTranslations("jobOrder");
+  const tr = useTranslations("rates");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -70,17 +72,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
     <Page>
       <PageHeader
         context={
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink render={<Link href="/job-orders" />}>{t("breadcrumb")}</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{job.position}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+<Crumbs label={tc("breadcrumb")} items={[{ label: t("breadcrumb"), href: "/job-orders" }]} />
         }
         title={
           <>
@@ -110,12 +102,13 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-        <aside aria-label={t("details")} className="flex flex-col gap-4 rounded-xl border bg-card p-4 lg:self-start">
-          <h2 className="text-base font-semibold">{t("details")}</h2>
-          <Facts items={details.map(([label, value]) => ({ label, value }))} />
-        </aside>
-
+      <RecordLayout
+        aside={
+          <Section id="job-order-details" title={t("details")}>
+            <Facts items={details.map(([label, value]) => ({ label, value }))} />
+          </Section>
+        }
+      >
         <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="min-w-0">
           <TabsList variant="line" className="h-10! w-full justify-start border-b">
             {TABS.map((k) => (
@@ -126,29 +119,39 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
             ))}
           </TabsList>
 
-          <TabsContent value="overview" className="flex flex-col gap-4 pt-4">
-            <section className="rounded-xl border bg-card p-4">
-              <h2 className="text-base font-semibold">{t("ratesNow")}</h2>
+          <TabsContent value="overview" className="flex flex-col gap-10 pt-6">
+            <Section
+              id="rates-now"
+              title={t("ratesNow")}
+              actions={
+                <Button variant="outline" size="sm" onClick={() => setTab("rates")}>
+                  {t("openRates")}
+                </Button>
+              }
+            >
               {current ? (
-                <p className="mt-1 text-sm">
-                  {t("ratesLine", { pay: money(current.payRateCents, locale), bill: money(current.billRateCents, locale), from: longDate(current.effectiveFrom, locale) })}
-                </p>
+                <KeyFigures className="pt-1">
+                  <KeyFigure label={tr("pay")} value={t("perHour", { amount: money(current.payRateCents, locale) })} note={t("since", { date: longDate(current.effectiveFrom, locale) })} />
+                  <KeyFigure label={tr("bill")} value={t("perHour", { amount: money(current.billRateCents, locale) })} note={t("since", { date: longDate(current.effectiveFrom, locale) })} />
+                </KeyFigures>
               ) : (
-                <p className="mt-1 text-sm text-destructive">{t("noRateToday")}</p>
+                <p className="text-sm text-destructive">{t("noRateToday")}</p>
               )}
-              {data.rates.versions.some((v) => v.effectiveFrom > today) && <p className="mt-1 text-sm text-muted-foreground">{t("changeScheduled")}</p>}
-              <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setTab("rates")}>
-                {t("openRates")}
-              </Button>
-            </section>
-            <section className="rounded-xl border bg-card p-4">
-              <h2 className="text-base font-semibold">{t("assignmentsNow")}</h2>
-              <p className="mt-1 text-sm">{t("assignmentsLine", { count: active.length, wanted: job.headcount })}</p>
-              {nextEnd && <p className="mt-1 text-sm text-muted-foreground">{t("nextEnd", { date: longDate(nextEnd, locale) })}</p>}
-              <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setTab("assignments")}>
-                {t("openAssignments")}
-              </Button>
-            </section>
+              {data.rates.versions.some((v) => v.effectiveFrom > today) && <p className="text-sm text-muted-foreground">{t("changeScheduled")}</p>}
+            </Section>
+            <Section
+              id="assignments-now"
+              title={t("assignmentsNow")}
+              actions={
+                <Button variant="outline" size="sm" onClick={() => setTab("assignments")}>
+                  {t("openAssignments")}
+                </Button>
+              }
+            >
+              <KeyFigures className="pt-1">
+                <KeyFigure label={t("onItNow")} value={t("assignedOf", { assigned: active.length, wanted: job.headcount })} note={nextEnd ? t("nextEnd", { date: longDate(nextEnd, locale) }) : undefined} />
+              </KeyFigures>
+            </Section>
           </TabsContent>
 
           <TabsContent value="assignments" className="pt-4">
@@ -166,7 +169,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
             <ActivityList items={data.activity} />
           </TabsContent>
         </Tabs>
-      </div>
+      </RecordLayout>
 
       {editing && (
         <JobOrderForm

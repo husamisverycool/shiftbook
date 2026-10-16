@@ -31,7 +31,7 @@ export interface AccountProps {
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3 border-t pt-6">
+    <section aria-labelledby={id} className="flex max-w-2xl flex-col gap-3 border-t pt-6">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -60,7 +60,7 @@ export function AccountView(props: AccountProps) {
   const when = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(iso));
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl min-w-0 flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
       <header className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>
         <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>

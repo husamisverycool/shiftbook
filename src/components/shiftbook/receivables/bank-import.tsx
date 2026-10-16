@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/bank/import.md — QuickBooks Online Upload from file (Upload · Map columns ·
 // Choose lines); Zoho Books Import Statement (three ways amounts are given; the mapping chosen
 // automatically and remembered).
-import { ChevronLeftIcon, UploadIcon } from "lucide-react";
+import { UploadIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -14,8 +14,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { Crumbs, Page, PageHeader, Steps } from "../page";
 import type { BankMapping } from "@/server/db/schema";
 import { longDate, money } from "../format";
 
@@ -39,6 +40,7 @@ export function columnLetter(i: number): string {
 
 export function BankImport({ demo }: { demo: boolean }) {
   const t = useTranslations("bankImport");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
@@ -104,24 +106,9 @@ export function BankImport({ demo }: { demo: boolean }) {
     });
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6">
-      <div className="flex flex-col gap-1">
-        <Link href="/bank" className="flex w-fit items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:underline" data-testid="back-to-bank">
-          <ChevronLeftIcon className="size-4" />
-          {t("bank")}
-        </Link>
-        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
-      </div>
-      <ol className="flex flex-wrap items-center gap-2 text-sm" aria-label={t("steps")}>
-        {STEPS.map((s, i) => (
-          <li key={s} className="flex items-center gap-2">
-            {i > 0 && <span className="text-muted-foreground">·</span>}
-            <span aria-current={step === s ? "step" : undefined} className={cn(step === s ? "font-semibold" : "text-muted-foreground")}>
-              {i + 1}. {t(`step.${s}`)}
-            </span>
-          </li>
-        ))}
-      </ol>
+    <Page width="default">
+      <PageHeader context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("bank"), href: "/bank", testId: "back-to-bank" }]} />} title={t("title")} />
+      <Steps label={t("steps")} current={step} steps={STEPS.map((s) => ({ key: s, label: t(`step.${s}`) }))} />
 
       {step === "upload" && (
         <section className="flex flex-col gap-4" aria-label={t("step.upload")}>
@@ -244,7 +231,7 @@ export function BankImport({ demo }: { demo: boolean }) {
           </div>
         </section>
       )}
-    </div>
+    </Page>
   );
 }
 

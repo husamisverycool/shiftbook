@@ -36,4 +36,7 @@ Bring the bank's activity CSV in, so its deposits can be matched to invoices (de
 ## Never copy
 Intuit's or Zoho's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+Laid out as `_components/record-page.md`'s header ("Bank" above the title) with the shared numbered steps of decision 0029 rule 12.
+
 Deviations allowed: none

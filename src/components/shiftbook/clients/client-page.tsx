@@ -3,25 +3,26 @@
 // Pattern: docs/patterns/clients/[id].md — Stripe customer details (a Details section with Edit
 // opening an update dialog; the customer's invoices on its page); Bullhorn One Invoice Terms kept as
 // dated versions; Avionté Billing Preferences sections (invoice, delivery, billing).
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
+import { PencilIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { saveBillingAction } from "@/app/[locale]/(app)/clients/[id]/actions";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import type { BillingProblem, BillingSettings } from "@/server/catalog/billing";
 import type { ClientDetail } from "@/server/clients/queries";
 import type { ClientReceivables, PaymentClients } from "@/server/receivables/queries";
 import { INVOICE_TEMPLATES, OT_BILLING_RULES, SEPARATE_BY, VMS_FORMATS } from "@/lib/invoice-options";
 import { longDate } from "../format";
 import { InvoicesTable } from "../invoices/invoices-table";
+import { Crumbs, Page, PageHeader, RecordLayout, Section } from "../page";
 import { ClientOwes } from "../receivables/client-owes";
 
 type Profile = NonNullable<ClientDetail["current"]>;
@@ -43,17 +44,18 @@ const settingsOf = (p: Profile | null): BillingSettings => ({
 export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect }: { detail: ClientDetail; mayChange: boolean; today: string; owes: ClientReceivables; clients: PaymentClients; mayCollect: boolean }) {
   const t = useTranslations("clients");
   const ti = useTranslations("invoices");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const [editing, setEditing] = useState(false);
   const p = detail.current;
   const yes = (on: boolean) => (on ? t("yes") : t("no"));
   const group = (title: string, rows: [string, ReactNode][]) => (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <h3 className="text-sm font-semibold">{title}</h3>
-      <dl className="grid grid-cols-[minmax(10rem,auto)_1fr] gap-x-6 gap-y-1.5 text-sm">
+      <dl className="grid gap-3 text-sm">
         {rows.map(([label, value]) => (
-          <div key={label} className="contents">
-            <dt className="text-muted-foreground">{label}</dt>
+          <div key={label} className="grid gap-0.5">
+            <dt className="text-[13px] text-muted-foreground">{label}</dt>
             <dd>{value}</dd>
           </div>
         ))}
@@ -61,88 +63,87 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
     </div>
   );
 
-  return (
-    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-6 px-4 py-6">
-      <div className="flex flex-col gap-3">
-        <Link href="/clients" className={buttonVariants({ variant: "link", size: "sm", className: "w-fit px-0" })}>
-          <ArrowLeftIcon />
-          {t("title")}
-        </Link>
-        <h1 className="text-[28px] leading-9 font-bold tracking-tight">
-          {detail.client.name} <span className="text-muted-foreground">· {detail.client.code}</span>
-        </h1>
-      </div>
-
-      <section className="flex flex-col gap-4 rounded-xl border bg-card p-4" aria-labelledby="settings-title" data-testid="invoice-settings">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 id="settings-title" className="mr-auto text-lg font-semibold">
-            {t("settings")}
-          </h2>
-          {mayChange && (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)} data-testid="edit-settings">
-              <PencilIcon />
-              {t("edit")}
-            </Button>
-          )}
-        </div>
-        {!mayChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
-        {p ? (
-          <>
-            <div className="grid gap-6 lg:grid-cols-2">
-              {group(t("groups.invoice"), [
-                [t("field.template"), ti(`template.${p.invoiceTemplate}`)],
-                [t("field.separateBy"), p.separateBy.length === 0 ? t("notSeparated") : p.separateBy.map((x) => t(`separate.${x}`)).join(", ")],
-                [t("field.poRequired"), yes(p.poRequired)],
-                [t("field.poNumber"), p.poNumber ?? "—"],
-              ])}
-              {group(t("groups.backup"), [
-                [t("field.backupDetail"), p.backupDetail ? t("included") : t("notIncluded")],
-                [t("field.backupImages"), p.backupImages ? t("included") : t("notIncluded")],
-              ])}
-              {group(t("groups.delivery"), [[t("field.vmsFormat"), p.vmsFormat ? t(`vms.${p.vmsFormat}`) : t("vmsNone")]])}
-              {group(t("groups.billing"), [
-                [t("field.terms"), t("termsDays", { days: p.paymentTermsDays })],
-                [t("field.otRule"), t(`otRule.${p.overtimeBillingRule}`)],
-                [t("field.billPremiums"), yes(p.billPremiums)],
-                [t("field.billGuarantees"), yes(p.billGuarantees)],
-              ])}
-            </div>
-            <p className="text-sm" data-testid="in-effect">
-              {p.effectiveTo ? t("inEffectBetween", { from: longDate(p.effectiveFrom, locale), to: longDate(p.effectiveTo, locale) }) : t("inEffectFrom", { from: longDate(p.effectiveFrom, locale) })}
-            </p>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground" data-testid="no-settings">
-            {t("noSettingsToday")}
+  const settings = (
+    <Section
+      id="settings-title"
+      title={t("settings")}
+      testId="invoice-settings"
+      actions={
+        mayChange ? (
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)} data-testid="edit-settings">
+            <PencilIcon />
+            {t("edit")}
+          </Button>
+        ) : undefined
+      }
+    >
+      {!mayChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+      {p ? (
+        <div className="flex flex-col gap-6 pt-1">
+          <p className="text-sm" data-testid="in-effect">
+            {p.effectiveTo ? t("inEffectBetween", { from: longDate(p.effectiveFrom, locale), to: longDate(p.effectiveTo, locale) }) : t("inEffectFrom", { from: longDate(p.effectiveFrom, locale) })}
           </p>
-        )}
-        {detail.versions.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">{t("versions")}</h3>
-            <ul className="flex flex-col gap-1 text-sm" data-testid="versions">
-              {detail.versions.map((v) => (
-                <li key={v.id} className="flex flex-wrap items-center gap-2">
-                  <span className="tabular-nums">{v.effectiveTo ? t("versionBetween", { from: longDate(v.effectiveFrom, locale), to: longDate(v.effectiveTo, locale) }) : t("versionFrom", { from: longDate(v.effectiveFrom, locale) })}</span>
-                  {p?.id === v.id && <Badge variant="secondary">{t("current")}</Badge>}
-                  {v.effectiveFrom > today && <Badge variant="outline">{t("upcoming")}</Badge>}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
+          {group(t("groups.invoice"), [
+            [t("field.template"), ti(`template.${p.invoiceTemplate}`)],
+            [t("field.separateBy"), p.separateBy.length === 0 ? t("notSeparated") : p.separateBy.map((x) => t(`separate.${x}`)).join(", ")],
+            [t("field.poRequired"), yes(p.poRequired)],
+            [t("field.poNumber"), p.poNumber ?? "—"],
+          ])}
+          {group(t("groups.backup"), [
+            [t("field.backupDetail"), p.backupDetail ? t("included") : t("notIncluded")],
+            [t("field.backupImages"), p.backupImages ? t("included") : t("notIncluded")],
+          ])}
+          {group(t("groups.delivery"), [[t("field.vmsFormat"), p.vmsFormat ? t(`vms.${p.vmsFormat}`) : t("vmsNone")]])}
+          {group(t("groups.billing"), [
+            [t("field.terms"), t("termsDays", { days: p.paymentTermsDays })],
+            [t("field.otRule"), t(`otRule.${p.overtimeBillingRule}`)],
+            [t("field.billPremiums"), yes(p.billPremiums)],
+            [t("field.billGuarantees"), yes(p.billGuarantees)],
+          ])}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground" data-testid="no-settings">
+          {t("noSettingsToday")}
+        </p>
+      )}
+      {detail.versions.length > 0 && (
+        <div className="flex flex-col gap-3 pt-3">
+          <h3 className="text-sm font-semibold">{t("versions")}</h3>
+          <ul className="flex flex-col gap-1.5 text-sm" data-testid="versions">
+            {detail.versions.map((v) => (
+              <li key={v.id} className="flex flex-wrap items-center gap-2">
+                <span className="tabular-nums">{v.effectiveTo ? t("versionBetween", { from: longDate(v.effectiveFrom, locale), to: longDate(v.effectiveTo, locale) }) : t("versionFrom", { from: longDate(v.effectiveFrom, locale) })}</span>
+                {p?.id === v.id && <Badge variant="secondary">{t("current")}</Badge>}
+                {v.effectiveFrom > today && <Badge variant="outline">{t("upcoming")}</Badge>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Section>
+  );
 
-      <ClientOwes clientId={detail.client.id} owes={owes} clients={clients} today={today} canChange={mayCollect} />
+  return (
+    <Page>
+      <PageHeader
+        context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("title"), href: "/clients" }]} />}
+        title={
+          <>
+            {detail.client.name} <span className="text-muted-foreground">· {detail.client.code}</span>
+          </>
+        }
+      />
 
-      <section className="flex flex-col gap-3" aria-labelledby="client-invoices-title">
-        <h2 id="client-invoices-title" className="text-lg font-semibold">
-          {ti("title")}
-        </h2>
-        {detail.invoices.length === 0 ? <p className="text-sm text-muted-foreground">{t("noInvoices")}</p> : <InvoicesTable rows={detail.invoices} showClient={false} />}
-      </section>
+      <RecordLayout aside={settings}>
+        <ClientOwes clientId={detail.client.id} owes={owes} clients={clients} today={today} canChange={mayCollect} />
+
+        <Section id="client-invoices-title" title={ti("title")} accessory={detail.invoices.length > 0 ? detail.invoices.length : undefined}>
+          {detail.invoices.length === 0 ? <p className="text-sm text-muted-foreground">{t("noInvoices")}</p> : <InvoicesTable rows={detail.invoices} showClient={false} />}
+        </Section>
+      </RecordLayout>
 
       {editing && <EditSettings detail={detail} today={today} onClose={() => setEditing(false)} />}
-    </div>
+    </Page>
   );
 }
 

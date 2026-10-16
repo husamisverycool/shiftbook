@@ -66,4 +66,7 @@ it. Invoices are made only by the weekly run; this page changes nothing in them 
 ## Never copy
 Stripe's, TempWorks', SAP's or Bullhorn's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+Laid out as `_components/record-page.md`: "Invoices" above the title (keeping the list's filters); the title with its status; the amount and client as the facts line; the ⋯ menu then **Download PDF** on the right. Line items, Backup, Payments and Related documents are modules on the left; the summary row's facts (amount due, issued, due, pay period, PO, worksite, template, client) are the details column on the right.
+
 Deviations allowed: none

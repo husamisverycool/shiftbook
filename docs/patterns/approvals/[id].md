@@ -61,4 +61,7 @@ the disputes to settle, and the history.
 ## Never copy
 Stripe's, Bullhorn's, Harvest's or Instawork's wording, icons, colors or logos.
 
+## Look (decision 0029, from the products' own screenshots)
+Laid out as `_components/record-page.md` without the details column (the hours by day need the full width): "Client approvals" above the client and week with its state; whom it was sent to as the facts line; the request's buttons on the right; Disputes, Hours and History as modules.
+
 Deviations allowed: none

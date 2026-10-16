@@ -4,7 +4,7 @@
  * details ever reach the client's page).
  */
 import { createHash } from "node:crypto";
-import { and, asc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 
@@ -49,10 +49,14 @@ export async function clientShifts(tx: Tx, clientId: string, payPeriodId: string
     .innerJoin(s.workers, eq(s.workers.id, s.timeEntries.workerId))
     .where(and(eq(s.timeEntries.payPeriodId, payPeriodId), eq(s.jobOrders.clientId, clientId), ne(s.timeEntries.status, "rejected")))
     .orderBy(asc(s.workers.lastName), asc(s.workers.firstName), asc(s.timeEntries.workDate), asc(s.timeEntries.inMinute), asc(s.timeEntries.id));
+  const approvedAs = await approvedBeforeLock(tx, clientId, payPeriodId, rows.filter((r) => r.status === "locked").map((r) => r.entryId));
   const shifts: ClientShift[] = [];
   for (const r of rows) {
-    const state = STATE[r.status];
+    let state = STATE[r.status];
     if (!state) continue;
+    // A locked shift (its files are made) paid exactly as the client approved it is still approved.
+    const was = approvedAs.get(r.entryId);
+    if (state === "locked" && was && was.workDate === r.workDate && was.inMinute === r.inMinute && was.outMinute === r.outMinute && was.breakMinutes === r.breakMinutes && was.minutes === r.minutes) state = "approved";
     // An entry without a day or minutes cannot be shown or approved: it still needs review.
     const complete = r.workDate !== null && r.minutes !== null;
     shifts.push({
@@ -68,6 +72,35 @@ export async function clientShifts(tx: Tx, clientId: string, payPeriodId: string
     });
   }
   return shifts;
+}
+
+/**
+ * What the client approved of the given (locked) entries, as it approved them: the shifts in its
+ * decisions and the disputes the agency accepted (the client's own times), each counted only when
+ * made after the last withdrawal of the client's approval for the period.
+ */
+async function approvedBeforeLock(tx: Tx, clientId: string, payPeriodId: string, entryIds: string[]): Promise<Map<string, Pick<s.ApprovedShift, "workDate" | "inMinute" | "outMinute" | "breakMinutes" | "minutes">>> {
+  const out = new Map<string, Pick<s.ApprovedShift, "workDate" | "inMinute" | "outMinute" | "breakMinutes" | "minutes">>();
+  if (entryIds.length === 0) return out;
+  const requests = (await tx.select({ id: s.approvalRequests.id }).from(s.approvalRequests).where(and(eq(s.approvalRequests.clientId, clientId), eq(s.approvalRequests.payPeriodId, payPeriodId)))).map((r) => r.id);
+  if (requests.length === 0) return out;
+  const [withdrawn] = await tx
+    .select({ at: sql<Date | null>`max(${s.auditEvents.occurredAt})` })
+    .from(s.auditEvents)
+    .where(and(eq(s.auditEvents.entityType, "approval_request"), inArray(s.auditEvents.entityId, requests), sql`${s.auditEvents.after}->>'event' = 'approval_withdrawn'`));
+  const since = withdrawn?.at ? new Date(withdrawn.at) : null;
+  const wanted = new Set(entryIds);
+  const decisions = await tx.select({ approved: s.approvalDecisions.approved, at: s.approvalDecisions.decidedAt }).from(s.approvalDecisions).where(inArray(s.approvalDecisions.requestId, requests)).orderBy(asc(s.approvalDecisions.decidedAt));
+  for (const d of decisions) {
+    if (since && d.at <= since) continue;
+    for (const a of d.approved) if (wanted.has(a.entryId)) out.set(a.entryId, a);
+  }
+  const accepted = await tx.select().from(s.clientDisputes).where(and(inArray(s.clientDisputes.timeEntryId, entryIds), eq(s.clientDisputes.status, "accepted")));
+  for (const d of accepted) {
+    if (d.proposedInMinute === null || d.proposedOutMinute === null || d.proposedBreakMinutes === null || d.resolvedAt === null || (since && d.resolvedAt <= since)) continue;
+    out.set(d.timeEntryId, { workDate: d.shift.workDate, inMinute: d.proposedInMinute, outMinute: d.proposedOutMinute, breakMinutes: d.proposedBreakMinutes, minutes: d.proposedOutMinute - d.proposedInMinute - d.proposedBreakMinutes });
+  }
+  return out;
 }
 
 /** Entries on the client's own timesheets not matched to anyone yet (they may turn out to be the client's). */

@@ -118,7 +118,7 @@ for (const locale of ["en", "es"] as const) {
     await rate.getByLabel(m.rates.markup, { exact: true }).check();
     await rate.getByLabel(m.rates.markupPercent).fill("45");
     // The markup's working, said the reader's way (decision 0030).
-    await expect(rate.getByTestId("markup-preview")).toContainText(locale === "en" ? "2102.5¢, rounded half up to $21.03" : "2102.5¢, redondeado hacia arriba en la mitad a $21.03");
+    await expect(rate.getByTestId("markup-preview")).toContainText(locale === "en" ? "2102.5¢, rounded half up to $21.03" : "2102.5¢, redondeado a $21.03 (medio centavo o más sube)");
     await rate.getByRole("button", { name: m.rates.addVersion }).click();
     await expect(rate).toBeHidden();
 

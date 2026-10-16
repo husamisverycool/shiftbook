@@ -115,7 +115,7 @@ for (const locale of ["en", "es"] as const) {
     await expect(ot).toContainText(money(5475, locale));
     await expect(ot).toContainText(m.margin.overtime.reasons.bill_overtime_straight);
     await ot.getByRole("button").click();
-    await expect(page.getByTestId("overtime-explain")).toContainText(locale === "en" ? "its premium (the part above straight time) $54.75" : "su prima (la parte por encima de la tarifa normal) $54.75");
+    await expect(page.getByTestId("overtime-explain")).toContainText(locale === "en" ? "its premium (the part above straight time) $54.75" : "su prima (la parte por encima del tiempo sencillo) $54.75");
     await expect(page.getByTestId("overtime-line")).toHaveCount(2);
     await expect(page.getByTestId("overtime-line").first()).toContainText(locale === "en" ? "Overtime: 6h 00m (360 min) × $27.375/h (1.5 × $18.25)" : "Horas extra: 6 h 00 min (360 min) × $27.375/h (1.5 × $18.25)");
     await check(page, "overtime not billed");

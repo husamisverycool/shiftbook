@@ -3,16 +3,18 @@
 // Pattern: docs/patterns/workers/[id].md — Toast Payroll employee profile: tabs at the top of the
 // record (Profile, Employment; Shiftbook adds Documents), each subject a section with its own Edit,
 // Retrieve SSN; Square's order of sections (personal information first).
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { PencilIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, type ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import type { WorkerProfile } from "@/server/workers/queries";
 import { useCan } from "../abilities";
+import { longDate } from "../format";
+import { Crumbs, Facts as DetailFacts, Page, PageHeader, RecordLayout, Section as RecordSection } from "../page";
+import { Status } from "../status";
 import { DocumentsTab } from "./documents";
 import { EmploymentTab } from "./employment";
 import { PayrollSection, PersonalSection, SsnSection } from "./profile-sections";
@@ -29,23 +31,51 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
   const tab: Tab = (TABS as readonly string[]).includes(params.get("tab") ?? "") ? (params.get("tab") as Tab) : "profile";
   const setTab = (next: string) => router.replace(next === "profile" ? pathname : `${pathname}?tab=${next}`, { scroll: false });
   const name = `${profile.firstName} ${profile.lastName}`;
+  const tc = useTranslations("common");
+  const locale = useLocale();
+
+  const current = profile.placements.filter((p) => p.current);
+  const details = [
+    { label: t("profile.employment.status"), value: profile.status === "active" ? t("status.active") : profile.endedOn ? t("profile.employment.endedOn", { date: longDate(profile.endedOn, locale) }) : t("status.ended") },
+    {
+      label: t("col.placement"),
+      value:
+        current.length === 0 ? (
+          t("notPlaced")
+        ) : (
+          <span className="flex flex-col gap-1">
+            {current.map((p) => (
+              <Link key={p.id} href={`/job-orders/${p.jobOrderId}`} className="underline-offset-4 hover:underline">
+                {t("placementAt", { position: p.position, client: p.clientName })}
+              </Link>
+            ))}
+          </span>
+        ),
+    },
+    { label: t("col.hired"), value: profile.hireDate ? longDate(profile.hireDate, locale) : "—" },
+    { label: t("profile.personal.language"), value: t(`language.${profile.preferredLanguage === "es" ? "es" : "en"}`) },
+  ];
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6">
-      <header className="flex flex-col gap-3">
-        <Link href="/workers" className={buttonVariants({ variant: "link", size: "sm", className: "w-fit px-0" })}>
-          <ArrowLeftIcon />
-          {t("profile.back")}
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[28px] leading-9 font-bold tracking-tight">{name}</h1>
-          <Badge variant={profile.status === "active" ? "secondary" : "outline"} data-testid="worker-status">
+    <Page>
+      <PageHeader
+        context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("profile.back"), href: "/workers" }]} />}
+        title={name}
+        status={
+          <Status tone={profile.status === "active" ? "success" : "neutral"} size="lg" data-testid="worker-status">
             {t(`status.${profile.status}`)}
-          </Badge>
-        </div>
-        {!mayChange && <p className="text-sm text-muted-foreground">{t("profile.readOnly")}</p>}
-      </header>
+          </Status>
+        }
+        description={!mayChange ? t("profile.readOnly") : undefined}
+      />
 
+      <RecordLayout
+        aside={
+          <RecordSection id="worker-details" title={t("profile.details")}>
+            <DetailFacts items={details} />
+          </RecordSection>
+        }
+      >
       <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="min-w-0">
         <TabsList variant="line" className="h-10! w-full justify-start border-b">
           {TABS.map((k) => (
@@ -55,19 +85,20 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
             </TabsTrigger>
           ))}
         </TabsList>
-        <TabsContent value="profile" className="flex flex-col gap-4 pt-4">
+        <TabsContent value="profile" className="flex flex-col gap-10 pt-6">
           <PersonalSection profile={profile} mayChange={mayChange} />
           <SsnSection profile={profile} mayChange={mayChange} />
           <PayrollSection profile={profile} mayChange={mayChange} />
         </TabsContent>
-        <TabsContent value="employment" className="flex flex-col gap-4 pt-4">
+        <TabsContent value="employment" className="flex flex-col gap-10 pt-6">
           <EmploymentTab profile={profile} today={today} mayChange={mayChange} />
         </TabsContent>
-        <TabsContent value="documents" className="flex flex-col gap-4 pt-4">
+        <TabsContent value="documents" className="flex flex-col gap-10 pt-6">
           <DocumentsTab profile={profile} today={today} mayChange={mayChange} />
         </TabsContent>
       </Tabs>
-    </div>
+      </RecordLayout>
+    </Page>
   );
 }
 
@@ -76,8 +107,8 @@ export function Section({ title, testId, onEdit, editing, actions, children }: {
   const t = useTranslations("workers.profile");
   const headingId = `${testId}-title`;
   return (
-    <section className="flex flex-col gap-4 rounded-xl border bg-card p-5" aria-labelledby={headingId} data-testid={testId}>
-      <div className="flex flex-wrap items-center gap-2">
+    <section className="flex flex-col gap-4" aria-labelledby={headingId} data-testid={testId}>
+      <div className="flex min-h-8 flex-wrap items-center gap-2 border-b pb-2">
         <h2 id={headingId} className="mr-auto text-base font-semibold">
           {title}
         </h2>

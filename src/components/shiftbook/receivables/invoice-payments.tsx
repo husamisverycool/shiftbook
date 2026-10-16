@@ -9,6 +9,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { reminderAction, shortPayAction, writeOffAction } from "@/app/[locale]/(app)/payments/actions";
 import { Badge } from "@/components/ui/badge";
+import { Section } from "../page";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -38,12 +39,11 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
   const dateTime = (at: Date | string) => new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(at));
 
   return (
-    <section className="flex flex-col gap-3" aria-labelledby="payments-title">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 id="payments-title" className="mr-auto text-lg font-semibold">
-          {t("title")}
-        </h2>
-        {canChange && open && (
+    <Section
+      id="payments-title"
+      title={t("title")}
+      actions={
+        canChange && open ? (
           <>
             <Button size="sm" variant="outline" onClick={() => setDialog("remind")} data-testid="prepare-reminder">
               {t("prepareReminder")}
@@ -57,10 +57,11 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
               {t("recordPayment")}
             </Button>
           </>
-        )}
-      </div>
-      <div className="flex flex-col divide-y border-y text-sm" data-testid="invoice-payments">
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3">
+        ) : undefined
+      }
+    >
+      <div className="flex flex-col divide-y text-sm" data-testid="invoice-payments">
+        <div className="flex flex-wrap items-center justify-between gap-3 py-3">
           <span className="font-medium">{credit ? t("creditForClient") : t("balance")}</span>
           <span className="flex items-center gap-3">
             {credit && canChange && (
@@ -74,19 +75,19 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
           </span>
         </div>
         {ar.payments.map((p) => (
-          <div key={p.paymentId} className={`flex flex-wrap items-baseline justify-between gap-3 p-3 ${p.voided ? "text-muted-foreground line-through" : ""}`} data-testid="invoice-payment">
-            <span className="flex flex-wrap items-baseline gap-2">
+          <div key={p.paymentId} className={`flex items-baseline justify-between gap-6 py-3 ${p.voided ? "text-muted-foreground line-through" : ""}`} data-testid="invoice-payment">
+            <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
               <Link href={`/payments?client=${clientId}`} className="underline-offset-4 hover:underline">
                 {t("payment", { date: longDate(p.receivedOn, locale), method: tp(`methods.${p.method}`) })}
               </Link>
               {p.reference && <span className="text-muted-foreground">{p.reference}</span>}
               {p.voided && <Badge variant="outline">{tp("statuses.voided")}</Badge>}
             </span>
-            <span className="tabular-nums">−{money(p.amountCents, locale)}</span>
+            <span className="shrink-0 tabular-nums">−{money(p.amountCents, locale)}</span>
           </div>
         ))}
         {ar.credits.map((c) => (
-          <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-3 p-3" data-testid="invoice-credit">
+          <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-3 py-3" data-testid="invoice-credit">
             <Link href={`/invoices/${c.id}`} className="underline-offset-4 hover:underline">
               {t("credit", { number: c.number, date: longDate(c.issuedOn, locale) })}
             </Link>
@@ -94,7 +95,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
           </div>
         ))}
         {ar.creditApplications.map((c) => (
-          <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-3 p-3" data-testid="invoice-credit-application">
+          <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-3 py-3" data-testid="invoice-credit-application">
             <span className="flex flex-col">
               <Link href={`/invoices/${c.invoiceId}`} className="underline-offset-4 hover:underline">
                 {t(c.direction === "in" ? "creditIn" : "creditOut", { number: c.number, date: longDate(c.appliedOn, locale) })}
@@ -108,7 +109,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
           </div>
         ))}
         {ar.writeOffs.map((w) => (
-          <div key={w.id} className="flex flex-wrap items-baseline justify-between gap-3 p-3" data-testid="invoice-write-off">
+          <div key={w.id} className="flex flex-wrap items-baseline justify-between gap-3 py-3" data-testid="invoice-write-off">
             <span className="flex flex-col">
               <span>{t("writtenOff", { date: longDate(w.writtenOn, locale), reason: t(`writeOffReasons.${w.reason}`) })}</span>
               <span className="text-xs text-muted-foreground">{w.note ? `${w.note} · ${w.by}` : w.by}</span>
@@ -117,7 +118,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
           </div>
         ))}
         {ar.shortPaid && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3" data-testid="short-pay">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-3" data-testid="short-pay">
             <span className="flex flex-col">
               <span>{ar.shortPay ? t("shortReason", { reason: t(`shortReasons.${ar.shortPay.reason}`) }) : t("shortNoReason")}</span>
               {ar.shortPay && <span className="text-xs text-muted-foreground">{ar.shortPay.note ? `${ar.shortPay.note} · ${ar.shortPay.by}` : ar.shortPay.by}</span>}
@@ -130,7 +131,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
           </div>
         )}
         {ar.reminders.map((r, i) => (
-          <div key={i} className="p-3 text-muted-foreground" data-testid="reminder-prepared">
+          <div key={i} className="py-3 text-muted-foreground" data-testid="reminder-prepared">
             {t("reminderPrepared", { date: dateTime(r.at), stage: t(`stages.${r.stage}`), language: t(`languages.${r.locale}`), by: r.by })}
           </div>
         ))}
@@ -141,7 +142,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
       {dialog === "writeOff" && <WriteOffDialog invoiceId={invoiceId} number={number} balanceCents={ar.balanceCents} onClose={() => setDialog(null)} />}
       {dialog === "short" && <ShortPayDialog invoiceId={invoiceId} current={ar.shortPay} onClose={() => setDialog(null)} />}
       {dialog === "remind" && <ReminderDialog invoiceId={invoiceId} reminder={ar.reminder} onClose={() => setDialog(null)} />}
-    </section>
+    </Section>
   );
 }
 

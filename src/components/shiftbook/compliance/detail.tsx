@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/compliance/[id].md — Drata control detail (Overview cards and owners;
 // Evidence: link, unlink, create, download), Vanta test detail tabs (Evidence, History, Notes) and
 // documents (a new file; expired files move to History; Mark as complete).
-import { ArrowLeftIcon, DownloadIcon, ExternalLinkIcon, PaperclipIcon } from "lucide-react";
+import { DownloadIcon, ExternalLinkIcon, PaperclipIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ import { parseDollars } from "@/lib/amounts";
 import type { Explain } from "@/lib/explain";
 import type { ObligationDetail } from "@/server/compliance/queries";
 import { longDate, money } from "../format";
-import { PageTabs } from "../page";
+import { Crumbs, Facts, Page, PageHeader, PageTabs, RecordLayout, Section } from "../page";
 import { useCite, useSay } from "./explain";
 import { dueIn, OwnerPicker } from "./list";
 import { StatusBadge } from "./status-badge";
@@ -50,6 +50,7 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
   const say = useSay();
   const t = useTranslations("compliance");
   const td = useTranslations("compliance.detail");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const i = d.item;
   const open = i.status === "overdue" || i.status === "due_soon" || i.status === "upcoming";
@@ -57,38 +58,32 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
   const { pending, act } = useAct();
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-4 px-4 py-6">
-      <Link href="/compliance" className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground" data-testid="back-to-compliance">
-        <ArrowLeftIcon className="size-4" />
-        {td("back")}
-      </Link>
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="mr-auto flex min-w-0 flex-col gap-1">
-          {/* Stripe's detail header: the title with its status beside it, then the record's facts. */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t(`kinds.${i.kind}` as "kinds.ma_job_order")}</h1>
-            <StatusBadge status={i.status} size="lg" />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {i.subject} · {t(`states.${i.jurisdiction}` as "states.IL")}
-          </p>
-        </div>
-        {i.mayAct && open && (
-          <div className="flex gap-2">
-            <Button variant="outline" disabled={pending} onClick={() => setClosing("not_applicable")} data-testid="not-applicable">
-              {td("notApplicable")}
-            </Button>
-            <Button disabled={pending} onClick={() => setClosing("done")} data-testid="mark-done">
-              {td("markDone")}
-            </Button>
-          </div>
-        )}
-        {d.mayReopen && (
-          <Button variant="outline" disabled={pending} onClick={() => act(() => reopenAction(i.id))} data-testid="reopen">
-            {td("reopen")}
-          </Button>
-        )}
-      </div>
+    <Page>
+      <PageHeader
+        context={<Crumbs label={tc("breadcrumb")} items={[{ label: td("back"), href: "/compliance", testId: "back-to-compliance" }]} />}
+        title={t(`kinds.${i.kind}` as "kinds.ma_job_order")}
+        status={<StatusBadge status={i.status} size="lg" />}
+        description={`${i.subject} · ${t(`states.${i.jurisdiction}` as "states.IL")}`}
+        actions={
+          <>
+            {i.mayAct && open && (
+              <>
+                <Button variant="outline" size="sm" disabled={pending} onClick={() => setClosing("not_applicable")} data-testid="not-applicable">
+                  {td("notApplicable")}
+                </Button>
+                <Button size="sm" disabled={pending} onClick={() => setClosing("done")} data-testid="mark-done">
+                  {td("markDone")}
+                </Button>
+              </>
+            )}
+            {d.mayReopen && (
+              <Button variant="outline" size="sm" disabled={pending} onClick={() => act(() => reopenAction(i.id))} data-testid="reopen">
+                {td("reopen")}
+              </Button>
+            )}
+          </>
+        }
+      />
       {!open && (
         <p className="text-sm" data-testid="closed-note">
           {(i.status === "done" ? td("doneBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" }) : td("naBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" })) +
@@ -96,6 +91,8 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
         </p>
       )}
       {!i.mayAct && <p className="text-sm text-muted-foreground">{td("readOnly", { who: t(`who.${whoFor(d)}`) })}</p>}
+      <RecordLayout aside={<Summary d={d} />}>
+        <div className="flex min-w-0 flex-col gap-6">
       <PageTabs
         label={td("tabs.overview")}
         current={tab}
@@ -111,8 +108,10 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
       {tab === "evidence" && <Evidence d={d} today={today} />}
       {tab === "history" && <History d={d} />}
       {tab === "notes" && <Notes d={d} />}
+        </div>
+      </RecordLayout>
       <CloseDialog id={i.id} status={closing} onClose={() => setClosing(null)} />
-    </div>
+    </Page>
   );
 }
 
@@ -133,31 +132,13 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
   const cite = useCite();
   const t = useTranslations("compliance");
   const td = useTranslations("compliance.detail");
-  const locale = useLocale();
   const i = d.item;
   const open = i.status === "overdue" || i.status === "due_soon" || i.status === "upcoming";
   const days = d.rule ? Math.abs(d.rule.offsetDays) || d.rule.businessDays : 0;
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="obligation-cards">
-        <Card label={td("cards.due")}>
-          <span className="text-base font-semibold">{longDate(i.dueOn, locale)}</span>
-          {open && <span className={`text-xs ${i.status === "overdue" ? "text-destructive" : "text-muted-foreground"}`}>{dueIn(t, i.dueInDays)}</span>}
-        </Card>
-        <Card label={td("cards.owner")}>
-          <OwnerPicker item={i} users={d.users} />
-        </Card>
-        <Card label={td("cards.evidence")}>
-          <Link href={`/compliance/${i.id}?tab=evidence`} className="text-base font-semibold underline-offset-4 hover:underline">
-            {td("files", { count: d.files.length })}
-          </Link>
-        </Card>
-        <Card label={td("cards.status")}>
-          <StatusBadge status={i.status} />
-        </Card>
-      </div>
-      <section className="flex flex-col gap-2" aria-labelledby="law">
-        <h2 id="law" className="text-base font-semibold">
+    <div className="flex flex-col gap-10">
+      <section className="flex flex-col gap-3" aria-labelledby="law">
+        <h2 id="law" className="border-b pb-2 text-base font-semibold">
           {td("whatLaw")}
         </h2>
         <p className="max-w-3xl text-sm">{t(`asks.${i.kind}` as "asks.ma_job_order", { days })}</p>
@@ -171,8 +152,8 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
           </p>
         )}
       </section>
-      <section className="flex flex-col gap-2" aria-labelledby="about">
-        <h2 id="about" className="text-base font-semibold">
+      <section className="flex flex-col gap-3" aria-labelledby="about">
+        <h2 id="about" className="border-b pb-2 text-base font-semibold">
           {td("about")}
         </h2>
         <dl className="grid max-w-3xl grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
@@ -223,12 +204,39 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
   );
 }
 
-function Card({ label, children }: { label: string; children: React.ReactNode }) {
+/** The duty's key facts beside its tabs (Drata's summary cards, set as Stripe's details column). */
+function Summary({ d }: { d: ObligationDetail }) {
+  const t = useTranslations("compliance");
+  const td = useTranslations("compliance.detail");
+  const locale = useLocale();
+  const i = d.item;
+  const open = i.status === "overdue" || i.status === "due_soon" || i.status === "upcoming";
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-card p-3">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      {children}
-    </div>
+    <Section id="duty-summary" title={td("summary")} testId="obligation-cards">
+      <Facts
+        items={[
+          {
+            label: td("cards.due"),
+            value: (
+              <span className="flex flex-col">
+                <span>{longDate(i.dueOn, locale)}</span>
+                {open && <span className={`text-[13px] ${i.status === "overdue" ? "text-destructive" : "text-muted-foreground"}`}>{dueIn(t, i.dueInDays)}</span>}
+              </span>
+            ),
+          },
+          { label: td("cards.owner"), value: <OwnerPicker item={i} users={d.users} /> },
+          {
+            label: td("cards.evidence"),
+            value: (
+              <Link href={`/compliance/${i.id}?tab=evidence`} className="underline-offset-4 hover:underline">
+                {td("files", { count: d.files.length })}
+              </Link>
+            ),
+          },
+          { label: td("cards.status"), value: <StatusBadge status={i.status} /> },
+        ]}
+      />
+    </Section>
   );
 }
 
@@ -248,8 +256,8 @@ function NoticeForm({ d }: { d: ObligationDetail }) {
     </div>
   );
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="notice" data-testid="notice-form">
-      <h2 id="notice" className="text-base font-semibold">
+    <section className="flex flex-col gap-3" aria-labelledby="notice" data-testid="notice-form">
+      <h2 id="notice" className="border-b pb-2 text-base font-semibold">
         {tn("title")}
       </h2>
       <p className="text-xs text-muted-foreground">{tn("intro")}</p>
@@ -315,8 +323,8 @@ function I9Form({ d, today }: { d: ObligationDetail; today: string }) {
     </div>
   );
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="i9">
-      <h2 id="i9" className="text-base font-semibold">
+    <section className="flex flex-col gap-3" aria-labelledby="i9">
+      <h2 id="i9" className="border-b pb-2 text-base font-semibold">
         {td("title")}
       </h2>
       <div className="flex flex-wrap items-end gap-3">
@@ -346,8 +354,8 @@ function ReverifyForm({ d, today }: { d: ObligationDetail; today: string }) {
   const [next, setNext] = useState("");
   const { pending, act } = useAct();
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="reverify">
-      <h2 id="reverify" className="text-base font-semibold">
+    <section className="flex flex-col gap-3" aria-labelledby="reverify">
+      <h2 id="reverify" className="border-b pb-2 text-base font-semibold">
         {td("title")}
       </h2>
       <div className="flex flex-wrap items-end gap-3">
@@ -379,7 +387,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
   const [key, setKey] = useState(0);
   const { pending, act } = useAct();
   const row = (f: ObligationDetail["files"][number], past: boolean) => (
-    <li key={`${f.id}-${String(f.addedAt)}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-2 last:border-b-0" data-testid={past ? "past-file" : "evidence-file"}>
+    <li key={`${f.id}-${String(f.addedAt)}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5" data-testid={past ? "past-file" : "evidence-file"}>
       <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium">{f.filename}</span>
@@ -417,7 +425,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
   return (
     <div className="flex flex-col gap-4">
       {d.makes && d.item.mayAct && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-4" data-testid="make-document">
+        <div className="flex flex-wrap items-center gap-3 border-b pb-4" data-testid="make-document">
           <Button size="sm" disabled={pending || blocked !== null} onClick={() => act(() => makeDocumentAction(d.item.id, d.item.kind), () => toast.success(td("create.made")))} data-testid="make-document-button">
             {td(`create.${d.item.kind}` as "create.ma_job_order")}
           </Button>
@@ -436,13 +444,13 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
         </div>
       )}
       {d.keepsNoFiles && (
-        <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground" data-testid="no-i9-files">
+        <p className="text-sm text-muted-foreground" data-testid="no-i9-files">
           {td("noI9Files")}
         </p>
       )}
       {d.item.mayAct && !d.keepsNoFiles && (
         <form
-          className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4"
+          className="flex flex-wrap items-end gap-3 border-b pb-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (!file) return;
@@ -477,18 +485,18 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
         </form>
       )}
       {d.keepsNoFiles && d.files.length === 0 ? null : d.files.length === 0 ? (
-        <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground" data-testid="no-files">
+        <p className="py-10 text-center text-sm text-muted-foreground" data-testid="no-files">
           {td("noFiles")}
         </p>
       ) : (
-        <ul className="overflow-hidden rounded-xl border bg-card">{d.files.map((f) => row(f, false))}</ul>
+        <ul className="divide-y border-y">{d.files.map((f) => row(f, false))}</ul>
       )}
       {d.pastFiles.length > 0 && (
         <section aria-labelledby="past-files" className="flex flex-col gap-2">
           <h2 id="past-files" className="text-sm font-semibold">
             {td("pastFiles")}
           </h2>
-          <ul className="overflow-hidden rounded-xl border bg-card">{d.pastFiles.map((f) => row(f, true))}</ul>
+          <ul className="divide-y border-y">{d.pastFiles.map((f) => row(f, true))}</ul>
         </section>
       )}
     </div>
@@ -513,9 +521,9 @@ function History({ d }: { d: ObligationDetail }) {
     return td("history.other");
   };
   return (
-    <ol className="flex flex-col overflow-hidden rounded-xl border bg-card" data-testid="obligation-history">
+    <ol className="flex flex-col border-y" data-testid="obligation-history">
       {d.history.map((h, n) => (
-        <li key={n} className="flex flex-wrap items-baseline gap-x-4 border-b px-3 py-2 text-sm last:border-b-0">
+        <li key={n} className="flex flex-wrap items-baseline gap-x-4 border-b py-2.5 text-sm last:border-b-0">
           <span className="w-56 text-xs text-muted-foreground tabular-nums">{new Date(h.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
           <span className="flex-1">{what(h)}</span>
           <span className="text-xs text-muted-foreground">{h.by}</span>
@@ -553,9 +561,9 @@ function Notes({ d }: { d: ObligationDetail }) {
       {d.notes.length === 0 ? (
         <p className="text-sm text-muted-foreground">{td("noNotes")}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y border-y">
           {d.notes.map((n) => (
-            <li key={n.id} className="rounded-xl border bg-card p-3" data-testid="obligation-note">
+            <li key={n.id} className="py-3" data-testid="obligation-note">
               <p className="text-sm whitespace-pre-wrap">{n.body}</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {n.by} · {new Date(n.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}
@@ -630,8 +638,8 @@ function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
   const ready = v.effectiveFrom !== "" && rateCents !== null && rateCents > 0 && benefitsCents !== null && v.comparator.trim() !== "";
   const trueUps = d.equalPay!.trueUps;
   return (
-    <section className="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="equal-pay" data-testid="equal-pay-form">
-      <h2 id="equal-pay" className="text-base font-semibold">
+    <section className="flex flex-col gap-3" aria-labelledby="equal-pay" data-testid="equal-pay-form">
+      <h2 id="equal-pay" className="border-b pb-2 text-base font-semibold">
         {te("title")}
       </h2>
       <p className="text-xs text-muted-foreground">{te("intro")}</p>

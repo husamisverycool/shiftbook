@@ -225,7 +225,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           <span className="flex flex-col items-end">
-                            <span>{t("shiftsHours", { shifts: r.counts.waiting + r.counts.approved + r.counts.disputed, hours: hoursMinutes(r.minutes) })}</span>
+                            <span>{t("shiftsHours", { shifts: r.shifts, hours: hoursMinutes(r.minutes) })}</span>
                             {r.counts.needsReview > 0 && <span className="text-xs text-destructive">{t("needsReview", { count: r.counts.needsReview })}</span>}
                           </span>
                         </TableCell>

@@ -12,13 +12,13 @@ import { toast } from "sonner";
 import { runImportAction, saveDateOrderAction, saveDecisionAction, saveMappingAction, startImportAction } from "@/app/[locale]/(app)/assignments/import/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { MAX_PLACEMENT_FILE_BYTES } from "@/lib/limits";
 import { cn } from "@/lib/utils";
+import { Crumbs, Page, PageHeader, Steps } from "../page";
 import { FIELDS, SOURCES, type Field, type Mapping, type Source } from "@/server/placements/fields";
 import type { DateOrder, DistinctValue, PlannedRow } from "@/server/placements/plan";
 import type { ImportView } from "@/server/placements/service";
@@ -34,45 +34,24 @@ export function ImportWizard({ view, history, options, step: asked }: { view: Im
   const t = useTranslations("import");
   // Decision 0026: importing is the placements ability; others read the results and the history.
   const mayImport = useCan()("placements");
+  const tc = useTranslations("common");
   const step: Step = !view ? "source" : view.status === "done" ? "run" : (STEPS as readonly string[]).includes(asked ?? "") && asked !== "source" && asked !== "run" ? (asked as Step) : "map";
-  const at = STEPS.indexOf(step);
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-6 px-4 py-6 md:px-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink render={<Link href="/assignments" />}>{t("breadcrumb")}</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{t("title")}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-      <div>
-        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
-        {view && <p className="text-sm text-muted-foreground">{t("fileLine", { file: view.filename, source: t(`sources.${view.source}`), rows: view.rowCount })}</p>}
-      </div>
-      {!mayImport && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
-      {mayImport && (
-        <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label={t("steps")}>
-          {STEPS.map((s, i) => (
-            <li key={s} aria-current={s === step ? "step" : undefined} className={cn("flex items-center gap-2", i > at ? "text-muted-foreground" : "", s === step && "font-semibold")}>
-              <span className={cn("flex size-6 items-center justify-center rounded-full border text-xs tabular-nums", i < at && "bg-primary text-primary-foreground", s === step && "border-foreground")}>
-                {i < at ? <CheckIcon className="size-3.5" /> : i + 1}
-              </span>
-              {t(`step.${s}`)}
-            </li>
-          ))}
-        </ol>
-      )}
+    <Page width="default">
+      <PageHeader
+        context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("breadcrumb"), href: "/assignments" }]} />}
+        title={t("title")}
+        description={view ? t("fileLine", { file: view.filename, source: t(`sources.${view.source}`), rows: view.rowCount }) : !mayImport ? t("readOnly") : undefined}
+      />
+      {view && !mayImport && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+      {mayImport && <Steps label={t("steps")} current={step} steps={STEPS.map((s) => ({ key: s, label: t(`step.${s}`) }))} />}
       {mayImport && step === "source" && <SourceStep />}
       {mayImport && view && step === "map" && <MapStep view={view} />}
       {mayImport && view && step === "values" && <ValuesStep view={view} options={options} />}
       {mayImport && view && step === "preview" && <PreviewStep view={view} options={options} />}
       {view && step === "run" && <RunStep view={view} />}
       {(step === "source" || (!mayImport && step !== "run")) && <HistoryList history={history} />}
-    </div>
+    </Page>
   );
 }
 
