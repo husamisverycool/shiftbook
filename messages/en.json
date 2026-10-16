@@ -592,7 +592,9 @@
     "clients": "Clients",
     "receivables": "Receivables",
     "payments": "Payments",
-    "bank": "Bank"
+    "bank": "Bank",
+    "margin": "Margin",
+    "marginSettings": "Margin settings"
   },
   "list": {
     "filter": "Filter",
@@ -724,8 +726,11 @@
         "headcount": "Enter a whole number from 1 to 10,000.",
         "pay_range": "Enter amounts like 18.50, with the first not above the second.",
         "amount": "Enter an amount like 18.50.",
-        "client_has_assignments": "Workers are assigned to this job order, so its client cannot change."
-      }
+        "client_has_assignments": "Workers are assigned to this job order, so its client cannot change.",
+        "branch": "Choose one of the agency's offices."
+      },
+      "branch": "Branch",
+      "noBranch": "No branch"
     }
   },
   "jobOrder": {
@@ -762,7 +767,8 @@
     "openAssignments": "Open assignments",
     "noAssignments": "No workers are assigned yet.",
     "ownRatesOf": "{name}'s own rates",
-    "ownRatesBody": "These rates apply to this worker on this job order from their start date; on other dates the job order's rates apply."
+    "ownRatesBody": "These rates apply to this worker on this job order from their start date; on other dates the job order's rates apply.",
+    "branch": "Branch"
   },
   "assignments": {
     "title": "Assignments",
@@ -804,7 +810,8 @@
       "bill": "Bill rate",
       "rates": "Rates",
       "source": "Source",
-      "po": "PO"
+      "po": "PO",
+      "recruiter": "Recruiter"
     },
     "status": {
       "active": "Active",
@@ -853,7 +860,10 @@
       "po_number": "A PO is 1 to 64 characters, with no spaces at either end.",
       "not_found": "This assignment no longer exists.",
       "invoiced": "Hours of this placement were invoiced under its PO."
-    }
+    },
+    "noRecruiter": "No recruiter",
+    "recruiterSaved": "Recruiter saved",
+    "recruiterError": "That didn't work. Try again."
   },
   "approvals": {
     "title": "Client approvals",
@@ -2148,5 +2158,195 @@
     "credit": "Credit available",
     "daysToPay": "Days to pay",
     "days": "{days} days ({count, plural, one {# invoice} other {# invoices}})"
+  },
+  "margin": {
+    "title": "Margin",
+    "period": "Period",
+    "presets": {
+      "4": "Last 4 weeks",
+      "13": "Last 13 weeks",
+      "52": "Last 52 weeks",
+      "custom": "Choose dates"
+    },
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "export": "Export",
+    "exportSummary": "Summary CSV",
+    "exportLines": "Lines CSV",
+    "exportCsv": "Export CSV",
+    "settings": "Margin settings",
+    "tabsLabel": "Margin views",
+    "tabs": {
+      "overview": "Overview",
+      "overtime": "Overtime not billed",
+      "cash": "Cash floating"
+    },
+    "notForRole": "Margin is for the Owner and the accountant.",
+    "chartTitle": "Gross margin by week",
+    "chartBar": "billed {billed}, gross margin {margin}",
+    "week": "Week",
+    "cols": {
+      "hours": "Hours",
+      "billed": "Billed",
+      "pay": "Pay",
+      "burden": "Est. burden",
+      "margin": "Gross margin",
+      "percent": "Margin %"
+    },
+    "formulas": {
+      "hours": "Regular, overtime and double-time hours paid.",
+      "billed": "What the invoices billed for the work, from the run's bill lines.",
+      "pay": "Gross pay for the work, from the run's pay lines.",
+      "burden": "Estimated employer costs: employer taxes as a percentage of pay, plus workers' comp per $100 of pay (without the overtime premium when the setting says so), from the rates in force that week.",
+      "margin": "Billed − pay − estimated burden.",
+      "percent": "Gross margin ÷ billed, to one decimal, half up."
+    },
+    "cards": {
+      "billed": "Billed",
+      "pay": "Pay",
+      "burden": "Estimated burden",
+      "margin": "Gross margin",
+      "percent": "Margin %",
+      "overtime": "Overtime premium not billed",
+      "cash": "Cash floating"
+    },
+    "working": {
+      "billed": "{billed} billed for the work of {from} to {to} ({lines, plural, one {# assignment-week} other {# assignment-weeks}}).",
+      "pay": "{pay} gross pay for the same work.",
+      "burden": "{burden} estimated burden: each pay line's employer taxes and workers' comp, rounded once per line. Open a row's lines to see each one worked out.",
+      "margin": "{billed} billed − {pay} pay − {burden} estimated burden = {margin}.",
+      "percent": "{margin} gross margin ÷ {billed} billed = {percent}."
+    },
+    "none": "None",
+    "weekOf": "Week of {date}",
+    "empty": "No week from {from} to {to} has its files made yet, so there is nothing to show.",
+    "emptyLink": "Convert timesheets",
+    "lineIncomplete": "Burden incomplete: a rate is missing.",
+    "payLine": "Pay ({type}):",
+    "billLine": "Bill ({type}):",
+    "burdenOf": "Burden: {explain}",
+    "incomplete": "{count, plural, one {# row's} other {# rows'}} burden is incomplete: a workers' comp or tax rate is missing and counts as $0.00.",
+    "groupBy": "Group by",
+    "groups": {
+      "client": "Client",
+      "worker": "Worker",
+      "recruiter": "Recruiter",
+      "branch": "Branch",
+      "week": "Week"
+    },
+    "sortBy": "Sort by",
+    "sorts": {
+      "margin": "Gross margin",
+      "percent": "Margin %"
+    },
+    "tableLabel": "Margin by {group}",
+    "total": "Total",
+    "overtime": {
+      "none": "No overtime was paid in this period.",
+      "allBilled": "All {hours} of overtime paid was billed at the overtime multiplier.",
+      "summary": "{paid} of overtime paid; {leaked} not billed at the multiplier; {premium} of premium paid on them and not billed.",
+      "client": "Client",
+      "worker": "Worker",
+      "week": "Week",
+      "paid": "OT paid",
+      "atMultiplier": "At multiplier",
+      "atStraight": "At straight time",
+      "notBilled": "Not billed",
+      "premium": "Premium not billed",
+      "terms": "Client's terms",
+      "reasons": {
+        "multiplier": "All at the multiplier",
+        "bill_overtime_straight": "Bills overtime at straight time",
+        "bill_overtime_own_sites_straight": "Bills overtime only for hours at its own sites",
+        "bill_overtime_not_billable": "Overtime not billable"
+      }
+    },
+    "cash": {
+      "now": "Floating today",
+      "nowWhy": "Payroll paid by {date} less what the clients paid for that work.",
+      "payroll": "Payroll on {date}",
+      "estimate": "No run for that week yet: the average of the last four paid weeks.",
+      "fromRun": "From that week's run.",
+      "estimateBadge": "Estimate",
+      "expected": "Expected in by then",
+      "nothingExpected": "No open invoice is expected in by then.",
+      "after": "Floating after that payroll",
+      "noPayDay": "No pay day is set, so pay dates are taken as the period's last day.",
+      "none": "Nothing is floating: every payroll paid so far has been paid for.",
+      "byClient": "Cash floating by client",
+      "client": "Client",
+      "paid": "Payroll paid",
+      "collected": "Collected for it",
+      "floating": "Floating",
+      "daysToPay": "Days to pay",
+      "days": "{days} days ({count, plural, one {# invoice} other {# invoices}})",
+      "week": "Week ending {ends}, paid {paid}"
+    }
+  },
+  "marginSettings": {
+    "above": "Settings",
+    "title": "Margin settings",
+    "description": "The rates the margin's estimated burden uses, and the day workers are paid. Each applies from a date.",
+    "readOnly": "Only the Owner changes these.",
+    "taxes": {
+      "title": "Employer taxes",
+      "intro": "One percentage of pay per worksite state; “Any other state” covers the rest.",
+      "none": "No rate yet: employer taxes count as $0.00 until one is added.",
+      "rate": "Rate %",
+      "includes": "What it includes",
+      "includesHint": "FICA 7.65% + FUTA 0.6% + state unemployment",
+      "addTitle": "Add an employer tax rate"
+    },
+    "wc": {
+      "title": "Workers' comp",
+      "intro": "A rate per $100 of pay for each state and class code on your rate cards.",
+      "none": "No rate yet: workers' comp counts as $0.00 until one is added.",
+      "missing": "No rate today for {codes}: workers' comp counts as $0.00 for that work.",
+      "classCode": "Class code",
+      "description": "Description",
+      "rate": "Rate per $100",
+      "addTitle": "Add a workers' comp rate",
+      "otPremium": "Leave the overtime premium out of workers' comp",
+      "otPremiumHint": "Most states charge workers' comp on overtime at the straight-time rate.",
+      "otNextOn": "From {date} the premium is left out.",
+      "otNextOff": "From {date} the premium is counted."
+    },
+    "payDay": {
+      "title": "Pay day",
+      "intro": "How many days after a pay period ends its workers are paid; cash floating counts from then.",
+      "notSet": "No pay day is set.",
+      "current": "Workers are paid {days, plural, one {# day} other {# days}} after the period ends (since {date}).",
+      "next": "From {date}: {days, plural, one {# day} other {# days}}.",
+      "days": "Days after the period ends"
+    },
+    "state": "State",
+    "from": "From",
+    "to": "To",
+    "anyOtherState": "Any other state",
+    "chooseState": "Choose a state",
+    "inForce": "In force",
+    "addRate": "Add rate",
+    "addBody": "It applies from the date you choose; the rate before it ends the day before.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Saved",
+    "changed": "Last changed {date} by {by}.",
+    "rules": {
+      "state": "Choose a state.",
+      "percent": "Enter a percentage from 0 to 100, at most two decimals.",
+      "per_hundred": "Enter dollars and cents per $100 of pay.",
+      "class_code": "Up to 10 letters, numbers, dots or dashes.",
+      "too_long": "This is too long.",
+      "date": "Enter a date.",
+      "days": "Enter whole days, 0 to 28."
+    },
+    "errors": {
+      "not_allowed": "Only the Owner changes these.",
+      "not_found": "This is no longer here. Refresh the page.",
+      "busy": "A week's files are being made right now. Try again in a moment.",
+      "generic": "That didn't work. Try again.",
+      "invalid": "Something needs fixing."
+    }
   }
 }

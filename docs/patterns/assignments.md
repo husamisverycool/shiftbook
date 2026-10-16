@@ -10,6 +10,7 @@ Source URL: https://attio.com/help/reference/managing-your-data/views/create-and
 Source URL: https://attio.com/help/reference/managing-your-data/records/create-and-view-records
 Source URL: https://kb.bullhorn.com/backoffice/Content/backoffice/Topics/purchaseOrderNumbers.htm
 Source URL: https://kb.bullhorn.com/backoffice/Content/backoffice/Topics/usingVariablesBillingContacts.htm
+Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/bh1CanvasUserScorecardReport.htm
 Researched: 2026-10-15. Confidence: high (same mechanics as the job orders list).
 
 ## Purpose in Shiftbook
@@ -29,6 +30,8 @@ and whether it is active. Also the entry point to importing placements.
    Slice g (decision G4): the client's **PO** for this placement (Bullhorn Back Office: a PO on each
    placement, or "same as billing contact"), a field whose hint says that left empty the client's
    own PO is used.
+   Slice i (decision I10): the **Recruiter** — one of the agency's users, or none — whose placements
+   the margin groups by (Bullhorn User Scorecard: gross profit by recruiter).
 
 ## Interactions
 - As in `job-orders.md`: J/K or arrows, Space for the side panel, X/Shift/Cmd+A selection, Esc, F
@@ -37,6 +40,7 @@ and whether it is active. Also the entry point to importing placements.
 - Import → `/assignments/import`.
 - The PO saves when its field is left or Enter is pressed, as the worker ids do
   (`settings/payroll.md`); a PO the rule refuses shows the rule under the field.
+- The recruiter saves when chosen; the accountant sees it read only.
 
 ## States
 - Empty: empty-state component with links to create or import.

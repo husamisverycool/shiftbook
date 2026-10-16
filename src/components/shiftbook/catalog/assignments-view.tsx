@@ -6,7 +6,7 @@ import { UploadIcon, UsersIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createAssignmentAction, endAssignmentsAction, setAssignmentPoAction } from "@/app/[locale]/(app)/job-orders/actions";
+import { createAssignmentAction, endAssignmentsAction, setAssignmentPoAction, setRecruiterAction } from "@/app/[locale]/(app)/job-orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,7 +19,7 @@ import { longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
 import { RecordList, type Column } from "./record-list";
 
-export function AssignmentsView({ rows, options, today }: { rows: AssignmentRow[]; options: CatalogOptions; today: string }) {
+export function AssignmentsView({ rows, options, today, canChange = true }: { rows: AssignmentRow[]; options: CatalogOptions; today: string; canChange?: boolean }) {
   const t = useTranslations("assignments");
   const te = useTranslations("convert.errors");
   const locale = useLocale();
@@ -112,6 +112,12 @@ export function AssignmentsView({ rows, options, today }: { rows: AssignmentRow[
             </dt>
             <dd>
               <PoField key={r.id} row={r} />
+            </dd>
+            <dt className="pt-2 text-muted-foreground">
+              <label htmlFor={`recruiter-${r.id}`}>{t("col.recruiter")}</label>
+            </dt>
+            <dd>
+              <RecruiterField key={r.id} row={r} users={options.users} canChange={canChange} />
             </dd>
           </dl>
         )}
@@ -252,6 +258,47 @@ function CreateAssignment({ options, today, onClose }: { options: CatalogOptions
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Whose placement it is (slice i, decision I10; Bullhorn User Scorecard by recruiter): saves when chosen. */
+function RecruiterField({ row, users, canChange }: { row: AssignmentRow; users: CatalogOptions["users"]; canChange: boolean }) {
+  const t = useTranslations("assignments");
+  const te = useTranslations("convert.errors");
+  const router = useRouter();
+  const [value, setValue] = useState(row.recruiterUserId ?? "");
+  const [note, setNote] = useState<{ error: boolean; text: string } | null>(null);
+  const [pending, run] = useTransition();
+  if (!canChange) return <span>{users.find((u) => u.id === row.recruiterUserId)?.name ?? t("noRecruiter")}</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      <NativeSelect
+        id={`recruiter-${row.id}`}
+        className="w-full"
+        value={value}
+        disabled={pending}
+        onChange={(e) => {
+          const next = e.target.value;
+          setValue(next);
+          run(async () => {
+            const r = await setRecruiterAction(row.id, next === "" ? null : next);
+            if (r.ok) {
+              setNote({ error: false, text: t("recruiterSaved") });
+              router.refresh();
+            } else setNote({ error: true, text: r.error === "busy" ? te("busy") : t("recruiterError") });
+          });
+        }}
+        data-testid="assignment-recruiter"
+      >
+        <NativeSelectOption value="">{t("noRecruiter")}</NativeSelectOption>
+        {users.map((u) => (
+          <NativeSelectOption key={u.id} value={u.id}>
+            {u.name}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
+      {note && <p className={note.error ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>{note.text}</p>}
+    </div>
   );
 }
 

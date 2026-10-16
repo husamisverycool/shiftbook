@@ -252,6 +252,8 @@ export const jobOrders = pgTable("job_orders", {
   prevailingWage: boolean("prevailing_wage").notNull().default(false),
   /** Illinois day and temporary labor (820 ILCS 175): false for clerical or professional work. */
   dayAndTemporaryLabor: boolean("day_and_temporary_labor").notNull().default(true),
+  /** The office whose margin the order counts in (slice i, decision I10). */
+  branchId: uuid("branch_id").references(() => branches.id),
   createdAt: createdAt(),
 });
 
@@ -298,6 +300,8 @@ export const assignments = pgTable(
     externalId: text("external_id"),
     /** The client's PO for this placement; none means the client's own PO (slice g, decision G4). */
     poNumber: text("po_number"),
+    /** Whose placement it is, for margin by recruiter (slice i, decision I10). */
+    recruiterUserId: uuid("recruiter_user_id").references(() => users.id),
     createdAt: createdAt(),
   },
   (t) => [
@@ -1157,6 +1161,36 @@ export const writeOffs = pgTable(
   (t) => [index("write_offs_invoice").on(t.agencyId, t.invoiceId)],
 );
 
+// ---------- margin (slice i) ----------
+/** Employer taxes as one rate per state, parts per million of pay; no state = every other state (I2, I3). */
+export const burdenTaxRates = pgTable("burden_tax_rates", {
+  id: id(),
+  agencyId: agencyId(),
+  state: text("state"),
+  ratePpm: integer("rate_ppm").notNull(),
+  includes: text("includes"),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
+
+/** Workers' comp per state and class code, parts per million of pay ($4.00 per $100 = 40000) (I2, I3). */
+export const wcRates = pgTable("wc_rates", {
+  id: id(),
+  agencyId: agencyId(),
+  state: text("state").notNull(),
+  classCode: text("class_code").notNull(),
+  description: text("description"),
+  ratePpm: integer("rate_ppm").notNull(),
+  effectiveFrom: isoDate("effective_from").notNull(),
+  effectiveTo: isoDate("effective_to"),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
+
 /**
  * Credit a credit note left on an invoice (more taken off than was still owed), applied to another of
  * the client's invoices (decision 0019; Stripe credits the customer's balance).
@@ -1249,4 +1283,6 @@ export const TENANT_TABLES = [
   "short_pays",
   "reminders",
   "credit_applications",
+  "burden_tax_rates",
+  "wc_rates",
 ] as const;

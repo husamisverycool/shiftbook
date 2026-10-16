@@ -21,6 +21,8 @@ export interface CatalogOptions {
   worksites: { id: string; clientId: string; name: string; city: string; state: string }[];
   workers: { id: string; name: string }[];
   jobOrders: { id: string; clientId: string; label: string }[];
+  users: { id: string; name: string }[];
+  branches: { id: string; name: string }[];
 }
 
 interface Values {
@@ -33,6 +35,7 @@ interface Values {
   payMin: string;
   payMax: string;
   prevailingWage: boolean;
+  branchId: string;
 }
 
 export interface JobOrderInitial {
@@ -46,11 +49,12 @@ export interface JobOrderInitial {
   payMinCents: number | null;
   payMaxCents: number | null;
   prevailingWage: boolean;
+  branchId: string | null;
 }
 
 const DRAFT_KEY = "shiftbook.draft.job-order";
-const EMPTY: Values = { clientId: "", worksiteId: "", position: "", socCode: "", shift: "", headcount: "1", payMin: "", payMax: "", prevailingWage: false };
-const FIELD_OF = { client: "clientId", worksite: "worksiteId", position: "position", soc_code: "socCode", shift: "shift", headcount: "headcount", pay_range: "payMin" } as const;
+const EMPTY: Values = { clientId: "", worksiteId: "", position: "", socCode: "", shift: "", headcount: "1", payMin: "", payMax: "", prevailingWage: false, branchId: "" };
+const FIELD_OF = { client: "clientId", worksite: "worksiteId", position: "position", soc_code: "socCode", shift: "shift", headcount: "headcount", pay_range: "payMin", branch: "branchId" } as const;
 
 function readDraft(): Values | null {
   try {
@@ -85,6 +89,7 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
         payMin: centsToInput(initial.payMinCents),
         payMax: centsToInput(initial.payMaxCents),
         prevailingWage: initial.prevailingWage,
+        branchId: initial.branchId ?? "",
       }
     : EMPTY;
   const [draft] = useState(() => (initial ? null : readDraft()));
@@ -123,6 +128,7 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
       payMinCents,
       payMaxCents,
       prevailingWage: values.prevailingWage,
+      branchId: values.branchId || null,
     };
     run(async () => {
       const r = initial ? await updateJobOrderAction(initial.id, input) : await createJobOrderAction(input);
@@ -202,6 +208,18 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
             {field("headcount", t("headcount"), <Input id="jo-headcount" inputMode="numeric" value={values.headcount} onChange={(e) => set("headcount", e.target.value)} {...invalid("headcount")} />)}
             {field("payMin", t("payMin"), <Input id="jo-payMin" inputMode="decimal" value={values.payMin} placeholder="18.00" onChange={(e) => set("payMin", e.target.value)} {...invalid("payMin")} />)}
             {field("payMax", t("payMax"), <Input id="jo-payMax" inputMode="decimal" value={values.payMax} placeholder="22.00" onChange={(e) => set("payMax", e.target.value)} {...invalid("payMax")} />)}
+            {field(
+              "branchId",
+              t("branch"),
+              <NativeSelect id="jo-branchId" className="w-full" value={values.branchId} onChange={(e) => set("branchId", e.target.value)} {...invalid("branchId")} data-testid="field-branch">
+                <NativeSelectOption value="">{t("noBranch")}</NativeSelectOption>
+                {options.branches.map((b) => (
+                  <NativeSelectOption key={b.id} value={b.id}>
+                    {b.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>,
+            )}
             <div className="flex items-center gap-2 sm:col-span-2">
               <Checkbox id="jo-prevailingWage" checked={values.prevailingWage} onCheckedChange={(on) => set("prevailingWage", on === true)} />
               <Label htmlFor="jo-prevailingWage">{t("prevailingWage")}</Label>

@@ -4,6 +4,7 @@ import { AssignmentsView } from "@/components/shiftbook/catalog/assignments-view
 import { catalogOptions, listAssignments } from "@/server/catalog/queries";
 import { withAgency } from "@/server/db";
 import { agencyToday } from "@/server/settings";
+import { mayChangePlacement } from "@/server/margin/service";
 import { currentActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -16,5 +17,5 @@ export default async function AssignmentsPage(props: { params: Promise<{ locale:
     const day = await agencyToday(tx);
     return { rows: await listAssignments(tx, day), options: await catalogOptions(tx), today: day };
   });
-  return <AssignmentsView rows={rows} options={options} today={today} />;
+  return <AssignmentsView rows={rows} options={options} today={today} canChange={mayChangePlacement(actor)} />;
 }

@@ -20,9 +20,11 @@ export interface JobOrderInput {
   payMinCents: number | null;
   payMaxCents: number | null;
   prevailingWage: boolean;
+  /** The office whose margin the order counts in (slice i, decision I10); absent: unchanged. */
+  branchId?: string | null;
 }
 
-export type JobOrderField = "client" | "worksite" | "position" | "soc_code" | "shift" | "headcount" | "pay_range";
+export type JobOrderField = "client" | "worksite" | "position" | "soc_code" | "shift" | "headcount" | "pay_range" | "branch";
 export type JobOrderResult = { ok: true; id: string } | { ok: false; error: "invalid"; fields: JobOrderField[] } | { ok: false; error: "not_found" | "client_has_assignments" };
 
 const MAX_RATE_CENTS = 10_000_000;
@@ -40,6 +42,10 @@ async function problems(tx: Tx, input: JobOrderInput): Promise<JobOrderField[]> 
   if (!Number.isSafeInteger(input.headcount) || input.headcount < 1 || input.headcount > 10_000) fields.push("headcount");
   if (!cents(input.payMinCents) || !cents(input.payMaxCents) || (input.payMinCents !== null && input.payMaxCents !== null && input.payMinCents > input.payMaxCents)) {
     fields.push("pay_range");
+  }
+  if (input.branchId) {
+    const [branch] = await tx.select({ id: s.branches.id }).from(s.branches).where(eq(s.branches.id, input.branchId));
+    if (!branch) fields.push("branch");
   }
   return fields;
 }
@@ -83,6 +89,7 @@ export async function updateJobOrder(tx: Tx, actor: Actor, id: string, raw: JobO
     payMinCents: current.payMinCents,
     payMaxCents: current.payMaxCents,
     prevailingWage: current.prevailingWage,
+    ...(input.branchId !== undefined ? { branchId: current.branchId } : {}),
   };
   await audit(tx, actor, [{ action: "update", entityType: "job_order", entityId: id, before, after: input }]);
   return { ok: true, id };

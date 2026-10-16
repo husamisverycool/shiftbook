@@ -8,6 +8,8 @@ import * as s from "../db/schema";
 import { BUILT_IN_PROFILES } from "../intake/profiles";
 import {
   AGENCY_SETTINGS,
+  BRANCHES,
+  BURDEN_TAX_RATES,
   CLIENTS,
   DEMO_AGENCY,
   DEMO_OWNER,
@@ -16,6 +18,8 @@ import {
   JOB_ORDERS,
   NICKNAMES,
   PERIODS,
+  RECRUITERS,
+  WC_RATES,
   WORKERS,
   type ClientKey,
   type JobKey,
@@ -28,6 +32,8 @@ const SINCE = "2026-01-01";
 /** Tenant tables in delete-safe order. audit_events is append-only and is never cleared. */
 const CLEAR_ORDER = [
   "jobs",
+  "burden_tax_rates",
+  "wc_rates",
   "credit_applications",
   "reminders",
   "short_pays",
@@ -87,7 +93,10 @@ export const periodId = (key: string) => demoUuid(`period:${key}`);
 
 export async function seedDemoAgency(tx: Tx): Promise<void> {
   await tx.insert(s.users).values({ ...DEMO_OWNER, agencyId });
-  await tx.insert(s.branches).values({ id: demoUuid("branch:main"), agencyId, name: "Main office" });
+  await tx.insert(s.users).values(RECRUITERS.map((r) => ({ id: demoUuid(`user:${r.key}`), agencyId, name: r.name, email: r.email, role: r.role })));
+  await tx.insert(s.branches).values(BRANCHES.map((b) => ({ id: demoUuid(`branch:${b.key}`), agencyId, name: b.name })));
+  await tx.insert(s.burdenTaxRates).values(BURDEN_TAX_RATES.map((r) => ({ agencyId, ...r, effectiveFrom: SINCE, createdByLabel: "Demo setup" })));
+  await tx.insert(s.wcRates).values(WC_RATES.map((r) => ({ agencyId, ...r, effectiveFrom: SINCE, createdByLabel: "Demo setup" })));
   await tx.insert(s.agencySettings).values(
     AGENCY_SETTINGS.map((setting) => ({ agencyId, key: setting.key, value: setting.value, effectiveFrom: SINCE })),
   );
@@ -124,6 +133,7 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
       headcount: j.headcount,
       payMinCents: j.payRateCents,
       payMaxCents: j.payRateCents,
+      branchId: demoUuid(`branch:${j.client === "ca" ? "ontario" : "main"}`),
     });
     await tx.insert(s.rateCards).values({
       agencyId,
@@ -139,7 +149,7 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
     });
   }
 
-  for (const w of WORKERS) {
+  for (const [index, w] of WORKERS.entries()) {
     const job = JOB_ORDERS[w.job];
     await tx.insert(s.workers).values({
       id: workerId(w.key),
@@ -157,6 +167,8 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
       jobOrderId: jobOrderId(w.job),
       startDate: "2026-08-03",
       status: "active",
+      // Every other placement is each recruiter's (slice i).
+      recruiterUserId: demoUuid(`user:${RECRUITERS[index % 2]!.key}`),
     });
   }
 

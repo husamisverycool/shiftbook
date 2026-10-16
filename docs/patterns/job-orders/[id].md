@@ -8,6 +8,7 @@ one replaces it); Stripe refunds — reason picker where "Other" requires a note
 Source URL: https://attio.com/help/reference/managing-your-data/records/create-and-view-records
 Source URL: https://attio.com/help/reference/managing-your-data/attributes/relationship-attributes
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/ManagePlaceRateCardVers.htm
+Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/bh1CanvasYearlyCurrentGrossMarginByBranch.htm
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/EditPlacementRateCard.htm
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/AddPlaceRateCard.htm
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/DeletePlacementRateCard.htm
@@ -27,7 +28,9 @@ create/edit with effective dating; rate changes never rewrite locked periods).
 1. **Header:** position as the title, client · worksite under it, action buttons under the name
    (Attio): Edit, Assign worker.
 2. **Details panel** on the left (Attio "Record Details"): client, worksite (address, county, city),
-   SOC code, shift, headcount, pay range, prevailing wage, created.
+   SOC code, shift, headcount, pay range, prevailing wage, branch (slice i, decision I10: the office
+   whose margin the order counts in; Bullhorn's gross margin by branch takes the job owner's
+   branch), created.
 3. **Tabs** on the right (Attio): Overview · Assignments · Rate card · Activity.
    - **Overview:** the rate card summary (Gusto card) and the assignments summary (count, next end).
    - **Assignments** (Attio relationship tab): the linked assignments as a list — worker, start, end,
@@ -52,7 +55,7 @@ create/edit with effective dating; rate changes never rewrite locked periods).
    and opens the same rate card view for that assignment (Bullhorn: rates live on the placement).
 
 ## Interactions
-- Edit opens the job-order form (same fields as create); Save audits the change.
+- Edit opens the job-order form (same fields as create, with the branch); Save audits the change.
 - New version: the form is filled from the shown version except the effective date, which is blank
   on purpose and required (Gusto); it must start after the last paid day; saving ends the previous
   version the day before (Bullhorn) — or, for a start after today, schedules it (Gusto notice).

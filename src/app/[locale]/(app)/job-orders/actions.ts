@@ -8,6 +8,7 @@ import { createJobOrder, updateJobOrder, type JobOrderInput, type JobOrderResult
 import { addRateVersion, deleteRateVersion, editRateVersion, type RateResult } from "@/server/catalog/rate-cards";
 import type { RateInput } from "@/server/catalog/versions";
 import { withAgency } from "@/server/db";
+import { setRecruiter, type MarginResult } from "@/server/margin/service";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { currentActor } from "@/server/session";
 
@@ -37,6 +38,7 @@ const JobOrderSchema = z
     payMinCents: whole.nullable(),
     payMaxCents: whole.nullable(),
     prevailingWage: z.boolean(),
+    branchId: id.nullable().optional(),
   })
   .strict();
 const AssignmentSchema = z.object({ workerId: id, jobOrderId: id, startDate: isoDate, endDate: isoDate.nullable() }).strict();
@@ -124,6 +126,12 @@ export async function cancelAssignmentAction(assignmentId: string, reason: strin
 }
 
 /** The client's PO for one placement (slice g, decision G4); empty means the client's own PO. */
+export async function setRecruiterAction(assignmentId: string, userId: string | null): Promise<MarginResult | { ok: false; error: "busy" }> {
+  const actor = currentActor();
+  if (!id.safeParse(assignmentId).success || (userId !== null && !id.safeParse(userId).success)) return { ok: false, error: "not_found" };
+  return run(() => withAgency(actor.agencyId, (tx) => setRecruiter(tx, actor, assignmentId, userId)));
+}
+
 export async function setAssignmentPoAction(assignmentId: string, poNumber: string): Promise<PoResult | { ok: false; error: "busy" }> {
   const actor = currentActor();
   if (!id.safeParse(assignmentId).success || !z.string().max(200).safeParse(poNumber).success) return { ok: false, error: "not_found" };

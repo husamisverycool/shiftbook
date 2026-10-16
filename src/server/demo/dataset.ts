@@ -26,6 +26,39 @@ export const DEMO_OWNER = {
   role: "owner" as const,
 };
 
+/** The demo's offices (slice i): the California warehouse work is run from Ontario. Invented names. */
+export const BRANCHES = [
+  { key: "main", name: "Main office" },
+  { key: "ontario", name: "Ontario office" },
+] as const;
+
+/** Recruiters whose placements the margin groups by (slice i). Invented people. */
+export const RECRUITERS = [
+  { key: "lena", name: "Lena Ortiz (demo)", email: "lena@cedarrow.example.com", role: "coordinator" as const },
+  { key: "sam", name: "Sam Whitfield (demo)", email: "sam@cedarrow.example.com", role: "coordinator" as const },
+] as const;
+
+/**
+ * Estimated burden for the margin (slice i, decision I12). Employer taxes: FICA 7.65% (Social
+ * Security 6.2% + Medicare 1.45%) and FUTA 0.6% (IRS Publication 15, 2026) plus each state's
+ * new-employer unemployment rate (California 3.4% + ETT 0.1%, EDD; Illinois 3.45% for temporary
+ * help, IDES 2026; Massachusetts 2.42%, an estimate). A flat rate overstates FUTA and SUTA once the
+ * wage bases are reached (TempWorks and Bullhorn estimate the same way).
+ */
+export const BURDEN_TAX_RATES: { state: string | null; ratePpm: number; includes: string }[] = [
+  { state: null, ratePpm: 82_500, includes: "FICA 7.65% + FUTA 0.6%" },
+  { state: "CA", ratePpm: 117_500, includes: "FICA 7.65% + FUTA 0.6% + CA UI 3.4% + ETT 0.1% (new employer)" },
+  { state: "IL", ratePpm: 117_000, includes: "FICA 7.65% + FUTA 0.6% + IL UI 3.45% (temporary help, new employer)" },
+  { state: "MA", ratePpm: 106_700, includes: "FICA 7.65% + FUTA 0.6% + MA UI 2.42% (new employer, estimate)" },
+];
+
+/** Workers' comp per $100 of pay for the demo's class codes: EXAMPLES, not real rates (decision I12). */
+export const WC_RATES: { state: string; classCode: string; description: string; ratePpm: number }[] = [
+  { state: "CA", classCode: "8292", description: "Warehouse (example rate)", ratePpm: 40_000 },
+  { state: "IL", classCode: "3632", description: "Machine shop (example rate)", ratePpm: 30_000 },
+  { state: "MA", classCode: "9079", description: "Restaurant and events (example rate)", ratePpm: 25_000 },
+];
+
 export const PERIODS = [
   { key: "w1", startsOn: "2026-09-28", endsOn: "2026-10-04" },
   { key: "w2", startsOn: "2026-10-05", endsOn: "2026-10-11" },
@@ -194,6 +227,10 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   // 20 days after it (QuickBooks Online's documented window).
   { key: "receivables.match_window", value: { daysBefore: 90, daysAfter: 20 } },
   { key: "rounding_mode", value: "half_up" },
+  // Slice i (decisions I2, I8): workers' comp leaves out the overtime premium (most states); workers
+  // are paid 5 days after the period ends (the Friday after a Sunday).
+  { key: "margin.wc_excludes_ot_premium", value: true },
+  { key: "payroll.pay_day_after_period_end", value: 5 },
   // The payroll file (slice f, decision F1): Gusto in the demo; every system's codes ready to switch to.
   { key: "payroll.target", value: { format: "gusto_hours_csv" } },
   { key: "earning_code_map.gusto_hours_csv", value: { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours", BONUS: "bonus" } },

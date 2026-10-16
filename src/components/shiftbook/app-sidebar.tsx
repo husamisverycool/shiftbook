@@ -1,9 +1,9 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, ReceiptTextIcon, SettingsIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, FileSpreadsheetIcon, LandmarkIcon, ReceiptTextIcon, SettingsIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
@@ -19,6 +19,8 @@ const AREAS = [
   { href: "/receivables", key: "receivables", jump: "r", icon: WalletIcon },
   { href: "/payments", key: "payments", jump: "y", icon: BanknoteIcon },
   { href: "/bank", key: "bank", jump: "b", icon: LandmarkIcon },
+  // Slice i: the Owner and the accountant only (SPEC §2).
+  { href: "/margin", key: "margin", jump: "m", icon: ChartColumnIcon },
 ] as const;
 
 /** True while the person is typing, so single-letter shortcuts stay out of the way. */
@@ -27,12 +29,13 @@ export function typing(target: EventTarget | null): boolean {
   return !!el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.getAttribute("role") === "combobox");
 }
 
-export function AppSidebar({ agencyName }: { agencyName: string }) {
+export function AppSidebar({ agencyName, showMargin = false }: { agencyName: string; showMargin?: boolean }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
   const [help, setHelp] = useState(false);
   const pendingG = useRef<number | null>(null);
+  const areas = useMemo(() => AREAS.filter((a) => a.key !== "margin" || showMargin), [showMargin]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -45,7 +48,7 @@ export function AppSidebar({ agencyName }: { agencyName: string }) {
       if (pendingG.current !== null) {
         window.clearTimeout(pendingG.current);
         pendingG.current = null;
-        const area = AREAS.find((a) => a.jump === e.key.toLowerCase());
+        const area = areas.find((a) => a.jump === e.key.toLowerCase());
         if (area) {
           e.preventDefault();
           router.push(area.href);
@@ -56,7 +59,7 @@ export function AppSidebar({ agencyName }: { agencyName: string }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [router]);
+  }, [router, areas]);
 
   return (
     <>
@@ -82,6 +85,12 @@ export function AppSidebar({ agencyName }: { agencyName: string }) {
                 <SettingsIcon />
                 {t("settings")}
               </DropdownMenuItem>
+              {showMargin && (
+                <DropdownMenuItem render={<Link href="/settings/margin" />} data-testid="menu-margin-settings">
+                  <ChartColumnIcon />
+                  {t("marginSettings")}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarHeader>
@@ -90,7 +99,7 @@ export function AppSidebar({ agencyName }: { agencyName: string }) {
             <SidebarGroupContent>
               <nav aria-label={t("label")}>
                 <SidebarMenu>
-                  {AREAS.map((a) => (
+                  {areas.map((a) => (
                     <SidebarMenuItem key={a.key}>
                       <SidebarMenuButton isActive={pathname === a.href || pathname.startsWith(`${a.href}/`)} render={<Link href={a.href} />}>
                         <a.icon />
@@ -110,7 +119,7 @@ export function AppSidebar({ agencyName }: { agencyName: string }) {
             <DialogTitle>{t("shortcuts")}</DialogTitle>
           </DialogHeader>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            {AREAS.map((a) => (
+            {areas.map((a) => (
               <div key={a.key} className="contents">
                 <dt>
                   <kbd className="rounded border px-1.5 font-mono text-xs">G</kbd> <kbd className="rounded border px-1.5 font-mono text-xs">{a.jump.toUpperCase()}</kbd>

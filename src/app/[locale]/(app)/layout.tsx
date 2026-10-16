@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/shiftbook/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { withAgency } from "@/server/db";
 import { agencies } from "@/server/db/schema";
+import { mayViewMargin } from "@/server/margin/service";
 import { currentActor } from "@/server/session";
 
 export default async function AppLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
@@ -16,7 +17,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
   const [agency] = await withAgency(actor.agencyId, (tx) => tx.select({ name: agencies.name }).from(agencies).where(eq(agencies.id, actor.agencyId)));
   return (
     <SidebarProvider className="min-h-0">
-      <AppSidebar agencyName={agency?.name ?? ""} />
+      <AppSidebar agencyName={agency?.name ?? ""} showMargin={mayViewMargin(actor)} />
       <SidebarInset className="min-w-0">
         <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden">
           <SidebarTrigger />

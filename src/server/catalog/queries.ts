@@ -135,6 +135,8 @@ export async function catalogOptions(tx: Tx) {
   const clients = await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients);
   const sites = await tx.select({ id: s.worksites.id, clientId: s.worksites.clientId, name: s.worksites.name, city: s.worksites.city, state: s.worksites.state }).from(s.worksites);
   const people = await tx.select({ id: s.workers.id, firstName: s.workers.firstName, lastName: s.workers.lastName }).from(s.workers);
+  const users = await tx.select({ id: s.users.id, name: s.users.name }).from(s.users);
+  const branches = await tx.select({ id: s.branches.id, name: s.branches.name }).from(s.branches);
   const jobs = await tx
     .select({ id: s.jobOrders.id, position: s.jobOrders.position, shift: s.jobOrders.shift, clientId: s.clients.id, clientName: s.clients.name })
     .from(s.jobOrders)
@@ -144,6 +146,9 @@ export async function catalogOptions(tx: Tx) {
     worksites: sites.sort((a, b) => cmp(a.name, b.name)),
     workers: people.map((w) => ({ id: w.id, name: fullName(w) })).sort((a, b) => cmp(a.name, b.name)),
     jobOrders: jobs.map((j) => ({ id: j.id, clientId: j.clientId, label: `${j.position}${j.shift ? ` (${j.shift})` : ""} — ${j.clientName}` })).sort((a, b) => cmp(a.label, b.label)),
+    /** Who can be a placement's recruiter, and the offices (slice i). */
+    users: users.sort((a, b) => cmp(a.name, b.name)),
+    branches: branches.sort((a, b) => cmp(a.name, b.name)),
   };
 }
 
@@ -165,6 +170,8 @@ export interface AssignmentRow {
   /** The client's PO for this placement (slice g); null: the client's own PO. */
   poNumber: string | null;
   clientPo: string | null;
+  /** Whose placement it is (slice i). */
+  recruiterUserId: string | null;
 }
 
 export async function listAssignments(tx: Tx, today: string, where?: { jobOrderId: string }): Promise<AssignmentRow[]> {
@@ -198,6 +205,7 @@ export async function listAssignments(tx: Tx, today: string, where?: { jobOrderI
         billRateCents: card?.billRateCents ?? null,
         source: a.externalSource,
         poNumber: a.poNumber,
+        recruiterUserId: a.recruiterUserId,
         clientPo: profiles.find((p) => p.clientId === c.id && p.effectiveFrom <= today && (p.effectiveTo === null || today <= p.effectiveTo))?.poNumber ?? null,
       };
     })
@@ -236,6 +244,8 @@ export async function jobOrderPage(tx: Tx, id: string, today: string) {
       payMinCents: row.job.payMinCents,
       payMaxCents: row.job.payMaxCents,
       prevailingWage: row.job.prevailingWage,
+      branchId: row.job.branchId,
+      branchName: row.job.branchId ? ((await tx.select({ name: s.branches.name }).from(s.branches).where(eq(s.branches.id, row.job.branchId)))[0]?.name ?? null) : null,
       createdAt: row.job.createdAt.toISOString(),
     },
     rates: { paidThrough: paid, versions: versions.filter((v) => v.assignmentId === null).map((v) => versionView(v, paid)) },

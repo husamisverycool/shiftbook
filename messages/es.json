@@ -592,7 +592,9 @@
     "clients": "Clientes",
     "receivables": "Cuentas por cobrar",
     "payments": "Pagos",
-    "bank": "Banco"
+    "bank": "Banco",
+    "margin": "Margen",
+    "marginSettings": "Configuración de margen"
   },
   "list": {
     "filter": "Filtrar",
@@ -724,8 +726,11 @@
         "headcount": "Escribe un número entero de 1 a 10,000.",
         "pay_range": "Escribe montos como 18.50, el primero no mayor que el segundo.",
         "amount": "Escribe un monto como 18.50.",
-        "client_has_assignments": "Hay trabajadores asignados a esta orden, así que su cliente no puede cambiar."
-      }
+        "client_has_assignments": "Hay trabajadores asignados a esta orden, así que su cliente no puede cambiar.",
+        "branch": "Elija una de las oficinas de la agencia."
+      },
+      "branch": "Oficina",
+      "noBranch": "Sin oficina"
     }
   },
   "jobOrder": {
@@ -762,7 +767,8 @@
     "openAssignments": "Abrir asignaciones",
     "noAssignments": "Aún no hay trabajadores asignados.",
     "ownRatesOf": "Tarifas propias de {name}",
-    "ownRatesBody": "Estas tarifas aplican a este trabajador en esta orden desde su fecha de inicio; en las demás fechas aplican las tarifas de la orden."
+    "ownRatesBody": "Estas tarifas aplican a este trabajador en esta orden desde su fecha de inicio; en las demás fechas aplican las tarifas de la orden.",
+    "branch": "Oficina"
   },
   "assignments": {
     "title": "Asignaciones",
@@ -804,7 +810,8 @@
       "bill": "Tarifa de cobro",
       "rates": "Tarifas",
       "source": "Origen",
-      "po": "Orden de compra"
+      "po": "Orden de compra",
+      "recruiter": "Reclutador(a)"
     },
     "status": {
       "active": "Activa",
@@ -853,7 +860,10 @@
       "po_number": "Una orden de compra tiene de 1 a 64 caracteres, sin espacios al principio ni al final.",
       "not_found": "Esta asignación ya no existe.",
       "invoiced": "Las horas de esta asignación se facturaron con su orden de compra."
-    }
+    },
+    "noRecruiter": "Sin reclutador(a)",
+    "recruiterSaved": "Reclutador(a) guardado",
+    "recruiterError": "No funcionó. Intente de nuevo."
   },
   "approvals": {
     "title": "Aprobaciones de clientes",
@@ -2148,5 +2158,195 @@
     "credit": "Crédito disponible",
     "daysToPay": "Días para pagar",
     "days": "{days} días ({count, plural, one {# factura} other {# facturas}})"
+  },
+  "margin": {
+    "title": "Margen",
+    "period": "Período",
+    "presets": {
+      "4": "Últimas 4 semanas",
+      "13": "Últimas 13 semanas",
+      "52": "Últimas 52 semanas",
+      "custom": "Elegir fechas"
+    },
+    "from": "Desde",
+    "to": "Hasta",
+    "apply": "Aplicar",
+    "export": "Exportar",
+    "exportSummary": "CSV del resumen",
+    "exportLines": "CSV de las líneas",
+    "exportCsv": "Exportar CSV",
+    "settings": "Configuración de margen",
+    "tabsLabel": "Vistas de margen",
+    "tabs": {
+      "overview": "Resumen",
+      "overtime": "Horas extra no facturadas",
+      "cash": "Efectivo adelantado"
+    },
+    "notForRole": "El margen es para el Propietario y el contador.",
+    "chartTitle": "Margen bruto por semana",
+    "chartBar": "facturado {billed}, margen bruto {margin}",
+    "week": "Semana",
+    "cols": {
+      "hours": "Horas",
+      "billed": "Facturado",
+      "pay": "Pago",
+      "burden": "Carga est.",
+      "margin": "Margen bruto",
+      "percent": "Margen %"
+    },
+    "formulas": {
+      "hours": "Horas normales, extra y dobles pagadas.",
+      "billed": "Lo que las facturas cobraron por el trabajo, de las líneas de facturación de la corrida.",
+      "pay": "Pago bruto por el trabajo, de las líneas de pago de la corrida.",
+      "burden": "Costos estimados del empleador: impuestos del empleador como porcentaje del pago, más compensación laboral por cada $100 de pago (sin la prima de horas extra cuando la configuración lo indica), con las tarifas vigentes esa semana.",
+      "margin": "Facturado − pago − carga estimada.",
+      "percent": "Margen bruto ÷ facturado, con un decimal, redondeado hacia arriba en la mitad."
+    },
+    "cards": {
+      "billed": "Facturado",
+      "pay": "Pago",
+      "burden": "Carga estimada",
+      "margin": "Margen bruto",
+      "percent": "Margen %",
+      "overtime": "Prima de horas extra no facturada",
+      "cash": "Efectivo adelantado"
+    },
+    "working": {
+      "billed": "{billed} facturado por el trabajo del {from} al {to} ({lines, plural, one {# asignación-semana} other {# asignaciones-semana}}).",
+      "pay": "{pay} de pago bruto por el mismo trabajo.",
+      "burden": "{burden} de carga estimada: los impuestos del empleador y la compensación laboral de cada línea de pago, redondeados una vez por línea. Abra las líneas de una fila para ver cada cálculo.",
+      "margin": "{billed} facturado − {pay} pago − {burden} carga estimada = {margin}.",
+      "percent": "{margin} de margen bruto ÷ {billed} facturado = {percent}."
+    },
+    "none": "Ninguno",
+    "weekOf": "Semana del {date}",
+    "empty": "Ninguna semana del {from} al {to} tiene sus archivos hechos todavía, así que no hay nada que mostrar.",
+    "emptyLink": "Convertir hojas de horas",
+    "lineIncomplete": "Carga incompleta: falta una tarifa.",
+    "payLine": "Pago ({type}):",
+    "billLine": "Facturación ({type}):",
+    "burdenOf": "Carga: {explain}",
+    "incomplete": "La carga de {count, plural, one {# fila está incompleta} other {# filas está incompleta}}: falta una tarifa de compensación laboral o de impuestos y cuenta como $0.00.",
+    "groupBy": "Agrupar por",
+    "groups": {
+      "client": "Cliente",
+      "worker": "Trabajador",
+      "recruiter": "Reclutador(a)",
+      "branch": "Oficina",
+      "week": "Semana"
+    },
+    "sortBy": "Ordenar por",
+    "sorts": {
+      "margin": "Margen bruto",
+      "percent": "Margen %"
+    },
+    "tableLabel": "Margen por {group}",
+    "total": "Total",
+    "overtime": {
+      "none": "No se pagaron horas extra en este período.",
+      "allBilled": "Las {hours} de horas extra pagadas se facturaron al multiplicador de horas extra.",
+      "summary": "{paid} de horas extra pagadas; {leaked} no facturadas al multiplicador; {premium} de prima pagada por ellas y no facturada.",
+      "client": "Cliente",
+      "worker": "Trabajador",
+      "week": "Semana",
+      "paid": "Extra pagadas",
+      "atMultiplier": "Al multiplicador",
+      "atStraight": "A tarifa normal",
+      "notBilled": "No facturadas",
+      "premium": "Prima no facturada",
+      "terms": "Condiciones del cliente",
+      "reasons": {
+        "multiplier": "Todo al multiplicador",
+        "bill_overtime_straight": "Factura las horas extra a tarifa normal",
+        "bill_overtime_own_sites_straight": "Factura horas extra solo por horas en sus propios sitios",
+        "bill_overtime_not_billable": "Horas extra no facturables"
+      }
+    },
+    "cash": {
+      "now": "Adelantado hoy",
+      "nowWhy": "Nómina pagada hasta el {date} menos lo que los clientes pagaron por ese trabajo.",
+      "payroll": "Nómina del {date}",
+      "estimate": "Aún no hay corrida para esa semana: el promedio de las últimas cuatro semanas pagadas.",
+      "fromRun": "De la corrida de esa semana.",
+      "estimateBadge": "Estimado",
+      "expected": "Por cobrar para entonces",
+      "nothingExpected": "No se espera cobrar ninguna factura abierta para entonces.",
+      "after": "Adelantado después de esa nómina",
+      "noPayDay": "No hay día de pago configurado, así que las fechas de pago se toman como el último día del período.",
+      "none": "No hay nada adelantado: toda nómina pagada hasta ahora ya fue pagada por los clientes.",
+      "byClient": "Efectivo adelantado por cliente",
+      "client": "Cliente",
+      "paid": "Nómina pagada",
+      "collected": "Cobrado por ella",
+      "floating": "Adelantado",
+      "daysToPay": "Días para pagar",
+      "days": "{days} días ({count, plural, one {# factura} other {# facturas}})",
+      "week": "Semana que termina el {ends}, pagada el {paid}"
+    }
+  },
+  "marginSettings": {
+    "above": "Configuración",
+    "title": "Configuración de margen",
+    "description": "Las tarifas que usa la carga estimada del margen y el día en que se paga a los trabajadores. Cada una aplica desde una fecha.",
+    "readOnly": "Solo el Propietario los cambia.",
+    "taxes": {
+      "title": "Impuestos del empleador",
+      "intro": "Un porcentaje del pago por estado del lugar de trabajo; «Cualquier otro estado» cubre el resto.",
+      "none": "Aún no hay tarifa: los impuestos del empleador cuentan como $0.00 hasta que se agregue una.",
+      "rate": "Tarifa %",
+      "includes": "Qué incluye",
+      "includesHint": "FICA 7.65% + FUTA 0.6% + desempleo estatal",
+      "addTitle": "Agregar una tarifa de impuestos del empleador"
+    },
+    "wc": {
+      "title": "Compensación laboral",
+      "intro": "Una tarifa por cada $100 de pago para cada estado y código de clase de sus tarjetas de tarifas.",
+      "none": "Aún no hay tarifa: la compensación laboral cuenta como $0.00 hasta que se agregue una.",
+      "missing": "Hoy no hay tarifa para {codes}: la compensación laboral cuenta como $0.00 para ese trabajo.",
+      "classCode": "Código de clase",
+      "description": "Descripción",
+      "rate": "Tarifa por $100",
+      "addTitle": "Agregar una tarifa de compensación laboral",
+      "otPremium": "Dejar la prima de horas extra fuera de la compensación laboral",
+      "otPremiumHint": "La mayoría de los estados cobran la compensación laboral de las horas extra a la tarifa normal.",
+      "otNextOn": "Desde el {date} la prima se deja fuera.",
+      "otNextOff": "Desde el {date} la prima se cuenta."
+    },
+    "payDay": {
+      "title": "Día de pago",
+      "intro": "Cuántos días después de que termina un período de pago se paga a sus trabajadores; el efectivo adelantado cuenta desde entonces.",
+      "notSet": "No hay día de pago configurado.",
+      "current": "Se paga a los trabajadores {days, plural, one {# día} other {# días}} después de que termina el período (desde el {date}).",
+      "next": "Desde el {date}: {days, plural, one {# día} other {# días}}.",
+      "days": "Días después de que termina el período"
+    },
+    "state": "Estado",
+    "from": "Desde",
+    "to": "Hasta",
+    "anyOtherState": "Cualquier otro estado",
+    "chooseState": "Elija un estado",
+    "inForce": "Vigente",
+    "addRate": "Agregar tarifa",
+    "addBody": "Aplica desde la fecha que elija; la tarifa anterior termina el día antes.",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "saved": "Guardado",
+    "changed": "Último cambio el {date} por {by}.",
+    "rules": {
+      "state": "Elija un estado.",
+      "percent": "Ingrese un porcentaje de 0 a 100, con dos decimales como máximo.",
+      "per_hundred": "Ingrese dólares y centavos por cada $100 de pago.",
+      "class_code": "Hasta 10 letras, números, puntos o guiones.",
+      "too_long": "Es demasiado largo.",
+      "date": "Ingrese una fecha.",
+      "days": "Ingrese días enteros, de 0 a 28."
+    },
+    "errors": {
+      "not_allowed": "Solo el Propietario los cambia.",
+      "not_found": "Esto ya no existe. Actualice la página.",
+      "busy": "Se están haciendo los archivos de una semana en este momento. Intente de nuevo en un momento.",
+      "generic": "No funcionó. Intente de nuevo.",
+      "invalid": "Hay algo que corregir."
+    }
   }
 }

@@ -57,6 +57,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
     [t("headcount"), t("assignedOf", { assigned: active.length, wanted: job.headcount })],
     [t("payRange"), job.payMinCents !== null || job.payMaxCents !== null ? `${job.payMinCents !== null ? money(job.payMinCents, locale) : "—"} – ${job.payMaxCents !== null ? money(job.payMaxCents, locale) : "—"}` : "—"],
     [t("prevailingWage"), job.prevailingWage ? t("yes") : t("no")],
+    [t("branch"), job.branchName ?? "—"],
     [t("created"), longDate(job.createdAt.slice(0, 10), locale)],
   ];
 
@@ -165,7 +166,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
         <JobOrderForm
           onClose={() => setEditing(false)}
           options={options}
-          initial={{ id: job.id, clientId: job.clientId, worksiteId: job.worksiteId, position: job.position, socCode: job.socCode, shift: job.shift, headcount: job.headcount, payMinCents: job.payMinCents, payMaxCents: job.payMaxCents, prevailingWage: job.prevailingWage }}
+          initial={{ id: job.id, clientId: job.clientId, worksiteId: job.worksiteId, position: job.position, socCode: job.socCode, shift: job.shift, headcount: job.headcount, payMinCents: job.payMinCents, payMaxCents: job.payMaxCents, prevailingWage: job.prevailingWage, branchId: job.branchId }}
         />
       )}
       {assigning && <AssignForm jobOrderId={job.id} workers={options.workers} today={today} onClose={() => setAssigning(false)} />}

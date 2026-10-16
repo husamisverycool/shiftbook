@@ -4,5 +4,5 @@ export { MINIMUM_WAGE } from "./rules/minimum-wage";
 export { NO_PLACE, STATE_FIPS } from "./places";
 export { WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 export { addDays, addMonths, isEffective, isIsoDate, weekdayOf, workweekStart } from "./dates";
-export { formatCents, formatDuration, formatRate } from "./format";
+export { formatCents, formatDuration, formatMoney, formatRate } from "./format";
 export { ceilDiv, exactDecimal, floorDiv, mod, mul, roundHalfUp, roundHalfUpBig } from "./int";
