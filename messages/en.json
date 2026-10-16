@@ -62,9 +62,6 @@
     "contact": "Questions? Contact {agency}: {contact}.",
     "footer": "Sent by Shiftbook on behalf of {agency}."
   },
-  "portal": {
-    "attestation": "I confirm that the shifts I am approving were worked as shown, and I approve them for {client}."
-  },
   "meta": {
     "title": "Shiftbook"
   },
@@ -398,7 +395,8 @@
       "bothRealTitle": "Are both entries real work?",
       "bothRealBody": "Confirm these entries are different work on the same day, not the same hours read twice. If either entry changes later, this is asked again.",
       "bothRealConfirm": "Confirm",
-      "goToUpload": "Go to timesheets"
+      "goToUpload": "Go to timesheets",
+      "openApprovals": "Open Client approvals"
     },
     "files": {
       "successTitle": "Files created",
@@ -438,6 +436,7 @@
     "convert": "Convert timesheets",
     "jobOrders": "Job orders",
     "assignments": "Assignments",
+    "approvals": "Client approvals",
     "shortcuts": "Keyboard shortcuts"
   },
   "list": {
@@ -692,6 +691,152 @@
     "chooseJobOrder": "Choose a job order…",
     "createdOne": "{name} assigned."
   },
+  "approvals": {
+    "title": "Client approvals",
+    "period": "Pay period",
+    "periodOption": "{start} – {end}",
+    "disputesBanner": "{count, plural, one {# shift disputed by a client needs a decision} other {# shifts disputed by clients need a decision}}",
+    "showDisputed": "Show disputed",
+    "filterStatus": "Status",
+    "filterClient": "Client",
+    "any": "Any",
+    "clearFilters": "Clear filters",
+    "colClient": "Client",
+    "colApprover": "Approver",
+    "colHours": "Shifts and hours",
+    "colStatus": "Status",
+    "colActivity": "Last activity",
+    "colActions": "Actions",
+    "state": {
+      "disputed": "Disputed",
+      "not_sent": "Not sent",
+      "send_again": "To send again",
+      "waiting": "Waiting",
+      "approved": "Approved"
+    },
+    "stateHint": {
+      "disputed": "The client disputed shifts. Settle each one.",
+      "not_sent": "No approval request has been sent for this period yet.",
+      "send_again": "Some shifts need the client's approval and no valid link covers them.",
+      "waiting": "Sent. The client has not acted yet.",
+      "approved": "The client approved every shift."
+    },
+    "noApprover": "No approver yet",
+    "shiftsHours": "{shifts, plural, one {# shift} other {# shifts}} · {hours}",
+    "needsReview": "{count, plural, one {# shift needs review} other {# shifts need review}}",
+    "activity": {
+      "approval_request": "Sent {when}",
+      "approval_reminder": "Reminder sent {when}",
+      "approval_renewal": "New link sent {when}",
+      "decided": "Client answered {when}"
+    },
+    "send": "Send for approval",
+    "sendAgain": "Send again",
+    "remind": "Send a reminder",
+    "open": "Open",
+    "sendTitle": "Send {client}'s hours for approval",
+    "sendBody": "{shifts, plural, one {# shift} other {# shifts}} ({hours} hours) will be emailed to the approver with a personal link. Reminders go out on their own until they answer.",
+    "approverName": "Approver's name",
+    "approverEmail": "Approver's email",
+    "approverLanguage": "Language of the email and page",
+    "english": "English",
+    "spanish": "Spanish",
+    "sendBlocked": "{count, plural, one {# shift} other {# shifts}} for this client still need review before the hours can be sent.",
+    "reviewHours": "Review hours",
+    "cancel": "Cancel",
+    "empty": "No hours in this pay period yet.",
+    "emptyLink": "Convert timesheets",
+    "noResults": "No clients match these filters.",
+    "done": {
+      "sent": "Sent to {email}",
+      "reminded": "Reminder sent",
+      "settled": "Dispute settled",
+      "withdrawn": "Approval withdrawn"
+    },
+    "errors": {
+      "not_found": "That request no longer exists.",
+      "period_locked": "This pay period's files were already created, so its hours can no longer change.",
+      "settings_missing": "The agency's approval settings (link days and reminder hours) are missing.",
+      "needs_review": "Some of this client's shifts still need review.",
+      "nothing_to_approve": "Nothing is waiting for the client's approval.",
+      "name_required": "Enter the approver's name.",
+      "invalid_email": "Enter a valid email address.",
+      "invalid_locale": "Choose English or Spanish.",
+      "send_failed": "The email could not be sent. Nothing was sent; try again in a moment.",
+      "not_open": "This request was replaced by a newer one.",
+      "dispute_not_open": "This dispute was already settled.",
+      "no_proposal": "The client gave no corrected times. Edit the hours or keep them instead.",
+      "reply_required": "Write a reply for the client.",
+      "reason_required": "Write a reason.",
+      "edit_refused": "The client's times cannot be applied as they are ({detail}). Edit the hours instead.",
+      "generic": "Something went wrong. Nothing was changed."
+    },
+    "detail": {
+      "back": "Client approvals",
+      "sentTo": "Sent to {name} ({email}) · {language}",
+      "changeApprover": "Change approver",
+      "withdraw": "Withdraw approval",
+      "withdrawTitle": "Withdraw the client's approval?",
+      "withdrawBody": "The approved shifts can then be changed again and will need the client's approval again. Earlier links stop working.",
+      "reason": "Reason",
+      "withdrawConfirm": "Withdraw approval",
+      "disputesTitle": "Disputes",
+      "recorded": "Recorded",
+      "clientTimes": "Client's times",
+      "change": "Change",
+      "noProposal": "No corrected times given",
+      "clientReason": "Client's reason",
+      "accept": "Accept the client's times",
+      "edit": "Edit the hours",
+      "keep": "Keep the hours",
+      "keepTitle": "Keep the recorded hours",
+      "keepBody": "Write a reply. The client sees it on the next link, and the shift needs their approval again.",
+      "reply": "Reply",
+      "keepConfirm": "Keep the hours",
+      "settled": {
+        "accepted": "The client's times were accepted",
+        "edited": "The hours were changed in Review hours",
+        "kept": "The hours were kept"
+      },
+      "settledBy": "{who}, {when}",
+      "hoursTitle": "Hours",
+      "historyTitle": "History",
+      "needsReview": "{count, plural, one {# more shift for this client needs review and is not shown to the client yet.} other {# more shifts for this client need review and are not shown to the client yet.}}",
+      "event": {
+        "sent": "Sent for approval to {approverEmail}",
+        "sent_again": "Sent again to {approverEmail}",
+        "approver_replaced": "Approver changed from {approverEmail} to {newApproverEmail}",
+        "reminder_sent": "Reminder sent",
+        "link_renewed": "The approver asked for a new link",
+        "link_opened": "Link first opened (this may be a mail system checking the link)",
+        "decided": "{typedName} approved {approved, plural, one {# shift} other {# shifts}} and disputed {disputed, plural, one {# shift} other {# shifts}}",
+        "dispute_accepted": "Dispute settled: the client's times accepted",
+        "dispute_edited": "Dispute settled: hours changed in Review hours",
+        "dispute_kept": "Dispute settled: hours kept",
+        "approval_withdrawn": "Approval withdrawn"
+      },
+      "automatic": "Shiftbook, automatically",
+      "viewEmail": "View email",
+      "emailKind": {
+        "approval_request": "Request",
+        "approval_reminder": "Reminder",
+        "approval_renewal": "New link",
+        "approval_confirmation": "Confirmation to the approver",
+        "approval_notice": "Notice to the agency"
+      },
+      "emailStatus": {
+        "sending": "Sending",
+        "sent": "Sent",
+        "failed": "Not sent"
+      },
+      "emailTo": "To",
+      "emailSubject": "Subject",
+      "emailSentAt": "Sent",
+      "linkHidden": "Links are hidden in this log.",
+      "demoCopy": "Demo: the email as the approver receives it, with its working link",
+      "notFound": "This approval request does not exist."
+    }
+  },
   "rates": {
     "title": "Rate card",
     "effectiveOn": "Effective on",
@@ -944,5 +1089,105 @@
     "invalidDates": "{count, plural, one {# date} other {# dates}} with an invalid format",
     "jobOrder": "Job order",
     "newBadge": "New"
+  },
+  "portal": {
+    "attestation": "I confirm that the shifts I am approving were worked as shown, and I approve them for {client}.",
+    "metaTitle": "Hours to approve",
+    "title": "Hours for {client}",
+    "period": "Pay period {start} to {end}",
+    "sentTo": "Sent to {name} ({email})",
+    "status": {
+      "waiting": "Waiting for your approval",
+      "approved": "Approved on {when} by {name}",
+      "disputed": "Some shifts are disputed and waiting for {agency}",
+      "newHours": "New or changed shifts are waiting for your approval"
+    },
+    "dispute": "Dispute",
+    "editDispute": "Edit dispute",
+    "removeDispute": "Remove dispute",
+    "willDispute": "To dispute",
+    "disputeTitle": "Dispute this shift",
+    "disputeShift": "{worker}, {day}: {start} to {end}, break {break} min, {hours} hours.",
+    "correctedTimes": "Correct times, if you know them",
+    "start": "Start",
+    "end": "End",
+    "breakMinutes": "Break (minutes)",
+    "reason": "Reason",
+    "reasonHint": "What is wrong with this shift. {agency} will see it.",
+    "saveDispute": "Save dispute",
+    "cancel": "Cancel",
+    "approveTitle": "Approve",
+    "approveSummary": "{shifts, plural, one {# shift} other {# shifts}} ({hours} hours) will be approved.",
+    "disputeSummary": "{count, plural, one {# disputed shift goes} other {# disputed shifts go}} to {agency} with your reasons.",
+    "fullName": "Your full name",
+    "evidence": "Your name, the time, and your internet address and browser are kept with your approval.",
+    "approveButton": "Approve hours",
+    "sendDisputesButton": "Send disputes",
+    "final": "Once sent, this cannot be changed here. To change it, contact {agency}.",
+    "nothingWaiting": "Nothing is waiting for your approval.",
+    "keptReply": "{agency} kept these hours: {reply}",
+    "clientDispute": "Your dispute: {reason}",
+    "done": "Thank you. Your answer was sent.",
+    "expired": {
+      "title": "This link has expired",
+      "body": "Ask for a new link by email, or contact {agency}.",
+      "newLink": "Email me a new link",
+      "sent": "A new link was sent to the email address this request went to.",
+      "closed": "This pay period is closed, so a new link cannot be sent. Contact {agency}."
+    },
+    "replaced": {
+      "title": "This link was replaced",
+      "body": "Use the link in the latest email from {agency}."
+    },
+    "invalid": {
+      "title": "This link is not valid",
+      "body": "Use the link in the latest email you received."
+    },
+    "closed": {
+      "title": "This pay period is closed",
+      "body": "Its hours were already paid. To change anything, contact {agency}."
+    },
+    "contact": "Questions? Contact {agency}: {contact}",
+    "providedBy": "Provided by {agency} through Shiftbook.",
+    "language": "Language",
+    "english": "English",
+    "spanish": "Español",
+    "errors": {
+      "changed": "The hours changed since you opened this page. Here are the latest; review them again.",
+      "link_expired": "This link has expired.",
+      "link_replaced": "This link was replaced by a newer one.",
+      "link_invalid": "This link is not valid.",
+      "period_locked": "This pay period is closed.",
+      "not_waiting": "This shift is no longer waiting for approval.",
+      "invalid_times": "The end must be after the start on the same day, and the break shorter than the shift.",
+      "reason_required": "Write what is wrong with this shift.",
+      "name_required": "Type your full name.",
+      "confirm_required": "Tick the confirmation to approve.",
+      "nothing_to_approve": "Nothing is waiting for your approval.",
+      "too_soon": "A new link was sent a moment ago. Check your inbox.",
+      "send_failed": "The email could not be sent. Try again in a moment.",
+      "settings_missing": "Something is missing on the agency's side. Contact them.",
+      "generic": "Something went wrong. Nothing was changed."
+    },
+    "currentTimesHint": "Leave a field empty to keep what is recorded."
+  },
+  "hoursTable": {
+    "label": "Hours by worker and day",
+    "worker": "Worker",
+    "total": "Total",
+    "totals": "Totals",
+    "showShifts": "Show {worker}'s shifts",
+    "day": "Day",
+    "start": "Start",
+    "end": "End",
+    "break": "Break",
+    "hours": "Hours",
+    "state": "State",
+    "states": {
+      "waiting": "Waiting",
+      "approved": "Approved",
+      "disputed": "Disputed"
+    },
+    "minutes": "{count} min"
   }
 }

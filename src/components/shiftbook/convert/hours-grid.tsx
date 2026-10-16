@@ -53,15 +53,16 @@ interface Draft {
 
 type AddError = EditError | "period_busy" | "worker_required";
 
-export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { id: string; name: string }[]; period: { startsOn: string; endsOn: string } }) {
+export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { id: string; name: string }[]; period: { startsOn: string; endsOn: string }; initialQuery?: string }) {
   const t = useTranslations("convert.hours");
   const tc = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
   const [pending, start] = useTransition();
   const attention = props.rows.filter(needsAttention);
-  const [filter, setFilter] = useState<"review" | "all">(attention.length > 0 ? "review" : "all");
-  const [query, setQuery] = useState("");
+  // Opened for one worker (Client approvals: "Edit the hours"): every row of theirs, not only those needing review.
+  const [filter, setFilter] = useState<"review" | "all">(attention.length > 0 && !props.initialQuery ? "review" : "all");
+  const [query, setQuery] = useState(props.initialQuery ?? "");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [active, setActive] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
   const [editing, setEditing] = useState<{ id: string; draft: Draft } | null>(null);

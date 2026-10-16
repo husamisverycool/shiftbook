@@ -62,9 +62,6 @@
     "contact": "¿Preguntas? Comunícate con {agency}: {contact}.",
     "footer": "Enviado por Shiftbook en nombre de {agency}."
   },
-  "portal": {
-    "attestation": "Confirmo que los turnos que apruebo se trabajaron como se muestran, y los apruebo en nombre de {client}."
-  },
   "meta": {
     "title": "Shiftbook"
   },
@@ -398,7 +395,8 @@
       "bothRealTitle": "¿Ambos registros son trabajo real?",
       "bothRealBody": "Confirma que estos registros son trabajos distintos del mismo día, no las mismas horas leídas dos veces. Si alguno cambia después, se volverá a preguntar.",
       "bothRealConfirm": "Confirmar",
-      "goToUpload": "Ir a las hojas de horas"
+      "goToUpload": "Ir a las hojas de horas",
+      "openApprovals": "Abrir Aprobaciones de clientes"
     },
     "files": {
       "successTitle": "Archivos creados",
@@ -438,6 +436,7 @@
     "convert": "Convertir hojas de horas",
     "jobOrders": "Órdenes de trabajo",
     "assignments": "Asignaciones",
+    "approvals": "Aprobaciones de clientes",
     "shortcuts": "Atajos de teclado"
   },
   "list": {
@@ -692,6 +691,152 @@
     "chooseJobOrder": "Elegir una orden de trabajo…",
     "createdOne": "Se asignó a {name}."
   },
+  "approvals": {
+    "title": "Aprobaciones de clientes",
+    "period": "Periodo de pago",
+    "periodOption": "{start} – {end}",
+    "disputesBanner": "{count, plural, one {# turno disputado por un cliente necesita una decisión} other {# turnos disputados por clientes necesitan una decisión}}",
+    "showDisputed": "Ver disputados",
+    "filterStatus": "Estado",
+    "filterClient": "Cliente",
+    "any": "Cualquiera",
+    "clearFilters": "Quitar filtros",
+    "colClient": "Cliente",
+    "colApprover": "Aprobador",
+    "colHours": "Turnos y horas",
+    "colStatus": "Estado",
+    "colActivity": "Última actividad",
+    "colActions": "Acciones",
+    "state": {
+      "disputed": "Disputado",
+      "not_sent": "Sin enviar",
+      "send_again": "Por reenviar",
+      "waiting": "En espera",
+      "approved": "Aprobado"
+    },
+    "stateHint": {
+      "disputed": "El cliente disputó turnos. Resuelve cada uno.",
+      "not_sent": "Todavía no se envió una solicitud de aprobación para este periodo.",
+      "send_again": "Algunos turnos necesitan la aprobación del cliente y ningún enlace vigente los incluye.",
+      "waiting": "Enviado. El cliente todavía no respondió.",
+      "approved": "El cliente aprobó todos los turnos."
+    },
+    "noApprover": "Sin aprobador todavía",
+    "shiftsHours": "{shifts, plural, one {# turno} other {# turnos}} · {hours}",
+    "needsReview": "{count, plural, one {# turno necesita revisión} other {# turnos necesitan revisión}}",
+    "activity": {
+      "approval_request": "Enviado {when}",
+      "approval_reminder": "Recordatorio enviado {when}",
+      "approval_renewal": "Nuevo enlace enviado {when}",
+      "decided": "El cliente respondió {when}"
+    },
+    "send": "Enviar para aprobación",
+    "sendAgain": "Enviar de nuevo",
+    "remind": "Enviar un recordatorio",
+    "open": "Abrir",
+    "sendTitle": "Enviar las horas de {client} para aprobación",
+    "sendBody": "{shifts, plural, one {# turno} other {# turnos}} ({hours} horas) se enviarán por correo al aprobador con un enlace personal. Los recordatorios salen solos hasta que responda.",
+    "approverName": "Nombre del aprobador",
+    "approverEmail": "Correo del aprobador",
+    "approverLanguage": "Idioma del correo y de la página",
+    "english": "Inglés",
+    "spanish": "Español",
+    "sendBlocked": "{count, plural, one {# turno} other {# turnos}} de este cliente todavía necesitan revisión antes de poder enviar las horas.",
+    "reviewHours": "Revisar horas",
+    "cancel": "Cancelar",
+    "empty": "Todavía no hay horas en este periodo de pago.",
+    "emptyLink": "Convertir hojas de horas",
+    "noResults": "Ningún cliente coincide con estos filtros.",
+    "done": {
+      "sent": "Enviado a {email}",
+      "reminded": "Recordatorio enviado",
+      "settled": "Disputa resuelta",
+      "withdrawn": "Aprobación retirada"
+    },
+    "errors": {
+      "not_found": "Esa solicitud ya no existe.",
+      "period_locked": "Los archivos de este periodo de pago ya se crearon, así que sus horas ya no pueden cambiar.",
+      "settings_missing": "Faltan los ajustes de aprobación de la agencia (días del enlace y horas de los recordatorios).",
+      "needs_review": "Algunos turnos de este cliente todavía necesitan revisión.",
+      "nothing_to_approve": "Nada espera la aprobación del cliente.",
+      "name_required": "Escribe el nombre del aprobador.",
+      "invalid_email": "Escribe un correo válido.",
+      "invalid_locale": "Elige inglés o español.",
+      "send_failed": "No se pudo enviar el correo. No se envió nada; inténtalo de nuevo en un momento.",
+      "not_open": "Esta solicitud fue reemplazada por una más reciente.",
+      "dispute_not_open": "Esta disputa ya se resolvió.",
+      "no_proposal": "El cliente no dio horas corregidas. Edita las horas o mantenlas.",
+      "reply_required": "Escribe una respuesta para el cliente.",
+      "reason_required": "Escribe un motivo.",
+      "edit_refused": "Las horas del cliente no se pueden aplicar tal como están ({detail}). Edita las horas.",
+      "generic": "Algo salió mal. No se cambió nada."
+    },
+    "detail": {
+      "back": "Aprobaciones de clientes",
+      "sentTo": "Enviado a {name} ({email}) · {language}",
+      "changeApprover": "Cambiar aprobador",
+      "withdraw": "Retirar la aprobación",
+      "withdrawTitle": "¿Retirar la aprobación del cliente?",
+      "withdrawBody": "Los turnos aprobados se podrán cambiar de nuevo y necesitarán otra vez la aprobación del cliente. Los enlaces anteriores dejan de funcionar.",
+      "reason": "Motivo",
+      "withdrawConfirm": "Retirar la aprobación",
+      "disputesTitle": "Disputas",
+      "recorded": "Registrado",
+      "clientTimes": "Horas del cliente",
+      "change": "Cambio",
+      "noProposal": "No dio horas corregidas",
+      "clientReason": "Motivo del cliente",
+      "accept": "Aceptar las horas del cliente",
+      "edit": "Editar las horas",
+      "keep": "Mantener las horas",
+      "keepTitle": "Mantener las horas registradas",
+      "keepBody": "Escribe una respuesta. El cliente la verá en el próximo enlace, y el turno necesitará otra vez su aprobación.",
+      "reply": "Respuesta",
+      "keepConfirm": "Mantener las horas",
+      "settled": {
+        "accepted": "Se aceptaron las horas del cliente",
+        "edited": "Las horas se cambiaron en Revisar horas",
+        "kept": "Se mantuvieron las horas"
+      },
+      "settledBy": "{who}, {when}",
+      "hoursTitle": "Horas",
+      "historyTitle": "Historial",
+      "needsReview": "{count, plural, one {# turno más de este cliente necesita revisión y todavía no se le muestra al cliente.} other {# turnos más de este cliente necesitan revisión y todavía no se le muestran al cliente.}}",
+      "event": {
+        "sent": "Enviado para aprobación a {approverEmail}",
+        "sent_again": "Enviado de nuevo a {approverEmail}",
+        "approver_replaced": "Aprobador cambiado de {approverEmail} a {newApproverEmail}",
+        "reminder_sent": "Recordatorio enviado",
+        "link_renewed": "El aprobador pidió un nuevo enlace",
+        "link_opened": "Enlace abierto por primera vez (puede ser un sistema de correo revisando el enlace)",
+        "decided": "{typedName} aprobó {approved, plural, one {# turno} other {# turnos}} y disputó {disputed, plural, one {# turno} other {# turnos}}",
+        "dispute_accepted": "Disputa resuelta: se aceptaron las horas del cliente",
+        "dispute_edited": "Disputa resuelta: horas cambiadas en Revisar horas",
+        "dispute_kept": "Disputa resuelta: se mantuvieron las horas",
+        "approval_withdrawn": "Aprobación retirada"
+      },
+      "automatic": "Shiftbook, automáticamente",
+      "viewEmail": "Ver correo",
+      "emailKind": {
+        "approval_request": "Solicitud",
+        "approval_reminder": "Recordatorio",
+        "approval_renewal": "Nuevo enlace",
+        "approval_confirmation": "Confirmación al aprobador",
+        "approval_notice": "Aviso a la agencia"
+      },
+      "emailStatus": {
+        "sending": "Enviando",
+        "sent": "Enviado",
+        "failed": "No enviado"
+      },
+      "emailTo": "Para",
+      "emailSubject": "Asunto",
+      "emailSentAt": "Enviado",
+      "linkHidden": "Los enlaces están ocultos en este registro.",
+      "demoCopy": "Demo: el correo como lo recibe el aprobador, con su enlace que funciona",
+      "notFound": "Esta solicitud de aprobación no existe."
+    }
+  },
   "rates": {
     "title": "Tarifas",
     "effectiveOn": "Vigente el",
@@ -944,5 +1089,105 @@
     "invalidDates": "{count, plural, one {# fecha} other {# fechas}} con formato no válido",
     "jobOrder": "Orden de trabajo",
     "newBadge": "Nueva"
+  },
+  "portal": {
+    "attestation": "Confirmo que los turnos que apruebo se trabajaron como se muestran, y los apruebo en nombre de {client}.",
+    "metaTitle": "Horas por aprobar",
+    "title": "Horas de {client}",
+    "period": "Periodo de pago del {start} al {end}",
+    "sentTo": "Enviado a {name} ({email})",
+    "status": {
+      "waiting": "Esperando tu aprobación",
+      "approved": "Aprobado el {when} por {name}",
+      "disputed": "Algunos turnos están disputados y esperan a {agency}",
+      "newHours": "Hay turnos nuevos o cambiados que esperan tu aprobación"
+    },
+    "dispute": "Disputar",
+    "editDispute": "Editar disputa",
+    "removeDispute": "Quitar disputa",
+    "willDispute": "Por disputar",
+    "disputeTitle": "Disputar este turno",
+    "disputeShift": "{worker}, {day}: de {start} a {end}, descanso de {break} min, {hours} horas.",
+    "correctedTimes": "Horas correctas, si las sabes",
+    "start": "Entrada",
+    "end": "Salida",
+    "breakMinutes": "Descanso (minutos)",
+    "reason": "Motivo",
+    "reasonHint": "Qué está mal en este turno. {agency} lo verá.",
+    "saveDispute": "Guardar disputa",
+    "cancel": "Cancelar",
+    "approveTitle": "Aprobar",
+    "approveSummary": "Se aprobarán {shifts, plural, one {# turno} other {# turnos}} ({hours} horas).",
+    "disputeSummary": "{count, plural, one {# turno disputado se envía} other {# turnos disputados se envían}} a {agency} con tus motivos.",
+    "fullName": "Tu nombre completo",
+    "evidence": "Tu nombre, la hora, y tu dirección de internet y navegador se guardan con tu aprobación.",
+    "approveButton": "Aprobar horas",
+    "sendDisputesButton": "Enviar disputas",
+    "final": "Una vez enviado, no se puede cambiar aquí. Para cambiarlo, comunícate con {agency}.",
+    "nothingWaiting": "Nada espera tu aprobación.",
+    "keptReply": "{agency} mantuvo estas horas: {reply}",
+    "clientDispute": "Tu disputa: {reason}",
+    "done": "Gracias. Tu respuesta se envió.",
+    "expired": {
+      "title": "Este enlace venció",
+      "body": "Pide un nuevo enlace por correo, o comunícate con {agency}.",
+      "newLink": "Envíame un nuevo enlace",
+      "sent": "Se envió un nuevo enlace al correo al que se mandó esta solicitud.",
+      "closed": "Este periodo de pago está cerrado, así que no se puede enviar un nuevo enlace. Comunícate con {agency}."
+    },
+    "replaced": {
+      "title": "Este enlace fue reemplazado",
+      "body": "Usa el enlace del correo más reciente de {agency}."
+    },
+    "invalid": {
+      "title": "Este enlace no es válido",
+      "body": "Usa el enlace del correo más reciente que recibiste."
+    },
+    "closed": {
+      "title": "Este periodo de pago está cerrado",
+      "body": "Sus horas ya se pagaron. Para cambiar algo, comunícate con {agency}."
+    },
+    "contact": "¿Preguntas? Comunícate con {agency}: {contact}",
+    "providedBy": "Proporcionado por {agency} a través de Shiftbook.",
+    "language": "Idioma",
+    "english": "English",
+    "spanish": "Español",
+    "errors": {
+      "changed": "Las horas cambiaron desde que abriste esta página. Estas son las más recientes; revísalas de nuevo.",
+      "link_expired": "Este enlace venció.",
+      "link_replaced": "Este enlace fue reemplazado por uno más reciente.",
+      "link_invalid": "Este enlace no es válido.",
+      "period_locked": "Este periodo de pago está cerrado.",
+      "not_waiting": "Este turno ya no espera aprobación.",
+      "invalid_times": "La salida debe ser después de la entrada el mismo día, y el descanso más corto que el turno.",
+      "reason_required": "Escribe qué está mal en este turno.",
+      "name_required": "Escribe tu nombre completo.",
+      "confirm_required": "Marca la confirmación para aprobar.",
+      "nothing_to_approve": "Nada espera tu aprobación.",
+      "too_soon": "Se envió un nuevo enlace hace un momento. Revisa tu correo.",
+      "send_failed": "No se pudo enviar el correo. Inténtalo de nuevo en un momento.",
+      "settings_missing": "Falta algo del lado de la agencia. Comunícate con ella.",
+      "generic": "Algo salió mal. No se cambió nada."
+    },
+    "currentTimesHint": "Deja un campo vacío para mantener lo registrado."
+  },
+  "hoursTable": {
+    "label": "Horas por trabajador y día",
+    "worker": "Trabajador",
+    "total": "Total",
+    "totals": "Totales",
+    "showShifts": "Ver los turnos de {worker}",
+    "day": "Día",
+    "start": "Entrada",
+    "end": "Salida",
+    "break": "Descanso",
+    "hours": "Horas",
+    "state": "Estado",
+    "states": {
+      "waiting": "En espera",
+      "approved": "Aprobado",
+      "disputed": "Disputado"
+    },
+    "minutes": "{count} min"
   }
 }

@@ -133,6 +133,10 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
                     <Link href={{ pathname: "/convert", query: { period: periodId, step: "hours" } }} className={buttonVariants({ size: "sm", variant: "outline", className: "w-fit" })}>
                       {t("edit")}
                     </Link>
+                  ) : b.code === "client_dispute_open" ? (
+                    <Link href={{ pathname: "/approvals", query: { period: periodId, status: "disputed" } }} className={buttonVariants({ size: "sm", variant: "outline", className: "w-fit" })}>
+                      {t("openApprovals")}
+                    </Link>
                   ) : (
                     b.workerIds.length > 0 && (
                       <Button size="sm" variant="outline" className="w-fit" onClick={() => setSkipping({ workerIds: b.workerIds })} data-testid="skip-workers">

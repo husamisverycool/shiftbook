@@ -788,6 +788,8 @@ export interface ClientApprovalRow {
   counts: { waiting: number; approved: number; disputed: number; needsReview: number };
   workers: number;
   minutes: number;
+  /** What a send would ask the client to approve now. */
+  waitingMinutes: number;
   lastActivity: { kind: s.EmailKind | "decided"; at: Date } | null;
 }
 
@@ -857,6 +859,7 @@ export async function listApprovals(tx: Tx, payPeriodId: string, now: Date = new
       counts,
       workers: new Set(visible.map((x) => x.workerId)).size,
       minutes: visible.reduce((sum, x) => sum + x.minutes, 0),
+      waitingMinutes: shifts.filter((x) => x.state === "waiting").reduce((sum, x) => sum + x.minutes, 0),
       lastActivity,
     });
   }

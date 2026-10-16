@@ -32,6 +32,20 @@ const nextConfig: NextConfig = {
     "exceljs",
     "postgres",
   ],
+  // Client approval links carry a secret in the path (decision 0013): never cached, never indexed,
+  // never sent on as a referrer.
+  async headers() {
+    return [
+      {
+        source: "/:locale(en|es)/approve/:token*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/", destination: "/en/convert", permanent: false },
