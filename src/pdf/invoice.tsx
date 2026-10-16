@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   dCell: { width: "16%", textAlign: "right" },
   dTotal: { flexDirection: "row", justifyContent: "flex-end", paddingVertical: 3, fontFamily: "Helvetica-Bold" },
   approval: { color: "#555555", marginTop: 3 },
-  imagePage: { padding: 32 },
+  imagePage: { paddingTop: 32, paddingBottom: 64, paddingHorizontal: 32, fontSize: 9, fontFamily: "Helvetica", color: "#111111" },
   image: { width: "100%", height: "92%", objectFit: "contain" },
 });
 

@@ -6,7 +6,7 @@
  */
 import { formatCents } from "@shiftbook/rules";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
-import { and, desc, eq, inArray, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { createElement, type ReactElement } from "react";
 import en from "../../../messages/en.json";
 import { StatementDocument, type StatementData } from "../../pdf/statement";
@@ -38,7 +38,7 @@ const rowsOf = async (tx: Tx, where?: SQL) => {
     .innerJoin(s.clients, eq(s.clients.id, s.invoices.clientId))
     .innerJoin(s.payRuns, eq(s.payRuns.id, s.invoices.payRunId))
     .innerJoin(s.payPeriods, eq(s.payPeriods.id, s.payRuns.payPeriodId));
-  const rows = await (where ? q.where(where) : q).orderBy(desc(s.invoices.issuedOn), desc(s.invoices.createdAt), desc(s.invoices.number));
+  const rows = await (where ? q.where(where) : q).orderBy(desc(s.invoices.issuedOn), desc(s.invoices.createdAt), asc(s.invoices.number));
   return rows.map(
     (r): InvoiceRow => ({
       id: r.invoice.id,
@@ -58,7 +58,7 @@ const rowsOf = async (tx: Tx, where?: SQL) => {
   );
 };
 
-/** Every invoice, supplemental invoice and credit note, newest first. */
+/** Every invoice, supplemental invoice and credit note, newest first (one run's in number order). */
 export function listInvoices(tx: Tx): Promise<InvoiceRow[]> {
   return rowsOf(tx);
 }
