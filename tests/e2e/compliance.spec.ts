@@ -382,7 +382,10 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("aca-show").selectOption("full_time");
     await page.getByTestId("aca-row").filter({ hasText: m.compliance.aca.cycles.standard }).getByTestId("aca-duty").click();
     await expect(page.getByRole("heading", { level: 1 })).toContainText(m.compliance.kinds.aca_offer);
-    await expect(page.getByTestId("obligation-message")).toContainText("Measured full-time in the standard measurement period 2025-10-01 to 2026-09-30");
+    // What it was worked out from, in the reader's language and dates (decision 0028).
+    await expect(page.getByTestId("obligation-message")).toContainText(
+      locale === "en" ? "Measured full-time in the standard measurement period October 1, 2025 to September 30, 2026" : "Medido como tiempo completo en el periodo de medición estándar del 1 de octubre de 2025 al 30 de septiembre de 2026",
+    );
     await check(page, "ACA offer duty");
     expect(errors).toEqual([]);
   });

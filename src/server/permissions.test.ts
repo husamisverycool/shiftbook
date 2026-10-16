@@ -8,9 +8,10 @@ describe("what each role may change (SPEC §2)", () => {
     for (const a of Object.keys(ABILITIES) as Ability[]) expect(can({ role: "owner" }, a)).toBe(true);
   });
 
-  it("the accountant reads everything (the margin too) and changes nothing", () => {
+  it("the accountant reads everything (the margin and the activity log too) and changes nothing", () => {
     expect(readsOnly({ role: "accountant" })).toBe(true);
     expect(can({ role: "accountant" }, "viewMargin")).toBe(true);
+    expect(can({ role: "accountant" }, "viewActivity")).toBe(true);
     for (const role of ROLES.filter((r) => r !== "accountant")) expect(readsOnly({ role })).toBe(false);
   });
 

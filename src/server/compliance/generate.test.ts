@@ -1,5 +1,22 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
-import { addBusinessDays, keyOf, wantedObligations, type ComplianceRule, type GenerateInput, type Placement, type Policy, type WorkerI9 } from "./generate";
+import en from "../../../messages/en.json";
+import { PLAIN, renderExplain } from "../../lib/explain";
+import { addBusinessDays, keyOf, wantedObligations as generate, type ComplianceRule, type GenerateInput, type Placement, type Policy, type WorkerI9 } from "./generate";
+
+/**
+ * Every duty any case below works out: its English template, filled the stored sentence's way, is
+ * exactly the stored sentence (decision 0028), so the Spanish screens say the same thing.
+ */
+const english = createTranslator({ locale: "en", messages: en, namespace: "compliance.explain" });
+const wantedObligations = (input: GenerateInput) => {
+  const out = generate(input);
+  for (const w of out) {
+    expect(renderExplain(w.explain, (key, values) => english(key as "reverify", values), PLAIN), `${w.kind} ${w.occurrence}`).toBe(w.message);
+    if (w.done) expect(renderExplain(w.done.key, (key, values) => english(key as "reverify", values), PLAIN), `${w.kind} ${w.occurrence} note`).toBe(w.done.note);
+  }
+  return out;
+};
 
 /** The rule rows of drizzle/0029 that these cases use (the numbers are the data, not the code's). */
 const rule = (code: string, over: Partial<ComplianceRule>): ComplianceRule => ({
@@ -258,5 +275,29 @@ describe("keys", () => {
     const w = wantedObligations({ ...base, placements: [placement({})] });
     expect(new Set(w.map(keyOf)).size).toBe(w.length);
     expect(keyOf({ kind: "il_client_proof", workerId: null, clientId: "c1", assignmentId: null, registrationId: null, policyId: null, occurrence: "2026-03-01" })).toBe("il_client_proof||c1||||2026-03-01");
+  });
+});
+
+describe("every wording of the explanation (decision 0028)", () => {
+  it("each key the generator can use is said, and says the stored English", () => {
+    const used = new Set<string>();
+    const run = (input: Partial<GenerateInput>) => wantedObligations({ ...base, ...input }).forEach((w) => [...w.explain.parts, ...(w.done?.key.parts ?? [])].forEach((p) => used.add(p.key)));
+    run({ registrations: [{ id: "r1", jurisdiction: "IL", branchId: null, number: "IL-0001", issuedOn: "2026-01-01", expiresOn: "2026-12-31" }] });
+    run({ rules: RULES.map((r) => (r.code === "il_registration_renewal" ? { ...r, offsetDays: 10 } : r)), registrations: [{ id: "r1", jurisdiction: "IL", branchId: null, number: "IL-0001", issuedOn: "2026-01-01", expiresOn: "2026-12-31" }] });
+    run({ policies: [{ id: "p1", carrier: "Carrier (demo)", policyNumber: "WC-1", states: [], startsOn: "2026-01-01", endsOn: "2026-12-31", auditDueOn: "2027-02-15" }] });
+    run({ placements: [placement({}), placement({ id: "a2", startDate: "2026-12-01", endDate: null })] });
+    run({ placements: [placement({ startDate: "2026-01-05", endDate: "2026-02-20", status: "ended" }), placement({ id: "a2", startDate: "2026-09-01", endDate: null })] });
+    run({ placements: [placement({ endDate: "2026-05-15", status: "ended" })] });
+    run({ placements: [placement({ state: "MA", startDate: "2026-10-14", firstPeriodEnd: "2026-10-18" }), placement({ id: "a3", state: "NJ", startDate: "2026-10-19", workerLanguage: "es" })] });
+    run({ workers: [worker({ workAuthExpiresOn: "2027-03-31" }), worker({ id: "w2", firstJobEndsOn: "2026-10-16" }), worker({ id: "w3", i9Section1On: "2026-01-02", i9Section2On: "2025-01-08" })] });
+    for (const weekdays of [[1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6, 0], [0, 1, 2, 3, 4, 5, 6]]) run({ openDays: [{ weekdays, effectiveFrom: "2026-01-01", effectiveTo: null }], workers: [worker({})] });
+    run({ rules: RULES.map((r) => (r.code === "i9_section2" ? { ...r, businessDays: 0, offsetDays: 2 } : r)), workers: [worker({})] });
+    const cycle = { workerId: "w1", measurementStart: "2025-10-01", measurementEnd: "2026-09-30", minutes: 94_170, days: 365, averageMinutesPerWeek: 1806, fullTimeMinutesPerWeek: 1800, stabilityStart: "2026-11-30", stabilityEnd: "2027-11-29" };
+    run({ aca: [{ ...cycle, cycle: "standard" }, { ...cycle, cycle: "initial", measurementStart: "2025-11-01" }] });
+    run({ registrations: [{ id: "r1", jurisdiction: "IL", branchId: null, number: "IL-0001", issuedOn: "2026-01-01", expiresOn: "2026-12-31" }, { id: "r3", jurisdiction: "IL", branchId: null, number: "IL-0003", issuedOn: "2026-10-10", expiresOn: "2027-12-31" }] });
+    run({ policies: [{ id: "p1", carrier: "Carrier (demo)", policyNumber: "WC-1", states: [], startsOn: "2026-01-01", endsOn: "2026-12-31", auditDueOn: null }, { id: "p2", carrier: "Carrier (demo)", policyNumber: "WC-2", states: [], startsOn: "2027-01-01", endsOn: "2027-12-31", auditDueOn: null }] });
+    run({ workers: [worker({ i9Section1On: "2026-10-15" })] });
+    const generated = Object.keys(en.compliance.explain).filter((k) => !k.startsWith("equalPay") && !["noteReverified", "noteWorkAuthChanged", "noteWorkAuthRemoved", "noteRateEntered"].includes(k));
+    expect([...used].sort()).toEqual(generated.sort());
   });
 });

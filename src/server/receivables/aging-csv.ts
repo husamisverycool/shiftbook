@@ -3,6 +3,7 @@
  * spreadsheet would run as a formula (starting with = + - @, a tab or a carriage return, and not a
  * number) is kept as text with a leading apostrophe before it is quoted (review finding 6).
  */
+import { csvCell } from "../../lib/csv-cell";
 import { formatCents } from "@shiftbook/rules";
 import { BUCKETS, type Bucket } from "./aging";
 
@@ -13,10 +14,7 @@ export interface AgingTable {
 }
 
 const money = (c: number) => (c < 0 ? `-${formatCents(-c).slice(1)}` : formatCents(c).slice(1)).replaceAll(",", "");
-const cell = (v: string) => {
-  const safe = /^[=+\-@\t\r]/.test(v) && Number.isNaN(Number(v)) ? `'${v}` : v;
-  return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
-};
+const cell = csvCell;
 
 export function agingCsv(view: AgingTable): string {
   const head = ["Client", "Current", "1-30", "31-60", "61-90", "91+", "Total", "Days to pay"];

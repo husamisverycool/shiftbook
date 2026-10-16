@@ -13,15 +13,18 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { addObligationFile, addObligationNote, addRegistration, closeObligation, recordI9, recordReverification, reopenObligation, setObligationOwner, setOpenWeekendDays, unlinkObligationFile } from "../../src/server/compliance/service";
 import { complianceItems, filterItems, obligationDetail, urgentCount } from "../../src/server/compliance/queries";
-import { syncObligations } from "../../src/server/compliance/sync";
+import { backfillKeys, syncObligations } from "../../src/server/compliance/sync";
 import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY, DEMO_OWNER } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, jobOrderId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
+import en from "../../messages/en.json";
+import es from "../../messages/es.json";
+import { explanationsSayTheMessage } from "./explain-parity";
 import { openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
@@ -46,9 +49,25 @@ async function freshAgency() {
 const items = () => inAgency((tx) => complianceItems(tx, theOwner, TODAY));
 const one = async (kind: string, where: (i: Awaited<ReturnType<typeof items>>["items"][number]) => boolean = () => true) => (await items()).items.find((i) => i.kind === kind && where(i))!;
 
+// Every duty on file says, in keys, what its English sentence says (decision 0028).
+afterEach(async () => {
+  await inAgency((tx) => explanationsSayTheMessage(tx));
+});
 afterAll(async () => {
   await app.close();
   await owner.close();
+});
+
+describe("each rule's citation in the reader's language (decision 0028)", () => {
+  it("the English copy in the messages is exactly the rule table's text, for every rule in force; Spanish has each", async () => {
+    const rules = await owner.db.select({ code: s.complianceRules.code, citation: s.complianceRules.citation, effectiveTo: s.complianceRules.effectiveTo }).from(s.complianceRules);
+    const inForce = rules.filter((r) => r.effectiveTo === null);
+    expect(inForce.length).toBeGreaterThan(0);
+    for (const r of inForce) {
+      expect((en.compliance.citations as Record<string, string>)[r.code], r.code).toBe(r.citation);
+      expect((es.compliance.citations as Record<string, string>)[r.code], r.code).toBeTruthy();
+    }
+  });
 });
 
 describe("the demo's duties, most urgent first (J1, J3)", () => {
@@ -179,6 +198,12 @@ describe("the data closes and reopens what it settles (J3)", () => {
     const o = await one("i9_reverify");
     expect(await inAgency((tx) => recordReverification(tx, coordinator, o.id, { reverifiedOn: "2026-10-17", nextExpiresOn: null }, TODAY))).toEqual({ ok: false, error: "invalid", field: "reverifiedOn" });
     expect(await inAgency((tx) => recordReverification(tx, coordinator, o.id, { reverifiedOn: "2026-10-14", nextExpiresOn: "2028-06-30" }, TODAY))).toEqual({ ok: true });
+    // The note in keys; one written before keys were kept gets them on the next sync (decision 0028).
+    const [reverified] = await inAgency((tx) => tx.select().from(s.obligations).where(eq(s.obligations.id, o.id)));
+    expect(reverified!.noteKey).toEqual({ parts: [{ key: "noteReverified", values: { date: { date: "2026-10-14" } } }], citation: null });
+    await inAgency((tx) => tx.update(s.obligations).set({ noteKey: null }).where(eq(s.obligations.id, o.id)));
+    await inAgency((tx) => backfillKeys(tx));
+    expect((await inAgency((tx) => tx.select().from(s.obligations).where(eq(s.obligations.id, o.id))))[0]!.noteKey).toEqual(reverified!.noteKey);
     expect((await items()).items.filter((i) => i.kind === "i9_reverify").map((i) => [i.occurrence, i.status])).toEqual([
       ["2028-06-30", "upcoming"],
       ["2026-12-20", "done"],

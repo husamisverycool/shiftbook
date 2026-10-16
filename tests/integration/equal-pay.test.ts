@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq, gte, inArray, lt } from "drizzle-orm";
 import { EQUAL_PAY_KINDS } from "../../src/server/compliance/kinds";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { addDays } from "@shiftbook/rules";
 import { agencies, assignments, auditEvents, equalPayRates, obligations, payLines, payPeriods, timeEntries, type ObligationEvidence } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
@@ -20,7 +20,9 @@ import { createRunFiles } from "../../src/server/files/service";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { addEntry } from "../../src/server/review/service";
 import { computeRun } from "../../src/server/run/service";
+import { backfillKeys } from "../../src/server/compliance/sync";
 import type { Actor } from "../../src/server/session";
+import { explanationsSayTheMessage } from "./explain-parity";
 import { approveAsOwner, openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
@@ -33,6 +35,10 @@ const TODAY = "2026-10-16";
 const theOwner: Actor = { ...actor, userId: "00000000-0000-4000-a000-000000000002", label: "Test owner", role: "owner" };
 const store = new LocalDocumentStore(mkdtempSync(join(tmpdir(), "sb-equal-pay-")));
 
+// Every equal-pay duty the run recorded says, in keys, what its English sentence says (decision 0028).
+afterEach(async () => {
+  await inAgency((tx) => explanationsSayTheMessage(tx));
+});
 beforeEach(async () => {
   const existing = await owner.db.select().from(agencies).where(eq(agencies.id, DEMO_AGENCY.id));
   if (existing.length === 0) await owner.db.insert(agencies).values({ ...DEMO_AGENCY, isDemo: true });
@@ -84,6 +90,11 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
     expect(rows[0]).toMatchObject({ kind: "il_equal_pay_720h", jurisdiction: "IL", workerId: marcus, clientId: clientId("il"), payRunId: run.runId, crossedOn: "2026-10-07", dueOn: "2026-10-11", status: "open" });
     expect(rows[0]!.facts).toMatchObject({ crossedAtMinute: 660, windowStart: "2025-10-08", thresholdMinutes: 43_200, minutesAfter: 1200, entryIds: ids.slice(2).sort() });
     expect(rows[0]!.message).toContain("Prairie Line");
+    // A duty recorded before explanations were kept gets them on the next sync — only because they say the same thing (decision 0028).
+    expect(rows[0]!.explain).not.toBeNull();
+    await inAgency((tx) => tx.update(obligations).set({ explain: null }).where(eq(obligations.id, rows[0]!.id)));
+    await inAgency((tx) => backfillKeys(tx));
+    expect((await inAgency((tx) => tx.select().from(obligations).where(eq(obligations.id, rows[0]!.id))))[0]!.explain).toEqual(rows[0]!.explain);
 
     // Computing again changes nothing and logs nothing new.
     await inAgency((tx) => computeRun(tx, actor, period));

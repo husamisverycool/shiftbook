@@ -253,6 +253,13 @@
       "when": 1792092600000,
       "tag": "0035_worker_roster",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792092700000,
+      "tag": "0036_duty_explanations",
+      "breakpoints": true
     }
   ]
 }

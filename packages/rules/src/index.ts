@@ -6,5 +6,5 @@ export { WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 export { applyEqualPayRates, duplicateEqualPayRates, equalPayRateProblem, latestRequest, rateInForce, type EqualPayMethod, type EqualPayRate } from "./rules/il-equal-pay-rate";
 export { coveredByEqualPay } from "./rules/il-equal-pay";
 export { addDays, addMonths, isEffective, isIsoDate, toDayNumber, weekdayOf, workweekStart } from "./dates";
-export { formatCents, formatDuration, formatMoney, formatRate } from "./format";
+export { formatCents, formatClock, formatDuration, formatHours, formatMoney, formatRate } from "./format";
 export { ceilDiv, exactDecimal, floorDiv, lowestTermsBig, mod, mul, roundHalfUp, roundHalfUpBig } from "./int";

@@ -3,15 +3,13 @@
  * Billing analytics). Amounts in dollars with two decimals; a cell a spreadsheet would run as a
  * formula is kept as text (as the aging CSV, decision 0019).
  */
+import { csvCell } from "../../lib/csv-cell";
 import { floorDiv, formatCents, mod, roundHalfUp } from "@shiftbook/rules";
 import { formatPermille, type GroupBy, type MarginGroup, type MarginLine } from "./margin";
 import type { OvertimeRow } from "./leakage";
 
 const money = (c: number) => (c < 0 ? `-${formatCents(-c).slice(1)}` : formatCents(c).slice(1)).replaceAll(",", "");
-const cell = (v: string) => {
-  const safe = /^[=+\-@\t\r]/.test(v) && Number.isNaN(Number(v)) ? `'${v}` : v;
-  return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
-};
+const cell = csvCell;
 const csv = (rows: string[][]) => rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
 /** Minutes as decimal hours to two places, rounded half up once: 2760 → "46.00", 50 → "0.83". */
 export function decimalHours(minutes: number): string {

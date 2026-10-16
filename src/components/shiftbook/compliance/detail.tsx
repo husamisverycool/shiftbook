@@ -19,8 +19,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { parseDollars } from "@/lib/amounts";
+import type { Explain } from "@/lib/explain";
 import type { ObligationDetail } from "@/server/compliance/queries";
 import { longDate, money } from "../format";
+import { useCite, useSay } from "./explain";
 import { dueIn, OwnerPicker } from "./list";
 import { StatusBadge } from "./status-badge";
 
@@ -46,6 +48,7 @@ export function useAct() {
 }
 
 export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: DetailTab; today: string }) {
+  const say = useSay();
   const t = useTranslations("compliance");
   const td = useTranslations("compliance.detail");
   const locale = useLocale();
@@ -88,7 +91,7 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
       {!open && (
         <p className="text-sm" data-testid="closed-note">
           {(i.status === "done" ? td("doneBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" }) : td("naBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" })) +
-            (d.closedBySystem ? ` ${systemNote(td, d, locale)}` : d.statusNote ? ` ${td("note", { note: d.statusNote })}` : "")}
+            (d.closedBySystem ? ` ${systemNote(td, d, locale)}` : d.noteKey ? ` ${td("note", { note: say(d.noteKey) })}` : d.statusNote ? ` ${td("note", { note: d.statusNote })}` : "")}
         </p>
       )}
       {!i.mayAct && <p className="text-sm text-muted-foreground">{td("readOnly", { who: t(`who.${whoFor(d)}`) })}</p>}
@@ -128,6 +131,8 @@ function systemNote(td: ReturnType<typeof useTranslations<"compliance.detail">>,
 const whoFor = (d: ObligationDetail): "owner" | "coordinator" | "billing" => (["placements", "workers"].includes(d.item.area) ? "coordinator" : d.item.area === "clients" ? "billing" : "owner");
 
 function Overview({ d, today }: { d: ObligationDetail; today: string }) {
+  const say = useSay();
+  const cite = useCite();
   const t = useTranslations("compliance");
   const td = useTranslations("compliance.detail");
   const locale = useLocale();
@@ -160,7 +165,7 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
         <p className="max-w-3xl text-sm">{t(`asks.${i.kind}` as "asks.ma_job_order", { days })}</p>
         {d.rule && (
           <p className="text-xs text-muted-foreground">
-            {td("citation")}: {d.rule.citation}.{" "}
+            {td("citation")}: {d.rule.citationCode ? cite(d.rule.citationCode, d.rule.citation) : d.rule.citation}.{" "}
             <a href={d.rule.sourceUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-0.5 underline underline-offset-4">
               {td("source")}
               <ExternalLinkIcon className="size-3" />
@@ -197,7 +202,7 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
           )}
           <dt className="text-muted-foreground">{td("workedOut")}</dt>
           <dd className="text-muted-foreground" data-testid="obligation-message">
-            {d.message}
+            {d.explain ? say(d.explain) : d.message}
           </dd>
         </dl>
         {i.kind === "aca_offer" && (
@@ -493,6 +498,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
 }
 
 function History({ d }: { d: ObligationDetail }) {
+  const say = useSay();
   const td = useTranslations("compliance.detail");
   const ts = useTranslations("compliance.statuses");
   const locale = useLocale();
@@ -500,7 +506,9 @@ function History({ d }: { d: ObligationDetail }) {
   const what = (h: ObligationDetail["history"][number]) => {
     const after = h.after ?? {};
     if (h.action === "create") return td("history.created");
-    if (typeof after.status === "string") return td("history.status", { to: after.status === "open" ? td("reopen") : ts(after.status === "done" ? "done" : "not_applicable") }) + (typeof after.note === "string" && after.note ? ` — ${after.note}` : "");
+    // Shiftbook's own notes in the reader's language (decision 0028); a person's note as typed.
+    const note = after.noteKey && typeof after.noteKey === "object" ? say(after.noteKey as Explain) : typeof after.note === "string" ? after.note : "";
+    if (typeof after.status === "string") return td("history.status", { to: after.status === "open" ? td("reopen") : ts(after.status === "done" ? "done" : "not_applicable") }) + (note ? ` — ${note}` : "");
     if ("ownerUserId" in after) return td("history.owner");
     if ("linkedDocumentId" in after) return after.linkedDocumentId ? td("history.fileAdded") : td("history.fileUnlinked");
     if (typeof after.dueOn === "string") return td("history.due", { date: longDate(after.dueOn, locale) });

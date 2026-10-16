@@ -139,3 +139,30 @@ Screens: `k34-profile.png`, `k35-profile-edit-personal.png`, `k36-ssn-edit-error
 - ✓ Spanish (`k44`).
 - Difference: Toast shows the number behind an eye icon in its pop-up; Shiftbook shows it in the
   dialog after Show. Same steps (reason, then the number, then the list).
+
+## Step 3 — the activity log; duty explanations in the reader's language
+
+### Activity — `docs/patterns/settings/activity.md` (Stripe Workbench events; GitHub's audit log; Vercel's export)
+Screens: `slice-k/k50-activity.png`, `k51-activity-record.png`, `k52-activity-changes.png`,
+`k53-activity-empty.png`, `k54-activity-es.png`, `k55-activity-coordinator.png`.
+- ✓ "Settings" above H1 "Activity"; Refresh, Copy link and Export CSV at the right.
+- ✓ The filters: From and To (the past three months by default), Person, Record type, Action;
+  Apply and Clear. The count of events under them.
+- ✓ Two panes: the list on the left — what happened, the record's type and name, and under it who
+  and when (in the agency's time) — the chosen row marked; the details on the right: what happened,
+  when to the second, who, the record (a link to its page) with "Show this record's activity", the
+  reason, Changes (each field before and after), and the event data folded (`k50`: the Owner's look
+  at an SSN with its reason; the last four at most).
+- ✓ One record's own history: the chip "Record: Marcus Bell" with its × (`k51`).
+- ✓ A change's fields before and after (`k52`).
+- ✓ Nothing matches: the line and Clear filters (`k53`). Spanish (`k54`).
+- ✓ A coordinator: the line saying the Owner and the accountant read the agency's activity (`k55`).
+- ✓ Load more, the arrows through the list, Copy link and the export following the filters are in
+  the Playwright test (`tests/e2e/activity.spec.ts`).
+- Difference: Stripe's list updates on Refresh only (as here); its filters each have their own Apply
+  — here one Apply runs them all.
+
+### A duty's explanation — `docs/patterns/compliance/[id].md`
+Screens: `k56-duty-explanation-en.png`, `k57-duty-explanation-es.png`.
+- ✓ "Worked out from" and the citation in the reader's language, with the reader's dates (decision
+  0028); the stored English sentence stays the record and a test keeps the two saying the same thing.

@@ -83,7 +83,11 @@ coordinator, billing or the accountant.
    `tests/e2e/workers.spec.ts` (en/es). Worker files are W-4, state withholding, direct deposit and
    other — no I-9 or identity copies (J4); Billing sees their list but cannot open them.
 3. **Activity log** — `/settings/activity` (Stripe Workbench events; GitHub audit-log export) and
-   per-record history; Spanish duty explanations.
+   per-record history; Spanish duty explanations (decision 0028). The Owner and the accountant read
+   the whole log (`viewActivity`); a record's own history is the log filtered to it ("Show this
+   record's activity"). Duties carry `explain` (a message key and values) beside the English
+   message; a parity test keeps the English template and the stored sentence identical. The
+   engine's own messages follow in slice l (task 50).
 
 ## Pattern files
 `docs/patterns/sign-in.md` (GitHub's two-step sign-in; Linear's login), `sign-in/code.md`,

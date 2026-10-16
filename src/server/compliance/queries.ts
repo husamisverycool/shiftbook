@@ -3,6 +3,7 @@
  * compliance/calendar.md, settings/compliance.md). The duties are worked out again before they are
  * shown (decision J3), so the list is never behind the data.
  */
+import { citationCodeOf } from "./explain-keys";
 import { toDayNumber } from "@shiftbook/rules";
 import { and, desc, eq, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import type { Tx } from "../db/client";
@@ -214,10 +215,12 @@ export async function obligationDetail(tx: Tx, actor: Actor, id: string, today: 
     : null;
   return {
     item,
-    rule: rule ? { citation: rule.citation, sourceUrl: rule.sourceUrl, anchor: rule.anchor, offsetDays: rule.offsetDays, businessDays: rule.businessDays, remindDays: rule.remindDays, fixedDates: rule.fixedDates } : null,
+    rule: rule ? { citation: rule.citation, citationCode: citationCodeOf(rule.code, rule.citation), sourceUrl: rule.sourceUrl, anchor: rule.anchor, offsetDays: rule.offsetDays, businessDays: rule.businessDays, remindDays: rule.remindDays, fixedDates: rule.fixedDates } : null,
     facts: o.facts,
     message: o.message,
+    explain: o.explain,
     statusNote: o.statusNote,
+    noteKey: o.noteKey,
     doneAt: o.doneAt,
     doneByLabel: o.doneByLabel,
     closedBySystem: o.closedBySystem,

@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, FileSpreadsheetIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, FileSpreadsheetIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { Role } from "@/server/permissions";
+import { useCan } from "./abilities";
 
 const AREAS = [
   { href: "/convert", key: "convert", jump: "c", icon: FileSpreadsheetIcon },
@@ -44,6 +45,7 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
   const [help, setHelp] = useState(false);
   const pendingG = useRef<number | null>(null);
   const areas = useMemo(() => AREAS.filter((a) => a.key !== "margin" || showMargin), [showMargin]);
+  const mayViewActivity = useCan()("viewActivity");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -107,6 +109,13 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <UserCogIcon />
                 {t("members")}
               </DropdownMenuItem>
+              {/* Slice k: the agency's log, for the Owner and the accountant (decision 0028). */}
+              {mayViewActivity && (
+                <DropdownMenuItem render={<Link href="/settings/activity" />} data-testid="menu-activity">
+                  <ActivityIcon />
+                  {t("activity")}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               {/* The person's own items (slice k). */}
               <DropdownMenuGroup>

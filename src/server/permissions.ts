@@ -1,9 +1,9 @@
 /**
  * What each role may change (slice k, decision K4; SPEC §2). One table: every server action checks
  * it before it does anything, and every screen reads it to hide what the person cannot do. Reading
- * is open to every role except the margin (the Owner and the accountant) and whole SSNs (the Owner,
- * with a reason). The services keep their own finer checks too (a compliance duty names the roles
- * that act on it; only the Owner changes compliance settings).
+ * is open to every role except the margin and the whole activity log (the Owner and the accountant)
+ * and whole SSNs (the Owner, with a reason). The services keep their own finer checks too (a
+ * compliance duty names the roles that act on it; only the Owner changes compliance settings).
  *
  * Pure: no database, so screens and tests can use it.
  */
@@ -33,13 +33,18 @@ export const ABILITIES = {
   revealSsn: ["owner"],
   /** The margin pages (reading). */
   viewMargin: ["owner", "accountant"],
+  /** The agency's whole activity log (reading; decision 0028). */
+  viewActivity: ["owner", "accountant"],
 } as const satisfies Record<string, readonly Role[]>;
 export type Ability = keyof typeof ABILITIES;
 
 export const can = (who: { role: Role }, ability: Ability): boolean => (ABILITIES[ability] as readonly Role[]).includes(who.role);
 
+/** What is only read: the abilities that change nothing. */
+const READING: Ability[] = ["viewMargin", "viewActivity"];
+
 /** True for a role that changes nothing at all (the outside accountant). */
-export const readsOnly = (who: { role: Role }): boolean => !(Object.keys(ABILITIES) as Ability[]).some((a) => a !== "viewMargin" && can(who, a));
+export const readsOnly = (who: { role: Role }): boolean => !(Object.keys(ABILITIES) as Ability[]).some((a) => !READING.includes(a) && can(who, a));
 
 /** Every ability as yes or no, for the screens (they hide what the role cannot change). */
 export const abilitiesOf = (who: { role: Role }): Record<Ability, boolean> => Object.fromEntries((Object.keys(ABILITIES) as Ability[]).map((a) => [a, can(who, a)])) as Record<Ability, boolean>;

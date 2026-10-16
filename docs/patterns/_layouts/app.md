@@ -21,7 +21,8 @@ between areas, the same on every page, inside the root frame (demo banner above 
       name in the upper-left corner and select Settings"). Settings opens the payroll file settings
       (slice f), the first settings page; Margin settings (slice i) is the next item, for the Owner
       and the accountant; Compliance settings (slice j) after it, for everyone (only the Owner
-      changes them); Members (slice k) after it, for everyone (only the Owner manages them).
+      changes them); Members (slice k) after it, for everyone (only the Owner manages them);
+      Activity (slice k, the agency's log) after it, for the Owner and the accountant.
       Below a separator, the person's own items (slice k): their name and role (not a link),
       **Your account**, and **Sign out**. Linear's docs do not say where its log-out item sits —
       listed as a difference.

@@ -12,6 +12,8 @@
  * computed for the whole period like any run, and settles only its differences against the latest
  * paid version (corrections.ts).
  */
+import { equalPayExplain, sayInEnglish } from "../compliance/explain-keys";
+import type { Explain } from "../../lib/explain";
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
 import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
@@ -766,11 +768,21 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       await audit(tx, actor, drop.map((m) => ({ action: "delete" as const, entityType: "obligation", entityId: m.id, before: { kind: m.kind, workerId: m.workerId, clientId: m.clientId, crossedOn: m.crossedOn }, reason: "the run's hours changed" })));
     }
     if (keep.length > 0) {
-      await tx.update(s.obligations).set({ status: "not_applicable", statusNote: NOT_CROSSED, doneAt: new Date(), doneBy: null, doneByLabel: SYSTEM, closedBySystem: true }).where(inArray(s.obligations.id, keep.map((m) => m.id)));
+      await tx.update(s.obligations).set({ status: "not_applicable", statusNote: NOT_CROSSED, noteKey: null, doneAt: new Date(), doneBy: null, doneByLabel: SYSTEM, closedBySystem: true }).where(inArray(s.obligations.id, keep.map((m) => m.id)));
       await audit(tx, actor, keep.map((m) => ({ action: "update" as const, entityType: "obligation", entityId: m.id, before: { status: "open" }, after: { status: "not_applicable" }, reason: NOT_CROSSED })));
     }
   }
-  const reopened = { status: "open" as const, statusNote: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false };
+  const reopened = { status: "open" as const, statusNote: null, noteKey: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false };
+  // The engine's sentence as keys and values for the reader's language (decision 0028): the client as
+  // the engine named it, the window's months from the rule row in force on the crossing (the engine's
+  // own lookup: jurisdiction and date). Kept only when it says exactly the engine's English.
+  const explainOf = (o: (typeof result.obligations)[number]): Explain | null => {
+    const rule = (input.equalPayRules ?? []).find((r) => r.jurisdiction === o.jurisdiction && r.ruleCode === o.ruleCode && r.effectiveFrom <= o.crossedOn && (r.effectiveTo === null || o.crossedOn <= r.effectiveTo));
+    if (!rule) return null;
+    const client = input.shifts.find((sh) => sh.workerId === o.workerId && sh.clientId === o.clientId && sh.clientName)?.clientName ?? `client ${o.clientId}`;
+    const explain = equalPayExplain(o, client, o.kind === "il_equal_pay_720h" ? rule.windowMonths : rule.longWindowMonths);
+    return sayInEnglish(explain) === o.message ? explain : null;
+  };
   for (const o of result.obligations) {
     const overdue = o.crossedOn < period.startsOn;
     const dueOn = overdue ? period.startsOn : period.endsOn;
@@ -778,7 +790,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     const same = mine.find((m) => keyOf(m) === keyOf(o));
     if (same) {
       const again = same.closedBySystem && same.status !== "open";
-      await tx.update(s.obligations).set({ facts, message: o.message, dueOn, ...(again ? reopened : {}) }).where(eq(s.obligations.id, same.id));
+      await tx.update(s.obligations).set({ facts, message: o.message, explain: explainOf(o), dueOn, ...(again ? reopened : {}) }).where(eq(s.obligations.id, same.id));
       if (again) await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: same.id, before: { status: same.status }, after: { status: "open" }, reason: "the run's hours cross again" }]);
       continue;
     }
@@ -787,19 +799,19 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     // One Shiftbook set aside is not on file for the engine: the new crossing takes it over, open.
     const [held] = equalPayRows(await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, o.kind), eq(s.obligations.workerId, o.workerId), eq(s.obligations.clientId, o.clientId))));
     if (held?.closedBySystem) {
-      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message, ...reopened }).where(eq(s.obligations.id, held.id));
+      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message, explain: explainOf(o), ...reopened }).where(eq(s.obligations.id, held.id));
       await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: held.id, before: { status: held.status, crossedOn: held.crossedOn }, after: { status: "open", crossedOn: o.crossedOn }, reason: "the run's hours cross again" }]);
       continue;
     }
     if (held) {
       if (o.crossedOn >= held.crossedOn) throw new Error(`Obligation ${held.id} is already on file from ${held.crossedOn}; the run found ${o.crossedOn}.`);
-      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message }).where(eq(s.obligations.id, held.id));
+      await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message, explain: explainOf(o) }).where(eq(s.obligations.id, held.id));
       await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: held.id, before: { crossedOn: held.crossedOn }, after: { crossedOn: o.crossedOn }, reason: "hours in an earlier week cross first" }]);
       continue;
     }
     const [row] = await tx
       .insert(s.obligations)
-      .values({ agencyId: actor.agencyId, kind: o.kind, jurisdiction: o.jurisdiction, subjectKind: "worker_client", workerId: o.workerId, clientId: o.clientId, payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message })
+      .values({ agencyId: actor.agencyId, kind: o.kind, jurisdiction: o.jurisdiction, subjectKind: "worker_client", workerId: o.workerId, clientId: o.clientId, payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message, explain: explainOf(o) })
       .returning();
     await audit(tx, actor, [{ action: "create", entityType: "obligation", entityId: row!.id, after: { kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn, dueOn } }]);
   }

@@ -9,6 +9,7 @@
  * were paid without it are listed, so each is trued up by a correction (paying late is itself a
  * violation).
  */
+import type { Explain } from "../../lib/explain";
 import { equalPayRateProblem, isIsoDate, type EqualPayRate } from "@shiftbook/rules";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { audit } from "../audit";
@@ -84,8 +85,10 @@ export async function setEqualPayRate(tx: Tx, actor: Actor, obligationId: string
   // The client's figures are in: the duty is done, saying so.
   if (input.kind === "rate" && o.status === "open") {
     const statusNote = `${RATE_ENTERED}${input.effectiveFrom}.`;
-    await tx.update(s.obligations).set({ status: "done", statusNote, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false }).where(eq(s.obligations.id, obligationId));
-    await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: obligationId, before: { status: "open" }, after: { status: "done", note: statusNote } }]);
+    // The note in keys too, for the reader's language (decision 0028).
+    const noteKey: Explain = { parts: [{ key: "noteRateEntered", values: { date: { date: input.effectiveFrom } } }], citation: null };
+    await tx.update(s.obligations).set({ status: "done", statusNote, noteKey, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false }).where(eq(s.obligations.id, obligationId));
+    await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: obligationId, before: { status: "open" }, after: { status: "done", note: statusNote, noteKey } }]);
   }
   return { ok: true };
 }
@@ -112,7 +115,7 @@ export async function removeEqualPayRate(tx: Tx, actor: Actor, obligationId: str
       .from(s.obligations)
       .where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), eq(s.obligations.workerId, o.workerId), eq(s.obligations.clientId, o.clientId), eq(s.obligations.status, "done"), eq(s.obligations.closedBySystem, false)));
     for (const d of closed.filter((x) => x.statusNote?.startsWith(RATE_ENTERED) === true)) {
-      await tx.update(s.obligations).set({ status: "open", statusNote: null, doneAt: null, doneBy: null, doneByLabel: null }).where(eq(s.obligations.id, d.id));
+      await tx.update(s.obligations).set({ status: "open", statusNote: null, noteKey: null, doneAt: null, doneBy: null, doneByLabel: null }).where(eq(s.obligations.id, d.id));
       await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: d.id, before: { status: "done", note: d.statusNote }, after: { status: "open" }, reason: "the equal-pay rate on file was removed" }]);
     }
   }

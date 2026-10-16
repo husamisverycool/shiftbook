@@ -5,6 +5,7 @@
  * Every change is audited and takes the compliance lock; anything that changes the facts works the
  * duties out again at once.
  */
+import type { Explain } from "../../lib/explain";
 import { createHash, randomUUID } from "node:crypto";
 import { addDays, isIsoDate } from "@shiftbook/rules";
 import { and, eq, isNull } from "drizzle-orm";
@@ -77,7 +78,7 @@ export async function closeObligation(tx: Tx, actor: Actor, id: string, status: 
   if (clean.length > 500) return { ok: false, error: "invalid", field: "note" };
   await tx
     .update(s.obligations)
-    .set({ status, statusNote: clean || null, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false })
+    .set({ status, statusNote: clean || null, noteKey: null, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false })
     .where(eq(s.obligations.id, id));
   await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: id, before: { status: "open" }, after: { status, note: clean || null } }]);
   return { ok: true };
@@ -90,7 +91,7 @@ export async function reopenObligation(tx: Tx, actor: Actor, id: string): Promis
   if ("error" in r) return { ok: false, error: r.error! };
   if (r.o.status === "open") return { ok: false, error: "already_open" };
   if (r.o.closedBySystem) return { ok: false, error: "closed_by_data" };
-  await tx.update(s.obligations).set({ status: "open", statusNote: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false }).where(eq(s.obligations.id, id));
+  await tx.update(s.obligations).set({ status: "open", statusNote: null, noteKey: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false }).where(eq(s.obligations.id, id));
   await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: id, before: { status: r.o.status, note: r.o.statusNote }, after: { status: "open" } }]);
   return { ok: true };
 }
@@ -200,8 +201,9 @@ export async function recordI9(tx: Tx, actor: Actor, workerId: string, input: I9
     const [old] = await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, "i9_reverify"), eq(s.obligations.workerId, workerId), eq(s.obligations.occurrence, w.workAuthExpiresOn), eq(s.obligations.status, "open")));
     if (old) {
       const note = input.workAuthExpiresOn ? `The work authorization's end was changed from ${w.workAuthExpiresOn} to ${input.workAuthExpiresOn}.` : `The work authorization's end (${w.workAuthExpiresOn}) was removed.`;
-      await tx.update(s.obligations).set({ status: "not_applicable", statusNote: note, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false }).where(eq(s.obligations.id, old.id));
-      await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: old.id, before: { status: "open" }, after: { status: "not_applicable", note } }]);
+      const noteKey: Explain = { parts: [input.workAuthExpiresOn ? { key: "noteWorkAuthChanged", values: { from: { date: w.workAuthExpiresOn }, to: { date: input.workAuthExpiresOn } } } : { key: "noteWorkAuthRemoved", values: { from: { date: w.workAuthExpiresOn } } }], citation: null };
+      await tx.update(s.obligations).set({ status: "not_applicable", statusNote: note, noteKey, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false }).where(eq(s.obligations.id, old.id));
+      await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: old.id, before: { status: "open" }, after: { status: "not_applicable", note, noteKey } }]);
     }
   }
   await syncObligations(tx, actor.agencyId, today);
@@ -217,8 +219,9 @@ export async function recordReverification(tx: Tx, actor: Actor, obligationId: s
   if (!isIsoDate(input.reverifiedOn) || input.reverifiedOn > today) return { ok: false, error: "invalid", field: "reverifiedOn" };
   if (!dateOrNull(input.nextExpiresOn) || (input.nextExpiresOn !== null && input.nextExpiresOn <= input.reverifiedOn)) return { ok: false, error: "invalid", field: "nextExpiresOn" };
   const note = `Reverified on ${input.reverifiedOn}.`;
-  await tx.update(s.obligations).set({ status: "done", statusNote: note, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false }).where(eq(s.obligations.id, obligationId));
-  await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: obligationId, before: { status: "open" }, after: { status: "done", note } }]);
+  const noteKey: Explain = { parts: [{ key: "noteReverified", values: { date: { date: input.reverifiedOn } } }], citation: null };
+  await tx.update(s.obligations).set({ status: "done", statusNote: note, noteKey, doneAt: new Date(), doneBy: actor.userId, doneByLabel: actor.label, closedBySystem: false }).where(eq(s.obligations.id, obligationId));
+  await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: obligationId, before: { status: "open" }, after: { status: "done", note, noteKey } }]);
   const [w] = await tx.select().from(s.workers).where(eq(s.workers.id, r.o.workerId));
   await tx.update(s.workers).set({ workAuthExpiresOn: input.nextExpiresOn }).where(eq(s.workers.id, r.o.workerId));
   await audit(tx, actor, [{ action: "update", entityType: "worker", entityId: r.o.workerId, before: { workAuthExpiresOn: w?.workAuthExpiresOn ?? null }, after: { workAuthExpiresOn: input.nextExpiresOn } }]);

@@ -27,7 +27,9 @@
  * file is kept (an overdue duty never closes because it is old). The run records the Illinois
  * equal-pay crossings itself (slice c).
  */
+import { citationCodeOf } from "./explain-keys";
 import { addDays, formatDuration, isEffective, weekdayOf } from "@shiftbook/rules";
+import type { Explain, ExplainPart } from "../../lib/explain";
 
 export type RuleAnchor = "expiry" | "fixed_dates" | "start" | "hire" | "crossing" | "first_pay_period_end" | "date";
 export type SubjectKind = "registration" | "policy" | "client" | "assignment" | "worker" | "worker_client";
@@ -155,8 +157,10 @@ export interface Wanted extends Subject {
   facts: Facts;
   /** English: what it was worked out from (the explain string). */
   message: string;
-  /** Closed by the data itself (renewed; the date recorded), with the note saying how. */
-  done: { note: string } | null;
+  /** The same, as message keys and values, for the reader's language (decision 0028). */
+  explain: Explain;
+  /** Closed by the data itself (renewed; the date recorded), with the note saying how (and in keys). */
+  done: { note: string; key: Explain } | null;
   /** Due further back than the rule's look-back: not created, but kept if already on file. */
   tooOld: boolean;
 }
@@ -189,14 +193,21 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
   /** Too old when its due date is further back than the rule's look-back. */
   const tooOld = (r: ComplianceRule, dueOn: string) => dueOn < addDays(input.today, -r.lookbackDays);
   const none = { workerId: null, clientId: null, assignmentId: null, registrationId: null, policyId: null };
-  const push = (r: ComplianceRule, w: Omit<Wanted, "kind" | "jurisdiction" | "subjectKind" | "remindOn" | "message" | "tooOld"> & { anchorText: string }) => {
-    const { anchorText, ...rest } = w;
-    out.push({ ...rest, kind: r.code, jurisdiction: r.jurisdiction, subjectKind: r.subjectKind, remindOn: addDays(w.dueOn, -r.remindDays), message: `${anchorText} (${r.citation}).`, tooOld: tooOld(r, w.dueOn) });
+  const push = (r: ComplianceRule, w: Omit<Wanted, "kind" | "jurisdiction" | "subjectKind" | "remindOn" | "message" | "explain" | "tooOld"> & { anchorText: string; parts: ExplainPart[] }) => {
+    const { anchorText, parts, ...rest } = w;
+    out.push({ ...rest, kind: r.code, jurisdiction: r.jurisdiction, subjectKind: r.subjectKind, remindOn: addDays(w.dueOn, -r.remindDays), message: `${anchorText} (${r.citation}).`, explain: { parts, citation: r.citation, citationCode: citationCodeOf(r.code, r.citation) }, tooOld: tooOld(r, w.dueOn) });
   };
   const openOn = (date: string) => input.openDays.find((o) => isEffective(date, o.effectiveFrom, o.effectiveTo))?.weekdays ?? WEEKDAYS_OPEN;
   const dueAfter = (r: ComplianceRule, anchor: string) => (r.businessDays > 0 ? addBusinessDays(anchor, r.businessDays, openOn(anchor)) : addDays(anchor, r.offsetDays));
   const expiryText = (what: string, anchor: string, r: ComplianceRule, due: string) =>
     r.offsetDays < 0 ? `${what} expires ${anchor}; due ${-r.offsetDays} days before, on ${due}` : r.offsetDays === 0 ? `${what} ends ${anchor}; due that day` : `${what} expires ${anchor}; due ${r.offsetDays} days after, on ${due}`;
+  const expiryParts = (subject: "registration" | "policy", number: string, anchor: string, r: ComplianceRule, due: string): ExplainPart[] => [
+    r.offsetDays < 0
+      ? { key: "expiryBefore", values: { subject, number, anchor: { date: anchor }, days: String(-r.offsetDays), dueOn: { date: due } } }
+      : r.offsetDays === 0
+        ? { key: "expiryOn", values: { subject, number, anchor: { date: anchor } } }
+        : { key: "expiryAfter", values: { subject, number, anchor: { date: anchor }, days: String(r.offsetDays), dueOn: { date: due } } },
+  ];
 
   // Registrations: a renewal before each expires; a newer one for the same state and office renews it.
   for (const g of input.registrations) {
@@ -210,8 +221,9 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
       occurrence: "",
       dueOn,
       facts: { number: g.number, expiresOn: g.expiresOn, branchId: g.branchId, renewedBy: next?.number ?? null, renewedUntil: next?.expiresOn ?? null },
-      done: next ? { note: `Renewed: ${next.number}, expires ${next.expiresOn}.` } : null,
+      done: next ? { note: `Renewed: ${next.number}, expires ${next.expiresOn}.`, key: { parts: [{ key: "noteRenewed", values: { number: next.number, expires: { date: next.expiresOn } } }], citation: null } } : null,
       anchorText: expiryText(`Registration ${g.number}`, g.expiresOn, r, dueOn),
+      parts: expiryParts("registration", g.number, g.expiresOn, r, dueOn),
     });
   }
 
@@ -232,7 +244,8 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
       const ongoing = lastEnd !== null && (lastEnd === "open" || lastEnd >= addDays(p.startDate, -(r?.windowDays ?? 0)));
       if (!ongoing && r) {
         const since = lastEnd === null ? "" : `, more than ${r.windowDays} days after the client's last covered work (${lastEnd})`;
-        push(r, { ...none, clientId, occurrence: `contract:${p.startDate}`, dueOn: p.startDate, facts: { contractStarts: p.startDate }, done: null, anchorText: `A placement starts ${p.startDate}${since}; proof of registration due by then` });
+        const parts: ExplainPart[] = [lastEnd === null ? { key: "contractStarts", values: { startDate: { date: p.startDate } } } : { key: "contractStartsAfterGap", values: { startDate: { date: p.startDate }, windowDays: String(r.windowDays), lastEnd: { date: lastEnd } } }];
+        push(r, { ...none, clientId, occurrence: `contract:${p.startDate}`, dueOn: p.startDate, facts: { contractStarts: p.startDate }, done: null, anchorText: `A placement starts ${p.startDate}${since}; proof of registration due by then`, parts });
       }
       const end = p.endDate ?? "open";
       if (lastEnd !== "open" && (end === "open" || lastEnd === null || end > lastEnd)) lastEnd = end;
@@ -246,7 +259,8 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
       const recently = !running && mine.some((p) => p.startDate <= d && p.endDate !== null && p.endDate >= from);
       if (!running && !recently) continue;
       const why = running ? `A placement is running on ${d}` : `The client had covered work within ${r.windowDays} days before ${d}`;
-      push(r, { ...none, clientId, occurrence: d, dueOn: addDays(d, r.offsetDays), facts: { date: d }, done: null, anchorText: `${why}, one of the dates (${r.fixedDates.join(", ")}) the client checks the agency's registration` });
+      const parts: ExplainPart[] = [running ? { key: "proofRunning", values: { date: { date: d }, dates: { monthDays: r.fixedDates } } } : { key: "proofRecent", values: { windowDays: String(r.windowDays), date: { date: d }, dates: { monthDays: r.fixedDates } } }];
+      push(r, { ...none, clientId, occurrence: d, dueOn: addDays(d, r.offsetDays), facts: { date: d }, done: null, anchorText: `${why}, one of the dates (${r.fixedDates.join(", ")}) the client checks the agency's registration`, parts });
     }
   }
 
@@ -254,13 +268,27 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
   for (const p of live) {
     if (p.state === "MA") {
       const r = ruleOn("ma_job_order", p.startDate);
-      if (r) push(r, { ...none, workerId: p.workerId, clientId: p.clientId, assignmentId: p.id, occurrence: "", dueOn: addDays(p.firstPeriodEnd, r.offsetDays), facts: { startDate: p.startDate, firstPeriodEnd: p.firstPeriodEnd }, done: null, anchorText: `The placement starts ${p.startDate}; due by the end of its first pay period, ${addDays(p.firstPeriodEnd, r.offsetDays)}` });
+      if (r) {
+        const dueOn = addDays(p.firstPeriodEnd, r.offsetDays);
+        push(r, { ...none, workerId: p.workerId, clientId: p.clientId, assignmentId: p.id, occurrence: "", dueOn, facts: { startDate: p.startDate, firstPeriodEnd: p.firstPeriodEnd }, done: null, anchorText: `The placement starts ${p.startDate}; due by the end of its first pay period, ${dueOn}`, parts: [{ key: "maJobOrder", values: { startDate: { date: p.startDate }, dueOn: { date: dueOn } } }] });
+      }
     }
     if (p.state === "NJ" && p.workerLanguage !== "en" && p.socCode) {
       const r = ruleOn("nj_language_notice", p.startDate);
       if (r && r.socGroups.includes(p.socCode.slice(0, 2))) {
         const dueOn = addDays(p.startDate, r.offsetDays);
-        push(r, { ...none, workerId: p.workerId, clientId: p.clientId, assignmentId: p.id, occurrence: "", dueOn, facts: { startDate: p.startDate, language: p.workerLanguage, socCode: p.socCode }, done: null, anchorText: `The placement (SOC ${p.socCode}, a designated classification) starts ${p.startDate}; the worker's language is "${p.workerLanguage}"; due by then` });
+        push(r, {
+          ...none,
+          workerId: p.workerId,
+          clientId: p.clientId,
+          assignmentId: p.id,
+          occurrence: "",
+          dueOn,
+          facts: { startDate: p.startDate, language: p.workerLanguage, socCode: p.socCode },
+          done: null,
+          anchorText: `The placement (SOC ${p.socCode}, a designated classification) starts ${p.startDate}; the worker's language is "${p.workerLanguage}"; due by then`,
+          parts: [{ key: "njNotice", values: { socCode: p.socCode, startDate: { date: p.startDate }, language: { language: p.workerLanguage } } }],
+        });
       }
     }
   }
@@ -281,6 +309,14 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
         const dueOn = short ? hire : dueAfter(r, hire);
         const weekend = open.filter((d) => !WEEKDAYS_OPEN.includes(d));
         const counted = weekend.length === 0 ? "weekends skipped" : `Monday to Friday and ${weekend.map((d) => (d === 6 ? "Saturday" : "Sunday")).join(" and ")} counted`;
+        const countedKey = weekend.length === 0 ? "skipped" : weekend.length === 2 ? (weekend[0] === 6 ? "saturdaySunday" : "sundaySaturday") : weekend[0] === 6 ? "saturday" : "sunday";
+        const howPart: ExplainPart = short
+          ? { key: "i9Short", values: { jobEnds: { date: w.firstJobEndsOn! }, days: String(r.businessDays) } }
+          : r.businessDays > 0
+            ? { key: "i9BusinessDays", values: { days: String(r.businessDays), counted: countedKey, dueOn: { date: dueOn } } }
+            : dueOn === hire
+              ? { key: "i9FirstDay" }
+              : { key: "i9DueOn", values: { dueOn: { date: dueOn } } };
         const how = short
           ? `the job ends ${w.firstJobEndsOn}, less than ${r.businessDays} business days: due by the first day`
           : r.businessDays > 0
@@ -291,14 +327,15 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
         // A date recorded long before this hire belongs to an earlier one.
         const counts = doneOn !== null && doneOn >= addDays(hire, -r.windowDays);
         const earlier = doneOn !== null && !counts ? `; ${part} on file is dated ${doneOn}, more than ${r.windowDays} days before this hire` : "";
-        push(r, { ...none, workerId: w.id, occurrence: hire, dueOn, facts: { hireDate: hire, completedOn: counts ? doneOn : null }, done: counts ? { note: `${part} completed on ${doneOn}.` } : null, anchorText: `Hired ${hire}; ${how}${earlier}` });
+        const parts: ExplainPart[] = [{ key: "i9Hired", values: { hire: { date: hire } } }, howPart, ...(doneOn !== null && !counts ? [{ key: "i9Earlier", values: { part: code === "i9_section1" ? "section1" : "section2", doneOn: { date: doneOn }, windowDays: String(r.windowDays) } }] : [])];
+        push(r, { ...none, workerId: w.id, occurrence: hire, dueOn, facts: { hireDate: hire, completedOn: counts ? doneOn : null }, done: counts ? { note: `${part} completed on ${doneOn}.`, key: { parts: [{ key: "noteCompleted", values: { part: code === "i9_section1" ? "section1" : "section2", date: { date: doneOn! } } }], citation: null } } : null, anchorText: `Hired ${hire}; ${how}${earlier}`, parts });
       }
     }
     if (w.workAuthExpiresOn) {
       const r = ruleOn("i9_reverify", w.workAuthExpiresOn);
       if (r) {
         const dueOn = addDays(w.workAuthExpiresOn, r.offsetDays);
-        push(r, { ...none, workerId: w.id, occurrence: w.workAuthExpiresOn, dueOn, facts: { expiresOn: w.workAuthExpiresOn }, done: null, anchorText: `The work authorization ends ${w.workAuthExpiresOn}; reverify by ${dueOn}` });
+        push(r, { ...none, workerId: w.id, occurrence: w.workAuthExpiresOn, dueOn, facts: { expiresOn: w.workAuthExpiresOn }, done: null, anchorText: `The work authorization ends ${w.workAuthExpiresOn}; reverify by ${dueOn}`, parts: [{ key: "reverify", values: { expiresOn: { date: w.workAuthExpiresOn }, dueOn: { date: dueOn } } }] });
       }
     }
   }
@@ -311,11 +348,11 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
       // A following policy renews it when it starts by the next day and covers at least the same states.
       const covers = (o: Policy) => o.states.length === 0 || (p.states.length > 0 && p.states.every((x) => o.states.includes(x)));
       const next = input.policies.filter((o) => o.id !== p.id && o.startsOn <= addDays(p.endsOn, 1) && o.endsOn > p.endsOn && covers(o)).sort((a, b) => cmp(a.startsOn, b.startsOn))[0];
-      push(r, { ...none, policyId: p.id, occurrence: "", dueOn, facts: { carrier: p.carrier, policyNumber: p.policyNumber, endsOn: p.endsOn, renewedBy: next?.policyNumber ?? null, renewedUntil: next?.endsOn ?? null }, done: next ? { note: `Renewed: ${next.policyNumber}, from ${next.startsOn} to ${next.endsOn}.` } : null, anchorText: expiryText(`Policy ${p.policyNumber}`, p.endsOn, r, dueOn) });
+      push(r, { ...none, policyId: p.id, occurrence: "", dueOn, facts: { carrier: p.carrier, policyNumber: p.policyNumber, endsOn: p.endsOn, renewedBy: next?.policyNumber ?? null, renewedUntil: next?.endsOn ?? null }, done: next ? { note: `Renewed: ${next.policyNumber}, from ${next.startsOn} to ${next.endsOn}.`, key: { parts: [{ key: "notePolicyRenewed", values: { number: next.policyNumber, from: { date: next.startsOn }, to: { date: next.endsOn } } }], citation: null } } : null, anchorText: expiryText(`Policy ${p.policyNumber}`, p.endsOn, r, dueOn), parts: expiryParts("policy", p.policyNumber, p.endsOn, r, dueOn) });
     }
     if (p.auditDueOn) {
       const a = ruleOn("wc_audit", p.auditDueOn);
-      if (a) push(a, { ...none, policyId: p.id, occurrence: "", dueOn: addDays(p.auditDueOn, a.offsetDays), facts: { carrier: p.carrier, policyNumber: p.policyNumber, auditDueOn: p.auditDueOn }, done: null, anchorText: `The premium audit of policy ${p.policyNumber} is due ${p.auditDueOn}` });
+      if (a) push(a, { ...none, policyId: p.id, occurrence: "", dueOn: addDays(p.auditDueOn, a.offsetDays), facts: { carrier: p.carrier, policyNumber: p.policyNumber, auditDueOn: p.auditDueOn }, done: null, anchorText: `The premium audit of policy ${p.policyNumber} is due ${p.auditDueOn}`, parts: [{ key: "wcAudit", values: { number: p.policyNumber, auditDueOn: { date: p.auditDueOn } } }] });
     }
   }
 
@@ -332,6 +369,26 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
       facts: { cycle: c.cycle, measurementStart: c.measurementStart, measurementEnd: c.measurementEnd, minutes: c.minutes, days: c.days, averageMinutesPerWeek: c.averageMinutesPerWeek, stabilityStart: c.stabilityStart, stabilityEnd: c.stabilityEnd },
       done: null,
       anchorText: `Measured full-time in the ${c.cycle} measurement period ${c.measurementStart} to ${c.measurementEnd}: ${formatDuration(c.minutes)} of service over ${c.days} days, ${formatDuration(c.averageMinutesPerWeek)} a week on average (${thousands(c.minutes)} minutes × 7 = ${thousands(c.minutes * 7)} ≥ ${thousands(c.fullTimeMinutesPerWeek)} × ${c.days} = ${thousands(c.fullTimeMinutesPerWeek * c.days)}); coverage for the stability period ${c.stabilityStart} to ${c.stabilityEnd} is offered by ${dueOn}`,
+      parts: [
+        {
+          key: "acaOffer",
+          values: {
+            cycle: c.cycle,
+            from: { date: c.measurementStart },
+            to: { date: c.measurementEnd },
+            minutes: { duration: c.minutes },
+            days: String(c.days),
+            average: { duration: c.averageMinutesPerWeek },
+            minutesCount: { count: c.minutes },
+            minutes7: { count: c.minutes * 7 },
+            fullTime: { count: c.fullTimeMinutesPerWeek },
+            fullTimeDays: { count: c.fullTimeMinutesPerWeek * c.days },
+            stabilityFrom: { date: c.stabilityStart },
+            stabilityTo: { date: c.stabilityEnd },
+            dueOn: { date: dueOn },
+          },
+        },
+      ],
     });
   }
   return out;

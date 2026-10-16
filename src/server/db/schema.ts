@@ -255,6 +255,7 @@ export const worksites = pgTable(
 
 export { INVOICE_TEMPLATES, SEPARATE_BY, VMS_FORMATS, type InvoiceTemplate, type SeparateBy, type VmsFormat } from "../../lib/invoice-options";
 import type { InvoiceTemplate, SeparateBy, VmsFormat } from "../../lib/invoice-options";
+import type { Explain } from "../../lib/explain";
 import type { WorkerDocumentKind } from "../../lib/worker-documents";
 
 export const clientBillingProfiles = pgTable(
@@ -810,7 +811,7 @@ export const auditEvents = pgTable(
     reason: text("reason"),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("audit_entity").on(t.agencyId, t.entityType, t.entityId)],
+  (t) => [index("audit_entity").on(t.agencyId, t.entityType, t.entityId), index("audit_occurred").on(t.agencyId, t.occurredAt)],
 );
 
 // ---------- background jobs ----------
@@ -1050,6 +1051,10 @@ export const obligations = pgTable(
     statusNote: text("status_note"),
     facts: jsonb("facts").$type<ObligationFacts>().notNull(),
     message: text("message").notNull(),
+    /** The message as keys and values, for the reader's language (decision 0028; drizzle/0036). */
+    explain: jsonb("explain").$type<Explain>(),
+    /** Shiftbook's own closing note as keys and values (a person's note stays as typed). */
+    noteKey: jsonb("note_key").$type<Explain>(),
     createdAt: createdAt(),
     doneAt: timestamp("done_at", { withTimezone: true }),
     doneBy: uuid("done_by"),
