@@ -129,7 +129,8 @@ export function BankImport({ demo }: { demo: boolean }) {
     });
 
   return (
-    <Page width="default">
+    // The same column as every other page (the narrower width centred it 12px further in).
+    <Page>
       <PageHeader context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("bank"), href: "/bank", testId: "back-to-bank" }]} />} title={t("title")} />
       <Steps label={t("steps")} current={step} steps={STEPS.map((s) => ({ key: s, label: t(`step.${s}`) }))} />
 
