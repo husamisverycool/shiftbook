@@ -234,7 +234,40 @@ describe("Gusto hours CSV — pay the engine now computes but this file cannot c
       const fixture = base({ payLines: [reg, line] });
       expect(() => renderGustoHours(fixture)).toThrowError(expect.objectContaining({ code: "unsupported_earning_type" }));
       expect(() => renderGustoHours(fixture)).toThrowError(message);
+      // The refusal names the worker, so the person knows whose pay to enter by hand.
+      expect(() => renderGustoHours(fixture)).toThrowError("Álvarez, Ana");
     }
+  });
+
+  it("carries bonuses in Gusto's bonus column, as dollars, when the agency maps them there", () => {
+    const fixture = base({
+      earningCodeMap: { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours", BONUS: "bonus" },
+      payLines: [
+        { workerId: "w1", type: "REG", minutes: 2400, amountCents: 73_000, rate: { num: 1825, den: 1 } },
+        { workerId: "w1", type: "BONUS", minutes: 0, amountCents: 5000, rate: { num: 0, den: 1 } },
+        { workerId: "w1", type: "BONUS", minutes: 0, amountCents: 1234, rate: { num: 0, den: 1 } },
+        { workerId: "w2", type: "REG", minutes: 2280, amountCents: 69_350, rate: { num: 1825, den: 1 } },
+      ],
+    });
+    const r = renderGustoHours(fixture);
+    expect(text(r.bytes)).toBe(
+      [
+        "last_name,first_name,title,gusto_employee_id,regular_hours,overtime_hours,double_overtime_hours,bonus",
+        "Álvarez,Ana,Picker (Primary),a1b2c3,40.00,0.00,0.00,62.34",
+        "Okafor,Ben,Loader (Primary),d4e5f6,38.00,0.00,0.00,0.00",
+        "",
+      ].join("\n"),
+    );
+    expect(r.controlTotals).toMatchObject({ workers: 2, minutesByType: { REG: 4680, BONUS: 0 }, amountsByType: { BONUS: 6234 }, grossCents: 148_584, payrollSystemGrossCents: 148_584, payrollSystemDifferenceCents: 0 });
+    expect(parseGustoHoursCsv(text(r.bytes))).toMatchObject({ workers: 2, bonusCents: 6234 });
+  });
+
+  it("refuses a bonus line that carries minutes, or a bonus without the column mapped", () => {
+    const mapped = { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours", BONUS: "bonus" } as const;
+    const reg = { workerId: "w1", type: "REG" as const, minutes: 480, amountCents: 14_600, rate: { num: 1825, den: 1 } };
+    expect(() => renderGustoHours(base({ earningCodeMap: mapped, payLines: [reg, { workerId: "w1", type: "BONUS", minutes: 60, amountCents: 5000, rate: { num: 5000, den: 1 } }] }))).toThrowError(expect.objectContaining({ code: "invalid_pay_line" }));
+    expect(() => renderGustoHours(base({ earningCodeMap: mapped, payLines: [reg, { workerId: "w1", type: "BONUS", minutes: 0, amountCents: 0, rate: { num: 0, den: 1 } }] }))).toThrowError(expect.objectContaining({ code: "invalid_pay_line" }));
+    expect(() => renderGustoHours(base({ payLines: [reg, { workerId: "w1", type: "BONUS", minutes: 0, amountCents: 5000, rate: { num: 0, den: 1 } }] }))).toThrowError(expect.objectContaining({ code: "unsupported_earning_type" }));
   });
 
   it("refuses overtime on a weighted regular rate plainly, even when its fraction is large", () => {

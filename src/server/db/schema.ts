@@ -524,6 +524,8 @@ export const invoices = pgTable(
 export type ControlTotals = {
   workers: number;
   minutesByType: Record<string, number>;
+  /** Amount lines carried as money, not hours (a bonus), in cents by type. */
+  amountsByType?: Record<string, number>;
   grossCents: number;
   /** What the payroll system should compute from the file's hours at the same rates. */
   payrollSystemGrossCents?: number;

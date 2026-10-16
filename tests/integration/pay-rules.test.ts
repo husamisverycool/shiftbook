@@ -15,6 +15,7 @@ import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from ".
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
 import { addEntry } from "../../src/server/review/service";
 import { totalsStep } from "../../src/server/convert/queries";
+import { createRunFiles } from "../../src/server/files/service";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -137,6 +138,23 @@ describe("pay rules through the weekly run", () => {
     const totals = await inAgency((tx) => totalsStep(tx, actor, period));
     expect(totals.clients.find((c) => c.clientId === clientId("ca"))!.minutes).toBe(worked);
     expect(all.reduce((sum, l) => sum + l.minutes, 0)).toBe(worked + 480);
+  });
+
+  it("creates the Gusto file for a run with a bonus, in Gusto's bonus column", async () => {
+    const luis = workerId("luis-hernandez");
+    const [p] = await inAgency((tx) => tx.select().from(payPeriods).where(eq(payPeriods.id, period)));
+    const added = await inAgency((tx) => addEntry(tx, actor, period, { workerId: luis, workDate: "2026-10-08", inMinute: 420, outMinute: 930, breakMinutes: 30 }, ["other"], "bonus week"));
+    if (!added.ok) throw new Error(added.error);
+    const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.id, added.entryId)));
+    await inAgency((tx) => tx.insert(bonuses).values({ agencyId: actor.agencyId, workerId: luis, assignmentId: entry!.assignmentId!, workweekStart: p!.startsOn, amountCents: 2500, kind: "nondiscretionary", enteredBy: actor.userId }));
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(run.blockers).toEqual([]);
+    const files = await inAgency((tx) => createRunFiles(tx, actor, store, period, { today: "2026-10-12" }));
+    const csv = new TextDecoder().decode(await store.get(files.payroll.storageKey));
+    const [header, row] = csv.split("\n");
+    expect(header!.split(",").at(-1)).toBe("bonus");
+    expect(row!.split(",").at(-1)).toBe("25.00");
+    expect(files.payroll.controlTotals.amountsByType).toEqual({ BONUS: 2500 });
   });
 
   it("holds a bonus entered for a week with no hours instead of dropping it", async () => {

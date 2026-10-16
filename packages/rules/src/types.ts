@@ -25,6 +25,13 @@ export type EarningType =
   /** California: overtime on a flat-sum bonus (Alvarado v. Dart Container). */
   | "BONUS_OT";
 
+/**
+ * The earning types that are time worked (and billed minute for minute). Every other line's minutes
+ * are paid minutes only (a premium, a guarantee, holiday pay): never hours worked, never counted
+ * toward overtime, hours totals or the Illinois equal-pay counter.
+ */
+export const WORKED_TIME: readonly EarningType[] = ["REG", "OT", "DT"];
+
 /** 0 = Sunday … 6 = Saturday. */
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 

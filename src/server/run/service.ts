@@ -11,7 +11,7 @@
  * the period is locked (period-lock.ts) — in this slice a period is paid once.
  */
 import { createHash } from "node:crypto";
-import { addDays, addMonths, computePay, NO_PLACE, RULES_VERSION, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, addMonths, computePay, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { renderExport } from "../../exports/registry";
@@ -69,7 +69,7 @@ export interface RunResult {
 
 const INT4_MAX = 2_147_483_647;
 /** Line types that are worked time, billed minute for minute (pay-only lines are not billed time). */
-const BILLED_TIME = new Set(["REG", "OT", "DT"]);
+const BILLED_TIME = new Set<string>(WORKED_TIME);
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const effective = (date: string, from: string, to: string | null) => from <= date && (to === null || date <= to);
 /**

@@ -7,7 +7,9 @@
  *   double_overtime_hours
  * This format writes exactly those, one row per worker, hours as decimals with two places.
  *
- * Declared capability: REG, OT, DT only. Any other earning type in the run fails the export.
+ * Declared capability: REG, OT, DT as hours, and BONUS as an amount in Gusto's "bonus" column (a
+ * documented import field) when the agency maps it there; the column is written only when the run
+ * has a bonus. Any other earning type in the run fails the export, naming the worker.
  * Gusto applies its own multipliers to overtime_hours (1.5×) and double_overtime_hours (2×), so an
  * OT or DT line at any other rate fails the export, as does a worker with several base rates.
  *
@@ -45,6 +47,12 @@ export const GUSTO_CAPABILITY: Partial<Record<EarningType, HourColumn>> = {
   DT: "double_overtime_hours",
 };
 
+/** Amount columns, written in dollars with two decimals. */
+const AMOUNT_COLUMNS = ["bonus"] as const;
+type AmountColumn = (typeof AMOUNT_COLUMNS)[number];
+/** The earning types this format can carry as an amount, and the template column each one may map to. */
+export const GUSTO_AMOUNT_CAPABILITY: Partial<Record<EarningType, AmountColumn>> = { BONUS: "bonus" };
+
 /** minutes → hundredths of an hour, rounded up (37 → 62 = 0.62 h; 38 → 64 = 0.64 h). */
 const toHundredths = (minutes: number) => ceilDiv(minutes * 100, 60);
 /** hundredths → minutes; exact for every value written by toHundredths (error ≤ 0.4 min). */
@@ -77,20 +85,30 @@ const NOT_CARRIED: Partial<Record<EarningType, string>> = {
   BONUS_OT: "overtime on a flat-sum bonus; pay it in Gusto as a separate amount",
 };
 
-function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"]): HourColumn {
+function columnFor(type: EarningType, map: ExportFixture["earningCodeMap"], who: string): { kind: "hours"; column: HourColumn } | { kind: "amount"; column: AmountColumn } {
   const mapped = map[type];
-  const allowed = GUSTO_CAPABILITY[type];
-  if (!mapped || !allowed || mapped !== allowed) {
-    const plain = NOT_CARRIED[type];
-    throw new ExportError(
-      "unsupported_earning_type",
-      plain
-        ? `The Gusto hours file carries regular, overtime and double-time hours only, so it cannot carry ${plain}.`
-        : `The Gusto hours file cannot carry earning type ${type}${mapped ? ` (mapped to "${mapped}")` : " (no column mapped)"}. It carries ${Object.keys(GUSTO_CAPABILITY).join(", ")} only.`,
-    );
-  }
-  return allowed;
+  const hours = GUSTO_CAPABILITY[type];
+  const amount = GUSTO_AMOUNT_CAPABILITY[type];
+  if (mapped && hours && mapped === hours) return { kind: "hours", column: hours };
+  if (mapped && amount && mapped === amount) return { kind: "amount", column: amount };
+  const plain = NOT_CARRIED[type];
+  const carried = map.BONUS === "bonus" ? "regular, overtime and double-time hours and bonuses" : "regular, overtime and double-time hours";
+  throw new ExportError(
+    "unsupported_earning_type",
+    plain
+      ? `${who}: the Gusto hours file carries ${carried} only, so it cannot carry ${plain}.`
+      : `${who}: the Gusto hours file cannot carry earning type ${type}${mapped ? ` (mapped to "${mapped}")` : " (no column mapped)"}. It carries ${[...Object.keys(GUSTO_CAPABILITY), ...Object.keys(GUSTO_AMOUNT_CAPABILITY)].join(", ")} only.`,
+  );
 }
+
+/** An amount line (a bonus) is money, not time: no minutes and a positive whole number of cents. */
+function checkAmountLine(line: ExportFixture["payLines"][number], who: string): void {
+  const problem = line.minutes !== 0 ? `it carries ${line.minutes} minutes, but it is an amount, not hours` : !Number.isSafeInteger(line.amountCents) || line.amountCents <= 0 ? `${line.amountCents} is not a positive whole number of cents` : null;
+  if (problem) throw new ExportError("invalid_pay_line", `${who}: the ${line.type} pay line cannot be exported because ${problem}.`);
+}
+
+/** 6234 → "62.34". */
+const dollarsText = (cents: number) => `${floorDiv(cents, 100)}.${String(mod(cents, 100)).padStart(2, "0")}`;
 
 /** Each worker once, and each Gusto employee id on one worker only (Gusto would merge their hours). */
 function indexWorkers(workers: ExportWorker[]): Map<string, ExportWorker> {
@@ -138,12 +156,14 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   const columnRates = new Map<string, Partial<Record<HourColumn, Fraction>>>();
   const premiumLines: { workerId: string; column: HourColumn; rate: Fraction }[] = [];
   const columnAmounts = new Map<string, Record<HourColumn, number>>();
+  const bonusCents = new Map<string, number>();
+  const amountsByType: Record<string, number> = {};
   let grossCents = 0;
 
   for (const line of fixture.payLines) {
-    const column = columnFor(line.type, fixture.earningCodeMap);
     const worker = workersById.get(line.workerId);
     if (!worker) throw new ExportError("missing_payroll_id", `Pay line for unknown worker ${line.workerId}.`);
+    const target = columnFor(line.type, fixture.earningCodeMap, `${worker.lastName}, ${worker.firstName}`);
     if (!worker.payrollIds.gusto?.id) {
       throw new ExportError(
         "missing_payroll_id",
@@ -156,6 +176,16 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
         `${worker.lastName}, ${worker.firstName} has no Gusto job title; Gusto matches hours to a job, so the row could land on the wrong job.`,
       );
     }
+    if (target.kind === "amount") {
+      checkAmountLine(line, `${worker.lastName}, ${worker.firstName}`);
+      bonusCents.set(line.workerId, (bonusCents.get(line.workerId) ?? 0) + line.amountCents);
+      if (!perWorker.has(line.workerId)) perWorker.set(line.workerId, { regular_hours: 0, overtime_hours: 0, double_overtime_hours: 0 });
+      minutesByType[line.type] = (minutesByType[line.type] ?? 0) + line.minutes;
+      amountsByType[line.type] = (amountsByType[line.type] ?? 0) + line.amountCents;
+      grossCents += line.amountCents;
+      continue;
+    }
+    const column = target.column;
     checkLine(line, `${worker.lastName}, ${worker.firstName}`);
     if (line.type === "REG") {
       const rates = baseRates.get(line.workerId) ?? new Set<string>();
@@ -207,7 +237,8 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
     .sort((a, b) => cmp(sortKey(a.lastName), sortKey(b.lastName)) || cmp(sortKey(a.firstName), sortKey(b.firstName)) || cmp(a.payrollIds.gusto!.id, b.payrollIds.gusto!.id));
 
   const notes: string[] = [];
-  const rows: string[][] = [[...GUSTO_HEADER]];
+  const withBonus = bonusCents.size > 0;
+  const rows: string[][] = [[...GUSTO_HEADER, ...(withBonus ? AMOUNT_COLUMNS : [])]];
   let payrollSystemGrossCents = 0;
   for (const w of ordered) {
     const minutes = perWorker.get(w.workerId)!;
@@ -231,13 +262,17 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
         );
       }
     });
-    rows.push([w.lastName, w.firstName, w.payrollIds.gusto!.title ?? "", w.payrollIds.gusto!.id, ...hours.map(hoursText)]);
+    // Gusto pays a bonus as the amount written: exact.
+    const bonus = bonusCents.get(w.workerId) ?? 0;
+    payrollSystemGrossCents += bonus;
+    rows.push([w.lastName, w.firstName, w.payrollIds.gusto!.title ?? "", w.payrollIds.gusto!.id, ...hours.map(hoursText), ...(withBonus ? [dollarsText(bonus)] : [])]);
   }
 
   const bytes = writeCsv(rows);
   const controlTotals: ControlTotals = {
     workers: ordered.length,
     minutesByType,
+    ...(Object.keys(amountsByType).length > 0 ? { amountsByType } : {}),
     grossCents,
     payrollSystemGrossCents,
     payrollSystemDifferenceCents: payrollSystemGrossCents - grossCents,
@@ -253,22 +288,27 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   };
 }
 
-/** Reads a Gusto hours file back: worker rows and total hundredths per hour column. */
-export function parseGustoHoursCsv(text: string): { workers: number; hundredthsByColumn: Record<HourColumn, number> } {
+/** Reads a Gusto hours file back: worker rows, total hundredths per hour column, and the bonus total in cents. */
+export function parseGustoHoursCsv(text: string): { workers: number; hundredthsByColumn: Record<HourColumn, number>; bonusCents: number } {
   const [header, ...rows] = readCsv(text);
-  if (!header || header.join(",") !== GUSTO_HEADER.join(",")) {
+  const withBonus = header?.join(",") === [...GUSTO_HEADER, ...AMOUNT_COLUMNS].join(",");
+  if (!header || (!withBonus && header.join(",") !== GUSTO_HEADER.join(","))) {
     throw new ExportError("does_not_reconcile", "The Gusto file header is not the expected template header.");
   }
   const totals: Record<HourColumn, number> = { regular_hours: 0, overtime_hours: 0, double_overtime_hours: 0 };
+  let bonusCents = 0;
+  const read = (text: string, what: string) => {
+    const m = /^(\d+)\.(\d{2})$/.exec(text);
+    if (!m) throw new ExportError("does_not_reconcile", `Unreadable ${what} value "${text}" in the Gusto file.`);
+    return Number(m[1]) * 100 + Number(m[2]);
+  };
   for (const row of rows) {
     HOUR_COLUMNS.forEach((col, i) => {
-      const text = row[4 + i] ?? "";
-      const m = /^(\d+)\.(\d{2})$/.exec(text);
-      if (!m) throw new ExportError("does_not_reconcile", `Unreadable hours value "${text}" in the Gusto file.`);
-      totals[col] += Number(m[1]) * 100 + Number(m[2]);
+      totals[col] += read(row[4 + i] ?? "", "hours");
     });
+    if (withBonus) bonusCents += read(row[4 + HOUR_COLUMNS.length] ?? "", "bonus");
   }
-  return { workers: rows.length, hundredthsByColumn: totals };
+  return { workers: rows.length, hundredthsByColumn: totals, bonusCents };
 }
 
 /** The file must give back the run's workers and minutes by type exactly, or the export fails. */
@@ -287,6 +327,8 @@ function reconcile(bytes: Uint8Array, expected: ControlTotals): void {
     const minutesInRun = expected.minutesByType[type] ?? 0;
     if (minutesFromFile !== minutesInRun) problems.push(`${type} minutes ${minutesFromFile} ≠ ${minutesInRun}`);
   }
+  const bonusInRun = expected.amountsByType?.BONUS ?? 0;
+  if (parsed.bonusCents !== bonusInRun) problems.push(`BONUS cents ${parsed.bonusCents} ≠ ${bonusInRun}`);
   if (problems.length > 0) {
     throw new ExportError("does_not_reconcile", `The Gusto file does not reconcile to the run: ${problems.join("; ")}.`);
   }

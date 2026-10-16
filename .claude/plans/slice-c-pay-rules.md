@@ -142,6 +142,16 @@ weeks (e); other states; alternative workweek schedules; split-shift premiums (f
   hours in the run; the totals screen counts only hours worked; the 1.5× cut-off for keeping
   holiday premiums out of the regular rate is a dated rule row; citations corrected (§ 207(e)(2)
   for holidays not worked).
-- Next: step 7 (lines and exports: Gusto currently refuses holiday, bonus and premium lines, so a
-  run with them cannot create files), the random-week property test, the second-opinion review of
-  steps 5–7, Playwright.
+- Step 7 (lines and exports): worked time is one list (regular, overtime, double time) used by the
+  run's pay/bill check and the totals screen; every other line's minutes are paid minutes only.
+  The Gusto file carries bonuses in Gusto's documented "bonus" column when the agency maps them
+  (the demo does), written only when the run has one, reconciled to the cent. As SPEC §13 requires,
+  it still refuses kinds it cannot carry (holiday, premium, minimum-pay and top-up lines), now
+  naming the worker; carrying them needs each agency's own Gusto template columns (slice f).
+  The invoice names every new kind in English and Spanish.
+- Random-week property test: 300 weeks each in Illinois and California — every worked minute paid
+  once, never below an independent federal amount, the same in any input order, every line's
+  amount its minutes × rate rounded once, bill minutes mirroring pay minutes, and the regular rate
+  never rounded.
+- Next: the second-opinion review of steps 5–7, Playwright (a California week and a two-rate week),
+  then the owner's approval of the new answer keys.

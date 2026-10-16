@@ -3,6 +3,7 @@
  * totals step recomputes the run when hours changed since it was last computed.
  */
 import { desc, eq, inArray } from "drizzle-orm";
+import { WORKED_TIME } from "@shiftbook/rules";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { isStuck } from "../intake/service";
@@ -217,7 +218,7 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
   for (const l of bill) {
     const row = perClient.get(l.clientId) ?? { clientId: l.clientId, name: clients.find((c) => c.id === l.clientId)?.name ?? "", minutes: 0, billedCents: 0 };
     // Hours billed are worked hours only: a premium or minimum-pay line repeats or adds minutes nobody worked.
-    if (l.type === "REG" || l.type === "OT" || l.type === "DT") row.minutes += l.minutes;
+    if (WORKED_TIME.includes(l.type)) row.minutes += l.minutes;
     row.billedCents += l.amountCents;
     perClient.set(l.clientId, row);
   }
