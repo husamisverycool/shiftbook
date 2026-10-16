@@ -79,7 +79,8 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
         <div className="flex flex-col">
           <span>{td.has(`event.${h.event}`) ? td(`event.${h.event}` as "event.sent", { approverEmail: "", newApproverEmail: "", typedName: "", approved: 0, disputed: 0, ...(h.details as Record<string, string | number>) }) : h.event}</span>
           {h.reason && <span className="text-muted-foreground">“{h.reason}”</span>}
-          <span className="text-xs text-muted-foreground">{h.details.automatic === true ? td("automatic") : h.actor}</span>
+          {/* An opening has no person behind it: its record's "who" repeats what the line already says. */}
+          {h.event !== "link_opened" && <span className="text-xs text-muted-foreground">{h.details.automatic === true ? td("automatic") : h.actor}</span>}
         </div>
       ),
     })),

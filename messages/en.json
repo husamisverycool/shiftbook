@@ -1020,7 +1020,7 @@
         "reminder_sent": "Reminder sent",
         "link_renewed": "The approver asked for a new link",
         "link_opened": "Link first opened (this may be a mail system checking the link)",
-        "decided": "{typedName} approved {approved, plural, one {# shift} other {# shifts}} and disputed {disputed, plural, one {# shift} other {# shifts}}",
+        "decided": "{typedName} {approved, plural, =0 {disputed {disputed, plural, one {# shift} other {# shifts}}} other {approved {approved, plural, one {# shift} other {# shifts}}{disputed, plural, =0 {} other { and disputed {disputed, plural, one {# shift} other {# shifts}}}}}}",
         "dispute_accepted": "Dispute settled: the client's times accepted",
         "dispute_edited": "Dispute settled: hours changed in Review hours",
         "dispute_kept": "Dispute settled: hours kept",

@@ -201,7 +201,7 @@ function Active({ view, token }: { view: ActiveView; token: string }) {
         )
       )}
 
-      <HoursTable shifts={view.shifts} period={view.period} shiftActions={closed ? undefined : shiftActions} shiftNote={shiftNote} initiallyOpen={[...new Set(view.shifts.filter((x) => x.draft || x.keptReply || x.dispute).map((x) => x.workerId))]} />
+      <HoursTable shifts={view.shifts} period={view.period} markWaiting={false} shiftActions={closed ? undefined : shiftActions} shiftNote={shiftNote} initiallyOpen={[...new Set(view.shifts.filter((x) => x.draft || x.keptReply || x.dispute).map((x) => x.workerId))]} />
 
       {!closed &&
         (waiting.length === 0 ? (

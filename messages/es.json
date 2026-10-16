@@ -1020,7 +1020,7 @@
         "reminder_sent": "Recordatorio enviado",
         "link_renewed": "El aprobador pidió un nuevo enlace",
         "link_opened": "Enlace abierto por primera vez (puede ser un sistema de correo revisando el enlace)",
-        "decided": "{typedName} aprobó {approved, plural, one {# turno} other {# turnos}} y disputó {disputed, plural, one {# turno} other {# turnos}}",
+        "decided": "{typedName} {approved, plural, =0 {disputó {disputed, plural, one {# turno} other {# turnos}}} other {aprobó {approved, plural, one {# turno} other {# turnos}}{disputed, plural, =0 {} other { y disputó {disputed, plural, one {# turno} other {# turnos}}}}}}",
         "dispute_accepted": "Disputa resuelta: se aceptaron las horas del cliente",
         "dispute_edited": "Disputa resuelta: horas cambiadas en Revisar horas",
         "dispute_kept": "Disputa resuelta: se mantuvieron las horas",

@@ -6,10 +6,10 @@ import { addDays } from "@shiftbook/rules";
 import { ChevronDownIcon, ChevronRightIcon, CircleAlertIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Fragment, useState, type ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { PortalShift } from "@/server/approvals/service";
 import { clock, hoursMinutes, shortDate } from "../format";
+import { Status, type Tone } from "../status";
 
 export type ShiftView = PortalShift;
 
@@ -24,12 +24,23 @@ export function workerState(shifts: ShiftView[]): ShiftView["state"] {
   return shifts.every((x) => x.state === "approved") ? "approved" : "waiting";
 }
 
+/** One status language (_components/status.md): waiting is the client's turn, approved is done, disputed needs the agency. */
+const STATE_TONE: Record<ShiftView["state"], Tone> = { waiting: "info", approved: "success", disputed: "critical" };
+
 export function StateBadge({ state }: { state: ShiftView["state"] }) {
   const t = useTranslations("hoursTable.states");
-  return <Badge variant={state === "disputed" ? "destructive" : state === "approved" ? "secondary" : "outline"}>{t(state)}</Badge>;
+  return (
+    <Status tone={STATE_TONE[state]} data-testid="shift-state">
+      {t(state)}
+    </Status>
+  );
 }
 
-export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: string; endsOn: string }; shiftActions?: (shift: ShiftView) => ReactNode; shiftNote?: (shift: ShiftView) => ReactNode; initiallyOpen?: string[] }) {
+/**
+ * `markWaiting={false}` (the client's page, approve/[token].md): only approved rows and disputed shifts
+ * are marked; what still waits is the approver's to do and carries no badge.
+ */
+export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: string; endsOn: string }; shiftActions?: (shift: ShiftView) => ReactNode; shiftNote?: (shift: ShiftView) => ReactNode; initiallyOpen?: string[]; markWaiting?: boolean }) {
   const t = useTranslations("hoursTable");
   const locale = useLocale();
   const days = daysOf(props.period);
@@ -42,6 +53,7 @@ export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: str
   }
   const dayTotal = (shifts: ShiftView[], day: string) => shifts.filter((x) => x.workDate === day).reduce((sum, x) => sum + x.minutes, 0);
   const total = (shifts: ShiftView[]) => shifts.reduce((sum, x) => sum + x.minutes, 0);
+  const marked = (state: ShiftView["state"]) => (state === "waiting" && props.markWaiting === false ? null : <StateBadge state={state} />);
   const toggle = (id: string) => setOpen((o) => (o.has(id) ? new Set([...o].filter((v) => v !== id)) : new Set([...o, id])));
 
   return (
@@ -77,7 +89,7 @@ export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: str
                         {expanded ? <ChevronDownIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
                         {w.name}
                       </button>
-                      <StateBadge state={workerState(w.shifts)} />
+                      {marked(workerState(w.shifts))}
                     </div>
                   </TableCell>
                   {days.map((d) => {
@@ -124,9 +136,7 @@ export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: str
                                   <TableCell className="tabular-nums">{clock(x.outMinute, locale)}</TableCell>
                                   <TableCell className="text-right tabular-nums">{x.breakMinutes === null ? "—" : t("minutes", { count: x.breakMinutes })}</TableCell>
                                   <TableCell className="text-right tabular-nums">{hoursMinutes(x.minutes)}</TableCell>
-                                  <TableCell>
-                                    <StateBadge state={x.state} />
-                                  </TableCell>
+                                  <TableCell>{marked(x.state)}</TableCell>
                                   {props.shiftActions && <TableCell className="text-right whitespace-nowrap">{props.shiftActions(x)}</TableCell>}
                                 </TableRow>
                                 {props.shiftNote?.(x) && (
