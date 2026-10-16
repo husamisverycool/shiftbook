@@ -3,15 +3,16 @@
 // Pattern: docs/patterns/approvals.md — Harvest approval page (timeframe, status filter, per-row
 // approve or remind), Stripe invoices list (status badge with a tooltip, row opens the detail page),
 // Instawork's disputes banner, Linear's fixed status order.
-import { CircleAlertIcon, InboxIcon } from "lucide-react";
+import { CircleAlertIcon, EllipsisIcon, InboxIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { sendReminderAction } from "@/app/[locale]/(app)/approvals/actions";
+import { sendReminderAction, setApprovalRequiredAction } from "@/app/[locale]/(app)/approvals/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -60,6 +61,12 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
   };
   const shown = props.rows.filter((r) => (status === "" || r.state === status) && (client === "" || r.clientId === client));
   const disputed = props.rows.reduce((sum, r) => sum + r.counts.disputed, 0);
+  const setRequired = (clientId: string, required: boolean) =>
+    start(async () => {
+      const r = await setApprovalRequiredAction(clientId, required);
+      if (!r.ok) toast.error(t.has(`errors.${r.error}`) ? t(`errors.${r.error}` as "errors.generic", { detail: "" }) : t("errors.generic"));
+      router.refresh();
+    });
   const remind = (requestId: string) =>
     start(async () => {
       const r = await sendReminderAction(requestId);
@@ -169,6 +176,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                     {group.map((r) => (
                       <TableRow key={r.clientId} data-testid="approval-row">
                         <TableCell className="font-medium">
+                          <span className="inline-flex flex-wrap items-center gap-2">
                           {r.request ? (
                             <Link href={`/approvals/${r.request.id}`} className="underline-offset-4 hover:underline">
                               {r.clientName}
@@ -180,6 +188,12 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                           ) : (
                             r.clientName
                           )}
+                          {r.approvalRequired && (
+                            <Badge variant="outline" data-testid="approval-required">
+                              {t("requiredBadge")}
+                            </Badge>
+                          )}
+                          </span>
                         </TableCell>
                         <TableCell>
                           {r.request ? (
@@ -216,6 +230,16 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                               {t("open")}
                             </Link>
                           ) : null}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" className="ml-1" aria-label={t("rowMenu", { client: r.clientName })} data-testid="row-menu" />}>
+                              <EllipsisIcon />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuCheckboxItem checked={r.approvalRequired} disabled={pending} onCheckedChange={(on) => setRequired(r.clientId, on === true)} data-testid="toggle-approval-required">
+                                {t("approvalRequired")}
+                              </DropdownMenuCheckboxItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}

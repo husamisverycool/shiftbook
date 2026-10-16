@@ -22,6 +22,7 @@ import { computeRun, PeriodLockedError, setSkipped } from "../../src/server/run/
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { openAppDb, openOwnerDb } from "./helpers";
+import { approveAsOwner } from "./helpers";
 
 const app = openAppDb();
 const owner = openOwnerDb();
@@ -54,6 +55,7 @@ afterAll(async () => {
 
 describe("a period is paid once (B1)", () => {
   it("locks the period and its paid entries once the files exist", async () => {
+    await inAgency((tx) => approveAsOwner(tx, actor, period));
     const files = await inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY }));
     const paid = await inAgency((tx) => tx.select().from(payLines).where(eq(payLines.payRunId, files.runId)));
     const ids = [...new Set(paid.flatMap((l) => l.timeEntryIds))];
@@ -76,6 +78,7 @@ describe("a period is paid once (B1)", () => {
 
 describe("concurrent clicks cannot double anything (B2)", () => {
   it("lets one of two simultaneous 'create files' through and refuses the other", async () => {
+    await inAgency((tx) => approveAsOwner(tx, actor, period));
     const results = await Promise.allSettled([
       inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY })),
       inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY })),
@@ -93,6 +96,7 @@ describe("concurrent clicks cannot double anything (B2)", () => {
   });
 
   it("a totals refresh racing 'create files' cannot change what is exported", async () => {
+    await inAgency((tx) => approveAsOwner(tx, actor, period));
     const [refresh, files] = await Promise.allSettled([
       inAgency((tx) => computeRun(tx, actor, period)),
       inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY })),

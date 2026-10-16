@@ -15,6 +15,7 @@ import { computeRun, PeriodLockedError } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { openAppDb, openOwnerDb } from "./helpers";
+import { approveAsOwner } from "./helpers";
 
 const app = openAppDb();
 const owner = openOwnerDb();
@@ -58,6 +59,7 @@ describe("creating the run's files", () => {
   it("writes the Gusto hours file, stores its fingerprint and control totals, and they match the run", async () => {
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.status).toBe("ready");
+    await inAgency((tx) => approveAsOwner(tx, actor, period));
     const files = await inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY }));
 
     const bytes = await store.get(files.payroll.storageKey);

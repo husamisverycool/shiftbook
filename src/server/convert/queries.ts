@@ -226,6 +226,8 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
   const sum = <T>(rows: T[], f: (r: T) => number) => rows.reduce((t, r) => t + f(r), 0);
   return {
     run: { id: run.id, version: run.version, status: run.status, fingerprint },
+    approval: run.approvedAt ? { by: run.approvedByLabel ?? "", at: run.approvedAt } : null,
+    canApprove: actor.role === "owner",
     summary: {
       workers: workers.length,
       regular: sum(workers, (w) => w.regular),

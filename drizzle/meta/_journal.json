@@ -162,6 +162,13 @@
       "when": 1792091600694,
       "tag": "0022_client_approvals",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792091600695,
+      "tag": "0023_weekly_run",
+      "breakpoints": true
     }
   ]
 }

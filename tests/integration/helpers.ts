@@ -1,5 +1,9 @@
 import { createDatabase } from "../../src/server/db/client";
+import type { Tx } from "../../src/server/db/client";
 import { earningType } from "../../src/server/db/schema";
+import { approveRun } from "../../src/server/run/approval";
+import { computeRun } from "../../src/server/run/service";
+import type { Actor } from "../../src/server/session";
 
 const PORT = process.env.SHIFTBOOK_PG_PORT ?? "54329";
 const TEST_DB = process.env.SHIFTBOOK_TEST_DB ?? "shiftbook_test";
@@ -35,4 +39,12 @@ export async function databaseError(promise: Promise<unknown>): Promise<string> 
 export function inLineOrder<T extends { workweekStart: string; type: (typeof earningType.enumValues)[number]; minutes: number }>(rows: T[]): T[] {
   const rank = (t: T["type"]) => earningType.enumValues.indexOf(t);
   return [...rows].sort((a, b) => (a.workweekStart < b.workweekStart ? -1 : a.workweekStart > b.workweekStart ? 1 : 0) || rank(a.type) - rank(b.type) || a.minutes - b.minutes);
+}
+
+/** The Owner approves the period's run as it stands (slice e: files are made only from an approved run). */
+export async function approveAsOwner(tx: Tx, actor: Actor, payPeriodId: string): Promise<void> {
+  const owner: Actor = { ...actor, role: "owner" };
+  const run = await computeRun(tx, owner, payPeriodId);
+  const result = await approveRun(tx, owner, payPeriodId, run.fingerprint);
+  if (!result.ok) throw new Error(`the run could not be approved: ${result.error}`);
 }

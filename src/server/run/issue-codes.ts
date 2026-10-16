@@ -5,6 +5,8 @@ export const RUN_ISSUE_CODES = [
   ...ISSUE_CODES,
   "entry_needs_review",
   "client_dispute_open",
+  "client_approval_missing",
+  "overtime_spike",
   "unmatched_entry",
   "entry_incomplete",
   "outside_period",

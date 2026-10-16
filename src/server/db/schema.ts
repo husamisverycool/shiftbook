@@ -68,6 +68,7 @@ export const payRunStatus = pgEnum("pay_run_status", [
   "validating",
   "blocked",
   "ready",
+  "approved",
   "exported",
   "closed",
 ]);
@@ -145,6 +146,8 @@ export const clients = pgTable("clients", {
   code: text("code").notNull(),
   addressLines: jsonb("address_lines").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
   billingEmail: text("billing_email"),
+  /** The client must approve its shifts before the run can be approved (slice e; drizzle/0023). */
+  approvalRequired: boolean("approval_required").notNull().default(false),
   createdAt: createdAt(),
 });
 
@@ -460,11 +463,27 @@ export const payRuns = pgTable(
     blockers: jsonb("blockers").$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
     warnings: jsonb("warnings").$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
     snapshot: jsonb("snapshot"),
+    /** "correction": a later version of a paid period, paying and billing only the differences (slice e). */
+    kind: text("kind").$type<"regular" | "correction">().notNull().default("regular"),
+    reason: text("reason"),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: uuid("approved_by"),
+    approvedByLabel: text("approved_by_label"),
+    /** What the Owner approved (drizzle/0023): the fingerprint the files must still match. */
+    approval: jsonb("approval").$type<RunApproval>(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [uniqueIndex("pay_runs_version").on(t.agencyId, t.payPeriodId, t.version)],
 );
+
+export interface RunApproval {
+  fingerprint: string;
+  rulesVersion: string;
+  /** The warnings shown when approving (acknowledged by approving). */
+  warnings: { code: string; message: string }[];
+  totals: { workers: number; grossCents: number; billedCents: number; payLines: number; billLines: number };
+}
 
 export const payLines = pgTable("pay_lines", {
   id: id(),

@@ -11,6 +11,7 @@
  * the period is locked (period-lock.ts) — in this slice a period is paid once.
  */
 import { createHash } from "node:crypto";
+import { hoursMinutes } from "../../components/shiftbook/format";
 import { addDays, addMonths, computePay, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type OvertimeRule, type PayInput, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
@@ -37,12 +38,15 @@ export type { RunIssueCode } from "./issue-codes";
 
 export interface RunIssue extends Omit<Issue, "code"> {
   code: RunIssueCode;
+  /** export_refused: the worker's gross pay this period, so a person skipping them knows what to pay by hand. */
+  grossCents?: number;
 }
 
 export interface RunResult {
   runId: string;
   version: number;
-  status: "ready" | "blocked";
+  /** "approved": the Owner approved it and nothing has changed since (slice e). */
+  status: "ready" | "blocked" | "approved";
   blockers: RunIssue[];
   warnings: RunIssue[];
   skipped: s.SkippedWorker[];
@@ -377,6 +381,25 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     blockers.push({ code: "no_entries", message: "There are no hours to pay in this period." });
   }
 
+  // A client that requires approval: every shift of its that would be paid must be approved by it
+  // (SPEC §11 "client approval missing where required"; slice e).
+  const mustApprove = new Map((await tx.select({ id: s.clients.id, name: s.clients.name, required: s.clients.approvalRequired }).from(s.clients)).filter((c) => c.required).map((c) => [c.id, c.name]));
+  if (mustApprove.size > 0) {
+    const statusOf = new Map(entries.map((e) => [e.id, e.status]));
+    const waiting = new Map<string, string[]>();
+    for (const sh of shifts) {
+      if (!mustApprove.has(sh.clientId)) continue;
+      for (const id of sh.entryIds) if (statusOf.get(id) !== "client_approved") waiting.set(sh.clientId, [...(waiting.get(sh.clientId) ?? []), id]);
+    }
+    for (const [clientId, ids] of [...waiting].sort((a, b) => cmp(mustApprove.get(a[0])!, mustApprove.get(b[0])!))) {
+      const unique = [...new Set(ids)].sort(cmp);
+      blockers.push({
+        code: "client_approval_missing",
+        entryIds: unique,
+        message: `${mustApprove.get(clientId)}: ${unique.length === 1 ? "1 shift is" : `${unique.length} shifts are`} not approved by the client yet.`,
+      });
+    }
+  }
   for (const id of [...paidWorkers].sort(cmp)) {
     const w = workersById.get(id)!;
     if (!w.payrollIds[TARGET_PAYROLL_SYSTEM]?.id) {
@@ -424,6 +447,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const input: PayInput = { workweekStartsOn: workweekStartsOn as Weekday, shifts, confirmations, holidayPolicies, bonuses, hoursWorked, obligationsOnFile, ...tables };
   const result = computePay(input);
   blockers.push(...result.blockers);
+  const warnings: RunIssue[] = [...result.warnings, ...(await overtimeSpikes(tx, period, result.payLines, workerNameOf))];
 
   // Pay and bill lines must carry the same worked minutes for each worker, assignment, week and type
   // (a minimum-wage top-up or a premium is pay only: it is not billed time).
@@ -454,7 +478,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         if (!(error instanceof ExportError)) throw error;
         const workerId = error.workerId;
         const w = workerId ? workersById.get(workerId) : undefined;
-        blockers.push({ code: "export_refused", workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, message: error.message });
+        const grossCents = workerId ? result.payLines.filter((l) => l.workerId === workerId).reduce((sum, l) => sum + l.amountCents, 0) : undefined;
+        blockers.push({ code: "export_refused", workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, message: error.message, ...(grossCents !== undefined ? { grossCents } : {}) });
         if (!workerId) break;
         lines = lines.filter((l) => l.workerId !== workerId);
       }
@@ -472,7 +497,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         pay: result.payLines,
         bill: result.billLines,
         blockers,
-        warnings: result.warnings,
+        warnings,
         obligations: result.obligations,
         skipped: run.skipped.map((x) => x.workerId).sort(cmp),
         documents: documents.map((d) => [d.id, d.status]),
@@ -481,8 +506,9 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     )
     .digest("hex");
   const previous = (run.snapshot as { fingerprint?: string } | null)?.fingerprint;
-  if (previous === fingerprint && run.status === status) {
-    return { runId: run.id, version: run.version, status, blockers, warnings: result.warnings, skipped: run.skipped, fingerprint };
+  // Nothing changed: the same lines stand, and an approval of them stands too.
+  if (previous === fingerprint && (run.status === status || (run.status === "approved" && status === "ready"))) {
+    return { runId: run.id, version: run.version, status: run.status === "approved" ? "approved" : status, blockers, warnings, skipped: run.skipped, fingerprint };
   }
   await tx.delete(s.payLines).where(eq(s.payLines.payRunId, run.id));
   await tx.delete(s.billLines).where(eq(s.billLines.payRunId, run.id));
@@ -560,11 +586,14 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       .returning();
     await audit(tx, actor, [{ action: "create", entityType: "obligation", entityId: row!.id, after: { kind: o.kind, workerId: o.workerId, clientId: o.clientId, crossedOn: o.crossedOn, dueOn } }]);
   }
-  const snapshot = { rulesVersion: result.rulesVersion, fingerprint, input, entryIds: ordered.map((e) => e.id), skipped: run.skipped, blockers, warnings: result.warnings };
+  const snapshot = { rulesVersion: result.rulesVersion, fingerprint, input, entryIds: ordered.map((e) => e.id), skipped: run.skipped, blockers, warnings };
+  // Anything changed after approval voids it (Gusto: preparing again cancels the calculations).
+  const voided = run.status === "approved";
   await tx
     .update(s.payRuns)
-    .set({ status, rulesVersion: result.rulesVersion, blockers, warnings: result.warnings, snapshot, updatedAt: new Date() })
+    .set({ status, rulesVersion: result.rulesVersion, blockers, warnings, snapshot, approvedAt: null, approvedBy: null, approvedByLabel: null, approval: null, updatedAt: new Date() })
     .where(eq(s.payRuns.id, run.id));
+  if (voided) await audit(tx, actor, [{ action: "update", entityType: "pay_run", entityId: run.id, before: { status: "approved", approvedBy: run.approvedByLabel }, after: { status }, reason: "approval voided: the run changed after it was approved" }]);
   await audit(tx, actor, [
     {
       action: "update",
@@ -574,7 +603,44 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       reason: "computed",
     },
   ]);
-  return { runId: run.id, version: run.version, status, blockers, warnings: result.warnings, skipped: run.skipped, fingerprint };
+  return { runId: run.id, version: run.version, status, blockers, warnings, skipped: run.skipped, fingerprint };
+}
+
+/**
+ * Workers with much more overtime than in the previous period's exported run (decision E5; PowerPay
+ * compares with the previous regular run and lists only those outside the threshold). The minutes and
+ * percent are the agency's setting; nothing is said when there is no earlier exported period.
+ */
+async function overtimeSpikes(
+  tx: Tx,
+  period: { startsOn: string },
+  lines: { workerId: string; type: string; minutes: number }[],
+  nameOf: (id: string) => string | undefined,
+): Promise<RunIssue[]> {
+  const threshold = await settingOn<{ minutes?: unknown; percent?: unknown }>(tx, "warnings.overtime_spike", period.startsOn);
+  const floor = threshold?.minutes;
+  const percent = threshold?.percent;
+  if (typeof floor !== "number" || typeof percent !== "number" || !Number.isInteger(floor) || !Number.isInteger(percent)) return [];
+  const earlier = await tx.select().from(s.payPeriods).where(lt(s.payPeriods.endsOn, period.startsOn)).orderBy(desc(s.payPeriods.endsOn)).limit(1);
+  if (earlier.length === 0) return [];
+  const [prior] = await tx.select().from(s.payRuns).where(eq(s.payRuns.payPeriodId, earlier[0]!.id)).orderBy(desc(s.payRuns.version)).limit(1);
+  if (!prior || (prior.status !== "exported" && prior.status !== "closed")) return [];
+  const overtime = (rows: { workerId: string; type: string; minutes: number }[]) => {
+    const out = new Map<string, number>();
+    for (const l of rows) if (l.type === "OT" || l.type === "DT") out.set(l.workerId, (out.get(l.workerId) ?? 0) + l.minutes);
+    return out;
+  };
+  const before = overtime(await tx.select({ workerId: s.payLines.workerId, type: s.payLines.type, minutes: s.payLines.minutes }).from(s.payLines).where(eq(s.payLines.payRunId, prior.id)));
+  const now = overtime(lines);
+  const out: RunIssue[] = [];
+  for (const [workerId, minutes] of [...now].sort((a, b) => cmp(a[0], b[0]))) {
+    const was = before.get(workerId) ?? 0;
+    const rise = minutes - was;
+    if (rise < floor || rise * 100 < percent * was) continue;
+    const name = nameOf(workerId) ?? "";
+    out.push({ code: "overtime_spike", workerId, workerName: name, message: `${name}: ${hoursMinutes(minutes)} of overtime this period against ${hoursMinutes(was)} in the period before.` });
+  }
+  return out;
 }
 
 /** The period's latest run with its lines, for the review screens. */

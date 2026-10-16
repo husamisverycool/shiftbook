@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { demoUuid } from "../../src/server/demo/dataset";
 import { money } from "../../src/components/shiftbook/format";
+import { approveAndCreateFiles, toExceptions, toTotals } from "./flow";
 
 const en = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
 const es = JSON.parse(readFileSync("messages/es.json", "utf8")) as typeof import("../../messages/en.json");
@@ -24,14 +25,12 @@ async function uploadClock(page: Page, locale: "en" | "es", name: string, lines:
   await page.getByTestId("forward").click();
   await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.hours })).toBeVisible();
   await expect(page.getByTestId("forward")).toBeEnabled();
-  await page.getByTestId("forward").click();
-  await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.totals })).toBeVisible({ timeout: 60_000 });
+  await toExceptions(page, m);
 }
 
 async function payrollCsv(page: Page, locale: "en" | "es") {
   const m = MESSAGES[locale];
-  await page.getByTestId("forward").click();
-  await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.files })).toBeVisible({ timeout: 60_000 });
+  await approveAndCreateFiles(page, m);
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("payroll-file").getByRole("link", { name: m.common.download }).click()]);
   return readFileSync((await download.path())!, "utf8").trim().split("\n");
 }
@@ -52,7 +51,7 @@ for (const locale of ["en", "es"] as const) {
       day("10/10/2026", "1:30 PM", "6.00"),
       day("10/11/2026", "5:30 PM", "10.00"),
     ]);
-    await expect(page.getByTestId("blocker")).toHaveCount(0);
+    await toTotals(page, MESSAGES[locale]);
     // 40 h × $19.50 + 20 h × $29.25 + 3 h × $39.00 = $1,482.00 (Cal. Lab. Code § 510(a)).
     await expect(page.getByTestId("summary")).toContainText(money(148_200, locale));
     const csv = await payrollCsv(page, locale);
@@ -84,16 +83,18 @@ for (const locale of ["en", "es"] as const) {
       ...["10/08/2026", "10/09/2026"].map((d) => row("10411", "Bell, Marcus", d, "3:00 PM", "8.00")),
       ...["10/05/2026", "10/06/2026", "10/07/2026"].map((d) => row("10413", "Patel, Anita", d, "3:00 PM", "8.00")),
     ]);
-    // Regular rate ($547.50 + $304.00) ÷ 46 h; overtime 6 h × ($19.00 + ½ × that) = $169.53: Marcus $907.03, Anita 24 h × $18.25 = $438.00.
-    await expect(page.getByTestId("summary")).toContainText(money(90_703 + 43_800, locale));
+    // Regular rate ($547.50 + $304.00) ÷ 46 h; overtime 6 h × ($19.00 + ½ × that) = $169.53: Marcus $907.03,
+    // shown as the amount to pay him by hand; Anita 24 h × $18.25 = $438.00.
     const refused = page.getByTestId("blocker");
     await expect(refused).toHaveCount(1);
     await expect(refused).toContainText("Bell, Marcus");
+    await expect(refused.getByTestId("gross-by-hand")).toContainText(money(90_703, locale));
     await page.getByTestId("skip-workers").click();
     await page.locator("#skip-reason").fill(locale === "en" ? "Paid by hand in Gusto (two rates)" : "Pagado a mano en Gusto (dos tarifas)");
     await page.getByTestId("confirm-skip").click();
     await expect(page.getByRole("dialog")).toBeHidden();
-    await expect(page.getByTestId("blocker")).toHaveCount(0);
+    await toTotals(page, m);
+    await expect(page.getByTestId("summary")).toContainText(money(43_800, locale));
     const csv = await payrollCsv(page, locale);
     expect(csv).toHaveLength(2);
     expect(csv[1]).toMatch(/^Patel,Anita,.*,24\.00,0\.00,0\.00$/);

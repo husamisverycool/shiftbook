@@ -7,11 +7,12 @@ import { z } from "zod";
 import { withAgency } from "@/server/db";
 import { auditEvents } from "@/server/db/schema";
 import { StaleRequestError } from "@/server/errors";
-import { createRunFiles, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
+import { createRunFiles, RunNotApprovedError, RunNotReadyError, TotalsChangedError } from "@/server/files/service";
 import { PeriodBusyError, PeriodLockedError, PeriodNotFoundError } from "@/server/run/period-lock";
 import { archiveDocument, NotArchivableError, retryDocument } from "@/server/intake/service";
 import { receiveUploads, type UploadResult } from "@/server/intake/upload";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
+import { approveRun, unapproveRun } from "@/server/run/approval";
 import { computeRun, setSkipped } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
@@ -203,10 +204,42 @@ export async function skipAction(payPeriodId: string, workerIds: string[], skipp
   });
 }
 
+/** The Owner approves the run as shown (slice e): the files will be made from exactly this. */
+export async function approveRunAction(payPeriodId: string, expectedFingerprint: string): Promise<{ ok: true } | { ok: false; error: "not_allowed" | "changed" | "blocked" | "period_locked" | "busy" | "generic" }> {
+  const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(z.string().max(128), expectedFingerprint)) return { ok: false, error: "generic" };
+  try {
+    const r = await withAgency(actor.agencyId, (tx) => approveRun(tx, actor, payPeriodId, expectedFingerprint));
+    refresh();
+    if (r.ok) return { ok: true };
+    return { ok: false, error: r.error === "not_allowed" || r.error === "changed" || r.error === "blocked" ? r.error : "generic" };
+  } catch (error) {
+    if (error instanceof PeriodLockedError) return { ok: false, error: "period_locked" };
+    if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
+    return { ok: false, error: "generic" };
+  }
+}
+
+/** Takes the approval back, with a reason, before the files exist. */
+export async function unapproveRunAction(payPeriodId: string, reason: string): Promise<{ ok: true } | { ok: false; error: "not_allowed" | "reason_required" | "period_locked" | "busy" | "generic" }> {
+  const actor = currentActor();
+  if (!ok(id, payPeriodId) || !ok(text, reason)) return { ok: false, error: "generic" };
+  try {
+    const r = await withAgency(actor.agencyId, (tx) => unapproveRun(tx, actor, payPeriodId, reason));
+    refresh();
+    if (r.ok) return { ok: true };
+    return { ok: false, error: r.error === "not_allowed" || r.error === "reason_required" ? r.error : "generic" };
+  } catch (error) {
+    if (error instanceof PeriodLockedError) return { ok: false, error: "period_locked" };
+    if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
+    return { ok: false, error: "generic" };
+  }
+}
+
 export async function createFilesAction(
   payPeriodId: string,
   expectedFingerprint: string,
-): Promise<{ ok: true } | { ok: false; error: "not_ready" | "totals_changed" | "period_locked" | "busy" | "generic" }> {
+): Promise<{ ok: true } | { ok: false; error: "not_ready" | "not_approved" | "totals_changed" | "period_locked" | "busy" | "generic" }> {
   const actor = currentActor();
   if (!ok(id, payPeriodId) || !ok(z.string().max(128), expectedFingerprint)) return { ok: false, error: "generic" };
   try {
@@ -216,6 +249,7 @@ export async function createFilesAction(
   } catch (error) {
     refresh();
     if (error instanceof RunNotReadyError) return { ok: false, error: "not_ready" };
+    if (error instanceof RunNotApprovedError) return { ok: false, error: "not_approved" };
     if (error instanceof TotalsChangedError) return { ok: false, error: "totals_changed" };
     if (error instanceof PeriodLockedError) return { ok: false, error: "period_locked" };
     if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };

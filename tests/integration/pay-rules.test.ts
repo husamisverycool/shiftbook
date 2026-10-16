@@ -20,7 +20,7 @@ import { createRunFiles } from "../../src/server/files/service";
 import { computeRun, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
-import { inLineOrder, openAppDb, openOwnerDb } from "./helpers";
+import { approveAsOwner, inLineOrder, openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
 const owner = openOwnerDb();
@@ -154,6 +154,7 @@ describe("pay rules through the weekly run", () => {
     await inAgency((tx) => tx.insert(bonuses).values({ agencyId: actor.agencyId, workerId: luis, assignmentId: entry!.assignmentId!, workweekStart: p!.startsOn, amountCents: 2500, kind: "nondiscretionary", enteredBy: actor.userId }));
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers).toEqual([]);
+    await inAgency((tx) => approveAsOwner(tx, actor, period));
     const files = await inAgency((tx) => createRunFiles(tx, actor, store, period, { today: "2026-10-12" }));
     const csv = new TextDecoder().decode(await store.get(files.payroll.storageKey));
     const [header, row] = csv.split("\n");
@@ -177,6 +178,10 @@ describe("pay rules through the weekly run", () => {
     const refused = run.blockers.filter((b) => b.code === "export_refused");
     expect(refused.map((b) => b.workerId)).toEqual([marcus]);
     expect(refused[0]!.message).toContain("Bell, Marcus");
+    // What a person skipping him must pay by hand: 30 h × $18.25 + 10 h × $17.00 + 6 h × ($17.00 + ½ × $819.50 ÷ 46 h) = $872.95.
+    const lines = await inAgency((tx) => tx.select({ amountCents: payLines.amountCents }).from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, marcus))));
+    expect(refused[0]!.grossCents).toBe(lines.reduce((sum, l) => sum + l.amountCents, 0));
+    expect(refused[0]!.grossCents).toBe(54_750 + 17_000 + 15_545);
     await inAgency((tx) => setSkipped(tx, actor, period, marcus, { skipped: true, reason: "paid by hand in Gusto" }));
     const again = await inAgency((tx) => computeRun(tx, actor, period));
     expect(again.blockers.filter((b) => b.code === "export_refused")).toEqual([]);

@@ -5,7 +5,9 @@ import { getLocale } from "next-intl/server";
 import { sendApprovalRequest, sendReminder, settleDispute, withdrawApproval, type ApprovalFailure } from "@/server/approvals/service";
 import { requestOrigin } from "@/server/request-info";
 import { editEntry } from "@/server/review/service";
+import { setClientApprovalRequired } from "@/server/run/approval";
 import { PeriodBusyError } from "@/server/run/period-lock";
+import { withAgency } from "@/server/db";
 import { approvalDeps, linkBaseUrl } from "@/server/services";
 import { currentActor } from "@/server/session";
 
@@ -58,3 +60,16 @@ export async function settleDisputeAction(disputeId: unknown, action: unknown, r
   );
 }
 
+
+/** "Approval required before payroll" for a client (slice e, decision E6), audited. */
+export async function setApprovalRequiredAction(clientId: unknown, required: unknown): Promise<ApprovalActionResult> {
+  if (!isText(clientId, 40) || typeof required !== "boolean") return { ok: false, error: "generic" };
+  const actor = currentActor();
+  try {
+    const r = await withAgency(actor.agencyId, (tx) => setClientApprovalRequired(tx, actor, clientId, required));
+    return r.ok ? { ok: true } : { ok: false, error: r.error === "not_allowed" ? "not_allowed" : "generic" };
+  } catch (error) {
+    console.error("approval-required change failed:", error instanceof Error ? error.message : String(error));
+    return { ok: false, error: "generic" };
+  }
+}

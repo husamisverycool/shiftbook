@@ -9,7 +9,7 @@ import { Loader2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createContext, useContext, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
-import { computeTotalsAction, createFilesAction } from "@/app/[locale]/(app)/convert/actions";
+import { approveRunAction, computeTotalsAction, createFilesAction } from "@/app/[locale]/(app)/convert/actions";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -19,6 +19,7 @@ import { REFUSAL_MESSAGE, STEPS, type Step } from "./types";
 export type Forward =
   | { kind: "link"; step: Step; disabled: boolean }
   | { kind: "computeTotals"; disabled: boolean }
+  | { kind: "approve"; disabled: boolean; fingerprint: string | null }
   | { kind: "createFiles"; disabled: boolean; fingerprint: string | null }
   | null;
 
@@ -41,7 +42,7 @@ export function ConvertFrame(props: {
   const t = useTranslations("convert");
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [working, setWorking] = useState<null | "totals" | "files">(null);
+  const [working, setWorking] = useState<null | "totals" | "approve" | "files">(null);
   const index = STEPS.indexOf(props.step);
   const reached = STEPS.slice(0, index + 1);
   const previous = index > 0 ? STEPS[index - 1]! : null;
@@ -53,7 +54,7 @@ export function ConvertFrame(props: {
       router.push(hrefFor(props.periodId, f.step));
       return;
     }
-    setWorking(f.kind === "computeTotals" ? "totals" : "files");
+    setWorking(f.kind === "computeTotals" ? "totals" : f.kind === "approve" ? "approve" : "files");
     start(async () => {
       if (f.kind === "computeTotals") {
         const r = await computeTotalsAction(props.periodId);
@@ -61,12 +62,20 @@ export function ConvertFrame(props: {
           toast.error(t(`errors.${REFUSAL_MESSAGE[r.error]}`));
           setWorking(null);
           router.refresh();
-        } else router.push(hrefFor(props.periodId, "totals"));
+        } else router.push(hrefFor(props.periodId, "exceptions"));
+      } else if (f.kind === "approve") {
+        const r = await approveRunAction(props.periodId, f.fingerprint ?? "");
+        if (!r.ok) {
+          const key = { not_allowed: "errors.notAllowed", changed: "errors.totalsChanged", blocked: "errors.approvalBlocked", period_locked: "errors.periodLocked", busy: "errors.busy", generic: "errors.generic" } as const;
+          toast.error(t(key[r.error]));
+        }
+        setWorking(null);
+        router.refresh();
       } else {
         const r = await createFilesAction(props.periodId, f.fingerprint ?? "");
         if (r.ok) router.push(hrefFor(props.periodId, "files"));
         else {
-          const key = { not_ready: "errors.notReady", totals_changed: "errors.totalsChanged", period_locked: "errors.periodLocked", busy: "errors.busy", generic: "errors.generic" } as const;
+          const key = { not_ready: "errors.notReady", not_approved: "errors.notApproved", totals_changed: "errors.totalsChanged", period_locked: "errors.periodLocked", busy: "errors.busy", generic: "errors.generic" } as const;
           toast.error(t(key[r.error]));
           setWorking(null);
           router.refresh();
@@ -78,8 +87,9 @@ export function ConvertFrame(props: {
   const forwardLabel = (() => {
     const f = props.forward;
     if (!f) return null;
-    if (f.kind === "link") return t(`forward.${props.step === "upload" ? "upload" : "hours"}`);
+    if (f.kind === "link") return t(`forward.${props.step === "upload" ? "upload" : props.step === "exceptions" ? "exceptions" : "hours"}`);
     if (f.kind === "computeTotals") return working === "totals" ? t("forward.hoursWorking") : t("forward.hours");
+    if (f.kind === "approve") return working === "approve" ? t("forward.approveWorking") : t("forward.approve");
     return working === "files" ? t("forward.totalsWorking") : t("forward.totals");
   })();
   const forwardButton = props.forward && (

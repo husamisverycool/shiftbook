@@ -109,13 +109,17 @@
     "steps": {
       "upload": "Upload timesheets",
       "hours": "Review hours",
+      "exceptions": "Exceptions",
       "totals": "Review totals",
       "files": "Files"
     },
     "forward": {
       "upload": "Review hours",
-      "hours": "Review totals",
-      "hoursWorking": "Computing totals…",
+      "hours": "Check exceptions",
+      "hoursWorking": "Checking…",
+      "exceptions": "Review totals",
+      "approve": "Approve",
+      "approveWorking": "Approving…",
       "totals": "Create files",
       "totalsWorking": "Creating files…"
     },
@@ -340,6 +344,7 @@
       "skipTitle": "Skip for this run?",
       "skipBody": "Skipped workers are not in this payroll file or these invoices. Pay them separately.",
       "skipReasonLabel": "Reason",
+      "grossByHand": "{name}: {amount} gross pay this period, to pay by hand if skipped.",
       "skipConfirm": "Skip",
       "unskip": "Bring back",
       "skippedTitle": "{count, plural, one {# worker skipped} other {# workers skipped}}",
@@ -347,6 +352,8 @@
       "blockers": {
         "entry_needs_review": "Entries still need review",
         "client_dispute_open": "Shifts the client disputed",
+        "client_approval_missing": "Shifts a client must approve first",
+        "overtime_spike": "Much more overtime than the week before",
         "unmatched_entry": "Entries not matched to a worker",
         "entry_incomplete": "Entries are missing a date or hours",
         "outside_assignment": "Dates outside the assignment",
@@ -428,7 +435,33 @@
       "notReady": "The run still has problems to resolve.",
       "periodLocked": "This period's files were already created, so its hours and totals can no longer change.",
       "stale": "This changed in another tab or window. The page now shows the latest.",
-      "totalsChanged": "The totals changed since you looked at them. Review them again, then create the files."
+      "totalsChanged": "The totals changed since you looked at them. Review them again, then create the files.",
+      "notApproved": "The run is not approved as it stands. Review the totals and approve them, then create the files.",
+      "notAllowed": "Only the Owner can approve or unapprove a run.",
+      "approvalBlocked": "The run still has blocking problems. Resolve them on the Exceptions step."
+    },
+    "exceptions": {
+      "summaryNone": "No blocking problems.",
+      "summaryNoneBody": "Review the totals and approve the run.",
+      "summaryBlocking": "{count, plural, one {# problem stops this run} other {# problems stop this run}}",
+      "summaryBlockingBody": "Fix each one below. Coming back to this step checks again.",
+      "blockingTitle": "Blocking",
+      "warningsTitle": "Warnings",
+      "warningsHint": "Warnings never stop the run. Approving acknowledges them.",
+      "noWarnings": "No warnings."
+    },
+    "approval": {
+      "approvedTitle": "Approved by {name} on {when}",
+      "approvedBody": "The files will be made from exactly what was approved. Any change before then cancels the approval.",
+      "unapprove": "Unapprove",
+      "unapproveTitle": "Take back the approval?",
+      "unapproveBody": "The run can then be changed, and it must be approved again before its files are made.",
+      "reason": "Reason",
+      "cancel": "Cancel",
+      "confirm": "Unapprove",
+      "ownerOnly": "Only the Owner can approve this run.",
+      "warningsAck": "Approving acknowledges {count, plural, one {# warning} other {# warnings}}.",
+      "unapproved": "Approval taken back"
     }
   },
   "nav": {
@@ -769,7 +802,8 @@
       "reply_required": "Write a reply for the client.",
       "reason_required": "Write a reason.",
       "edit_refused": "The client's times cannot be applied as they are ({detail}). Edit the hours instead.",
-      "generic": "Something went wrong. Nothing was changed."
+      "generic": "Something went wrong. Nothing was changed.",
+      "not_allowed": "Only the Owner can change this."
     },
     "detail": {
       "back": "Client approvals",
@@ -835,7 +869,10 @@
       "linkHidden": "Links are hidden in this log.",
       "demoCopy": "Demo: the email as the approver receives it, with its working link",
       "notFound": "This approval request does not exist."
-    }
+    },
+    "approvalRequired": "Approval required before payroll",
+    "requiredBadge": "Approval required",
+    "rowMenu": "More for {client}"
   },
   "rates": {
     "title": "Rate card",

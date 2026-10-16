@@ -1,29 +1,27 @@
 "use client";
 
 /**
- * Review totals — docs/patterns/convert.md step 3 (Gusto review step): alerts, one error alert per
- * blocker type (a blocker on workers offers to skip them for this run, Gusto "skip employee"),
- * the Summary figures, then tabs of tables with a totals footer, 25 rows per page.
+ * Review totals — docs/patterns/convert.md step 4 (Gusto review step): the approval (Approve in the
+ * heading row; once approved, who and when with Unapprove — Rise, Check), warnings acknowledged by
+ * approving, the Summary figures, then tabs of tables with a totals footer, 25 rows per page.
+ * Blocking problems are on the Exceptions step; a blocked run never reaches this step.
  */
-import { CircleAlertIcon, InfoIcon, TriangleAlertIcon, XIcon } from "lucide-react";
+import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
-import { confirmDistinctAction, skipAction } from "@/app/[locale]/(app)/convert/actions";
+import { unapproveRunAction } from "@/app/[locale]/(app)/convert/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { hoursMinutes, money } from "../format";
-import { REFUSAL_MESSAGE } from "./types";
 
-const ENTRY_LEVEL = new Set(["entry_needs_review", "unmatched_entry", "entry_incomplete", "outside_period", "outside_assignment", "crosses_midnight", "possible_duplicate_day", "no_entries"]);
-const DOCUMENT_LEVEL = new Set(["documents_pending", "document_failed"]);
 const PAGE = 25;
 
 export interface TotalsData {
@@ -35,46 +33,71 @@ export interface TotalsData {
     ruleCode: string | null;
     jurisdiction: string | null;
     ruleCodes: string[];
-    issues: { message: string; workerName?: string; entryIds?: string[] }[];
+    issues: { message: string; workerName?: string; entryIds?: string[]; grossCents?: number }[];
     workerIds: string[];
     workerNames: string[];
   }[];
-  warnings: { code: string; ruleCode: string | null; issues: { message: string }[] }[];
+  warnings: TotalsData["blockers"];
   skipped: { workerId: string; name: string; reason: string; by: string }[];
+  /** Who approved the run and when (slice e), while it stays approved. */
+  approval: { by: string; at: Date } | null;
+  canApprove: boolean;
 }
 
 export function TotalsReview({ periodId, data, locked }: { periodId: string; data: TotalsData; locked: boolean }) {
   const t = useTranslations("convert.totals");
-  const tc = useTranslations("common");
+  const ta = useTranslations("convert.approval");
   const tx = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [skipping, setSkipping] = useState<{ workerIds: string[] } | null>(null);
-  const [confirming, setConfirming] = useState<string[] | null>(null);
-  const [confirmReason, setConfirmReason] = useState("");
+  const [unapproving, setUnapproving] = useState(false);
   const [reason, setReason] = useState("");
   const skipped = new Set(data.skipped.map((s) => s.workerId));
+  const warningCount = data.warnings.reduce((sum, w) => sum + w.issues.length, 0);
 
-  const confirmSkip = () =>
-    skipping &&
+  const unapprove = () =>
     start(async () => {
-      const r = await skipAction(periodId, skipping.workerIds, true, reason);
-      if ("error" in r) {
-        toast.error(tx(`errors.${REFUSAL_MESSAGE[r.error]}`));
-        setSkipping(null);
-        router.refresh();
-      } else if (r.ok) {
-        setSkipping(null);
+      const r = await unapproveRunAction(periodId, reason);
+      if (r.ok) {
+        toast.success(ta("unapproved"));
+        setUnapproving(false);
         setReason("");
-        router.refresh();
+      } else {
+        const key = { not_allowed: "errors.notAllowed", reason_required: "errors.generic", period_locked: "errors.periodLocked", busy: "errors.busy", generic: "errors.generic" } as const;
+        toast.error(tx(key[r.error]));
       }
+      router.refresh();
     });
 
   return (
     <div className="flex flex-col gap-6">
-      {(data.blockers.length > 0 || data.skipped.length > 0 || data.warnings.some((w) => !dismissed.has(w.code))) && (
+      {data.approval ? (
+        <Alert data-testid="approval">
+          <CircleCheckIcon />
+          <AlertTitle>{ta("approvedTitle", { name: data.approval.by, when: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(data.approval.at)) })}</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>{ta("approvedBody")}</p>
+            {!locked && data.canApprove && (
+              <Button size="sm" variant="outline" className="w-fit" onClick={() => setUnapproving(true)} data-testid="unapprove">
+                {ta("unapprove")}
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      ) : (
+        !locked &&
+        (!data.canApprove ? (
+          <Alert>
+            <InfoIcon />
+            <AlertTitle>{ta("ownerOnly")}</AlertTitle>
+          </Alert>
+        ) : (
+          warningCount > 0 && <p className="text-sm text-muted-foreground">{ta("warningsAck", { count: warningCount })}</p>
+        ))
+      )}
+      {(data.skipped.length > 0 || data.warnings.some((w) => !dismissed.has(w.code))) && (
         <div className="flex flex-col gap-4">
           {data.warnings
             .filter((w) => !dismissed.has(w.code))
@@ -90,114 +113,22 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
                 </Button>
               </Alert>
             ))}
-          {data.blockers.map((b) => (
-            <Alert key={`${b.code}|${b.ruleCode ?? ""}`} variant="destructive" data-testid="blocker">
-              <CircleAlertIcon />
-              <AlertTitle>
-                {t(`blockers.${b.code}` as "blockers.invalid_input")}
-                {b.workerIds.length > 0 && <span className="font-normal"> · {t("blockerCount", { count: b.workerIds.length })}</span>}
-              </AlertTitle>
-              <AlertDescription className="flex flex-col gap-2 text-foreground!">
-                {b.ruleCodes.length > 0 ? (
-                  <div className="flex flex-col gap-1">
-                    <p>
-                      {t("rulesLine", {
-                        place: b.jurisdiction === "US" ? t("federal") : (b.jurisdiction ?? ""),
-                        rules: b.ruleCodes.map((code) => (t.has(`rules.${code}`) ? t(`rules.${code}` as "rules.weekly_overtime") : code)).join(" · "),
-                      })}
-                    </p>
-                    {b.workerNames.length > 0 && <p>{t("workersLine", { names: b.workerNames.join(", ") })}</p>}
-                  </div>
-                ) : b.code === "possible_duplicate_day" ? (
-                  <ul className="flex flex-col gap-2">
-                    {b.issues.map((i, n) => (
-                      <li key={n} className="flex flex-col gap-1">
-                        <span>{i.message}</span>
-                        {!locked && i.entryIds && (
-                          <Button size="sm" variant="outline" className="w-fit" onClick={() => setConfirming(i.entryIds!)} data-testid="both-real">
-                            {t("bothReal")}
-                          </Button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <Issues issues={b.issues} />
-                )}
-                {!locked &&
-                  (DOCUMENT_LEVEL.has(b.code) ? (
-                    <Link href={{ pathname: "/convert", query: { period: periodId, step: "upload" } }} className={buttonVariants({ size: "sm", variant: "outline", className: "w-fit" })}>
-                      {t("goToUpload")}
-                    </Link>
-                  ) : ENTRY_LEVEL.has(b.code) ? (
-                    <Link href={{ pathname: "/convert", query: { period: periodId, step: "hours" } }} className={buttonVariants({ size: "sm", variant: "outline", className: "w-fit" })}>
-                      {t("edit")}
-                    </Link>
-                  ) : b.code === "client_dispute_open" ? (
-                    <Link href={{ pathname: "/approvals", query: { period: periodId, status: "disputed" } }} className={buttonVariants({ size: "sm", variant: "outline", className: "w-fit" })}>
-                      {t("openApprovals")}
-                    </Link>
-                  ) : (
-                    b.workerIds.length > 0 && (
-                      <Button size="sm" variant="outline" className="w-fit" onClick={() => setSkipping({ workerIds: b.workerIds })} data-testid="skip-workers">
-                        {t("skipWorkers", { count: b.workerIds.length })}
-                      </Button>
-                    )
-                  ))}
-              </AlertDescription>
-            </Alert>
-          ))}
           {data.skipped.length > 0 && (
             <Alert>
               <InfoIcon />
               <AlertTitle>{t("skippedTitle", { count: data.skipped.length })}</AlertTitle>
               <AlertDescription className="flex flex-col gap-3">
-                {[...new Set(data.skipped.map((s) => s.reason))].map((why) => {
-                  const people = data.skipped.filter((s) => s.reason === why);
-                  return (
-                    <div key={why} className="flex flex-col gap-1">
-                      <p className="text-foreground">{why}</p>
-                      <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
-                        {people.map((s) => (
-                          <span key={s.workerId} className="inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-xs">
-                            {s.name}
-                            {!locked && (
-                              <Button
-                                size="icon-xs"
-                                variant="ghost"
-                                aria-label={`${t("unskip")}: ${s.name}`}
-                                disabled={pending}
-                                onClick={() =>
-                                  start(async () => {
-                                    await skipAction(periodId, [s.workerId], false, "brought back");
-                                    router.refresh();
-                                  })
-                                }
-                              >
-                                <XIcon />
-                              </Button>
-                            )}
-                          </span>
-                        ))}
-                        {!locked && people.length > 1 && (
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            disabled={pending}
-                            onClick={() =>
-                              start(async () => {
-                                await skipAction(periodId, people.map((p) => p.workerId), false, "brought back");
-                                router.refresh();
-                              })
-                            }
-                          >
-                            {t("bringBackAll")}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {[...new Set(data.skipped.map((s) => s.reason))].map((why) => (
+                  <div key={why} className="flex flex-col gap-1">
+                    <p className="text-foreground">{why}</p>
+                    <p>
+                      {data.skipped
+                        .filter((s) => s.reason === why)
+                        .map((s) => s.name)
+                        .join(", ")}
+                    </p>
+                  </div>
+                ))}
               </AlertDescription>
             </Alert>
           )}
@@ -266,56 +197,22 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
         </TabsContent>
       </Tabs>
 
-      <Dialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+      <Dialog open={unapproving} onOpenChange={setUnapproving}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("bothRealTitle")}</DialogTitle>
-            <DialogDescription>{t("bothRealBody")}</DialogDescription>
+            <DialogTitle>{ta("unapproveTitle")}</DialogTitle>
+            <DialogDescription>{ta("unapproveBody")}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="confirm-reason">{t("skipReasonLabel")}</Label>
-            <Textarea id="confirm-reason" value={confirmReason} onChange={(e) => setConfirmReason(e.target.value)} />
+            <Label htmlFor="unapprove-reason">{ta("reason")}</Label>
+            <Textarea id="unapprove-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirming(null)}>
-              {tc("cancel")}
+            <Button variant="outline" onClick={() => setUnapproving(false)}>
+              {ta("cancel")}
             </Button>
-            <Button
-              disabled={pending || confirmReason.trim() === ""}
-              data-testid="confirm-both-real"
-              onClick={() =>
-                confirming &&
-                start(async () => {
-                  const r = await confirmDistinctAction(confirming, confirmReason);
-                  if ("error" in r) toast.error(tx(`errors.${REFUSAL_MESSAGE[r.error]}`));
-                  setConfirming(null);
-                  setConfirmReason("");
-                  router.refresh();
-                })
-              }
-            >
-              {t("bothRealConfirm")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={skipping !== null} onOpenChange={(open) => !open && setSkipping(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("skipTitle")}</DialogTitle>
-            <DialogDescription>{t("skipBody")}</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="skip-reason">{t("skipReasonLabel")}</Label>
-            <Textarea id="skip-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSkipping(null)}>
-              {tc("cancel")}
-            </Button>
-            <Button onClick={confirmSkip} disabled={pending || reason.trim() === ""} data-testid="confirm-skip">
-              {t("skipConfirm")}
+            <Button onClick={unapprove} disabled={pending || reason.trim() === ""} data-testid="confirm-unapprove">
+              {ta("confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

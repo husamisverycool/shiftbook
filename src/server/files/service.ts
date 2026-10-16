@@ -31,6 +31,14 @@ export class RunNotReadyError extends Error {
   }
 }
 
+/** The Owner has not approved the run, or its approval no longer matches it (slice e, decision E1). */
+export class RunNotApprovedError extends Error {
+  constructor() {
+    super("The run is not approved as it stands. Review the totals and approve them before creating the files.");
+    this.name = "RunNotApprovedError";
+  }
+}
+
 /** The totals changed between being shown and "Create files": the person must review them again. */
 export class TotalsChangedError extends Error {
   constructor() {
@@ -64,9 +72,11 @@ export async function createRunFiles(
   // Rates and assignments cannot change while this period is paid with them.
   await lockCatalog(tx, actor.agencyId, "shared");
   const computed = await computeRun(tx, actor, payPeriodId);
-  if (computed.status !== "ready") throw new RunNotReadyError(computed.blockers);
+  if (computed.status === "blocked") throw new RunNotReadyError(computed.blockers);
   if (opts.expectedFingerprint !== undefined && opts.expectedFingerprint !== computed.fingerprint) throw new TotalsChangedError();
   const [run] = await tx.select().from(s.payRuns).where(eq(s.payRuns.payPeriodId, payPeriodId)).orderBy(desc(s.payRuns.version)).limit(1);
+  // Files only from what the Owner approved, unchanged since (computing again voids a stale approval).
+  if (computed.status !== "approved" || run!.approval?.fingerprint !== computed.fingerprint) throw new RunNotApprovedError();
   const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, payPeriodId));
   const [agency] = await tx.select().from(s.agencies).where(eq(s.agencies.id, actor.agencyId));
   const pay = await tx.select().from(s.payLines).where(eq(s.payLines.payRunId, run!.id));

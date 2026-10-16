@@ -9,11 +9,11 @@ import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { money } from "../../src/components/shiftbook/format";
+import { uploadPrairieWeek } from "./flow";
 
 const en = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
 const es = JSON.parse(readFileSync("messages/es.json", "utf8")) as typeof import("../../messages/en.json");
 const MESSAGES = { en, es } as const;
-const CLOCK_HEADER = "Employee ID,Employee Name,Department,Date,Clock In,Clock Out,Break (min),Total Hours";
 const PRAIRIE = "Prairie Line Manufacturing (demo)";
 
 async function check(page: Page, where: string) {
@@ -21,22 +21,6 @@ async function check(page: Page, where: string) {
   const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   const serious = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(serious.map((v) => `${where}: ${v.id} — ${v.help} (${v.nodes.map((n) => n.target.join(" ")).join(", ")})`)).toEqual([]);
-}
-
-/** Marcus 10 h Monday to Wednesday and 8 h Thursday and Friday; Anita 8 h Monday to Wednesday. Returns the period id. */
-async function uploadPrairieWeek(page: Page, locale: "en" | "es"): Promise<string> {
-  const m = MESSAGES[locale];
-  const row = (id: string, name: string, date: string, out: string, total: string) => `${id},"${name}",Molding,${date},7:00 AM,${out},0,${total}`;
-  const lines = [
-    ...["10/05/2026", "10/06/2026", "10/07/2026"].map((d) => row("10411", "Bell, Marcus", d, "5:00 PM", "10.00")),
-    ...["10/08/2026", "10/09/2026"].map((d) => row("10411", "Bell, Marcus", d, "3:00 PM", "8.00")),
-    ...["10/05/2026", "10/06/2026", "10/07/2026"].map((d) => row("10413", "Patel, Anita", d, "3:00 PM", "8.00")),
-  ];
-  await page.goto(`/${locale}/convert`);
-  await page.getByRole("link", { name: m.landing.start }).first().click();
-  await page.getByTestId("file-input").setInputFiles({ name: "prairie-week.csv", mimeType: "text/csv", buffer: Buffer.from([CLOCK_HEADER, ...lines].join("\n")) });
-  await expect(page.getByTestId("document-row")).toHaveCount(1, { timeout: 60_000 });
-  return new URL(page.url()).searchParams.get("period")!;
 }
 
 for (const locale of ["en", "es"] as const) {

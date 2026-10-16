@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { demoUuid } from "../../src/server/demo/dataset";
 import { expect, test, type Page } from "@playwright/test";
+import { approveAndCreateFiles, toExceptions, toTotals } from "./flow";
 
 const FIXTURE = "tests/e2e/fixtures/timeclock-messy-2026-10-05.csv";
 const en = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
@@ -38,10 +39,10 @@ test("converter steps have no serious accessibility problems", async ({ page }) 
   await check(page, "source panel");
 });
 
-test("totals and files steps, with their dialogs, have no serious accessibility problems", async ({ page }) => {
+test("exceptions, totals and files steps, with their dialogs, have no serious accessibility problems", async ({ page }) => {
   execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
   // A mid-week rate change gives the machine operators two pay rates, which the Gusto hours file
-  // refuses per worker: the totals step is blocked and offers to skip them.
+  // refuses per worker: the run is blocked at Exceptions, which offers to skip them.
   await page.goto(`/en/job-orders/${demoUuid("job:il-operator")}`);
   await page.getByRole("tab", { name: en.jobOrder.tabs.rates }).click();
   await page.getByTestId("new-version").click();
@@ -58,19 +59,19 @@ test("totals and files steps, with their dialogs, have no serious accessibility 
   await expect(page.getByTestId("document-row")).toHaveCount(2, { timeout: 60_000 });
   await page.getByTestId("forward").click();
   await expect(page.getByTestId("hours-grid").or(page.getByText("Nothing needs review"))).toBeVisible();
-  await page.getByTestId("forward").click();
-  await expect(page.getByRole("heading", { level: 1, name: "Review totals" })).toBeVisible({ timeout: 60_000 });
-  await check(page, "review totals (blocked)");
+  await toExceptions(page, en);
+  await check(page, "exceptions (blocked)");
   await page.getByTestId("skip-workers").first().click();
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
   await check(page, "skip dialog");
   await page.locator("#skip-reason").fill("Paid separately (test)");
   await page.getByTestId("confirm-skip").click();
   await expect(page.getByRole("dialog")).toBeHidden();
-  await check(page, "review totals (ready)");
+  await check(page, "exceptions (clear, workers skipped)");
+  await toTotals(page, en);
+  await check(page, "review totals");
   await page.getByRole("tab", { name: "Billing" }).click();
   await check(page, "review totals (billing tab)");
-  await page.getByTestId("forward").click();
-  await expect(page.getByRole("heading", { level: 1, name: "Files" })).toBeVisible({ timeout: 60_000 });
+  await approveAndCreateFiles(page, en);
   await check(page, "files");
 });

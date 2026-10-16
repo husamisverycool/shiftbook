@@ -7,6 +7,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { demoUuid } from "../../src/server/demo/dataset";
+import { toExceptions, toTotals } from "./flow";
 
 const FIXTURE = "tests/e2e/fixtures/timeclock-messy-2026-10-05.csv";
 const CLOCK_HEADER = "Employee ID,Employee Name,Department,Date,Clock In,Clock Out,Break (min),Total Hours";
@@ -76,9 +77,8 @@ for (const locale of ["en", "es"] as const) {
     await page.keyboard.press("Escape");
 
     // Totals compute with the rejected row left out.
-    await page.getByTestId("forward").click();
-    await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.totals })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByTestId("blocker")).toHaveCount(0);
+    await toExceptions(page, m);
+    await toTotals(page, m);
     await expect(page.getByTestId("summary")).toContainText("24:00");
     expect(errors).toEqual([]);
   });

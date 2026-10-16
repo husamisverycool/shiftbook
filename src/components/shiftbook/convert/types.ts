@@ -1,6 +1,7 @@
 /** Shapes and constants shared by the converter's server page and client components (plain data only). */
 
-export const STEPS = ["upload", "hours", "totals", "files"] as const;
+// SPEC §11: hours complete → exceptions resolved (rules computed on the way) → review totals → files.
+export const STEPS = ["upload", "hours", "exceptions", "totals", "files"] as const;
 export type Step = (typeof STEPS)[number];
 export interface GridField {
   value: string | null;

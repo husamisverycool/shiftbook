@@ -109,13 +109,17 @@
     "steps": {
       "upload": "Subir hojas de horas",
       "hours": "Revisar horas",
+      "exceptions": "Excepciones",
       "totals": "Revisar totales",
       "files": "Archivos"
     },
     "forward": {
       "upload": "Revisar horas",
-      "hours": "Revisar totales",
-      "hoursWorking": "Calculando totales…",
+      "hours": "Revisar excepciones",
+      "hoursWorking": "Revisando…",
+      "exceptions": "Revisar totales",
+      "approve": "Aprobar",
+      "approveWorking": "Aprobando…",
       "totals": "Crear archivos",
       "totalsWorking": "Creando archivos…"
     },
@@ -340,6 +344,7 @@
       "skipTitle": "¿Omitir en esta nómina?",
       "skipBody": "Los trabajadores omitidos no están en este archivo de nómina ni en estas facturas. Págales por separado.",
       "skipReasonLabel": "Motivo",
+      "grossByHand": "{name}: {amount} de pago bruto en este período, para pagar a mano si se omite.",
       "skipConfirm": "Omitir",
       "unskip": "Volver a incluir",
       "skippedTitle": "{count, plural, one {# trabajador omitido} other {# trabajadores omitidos}}",
@@ -347,6 +352,8 @@
       "blockers": {
         "entry_needs_review": "Hay registros por revisar",
         "client_dispute_open": "Turnos que el cliente disputó",
+        "client_approval_missing": "Turnos que el cliente debe aprobar primero",
+        "overtime_spike": "Mucho más tiempo extra que la semana anterior",
         "unmatched_entry": "Registros sin trabajador asignado",
         "entry_incomplete": "Registros sin fecha u horas",
         "outside_assignment": "Fechas fuera de la asignación",
@@ -428,7 +435,33 @@
       "notReady": "La nómina todavía tiene problemas por resolver.",
       "periodLocked": "Los archivos de este periodo ya se crearon, así que sus horas y totales ya no pueden cambiar.",
       "stale": "Esto cambió en otra pestaña o ventana. La página ahora muestra lo más reciente.",
-      "totalsChanged": "Los totales cambiaron desde que los revisaste. Revísalos de nuevo y luego crea los archivos."
+      "totalsChanged": "Los totales cambiaron desde que los revisaste. Revísalos de nuevo y luego crea los archivos.",
+      "notApproved": "La nómina no está aprobada tal como está. Revisa los totales, apruébalos y luego crea los archivos.",
+      "notAllowed": "Solo el Propietario puede aprobar o desaprobar una nómina.",
+      "approvalBlocked": "La nómina todavía tiene problemas que la detienen. Resuélvelos en el paso Excepciones."
+    },
+    "exceptions": {
+      "summaryNone": "No hay problemas que detengan la nómina.",
+      "summaryNoneBody": "Revisa los totales y aprueba la nómina.",
+      "summaryBlocking": "{count, plural, one {# problema detiene esta nómina} other {# problemas detienen esta nómina}}",
+      "summaryBlockingBody": "Corrige cada uno abajo. Al volver a este paso se revisa de nuevo.",
+      "blockingTitle": "Detienen la nómina",
+      "warningsTitle": "Avisos",
+      "warningsHint": "Los avisos nunca detienen la nómina. Al aprobar, los das por vistos.",
+      "noWarnings": "Sin avisos."
+    },
+    "approval": {
+      "approvedTitle": "Aprobada por {name} el {when}",
+      "approvedBody": "Los archivos se harán exactamente con lo aprobado. Cualquier cambio antes de eso cancela la aprobación.",
+      "unapprove": "Desaprobar",
+      "unapproveTitle": "¿Retirar la aprobación?",
+      "unapproveBody": "La nómina se podrá cambiar, y habrá que aprobarla de nuevo antes de hacer sus archivos.",
+      "reason": "Motivo",
+      "cancel": "Cancelar",
+      "confirm": "Desaprobar",
+      "ownerOnly": "Solo el Propietario puede aprobar esta nómina.",
+      "warningsAck": "Al aprobar das por {count, plural, one {visto # aviso} other {vistos # avisos}}.",
+      "unapproved": "Aprobación retirada"
     }
   },
   "nav": {
@@ -769,7 +802,8 @@
       "reply_required": "Escribe una respuesta para el cliente.",
       "reason_required": "Escribe un motivo.",
       "edit_refused": "Las horas del cliente no se pueden aplicar tal como están ({detail}). Edita las horas.",
-      "generic": "Algo salió mal. No se cambió nada."
+      "generic": "Algo salió mal. No se cambió nada.",
+      "not_allowed": "Solo el Propietario puede cambiar esto."
     },
     "detail": {
       "back": "Aprobaciones de clientes",
@@ -835,7 +869,10 @@
       "linkHidden": "Los enlaces están ocultos en este registro.",
       "demoCopy": "Demo: el correo como lo recibe el aprobador, con su enlace que funciona",
       "notFound": "Esta solicitud de aprobación no existe."
-    }
+    },
+    "approvalRequired": "Aprobación obligatoria antes de la nómina",
+    "requiredBadge": "Aprobación obligatoria",
+    "rowMenu": "Más opciones de {client}"
   },
   "rates": {
     "title": "Tarifas",

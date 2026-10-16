@@ -175,4 +175,7 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   // after a request while the client has not acted.
   { key: "approval_link_days", value: 14 },
   { key: "approval_reminder_hours", value: [24, 48] },
+  // The weekly run's warning (slice e, decision E5): overtime at least 4 hours and 50% above the
+  // previous period's exported run (PowerPay compares with the previous regular run).
+  { key: "warnings.overtime_spike", value: { minutes: 240, percent: 50 } },
 ];

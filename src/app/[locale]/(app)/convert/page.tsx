@@ -1,5 +1,5 @@
 // Pattern: docs/patterns/convert.md — Gusto payroll-run flow: landing list, then one step at a time
-// (upload → review hours → review totals → files) inside the step frame.
+// (upload → review hours → exceptions → review totals → files) inside the step frame.
 import { CircleAlertIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
@@ -9,6 +9,7 @@ import { ConvertFrame } from "@/components/shiftbook/convert/frame";
 import { FilesStep } from "@/components/shiftbook/convert/files-step";
 import { HoursGrid } from "@/components/shiftbook/convert/hours-grid";
 import { Landing } from "@/components/shiftbook/convert/landing";
+import { ExceptionsStep } from "@/components/shiftbook/convert/exceptions-step";
 import { TotalsReview } from "@/components/shiftbook/convert/totals-review";
 import { needsAttention, STEPS, type GridRow, type Step } from "@/components/shiftbook/convert/types";
 import { UploadStep } from "@/components/shiftbook/convert/upload-step";
@@ -86,7 +87,8 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     );
   }
 
-  if (step === "totals") {
+  if (step === "exceptions" || step === "totals") {
+    // Rules computed on the way (SPEC §11): the run is brought up to date every time.
     const data = await inAgency((tx) => totalsStep(tx, actor, periodId)).catch((error: unknown) => {
       if (error instanceof PeriodBusyError) return null;
       throw error;
@@ -94,15 +96,30 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     // Someone else is changing the period, so the totals could not be brought up to date.
     if (!data) {
       return (
-        <ConvertFrame {...frame} editHref forward={{ kind: "createFiles", disabled: true, fingerprint: null }}>
+        <ConvertFrame {...frame} editHref forward={step === "totals" ? { kind: "approve", disabled: true, fingerprint: null } : { kind: "link", step: "totals", disabled: true }}>
           <BusyNotice />
         </ConvertFrame>
       );
     }
     // The files were created while this page loaded (another tab): show them.
     if (data.run.status === "exported") redirect(`/${locale}/convert?period=${periodId}&step=files`);
+    const blocked = data.run.status === "blocked";
+    // A blocked run never reaches Review totals (Gusto: calculate is disabled while blockers exist).
+    if (step === "totals" && blocked) redirect(`/${locale}/convert?period=${periodId}&step=exceptions`);
+    if (step === "exceptions") {
+      return (
+        <ConvertFrame {...frame} editHref forward={{ kind: "link", step: "totals", disabled: blocked }}>
+          <ExceptionsStep periodId={periodId} data={data} locked={locked} />
+        </ConvertFrame>
+      );
+    }
+    const approved = data.run.status === "approved";
     return (
-      <ConvertFrame {...frame} editHref forward={{ kind: "createFiles", disabled: data.run.status !== "ready", fingerprint: data.run.fingerprint }}>
+      <ConvertFrame
+        {...frame}
+        editHref
+        forward={approved ? { kind: "createFiles", disabled: false, fingerprint: data.run.fingerprint } : { kind: "approve", disabled: !data.canApprove, fingerprint: data.run.fingerprint }}
+      >
         <TotalsReview periodId={periodId} data={data} locked={locked} />
       </ConvertFrame>
     );

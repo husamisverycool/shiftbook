@@ -1,12 +1,13 @@
 /**
  * Slice (a) acceptance, in English and Spanish (SPEC §24 steps that exist in this slice):
- * upload the sample folder → review hours → review totals → payroll file and invoice, all through
- * the screens, in demo mode (no outside calls).
+ * upload the sample folder → review hours → exceptions → review totals → approve → payroll file and
+ * invoice, all through the screens, in demo mode (no outside calls).
  */
 import { execSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { demoUuid } from "../../src/server/demo/dataset";
+import { approveAndCreateFiles, toExceptions, toTotals } from "./flow";
 
 
 const SAMPLES = "demo/samples/2026-10-05";
@@ -60,16 +61,18 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByTestId("hours-row").first()).toBeVisible();
     await expect(page.getByTestId("forward")).toBeEnabled();
 
-    // Review totals: workers held by rules this version does not handle are skipped with a reason.
-    await page.getByTestId("forward").click();
-    await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.totals })).toBeVisible({ timeout: 60_000 });
+    // Exceptions: workers held by rules this version does not handle are skipped with a reason.
+    await toExceptions(page, m);
+    await expect(page.getByTestId("exceptions-summary")).toBeVisible();
     await skipAllBlocked(page, "Paid separately this week (test)");
-    await expect(page.getByTestId("blocker")).toHaveCount(0);
+    await expect(page.getByTestId("exceptions-summary")).toContainText(m.convert.exceptions.summaryNone);
+
+    // Review totals, approved by the Owner.
+    await toTotals(page, m);
     await expect(page.getByTestId("summary")).toContainText(locale === "en" ? "$" : "US$");
 
     // Files: the payroll file reconciles with the control totals shown; the invoice is a PDF.
-    await page.getByTestId("forward").click();
-    await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.files })).toBeVisible({ timeout: 60_000 });
+    await approveAndCreateFiles(page, m);
     const payroll = page.getByTestId("payroll-file");
     const [csvDownload] = await Promise.all([page.waitForEvent("download"), payroll.getByRole("link", { name: m.common.download }).click()]);
     const csv = readFileSync((await csvDownload.path())!, "utf8").trim().split("\n");
@@ -88,7 +91,7 @@ for (const locale of ["en", "es"] as const) {
 
 test("a period paid before Shiftbook, opened by its link, goes back to the list of periods", async ({ page }) => {
   execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
-  for (const step of ["upload", "totals", "files"]) {
+  for (const step of ["upload", "exceptions", "totals", "files"]) {
     await page.goto(`/en/convert?period=${demoUuid("period:w1")}&step=${step}`);
     await expect(page).toHaveURL(/\/en\/convert$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

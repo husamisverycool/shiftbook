@@ -844,6 +844,8 @@ export type ClientApprovalState = "disputed" | "not_sent" | "send_again" | "wait
 export interface ClientApprovalRow {
   clientId: string;
   clientName: string;
+  /** The client must approve its shifts before the run can be approved (slice e). */
+  approvalRequired: boolean;
   state: ClientApprovalState;
   request: { id: string; approverName: string; approverEmail: string; locale: s.ApprovalLocale } | null;
   /** Prefill for the send dialog: this request's approver, or the client's latest approver. */
@@ -917,6 +919,7 @@ export async function listApprovals(tx: Tx, payPeriodId: string, now: Date = new
     rows.push({
       clientId: client.id,
       clientName: client.name,
+      approvalRequired: client.approvalRequired,
       state: stateOf(counts, request ?? null, linkValid),
       request: request ? { id: request.id, approverName: request.approverName, approverEmail: request.approverEmail, locale: request.locale } : null,
       lastApprover: latest ? { name: latest.approverName, email: latest.approverEmail, locale: latest.locale } : null,

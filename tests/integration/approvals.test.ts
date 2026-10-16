@@ -124,7 +124,7 @@ describe("sending a client's hours for approval", () => {
 
   it("emails a link whose token is stored only as its SHA-256; the email log hides it; it is audited", async () => {
     const sent = await send();
-    expect(sent.ok).toBe(true);
+    if (!sent.ok) throw new Error(sent.error);
     const token = await latestToken();
     const [mail] = await inAgency((tx) => tx.select().from(s.demoMailbox));
     expect(mail!.textBody).toContain(`https://shiftbook.test/en/approve/${token}`);
@@ -149,7 +149,7 @@ describe("sending a client's hours for approval", () => {
       where t like ${`%${token}%`}`);
     expect(everywhere[0]!.hit).toBe(0);
 
-    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(eq(s.auditEvents.entityType, "approval_request")));
+    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "approval_request"), eq(s.auditEvents.entityId, sent.requestId))));
     expect(events.map((e) => (e.after as { event: string }).event)).toEqual(["sent"]);
   });
 
@@ -292,7 +292,8 @@ describe("the approver's decision", () => {
 
   it("approves every waiting shift but the disputed ones, keeps the evidence, holds the disputed shift from the run, and emails both sides", async () => {
     const x = await fresh();
-    await send();
+    const sent = await send();
+    if (!sent.ok) throw new Error(sent.error);
     const token = await latestToken();
     await saveDraftDispute(deps, token, { entryId: x.marcusWed.id, reason: "Left at 3 pm, not 5 pm", proposed: { inMinute: 420, outMinute: 900, breakMinutes: 0 } });
     expect(await decide(token)).toEqual({ ok: true, approved: 4, disputed: 1 });
@@ -308,7 +309,7 @@ describe("the approver's decision", () => {
     expect(decision!.approved.find((a) => a.entryId === x.marcusMon.id)).toEqual({ entryId: x.marcusMon.id, workerId: workerId("marcus-bell"), workerName: "Marcus Bell", workDate: "2026-10-05", inMinute: 420, outMinute: 1020, breakMinutes: 0, minutes: 600 });
     expect(decision!.disputed).toEqual([{ entryId: x.marcusWed.id, disputeId: expect.any(String), reason: "Left at 3 pm, not 5 pm" }]);
 
-    const [event] = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "approval_request"), eq(s.auditEvents.action, "approve"))));
+    const [event] = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "approval_request"), eq(s.auditEvents.entityId, sent.requestId), eq(s.auditEvents.action, "approve"))));
     expect(event!.actorLabel).toBe("Dana Approver <dana@prairie.example> (client, by link)");
     expect(event!.actorUserId).toBeNull();
     expect(event!.after).toMatchObject({ event: "decided", approved: 4, disputed: 1, ipAddress: "203.0.113.7", snapshotSha256: decision!.snapshotSha256 });
@@ -668,7 +669,7 @@ describe("second opinion on slice (d)", () => {
     transport = () => ({ send: () => Promise.reject(new Error("service down")) });
     const sent = await send({ approverName: "Lee Supervisor", approverEmail: "lee@prairie.example" });
     expect(sent).toMatchObject({ ok: false, error: "send_failed" });
-    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(eq(s.auditEvents.entityType, "approval_request")));
+    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "approval_request"), eq(s.auditEvents.entityId, sent.requestId!))));
     expect(events.map((e) => (e.after as { event: string }).event)).toContain("send_failed");
   });
 });
