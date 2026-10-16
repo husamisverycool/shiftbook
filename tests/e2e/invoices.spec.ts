@@ -112,6 +112,12 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByTestId("invoice-summary")).toContainText("PO-48213");
     await expect(page.getByTestId("line-item").filter({ hasText: "Marcus Bell" })).toHaveCount(2);
     await expect(page.getByTestId("line-item").filter({ hasText: "Anita Patel" })).toHaveCount(0);
+    // Each line's detail in the reader's language (the PDF stays as issued, below); the worksite the
+    // PDF names, and the client as a link, in the details.
+    const week = m.invoice.weekOf.replace("{date}", new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date("2026-10-05T00:00:00Z")));
+    await expect(page.getByTestId("line-detail").first()).toContainText(`${m.invoice.earning.REG} · ${week}`);
+    await expect(page.getByTestId("summary-worksite")).not.toContainText("—");
+    await expect(page.getByTestId("invoice-summary").getByTestId("invoice-client")).toHaveAttribute("href", /\/clients\//);
     await expect(page.getByTestId("backup-list")).toContainText(m.invoices.detail.included);
     await expect(page.getByTestId("backup-timesheet")).toContainText("photo-sign-in-2026-10-06.jpg");
     await check(page, "invoice page");

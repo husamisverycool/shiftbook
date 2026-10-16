@@ -1699,6 +1699,7 @@
       "back": "Invoices",
       "credited": "Credited",
       "amountDue": "Amount due",
+      "amountPaid": "Amount paid",
       "issued": "Issued",
       "due": "Due",
       "period": "Pay period",

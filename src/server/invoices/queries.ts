@@ -13,6 +13,7 @@ import { StatementDocument, type StatementData } from "../../pdf/statement";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { fill, longDate, printedInvoice } from "../files/invoice-documents";
+import { lineDetailParts, type LineDetailParts } from "./line-detail";
 
 export interface InvoiceRow {
   id: string;
@@ -68,6 +69,15 @@ export function clientInvoices(tx: Tx, clientId: string): Promise<InvoiceRow[]> 
   return rowsOf(tx, eq(s.invoices.clientId, clientId));
 }
 
+export interface PrintedLine {
+  description: string;
+  detail: string;
+  parts: LineDetailParts | null;
+  hours: string;
+  rate: string;
+  amount: string;
+}
+
 export interface InvoiceDetail {
   row: InvoiceRow;
   client: { id: string; name: string; code: string };
@@ -75,8 +85,11 @@ export interface InvoiceDetail {
   template: s.InvoiceTemplate;
   poNumber: string | null;
   worksite: string | null;
-  /** The PDF's text as issued (null for an invoice made before slice g kept it). */
-  printed: { lines: { description: string; detail: string; hours: string; rate: string; amount: string }[]; groups: { title: string; subtotal: string; lines: { description: string; detail: string; hours: string; rate: string; amount: string }[] }[] | null; subtotal: string; total: string } | null;
+  /**
+   * The PDF's text as issued (null for an invoice made before slice g kept it). Each line's `parts`
+   * say its detail again in the reader's language, when they say exactly what was printed.
+   */
+  printed: { lines: PrintedLine[]; groups: { title: string; subtotal: string; lines: PrintedLine[] }[] | null; subtotal: string; total: string } | null;
   backup: s.IssuedInvoice["backup"] | null;
   /** The invoice this one corrects, and the documents that correct it (Stripe history; Bullhorn credits). */
   original: { id: string; number: string; kind: s.InvoiceKind } | null;
@@ -98,14 +111,27 @@ export async function invoiceDetail(tx: Tx, id: string): Promise<InvoiceDetail |
     .orderBy(s.invoices.issuedOn, s.invoices.number);
   const doc = inv!.document;
   const pdf = doc ? printedInvoice(doc) : null;
+  // The printed lines are the issued lines in the same order; a group's lines follow them in turn.
+  const issued = doc?.lines ?? [];
+  let at = 0;
+  const withParts = (l: Omit<PrintedLine, "parts">, n = at++): PrintedLine => ({ ...l, parts: issued[n] ? lineDetailParts(l.detail, issued[n]!) : null });
+  // The worksite the PDF names: the invoice's own when split by worksite, or its lines' (decision G4).
+  const worksites = [...new Set(issued.map((l) => l.worksite).filter((w): w is string => Boolean(w)))].sort();
   return {
     row,
     client: client!,
     run: run!,
     template: inv!.template,
     poNumber: inv!.poNumber,
-    worksite: worksite?.name ?? null,
-    printed: pdf ? { lines: pdf.lines, groups: pdf.groups?.map((g) => ({ title: g.title, subtotal: g.subtotal, lines: g.lines })) ?? null, subtotal: pdf.subtotal, total: pdf.total } : null,
+    worksite: worksite?.name ?? (worksites.length > 0 ? worksites.join("; ") : null),
+    printed: pdf
+      ? {
+          lines: pdf.lines.map((l, n) => withParts(l, n)),
+          groups: pdf.groups?.map((g) => ({ title: g.title, subtotal: g.subtotal, lines: g.lines.map((l) => withParts(l)) })) ?? null,
+          subtotal: pdf.subtotal,
+          total: pdf.total,
+        }
+      : null,
     backup: doc?.backup ?? null,
     original: original ?? null,
     corrections,

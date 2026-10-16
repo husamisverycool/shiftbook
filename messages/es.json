@@ -1699,6 +1699,7 @@
       "back": "Facturas",
       "credited": "Acreditado",
       "amountDue": "Importe a pagar",
+      "amountPaid": "Importe pagado",
       "issued": "Emitida",
       "due": "Vence",
       "period": "Periodo de pago",

@@ -20,19 +20,36 @@ import { downloadHref, InvoiceStatusBadge } from "./invoices-table";
 
 type Line = NonNullable<InvoiceDetail["printed"]>["lines"][number];
 
+/** A link inside a record's text and details, underlined so it reads as one (as the compliance duty's). */
+const RECORD_LINK = "underline underline-offset-4 hover:text-foreground";
+
 export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { detail: InvoiceDetail; back: string; ar: InvoiceReceivables | null; clients: PaymentClients; today: string; canCollect: boolean }) {
   const t = useTranslations("invoices");
   const td = useTranslations("invoices.detail");
   const tc = useTranslations("common");
+  const tl = useTranslations("invoice");
+  const tp = useTranslations("invoicePayments");
   const locale = useLocale();
   const r = detail.row;
   const credit = r.kind === "credit_note";
+  // Each line's detail in the reader's language when its parts say exactly what was printed; else as printed.
+  const detailOf = (l: Line) =>
+    l.parts
+      ? [
+          `${tl(`earning.${l.parts.type}`)}${l.parts.notBillable ? ` (${tl("notBillable")})` : ""}`,
+          tl("weekOf", { date: longDate(l.parts.week, locale) }),
+          ...(l.parts.po === "none" ? [tl("noPo")] : l.parts.po ? [tl("poLine", { po: l.parts.po.po })] : []),
+          ...(l.parts.wasNow ? [tl("wasNow", l.parts.wasNow)] : []),
+        ].join(" · ")
+      : l.detail;
   const line = (l: Line, key: string) => (
     <TableRow key={key} data-testid="line-item">
       <TableCell>
         <span className="flex flex-col">
           <span>{l.description}</span>
-          <span className="text-xs text-muted-foreground">{l.detail}</span>
+          <span className="text-xs text-muted-foreground" data-testid="line-detail">
+            {detailOf(l)}
+          </span>
         </span>
       </TableCell>
       <TableCell className="text-right tabular-nums">{l.hours}</TableCell>
@@ -40,22 +57,30 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
       <TableCell className="text-right tabular-nums">{l.amount}</TableCell>
     </TableRow>
   );
-  const summary: { label: string; value: ReactNode }[] = [
-    { label: credit ? td("credited") : td("amountDue"), value: money(credit ? -r.totalCents : r.totalCents, locale) },
+  const clientLink = (
+    <Link href={`/clients/${detail.client.id}`} className={RECORD_LINK} data-testid="invoice-client">
+      {detail.client.name}
+    </Link>
+  );
+  // Once money came in, what was paid and what is left, as the Payments module says it (Stripe's
+  // amount paid and amount remaining); before that, the amount due.
+  const amounts: { label: string; value: ReactNode; testId?: string }[] = credit
+    ? [{ label: td("credited"), value: money(-r.totalCents, locale) }]
+    : ar && ar.paidCents > 0
+      ? [
+          { label: td("amountPaid"), value: money(ar.paidCents, locale), testId: "summary-paid" },
+          { label: ar.balanceCents < 0 ? tp("creditForClient") : tp("balance"), value: ar.balanceCents === 0 ? tp("paidInFull") : money(Math.abs(ar.balanceCents), locale), testId: "summary-balance" },
+        ]
+      : [{ label: td("amountDue"), value: money(r.totalCents, locale), testId: "summary-due" }];
+  const summary: { label: string; value: ReactNode; testId?: string }[] = [
+    ...amounts,
     { label: td("issued"), value: longDate(r.issuedOn, locale) },
     ...(credit ? [] : [{ label: td("due"), value: longDate(r.dueOn, locale) }]),
     { label: td("period"), value: dateRange(r.period.startsOn, r.period.endsOn, locale) },
     { label: td("po"), value: detail.poNumber ?? "—" },
-    ...(detail.worksite ? [{ label: td("worksite"), value: detail.worksite }] : []),
+    { label: td("worksite"), value: detail.worksite ?? "—", testId: "summary-worksite" },
     { label: td("template"), value: t(`template.${detail.template}`) },
-    {
-      label: td("client"),
-      value: (
-        <Link href={`/clients/${detail.client.id}`} className="underline-offset-4 hover:underline">
-          {detail.client.name}
-        </Link>
-      ),
-    },
+    { label: td("client"), value: clientLink },
   ];
 
   return (
@@ -66,7 +91,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
         status={<InvoiceStatusBadge status={r.status} />}
         description={
           <span className="tabular-nums">
-            {money(credit ? -r.totalCents : r.totalCents, locale)} · {detail.client.name}
+            {money(credit ? -r.totalCents : r.totalCents, locale)} · {clientLink}
           </span>
         }
         actions={
