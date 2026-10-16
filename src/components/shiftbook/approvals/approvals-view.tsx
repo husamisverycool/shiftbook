@@ -27,8 +27,11 @@ import { SendDialog, type SendTarget } from "./send-dialog";
 import { useDateTime } from "../agency-zone";
 
 export const STATE_ORDER: ClientApprovalState[] = ["disputed", "not_sent", "send_again", "waiting", "approved"];
-/** One status language (decision 0029): disputed needs the agency, waiting is the client's turn. */
-const STATE_TONE: Record<ClientApprovalState, Tone> = { disputed: "critical", not_sent: "warning", send_again: "warning", waiting: "info", approved: "success" };
+/**
+ * One status language (_components/status.md): not sent is not started yet (neutral), new hours to send
+ * need attention, waiting is the client's turn, approved is done, disputed needs the agency.
+ */
+const STATE_TONE: Record<ClientApprovalState, Tone> = { disputed: "critical", not_sent: "neutral", send_again: "warning", waiting: "info", approved: "success" };
 
 export function ApprovalStateBadge({ state }: { state: ClientApprovalState }) {
   const t = useTranslations("approvals");
@@ -233,7 +236,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                         <TableCell>
                           <ApprovalStateBadge state={r.state} />
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{r.lastActivity ? t(`activity.${r.lastActivity.kind}` as "activity.decided", { when: when(r.lastActivity.at) }) : ""}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{r.lastActivity ? t(`activity.${r.lastActivity.kind}` as "activity.decided", { when: when(r.lastActivity.at) }) : "—"}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           {/* A period whose files exist cannot be asked about any more: only Open. */}
                           {mayAsk && props.periodOpen && (r.state === "not_sent" || r.state === "send_again") ? (
