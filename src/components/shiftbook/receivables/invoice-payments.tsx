@@ -21,6 +21,7 @@ import { centsToInput, parseDollars } from "@/lib/amounts";
 import type { InvoiceReceivables, PaymentClients } from "@/server/receivables/queries";
 import { longDate, money } from "../format";
 import { PaymentDialog } from "./payment-dialog";
+import { useDateTime } from "../agency-zone";
 
 const WRITE_OFF_REASONS = ["small_balance", "disputed_hours", "rate_difference", "bank_fee", "bad_debt", "other"] as const;
 const SHORT_PAY_REASONS = ["disputed_hours", "rate_difference", "bank_fee", "client_deduction", "unknown", "other"] as const;
@@ -36,7 +37,8 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
   const open = ar.balanceCents > 0;
   // More credited than was still owed: the client's credit, to apply to its other invoices (decision 0019).
   const credit = ar.balanceCents < 0;
-  const dateTime = (at: Date | string) => new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(at));
+  const when = useDateTime();
+  const dateTime = (at: Date | string) => when(at, { time: false });
 
   return (
     <Section

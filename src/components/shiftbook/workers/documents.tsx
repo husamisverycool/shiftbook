@@ -20,9 +20,10 @@ import { WORKER_DOCUMENT_KINDS, type WorkerDocumentKind } from "@/lib/worker-doc
 import type { WorkerProfile } from "@/server/workers/queries";
 import { useCan } from "../abilities";
 import { useConfirmed } from "../auth/confirm-access";
-import { mediumDate, mediumDateTime } from "./dates";
+import { mediumDate } from "./dates";
 import { FieldError, useWorkerFailure } from "./results";
 import { Section } from "./worker-profile";
+import { useDateTime } from "../agency-zone";
 
 type Doc = WorkerProfile["documents"][number];
 const RULES = ["form", "kind", "file_type", "file_size", "file_name", "effective_on"] as const;
@@ -30,6 +31,7 @@ const RULES = ["form", "kind", "file_type", "file_size", "file_name", "effective
 export function DocumentsTab({ profile, today, mayChange }: { profile: WorkerProfile; today: string; mayChange: boolean }) {
   const t = useTranslations("workers.profile.documents");
   const locale = useLocale();
+  const when = useDateTime();
   const router = useRouter();
   const failure = useWorkerFailure();
   const [adding, setAdding] = useState(false);
@@ -90,7 +92,7 @@ export function DocumentsTab({ profile, today, mayChange }: { profile: WorkerPro
                   </TableCell>
                   <TableCell>{t(`kinds.${d.kind}`)}</TableCell>
                   <TableCell className="tabular-nums">{mediumDate(d.effectiveOn, locale)}</TableCell>
-                  <TableCell className="text-muted-foreground">{t("addedBy", { who: d.addedBy, date: mediumDateTime(d.addedAt, locale) })}</TableCell>
+                  <TableCell className="text-muted-foreground">{t("addedBy", { who: d.addedBy, date: when(d.addedAt) })}</TableCell>
                   {mayChange && (
                     <TableCell>
                       <Button size="sm" variant="ghost" onClick={() => setRemoving(d)} data-testid="remove-document">

@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { PortalAgency, PortalView } from "@/server/approvals/service";
-import { clock, hoursMinutes, longDate, shortDate } from "../format";
+import { clock, dateTime, hoursMinutes, longDate, shortDate } from "../format";
 import { HoursTable, type ShiftView } from "./hours-table";
 
 const contactOf = (a: PortalAgency) => [a.phone, a.email].filter(Boolean).join(" · ");
@@ -137,7 +137,7 @@ function Active({ view, token }: { view: ActiveView; token: string }) {
   const drafts = waiting.filter((x) => x.draft !== null);
   const toApprove = waiting.filter((x) => x.draft === null);
   const latest = view.decisions[0];
-  const decided = latest ? t("status.approved", { when: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(latest.decidedAt)), name: latest.typedName }) : null;
+  const decided = latest ? t("status.approved", { when: dateTime(latest.decidedAt, locale, view.agency.timeZone, { date: "long" }), name: latest.typedName }) : null;
   // What the page says about itself (Stripe's hosted page shows its own state): the latest decision,
   // then what waits — on the approver, or on the agency for disputed shifts.
   const status = closed

@@ -4,7 +4,7 @@
 // chosen once with its own fields (Deputy shows a format's fields once chosen), an explicit Save,
 // then tabs for the export codes, the employee ids and (Deputy's custom template) the spreadsheet.
 import { CircleAlertIcon, InfoIcon } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { saveTargetAction, type SettingsActionResult } from "@/app/[locale]/(app)/settings/payroll/actions";
@@ -21,6 +21,7 @@ import { EarningCodes } from "./earning-codes";
 import { problemFor } from "./problems";
 import { SpreadsheetColumns } from "./spreadsheet-columns";
 import { WorkerIds } from "./worker-ids";
+import { useDateTime } from "../agency-zone";
 
 export type PayrollTab = "codes" | "workers" | "columns";
 export type WorkerFilter = "all" | "missing" | "set";
@@ -100,7 +101,7 @@ function setQuery(change: Record<string, string | null>) {
 export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }: { view: PayrollSettingsView; tab: PayrollTab; filter: WorkerFilter }) {
   const t = useTranslations("settings");
   const tp = useTranslations("settings.payroll");
-  const locale = useLocale();
+  const when = useDateTime();
   const router = useRouter();
   const refuse = useRefusal();
   const [chosenTab, setChosenTab] = useState<PayrollTab>(initialTab);
@@ -115,7 +116,7 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
     setFields((f) => ({ ...f, [key]: value }));
     setSaved(false);
   };
-  const changedOn = view.changed ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(view.changed.at)) : null;
+  const changedOn = view.changed ? when(view.changed.at) : null;
 
   const targetFor = (f: ExportFormat): PayrollTarget => {
     switch (f) {

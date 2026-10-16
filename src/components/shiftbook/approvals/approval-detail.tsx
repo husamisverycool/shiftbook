@@ -23,6 +23,7 @@ import { Crumbs, Page, PageHeader, Section } from "../page";
 import { ApprovalStateBadge } from "./approvals-view";
 import { HoursTable } from "./hours-table";
 import { SendDialog, type SendTarget } from "./send-dialog";
+import { useDateTime } from "../agency-zone";
 
 type Email = ApprovalDetail["emails"][number];
 type Dispute = ApprovalDetail["disputes"][number];
@@ -43,7 +44,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
   const [text, setText] = useState("");
   const [email, setEmail] = useState<Email | null>(null);
   const r = detail.request;
-  const when = (d: Date) => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(d));
+  const when = useDateTime();
   const errorText = (res: Extract<ApprovalActionResult, { ok: false }>) => (t.has(`errors.${res.error}`) ? t(`errors.${res.error}` as "errors.generic", { detail: res.detail ?? "" }) : t("errors.generic"));
   const run = (fn: () => Promise<ApprovalActionResult>, done: string, after?: () => void) =>
     start(async () => {

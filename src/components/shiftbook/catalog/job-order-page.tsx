@@ -32,6 +32,7 @@ import { Status } from "../status";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
 import { RateCard } from "./rate-card";
+import { useDateTime } from "../agency-zone";
 
 const TABS = ["overview", "assignments", "rates", "activity"] as const;
 type Tab = (typeof TABS)[number];
@@ -41,6 +42,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
   const tr = useTranslations("rates");
   const tc = useTranslations("common");
   const locale = useLocale();
+  const when = useDateTime();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -65,7 +67,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
     [t("payRange"), job.payMinCents !== null || job.payMaxCents !== null ? `${job.payMinCents !== null ? money(job.payMinCents, locale) : "—"} – ${job.payMaxCents !== null ? money(job.payMaxCents, locale) : "—"}` : "—"],
     [t("prevailingWage"), job.prevailingWage ? t("yes") : t("no")],
     [t("branch"), job.branchName ?? "—"],
-    [t("created"), longDate(job.createdAt.slice(0, 10), locale)],
+    [t("created"), when(job.createdAt, { date: "long", time: false })],
   ];
 
   return (

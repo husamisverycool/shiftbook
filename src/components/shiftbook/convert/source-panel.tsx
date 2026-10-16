@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { clock, hoursMinutes, shortDate } from "../format";
 import type { GridRow } from "./types";
+import { useDateTime } from "../agency-zone";
 
 const FIELDS = ["worker", "date", "in", "out", "break", "total"] as const;
 
@@ -21,6 +22,7 @@ const REASON_CODES = ["misread_corrected", "confirmed_client", "confirmed_worker
 export function SourcePanel({ row, field, roster, onClose }: { row: GridRow | null; field: string | null; roster: { id: string; name: string }[]; onClose: () => void }) {
   const t = useTranslations("convert.hours");
   const locale = useLocale();
+  const when = useDateTime();
   const [zoom, setZoom] = useState(1);
   const [history, setHistory] = useState<{ id: string; events: HistoryEvent[] } | null>(null);
   const rowId = row?.id ?? null;
@@ -134,7 +136,7 @@ export function SourcePanel({ row, field, roster, onClose }: { row: GridRow | nu
                       <li key={i} className="flex flex-col border-l-2 pl-3">
                         <span className="font-medium">{t(`historyActions.${["create", "update", "approve", "delete", "reset"].includes(e.action) ? e.action : "update"}` as "historyActions.update")}</span>
                         <span className="text-xs text-muted-foreground">
-                          {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(e.at))} · {e.actor}
+                          {when(e.at)} · {e.actor}
                         </span>
                         {e.reason && <span className="text-xs">{readableReason(e.reason, (code) => t(`editReasons.${code}` as "editReasons.other"))}</span>}
                         <Changes before={e.before} after={e.after} roster={roster} locale={locale} />

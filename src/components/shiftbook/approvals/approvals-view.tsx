@@ -24,6 +24,7 @@ import { hoursMinutes, longDate } from "../format";
 import { Page, PageHeader, TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 import { SendDialog, type SendTarget } from "./send-dialog";
+import { useDateTime } from "../agency-zone";
 
 export const STATE_ORDER: ClientApprovalState[] = ["disputed", "not_sent", "send_again", "waiting", "approved"];
 /** One status language (decision 0029): disputed needs the agency, waiting is the client's turn. */
@@ -60,7 +61,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
   const [sending, setSending] = useState<SendTarget | null>(null);
   const status = params.get("status") ?? "";
   const client = params.get("client") ?? "";
-  const when = (d: Date) => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(d));
+  const when = useDateTime();
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());

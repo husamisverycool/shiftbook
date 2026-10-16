@@ -24,6 +24,7 @@ import { Crumbs, Facts, Page, PageHeader, PageTabs, RecordLayout, Section } from
 import { useCite, useSay } from "./explain";
 import { dueIn, OwnerPicker } from "./list";
 import { StatusBadge } from "./status-badge";
+import { useDateTime } from "../agency-zone";
 
 export type DetailTab = "overview" | "evidence" | "history" | "notes";
 const TABS: DetailTab[] = ["overview", "evidence", "history", "notes"];
@@ -52,6 +53,7 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
   const td = useTranslations("compliance.detail");
   const tc = useTranslations("common");
   const locale = useLocale();
+  const when = useDateTime();
   const i = d.item;
   const open = i.status === "overdue" || i.status === "due_soon" || i.status === "upcoming";
   const [closing, setClosing] = useState<"done" | "not_applicable" | null>(null);
@@ -86,7 +88,7 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
       />
       {!open && (
         <p className="text-sm" data-testid="closed-note">
-          {(i.status === "done" ? td("doneBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" }) : td("naBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? longDate(d.doneAt.toISOString().slice(0, 10), locale) : "" })) +
+          {(i.status === "done" ? td("doneBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? when(d.doneAt, { date: "long", time: false }) : "" }) : td("naBy", { by: d.closedBySystem ? td("byShiftbook") : (d.doneByLabel ?? ""), date: d.doneAt ? when(d.doneAt, { date: "long", time: false }) : "" })) +
             (d.closedBySystem ? ` ${systemNote(td, d, locale)}` : d.noteKey ? ` ${td("note", { note: say(d.noteKey) })}` : d.statusNote ? ` ${td("note", { note: d.statusNote })}` : "")}
         </p>
       )}
@@ -382,6 +384,7 @@ function ReverifyForm({ d, today }: { d: ObligationDetail; today: string }) {
 function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
   const td = useTranslations("compliance.detail");
   const locale = useLocale();
+  const when = useDateTime();
   const [effectiveOn, setEffectiveOn] = useState(today);
   const [file, setFile] = useState<File | null>(null);
   const [key, setKey] = useState(0);
@@ -395,7 +398,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
           {[
             `${td("effectiveOn")}: ${longDate(f.effectiveOn, locale)}`,
             f.source === "generated" ? td("generated") : td("uploaded"),
-            past && f.unlinkedAt ? td("unlinkedBy", { by: f.unlinkedBy ?? "", date: longDate(new Date(f.unlinkedAt).toISOString().slice(0, 10), locale) }) : td("addedBy", { by: f.addedBy, date: longDate(new Date(f.addedAt).toISOString().slice(0, 10), locale) }),
+            past && f.unlinkedAt ? td("unlinkedBy", { by: f.unlinkedBy ?? "", date: when(f.unlinkedAt, { date: "long", time: false }) }) : td("addedBy", { by: f.addedBy, date: when(f.addedAt, { date: "long", time: false }) }),
           ].join(" · ")}
         </span>
       </span>
@@ -508,6 +511,7 @@ function History({ d }: { d: ObligationDetail }) {
   const td = useTranslations("compliance.detail");
   const ts = useTranslations("compliance.statuses");
   const locale = useLocale();
+  const when = useDateTime();
   if (d.history.length === 0) return <p className="text-sm text-muted-foreground">{td("noHistory")}</p>;
   const what = (h: ObligationDetail["history"][number]) => {
     const after = h.after ?? {};
@@ -524,7 +528,7 @@ function History({ d }: { d: ObligationDetail }) {
     <ol className="flex flex-col border-y" data-testid="obligation-history">
       {d.history.map((h, n) => (
         <li key={n} className="flex flex-wrap items-baseline gap-x-4 border-b py-2.5 text-sm last:border-b-0">
-          <span className="w-56 text-xs text-muted-foreground tabular-nums">{new Date(h.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+          <span className="w-56 text-xs text-muted-foreground tabular-nums">{when(h.at)}</span>
           <span className="flex-1">{what(h)}</span>
           <span className="text-xs text-muted-foreground">{h.by}</span>
         </li>
@@ -535,7 +539,7 @@ function History({ d }: { d: ObligationDetail }) {
 
 function Notes({ d }: { d: ObligationDetail }) {
   const td = useTranslations("compliance.detail");
-  const locale = useLocale();
+  const when = useDateTime();
   const [body, setBody] = useState("");
   const { pending, act } = useAct();
   return (
@@ -566,7 +570,7 @@ function Notes({ d }: { d: ObligationDetail }) {
             <li key={n.id} className="py-3" data-testid="obligation-note">
               <p className="text-sm whitespace-pre-wrap">{n.body}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {n.by} · {new Date(n.at).toLocaleString(locale === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" })}
+                {n.by} · {when(n.at)}
               </p>
             </li>
           ))}
@@ -624,6 +628,7 @@ const EQUAL_PAY_METHODS = ["comparator", "closest_seniority", "survey_median", "
 function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
   const te = useTranslations("compliance.detail.equalPay");
   const locale = useLocale();
+  const when = useDateTime();
   const can = d.item.mayAct;
   const rates = d.equalPay!.rates;
   const live = rates.filter((r) => r.replacedAt === null);
@@ -750,7 +755,7 @@ function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
                   ? te("askedRow", { date: longDate(r.effectiveFrom, locale) })
                   : te("rateRow", { date: longDate(r.effectiveFrom, locale), total: money((r.rateCents ?? 0) + (r.benefitsCents ?? 0), locale), rate: money(r.rateCents ?? 0, locale), benefits: money(r.benefitsCents ?? 0, locale), method: te(`methods.${r.method ?? "comparator"}`), comparator: r.comparator ?? "" })}
               </span>{" "}
-              <span className="text-xs text-muted-foreground">{te("by", { by: r.by, date: longDate(new Date(r.at).toISOString().slice(0, 10), locale) })}</span>
+              <span className="text-xs text-muted-foreground">{te("by", { by: r.by, date: when(r.at, { date: "long", time: false }) })}</span>
               {r.replacedAt && <span className="text-xs text-muted-foreground"> · {r.removedReason ? te("removed", { by: r.replacedBy ?? "", reason: r.removedReason }) : te("replaced")}</span>}
               {can && !r.replacedAt && (
                 <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setRemoving(r.id)} data-testid="remove-equal-pay">

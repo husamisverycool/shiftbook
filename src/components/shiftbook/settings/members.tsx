@@ -22,6 +22,7 @@ import { useRouter } from "@/i18n/navigation";
 import { ROLES, type Role } from "@/server/permissions";
 import { useConfirmed } from "../auth/confirm-access";
 import { LinkedText } from "../linked-text";
+import { useDateTime } from "../agency-zone";
 
 export interface MemberRow {
   id: string;
@@ -41,7 +42,6 @@ const NEEDS_APP: Role[] = ["owner", "coordinator"];
 export function MembersView({ members, me, canManage, now }: { members: MemberRow[]; me: string; canManage: boolean; now: string }) {
   const t = useTranslations("members");
   const tr = useTranslations("roles");
-  const locale = useLocale();
   const router = useRouter();
   const id = useId();
   const [role, setRole] = useState<Role | "all">("all");
@@ -58,8 +58,8 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
     return members.filter((m) => (role === "all" || m.role === role) && (status === "all" || m.status === status) && (!q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)));
   }, [members, role, status, search]);
 
-  const date = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(iso));
-  const dateTime = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  const dateTime = useDateTime();
+  const date = (iso: string) => dateTime(iso, { time: false });
 
   const run = (fn: () => Promise<MemberResult>, success: string, after?: (r: Extract<MemberResult, { ok: true }>) => void) =>
     start(async () => {

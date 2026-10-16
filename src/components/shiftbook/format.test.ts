@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clock, hoursMinutes, money, parseClock, signedMoney } from "./format";
+import { clock, dateTime, hoursMinutes, money, parseClock, signedMoney } from "./format";
 
 describe("screen formatting", () => {
   it("shows money exactly from integer cents in both languages", () => {
@@ -26,5 +26,24 @@ describe("screen formatting", () => {
     expect(parseClock("abc")).toBeNull();
     expect(clock(1170, "en")).toBe("7:30 PM");
     expect(clock(1170, "es")).toBe("19:30");
+  });
+
+  it("shows a moment in the agency's own time zone, whatever zone the server or browser is in", () => {
+    // 22:41 UTC on October 16, 2026 is 5:41 PM in Chicago (daylight time, UTC−5) — as the activity log shows it.
+    const at = "2026-10-16T22:41:07Z";
+    const plain = (s: string) => s.replace(/[\u202f\u00a0]/g, " ");
+    expect(plain(dateTime(at, "en", "America/Chicago"))).toBe("Oct 16, 2026, 5:41 PM");
+    expect(plain(dateTime(new Date(at), "en", "America/Chicago", { date: "long" }))).toBe("October 16, 2026 at 5:41 PM");
+    expect(plain(dateTime(at, "en", "America/Chicago", { seconds: true }))).toBe("Oct 16, 2026, 5:41:07 PM");
+    expect(plain(dateTime(at, "es", "America/Chicago"))).toBe("16 oct 2026, 17:41");
+    // In January Chicago is on standard time (UTC−6).
+    expect(plain(dateTime("2026-01-15T22:41:00Z", "en", "America/Chicago"))).toBe("Jan 15, 2026, 4:41 PM");
+    // A late-evening moment in Chicago is still the same day there, though UTC has moved on.
+    expect(plain(dateTime("2026-10-17T03:30:00Z", "en", "America/Chicago"))).toBe("Oct 16, 2026, 10:30 PM");
+    // The day alone, as the agency counts days: 03:30 UTC on the 17th is still the 16th in Chicago.
+    expect(dateTime("2026-10-17T03:30:00Z", "en", "America/Chicago", { time: false })).toBe("Oct 16, 2026");
+    expect(dateTime("2026-10-17T03:30:00Z", "en", "America/Chicago", { date: "long", time: false })).toBe("October 16, 2026");
+    // A zone name the browser does not know is read as UTC rather than failing the page (as agencyToday does).
+    expect(plain(dateTime(at, "en", "Not/AZone"))).toBe("Oct 16, 2026, 10:41 PM");
   });
 });

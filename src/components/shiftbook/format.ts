@@ -45,6 +45,23 @@ export function signedHours(minutes: number): string {
   return minutes > 0 ? `+${hoursMinutes(minutes)}` : hoursMinutes(minutes);
 }
 
+/**
+ * A moment in the agency's own time zone ("Oct 16, 2026, 5:41 PM"; long: "October 16, 2026 at 5:41 PM";
+ * `time: false`: its day there, "Oct 16, 2026"), so the server, the browser and the activity log all
+ * show the same time. A zone name Intl does not know is read as UTC rather than failing the page (as
+ * agencyToday does).
+ */
+export function dateTime(at: string | Date, locale: string, zone: string, opts: { date?: "medium" | "long"; time?: boolean; seconds?: boolean } = {}): string {
+  const style: Intl.DateTimeFormatOptions = { dateStyle: opts.date ?? "medium", ...(opts.time === false ? {} : { timeStyle: opts.seconds ? "medium" : "short" }) };
+  let format: Intl.DateTimeFormat;
+  try {
+    format = new Intl.DateTimeFormat(locale, { ...style, timeZone: zone });
+  } catch {
+    format = new Intl.DateTimeFormat(locale, { ...style, timeZone: "UTC" });
+  }
+  return format.format(new Date(at));
+}
+
 /** "2026-10-05" → "Mon, Oct 5". */
 export function shortDate(iso: string | null, locale: string): string {
   if (!iso) return "—";
