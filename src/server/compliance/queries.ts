@@ -9,6 +9,7 @@ import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
 import type { ComplianceRule } from "./generate";
+import { ACA_SETTINGS_KEY, acaLimitsOn, acaSettingsOn } from "./aca-data";
 import { ratesForDuty, weeksToTrueUp } from "./equal-pay-rates";
 import { EQUAL_PAY_KINDS } from "./kinds";
 import { keepsNoFiles, MA_CONTACT_KEY, MA_STATEMENT_KEY } from "./service";
@@ -284,6 +285,16 @@ export async function complianceSettings(tx: Tx, actor: Actor, today: string) {
         .limit(1)
     : [];
   const openDaysChanged = openDaysEvent ? { at: openDaysEvent.at, by: openDaysEvent.by } : null;
+  // The ACA look-back's settings in force and the limits they are checked against, with who set them.
+  const [aca, acaLimits] = await Promise.all([acaSettingsOn(tx, today), acaLimitsOn(tx, today)]);
+  const [acaEvent] = aca
+    ? await tx
+        .select({ at: s.auditEvents.occurredAt, by: s.auditEvents.actorLabel })
+        .from(s.auditEvents)
+        .where(and(eq(s.auditEvents.entityType, "agency_setting"), sql`${s.auditEvents.after}->>'key' = ${ACA_SETTINGS_KEY}`))
+        .orderBy(desc(s.auditEvents.occurredAt))
+        .limit(1)
+    : [];
   const statementDoc = statementId ? docs.find((d) => d.id === statementId) : undefined;
   return {
     registrations: registrations
@@ -308,7 +319,8 @@ export async function complianceSettings(tx: Tx, actor: Actor, today: string) {
     statement: statementDoc ? { id: statementDoc.id, filename: statementDoc.filename, at: statementDoc.createdAt, by: statementDoc.createdByLabel } : null,
     contact: typeof contact === "string" ? contact : null,
     openDays: Array.isArray(openDays?.value) ? (openDays.value as number[]) : [1, 2, 3, 4, 5],
-    changed: { registrations: newest(registrations), policies: newest(policies), openDays: openDaysChanged },
+    aca: { settings: aca?.settings ?? null, from: aca?.from ?? null, limits: acaLimits },
+    changed: { registrations: newest(registrations), policies: newest(policies), openDays: openDaysChanged, aca: acaEvent ? { at: acaEvent.at, by: acaEvent.by } : null },
   };
 }
 export type ComplianceSettings = Awaited<ReturnType<typeof complianceSettings>>;

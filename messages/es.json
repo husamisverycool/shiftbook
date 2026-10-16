@@ -2368,7 +2368,8 @@
       "list": "Lista",
       "calendar": "Calendario",
       "workersComp": "Compensación laboral",
-      "counters": "Contadores"
+      "counters": "Contadores",
+      "aca": "ACA"
     },
     "areasLabel": "Áreas",
     "areas": {
@@ -2443,7 +2444,8 @@
       "i9_section2": "Formulario I-9, Sección 2",
       "i9_reverify": "Reverificación del Formulario I-9",
       "wc_policy_renewal": "Renovación de la póliza de compensación laboral",
-      "wc_audit": "Auditoría de prima de compensación laboral"
+      "wc_audit": "Auditoría de prima de compensación laboral",
+      "aca_offer": "ACA: ofrecer cobertura"
     },
     "asks": {
       "il_registration_renewal": "Solicite la renovación del registro de mano de obra temporal de Illinois al menos {days} días antes de que venza. Se registran la agencia y cada sucursal; si la compensación laboral se interrumpe, el registro se suspende.",
@@ -2459,7 +2461,8 @@
       "i9_section2": "La agencia examina los documentos del trabajador y completa la Sección 2 dentro de {days} días hábiles del primer día.",
       "i9_reverify": "Reverifique la autorización de empleo del trabajador a más tardar el día en que vence (Suplemento B).",
       "wc_policy_renewal": "Mantenga vigente la compensación laboral: la siguiente póliza empieza a más tardar el día en que termina esta.",
-      "wc_audit": "Entregue al auditor de primas de la aseguradora la nómina por clase, con la prima de horas extra aparte por trabajador y por clase."
+      "wc_audit": "Entregue al auditor de primas de la aseguradora la nómina por clase, con la prima de horas extra aparte por trabajador y por clase.",
+      "aca_offer": "Ofrezca cobertura médica a cada trabajador medido como de tiempo completo (en promedio al menos 30 horas de servicio por semana en un periodo de medición) antes de que termine el periodo administrativo, para que rija desde el primer día del periodo de estabilidad."
     },
     "emptyOpen": "No hay ninguna obligación de cumplimiento abierta.",
     "nextUpcoming": "La siguiente vence el {date}.",
@@ -2548,6 +2551,7 @@
         "save": "Registrar"
       },
       "settingsLink": "Cámbielo en Ajustes de cumplimiento",
+      "acaLink": "Abrir el método retrospectivo de la ACA",
       "readOnly": "Puede consultar esta obligación; cambiarla corresponde a {who}.",
       "system": {
         "renewed": "Renovada con {number}, vigente hasta el {date}.",
@@ -2673,7 +2677,12 @@
         "rateCents": "Escriba la tarifa por hora, como 18.50.",
         "benefitsCents": "Escriba el valor en efectivo por hora de los beneficios, o 0.",
         "comparator": "Diga con quién se comparó (hasta 300 caracteres).",
-        "askedOverRate": "Hay una tarifa registrada desde esa fecha; una solicitud no la cambiaría. Elija otra fecha."
+        "askedOverRate": "Hay una tarifa registrada desde esa fecha; una solicitud no la cambiaría. Elija otra fecha.",
+        "measurementMonths": "El periodo de medición debe estar dentro de los límites.",
+        "firstMonth": "Elija el mes en que empiezan los periodos.",
+        "adminDays": "Los días administrativos deben ser un número entero dentro del límite.",
+        "stabilityMonths": "El periodo de estabilidad debe ser al menos el mínimo y no más corto que el de medición.",
+        "rule": "Los límites de la ACA no están registrados."
       },
       "closed_by_data": "Shiftbook cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
     },
@@ -2782,6 +2791,88 @@
         "note": "Nota (de dónde salen las horas)"
       },
       "saved": "Guardado. La próxima nómina lo cuenta."
+    },
+    "aca": {
+      "intro": "Quién es de tiempo completo según el método retrospectivo: las horas de servicio de cada periodo de medición, promediadas por semana. A quien resulte de tiempo completo se le ofrece cobertura para el periodo de estabilidad siguiente.",
+      "parameters": "Ajustes del método retrospectivo y horas registradas",
+      "settingsTitle": "Ajustes de medición",
+      "settingsLine": "Periodos de {months} meses desde {month}; {admin} días administrativos; periodos de estabilidad de {stability} meses. Vigentes desde el {date}.",
+      "noSettings": "Aún no hay periodos: nadie se mide hasta que se definan.",
+      "noSettingsReadOnly": "Aún no hay periodos: el Propietario los define en Ajustes de cumplimiento.",
+      "changeSettings": "Cámbielos en Ajustes de cumplimiento",
+      "setSettings": "Definir los periodos",
+      "hoursTitle": "Horas registradas",
+      "paidLine": "Semanas pagadas en Shiftbook: {range}.",
+      "noPaid": "Aún no se ha pagado ninguna semana en Shiftbook.",
+      "importsLine": "Importadas de antes de Shiftbook: {rows, plural, one {# total mensual} other {# totales mensuales}} de {workers, plural, one {# trabajador} other {# trabajadores}}, {range}. Último archivo {source}, por {by}, {date}.",
+      "noImports": "No se importaron horas de antes de Shiftbook.",
+      "needsSettings": "El método retrospectivo necesita primero sus periodos: cuánto dura un periodo de medición y cuándo empieza, los días administrativos y el periodo de estabilidad.",
+      "noRule": "Los límites de la ACA no están registrados, así que no se puede medir a nadie.",
+      "search": "Buscar",
+      "searchPlaceholder": "Buscar por trabajador",
+      "show": "Mostrar",
+      "shows": {
+        "all": "Todos",
+        "full_time": "Tiempo completo",
+        "not_full_time": "No de tiempo completo",
+        "measuring": "En medición",
+        "missing_hours": "Faltan horas",
+        "on_break": "En una interrupción"
+      },
+      "nothing": "Ningún trabajador tiene horas registradas en estos periodos.",
+      "noMatch": "Nada coincide con la búsqueda y Mostrar.",
+      "clear": "Quitar filtros",
+      "tableLabel": "Ciclos de medición por trabajador",
+      "cols": {
+        "worker": "Trabajador",
+        "hired": "Fecha de contratación",
+        "cycle": "Ciclo",
+        "result": "Resultado",
+        "measurement": "Periodo de medición",
+        "hours": "Horas",
+        "weeks": "Semanas",
+        "average": "Promedio semanal",
+        "admin": "Periodo administrativo",
+        "stability": "Periodo de estabilidad",
+        "break": "Interrupción del servicio"
+      },
+      "cycles": {
+        "standard": "Estándar",
+        "initial": "Inicial"
+      },
+      "results": {
+        "full_time": "Tiempo completo",
+        "not_full_time": "No de tiempo completo",
+        "measuring": "En medición"
+      },
+      "offerBy": "Ofrecer cobertura desde el {date}",
+      "countedThrough": "Contadas hasta el {date}",
+      "nothingCounted": "Aún no hay horas registradas",
+      "missingFrom": "Faltan horas desde el {date}",
+      "onBreakSince": "En una interrupción desde el {date}",
+      "since": "Desde el {date}",
+      "import": {
+        "open": "Importar horas",
+        "title": "Importar horas de antes de Shiftbook",
+        "body": "Un archivo CSV con una fila por trabajador y mes: el nombre completo del trabajador, el mes y las horas de servicio, con los feriados y permisos pagados. Agregue una columna Payroll ID para distinguir a dos trabajadores con el mismo nombre. Los meses pueden escribirse 2025-10, 10/2025 u Oct-25; las horas como 140, 140:30 o 140.5. Solo meses ya terminados; para un mes que Shiftbook pagó en parte, solo las horas fuera de las semanas que pagó. No se guarda nada hasta que todas las filas estén bien; un mes importado de nuevo reemplaza al registrado.",
+        "example": "Worker,Month,Hours\nMarcus Bell,2025-10,140\nAnita Patel,2025-10,121:30",
+        "file": "Archivo CSV",
+        "problemsTitle": "No se guardó nada. Corrija estas filas e importe de nuevo:",
+        "problems": {
+          "worker": "Fila {row}: no hay ningún trabajador con ese nombre completo o ID de nómina, o hay más de uno.",
+          "month": "Fila {row}: el mes debe haber terminado y escribirse como 2025-10, 10/2025 u Oct-25.",
+          "hours": "Fila {row}: las horas deben escribirse como 140, 140:30 o 140.5 (minutos enteros), como mucho las de un mes.",
+          "columns": "La primera fila debe nombrar las columnas Worker, Month y Hours.",
+          "duplicate": "Fila {row}: el mismo trabajador y mes otra vez.",
+          "empty": "El archivo no tiene filas debajo de los nombres de las columnas.",
+          "paid": "Fila {row}: Shiftbook ya pagó ese mes completo, así que sus horas ya están registradas.",
+          "too_many": "El archivo tiene más de 5000 filas: impórtelo por partes."
+        },
+        "cancel": "Cancelar",
+        "save": "Importar",
+        "done": "Se importaron {rows, plural, one {# mes} other {# meses}}.",
+        "tooLarge": "El archivo pesa más de 1 MB."
+      }
     }
   },
   "complianceSettings": {
@@ -2875,6 +2966,22 @@
         "5": "Viernes",
         "6": "Sábado"
       }
+    },
+    "aca": {
+      "title": "Método retrospectivo de la ACA",
+      "intro": "Los periodos que usa la prueba de tiempo completo (26 C.F.R. § 54.4980H-3(d)). Al guardar se vuelven a calcular las obligaciones de la ACA.",
+      "none": "Aún no hay periodos: nadie se mide y no se puede calcular ninguna obligación de la ACA.",
+      "noRule": "Los límites de la ACA no están registrados.",
+      "measurementMonths": "Periodo de medición",
+      "monthsOption": "{months, plural, one {# mes} other {# meses}}",
+      "firstMonth": "Empieza en",
+      "adminDays": "Días administrativos",
+      "stabilityMonths": "Periodo de estabilidad (meses)",
+      "limits": "Límites: un periodo de medición de {minMonths} a {maxMonths} meses; como mucho {admin} días administrativos; un periodo de estabilidad de al menos {stability} meses y no más corto que el de medición. {weeks} semanas sin ninguna hora de servicio son una interrupción.",
+      "newWorkers": "Los trabajadores nuevos se miden en un periodo inicial de la misma duración, desde el primer día del mes siguiente a su inicio; sus días administrativos cuentan desde el inicio, como mucho el límite en total.",
+      "inForce": "Vigentes desde el {date}.",
+      "save": "Guardar periodos",
+      "open": "Abrir el método retrospectivo de la ACA"
     }
   },
   "complianceDocuments": {

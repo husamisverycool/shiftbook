@@ -18,12 +18,13 @@ import { cn } from "@/lib/utils";
 import type { Area } from "@/server/compliance/queries";
 import { typing } from "../app-sidebar";
 
-export type ComplianceTab = "list" | "calendar" | "counters" | "workersComp";
+export type ComplianceTab = "list" | "calendar" | "counters" | "workersComp" | "aca";
 const TABS: { tab: ComplianceTab; href: string }[] = [
   { tab: "list", href: "/compliance" },
   { tab: "calendar", href: "/compliance/calendar" },
   { tab: "counters", href: "/compliance/counters" },
   { tab: "workersComp", href: "/compliance/workers-comp" },
+  { tab: "aca", href: "/compliance/aca" },
 ];
 /** The tabs that share the list's filters. */
 const FILTERED: ComplianceTab[] = ["list", "calendar"];
@@ -35,6 +36,7 @@ const AREAS: (Area | "all")[] = [
   "workers",
   "equal_pay",
   "workers_comp",
+  "aca",
 ];
 /** The filters, kept in the address and carried between the tabs. */
 const KEPT = ["area", "status", "state", "owner", "q"];

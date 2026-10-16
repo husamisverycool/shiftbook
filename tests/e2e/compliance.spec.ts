@@ -317,3 +317,71 @@ for (const locale of ["en", "es"] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+/** Hours from before Shiftbook: October 2025 to September 2026, Marcus 140 h a month (full-time), Anita 120 h (not). */
+const MONTHS = ["2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"];
+const HOURS_CSV = ["Worker,Month,Hours", ...MONTHS.map((m) => `Marcus Bell,${m},140`), ...MONTHS.map((m) => `Anita Patel,${m},120`)].join("\n");
+
+for (const locale of ["en", "es"] as const) {
+  test(`compliance ACA: periods set, hours imported (a bad file first), who is full-time, the offer duty (${locale})`, async ({ page }) => {
+    test.setTimeout(300_000);
+    const m = MESSAGES[locale];
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (msg) => msg.type() === "error" && /MISSING_MESSAGE|FORMATTING_ERROR/.test(msg.text()) && errors.push(msg.text()));
+    const dialog = page.getByRole("dialog");
+
+    // No periods yet: the tab says so and leads to the settings.
+    await page.goto(`/${locale}/compliance/aca`);
+    await expect(page.getByTestId("aca-needs-settings")).toBeVisible();
+    await check(page, "ACA without settings");
+    await page.getByTestId("aca-needs-settings").getByRole("link").click();
+    await expect(page.getByTestId("aca-settings-form")).toBeVisible();
+    await expect(page.getByTestId("aca-settings-none")).toBeVisible();
+    // Twelve-month periods from October, 60 administrative days; a 91st day is refused.
+    await page.getByTestId("aca-first").selectOption("10");
+    await page.getByTestId("aca-admin").fill("91");
+    await page.getByTestId("save-aca").click();
+    await expect(page.getByText(m.compliance.errors.fields.adminDays)).toBeVisible();
+    await page.getByTestId("aca-admin").fill("60");
+    await page.getByTestId("save-aca").click();
+    await expect(page.getByTestId("aca-settings-none")).toHaveCount(0);
+    await check(page, "compliance settings with ACA");
+
+    // Before any hours: every worker is measuring, with no hours on file.
+    await page.goto(`/${locale}/compliance/aca`);
+    await expect(page.getByTestId("aca-settings")).toBeVisible();
+    await expect(page.getByTestId("aca-row").first()).toHaveAttribute("data-result", "measuring");
+    await expect(page.locator('[data-testid="aca-row"][data-result="full_time"]')).toHaveCount(0);
+
+    // A file with a name that matches nobody: nothing is saved, the row is named.
+    await page.getByTestId("aca-import").click();
+    await dialog.getByTestId("aca-file").setInputFiles({ name: "old-payroll.csv", mimeType: "text/csv", buffer: Buffer.from("Worker,Month,Hours\nMarcus Bel,2025-10,140") });
+    await dialog.getByTestId("aca-import-save").click();
+    await expect(dialog.getByTestId("aca-problems")).toContainText(m.compliance.aca.import.problems.worker.replace("{row}", "2"));
+    await dialog.getByTestId("aca-file").setInputFiles({ name: "old-payroll.csv", mimeType: "text/csv", buffer: Buffer.from(HOURS_CSV) });
+    await dialog.getByTestId("aca-import-save").click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId("aca-imports")).toContainText("old-payroll.csv");
+
+    // Marcus averaged 32:13 a week (100,800 minutes × 7 ÷ 365 days): full-time, with his offer duty; Anita (27:36) is not.
+    await page.getByTestId("aca-show").selectOption("full_time");
+    await expect(page).toHaveURL(/show=full_time/);
+    const full = page.getByTestId("aca-row");
+    await expect(full.first()).toContainText("Marcus Bell");
+    await expect(page.getByTestId("aca-table")).not.toContainText("Anita Patel");
+    await check(page, "ACA with results");
+    await page.getByTestId("aca-search").fill("anita");
+    await page.getByTestId("aca-search").press("Enter");
+    await expect(page.getByTestId("aca-no-match")).toBeVisible();
+    await page.getByTestId("aca-no-match").getByRole("button").click();
+    await expect(page).not.toHaveURL(/show=/);
+    await page.getByTestId("aca-show").selectOption("full_time");
+    await page.getByTestId("aca-row").filter({ hasText: m.compliance.aca.cycles.standard }).getByTestId("aca-duty").click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(m.compliance.kinds.aca_offer);
+    await expect(page.getByTestId("obligation-message")).toContainText("Measured full-time in the standard measurement period 2025-10-01 to 2026-09-30");
+    await check(page, "ACA offer duty");
+    expect(errors).toEqual([]);
+  });
+}

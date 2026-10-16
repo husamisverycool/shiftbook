@@ -9,6 +9,7 @@ Jira — configure working days (select the days the team usually works under "S
 Source URL: https://help.vanta.com/en/articles/11345476-document-renewal-settings
 Source URL: https://help.vanta.com/en/articles/11345479-managing-documents
 Source URL: https://support.atlassian.com/jira-software-cloud/docs/configure-working-days/
+Source URL: https://www.ecfr.gov/current/title-26/chapter-I/subchapter-D/part-54/section-54.4980H-3
 Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §1–§5, §7). Confidence: high for the
 renewal behavior; low for the page's layout (Vanta keeps these on each document, Shiftbook gathers
 them on one page as Margin settings does).
@@ -37,7 +38,13 @@ job orders (SPEC §16).
    Monday to Friday checked and fixed (they always count), Saturday and Sunday for the Owner to tick
    when the agency is open then; a line that holidays count too (the earlier date); **Save days**,
    from today.
-6. Each section says when it was last changed and by whom.
+6. **ACA look-back** (the fields are the regulation's, 26 C.F.R. § 54.4980H-3(d); laid out as the
+   business days above): the standard measurement period's length in months and the month it starts,
+   the administrative period in days, the stability period in months, each with its limits in words
+   from the dated rule (3 to 12 months; at most 90 days; at least 6 months and no shorter than the
+   measurement period); a line that new workers are measured on an initial period of the same length;
+   **Save**, from today, which works the ACA duties out at once; a link to the ACA tab.
+7. Each section says when it was last changed and by whom.
 
 ## Interactions
 - Saving a registration or policy works out its duties at once (the renewal, the audit) and says
@@ -47,7 +54,7 @@ job orders (SPEC §16).
 ## States
 - **Nothing entered:** each section says what is missing and which duties cannot be worked out
   without it (for example "No Illinois registration: its renewal and the client proof pages cannot be
-  dated").
+  dated"; "No ACA periods yet: no one is measured").
 
 ## Never copy
 Vanta's or Bullhorn's wording, icons, colors or logos.

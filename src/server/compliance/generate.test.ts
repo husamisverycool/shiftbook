@@ -35,6 +35,7 @@ const RULES: ComplianceRule[] = [
   rule("i9_reverify", { anchor: "expiry", remindDays: 90 }),
   rule("wc_policy_renewal", { area: "workers_comp", subjectKind: "policy", anchor: "expiry", remindDays: 30 }),
   rule("wc_audit", { area: "workers_comp", subjectKind: "policy", anchor: "date", remindDays: 30 }),
+  rule("aca_offer", { area: "aca", subjectKind: "worker", anchor: "date", remindDays: 30, effectiveFrom: "2015-01-01" }),
 ];
 const TODAY = "2026-10-16"; // a Friday
 const base: GenerateInput = { today: TODAY, rules: RULES, registrations: [], policies: [], placements: [], workers: [], openDays: [] };
@@ -231,6 +232,24 @@ describe("workers' comp policy (J3)", () => {
     expect(renewedBy([p1, p2(["IL", "MA", "NJ"])])).not.toBeNull();
     expect(renewedBy([p1, p2([])])).not.toBeNull();
     expect(renewedBy([{ ...p1, states: [] }, p2(["IL", "MA"])])).toBeNull();
+  });
+});
+
+describe("ACA offer (26 C.F.R. § 54.4980H-3(d))", () => {
+  const cycle = { workerId: "w1", cycle: "standard" as const, measurementStart: "2025-10-01", measurementEnd: "2026-09-30", minutes: 94_170, days: 365, averageMinutesPerWeek: 1806, fullTimeMinutesPerWeek: 1800, stabilityStart: "2026-11-30", stabilityEnd: "2027-11-29" };
+  it("for each period measured full-time, coverage offered by the day before its stability period, reminded 30 days before; one per worker and period", () => {
+    expect(kinds({ aca: [cycle, { ...cycle, cycle: "initial", measurementStart: "2025-11-01", measurementEnd: "2026-10-31", stabilityStart: "2026-12-01", stabilityEnd: "2027-11-30" }] })).toEqual([
+      ["aca_offer", "standard:2025-10-01", "2026-11-29", "2026-10-30", null],
+      ["aca_offer", "initial:2025-11-01", "2026-11-30", "2026-10-31", null],
+    ]);
+    const [w] = wantedObligations({ ...base, aca: [cycle] });
+    expect(w).toMatchObject({ workerId: "w1", subjectKind: "worker", jurisdiction: "US" });
+    expect(w!.message).toBe("Measured full-time in the standard measurement period 2025-10-01 to 2026-09-30: 1569h 30m of service over 365 days, 30h 06m a week on average (94,170 minutes × 7 = 659,190 ≥ 1,800 × 365 = 657,000); coverage for the stability period 2026-11-30 to 2027-11-29 is offered by 2026-11-29 (aca_offer citation).");
+  });
+
+  it("none before the agency enters its settings, or before the rule's date", () => {
+    expect(kinds({})).toEqual([]);
+    expect(kinds({ aca: [{ ...cycle, stabilityStart: "2014-12-01" }] })).toEqual([]);
   });
 });
 

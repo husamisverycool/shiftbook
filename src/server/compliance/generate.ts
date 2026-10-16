@@ -20,11 +20,14 @@
  *   Reverification by the end of the work authorization. Dates only (decision J4).
  * - Workers' comp: renewal by the day the policy ends (a following policy covering at least the same
  *   states renews it); the premium audit on its date.
+ * - ACA (26 C.F.R. § 54.4980H-3(d)): for each measurement period a worker was measured full-time in,
+ *   coverage offered by the day before its stability period begins (the end of the administrative
+ *   period), so it is in place from the first day (aca.ts works out the periods).
  * A duty further back than its rule's look-back is marked too old: not created, but one already on
  * file is kept (an overdue duty never closes because it is old). The run records the Illinois
  * equal-pay crossings itself (slice c).
  */
-import { addDays, isEffective, weekdayOf } from "@shiftbook/rules";
+import { addDays, formatDuration, isEffective, weekdayOf } from "@shiftbook/rules";
 
 export type RuleAnchor = "expiry" | "fixed_dates" | "start" | "hire" | "crossing" | "first_pay_period_end" | "date";
 export type SubjectKind = "registration" | "policy" | "client" | "assignment" | "worker" | "worker_client";
@@ -105,6 +108,21 @@ export interface OpenDays {
   effectiveTo: string | null;
 }
 
+/** A measurement period a worker was measured full-time in (aca.ts). */
+export interface AcaOffer {
+  workerId: string;
+  cycle: "standard" | "initial";
+  measurementStart: string;
+  measurementEnd: string;
+  minutes: number;
+  days: number;
+  averageMinutesPerWeek: number;
+  /** The weekly average the limits row asks for (1,800 minutes: 30 hours). */
+  fullTimeMinutesPerWeek: number;
+  stabilityStart: string;
+  stabilityEnd: string;
+}
+
 export interface GenerateInput {
   today: string;
   rules: ComplianceRule[];
@@ -113,6 +131,8 @@ export interface GenerateInput {
   placements: Placement[];
   workers: WorkerI9[];
   openDays: OpenDays[];
+  /** None until the agency enters its measurement settings. */
+  aca?: AcaOffer[];
 }
 
 export type Facts = Record<string, string | number | boolean | null>;
@@ -144,6 +164,8 @@ export interface Wanted extends Subject {
 export const keyOf = (s: Subject) => [s.kind, s.workerId ?? "", s.clientId ?? "", s.assignmentId ?? "", s.registrationId ?? "", s.policyId ?? "", s.occurrence].join("|");
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+/** 657000 → "657,000". */
+const thousands = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 /** Monday to Friday always count as business days; holidays are not skipped (the earlier date). */
 export const WEEKDAYS_OPEN = [1, 2, 3, 4, 5];
@@ -295,6 +317,22 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
       const a = ruleOn("wc_audit", p.auditDueOn);
       if (a) push(a, { ...none, policyId: p.id, occurrence: "", dueOn: addDays(p.auditDueOn, a.offsetDays), facts: { carrier: p.carrier, policyNumber: p.policyNumber, auditDueOn: p.auditDueOn }, done: null, anchorText: `The premium audit of policy ${p.policyNumber} is due ${p.auditDueOn}` });
     }
+  }
+
+  // ACA: coverage offered by the day before the stability period of each period measured full-time.
+  for (const c of input.aca ?? []) {
+    const r = ruleOn("aca_offer", c.stabilityStart);
+    if (!r) continue;
+    const dueOn = addDays(c.stabilityStart, r.offsetDays - 1);
+    push(r, {
+      ...none,
+      workerId: c.workerId,
+      occurrence: `${c.cycle}:${c.measurementStart}`,
+      dueOn,
+      facts: { cycle: c.cycle, measurementStart: c.measurementStart, measurementEnd: c.measurementEnd, minutes: c.minutes, days: c.days, averageMinutesPerWeek: c.averageMinutesPerWeek, stabilityStart: c.stabilityStart, stabilityEnd: c.stabilityEnd },
+      done: null,
+      anchorText: `Measured full-time in the ${c.cycle} measurement period ${c.measurementStart} to ${c.measurementEnd}: ${formatDuration(c.minutes)} of service over ${c.days} days, ${formatDuration(c.averageMinutesPerWeek)} a week on average (${thousands(c.minutes)} minutes × 7 = ${thousands(c.minutes * 7)} ≥ ${thousands(c.fullTimeMinutesPerWeek)} × ${c.days} = ${thousands(c.fullTimeMinutesPerWeek * c.days)}); coverage for the stability period ${c.stabilityStart} to ${c.stabilityEnd} is offered by ${dueOn}`,
+    });
   }
   return out;
 }

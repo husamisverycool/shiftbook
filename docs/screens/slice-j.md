@@ -225,3 +225,66 @@ Screens: `j35-equal-pay-form.png`, `j36-equal-pay-true-up.png`, `j37-equal-pay-r
 - On Spanish screens, the "How it was worked out" text and the note after each citation are in
   English (stored when the duty is made). This is true of every duty since step 1; it is listed for
   the Spanish/English slice (k).
+
+## Step 3c — the ACA look-back
+
+### No periods yet — `docs/patterns/compliance/aca.md` (States: no settings yet)
+Screen: `j39-aca-needs-settings.png`.
+- ✓ The ACA tab says the look-back needs its periods first, with Set the periods (to the settings).
+
+### The periods — `docs/patterns/settings/compliance.md` (ACA look-back)
+Screen: `j40-aca-settings.png`.
+- ✓ Measurement period (3 to 12 months, from the dated limits), the month it starts, administrative
+  days, stability months; the limits and the new-worker rule in words; Save periods from today
+  (91 administrative days is refused, browser test); in force from, and who changed it.
+
+### Importing hours from before Shiftbook — `docs/patterns/compliance/aca.md` (Import hours)
+Screen: `j41-aca-import-problems.png`.
+- ✓ A CSV of worker, month and hours; the rows that are wrong are listed by number with what is
+  wrong, and nothing is saved until all are good; a month imported again replaces the one on file.
+
+### Who is full-time — `docs/patterns/compliance/aca.md` (TempWorks ACA Employee Cycles)
+Screens: `j42-aca-cycles.png`, `es-j42-aca-cycles.png`.
+- ✓ The settings in force and the hours on file (paid weeks; the imported months, the latest file and
+  who imported it); Show and search; one row per worker and cycle with hire date, cycle, result in
+  words, the measurement period, hours, weeks, the average a week, and the administrative,
+  stability and break-in-service periods.
+- ✓ Marcus Bell, 140 hours a month from October 2025 to September 2026: 1,680 hours over 365 days,
+  32:13 a week on average — full-time, in his initial and his standard period; Anita Patel, 120 hours
+  a month (27:36 a week) — not full-time; Luis Hernández, no hours since March — on a break since
+  April 1, 2026; every other demo worker, hired 2026-08-03 — measuring, counted to the last day on
+  file.
+
+### The offer duty — `docs/patterns/compliance/[id].md`
+Screen: `j43-aca-offer-duty.png`.
+- ✓ "ACA: offer coverage" for Marcus Bell, due 2026-11-29 (the day before his stability period of
+  2026-11-30), with how it was worked out and a link back to the ACA tab.
+
+### Differences found and what was done
+- The table ran past the right edge at 1,440 pixels: each period's first and last day now sit one
+  above the other, the long headings wrap, and the hire date is short.
+- "30 months for 3 workers" read as 30 months each; it now says 30 monthly totals.
+- The duty page had no way back to the ACA tab; it has a link now.
+- Checking the regulation's text again added two rules the draft missed: a new worker's 90
+  administrative days include the days before the initial period begins, and a period with days whose
+  hours are not on file is never decided (it says "hours missing from" that day) — before, an agency
+  starting mid-year would have seen everyone as not full-time and no offer duty at all.
+
+### Second opinion, fixed (decision 0024)
+1. An imported month counted for every worker: now only for its own worker (a month of no hours
+   included); a week whose run skipped a worker is not on file for them.
+2. A full-time result left the list, and its duty closed, once the next period ended: it stays until
+   its stability period ends; a worker on a break keeps periods already ended; a duty already due is
+   never set aside by the data.
+3. Periods that do not divide a year jumped at New Year: they now follow one another.
+4. A worker with no hire date looked new: unknown start, measured as employed all along, unless 13
+   weeks on file before the first day show no hours.
+5. A measuring row hid gaps before the last paid day: it says "Hours missing from" (red).
+6. A worker skipped in a run counted as working no hours that week: now not on file.
+7. An import could count a paid month twice: a month Shiftbook paid in full is refused; only ended
+   months are taken.
+8. Every page read every paid line: paid hours are now summed in the database from what each run
+   paid, once per page.
+9. Spreadsheet months (10/2025, Oct-25), decimal hours and a Payroll ID column are read.
+- Nits: the duty shows the test's arithmetic; read-only users see no settings link; a file over
+  5,000 rows says so.

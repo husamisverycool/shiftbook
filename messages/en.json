@@ -2368,7 +2368,8 @@
       "list": "List",
       "calendar": "Calendar",
       "workersComp": "Workers' comp",
-      "counters": "Counters"
+      "counters": "Counters",
+      "aca": "ACA"
     },
     "areasLabel": "Areas",
     "areas": {
@@ -2443,7 +2444,8 @@
       "i9_section2": "Form I-9 Section 2",
       "i9_reverify": "Form I-9 reverification",
       "wc_policy_renewal": "Workers' comp policy renewal",
-      "wc_audit": "Workers' comp premium audit"
+      "wc_audit": "Workers' comp premium audit",
+      "aca_offer": "ACA: offer coverage"
     },
     "asks": {
       "il_registration_renewal": "Apply to renew the agency's Illinois day and temporary labor registration at least {days} days before it expires. The agency and each branch office register; a lapse in workers' comp suspends the registration.",
@@ -2459,7 +2461,8 @@
       "i9_section2": "The agency examines the worker's documents and completes Section 2 within {days} business days of the first day.",
       "i9_reverify": "Reverify the worker's employment authorization by the day it ends (Supplement B).",
       "wc_policy_renewal": "Keep workers' comp in force: the next policy starts by the day this one ends.",
-      "wc_audit": "Give the insurer's premium auditor the payroll by class, with the overtime premium shown apart by worker and by class."
+      "wc_audit": "Give the insurer's premium auditor the payroll by class, with the overtime premium shown apart by worker and by class.",
+      "aca_offer": "Offer health coverage to each worker measured full-time (at least 30 hours of service a week on average in a measurement period) by the end of the administrative period, so it is in place from the first day of the stability period."
     },
     "emptyOpen": "No compliance duty is open.",
     "nextUpcoming": "The next one is due {date}.",
@@ -2548,6 +2551,7 @@
         "save": "Record"
       },
       "settingsLink": "Change it in Compliance settings",
+      "acaLink": "Open the ACA look-back",
       "readOnly": "You can read this duty; changing it is for {who}.",
       "system": {
         "renewed": "Renewed by {number}, which runs to {date}.",
@@ -2673,7 +2677,12 @@
         "rateCents": "Enter the hourly rate, like 18.50.",
         "benefitsCents": "Enter the benefits' hourly cash value, or 0.",
         "comparator": "Say who it was compared with (up to 300 characters).",
-        "askedOverRate": "A rate is on file from that date; a request would not change it. Choose another date."
+        "askedOverRate": "A rate is on file from that date; a request would not change it. Choose another date.",
+        "measurementMonths": "The measurement period must be within the limits.",
+        "firstMonth": "Choose the month the periods start.",
+        "adminDays": "The administrative days must be a whole number within the limit.",
+        "stabilityMonths": "The stability period must be at least the minimum and no shorter than the measurement period.",
+        "rule": "The ACA limits are not on file."
       },
       "closed_by_data": "Shiftbook closed this duty from the data; it opens again by itself if the data calls for it."
     },
@@ -2782,6 +2791,88 @@
         "note": "Note (where the hours come from)"
       },
       "saved": "Saved. The next run counts it."
+    },
+    "aca": {
+      "intro": "Who is full-time under the look-back method: hours of service in each measurement period, averaged by week. A worker measured full-time is offered coverage for the stability period that follows.",
+      "parameters": "Look-back settings and hours on file",
+      "settingsTitle": "Measurement settings",
+      "settingsLine": "{months}-month periods from {month}; {admin} administrative days; {stability}-month stability periods. In force from {date}.",
+      "noSettings": "No periods yet: nobody is measured until they are set.",
+      "noSettingsReadOnly": "No periods yet: the Owner sets them in Compliance settings.",
+      "changeSettings": "Change them in Compliance settings",
+      "setSettings": "Set the periods",
+      "hoursTitle": "Hours on file",
+      "paidLine": "Paid weeks in Shiftbook: {range}.",
+      "noPaid": "No week has been paid in Shiftbook yet.",
+      "importsLine": "Imported from before Shiftbook: {rows, plural, one {# monthly total} other {# monthly totals}} for {workers, plural, one {# worker} other {# workers}}, {range}. Latest file {source}, by {by}, {date}.",
+      "noImports": "No hours imported from before Shiftbook.",
+      "needsSettings": "The look-back needs its periods first: how long a measurement period is and when it starts, the administrative days and the stability period.",
+      "noRule": "The ACA limits are not on file, so nobody can be measured.",
+      "search": "Search",
+      "searchPlaceholder": "Search by worker",
+      "show": "Show",
+      "shows": {
+        "all": "All",
+        "full_time": "Full-time",
+        "not_full_time": "Not full-time",
+        "measuring": "Measuring",
+        "missing_hours": "Hours missing",
+        "on_break": "On a break"
+      },
+      "nothing": "No worker has hours on file in these periods.",
+      "noMatch": "Nothing matches the search and Show.",
+      "clear": "Clear filters",
+      "tableLabel": "Measurement cycles by worker",
+      "cols": {
+        "worker": "Worker",
+        "hired": "Hire date",
+        "cycle": "Cycle",
+        "result": "Result",
+        "measurement": "Measurement period",
+        "hours": "Hours",
+        "weeks": "Weeks",
+        "average": "Average a week",
+        "admin": "Administrative period",
+        "stability": "Stability period",
+        "break": "Break in service"
+      },
+      "cycles": {
+        "standard": "Standard",
+        "initial": "Initial"
+      },
+      "results": {
+        "full_time": "Full-time",
+        "not_full_time": "Not full-time",
+        "measuring": "Measuring"
+      },
+      "offerBy": "Offer coverage from {date}",
+      "countedThrough": "Counted to {date}",
+      "nothingCounted": "No hours on file yet",
+      "missingFrom": "Hours missing from {date}",
+      "onBreakSince": "On a break since {date}",
+      "since": "Since {date}",
+      "import": {
+        "open": "Import hours",
+        "title": "Import hours from before Shiftbook",
+        "body": "A CSV file with one row per worker and month: the worker's full name, the month and the hours of service, paid holidays and leave included. Add a Payroll ID column to tell apart two workers with one name. Months may be written 2025-10, 10/2025 or Oct-25; hours as 140, 140:30 or 140.5. Only months that have ended; for a month Shiftbook paid in part, only the hours outside the weeks it paid. Nothing is saved until every row is good; a month imported again replaces the one on file.",
+        "example": "Worker,Month,Hours\nMarcus Bell,2025-10,140\nAnita Patel,2025-10,121:30",
+        "file": "CSV file",
+        "problemsTitle": "Nothing was saved. Fix these rows and import again:",
+        "problems": {
+          "worker": "Row {row}: no worker with that full name or payroll ID, or more than one.",
+          "month": "Row {row}: the month must be one that has ended, written like 2025-10, 10/2025 or Oct-25.",
+          "hours": "Row {row}: the hours must be like 140, 140:30 or 140.5 (whole minutes), at most a month's hours.",
+          "columns": "The first row must name the columns Worker, Month and Hours.",
+          "duplicate": "Row {row}: the same worker and month again.",
+          "empty": "The file has no rows below the column names.",
+          "paid": "Row {row}: Shiftbook paid that whole month already, so its hours are on file.",
+          "too_many": "The file has more than 5,000 rows: import it in parts."
+        },
+        "cancel": "Cancel",
+        "save": "Import",
+        "done": "Imported {rows, plural, one {# month} other {# months}}.",
+        "tooLarge": "The file is larger than 1 MB."
+      }
     }
   },
   "complianceSettings": {
@@ -2875,6 +2966,22 @@
         "5": "Friday",
         "6": "Saturday"
       }
+    },
+    "aca": {
+      "title": "ACA look-back",
+      "intro": "The periods the full-time test uses (26 C.F.R. § 54.4980H-3(d)). Saving works the ACA duties out again at once.",
+      "none": "No periods yet: nobody is measured, and no ACA duty can be worked out.",
+      "noRule": "The ACA limits are not on file.",
+      "measurementMonths": "Measurement period",
+      "monthsOption": "{months, plural, one {# month} other {# months}}",
+      "firstMonth": "Starts in",
+      "adminDays": "Administrative days",
+      "stabilityMonths": "Stability period (months)",
+      "limits": "Limits: a measurement period of {minMonths} to {maxMonths} months; at most {admin} administrative days; a stability period of at least {stability} months and no shorter than the measurement period. {weeks} weeks without an hour of service is a break.",
+      "newWorkers": "New workers are measured on an initial period of the same length, from the first of the month after they start; their administrative days count from the start, at most the limit in all.",
+      "inForce": "In force from {date}.",
+      "save": "Save periods",
+      "open": "Open the ACA look-back"
     }
   },
   "complianceDocuments": {

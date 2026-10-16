@@ -290,7 +290,7 @@ async function linkCertificate(tx: Tx, actor: Actor, subject: { registrationId: 
 }
 
 /** A compliance setting from today: today's row replaced, else the one before ends yesterday. */
-async function setFromToday(tx: Tx, actor: Actor, key: string, value: unknown, today: string) {
+export async function setFromToday(tx: Tx, actor: Actor, key: string, value: unknown, today: string) {
   const rows = await tx.select().from(s.agencySettings).where(eq(s.agencySettings.key, key));
   const current = rows.find((r) => r.effectiveTo === null);
   if (current && current.effectiveFrom === today) await tx.update(s.agencySettings).set({ value }).where(eq(s.agencySettings.id, current.id));

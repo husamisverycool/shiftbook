@@ -34,7 +34,7 @@ attachments").
    three business days later"). Where the duty needs data, its form is here: the I-9 dates; the
    Massachusetts job order's details (the worksite employer's phone, times, overtime, requirements,
    meals, transportation, strike; kept on the job order); the Illinois equal-pay rate (below); for a
-   registration or policy, a link to Compliance settings.
+   registration or policy, a link to Compliance settings; for an ACA offer, a link to the ACA tab.
    **Illinois equal-pay rate** (an equal-pay crossing's duty; Drata's control form): from a date (the
    crossing day for the first rate, today once one is on file); how the client compared (a comparable
    direct hire, the direct hire with the closest seniority, or the wage survey's median or 75th

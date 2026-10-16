@@ -6,7 +6,7 @@ import { PlusIcon, UploadIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
-import { addPolicyAction, addRegistrationAction, setMaContactAction, setMaStatementAction, setOpenDaysAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
+import { addPolicyAction, addRegistrationAction, setAcaSettingsAction, setMaContactAction, setMaStatementAction, setOpenDaysAction, type ComplianceActionResult } from "@/app/[locale]/(app)/compliance/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -190,6 +190,8 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
       {section("statement-title", t("statement.title"), t("statement.intro"), null, <Statement view={view} canChange={canChange} />, null)}
 
       {section("open-days-title", t("openDays.title"), t("openDays.intro"), null, <OpenDays view={view} canChange={canChange} />, changed(view.changed.openDays))}
+
+      {section("aca-title", t("aca.title"), t("aca.intro"), null, <AcaSettings view={view} canChange={canChange} />, changed(view.changed.aca))}
 
       {adding === "registration" && <RegistrationDialog view={view} today={today} onClose={() => setAdding(null)} />}
       {adding === "policy" && <PolicyDialog today={today} onClose={() => setAdding(null)} />}
@@ -451,6 +453,67 @@ function OpenDays({ view, canChange }: { view: View; canChange: boolean }) {
           {t("save")}
         </Button>
       )}
+    </div>
+  );
+}
+
+/** The ACA look-back's periods (26 C.F.R. § 54.4980H-3(d)), checked against the dated limits; from today. */
+function AcaSettings({ view, canChange }: { view: View; canChange: boolean }) {
+  const t = useTranslations("complianceSettings.aca");
+  const locale = useLocale();
+  const { pending, save, field } = useSave();
+  const current = view.aca.settings;
+  const limits = view.aca.limits;
+  const [v, setV] = useState({ measurementMonths: String(current?.measurementMonths ?? 12), firstMonth: String(current?.firstMonth ?? 1), adminDays: String(current?.adminDays ?? 0), stabilityMonths: String(current?.stabilityMonths ?? 12) });
+  if (!limits) return <p className="text-sm text-muted-foreground">{t("noRule")}</p>;
+  const n = (x: string) => (/^\d{1,3}$/.test(x.trim()) ? Number(x.trim()) : NaN);
+  const value = { measurementMonths: n(v.measurementMonths), firstMonth: n(v.firstMonth), adminDays: n(v.adminDays), stabilityMonths: n(v.stabilityMonths) };
+  const same = current !== null && (Object.keys(value) as (keyof typeof value)[]).every((k) => value[k] === current[k]);
+  const ready = Object.values(value).every((x) => Number.isInteger(x));
+  const month = (m: number) => new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2000, m - 1, 1)));
+  const months = Array.from({ length: limits.maxMeasurementMonths - limits.minMeasurementMonths + 1 }, (_, i) => limits.minMeasurementMonths + i);
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border p-4" data-testid="aca-settings-form">
+      {!current && <p className="text-sm text-muted-foreground" data-testid="aca-settings-none">{t("none")}</p>}
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Field id="aca-months" label={t("measurementMonths")} invalid={field === "measurementMonths"}>
+          <NativeSelect id="aca-months" className="w-full" disabled={!canChange} value={v.measurementMonths} onChange={(e) => setV({ ...v, measurementMonths: e.target.value })} data-testid="aca-months">
+            {months.map((m) => (
+              <NativeSelectOption key={m} value={String(m)}>
+                {t("monthsOption", { months: m })}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field id="aca-first" label={t("firstMonth")} invalid={field === "firstMonth"}>
+          <NativeSelect id="aca-first" className="w-full" disabled={!canChange} value={v.firstMonth} onChange={(e) => setV({ ...v, firstMonth: e.target.value })} data-testid="aca-first">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+              <NativeSelectOption key={m} value={String(m)}>
+                {month(m)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field id="aca-admin" label={t("adminDays")} invalid={field === "adminDays"}>
+          <Input id="aca-admin" inputMode="numeric" disabled={!canChange} value={v.adminDays} aria-invalid={field === "adminDays" ? true : undefined} onChange={(e) => setV({ ...v, adminDays: e.target.value })} data-testid="aca-admin" />
+        </Field>
+        <Field id="aca-stability" label={t("stabilityMonths")} invalid={field === "stabilityMonths"}>
+          <Input id="aca-stability" inputMode="numeric" disabled={!canChange} value={v.stabilityMonths} aria-invalid={field === "stabilityMonths" ? true : undefined} onChange={(e) => setV({ ...v, stabilityMonths: e.target.value })} data-testid="aca-stability" />
+        </Field>
+      </div>
+      <p className="text-xs text-muted-foreground">{t("limits", { minMonths: limits.minMeasurementMonths, maxMonths: limits.maxMeasurementMonths, admin: limits.maxAdminDays, stability: limits.minStabilityMonths, weeks: limits.breakWeeks })}</p>
+      <p className="text-xs text-muted-foreground">{t("newWorkers")}</p>
+      {current && view.aca.from && <p className="text-xs text-muted-foreground">{t("inForce", { date: longDate(view.aca.from, locale) })}</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        {canChange && (
+          <Button size="sm" variant="outline" className="w-fit" disabled={pending || !ready || same} onClick={() => save(() => setAcaSettingsAction(value), () => undefined)} data-testid="save-aca">
+            {t("save")}
+          </Button>
+        )}
+        <Link href="/compliance/aca" className="text-sm underline underline-offset-4">
+          {t("open")}
+        </Link>
+      </div>
     </div>
   );
 }

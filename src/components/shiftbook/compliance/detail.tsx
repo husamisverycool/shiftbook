@@ -200,6 +200,11 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
             {d.message}
           </dd>
         </dl>
+        {i.kind === "aca_offer" && (
+          <Link href="/compliance/aca" className="w-fit text-sm underline underline-offset-4" data-testid="open-aca">
+            {td("acaLink")}
+          </Link>
+        )}
         {(i.subjectKind === "registration" || i.subjectKind === "policy") && (
           <Link href="/settings/compliance" className="w-fit text-sm underline underline-offset-4">
             {td("settingsLink")}

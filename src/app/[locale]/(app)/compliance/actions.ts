@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { addObligationFile, addObligationNote, addPolicy, addRegistration, closeObligation, mayChangeComplianceSettings, recordI9, recordReverification, reopenObligation, setMaContact, setMaStatement, setObligationOwner, setOpenWeekendDays, storeComplianceDocument, unlinkObligationFile, type ComplianceResult } from "@/server/compliance/service";
 import { addOpeningBalance, removeOpeningBalance } from "@/server/compliance/counter-balances";
+import { importAcaHours, setAcaSettings, type ImportResult } from "@/server/compliance/aca-service";
 import { removeEqualPayRate, setEqualPayRate } from "@/server/compliance/equal-pay-rates";
 import { createJobOrderNotice, createPacketDocument, createProofPage, saveNoticeDetails } from "@/server/compliance/documents";
 import { withAgency } from "@/server/db";
@@ -19,14 +20,14 @@ const id = z.string().uuid();
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const dateOrNull = isoDate.nullable();
 
-async function guarded(fn: () => Promise<ComplianceResult>): Promise<ComplianceActionResult> {
+async function guarded<T>(fn: () => Promise<T>): Promise<T | { ok: false; error: "busy" }> {
   try {
     return await fn();
   } catch (error) {
     if (error instanceof PeriodBusyError) return { ok: false, error: "busy" };
     throw error;
   } finally {
-    for (const path of ["/[locale]/(app)/compliance", "/[locale]/(app)/compliance/[id]", "/[locale]/(app)/compliance/calendar", "/[locale]/(app)/compliance/counters", "/[locale]/(app)/settings/compliance"]) revalidatePath(path, "page");
+    for (const path of ["/[locale]/(app)/compliance", "/[locale]/(app)/compliance/[id]", "/[locale]/(app)/compliance/calendar", "/[locale]/(app)/compliance/counters", "/[locale]/(app)/compliance/aca", "/[locale]/(app)/settings/compliance"]) revalidatePath(path, "page");
     revalidatePath("/[locale]/(app)", "layout");
   }
 }
@@ -210,4 +211,26 @@ export async function setEqualPayRateAction(obligationId: string, input: unknown
 export async function removeEqualPayRateAction(obligationId: string, rateId: string, reason: string): Promise<ComplianceActionResult> {
   if (!id.safeParse(obligationId).success || !id.safeParse(rateId).success || typeof reason !== "string" || reason.length > 1000) return { ok: false, error: "generic" };
   return run((tx, actor) => removeEqualPayRate(tx, actor, obligationId, rateId, reason));
+}
+
+const AcaSettingsSchema = z.object({ measurementMonths: z.number().int(), firstMonth: z.number().int(), adminDays: z.number().int(), stabilityMonths: z.number().int() }).strict();
+
+/** The ACA measurement settings from today (the Owner). */
+export async function setAcaSettingsAction(input: unknown): Promise<ComplianceActionResult> {
+  const parsed = AcaSettingsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid", field: String(parsed.error.issues[0]?.path[0] ?? "form") };
+  return run((tx, actor, today) => setAcaSettings(tx, actor, parsed.data, today));
+}
+
+/** At most a megabyte of CSV: 5,000 rows of a name, a month and hours fit with room to spare. */
+const MAX_IMPORT_BYTES = 1_000_000;
+
+/** Hours of service before Shiftbook, a CSV (FormData: file) — the Owner. */
+export async function importAcaHoursAction(form: FormData): Promise<ImportResult | { ok: false; error: "busy" | "generic" | "too_large" }> {
+  const file = form.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "generic" };
+  if (file.size > MAX_IMPORT_BYTES) return { ok: false, error: "too_large" };
+  const text = await file.text();
+  const actor = currentActor();
+  return guarded(() => withAgency(actor.agencyId, async (tx) => importAcaHours(tx, actor, file.name, text, await agencyToday(tx))));
 }

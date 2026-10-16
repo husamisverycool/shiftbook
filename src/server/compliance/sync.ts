@@ -14,6 +14,7 @@ import * as s from "../db/schema";
 import { lockCompliance, tryLockCompliance } from "../run/period-lock";
 import { settingOn } from "../settings";
 import { EQUAL_PAY_KINDS } from "./kinds";
+import { acaOffers } from "./aca-data";
 import { keyOf, wantedObligations, type ComplianceRule, type GenerateInput, type OpenDays, type Placement, type Wanted } from "./generate";
 
 /** Who Shiftbook's own changes are recorded as. */
@@ -32,6 +33,8 @@ export async function complianceRules(tx: Tx): Promise<ComplianceRule[]> {
 
 /** The facts the duties are worked out from. */
 export async function complianceInput(tx: Tx, today: string): Promise<GenerateInput> {
+  const offers = await acaOffers(tx, today);
+  const aca = offers.rows.map((r) => ({ workerId: r.workerId, cycle: r.cycle, measurementStart: r.measurementStart, measurementEnd: r.measurementEnd, minutes: r.minutes, days: r.days, averageMinutesPerWeek: r.averageMinutesPerWeek, fullTimeMinutesPerWeek: offers.fullTimeMinutesPerWeek, stabilityStart: r.stabilityStart!, stabilityEnd: r.stabilityEnd! }));
   const [rules, registrations, policies, rows, workers, openRows] = await Promise.all([
     complianceRules(tx),
     tx.select().from(s.agencyRegistrations),
@@ -93,6 +96,7 @@ export async function complianceInput(tx: Tx, today: string): Promise<GenerateIn
         return { id: w.id, hireDate, i9Section1On: w.i9Section1On, i9Section2On: w.i9Section2On, workAuthExpiresOn: w.workAuthExpiresOn, firstJobEndsOn: firstJobEnds(w.id, hireDate) };
       }),
     openDays,
+    aca,
   };
 }
 
@@ -159,6 +163,8 @@ export async function syncObligations(tx: Tx, agencyId: string, today: string): 
   }
   for (const o of existing) {
     if (o.status !== "open" || seen.has(keyOf(o))) continue;
+    // An ACA offer already due is never set aside by the data (a break, new periods, changed settings): a person decides.
+    if (o.kind === "aca_offer" && o.dueOn < today) continue;
     await tx.update(s.obligations).set({ status: "not_applicable", statusNote: NO_LONGER, doneAt: now, doneBy: null, doneByLabel: SYSTEM, closedBySystem: true }).where(eq(s.obligations.id, o.id));
     await auditBy(tx, who, [{ action: "update", entityType: "obligation", entityId: o.id, before: { status: "open" }, after: { status: "not_applicable" }, reason: NO_LONGER }]);
     closed += 1;
