@@ -19,7 +19,7 @@ import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { Actor } from "../session";
-import { clientNets } from "../files/invoice-plan";
+import { billDifferences, planCorrectionInvoices, type CorrectionDocuments } from "../files/invoice-plan";
 import { differences, settlement, type DiffLine, type FileLine, type LineForDiff, type WeekLine } from "./differences";
 import { lockPeriod, openPeriod, periodState } from "./period-lock";
 import { computeRun } from "./service";
@@ -251,7 +251,9 @@ export async function discardCorrection(tx: Tx, actor: Actor, payPeriodId: strin
   // A decision is a record of what was settled outside the files: removed on purpose, not with a discard.
   if (plan.workers.some((w) => w.decisions.length > 0)) return { ok: false, error: "has_decisions" };
   const obligations = await tx.select({ id: s.obligations.id }).from(s.obligations).where(eq(s.obligations.payRunId, run.id));
-  if (hasRealDifferences(plan) || obligations.length > 0) return { ok: false, error: "has_differences" };
+  const [period] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, payPeriodId));
+  const billed = await planCorrectionInvoices(tx, period!, billDifferences(plan.bill));
+  if (hasRealDifferences(plan, billed) || obligations.length > 0) return { ok: false, error: "has_differences" };
   const base = (await paidBase(tx, payPeriodId, run.version))!;
   await tx.delete(s.correctionDecisions).where(eq(s.correctionDecisions.payRunId, run.id));
   await tx.delete(s.payLines).where(eq(s.payLines.payRunId, run.id));
@@ -306,9 +308,13 @@ export async function recordCorrectionDecision(
   return { ok: true };
 }
 
-/** Something besides rounding differs: a worker's pay, a decision on file, or a client's bill. */
-export function hasRealDifferences(plan: CorrectionPlan): boolean {
-  return plan.workers.some((w) => w.changed || w.decisions.length > 0) || [...clientNets(plan.bill).values()].some((c) => c.real);
+/**
+ * Something besides rounding differs: a worker's pay, a decision on file, or what an invoice bills —
+ * judged per invoice the differences belong to (slice g: hours moved between two invoices of one
+ * client are a real difference to each, even when the client's total does not change).
+ */
+export function hasRealDifferences(plan: CorrectionPlan, billed: Pick<CorrectionDocuments, "plans" | "problems" | "quiet">): boolean {
+  return plan.workers.some((w) => w.changed || w.decisions.length > 0) || billed.plans.length > 0 || billed.problems.length > 0 || billed.quiet.length > 0;
 }
 
 /** Removes a decision recorded by mistake in the open correction (Owner): nothing was done outside the files after all. */

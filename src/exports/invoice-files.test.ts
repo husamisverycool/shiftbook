@@ -51,7 +51,7 @@ describe("SAP Fieldglass time sheet invoice upload", () => {
   });
 
   it("refuses hours that did not come from a Fieldglass time sheet, naming the worker", () => {
-    expect(() => fieldglassUpload(input({ lines: [{ ...input().lines[2]!, timeSheetIds: [] }] }))).toThrowError(/Anita Patel: hours for the week ending 2026-10-11 did not come from a SAP Fieldglass time sheet/);
+    expect(() => fieldglassUpload(input({ lines: [{ ...input().lines[2]!, timeSheetIds: [] }] }))).toThrowError(/Anita Patel: the REG line for the week ending 2026-10-11 has hours that did not come from a SAP Fieldglass time sheet/);
     // The refusal carries the worker's id when the line has one (the run offers to skip them).
     try {
       fieldglassUpload(input({ lines: [{ ...input().lines[2]!, workerId: "w-anita", timeSheetIds: [] }] }));
@@ -62,5 +62,13 @@ describe("SAP Fieldglass time sheet invoice upload", () => {
 
   it("refuses a line whose hours span two time sheets (the line's amount cannot be split)", () => {
     expect(() => fieldglassUpload(input({ lines: [{ ...input().lines[0]!, timeSheetIds: ["XXXXTS00000001", "XXXXTS00000003"] }] }))).toThrowError(/Marcus Bell: .* two SAP Fieldglass time sheets/);
+  });
+});
+
+describe("text a spreadsheet would read as a formula (OWASP CSV injection)", () => {
+  it("gets a leading apostrophe in the invoice CSV and the upload; amounts keep their minus sign", () => {
+    const lines = [{ ...input().lines[0]!, workerName: "=HYPERLINK(1)", poNumber: "@PO", worksite: "+Site", minutes: -60, amountCents: -2650 }];
+    expect(text(invoiceCsv(input({ lines }))).split("\r\n")[1]).toBe("PCD-20261005,2026-10-13,2026-10-05,2026-10-11,'=HYPERLINK(1),'+Site,'@PO,2026-10-11,REG,-1.00,-60,26.5000,-26.50");
+    expect(text(fieldglassUpload(input({ lines: [{ ...input().lines[0]!, vmsWorkerId: "-JS1" }] }))).split("\r\n")[4]).toBe("PCD-20261005,XXXXTS00000001,'-JS1,0.00,1060.00");
   });
 });

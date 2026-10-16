@@ -90,3 +90,14 @@ invoice with its documents; several of one client's invoices can be put together
 ## Out of this slice
 Payments, aging and reminders (h); emailing invoices (the files are downloaded; slice h adds
 reminders); Coupa and Ariba uploads; custom invoice layouts.
+
+## Progress (2026-10-16)
+- Steps 1–3 built, tests first: dated invoice settings and the placement PO; invoices split by PO
+  and worksite with their numbering and PO checks; the three templates; hours detail with the
+  client's approval and the redacted timesheet pictures; the invoice CSV and the SAP Fieldglass
+  upload; the invoices list and page, statements, the clients list and page; the run's fixes.
+- Proposed answer keys for the invoice CSV and the Fieldglass file, checked by hand; the owner
+  approved all answer keys ("approve all goldens") and they are in `tests/goldens/`.
+- Second-opinion review: 10 findings, all fixed with tests (decision 0017).
+- Browser tests in English and Spanish with accessibility checks; screenshots compared in
+  `docs/screens/slice-g.md`.

@@ -481,10 +481,10 @@ describe("a correction's documents (decision E11)", () => {
     // One hour at $26.50 more (or less) for Marcus Bell's week.
     const diff = (amountCents: number) => ({ clientId: clientId("il"), workerId: marcus, assignmentId: assignmentId("marcus-bell"), workweekStart: "2026-10-05", type: "REG" as const, minutes: amountCents > 0 ? 60 : -60, rate: { num: 2650, den: 1 }, amountCents, wasLines: 1, nowLines: 1 });
     const plan = (diffs: number[]) => inAgency((tx) => planCorrectionInvoices(tx, period!, diffs.map(diff)));
-    expect(await plan([2650, -2650])).toEqual({ plans: [], problems: [] });
+    expect(await plan([2650, -2650])).toEqual({ plans: [], problems: [], quiet: [] });
     // A cent rounding left over when hours moved at one rate is not billed (second opinion, finding 6).
     const leftover = { ...diff(1), minutes: 0 };
-    expect(await inAgency((tx) => planCorrectionInvoices(tx, period!, [leftover]))).toEqual({ plans: [], problems: [] });
+    expect(await inAgency((tx) => planCorrectionInvoices(tx, period!, [leftover]))).toEqual({ plans: [], problems: [], quiet: [] });
     expect((await plan([2650])).plans.map((p) => [p.number, p.kind, p.totalCents, p.original?.number])).toEqual([["PLM-20261005-S1", "supplemental", 2650, "PLM-20261005"]]);
     expect((await plan([-2650])).plans.map((p) => [p.number, p.kind, p.totalCents, p.original?.number])).toEqual([["PLM-20261005-CN-01", "credit_note", -2650, "PLM-20261005"]]);
   });

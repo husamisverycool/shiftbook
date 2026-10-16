@@ -67,6 +67,9 @@ test("exceptions, totals and files steps, with their dialogs, have no serious ac
   await page.locator("#skip-reason").fill("Paid separately (test)");
   await page.getByTestId("confirm-skip").click();
   await expect(page.getByRole("dialog")).toBeHidden();
+  // The forward button turns from disabled to enabled once the run is checked again: contrast is
+  // measured on the settled button, not mid-transition.
+  await expect(page.getByTestId("forward")).toBeEnabled({ timeout: 60_000 });
   await check(page, "exceptions (clear, workers skipped)");
   await toTotals(page, en);
   await check(page, "review totals");

@@ -43,6 +43,16 @@ export interface PlanLine {
 /** A planned invoice's line: the PO it is billed under and the worksite of its assignment. */
 export type PlannedLine = PlanLine & { po: string | null; worksite: { id: string; name: string } | null };
 
+/**
+ * A correction's documents, and the invoices whose differences are real but net to zero (hours moved
+ * at one rate between days; no document, said on the files step).
+ */
+export interface CorrectionDocuments {
+  plans: InvoicePlan[];
+  problems: InvoiceProblem[];
+  quiet: { clientId: string; clientName: string; number: string | null }[];
+}
+
 /** A stored bill line as a planned line. */
 export const planLineOf = (l: typeof s.billLines.$inferSelect): PlanLine => ({
   clientId: l.clientId,
@@ -254,15 +264,21 @@ export async function planCorrectionInvoices(
   tx: Tx,
   period: { id: string; startsOn: string; endsOn: string },
   differences: PlanLine[],
-): Promise<{ plans: InvoicePlan[]; problems: InvoiceProblem[] }> {
+): Promise<CorrectionDocuments> {
   const clientIds = [...new Set(differences.map((d) => d.clientId))].sort(cmp);
-  if (clientIds.length === 0) return { plans: [], problems: [] };
+  if (clientIds.length === 0) return { plans: [], problems: [], quiet: [] };
   const runIds = (await tx.select({ id: s.payRuns.id }).from(s.payRuns).where(eq(s.payRuns.payPeriodId, period.id))).map((r) => r.id);
-  const issued = (runIds.length > 0 ? await tx.select().from(s.invoices).where(inArray(s.invoices.payRunId, runIds)) : []).filter((i) => i.kind === "invoice").sort((a, b) => cmp(a.number, b.number));
+  // Every document this period issued: invoices, and the supplementals and credit notes made since.
+  const all = runIds.length > 0 ? await tx.select().from(s.invoices).where(inArray(s.invoices.payRunId, runIds)) : [];
+  const issued = all.filter((i) => i.kind === "invoice").sort((a, b) => cmp(a.number, b.number));
+  // Where to look for the lines that billed hours: invoices first, then the documents correcting them.
+  const searched = [...issued, ...all.filter((i) => i.kind !== "invoice").sort((a, b) => cmp(a.number, b.number))];
+  const rootOf = (i: (typeof all)[number]) => (i.kind === "invoice" ? i : issued.find((x) => x.id === i.originalInvoiceId));
   const { clients, inEffect } = await profilesOn(tx, clientIds, period.endsOn);
   const placed = await places(tx, differences);
   const plans: InvoicePlan[] = [];
   const problems: InvoiceProblem[] = [];
+  const quiet: CorrectionDocuments["quiet"] = [];
   for (const clientId of clientIds) {
     const client = clients.find((c) => c.id === clientId)!;
     const profile = inEffect(clientId);
@@ -272,26 +288,53 @@ export async function planCorrectionInvoices(
     }
     const p = profile[0]!;
     const originals = issued.filter((i) => i.clientId === clientId);
-    // Each difference to the invoice that billed its assignment and week, else to its part now.
-    const billedOn = (d: PlanLine) =>
-      originals.find((i) => i.document?.lines.some((l) => l.assignmentId === d.assignmentId && l.workweekStart === d.workweekStart)) ??
-      // Invoices made before slice g kept no lines: a client's single invoice billed everything.
-      (originals.length === 1 && !originals[0]!.document ? originals[0] : undefined);
-    const groups = new Map<string, { original: (typeof originals)[number] | undefined; key: string; lines: { line: PlanLine; po: string | null; worksite: { id: string; name: string } | null }[] }>();
+    const mine = searched.filter((i) => i.clientId === clientId);
+    type Original = (typeof originals)[number];
+    /**
+     * The invoice that billed a difference's assignment and week, as issued (a supplemental's hours
+     * belong to the invoice it adds to), with the PO they were billed under, whatever the placement
+     * says now.
+     */
+    const billedOn = (d: PlanLine): { original: Original; po: string | null | undefined } | null => {
+      for (const doc of mine) {
+        const line = doc.document?.lines.find((l) => l.assignmentId === d.assignmentId && l.workweekStart === d.workweekStart);
+        const root = line ? rootOf(doc) : undefined;
+        if (line && root) return { original: root, po: line.poNumber };
+      }
+      // Invoices made before slice g kept no lines: a client's single invoice billed everything, under
+      // its PO, or (several) the placement's or the client's.
+      if (originals.length === 1 && !originals[0]!.document) return { original: originals[0]!, po: originals[0]!.poNumber ?? undefined };
+      return null;
+    };
+    const groups = new Map<string, { original: Original | undefined; key: string; lines: { line: PlanLine; po: string | null; worksite: { id: string; name: string } | null }[] }>();
     for (const d of differences.filter((x) => x.clientId === clientId)) {
       const part = partOf(p, d.assignmentId ? placed.get(d.assignmentId) : undefined);
-      const original = billedOn(d) ?? originals.find((i) => i.splitKey === part.key && i.document);
-      const groupKey = original ? `invoice:${original.id}` : `part:${part.key}`;
-      const g = groups.get(groupKey) ?? { original, key: original ? original.splitKey : part.key, lines: [] };
-      g.lines.push({ line: d, po: original ? (original.poNumber ?? part.po) : part.po, worksite: part.worksite });
+      // Hours never billed: the invoice of the part the client's settings put them in, if one was issued.
+      const billed = billedOn(d) ?? ((o) => (o ? { original: o, po: part.po } : null))(originals.find((i) => i.splitKey === part.key && i.document));
+      const groupKey = billed ? `invoice:${billed.original.id}` : `part:${part.key}`;
+      const g = groups.get(groupKey) ?? { original: billed?.original, key: billed ? billed.original.splitKey : part.key, lines: [] };
+      g.lines.push({ line: d, po: billed && billed.po !== undefined ? billed.po : part.po, worksite: part.worksite });
       groups.set(groupKey, g);
     }
+    const fresh: { g: (typeof groups extends Map<string, infer G> ? G : never); common: Omit<InvoicePlan, "number" | "kind" | "original"> }[] = [];
     for (const g of [...groups.values()].sort((a, b) => cmp(a.original?.number ?? `~${a.key}`, b.original?.number ?? `~${b.key}`))) {
       const net = netOf(g.lines.map((x) => x.line));
-      if (!net.real || net.netCents === 0) continue;
+      if (!net.real) continue;
+      if (net.netCents === 0) {
+        quiet.push({ clientId, clientName: client.name, number: g.original?.number ?? null });
+        continue;
+      }
       if (Math.abs(net.netCents) > INT4_MAX) {
         problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: the correction's total is too large to store; check the bill rates.` });
         continue;
+      }
+      // More billed must carry a PO when the client requires one (decision G5), as a regular run would.
+      if (p.poRequired && net.netCents > 0) {
+        const missing = await poMissing(tx, client, g.lines.map((x) => ({ workerId: x.line.workerId, po: x.po })));
+        if (missing) {
+          problems.push(missing);
+          continue;
+        }
       }
       const po = poOf(g.lines.map((x) => x.po));
       const common = { clientId, client, profile: p, totalCents: net.netCents, splitKey: g.key, ...po, worksite: p.separateBy.includes("worksite") ? (g.lines[0]!.worksite ?? null) : null, lines: g.lines.map((x) => ({ ...x.line, po: x.po, worksite: x.worksite })) };
@@ -300,33 +343,32 @@ export async function planCorrectionInvoices(
           problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: ${formatCents(-net.netCents)} less would be credited on hours this period never invoiced; check the bill rates.` });
           continue;
         }
-        if (p.poRequired) {
-          const missing = await poMissing(tx, client, g.lines.map((x) => ({ workerId: x.line.workerId, po: x.po })));
-          if (missing) {
-            problems.push(missing);
-            continue;
-          }
-        }
-        // The next number after the client's invoices for this period.
-        const base = `${client.code}-${period.startsOn.replaceAll("-", "")}`;
-        const used = originals.length + plans.filter((x) => x.clientId === clientId && x.kind === "invoice").length;
-        plans.push({ ...common, number: used === 0 ? base : `${base}-${used + 1}`, kind: "invoice", original: null });
+        fresh.push({ g, common });
         continue;
       }
       const kind: s.InvoiceKind = net.netCents > 0 ? "supplemental" : "credit_note";
-      const earlier = await tx.select({ id: s.invoices.id }).from(s.invoices).where(and(eq(s.invoices.originalInvoiceId, g.original.id), eq(s.invoices.kind, kind)));
-      const n = earlier.length + 1;
+      const earlier = all.filter((i) => i.originalInvoiceId === g.original!.id && i.kind === kind).length;
+      const n = earlier + 1;
       const number = kind === "supplemental" ? `${g.original.number}-S${n}` : `${g.original.number}-CN-${String(n).padStart(2, "0")}`;
       plans.push({ ...common, number, kind, original: { id: g.original.id, number: g.original.number } });
     }
+    // Hours this period never invoiced: new invoices, numbered as a run numbers them (decision G3):
+    // alone and first, the base number; otherwise the next numbers after the client's invoices, in
+    // PO then worksite order.
+    const base = `${client.code}-${period.startsOn.replaceAll("-", "")}`;
+    fresh.sort((a, b) => cmp(a.common.poNumber ?? "", b.common.poNumber ?? "") || cmp(a.common.worksite?.name ?? "", b.common.worksite?.name ?? "") || cmp(a.g.key, b.g.key));
+    fresh.forEach(({ common }, i) => {
+      const number = originals.length === 0 && fresh.length === 1 ? base : `${base}-${originals.length + i + 1}`;
+      plans.push({ ...common, number, kind: "invoice", original: null });
+    });
   }
   problems.push(...(await numbersTaken(tx, plans)));
   plans.sort((a, b) => cmp(a.number, b.number));
-  return { plans: plans.filter((p) => !problems.some((x) => x.number === p.number)), problems };
+  return { plans: plans.filter((p) => !problems.some((x) => x.number === p.number)), problems, quiet };
 }
 
 /** What the files will say besides money (names, addresses, PO, terms, numbers, payroll ids). */
-export async function fileTextInputs(tx: Tx, agencyId: string, plans: InvoicePlan[], workerIds: string[], assignmentIds: string[]) {
+export async function fileTextInputs(tx: Tx, agencyId: string, payPeriodId: string, plans: InvoicePlan[], workerIds: string[], assignmentIds: string[]) {
   const [agency] = await tx.select().from(s.agencies).where(eq(s.agencies.id, agencyId));
   const people = workerIds.length > 0 ? await tx.select().from(s.workers).where(inArray(s.workers.id, workerIds)) : [];
   // The position, worksite and PO are printed on invoice lines.
@@ -339,7 +381,28 @@ export async function fileTextInputs(tx: Tx, agencyId: string, plans: InvoicePla
           .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId))
           .where(inArray(s.assignments.id, assignmentIds))
       : [];
+  // What the backup pages and the VMS file are made of (time sheet ids, statuses, the pictures' pages
+  // and who else is on them, the client's approvals), so a change after approval is caught too.
+  const entryIds = [...new Set(plans.flatMap((p) => p.lines.flatMap((l) => l.entryIds ?? [])))].sort(cmp);
+  const pagesOf = (fields: s.EntryFields) => [...new Set(Object.values(fields).map((f) => f?.page ?? null))].sort();
+  const backed = entryIds.length > 0 ? await tx.select().from(s.timeEntries).where(inArray(s.timeEntries.id, entryIds)) : [];
+  const docIds = [...new Set(backed.map((e) => e.sourceDocumentId).filter((x): x is string => x !== null))].sort(cmp);
+  const onPictures = docIds.length > 0 ? await tx.select().from(s.timeEntries).where(inArray(s.timeEntries.sourceDocumentId, docIds)) : [];
+  const clientIds = [...new Set(plans.map((p) => p.clientId))];
+  const decisions =
+    clientIds.length > 0
+      ? await tx
+          .select({ id: s.approvalDecisions.id })
+          .from(s.approvalDecisions)
+          .innerJoin(s.approvalRequests, eq(s.approvalRequests.id, s.approvalDecisions.requestId))
+          .where(and(inArray(s.approvalRequests.clientId, clientIds), eq(s.approvalRequests.payPeriodId, payPeriodId)))
+      : [];
   return {
+    backup: {
+      entries: backed.map((e) => [e.id, e.status, e.paidStatus, e.vmsRefs, e.sourceDocumentId, pagesOf(e.fields)]).sort((a, b) => cmp(String(a[0]), String(b[0]))),
+      pictures: onPictures.map((e) => [e.id, e.sourceDocumentId, e.assignmentId, pagesOf(e.fields)]).sort((a, b) => cmp(String(a[0]), String(b[0]))),
+      approvals: decisions.map((d) => d.id).sort(cmp),
+    },
     agency: agency ? [agency.name, agency.addressLines, agency.phone, agency.email] : null,
     invoices: plans.map((p) => [
       p.number,

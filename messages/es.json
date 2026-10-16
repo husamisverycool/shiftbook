@@ -411,6 +411,7 @@
         "invoice_problem": "No se puede crear una factura",
         "po_missing": "Horas sin la orden de compra que el cliente exige",
         "vms_refused": "Horas que la carga al VMS del cliente no puede llevar",
+        "vms_correction_by_hand": "Una corrección que registrar en el VMS del cliente",
         "premium_not_applicable": "Una prima confirmada que no aplica aquí",
         "bonus_kind_check": "Un bono de California por revisar",
         "approaching_equal_pay_hours": "Cerca de 720 horas con un cliente de Illinois",

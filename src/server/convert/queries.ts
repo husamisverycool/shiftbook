@@ -339,7 +339,7 @@ export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
   for (const v of paid) {
     const [payroll] = await tx.select().from(s.exports).where(eq(s.exports.payRunId, v.id)).orderBy(desc(s.exports.createdAt)).limit(1);
     const invoices = await tx
-      .select({ id: s.invoices.id, number: s.invoices.number, kind: s.invoices.kind, originalInvoiceId: s.invoices.originalInvoiceId, totalCents: s.invoices.totalCents, dueOn: s.invoices.dueOn, clientName: s.clients.name })
+      .select({ id: s.invoices.id, number: s.invoices.number, kind: s.invoices.kind, originalInvoiceId: s.invoices.originalInvoiceId, totalCents: s.invoices.totalCents, dueOn: s.invoices.dueOn, clientId: s.invoices.clientId, clientName: s.clients.name })
       .from(s.invoices)
       .innerJoin(s.clients, eq(s.clients.id, s.invoices.clientId))
       .where(eq(s.invoices.payRunId, v.id));
@@ -357,7 +357,9 @@ export async function filesStep(tx: Tx, actor: Actor, payPeriodId: string) {
         const people = await tx.select().from(s.workers).where(inArray(s.workers.id, left.map((w) => w.workerId)));
         roundings.push(...left.map((w) => ({ name: fullName(people.find((p) => p.id === w.workerId)!), cents: w.leftoverCents })).sort((a, b) => cmp(a.name, b.name)));
       }
-      const zero = [...clientNets(plan.bill)].filter(([, c]) => c.real && c.netCents === 0).map(([id]) => id);
+      // Clients whose differences were real but whose invoices got no document in this version.
+      const billedNow = new Set(invoices.map((i) => i.clientId));
+      const zero = [...clientNets(plan.bill)].filter(([id, c]) => c.real && c.netCents === 0 && !billedNow.has(id)).map(([id]) => id);
       if (zero.length > 0) netZero.push(...(await tx.select({ name: s.clients.name }).from(s.clients).where(inArray(s.clients.id, zero))).map((c) => c.name).sort(cmp));
     }
     const decided = await tx

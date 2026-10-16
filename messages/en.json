@@ -411,6 +411,7 @@
         "invoice_problem": "An invoice cannot be created",
         "po_missing": "Hours without the PO the client requires",
         "vms_refused": "Hours the client's VMS upload cannot carry",
+        "vms_correction_by_hand": "A correction to record in the client's VMS",
         "premium_not_applicable": "A confirmed premium that does not apply here",
         "bonus_kind_check": "A California bonus to check",
         "approaching_equal_pay_hours": "Nearing 720 hours at one Illinois client",

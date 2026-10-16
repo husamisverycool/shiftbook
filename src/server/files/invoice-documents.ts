@@ -148,8 +148,8 @@ const pagesOf = (e: Entry, pageCount: number): number[] => {
 
 /**
  * The timesheet pictures (decision G6): each page an invoice line's hours were read from, once, in
- * line order then date, as the redacted copy. A page that also shows hours billed to another client
- * is left out: it would show that client's workers.
+ * line order then date, as the redacted copy. A page that also shows a line not billed to this client
+ * (another client's, or one with no placement) is left out: it could show someone else's worker.
  */
 async function imagesOf(tx: Tx, store: DocumentStore, plan: InvoicePlan, lines: PlannedLine[], entries: Map<string, Entry>): Promise<{ images: InvoiceImage[]; used: s.IssuedInvoice["backup"]["images"] }> {
   const order: Entry[] = [];
@@ -173,7 +173,8 @@ async function imagesOf(tx: Tx, store: DocumentStore, plan: InvoicePlan, lines: 
   const shared = new Set<string>();
   for (const { entry, clientId } of onPictures) {
     const doc = pictures.find((d) => d.id === entry.sourceDocumentId)!;
-    if (clientId !== null && clientId !== plan.clientId) for (const p of pagesOf(entry, doc.pageCount ?? 0)) shared.add(`${doc.id}#${p}`);
+    // Only pages whose every line is this client's: a line with no placement may be anyone's.
+    if (clientId !== plan.clientId) for (const p of pagesOf(entry, doc.pageCount ?? 0)) shared.add(`${doc.id}#${p}`);
   }
   const images: InvoiceImage[] = [];
   const used: s.IssuedInvoice["backup"]["images"] = [];
@@ -195,12 +196,30 @@ async function imagesOf(tx: Tx, store: DocumentStore, plan: InvoicePlan, lines: 
   return { images, used };
 }
 
-/** The Fieldglass time sheets each line's hours came from, and the worker's id there (decision G9). */
-function vmsOf(line: PlannedLine, entries: Map<string, Entry>): { timeSheetIds: string[]; vmsWorkerId: string | null } {
-  const mine = (line.entryIds ?? []).map((id) => entries.get(id)).filter((e): e is Entry => e !== undefined);
-  const ids = [...new Set(mine.flatMap((e) => e.vmsRefs.timeSheetIds ?? []))].sort(cmp);
-  const worker = mine.map((e) => e.vmsRefs.workerId).find((x): x is string => typeof x === "string") ?? null;
-  return { timeSheetIds: ids, vmsWorkerId: worker };
+/**
+ * The Fieldglass time sheet each line's hours came from, and the worker's id there (decision G9).
+ * Every entry of the line must carry its time sheet id: an entry typed in by hand has none, and the
+ * line is refused rather than billed on a time sheet that does not hold its hours. A line that is
+ * not worked hours (a holiday not worked, a guarantee) is billed on the worker's one time sheet for
+ * that placement and week, when there is exactly one.
+ */
+function sheetsOf(lines: PlannedLine[], entries: Map<string, Entry>): { timeSheetIds: string[]; vmsWorkerId: string | null }[] {
+  const own = lines.map((l) => {
+    const mine = (l.entryIds ?? []).map((id) => entries.get(id)).filter((e): e is Entry => e !== undefined);
+    const complete = mine.length > 0 && mine.every((e) => (e.vmsRefs.timeSheetIds ?? []).length > 0);
+    return {
+      worked: mine.length > 0,
+      timeSheetIds: complete ? [...new Set(mine.flatMap((e) => e.vmsRefs.timeSheetIds ?? []))].sort(cmp) : [],
+      vmsWorkerId: mine.map((e) => e.vmsRefs.workerId).find((x): x is string => typeof x === "string") ?? null,
+    };
+  });
+  return lines.map((l, i) => {
+    if (own[i]!.worked) return { timeSheetIds: own[i]!.timeSheetIds, vmsWorkerId: own[i]!.vmsWorkerId };
+    const siblings = lines.map((x, j) => ({ x, o: own[j]! })).filter(({ x, o }) => o.worked && x.workerId === l.workerId && x.assignmentId === l.assignmentId && x.workweekStart === l.workweekStart);
+    const ids = [...new Set(siblings.flatMap(({ o }) => o.timeSheetIds))];
+    const one = siblings.length > 0 && siblings.every(({ o }) => o.timeSheetIds.length === 1) && ids.length === 1;
+    return { timeSheetIds: one ? ids : [], vmsWorkerId: siblings.map(({ o }) => o.vmsWorkerId).find((x): x is string => x !== null) ?? null };
+  });
 }
 
 /** The time entries the plans' lines came from. */
@@ -216,7 +235,7 @@ export function vmsInput(plan: InvoicePlan, ctx: Workers & Pick<DocumentContext,
     number: plan.number,
     issuedOn: ctx.today ?? "",
     period: ctx.period,
-    lines: ordered(ctx, plan.lines).map((l) => ({ ...fileLine(ctx, l), ...vmsOf(l, entries) })),
+    lines: ((lines) => ((sheets) => lines.map((l, i) => ({ ...fileLine(ctx, l), ...sheets[i]! })))(sheetsOf(lines, entries)))(ordered(ctx, plan.lines)),
   };
 }
 

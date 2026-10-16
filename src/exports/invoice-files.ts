@@ -32,6 +32,12 @@ export interface InvoiceFileInput {
   lines: InvoiceFileLine[];
 }
 
+/**
+ * A name or PO the agency typed, written so a spreadsheet opening the CSV never reads it as a formula
+ * (OWASP CSV injection: a leading =, +, -, @, tab or carriage return gets a leading apostrophe).
+ */
+const text = (value: string | null) => (value === null ? "" : /^[=+\-@\t\r]/.test(value) ? `'${value}` : value);
+
 /** 6234 → "62.34"; −2650 → "-26.50". */
 const signed2 = (n: number) => (n < 0 ? `-${twoDecimals(-n)}` : twoDecimals(n));
 /** Minutes as decimal hours to two places, rounded half up (display only; the minutes column is exact). */
@@ -56,9 +62,9 @@ export function invoiceCsv(input: InvoiceFileInput): Uint8Array {
       input.issuedOn,
       input.period.startsOn,
       input.period.endsOn,
-      l.workerName,
-      l.worksite ?? "",
-      l.poNumber ?? "",
+      text(l.workerName),
+      text(l.worksite),
+      text(l.poNumber),
       weekEnding(l.workweekStart, input.period),
       l.type,
       hours(l.minutes),
@@ -82,9 +88,9 @@ export function fieldglassUpload(input: InvoiceFileInput): Uint8Array {
   for (const l of input.lines) {
     const ids = [...new Set(l.timeSheetIds ?? [])];
     const week = weekEnding(l.workweekStart, input.period);
-    if (ids.length === 0) throw new ExportError("missing_payroll_id", `${l.workerName}: hours for the week ending ${week} did not come from a SAP Fieldglass time sheet, so the upload cannot name one. Upload the client's time sheet download for these hours, or turn this client's VMS file off.`, l.workerId);
+    if (ids.length === 0) throw new ExportError("missing_payroll_id", `${l.workerName}: the ${l.type} line for the week ending ${week} has hours that did not come from a SAP Fieldglass time sheet, so the upload cannot bill them on one. Upload the client's time sheet download for these hours, or turn this client's VMS file off.`, l.workerId);
     if (ids.length > 1) throw new ExportError("unsupported_earning_type", `${l.workerName}: the ${l.type} line for the week ending ${week} has hours from two SAP Fieldglass time sheets (${ids.join(", ")}), and its amount cannot be split between them.`, l.workerId);
-    const s = sheets.get(ids[0]!) ?? { worker: l.vmsWorkerId ?? null, cents: 0 };
+    const s = sheets.get(ids[0]!) ?? { worker: text(l.vmsWorkerId ?? null) || null, cents: 0 };
     s.cents += l.amountCents;
     sheets.set(ids[0]!, s);
   }

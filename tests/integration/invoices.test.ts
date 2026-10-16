@@ -23,7 +23,7 @@ import { assignmentId, clearDemoAgency, clientId, jobOrderId, periodId, seedDemo
 import { pdfPages, pdfText } from "../../src/server/files/pdf-text";
 import { createRunFiles } from "../../src/server/files/service";
 import { editEntry } from "../../src/server/review/service";
-import { startCorrection } from "../../src/server/run/corrections";
+import { recordCorrectionDecision, startCorrection } from "../../src/server/run/corrections";
 import { computeRun, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -407,5 +407,155 @@ describe("invoices made before slice g", () => {
     const out = await files("2026-10-20");
     expect(out.invoices.map((i) => [i.number, i.totalCents])).toEqual([["PLM-20261005-S1", 21_200]]);
     expect(await pdfText(await store.get(out.invoices[0]!.storageKey))).toContain("Adds to invoice PLM-20261005");
+  });
+});
+
+describe("second opinion (slice g): corrections go to the invoice that billed the hours, as issued", () => {
+  beforeEach(theWeek);
+
+  /** Correction 1: Jerome's Monday was missing (no PO on his placement: the client's PO-48213). */
+  async function jeromeAddedThenCut(newPo: string) {
+    await settings({ separateBy: ["po"] });
+    await files();
+    await inAgency((tx) => startCorrection(tx, theOwner, w2, "Jerome's Monday was missing"));
+    const jerome = await addShift("jerome-washington", "2026-10-05", 420, 900);
+    const c1 = await files("2026-10-20");
+    expect(c1.invoices.map((i) => [i.number, i.totalCents])).toEqual([["PLM-20261005-3-S1", 21_200]]);
+    // His placement then gets another PO, and a second correction cuts his Monday by 2 hours.
+    await inAgency((tx) => setAssignmentPo(tx, theOwner, assignmentId("jerome-washington"), newPo));
+    await inAgency((tx) => startCorrection(tx, theOwner, w2, "Jerome left early"));
+    expect(await inAgency((tx) => editEntry(tx, theOwner, jerome.id, { inMinute: 420, outMinute: 780, breakMinutes: 0 }, ["misread_corrected"], "test"))).toMatchObject({ ok: true });
+    expect(await inAgency((tx) => recordCorrectionDecision(tx, theOwner, w2, workerId("jerome-washington"), "repaid_outside_payroll", "Repaid by check"))).toEqual({ ok: true });
+  }
+
+  it("hours first billed on a supplemental are credited on the invoice it added to, under the PO they were billed with", async () => {
+    await jeromeAddedThenCut("PO-1001");
+    expect((await compute()).blockers).toEqual([]);
+    const c2 = await files("2026-10-27");
+    expect(c2.invoices.map((i) => [i.number, i.kind, i.totalCents, i.originalNumber])).toEqual([["PLM-20261005-3-CN-01", "credit_note", -5300, "PLM-20261005-3"]]);
+    const [cn] = await inAgency((tx) => tx.select().from(s.invoices).where(eq(s.invoices.number, "PLM-20261005-3-CN-01")));
+    expect(cn!.poNumber).toBe("PO-48213");
+  });
+
+  it("…whatever PO the placement carries now, even one never invoiced", async () => {
+    await jeromeAddedThenCut("PO-3003");
+    expect((await compute()).blockers).toEqual([]);
+    expect((await files("2026-10-27")).invoices.map((i) => i.number)).toEqual(["PLM-20261005-3-CN-01"]);
+  });
+
+  it("an unsplit invoice's supplemental names the PO the hours were invoiced under, not the placement's new one", async () => {
+    await files();
+    await inAgency((tx) => setAssignmentPo(tx, theOwner, assignmentId("marcus-bell"), "PO-9999"));
+    await inAgency((tx) => startCorrection(tx, theOwner, w2, "Marcus stayed an hour"));
+    await inAgency((tx) => editEntry(tx, theOwner, shifts.marcus![0]!.id, { inMinute: 420, outMinute: 1080, breakMinutes: 0 }, ["misread_corrected"], "test"));
+    const out = await files("2026-10-20");
+    expect(out.invoices.map((i) => [i.number, i.totalCents])).toEqual([["PLM-20261005-S1", 2650]]);
+    const [sup] = await inAgency((tx) => tx.select().from(s.invoices).where(eq(s.invoices.number, "PLM-20261005-S1")));
+    expect(sup!.poNumber).toBe("PO-1001");
+    expect(sup!.document!.lines.map((l) => l.poNumber)).toEqual(["PO-1001"]);
+    expect((await pdfOf("PLM-20261005-S1"))[0]).toContain("PO number PO-1001");
+  });
+
+  it("hours moved between two placements of one client, on two invoices, are corrected on each", async () => {
+    // Marcus's PO-1001 placement ends Tuesday; from Wednesday he is on another under PO-7777 (same job, same rates).
+    await owner.db.update(s.assignments).set({ endDate: "2026-10-06" }).where(eq(s.assignments.id, assignmentId("marcus-bell")));
+    const [a2] = await owner.db.insert(s.assignments).values({ agencyId: theOwner.agencyId, workerId: workerId("marcus-bell"), jobOrderId: jobOrderId("il-operator"), startDate: "2026-10-07", poNumber: "PO-7777" }).returning();
+    await owner.db.update(s.timeEntries).set({ assignmentId: a2!.id }).where(eq(s.timeEntries.id, shifts.marcus![2]!.id));
+    await settings({ separateBy: ["po"] });
+    expect((await files()).invoices.filter((i) => i.clientId === PLM).map((i) => [i.number, i.totalCents])).toEqual([
+      ["PLM-20261005-1", 53_000],
+      ["PLM-20261005-2", 20_600],
+      ["PLM-20261005-3", 42_400],
+      ["PLM-20261005-4", 26_500],
+    ]);
+    // His "Tuesday" was really Thursday, on the PO-7777 placement: the client's total does not change.
+    await inAgency((tx) => startCorrection(tx, theOwner, w2, "Marcus's Tuesday was Thursday"));
+    await owner.db.update(s.timeEntries).set({ workDate: "2026-10-08", assignmentId: a2!.id }).where(eq(s.timeEntries.id, shifts.marcus![1]!.id));
+    const run = await compute();
+    expect(run.blockers.map((b) => b.code)).not.toContain("correction_no_differences");
+    expect(run.blockers).toEqual([]);
+    expect((await files("2026-10-20")).invoices.map((i) => [i.number, i.totalCents])).toEqual([
+      ["PLM-20261005-1-CN-01", -26_500],
+      ["PLM-20261005-4-S1", 26_500],
+    ]);
+  });
+
+  it("more hours a client must have a PO for, joining an invoice as a supplemental, need one too", async () => {
+    await owner.db.update(s.assignments).set({ poNumber: "PO-3003" }).where(eq(s.assignments.id, assignmentId("anita-patel")));
+    await settings({ poRequired: true, poNumber: null });
+    await files();
+    await inAgency((tx) => startCorrection(tx, theOwner, w2, "Jerome's Monday was missing"));
+    await addShift("jerome-washington", "2026-10-05", 420, 900);
+    const run = await compute();
+    expect(run.blockers.map((b) => [b.code, b.clientId])).toEqual([["po_missing", PLM]]);
+    expect(run.blockers[0]!.message).toContain("Jerome Washington");
+  });
+
+  it("new invoices a correction makes for a client with none this period are numbered -1, -2 in PO order", async () => {
+    await settings({ separateBy: ["po"] });
+    // The paid week billed only Harborview.
+    await owner.db.delete(s.timeEntries).where(eq(s.timeEntries.payPeriodId, w2));
+    await addShift("elizabeth-sullivan", "2026-10-05", 600, 1080);
+    expect((await files()).invoices.map((i) => i.number)).toEqual(["HEH-20261005"]);
+    await inAgency((tx) => startCorrection(tx, theOwner, w2, "Prairie Line's time clock came late"));
+    await addShift("marcus-bell", "2026-10-05", 420, 900);
+    await addShift("anita-patel", "2026-10-05", 420, 900);
+    expect((await files("2026-10-20")).invoices.map((i) => [i.number, i.kind])).toEqual([
+      ["PLM-20261005-1", "invoice"],
+      ["PLM-20261005-2", "invoice"],
+    ]);
+    const rows = await invoices();
+    expect(rows.map((r) => [r.number, r.poNumber])).toEqual([
+      ["PLM-20261005-1", "PO-1001"],
+      ["PLM-20261005-2", "PO-48213"],
+    ]);
+  });
+});
+
+describe("second opinion (slice g): the Fieldglass upload and the pictures", () => {
+  beforeEach(theWeek);
+
+  it("a line with one day from a time sheet and one typed by hand is refused, not billed on the time sheet", async () => {
+    await settings({ vmsFormat: "fieldglass_time_sheet_invoice" });
+    const refs = { marcus: { timeSheetIds: ["TS-1001"], workerId: "FG-0001" }, anita: { timeSheetIds: ["TS-1002"], workerId: "FG-0002" }, trevor: { timeSheetIds: ["TS-1003"], workerId: "FG-0003" } };
+    for (const [who, list] of Object.entries(shifts)) for (const e of list) await owner.db.update(s.timeEntries).set({ vmsRefs: refs[who as keyof typeof refs] }).where(eq(s.timeEntries.id, e.id));
+    await owner.db.update(s.timeEntries).set({ vmsRefs: {} }).where(eq(s.timeEntries.id, shifts.marcus![2]!.id));
+    const run = await compute();
+    expect(run.blockers.map((b) => [b.code, b.workerName])).toEqual([["vms_refused", "Marcus Bell"]]);
+    expect(run.blockers[0]!.message).toContain("has hours that did not come from a SAP Fieldglass time sheet");
+  });
+
+  it("a correction of a client on Fieldglass is a warning: it is recorded there by hand", async () => {
+    await settings({ vmsFormat: "fieldglass_time_sheet_invoice" });
+    for (const e of Object.values(shifts).flat()) await owner.db.update(s.timeEntries).set({ vmsRefs: { timeSheetIds: [`TS-${e.workerNameRaw}`], workerId: e.workerNameRaw } }).where(eq(s.timeEntries.id, e.id));
+    await files();
+    await inAgency((tx) => startCorrection(tx, theOwner, w2, "Anita's Wednesday was missing"));
+    await addShift("anita-patel", "2026-10-07", 420, 900, { vmsRefs: { timeSheetIds: ["TS-anita-2"], workerId: "anita-patel" } });
+    const run = await compute();
+    expect(run.blockers).toEqual([]);
+    expect(run.warnings.filter((w) => w.code === "vms_correction_by_hand").map((w) => w.message)).toEqual([expect.stringContaining("PLM-20261005-S1 adds to invoice PLM-20261005")]);
+    const out = await files("2026-10-20");
+    const [sup] = await inAgency((tx) => tx.select().from(s.invoices).where(eq(s.invoices.id, out.invoices[0]!.invoiceId)));
+    expect(sup!.vmsStorageKey).toBeNull();
+  });
+
+  it("a picture page that also shows a line with no placement is left out", async () => {
+    const jpeg = new Uint8Array(await sharp({ create: { width: 85, height: 110, channels: 3, background: "#ffffff" } }).jpeg().toBuffer());
+    const prefix = `${theOwner.agencyId}/documents/invoice-test-2`;
+    await store.put(`${prefix}/page-1-redacted.jpg`, jpeg);
+    await store.put(`${prefix}/page-2-redacted.jpg`, jpeg);
+    const [doc] = await owner.db
+      .insert(s.sourceDocuments)
+      .values({ agencyId: theOwner.agencyId, payPeriodId: w2, kind: "image", filename: "sign-in-2.jpg", mediaType: "image/jpeg", sha256: "b".repeat(64), byteSize: jpeg.length, storageKey: `${prefix}/original.jpg`, status: "read", pageCount: 2 })
+      .returning();
+    for (const n of [1, 2]) await owner.db.insert(s.documentPages).values({ agencyId: theOwner.agencyId, documentId: doc!.id, pageNumber: n, storageKey: `${prefix}/page-${n}.jpg`, redactedStorageKey: `${prefix}/page-${n}-redacted.jpg`, width: 85, height: 110, redactions: 1 });
+    const read = (page: number): s.EntryFields => ({ worker: { value: "x", page, box: null, passA: null, passB: null, agree: true, handwritten: true, confidence: "high", checks: [] } });
+    for (const e of shifts.marcus!) await owner.db.update(s.timeEntries).set({ sourceDocumentId: doc!.id, fields: read(1) }).where(eq(s.timeEntries.id, e.id));
+    await owner.db.update(s.timeEntries).set({ sourceDocumentId: doc!.id, fields: read(2) }).where(eq(s.timeEntries.id, shifts.trevor![0]!.id));
+    // As intake leaves a line it could not place: no placement, set aside.
+    await addShift("elizabeth-sullivan", "2026-10-05", 600, 840, { status: "rejected", assignmentId: null, sourceDocumentId: doc!.id, fields: read(2) });
+    await settings({ backupImages: true });
+    await files();
+    expect((await invoices())[0]!.document!.backup.images).toEqual([{ documentId: doc!.id, filename: "sign-in-2.jpg", pages: [1] }]);
   });
 });

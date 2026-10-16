@@ -564,9 +564,6 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         message,
       });
     }
-    if (!hasRealDifferences(correction) && blockers.length === 0) {
-      blockers.push({ code: "correction_no_differences", message: `Nothing differs from version ${correction.baseVersion}, so there is nothing to correct. Change the hours or rates, or discard this correction.` });
-    }
   }
 
   // Dry run of the files: anything the payroll file or an invoice would refuse is a blocker now,
@@ -578,6 +575,18 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         period,
         result.billLines.map((l) => ({ clientId: l.clientId, workerId: l.workerId, assignmentId: l.assignmentId, workweekStart: l.workweekStart, type: l.type, minutes: l.minutes, rate: l.rate, amountCents: l.amountCents, ruleId: l.ruleId, entryIds: l.entryIds })),
       );
+  if (correction && !hasRealDifferences(correction, { quiet: [], ...invoicePlan }) && blockers.length === 0) {
+    blockers.push({ code: "correction_no_differences", message: `Nothing differs from version ${correction.baseVersion}, so there is nothing to correct. Change the hours or rates, or discard this correction.` });
+  }
+  // A VMS invoices each time sheet once: a correction of a client on one is recorded there by hand.
+  for (const p of invoicePlan.plans.filter((x) => x.profile.vmsFormat !== null && x.kind !== "invoice")) {
+    warnings.push({
+      code: "vms_correction_by_hand",
+      clientId: p.clientId,
+      clientName: p.client.name,
+      message: `${p.client.name}: ${p.number} ${p.kind === "credit_note" ? "credits" : "adds to"} invoice ${p.original!.number}. SAP Fieldglass takes each time sheet's invoice once, so this correction is not in an upload file: record it in SAP Fieldglass.`,
+    });
+  }
   // A correction's file carries the additions of the workers it settles (decision E9).
   const fileLines: ExportPayLine[] = correction
     ? fileWorkers(correction).flatMap((w) => w.weekLines.map((l) => ({ workerId: w.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate, parts: l.parts, workweekStart: l.workweekStart })))
@@ -630,7 +639,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     }
   }
   // Everything the files will say, so a change after the totals were shown is caught at "Create files".
-  const textInputs = await fileTextInputs(tx, actor.agencyId, invoicePlan.plans, [...new Set(result.payLines.map((l) => l.workerId))], [...new Set(result.billLines.map((l) => l.assignmentId))]);
+  const textInputs = await fileTextInputs(tx, actor.agencyId, period.id, invoicePlan.plans, [...new Set(result.payLines.map((l) => l.workerId))], [...new Set(result.billLines.map((l) => l.assignmentId))]);
   const decided = decisions.map((d) => [d.workerId, d.decision, d.differenceCents, d.note]).sort((a, b) => cmp(String(a[0]), String(b[0])));
 
   const status = blockers.length > 0 ? "blocked" : "ready";
