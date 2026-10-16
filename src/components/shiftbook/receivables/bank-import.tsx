@@ -37,15 +37,6 @@ export function columnLetter(i: number): string {
   return out;
 }
 
-const firstGuess = (columns: number): BankMapping => ({
-  headerRow: 0,
-  date: 0,
-  description: Math.min(1, columns - 1),
-  reference: null,
-  amounts: { kind: "signed", amount: Math.min(2, columns - 1) },
-  dateFormat: "MM/DD/YYYY",
-});
-
 export function BankImport({ demo }: { demo: boolean }) {
   const t = useTranslations("bankImport");
   const locale = useLocale();
@@ -77,12 +68,7 @@ export function BankImport({ demo }: { demo: boolean }) {
       if (!r.ok) return setError(t(`errors.${r.error}`));
       setText(body);
       setPreview(r);
-      setMapping(r.mapping ?? firstGuess(r.columns));
-      if (!r.mapping) {
-        // Nothing recognisable: read it with the first guess so the person sees what it gives.
-        const again = await previewBankFileAction(body, firstGuess(r.columns));
-        if (again.ok) setPreview(again);
-      }
+      setMapping(r.mapping);
       setStep("map");
     });
 

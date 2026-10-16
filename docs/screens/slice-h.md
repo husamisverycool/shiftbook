@@ -71,7 +71,8 @@ Screens: `slice-h/h06-bank-import-upload.png`, `h07-bank-import-map.png`,
 
 ## Invoice page, Payments — `docs/patterns/invoices/[id].md` §5 (Stripe payment history; QuickBooks Online reminder; TempWorks write-off)
 Screens: `slice-h/h16-invoice-payments.png`, `h17-short-reason-dialog.png`, `h18-reminder-dialog.png`,
-`h19-write-off-dialog.png`, `h20-invoice-paid.png`, and the `es-` copies.
+`h19-write-off-dialog.png`, `h20-invoice-paid.png`, `h26-invoice-credit.png`,
+`h27-apply-invoice-credit-dialog.png`, and the `es-` copies.
 - ✓ Balance due; each payment (date, method, reference, amount, linking to Payments), each credit
   note and each write-off; Record payment, Write off balance and Prepare reminder while a balance is
   open (`h16`).
@@ -79,8 +80,12 @@ Screens: `slice-h/h16-invoice-payments.png`, `h17-short-reason-dialog.png`, `h18
 - ✓ Prepare reminder: the stage from the days late, the language, To (the billing email), subject and
   message from the template and editable; Copy and Open in email app; Shiftbook sends nothing and
   says so (`h18`). The day it was prepared shows under the payments.
-- ✓ Write off: amount (the balance), reason, note (`h19`); the invoice then reads Paid in full and
-  offers no reminder (`h20`).
+- ✓ Write off (offered only when a payment left a balance): amount (the balance), reason, note
+  (`h19`); the invoice then reads Paid in full and offers no reminder (`h20`).
+- ✓ Credit notes that took off more than was still owed: "Credit for the client" with Apply credit
+  (`h26`); the dialog lists the client's open invoices for the credit (`h27`), and each credit
+  applied in or out is listed with its invoice. For the pictures a $10.00 credit note was inserted
+  on the paid invoice as a correction would make it; the integration tests make it the same way.
 
 ## Client page — `docs/patterns/clients/[id].md` §3 (FreshBooks client profile; Xero days to pay)
 Screens: `slice-h/h21-client-owes.png`, `es-h21`.
@@ -92,6 +97,11 @@ Screen: `slice-h/h25-shortcuts.png`.
 - ✓ Receivables, Payments and Bank in the sidebar; G then R, Y, B in the shortcuts list.
 
 ## Differences found and what was done
+- After the second opinion (decision 0019): write-off and a short pay's reason are offered only for
+  an invoice a payment left short, as the pattern says; a credit note's extra credit can be applied
+  (pattern updated with its reference); the bank import's Map step names a header row that reads as
+  a transaction and, when nothing reads, every line's reason; a deposit's problems with fields the
+  dialog does not show are said in the dialog.
 - The Payments list first carried an extra column with the invoices each payment paid; no
   documented reference shows that in a payments list, so it was removed (the invoice page lists its
   payments, and Bank → Posted shows what each deposit paid).

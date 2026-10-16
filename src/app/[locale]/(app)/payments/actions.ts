@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withAgency } from "@/server/db";
 import type { BankMapping } from "@/server/db/schema";
-import { BANK_FILE_LIMITS, bankRows, guessMapping, readBankLines, type BankFileProblem } from "@/server/receivables/bank-csv";
+import { alignMapping, BANK_FILE_LIMITS, bankRows, firstMapping, guessMapping, readBankLines, type BankFileProblem } from "@/server/receivables/bank-csv";
 import { fingerprints } from "@/server/receivables/bank-fingerprint";
 import { lastBankMapping } from "@/server/receivables/queries";
 import * as r from "@/server/receivables/service";
@@ -45,6 +45,12 @@ export async function applyCreditAction(paymentId: string, applications: unknown
   if (!id.safeParse(paymentId).success || !small(applications)) return { ok: false, error: "generic" };
   const actor = currentActor();
   return guarded(() => withAgency(actor.agencyId, (tx) => r.applyCredit(tx, actor, paymentId, applications)));
+}
+
+export async function applyInvoiceCreditAction(fromInvoiceId: string, applications: unknown): Promise<ActionResult> {
+  if (!id.safeParse(fromInvoiceId).success || !small(applications)) return { ok: false, error: "generic" };
+  const actor = currentActor();
+  return guarded(() => withAgency(actor.agencyId, (tx) => r.applyInvoiceCredit(tx, actor, fromInvoiceId, applications)));
 }
 
 export async function voidPaymentAction(paymentId: string, reason: string): Promise<ActionResult> {
@@ -106,31 +112,40 @@ export interface BankPreview {
   /** The first rows as text, to choose the header and the columns from. */
   head: string[][];
   columns: number;
-  mapping: BankMapping | null;
+  mapping: BankMapping;
   lines: { rowNumber: number; postedOn: string; description: string; amountCents: number; imported: boolean }[];
   problems: BankFileProblem[];
 }
 
-/** Reads a bank file with a mapping (the one given, else the last used or the best guess) for the Map and Choose steps. */
-export async function previewBankFileAction(text: string, mapping?: unknown): Promise<BankPreview | { ok: false; error: "size" | "lines" | "empty" | "generic" }> {
+/** The first lines offered as the header row: as many as the header is looked for in (guessMapping). */
+const HEAD_ROWS = 10;
+
+/**
+ * Reads a bank file with a mapping for the Map and Choose steps: the one given; else the last one used,
+ * with this file's header row (review finding 2); else the one its header names; else a first mapping
+ * from what its cells hold.
+ */
+export async function previewBankFileAction(text: string, mapping?: unknown): Promise<BankPreview | { ok: false; error: "size" | "lines" | "empty" | "not_allowed" | "generic" }> {
   if (typeof text !== "string") return { ok: false, error: "generic" };
+  const actor = currentActor();
+  if (!r.mayCollect(actor)) return { ok: false, error: "not_allowed" };
   if (Buffer.byteLength(text, "utf8") > BANK_FILE_LIMITS.bytes) return { ok: false, error: "size" };
   const rows = bankRows(text);
   if (rows.length === 0) return { ok: false, error: "empty" };
   if (rows.length > BANK_FILE_LIMITS.lines + 20) return { ok: false, error: "lines" };
-  const actor = currentActor();
   const given = mapping === undefined ? null : MappingSchema.safeParse(mapping);
   if (given && !given.success) return { ok: false, error: "generic" };
-  const columns = Math.max(...rows.slice(0, 30).map((r) => r.length));
-  const chosen = given?.data ?? (await withAgency(actor.agencyId, (tx) => lastBankMapping(tx))) ?? guessMapping(rows);
-  const usable = chosen && [chosen.date, chosen.description].every((c) => c < columns) ? chosen : guessMapping(rows);
-  if (!usable) return { ok: true, head: rows.slice(0, 8), columns, mapping: null, lines: [], problems: [] };
+  const columns = Math.max(...rows.slice(0, 30).map((row) => row.length));
+  const fits = (m: BankMapping | null): m is BankMapping => !!m && [m.date, m.description, m.reference ?? 0, ...Object.values(m.amounts).filter((v): v is number => typeof v === "number")].every((c) => c < columns);
+  const remembered = given ? null : await withAgency(actor.agencyId, (tx) => lastBankMapping(tx));
+  const chosen = given?.data ?? (fits(remembered) ? alignMapping(rows, remembered) : null) ?? guessMapping(rows) ?? firstMapping(rows);
+  const usable = fits(chosen) ? chosen : (guessMapping(rows) ?? firstMapping(rows));
   const read = readBankLines(rows, usable);
   const prints = fingerprints(read.lines);
   const seen = prints.length > 0 ? new Set((await withAgency(actor.agencyId, (tx) => tx.select({ f: s.bankLines.fingerprint }).from(s.bankLines).where(inArray(s.bankLines.fingerprint, prints)))).map((x) => x.f)) : new Set<string>();
   return {
     ok: true,
-    head: rows.slice(0, 8),
+    head: rows.slice(0, HEAD_ROWS),
     columns,
     mapping: usable,
     lines: read.lines.map((l, i) => ({ rowNumber: l.rowNumber, postedOn: l.postedOn, description: l.description, amountCents: l.amountCents, imported: seen.has(prints[i]!) })),

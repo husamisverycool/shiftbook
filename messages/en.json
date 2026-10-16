@@ -1883,13 +1883,15 @@
       "not_found": "This is no longer here. Refresh the page.",
       "voided": "This payment was voided.",
       "line_not_open": "This bank line was already posted or excluded.",
-      "invalid": "Something needs fixing. Use Find match to check it.",
+      "invalid": "Something needs fixing. Check the fields and try again.",
       "busy": "Someone else is saving payments right now. Try again in a moment.",
-      "generic": "That didn't work. Try again."
+      "generic": "That didn't work. Try again.",
+      "not_short_paid": "Only an invoice a payment left short can have this."
     },
     "from": "From",
     "fromTyped": "Typed in",
-    "fromBank": "Bank file"
+    "fromBank": "Bank file",
+    "applyInvoiceCreditBody": "{amount} of credit from this invoice's credit notes is not applied yet. Choose the invoices it pays."
   },
   "receivables": {
     "title": "Receivables",
@@ -1986,7 +1988,8 @@
       "line_not_open": "This bank line was already posted or excluded.",
       "invalid": "Something needs fixing. Use Find match to check it.",
       "busy": "Someone else is saving payments right now. Try again in a moment.",
-      "generic": "That didn't work. Try again."
+      "generic": "That didn't work. Try again.",
+      "not_short_paid": "Only an invoice a payment left short can have this."
     }
   },
   "bankImport": {
@@ -2041,7 +2044,8 @@
     "problems": {
       "date": "Line {row}: the date “{text}” can't be read with this date format.",
       "amount": "Line {row}: “{text}” is not an amount in dollars and cents.",
-      "description": "Line {row}: the description is empty."
+      "description": "Line {row}: the description is empty.",
+      "header": "Line {row} is chosen as the header row, but it reads as a transaction (“{text}”). Choose “No header row” or another line."
     },
     "moreProblems": "…and {count} more.",
     "chooseAll": "Choose all lines",
@@ -2128,7 +2132,11 @@
     "message": "Message",
     "sendsNothing": "Shiftbook sends nothing: copy the message or open it in your email app. The day is recorded on this invoice.",
     "copy": "Copy",
-    "openEmail": "Open in email app"
+    "openEmail": "Open in email app",
+    "creditForClient": "Credit for the client",
+    "applyCredit": "Apply credit",
+    "creditIn": "Credit from {number} · {date}",
+    "creditOut": "Credit used on {number} · {date}"
   },
   "clientOwes": {
     "title": "What the client owes",

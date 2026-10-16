@@ -19,7 +19,7 @@ import { createRunFiles } from "../../src/server/files/service";
 import { invoiceBalances } from "../../src/server/receivables/balances";
 import { bankRows, guessMapping } from "../../src/server/receivables/bank-csv";
 import { bankView, clientReceivables, invoiceReceivables, paymentsList, receivablesView } from "../../src/server/receivables/queries";
-import { applyCredit, excludeLine, importBankFile, includeLine, recordPayment, recordReminder, setShortPay, undoLine, voidPayment, writeOff } from "../../src/server/receivables/service";
+import { applyCredit, applyInvoiceCredit, excludeLine, importBankFile, includeLine, recordPayment, recordReminder, setShortPay, undoLine, voidPayment, writeOff } from "../../src/server/receivables/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { approveAsOwner, databaseError, openAppDb, openOwnerDb } from "./helpers";
@@ -254,5 +254,77 @@ describe("payment applications stay within one client (database check)", () => {
     expect(await databaseError(inAgency((tx) => tx.insert(s.paymentMatches).values({ agencyId: theOwner.agencyId, paymentId: r.paymentId, invoiceId: invoice.id, amountCents: 100, createdByLabel: "t" })))).toMatch(/own client/);
     const all = await inAgency((tx) => tx.select().from(s.payments).orderBy(asc(s.payments.createdAt)));
     expect(all).toHaveLength(1);
+  });
+});
+
+describe("second-opinion review (decision 0019)", () => {
+  beforeEach(invoicedWeek);
+
+  const creditNote = (cents: number, number = "PLM-20261005-CN-01") =>
+    owner.db.insert(s.invoices).values({ agencyId: theOwner.agencyId, clientId: PLM, payRunId: invoice.payRunId, number, issuedOn: "2026-10-20", dueOn: "2026-10-20", status: "issued", subtotalCents: -cents, totalCents: -cents, kind: "credit_note", originalInvoiceId: invoice.id, splitKey: number });
+  const anotherInvoice = async (cents: number, clientId = PLM, number = "PLM-20261012") =>
+    (await owner.db.insert(s.invoices).values({ agencyId: theOwner.agencyId, clientId, payRunId: invoice.payRunId, number, issuedOn: "2026-10-20", dueOn: "2026-11-19", status: "issued", subtotalCents: cents, totalCents: cents, kind: "invoice", splitKey: number }).returning())[0]!;
+
+  it("3: as of a date, a payment's credit applied later to an invoice issued after that date is still credit then", async () => {
+    const r = (await pay(142_500, [], { receivedOn: "2026-10-10" })) as { ok: true; paymentId: string };
+    const asOf11 = async () => (await inAgency((tx) => receivablesView(tx, "2026-10-11"))).clients.map((c) => [c.clientName, c.totalCents, c.creditCents]);
+    expect(await asOf11()).toEqual([["Prairie Line Manufacturing (demo)", -142_500, 142_500]]);
+    expect(await inAgency((tx) => applyCredit(tx, theOwner, r.paymentId, [{ invoiceId: invoice.id, amountCents: 142_500 }]))).toEqual({ ok: true });
+    expect(await asOf11()).toEqual([["Prairie Line Manufacturing (demo)", -142_500, 142_500]]);
+    expect((await inAgency((tx) => receivablesView(tx, "2026-10-16"))).clients).toEqual([]);
+  });
+
+  it("4: a credit note taking off more than is still owed leaves the client's credit, applied to another of its invoices", async () => {
+    await pay(142_500, [{ invoiceId: invoice.id, amountCents: 142_500 }]);
+    await creditNote(5300);
+    expect(await balanceOf()).toMatchObject({ balanceCents: -5300 });
+    expect(await inAgency((tx) => clientReceivables(tx, PLM, "2026-10-21"))).toMatchObject({ owedCents: -5300, creditCents: 5300 });
+    const next = await anotherInvoice(10_000);
+    const other = await anotherInvoice(10_000, HEH, "HEH-20261012");
+    const apply = (to: string, amountCents: number, who: Actor = theOwner, from = invoice.id) => inAgency((tx) => applyInvoiceCredit(tx, who, from, [{ invoiceId: to, amountCents }]));
+    expect(await apply(next.id, 5301)).toMatchObject({ ok: false, problems: [{ rule: "more_than_received" }] });
+    expect(await apply(other.id, 100)).toMatchObject({ ok: false, problems: [{ rule: "not_this_clients" }] });
+    expect(await apply(next.id, 100, coordinator)).toEqual({ ok: false, error: "not_allowed" });
+    expect(await apply(invoice.id, 100, theOwner, next.id)).toMatchObject({ ok: false, problems: [{ rule: "more_than_received" }] });
+    expect(await apply(next.id, 5300)).toEqual({ ok: true });
+    expect(await balanceOf()).toMatchObject({ balanceCents: 0 });
+    expect(await balanceOf(next.id)).toMatchObject({ balanceCents: 4700, shortPaid: false });
+    expect(await inAgency((tx) => clientReceivables(tx, PLM, "2026-10-21"))).toMatchObject({ owedCents: 4700, creditCents: 0 });
+    const from = (await inAgency((tx) => invoiceReceivables(tx, invoice.id, "2026-10-21")))!;
+    const to = (await inAgency((tx) => invoiceReceivables(tx, next.id, "2026-10-21")))!;
+    expect(from.creditApplications).toEqual([expect.objectContaining({ direction: "out", number: "PLM-20261012", amountCents: 5300 })]);
+    expect(to.creditApplications).toEqual([expect.objectContaining({ direction: "in", number: "PLM-20261005", amountCents: 5300 })]);
+    // As of 2026-10-15 neither the credit note nor the second invoice existed, and the first was paid.
+    expect((await inAgency((tx) => receivablesView(tx, "2026-10-15"))).clients).toEqual([]);
+    expect(await databaseError(inAgency((tx) => tx.insert(s.creditApplications).values({ agencyId: theOwner.agencyId, fromInvoiceId: invoice.id, toInvoiceId: other.id, appliedOn: "2026-10-21", amountCents: 1, createdByLabel: "t" })))).toMatch(/own client/);
+  });
+
+  it("5: a deposit the bank dates after the agency's today posts with the bank's date", async () => {
+    const file = ["Posting Date,Description,Amount", "01/05/2099,ACH DEPOSIT INV PLM-20261005,1425.00"].join("\n");
+    expect(await inAgency((tx) => importBankFile(tx, theOwner, { filename: "f.csv", text: file }, guessMapping(bankRows(file))!, [2]))).toMatchObject({ ok: true, imported: 1 });
+    const line = (await inAgency((tx) => bankView(tx, "2026-10-16"))).review[0]!;
+    expect(line.suggestion).toMatchObject({ confidence: "high" });
+    const posted = await inAgency((tx) => recordPayment(tx, theOwner, { clientId: PLM, receivedOn: line.postedOn, amountCents: line.amountCents, method: "bank_deposit", reference: line.description, memo: null, applications: [{ invoiceId: invoice.id, amountCents: 142_500 }] }, { bankLineId: line.id }));
+    expect(posted).toMatchObject({ ok: true });
+    // Typed in by hand, a future date is still refused.
+    expect(await pay(100, [], { receivedOn: "2099-01-05" })).toMatchObject({ ok: false, problems: [{ rule: "future" }] });
+  });
+
+  it("7: a write-off and a short pay's reason are for an invoice a payment left short", async () => {
+    expect(await inAgency((tx) => writeOff(tx, theOwner, invoice.id, { amountCents: 2500, reason: "small_balance" }))).toEqual({ ok: false, error: "not_short_paid" });
+    expect(await inAgency((tx) => setShortPay(tx, theOwner, invoice.id, "bank_fee", null))).toEqual({ ok: false, error: "not_short_paid" });
+    await pay(142_500, [{ invoiceId: invoice.id, amountCents: 142_500 }]);
+    expect(await inAgency((tx) => setShortPay(tx, theOwner, invoice.id, "bank_fee", null))).toEqual({ ok: false, error: "not_short_paid" });
+  });
+
+  it("nits: ids that are not ids are refused, not thrown; a payment voided after the date still counts as of that date", async () => {
+    expect(await pay(100, [], { clientId: "not-an-id" })).toMatchObject({ ok: false, problems: [{ field: "clientId", rule: "choose_client" }] });
+    expect(await pay(100, [{ invoiceId: "x", amountCents: 100 }])).toMatchObject({ ok: false, problems: [{ rule: "not_this_clients" }] });
+    const r = (await pay(142_500, [{ invoiceId: invoice.id, amountCents: 142_500 }], { receivedOn: "2026-10-14" })) as { ok: true; paymentId: string };
+    expect(await inAgency((tx) => voidPayment(tx, theOwner, r.paymentId, "Check returned"))).toEqual({ ok: true });
+    // Voided today (on or after 2026-10-16): as of 2026-10-15 the invoice was paid; as of today it is owed.
+    expect((await inAgency((tx) => receivablesView(tx, "2026-10-15"))).clients).toEqual([]);
+    const today = (await inAgency((tx) => receivablesView(tx, "2099-01-01"))).clients;
+    expect(today.map((c) => c.totalCents)).toEqual([142_500]);
   });
 });

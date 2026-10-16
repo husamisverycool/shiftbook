@@ -1883,13 +1883,15 @@
       "not_found": "Esto ya no existe. Actualice la página.",
       "voided": "Este pago fue anulado.",
       "line_not_open": "Esta línea del banco ya se registró o se excluyó.",
-      "invalid": "Hay algo que corregir. Use Buscar coincidencia para revisarlo.",
+      "invalid": "Hay algo que corregir. Revise los campos e intente de nuevo.",
       "busy": "Alguien más está guardando pagos ahora. Intente de nuevo en un momento.",
-      "generic": "No funcionó. Intente de nuevo."
+      "generic": "No funcionó. Intente de nuevo.",
+      "not_short_paid": "Solo una factura que un pago dejó incompleta puede tener esto."
     },
     "from": "Origen",
     "fromTyped": "Ingresado a mano",
-    "fromBank": "Archivo del banco"
+    "fromBank": "Archivo del banco",
+    "applyInvoiceCreditBody": "{amount} de crédito de las notas de crédito de esta factura aún no se aplica. Elija las facturas que paga."
   },
   "receivables": {
     "title": "Cuentas por cobrar",
@@ -1986,7 +1988,8 @@
       "line_not_open": "Esta línea del banco ya se registró o se excluyó.",
       "invalid": "Hay algo que corregir. Use Buscar coincidencia para revisarlo.",
       "busy": "Alguien más está guardando pagos ahora. Intente de nuevo en un momento.",
-      "generic": "No funcionó. Intente de nuevo."
+      "generic": "No funcionó. Intente de nuevo.",
+      "not_short_paid": "Solo una factura que un pago dejó incompleta puede tener esto."
     }
   },
   "bankImport": {
@@ -2041,7 +2044,8 @@
     "problems": {
       "date": "Línea {row}: la fecha «{text}» no se puede leer con este formato.",
       "amount": "Línea {row}: «{text}» no es un monto en dólares y centavos.",
-      "description": "Línea {row}: la descripción está vacía."
+      "description": "Línea {row}: la descripción está vacía.",
+      "header": "La línea {row} está elegida como fila de encabezados, pero se lee como una transacción («{text}»). Elija «Sin fila de encabezados» u otra línea."
     },
     "moreProblems": "…y {count} más.",
     "chooseAll": "Elegir todas las líneas",
@@ -2128,7 +2132,11 @@
     "message": "Mensaje",
     "sendsNothing": "Shiftbook no envía nada: copie el mensaje o ábralo en su aplicación de correo. El día queda registrado en esta factura.",
     "copy": "Copiar",
-    "openEmail": "Abrir en la aplicación de correo"
+    "openEmail": "Abrir en la aplicación de correo",
+    "creditForClient": "Crédito para el cliente",
+    "applyCredit": "Aplicar crédito",
+    "creditIn": "Crédito de {number} · {date}",
+    "creditOut": "Crédito usado en {number} · {date}"
   },
   "clientOwes": {
     "title": "Lo que debe el cliente",

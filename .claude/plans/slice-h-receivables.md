@@ -88,3 +88,4 @@ Shiftbook never sends them and never moves money.
 - Below what amount should a small shortfall just be written off?
 - Which bank's activity download does the agency use (a sample with fake numbers would help)?
 - Days to pay: from the invoice date (as now) or from the due date?
+- An invoice nothing was ever paid on (a client that closed): written off as bad debt from its page, or only after a payment (as now, decision 0019)?

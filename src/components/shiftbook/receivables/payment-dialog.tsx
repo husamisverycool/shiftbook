@@ -7,7 +7,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { applyCreditAction, recordPaymentAction } from "@/app/[locale]/(app)/payments/actions";
+import { applyCreditAction, applyInvoiceCreditAction, recordPaymentAction } from "@/app/[locale]/(app)/payments/actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -24,7 +24,8 @@ const METHODS = ["check", "ach", "wire", "card", "other"] as const;
 
 export type PaymentMode =
   | { kind: "record"; clientId?: string; invoiceId?: string }
-  | { kind: "credit"; paymentId: string; clientId: string; unusedCents: number }
+  /** A payment's unused amount, or the credit a credit note left on an invoice (decision 0019). */
+  | { kind: "credit"; paymentId?: string; fromInvoiceId?: string; clientId: string; unusedCents: number }
   | { kind: "bank"; lineId: string; postedOn: string; amountCents: number; description: string; clientId?: string; applications?: { invoiceId: string; amountCents: number }[] };
 
 type Problem = { field: string; rule: string; invoiceId?: string };
@@ -57,6 +58,9 @@ export function PaymentDialog({ clients, mode, today, onClose }: { clients: Paym
   const left = received === null ? null : received - appliedCents;
   const problem = (field: string, invoiceId?: string) => problems.find((p) => p.field === field && (invoiceId === undefined || p.invoiceId === invoiceId));
   const rule = (p: Problem | undefined) => (p ? t(`rules.${p.rule}` as "rules.amount") : null);
+  // Fields this mode does not show (a deposit's date and amount are the bank's): their problems are said below the form (review finding 5).
+  const shownFields = mode.kind === "record" ? ["clientId", "receivedOn", "amountCents", "method", "reference", "memo", "applications"] : ["clientId", "applications"];
+  const elsewhere = problems.filter((p) => !shownFields.includes(p.field));
 
   // Ticking fills what is left of the amount, oldest first (QuickBooks Online).
   const tick = (invoiceId: string, balance: number, on: boolean) =>
@@ -73,12 +77,16 @@ export function PaymentDialog({ clients, mode, today, onClose }: { clients: Paym
 
   const save = () =>
     start(async () => {
+      // A ticked invoice whose amount was emptied is left out, like an untick (review nit).
       const applications = Object.entries(apps)
+        .filter(([, v]) => v.trim() !== "")
         .map(([invoiceId, v]) => ({ invoiceId, amountCents: parseDollars(v) ?? -1 }))
         .filter((a) => a.amountCents !== 0);
       const res =
         mode.kind === "credit"
-          ? await applyCreditAction(mode.paymentId, applications)
+          ? mode.fromInvoiceId
+            ? await applyInvoiceCreditAction(mode.fromInvoiceId, applications)
+            : await applyCreditAction(mode.paymentId!, applications)
           : await recordPaymentAction(
               { clientId, receivedOn: date, amountCents: received ?? -1, method: mode.kind === "bank" ? "bank_deposit" : method, reference: mode.kind === "bank" ? mode.description.slice(0, 100) : reference || null, memo: memo || null, applications },
               mode.kind === "bank" ? mode.lineId : undefined,
@@ -98,7 +106,7 @@ export function PaymentDialog({ clients, mode, today, onClose }: { clients: Paym
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{mode.kind === "credit" ? t("applyCreditTitle") : mode.kind === "bank" ? t("matchTitle") : t("recordTitle")}</DialogTitle>
-          <DialogDescription>{mode.kind === "bank" ? t("matchBody", { description: mode.description, amount: money(mode.amountCents, locale), date: longDate(mode.postedOn, locale) }) : mode.kind === "credit" ? t("applyCreditBody", { amount: money(mode.unusedCents, locale) }) : t("recordBody")}</DialogDescription>
+          <DialogDescription>{mode.kind === "bank" ? t("matchBody", { description: mode.description, amount: money(mode.amountCents, locale), date: longDate(mode.postedOn, locale) }) : mode.kind === "credit" ? t(mode.fromInvoiceId ? "applyInvoiceCreditBody" : "applyCreditBody", { amount: money(mode.unusedCents, locale) }) : t("recordBody")}</DialogDescription>
         </DialogHeader>
         <form
           className="flex flex-col gap-4"
@@ -220,6 +228,14 @@ export function PaymentDialog({ clients, mode, today, onClose }: { clients: Paym
             {problem("applications") && !problem("applications")!.invoiceId && <p className="text-sm text-destructive">{rule(problem("applications"))}</p>}
           </section>
 
+          {elsewhere.length > 0 && (
+            <ul role="alert" className="flex flex-col gap-1 text-sm text-destructive" data-testid="pay-problems">
+              {elsewhere.map((p) => (
+                <li key={`${p.field}-${p.rule}`}>{rule(p)}</li>
+              ))}
+            </ul>
+          )}
+
           <dl className="ml-auto grid grid-cols-[auto_auto] gap-x-6 gap-y-1 text-sm" data-testid="pay-totals">
             <dt className="text-muted-foreground">{t("toApply")}</dt>
             <dd className="text-right tabular-nums">{money(appliedCents, locale)}</dd>
@@ -232,7 +248,7 @@ export function PaymentDialog({ clients, mode, today, onClose }: { clients: Paym
               {t("cancel")}
             </Button>
             <Button type="submit" disabled={pending || !client || received === null || (left !== null && left < 0)} data-testid="pay-save">
-              {mode.kind === "bank" ? t("post") : t("save")}
+              {mode.kind === "bank" ? t("post") : mode.kind === "credit" ? t("applyCredit") : t("save")}
             </Button>
           </DialogFooter>
         </form>

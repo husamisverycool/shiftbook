@@ -31,8 +31,10 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
   const t = useTranslations("invoicePayments");
   const tp = useTranslations("payments");
   const locale = useLocale();
-  const [dialog, setDialog] = useState<"pay" | "writeOff" | "short" | "remind" | null>(null);
+  const [dialog, setDialog] = useState<"pay" | "writeOff" | "short" | "remind" | "credit" | null>(null);
   const open = ar.balanceCents > 0;
+  // More credited than was still owed: the client's credit, to apply to its other invoices (decision 0019).
+  const credit = ar.balanceCents < 0;
   const dateTime = (at: Date | string) => new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(at));
 
   return (
@@ -46,9 +48,11 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
             <Button size="sm" variant="outline" onClick={() => setDialog("remind")} data-testid="prepare-reminder">
               {t("prepareReminder")}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setDialog("writeOff")} data-testid="write-off">
-              {t("writeOff")}
-            </Button>
+            {ar.shortPaid && (
+              <Button size="sm" variant="outline" onClick={() => setDialog("writeOff")} data-testid="write-off">
+                {t("writeOff")}
+              </Button>
+            )}
             <Button size="sm" onClick={() => setDialog("pay")} data-testid="invoice-record-payment">
               {t("recordPayment")}
             </Button>
@@ -56,10 +60,17 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
         )}
       </div>
       <div className="flex flex-col divide-y rounded-lg border text-sm" data-testid="invoice-payments">
-        <div className="flex flex-wrap items-baseline justify-between gap-3 p-3">
-          <span className="font-medium">{t("balance")}</span>
-          <span className="text-base font-semibold tabular-nums" data-testid="invoice-balance">
-            {ar.balanceCents === 0 ? t("paidInFull") : money(ar.balanceCents, locale)}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3">
+          <span className="font-medium">{credit ? t("creditForClient") : t("balance")}</span>
+          <span className="flex items-center gap-3">
+            {credit && canChange && (
+              <Button size="sm" variant="outline" onClick={() => setDialog("credit")} data-testid="apply-invoice-credit">
+                {t("applyCredit")}
+              </Button>
+            )}
+            <span className="text-base font-semibold tabular-nums" data-testid="invoice-balance">
+              {ar.balanceCents === 0 ? t("paidInFull") : money(Math.abs(ar.balanceCents), locale)}
+            </span>
           </span>
         </div>
         {ar.payments.map((p) => (
@@ -80,6 +91,20 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
               {t("credit", { number: c.number, date: longDate(c.issuedOn, locale) })}
             </Link>
             <span className="tabular-nums">−{money(c.amountCents, locale)}</span>
+          </div>
+        ))}
+        {ar.creditApplications.map((c) => (
+          <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-3 p-3" data-testid="invoice-credit-application">
+            <span className="flex flex-col">
+              <Link href={`/invoices/${c.invoiceId}`} className="underline-offset-4 hover:underline">
+                {t(c.direction === "in" ? "creditIn" : "creditOut", { number: c.number, date: longDate(c.appliedOn, locale) })}
+              </Link>
+              <span className="text-xs text-muted-foreground">{c.by}</span>
+            </span>
+            <span className="tabular-nums">
+              {c.direction === "in" ? "−" : "+"}
+              {money(c.amountCents, locale)}
+            </span>
           </div>
         ))}
         {ar.writeOffs.map((w) => (
@@ -112,6 +137,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
       </div>
       {!canChange && <p className="text-sm text-muted-foreground">{tp("readOnly")}</p>}
       {dialog === "pay" && <PaymentDialog clients={clients} mode={{ kind: "record", clientId, invoiceId }} today={today} onClose={() => setDialog(null)} />}
+      {dialog === "credit" && <PaymentDialog clients={clients} mode={{ kind: "credit", fromInvoiceId: invoiceId, clientId, unusedCents: -ar.balanceCents }} today={today} onClose={() => setDialog(null)} />}
       {dialog === "writeOff" && <WriteOffDialog invoiceId={invoiceId} number={number} balanceCents={ar.balanceCents} onClose={() => setDialog(null)} />}
       {dialog === "short" && <ShortPayDialog invoiceId={invoiceId} current={ar.shortPay} onClose={() => setDialog(null)} />}
       {dialog === "remind" && <ReminderDialog invoiceId={invoiceId} reminder={ar.reminder} onClose={() => setDialog(null)} />}
@@ -279,7 +305,8 @@ function ReminderDialog({ invoiceId, reminder, onClose }: { invoiceId: string; r
     }
     record("copied");
   };
-  const mailto = `mailto:${encodeURIComponent(reminder.to ?? "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // Several billing addresses stay several (commas are not encoded in a mailto list; review nit).
+  const mailto = `mailto:${encodeURIComponent(reminder.to ?? "").replace(/%2C/gi, ",")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-2xl">

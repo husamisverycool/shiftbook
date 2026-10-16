@@ -21,7 +21,7 @@ import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { correctionPlanFor, decisionText, fileWorkers as correctionFileWorkers } from "../run/corrections";
-import { lockCatalog, lockPayrollSettings, openPeriod } from "../run/period-lock";
+import { lockCatalog, lockPayrollSettings, lockReceivables, openPeriod } from "../run/period-lock";
 import { computeRun, regularRates, type RunIssue } from "../run/service";
 import { invoiceDocuments, planEntries } from "./invoice-documents";
 import { billDifferences, planCorrectionInvoices, planInvoices, planLineOf } from "./invoice-plan";
@@ -133,6 +133,9 @@ export async function createRunFiles(
   const plan = correction ? await planCorrectionInvoices(tx, period!, billDifferences(correction.bill)) : await planInvoices(tx, period!, bill.map(planLineOf));
   if (plan.problems.length > 0) throw new Error(`Invoice problems: ${plan.problems.map((p) => p.message).join(" ")}`);
   const entries = await planEntries(tx, plan.plans);
+  // A credit note changes what its original still owes: no payment is applied while it is issued
+  // (review finding 8; the payment path takes only this lock, so there is no lock cycle).
+  if (plan.plans.some((p) => p.kind === "credit_note")) await lockReceivables(tx, agency!.id);
   const ctx = { agency: agency!, period: period!, today: opts.today, workersById };
   for (const p of plan.plans) {
     const { clientId, client, number, kind, original } = p;

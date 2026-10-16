@@ -5,7 +5,7 @@
  */
 import { createHash } from "node:crypto";
 import { isIsoDate } from "@shiftbook/rules";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, max } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
@@ -17,6 +17,8 @@ import { fingerprints } from "./bank-fingerprint";
 import { invoiceBalances, settleStatuses, unappliedOf } from "./balances";
 
 const INT4_MAX = 2_147_483_647;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isId = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 /** Who may record and change receivables (SPEC §2: Billing does invoices, AR and cash application). */
 export const mayCollect = (actor: Actor) => actor.role === "owner" || actor.role === "billing";
 
@@ -43,7 +45,7 @@ export interface ReceivablesProblem {
 
 export type ReceivablesResult<T = object> =
   | ({ ok: true } & T)
-  | { ok: false; error: "not_allowed" | "not_found" | "voided" | "line_not_open" }
+  | { ok: false; error: "not_allowed" | "not_found" | "voided" | "line_not_open" | "not_short_paid" }
   | { ok: false; error: "invalid"; problems: ReceivablesProblem[] };
 
 const whole = (n: unknown): n is number => typeof n === "number" && Number.isSafeInteger(n);
@@ -55,7 +57,8 @@ async function applicationProblems(tx: Tx, clientId: string, applications: unkno
   const problems: ReceivablesProblem[] = [];
   const ids = applications.map((a) => (a as Application)?.invoiceId);
   if (ids.some((x) => typeof x !== "string") || new Set(ids).size !== ids.length) return [{ field: "applications", rule: "applications" }];
-  const open = await invoiceBalances(tx, { clientIds: [clientId], invoiceIds: ids as string[] });
+  // An id that is not one is simply not this client's invoice (refused, never a database error).
+  const open = await invoiceBalances(tx, { clientIds: [clientId], invoiceIds: (ids as string[]).filter(isId) });
   let total = 0;
   for (const a of applications as Application[]) {
     const b = open.find((x) => x.invoice.id === a.invoiceId);
@@ -79,10 +82,12 @@ export async function recordPayment(tx: Tx, actor: Actor, input: unknown, opts: 
   const v = (input ?? {}) as Partial<PaymentInput>;
   const today = await agencyToday(tx);
   const problems: ReceivablesProblem[] = [];
-  const [client] = typeof v.clientId === "string" ? await tx.select({ id: s.clients.id }).from(s.clients).where(eq(s.clients.id, v.clientId)) : [];
+  const [client] = isId(v.clientId) ? await tx.select({ id: s.clients.id }).from(s.clients).where(eq(s.clients.id, v.clientId)) : [];
   if (!client) problems.push({ field: "clientId", rule: "choose_client" });
   if (typeof v.receivedOn !== "string" || !isIsoDate(v.receivedOn)) problems.push({ field: "receivedOn", rule: "date" });
-  else if (v.receivedOn > today) problems.push({ field: "receivedOn", rule: "future" });
+  // A deposit carries the bank's date, which may be ahead of the agency's today (review finding 5);
+  // typed in by hand, a payment cannot be dated in the future.
+  else if (v.receivedOn > today && !opts.bankLineId) problems.push({ field: "receivedOn", rule: "future" });
   if (!whole(v.amountCents) || v.amountCents <= 0 || v.amountCents > INT4_MAX) problems.push({ field: "amountCents", rule: "amount" });
   if (!s.PAYMENT_METHODS.includes(v.method as s.PaymentMethod)) problems.push({ field: "method", rule: "choose_method" });
   if (!text(v.reference ?? null, 100)) problems.push({ field: "reference", rule: "too_long" });
@@ -145,13 +150,50 @@ export async function voidPayment(tx: Tx, actor: Actor, paymentId: string, reaso
   return { ok: true };
 }
 
+/**
+ * Applies the credit a credit note left on an invoice (more taken off than was still owed: a negative
+ * balance) to the client's other open invoices (decision 0019; Stripe credits the customer's balance
+ * and applies it to the next invoice). Dated no earlier than the credit and the invoice it pays.
+ */
+export async function applyInvoiceCredit(tx: Tx, actor: Actor, fromInvoiceId: string, applications: unknown): Promise<ReceivablesResult> {
+  if (!mayCollect(actor)) return { ok: false, error: "not_allowed" };
+  await lockReceivables(tx, actor.agencyId);
+  const [from] = isId(fromInvoiceId) ? await invoiceBalances(tx, { invoiceIds: [fromInvoiceId] }) : [];
+  if (!from) return { ok: false, error: "not_found" };
+  const available = -from.balanceCents;
+  if (available <= 0) return { ok: false, error: "invalid", problems: [{ field: "applications", rule: "more_than_received" }] };
+  const problems = await applicationProblems(tx, from.invoice.clientId, applications, available);
+  if (problems.length > 0) return { ok: false, error: "invalid", problems };
+  const apps = applications as Application[];
+  const [latest] = await tx.select({ on: max(s.invoices.issuedOn) }).from(s.invoices).where(and(eq(s.invoices.originalInvoiceId, from.invoice.id), eq(s.invoices.kind, "credit_note")));
+  const targets = await tx.select({ id: s.invoices.id, issuedOn: s.invoices.issuedOn }).from(s.invoices).where(inArray(s.invoices.id, apps.map((a) => a.invoiceId)));
+  const today = await agencyToday(tx);
+  const later = (...dates: (string | null | undefined)[]) => dates.reduce<string>((a, d) => (d && d > a ? d : a), today);
+  await tx.insert(s.creditApplications).values(
+    apps.map((a) => ({
+      agencyId: actor.agencyId,
+      fromInvoiceId: from.invoice.id,
+      toInvoiceId: a.invoiceId,
+      appliedOn: later(latest?.on, targets.find((t) => t.id === a.invoiceId)?.issuedOn),
+      amountCents: a.amountCents,
+      createdBy: actor.userId,
+      createdByLabel: actor.label,
+    })),
+  );
+  await settleStatuses(tx, [from.invoice.id, ...apps.map((a) => a.invoiceId)]);
+  await audit(tx, actor, [{ action: "create", entityType: "credit_application", entityId: from.invoice.id, after: { from: from.invoice.number, creditBefore: available, applications: apps } }]);
+  return { ok: true };
+}
+
 /** Lets go of the rest of an invoice, with a reason (TempWorks small-balance write-off). */
 export async function writeOff(tx: Tx, actor: Actor, invoiceId: string, input: unknown): Promise<ReceivablesResult> {
   if (!mayCollect(actor)) return { ok: false, error: "not_allowed" };
   await lockReceivables(tx, actor.agencyId);
   const v = (input ?? {}) as { amountCents?: unknown; reason?: unknown; note?: unknown };
-  const [b] = await invoiceBalances(tx, { invoiceIds: [invoiceId] });
+  const [b] = isId(invoiceId) ? await invoiceBalances(tx, { invoiceIds: [invoiceId] }) : [];
   if (!b) return { ok: false, error: "not_found" };
+  // Only the rest of an invoice a payment left short is let go (invoices/[id].md §5; H4).
+  if (!b.shortPaid) return { ok: false, error: "not_short_paid" };
   const problems: ReceivablesProblem[] = [];
   if (!whole(v.amountCents) || v.amountCents <= 0) problems.push({ field: "amountCents", rule: "amount" });
   else if (v.amountCents > b.balanceCents) problems.push({ field: "amountCents", rule: "more_than_owed" });
@@ -176,8 +218,10 @@ export async function setShortPay(tx: Tx, actor: Actor, invoiceId: string, reaso
   if (!text(note ?? null, 500)) problems.push({ field: "note", rule: "too_long" });
   if (problems.length > 0) return { ok: false, error: "invalid", problems };
   await lockReceivables(tx, actor.agencyId);
-  const [inv] = await tx.select({ id: s.invoices.id }).from(s.invoices).where(eq(s.invoices.id, invoiceId));
-  if (!inv) return { ok: false, error: "not_found" };
+  const [b] = isId(invoiceId) ? await invoiceBalances(tx, { invoiceIds: [invoiceId] }) : [];
+  if (!b) return { ok: false, error: "not_found" };
+  // A reason is for an invoice a payment left short (H4).
+  if (!b.shortPaid) return { ok: false, error: "not_short_paid" };
   const [before] = await tx.select().from(s.shortPays).where(eq(s.shortPays.invoiceId, invoiceId));
   const values = { reason: reason as s.ShortPayReason, note: (note as string | null)?.trim() || null, recordedAt: new Date(), recordedBy: actor.userId, recordedByLabel: actor.label };
   if (before) await tx.update(s.shortPays).set(values).where(eq(s.shortPays.id, before.id));

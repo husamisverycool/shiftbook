@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bankRows, guessMapping, readBankLines, readCents, readDate } from "./bank-csv";
+import { alignMapping, bankRows, firstMapping, guessMapping, readBankLines, readCents, readDate } from "./bank-csv";
 import { fingerprints } from "./bank-fingerprint";
 
 describe("reading a bank CSV (H5)", () => {
@@ -72,5 +72,39 @@ describe("reading a bank CSV (H5)", () => {
     const [a, b] = fingerprints([line, { ...line, rowNumber: 3 }]);
     expect(a).not.toBe(b);
     expect(fingerprints([{ ...line, rowNumber: 9 }])[0]).toBe(a);
+  });
+
+  it("review 2: a file without a header row gets a first mapping that reads its first line, by what the cells hold", () => {
+    const rows = bankRows(['"10/14/2026","1425.00","*","","DEPOSIT PRAIRIE LINE"', '"10/15/2026","-80.00","*","","SERVICE FEE"'].join("\n"));
+    expect(guessMapping(rows)).toBeNull();
+    const m = firstMapping(rows);
+    expect(m).toEqual({ headerRow: null, date: 0, description: 4, reference: null, amounts: { kind: "signed", amount: 1 }, dateFormat: "MM/DD/YYYY" });
+    expect(readBankLines(rows, m).lines.map((l) => [l.rowNumber, l.amountCents])).toEqual([
+      [1, 142_500],
+      [2, -8000],
+    ]);
+  });
+
+  it("review 2: a remembered mapping takes this file's header row; a header row that reads as a line is a problem, never silently dropped", () => {
+    const boa = bankRows(["Description,,Summary Amt.", "Beginning balance as of 10/01/2026,,5000.00", "Date,Description,Amount,Running Bal.", "10/14/2026,DEPOSIT HARBORVIEW,500.00,5500.00"].join("\n"));
+    const remembered = { headerRow: 3, date: 0, description: 1, reference: null, amounts: { kind: "signed" as const, amount: 2 }, dateFormat: "MM/DD/YYYY" as const };
+    expect(alignMapping(boa, remembered).headerRow).toBe(2);
+    const plain = bankRows(['"10/14/2026","1425.00","*","","DEPOSIT PRAIRIE LINE"'].join("\n"));
+    const used = { headerRow: 0, date: 0, description: 4, reference: null, amounts: { kind: "signed" as const, amount: 1 }, dateFormat: "MM/DD/YYYY" as const };
+    expect(alignMapping(plain, used).headerRow).toBeNull();
+    expect(readBankLines(plain, used).problems).toEqual([{ rowNumber: 1, field: "header", text: "10/14/2026" }]);
+  });
+
+  it("review nits: amount and type only when the types say credit or debit; the date format from every line; a wrong date column names its lines", () => {
+    const chase = bankRows(["Posting Date,Description,Amount,Type", "10/14/2026,DEPOSIT A,100.00,ACH_CREDIT", "10/15/2026,DEPOSIT B,250.00,CHECK_DEPOSIT"].join("\n"));
+    expect(guessMapping(chase)!.amounts).toEqual({ kind: "signed", amount: 2 });
+    const typed = bankRows(["Date,Description,Amount,Type", "10/14/2026,DEPOSIT,100.00,ACH_CREDIT", "10/15/2026,PAYMENT,40.00,ACH_DEBIT"].join("\n"));
+    const t = guessMapping(typed)!;
+    expect(t.amounts).toEqual({ kind: "typed", amount: 2, type: 3 });
+    expect(readBankLines(typed, t).lines.map((l) => l.amountCents)).toEqual([10_000, -4000]);
+    const dm = ["Date,Description,Amount", ...["01", "02", "03", "04", "05", "06"].map((d) => `${d}/10/2026,DEP ${d},1.00`), "25/10/2026,DEP 25,1.00"];
+    expect(guessMapping(bankRows(dm.join("\n")))!.dateFormat).toBe("DD/MM/YYYY");
+    const wrong = { ...guessMapping(typed)!, date: 1 };
+    expect(readBankLines(typed, wrong)).toEqual({ lines: [], problems: [{ rowNumber: 2, field: "date", text: "DEPOSIT" }, { rowNumber: 3, field: "date", text: "PAYMENT" }] });
   });
 });

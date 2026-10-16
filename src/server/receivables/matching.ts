@@ -79,23 +79,31 @@ function fill(invoices: OpenInvoice[], amountCents: number) {
   return { applications, creditCents: left, shortCents: owed - applied };
 }
 
-/** Groups of up to five invoices whose balances add up exactly to the amount, fewest first (bounded search). */
+/**
+ * Groups of one to five invoices whose balances add up exactly to the amount, of the fewest invoices
+ * that can (oldest first). The search goes by size — every single invoice before any pair — so many
+ * small invoices never hide one that matches alone (review finding 1); each size's search is bounded.
+ */
 function exactGroups(invoices: OpenInvoice[], amountCents: number): OpenInvoice[][] {
-  const sorted = [...invoices].sort(byAge);
-  const found: OpenInvoice[][] = [];
-  let steps = 0;
-  const walk = (from: number, chosen: OpenInvoice[], sum: number) => {
-    if (++steps > 20_000 || found.length > 20) return;
-    if (sum === amountCents && chosen.length > 0) {
-      found.push(chosen);
-      return;
-    }
-    if (chosen.length === 5 || sum > amountCents) return;
-    for (let i = from; i < sorted.length; i++) walk(i + 1, [...chosen, sorted[i]!], sum + sorted[i]!.balanceCents);
-  };
-  walk(0, [], 0);
-  // The fewest invoices, then the oldest (Stripe).
-  return found.sort((a, b) => a.length - b.length || byAge(a[0]!, b[0]!));
+  const sorted = invoices.filter((i) => i.balanceCents <= amountCents).sort(byAge);
+  for (let size = 1; size <= 5; size++) {
+    const found: OpenInvoice[][] = [];
+    let steps = 0;
+    const walk = (from: number, chosen: OpenInvoice[], sum: number) => {
+      if (++steps > 20_000 || found.length > 20) return;
+      if (chosen.length === size) {
+        if (sum === amountCents) found.push(chosen);
+        return;
+      }
+      for (let i = from; i < sorted.length; i++) {
+        const next = sum + sorted[i]!.balanceCents;
+        if (next <= amountCents) walk(i + 1, [...chosen, sorted[i]!], next);
+      }
+    };
+    walk(0, [], 0);
+    if (found.length > 0) return found.sort((a, b) => byAge(a[0]!, b[0]!));
+  }
+  return [];
 }
 
 const list = (invoices: OpenInvoice[]) => invoices.map((i) => i.number).join(", ");
@@ -104,7 +112,8 @@ export function suggestMatch(deposit: Deposit, open: OpenInvoice[], clients: Mat
   if (deposit.amountCents <= 0) return null;
   const text = ` ${deposit.description} ${deposit.reference ?? ""} `.toLowerCase();
   const payable = open.filter((i) => i.balanceCents > 0);
-  const named = clients.filter((c) => nameKey(c.name).length > 4 && text.includes(nameKey(c.name)));
+  // The name as whole words: "Mart Staffing" is not inside "WALMART STAFFING".
+  const named = clients.filter((c) => nameKey(c.name).length > 4 && word(nameKey(c.name)).test(text));
   const client = named.length === 1 ? named[0]! : null;
   const amount = formatCents(deposit.amountCents);
 

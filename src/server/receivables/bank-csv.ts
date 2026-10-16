@@ -21,7 +21,8 @@ export interface BankFileLine {
 
 export interface BankFileProblem {
   rowNumber: number;
-  field: "date" | "amount" | "description";
+  /** "header": the line chosen as the header reads as a transaction (it would be left out). */
+  field: "date" | "amount" | "description" | "header";
   text: string;
 }
 
@@ -42,6 +43,11 @@ const HEADS = {
   withdrawals: ["withdrawals", "withdrawal", "debit", "debits", "debit amount"],
   type: ["type", "transaction type", "credit debit", "dr cr"],
 };
+
+const DEBIT = /^(debit|dr|d|withdrawal|withdrawals|wd|payment|check|chk|fee|ach debit|debit card)$/i;
+const CREDIT = /^(credit|cr|c|deposit|deposits|dep|ach credit|wire in|incoming wire)$/i;
+/** "ACH_CREDIT" reads as "ACH CREDIT". */
+const typeWord = (text: string) => text.trim().replace(/[_\s]+/g, " ");
 
 /** The column whose header names this field, or null. */
 function columnOf(header: string[], names: readonly string[]): number | null {
@@ -70,19 +76,55 @@ export function guessMapping(rows: string[][]): BankMapping | null {
     const amounts: BankMapping["amounts"] | null =
       deposits !== null && withdrawals !== null ? { kind: "split", deposits, withdrawals } : amount !== null ? { kind: "signed", amount } : null;
     if (!amounts) continue;
-    const sample = rows.slice(r + 1, r + 6).map((row) => row[date] ?? "");
-    // A type column only matters when the amounts carry no sign of their own.
-    const unsigned = amounts.kind === "signed" && rows.slice(r + 1).every((row) => !/^\s*[-(]/.test(row[amounts.amount] ?? ""));
+    const body = rows.slice(r + 1);
+    // A type column only matters when the amounts carry no sign of their own, and only when what it
+    // holds says credit or debit (Chase's ACH_CREDIT and CHECK_DEPOSIT are kinds of deposit, not signs).
+    const unsigned = amounts.kind === "signed" && body.every((row) => !/^\s*[-(]/.test(row[amounts.amount] ?? ""));
+    const types = type === null ? [] : body.map((row) => (row[type] ?? "").trim()).filter((v) => v !== "");
+    const signsByType = types.length > 0 && types.every((v) => DEBIT.test(typeWord(v)) || CREDIT.test(typeWord(v)));
     return {
       headerRow: r,
       date,
       description,
       reference: columnOf(header, HEADS.reference),
-      amounts: amounts.kind === "signed" && unsigned && type !== null ? { kind: "typed", amount: amounts.amount, type } : amounts,
-      dateFormat: guessDateFormat(sample),
+      amounts: amounts.kind === "signed" && unsigned && signsByType && type !== null ? { kind: "typed", amount: amounts.amount, type } : amounts,
+      // Every line's date counts: a day past 12 anywhere settles the order (review nit).
+      dateFormat: guessDateFormat(body.map((row) => row[date] ?? "")),
     };
   }
   return null;
+}
+
+/**
+ * A first mapping for a file whose header names nothing Shiftbook knows (or that has none, like Wells
+ * Fargo's): no header row when the first line already holds a date; the date column is the first
+ * whose cells read as dates, the amount the first other whose cells read as amounts, the description
+ * the one with the most words. The person checks it on the Map columns step.
+ */
+export function firstMapping(rows: string[][]): BankMapping {
+  const columns = Math.max(1, ...rows.slice(0, 30).map((r) => r.length));
+  const anyDate = (cell: string) => (["MM/DD/YYYY", "YYYY-MM-DD", "DD/MM/YYYY"] as const).some((f) => readDate(cell, f) !== null);
+  const headerRow = (rows[0] ?? []).some((c) => anyDate(c)) ? null : 0;
+  const body = rows.slice(headerRow === null ? 0 : 1, (headerRow === null ? 0 : 1) + 20);
+  const cells = (c: number) => body.map((row) => (row[c] ?? "").trim());
+  const all = Array.from({ length: columns }, (_, c) => c);
+  const date = all.find((c) => cells(c).filter((v) => v !== "").length > 0 && cells(c).filter((v) => v !== "").every(anyDate)) ?? 0;
+  const amount =
+    all.find((c) => c !== date && cells(c).some((v) => /\d/.test(v) && (readCents(v) ?? 0) !== 0) && cells(c).every((v) => v === "" || (/\d/.test(v) && readCents(v) !== null))) ?? Math.min(date + 1, columns - 1);
+  const letters = (c: number) => cells(c).reduce((sum, v) => sum + (v.match(/[a-z]/gi)?.length ?? 0), 0);
+  const description = all.filter((c) => c !== date && c !== amount).sort((a, b) => letters(b) - letters(a) || a - b)[0] ?? amount;
+  return { headerRow, date, description, reference: null, amounts: { kind: "signed", amount }, dateFormat: guessDateFormat(cells(date)) };
+}
+
+/**
+ * A remembered mapping used on a new file: the columns as the person chose them, the header row
+ * found in this file (a bank's summary lines above it vary from file to file), none when its first
+ * line is already a transaction.
+ */
+export function alignMapping(rows: string[][], mapping: BankMapping): BankMapping {
+  const guess = guessMapping(rows);
+  if (guess) return { ...mapping, headerRow: guess.headerRow };
+  return readDate((rows[0]?.[mapping.date] ?? "").trim(), mapping.dateFormat) !== null ? { ...mapping, headerRow: null } : mapping;
 }
 
 export function guessDateFormat(samples: string[]): BankMapping["dateFormat"] {
@@ -132,14 +174,15 @@ export function readCents(text: string): number | null {
   return Number.isSafeInteger(cents) && cents <= 2_147_483_647 ? sign * cents : null;
 }
 
-const DEBIT = /^(debit|dr|d|withdrawal|withdrawals|wd|payment|check|chk|fee|ach debit|debit card)$/i;
-const CREDIT = /^(credit|cr|c|deposit|deposits|dep|ach credit|wire in|incoming wire)$/i;
-
 /** The file's lines under a mapping, and the cells it could not read. */
 export function readBankLines(rows: string[][], mapping: BankMapping): { lines: BankFileLine[]; problems: BankFileProblem[] } {
   const lines: BankFileLine[] = [];
   const problems: BankFileProblem[] = [];
+  /** Lines whose date cell holds no date at all: totals and summaries, unless nothing reads (a wrong date column). */
+  const undated: BankFileProblem[] = [];
   const start = mapping.headerRow === null ? 0 : mapping.headerRow + 1;
+  const head = mapping.headerRow === null ? null : rows[mapping.headerRow];
+  if (head && readDate((head[mapping.date] ?? "").trim(), mapping.dateFormat) !== null) problems.push({ rowNumber: mapping.headerRow! + 1, field: "header", text: (head[mapping.date] ?? "").trim() });
   for (let r = start; r < rows.length; r++) {
     const row = rows[r]!;
     const rowNumber = r + 1;
@@ -147,7 +190,11 @@ export function readBankLines(rows: string[][], mapping: BankMapping): { lines: 
     const postedOn = readDate(cell(mapping.date), mapping.dateFormat);
     if (!postedOn) {
       // Summary and total lines after the activity (Bank of America) carry no date: left out.
-      if (cell(mapping.date) === "" || !/\d/.test(cell(mapping.date))) continue;
+      if (cell(mapping.date) === "") continue;
+      if (!/\d/.test(cell(mapping.date))) {
+        undated.push({ rowNumber, field: "date", text: cell(mapping.date) });
+        continue;
+      }
       problems.push({ rowNumber, field: "date", text: cell(mapping.date) });
       continue;
     }
@@ -161,7 +208,7 @@ export function readBankLines(rows: string[][], mapping: BankMapping): { lines: 
     } else {
       const amt = readCents(cell(a.amount));
       const type = cell(a.type);
-      amountCents = amt === null ? null : DEBIT.test(type) ? -Math.abs(amt) : CREDIT.test(type) ? Math.abs(amt) : null;
+      amountCents = amt === null ? null : DEBIT.test(typeWord(type)) ? -Math.abs(amt) : CREDIT.test(typeWord(type)) ? Math.abs(amt) : null;
     }
     if (amountCents === null || amountCents === 0) {
       problems.push({ rowNumber, field: "amount", text: a.kind === "split" ? `${cell(a.deposits)} / ${cell(a.withdrawals)}` : cell(a.kind === "signed" ? a.amount : a.amount) });
@@ -174,5 +221,7 @@ export function readBankLines(rows: string[][], mapping: BankMapping): { lines: 
     }
     lines.push({ rowNumber, postedOn, description: description.slice(0, 500), reference: cell(mapping.reference).slice(0, 100) || null, amountCents });
   }
-  return { lines, problems };
+  // Nothing read at all: the date column is likely the wrong one, so each line says why (review nit).
+  if (lines.length === 0) problems.push(...undated);
+  return { lines, problems: problems.sort((a, b) => a.rowNumber - b.rowNumber) };
 }

@@ -4,7 +4,7 @@
  * and reminder drafts (invoices/[id].md), and what a client owes (clients/[id].md).
  */
 import { formatCents } from "@shiftbook/rules";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import en from "../../../messages/en.json";
 import es from "../../../messages/es.json";
 import type { Tx } from "../db/client";
@@ -110,14 +110,7 @@ export async function receivablesView(tx: Tx, asOf: string) {
 }
 export type ReceivablesView = Awaited<ReturnType<typeof receivablesView>>;
 
-/** The aging as CSV, as shown (FreshBooks "Export for Excel"). */
-export function agingCsv(view: ReceivablesView): string {
-  const money = (c: number) => (c < 0 ? `-${formatCents(-c).slice(1)}` : formatCents(c).slice(1)).replaceAll(",", "");
-  const head = ["Client", "Current", "1-30", "31-60", "61-90", "91+", "Total", "Days to pay"];
-  const rows = view.clients.map((c) => [c.clientName, ...BUCKETS.map((k) => money(c.buckets[k])), money(c.totalCents), c.daysToPay.averageDays === null ? "" : String(c.daysToPay.averageDays)]);
-  const quote = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replaceAll('"', '""')}"` : /^[=+\-@]/.test(v) && Number.isNaN(Number(v)) ? `'${v}` : v);
-  return [head, ...rows, ["Total", ...BUCKETS.map((k) => money(view.totals[k])), money(view.totalCents), ""]].map((r) => r.map(quote).join(",")).join("\r\n") + "\r\n";
-}
+export { agingCsv } from "./aging-csv";
 
 export async function paymentsList(tx: Tx) {
   const pays = await tx
@@ -173,7 +166,9 @@ export async function bankView(tx: Tx, today: string) {
   const lines = await tx.select().from(s.bankLines).orderBy(desc(s.bankLines.postedOn), asc(s.bankLines.rowNumber));
   const balances = (await invoiceBalances(tx)).filter((b) => b.balanceCents > 0);
   const clients = await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients);
-  const window = await matchWindow(tx, today);
+  // The window in force on each deposit's date (review nit), read once per date.
+  const windows = new Map<string, MatchWindow>();
+  for (const d of new Set(lines.filter((l) => l.status === "review").map((l) => l.postedOn))) windows.set(d, await matchWindow(tx, d > today ? today : d));
   const open = balances.map((b) => ({ id: b.invoice.id, number: b.invoice.number, clientId: b.invoice.clientId, poNumber: b.invoice.poNumber, issuedOn: b.invoice.issuedOn, dueOn: b.invoice.dueOn, balanceCents: b.balanceCents }));
   const numberOf = new Map(balances.map((b) => [b.invoice.id, b.invoice.number]));
   const nameOf = new Map(clients.map((c) => [c.id, c.name]));
@@ -185,7 +180,7 @@ export async function bankView(tx: Tx, today: string) {
     review: lines
       .filter((l) => l.status === "review")
       .map((l) => {
-        const suggestion: Suggestion | null = suggestMatch({ postedOn: l.postedOn, description: l.description, reference: l.reference, amountCents: l.amountCents }, open, clients, window);
+        const suggestion: Suggestion | null = suggestMatch({ postedOn: l.postedOn, description: l.description, reference: l.reference, amountCents: l.amountCents }, open, clients, windows.get(l.postedOn)!);
         return {
           ...base(l),
           suggestion: suggestion ? { ...suggestion, clientName: nameOf.get(suggestion.clientId) ?? "", applications: suggestion.applications.map((a) => ({ ...a, number: numberOf.get(a.invoiceId) ?? "" })) } : null,
@@ -221,6 +216,8 @@ export async function invoiceReceivables(tx: Tx, invoiceId: string, today: strin
     .orderBy(asc(s.payments.receivedOn));
   const credits = await tx.select({ id: s.invoices.id, number: s.invoices.number, totalCents: s.invoices.totalCents, issuedOn: s.invoices.issuedOn }).from(s.invoices).where(and(eq(s.invoices.originalInvoiceId, invoiceId), eq(s.invoices.kind, "credit_note")));
   const offs = await tx.select().from(s.writeOffs).where(eq(s.writeOffs.invoiceId, invoiceId)).orderBy(asc(s.writeOffs.createdAt));
+  const moved = await tx.select().from(s.creditApplications).where(or(eq(s.creditApplications.fromInvoiceId, invoiceId), eq(s.creditApplications.toInvoiceId, invoiceId))).orderBy(asc(s.creditApplications.createdAt));
+  const movedNumbers = moved.length > 0 ? new Map((await tx.select({ id: s.invoices.id, number: s.invoices.number }).from(s.invoices).where(inArray(s.invoices.id, moved.flatMap((c) => [c.fromInvoiceId, c.toInvoiceId])))).map((x) => [x.id, x.number])) : new Map<string, string>();
   const [short] = await tx.select().from(s.shortPays).where(eq(s.shortPays.invoiceId, invoiceId));
   const sent = await tx.select().from(s.reminders).where(eq(s.reminders.invoiceId, invoiceId)).orderBy(desc(s.reminders.createdAt));
   const [client] = await tx.select().from(s.clients).where(eq(s.clients.id, b.invoice.clientId));
@@ -253,6 +250,12 @@ export async function invoiceReceivables(tx: Tx, invoiceId: string, today: strin
     payments: pays.map(({ match, payment }) => ({ paymentId: payment.id, receivedOn: payment.receivedOn, method: payment.method, reference: payment.reference, amountCents: match.amountCents, voided: payment.voidedAt !== null })),
     credits: credits.map((c) => ({ id: c.id, number: c.number, amountCents: -c.totalCents, issuedOn: c.issuedOn })),
     writeOffs: offs.map((w) => ({ id: w.id, writtenOn: w.writtenOn, amountCents: w.amountCents, reason: w.reason, note: w.note, by: w.createdByLabel })),
+    /** Credit moved in from another of the client's invoices, or out of this one to another (decision 0019). */
+    creditApplications: moved.map((c) => {
+      const out = c.fromInvoiceId === invoiceId;
+      const other = out ? c.toInvoiceId : c.fromInvoiceId;
+      return { id: c.id, direction: out ? ("out" as const) : ("in" as const), invoiceId: other, number: movedNumbers.get(other) ?? "", appliedOn: c.appliedOn, amountCents: c.amountCents, by: c.createdByLabel };
+    }),
     shortPay: short ? { reason: short.reason, note: short.note, by: short.recordedByLabel, at: short.recordedAt } : null,
     reminders: sent.map((r) => ({ at: r.createdAt, stage: r.stage, locale: r.locale, how: r.how, by: r.createdByLabel })),
     reminder: { stage, daysLate: Math.max(0, daysLate), to: client!.billingEmail, drafts },

@@ -39,7 +39,11 @@ it. Invoices are made only by the weekly run; this page changes nothing in them 
    Payments), each credit note and each write-off; **Record payment** (the dialog of
    `payments.md`, this invoice ticked); when a payment left a balance, the short pay's reason
    (record or change it) and **Write off balance** (amount, reason; TempWorks small-balance
-   write-off); **Prepare reminder** for an open balance (below).
+   write-off); **Prepare reminder** for an open balance (below). When credit notes took off more
+   than was still owed, the client's credit instead of a balance, with **Apply credit** to the
+   client's other open invoices (Stripe: a credit note on a paid invoice credits the customer's
+   balance, applied to its next invoice); each credit applied in or out is listed with the invoice
+   it came from or went to (decision 0019).
 6. **Related documents** (Stripe history; Bullhorn credit links): the invoice this one corrects, or
    the supplemental invoices and credit notes that correct it, each linking to its page; and the
    week's run (link to the Files step).

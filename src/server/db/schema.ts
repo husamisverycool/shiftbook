@@ -1157,6 +1157,26 @@ export const writeOffs = pgTable(
   (t) => [index("write_offs_invoice").on(t.agencyId, t.invoiceId)],
 );
 
+/**
+ * Credit a credit note left on an invoice (more taken off than was still owed), applied to another of
+ * the client's invoices (decision 0019; Stripe credits the customer's balance).
+ */
+export const creditApplications = pgTable(
+  "credit_applications",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    fromInvoiceId: uuid("from_invoice_id").notNull().references(() => invoices.id),
+    toInvoiceId: uuid("to_invoice_id").notNull().references(() => invoices.id),
+    appliedOn: isoDate("applied_on").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [index("credit_applications_from").on(t.agencyId, t.fromInvoiceId), index("credit_applications_to").on(t.agencyId, t.toInvoiceId)],
+);
+
 export const shortPays = pgTable("short_pays", {
   id: id(),
   agencyId: agencyId(),
@@ -1228,4 +1248,5 @@ export const TENANT_TABLES = [
   "write_offs",
   "short_pays",
   "reminders",
+  "credit_applications",
 ] as const;

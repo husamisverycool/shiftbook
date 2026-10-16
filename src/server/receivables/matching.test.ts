@@ -73,4 +73,20 @@ describe("suggested matches for a deposit (H6), in Stripe's order", () => {
     expect(suggestMatch(dep("PLM-20261005-2", -63_600), open, clients, W)).toBeNull();
     expect(suggestMatch(dep("TRANSFER FROM SAVINGS", 123_456), open, clients, W)).toBeNull();
   });
+
+  it("review 1: one exact invoice is found among many small ones (the search goes by group size, singles first)", () => {
+    const small = Array.from({ length: 29 }, (_, k) => inv(`ACM-1${String(k).padStart(3, "0")}`, "acm", 30_000, "2026-10-01", { issuedOn: "2026-09-01" }));
+    const big = inv("ACM-2000", "acm", 500_000, "2026-11-10", { issuedOn: "2026-10-10" });
+    const many = [...small, big];
+    const acme = [{ id: "acm", name: "Acme Fulfillment Centers" }];
+    expect(suggestMatch(dep("ACH ACME FULFILLMENT CENTERS", 500_000), many, acme, W)).toMatchObject({ clientId: "acm", confidence: "high", applications: [{ invoiceId: "ACM-2000", amountCents: 500_000 }], shortCents: 0 });
+    expect(suggestMatch(dep("DEPOSIT", 500_000), many, acme, W)).toMatchObject({ clientId: "acm", confidence: "medium", applications: [{ invoiceId: "ACM-2000", amountCents: 500_000 }] });
+  });
+
+  it("review nit: a client's name is matched as whole words (Mart Staffing is not inside WALMART STAFFING)", () => {
+    const mart = [{ id: "mrt", name: "Mart Staffing" }];
+    const one = [inv("MRT-1", "mrt", 12_345, "2026-11-12")];
+    expect(suggestMatch(dep("WALMART STAFFING PAYROLL", 10_000), one, mart, W)).toBeNull();
+    expect(suggestMatch(dep("ACH MART STAFFING PMT", 10_000), one, mart, W)).toMatchObject({ clientId: "mrt", shortCents: 2345 });
+  });
 });
