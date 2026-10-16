@@ -11,12 +11,13 @@ import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { agencies, assignments, billLines, bonuses, clientBillingProfiles, holidayPolicies, jobOrders, payLines, payPeriods, premiumConfirmations, rateCards, timeEntries } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
-import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
+import { createAssignment } from "../../src/server/catalog/assignments";
+import { clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { readStoredDocument, receiveDocument, type ImageReader } from "../../src/server/intake/service";
 import { addEntry } from "../../src/server/review/service";
 import { totalsStep } from "../../src/server/convert/queries";
 import { createRunFiles } from "../../src/server/files/service";
-import { computeRun } from "../../src/server/run/service";
+import { computeRun, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { openAppDb, openOwnerDb } from "./helpers";
@@ -95,7 +96,10 @@ describe("pay rules through the weekly run", () => {
     await inAgency((tx) => tx.insert(premiumConfirmations).values([{ ...base, workDate: "2026-10-08" }, { ...base, workDate: "2026-10-09" }]));
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers.map((b) => b.code)).not.toContain("pay_bill_mismatch");
-    expect(run.blockers.filter((b) => b.workerId === workerId("luis-hernandez"))).toEqual([]);
+    // The pay is right; the Gusto hours file cannot carry reporting-time pay (SPEC §13), so that refusal
+    // names the worker, who can be skipped and paid by hand.
+    expect(run.blockers.filter((b) => b.workerId === workerId("luis-hernandez") && b.code !== "export_refused")).toEqual([]);
+    expect(run.blockers.find((b) => b.code === "export_refused")?.message).toContain("reporting-time pay");
     const lines = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, workerId("luis-hernandez")))));
     // Thursday: 2 h worked of 8 scheduled → half the day (4 h) is due: 2 h more. Friday: no work → 4 h.
     expect(lines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
@@ -118,7 +122,8 @@ describe("pay rules through the weekly run", () => {
       await tx.insert(bonuses).values({ agencyId: actor.agencyId, workerId: luis, assignmentId, workweekStart: p!.startsOn, amountCents: 2500, kind: "nondiscretionary", enteredBy: actor.userId });
     });
     const run = await inAgency((tx) => computeRun(tx, actor, period));
-    expect(run.blockers.filter((b) => b.workerId === luis || b.code === "pay_bill_mismatch")).toEqual([]);
+    expect(run.blockers.filter((b) => (b.workerId === luis && b.code !== "export_refused") || b.code === "pay_bill_mismatch")).toEqual([]);
+    expect(run.blockers.find((b) => b.code === "export_refused")).toMatchObject({ workerId: luis });
     const pay = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, luis))));
     // $19.50: the worked holiday adds 0.5 × $19.50 for 8 h; the holiday not worked pays 8 h; the bonus as entered.
     expect(pay.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
@@ -155,6 +160,26 @@ describe("pay rules through the weekly run", () => {
     expect(header!.split(",").at(-1)).toBe("bonus");
     expect(row!.split(",").at(-1)).toBe("25.00");
     expect(files.payroll.controlTotals.amountsByType).toEqual({ BONUS: 2500 });
+  });
+
+  it("a payroll file refusal names its worker, every such worker at once, and skipping them clears the run", async () => {
+    const marcus = workerId("marcus-bell");
+    const [il] = await inAgency((tx) => tx.select().from(assignments).where(eq(assignments.workerId, marcus)));
+    await inAgency((tx) => tx.update(assignments).set({ endDate: "2026-10-07" }).where(eq(assignments.id, il!.id)));
+    const moved = await inAgency((tx) => createAssignment(tx, actor, { workerId: marcus, jobOrderId: jobOrderId("ma-server"), startDate: "2026-10-08", endDate: null }));
+    expect(moved.ok).toBe(true);
+    // 30 h at $18.25 in Illinois, then 16 h at $17.00 in Massachusetts: overtime on a weighted rate, which the Gusto hours file cannot carry.
+    for (const [day, out] of [["2026-10-05", 1020], ["2026-10-06", 1020], ["2026-10-07", 1020], ["2026-10-08", 900], ["2026-10-09", 900]] as const) {
+      const added = await inAgency((tx) => addEntry(tx, actor, period, { workerId: marcus, workDate: day, inMinute: 420, outMinute: out, breakMinutes: 0 }, ["other"], "two-rate week"));
+      if (!added.ok) throw new Error(added.error);
+    }
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    const refused = run.blockers.filter((b) => b.code === "export_refused");
+    expect(refused.map((b) => b.workerId)).toEqual([marcus]);
+    expect(refused[0]!.message).toContain("Bell, Marcus");
+    await inAgency((tx) => setSkipped(tx, actor, period, marcus, { skipped: true, reason: "paid by hand in Gusto" }));
+    const again = await inAgency((tx) => computeRun(tx, actor, period));
+    expect(again.blockers.filter((b) => b.code === "export_refused")).toEqual([]);
   });
 
   it("holds a bonus entered for a week with no hours instead of dropping it", async () => {

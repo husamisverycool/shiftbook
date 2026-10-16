@@ -450,11 +450,21 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   // not an error after "Create files".
   const invoicePlan = await planInvoices(tx, period, result.billLines.map((l) => ({ clientId: l.clientId, amountCents: l.amountCents })));
   if (blockers.length === 0 && result.payLines.length > 0) {
-    try {
-      renderExport(await payrollFixture(tx, period, result.payLines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate }))));
-    } catch (error) {
-      if (!(error instanceof ExportError)) throw error;
-      blockers.push({ code: "export_refused", message: error.message });
+    // A refusal about one worker's pay names that worker (they can be skipped and paid by hand); the
+    // file is tried again without them, so every such worker is named at once.
+    let lines = result.payLines;
+    for (let tries = 0; lines.length > 0 && tries <= workersById.size; tries++) {
+      try {
+        renderExport(await payrollFixture(tx, period, lines.map((l) => ({ workerId: l.workerId, type: l.type, minutes: l.minutes, amountCents: l.amountCents, rate: l.rate }))));
+        break;
+      } catch (error) {
+        if (!(error instanceof ExportError)) throw error;
+        const workerId = error.workerId;
+        const w = workerId ? workersById.get(workerId) : undefined;
+        blockers.push({ code: "export_refused", workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, message: error.message });
+        if (!workerId) break;
+        lines = lines.filter((l) => l.workerId !== workerId);
+      }
     }
     for (const problem of invoicePlan.problems) blockers.push({ code: "invoice_problem", message: problem });
   }

@@ -234,8 +234,10 @@ describe("Gusto hours CSV — pay the engine now computes but this file cannot c
       const fixture = base({ payLines: [reg, line] });
       expect(() => renderGustoHours(fixture)).toThrowError(expect.objectContaining({ code: "unsupported_earning_type" }));
       expect(() => renderGustoHours(fixture)).toThrowError(message);
-      // The refusal names the worker, so the person knows whose pay to enter by hand.
+      // The refusal names the worker, so the person knows whose pay to enter by hand, and carries
+      // the worker's id, so the run can offer to skip that worker.
       expect(() => renderGustoHours(fixture)).toThrowError("Álvarez, Ana");
+      expect(() => renderGustoHours(fixture)).toThrowError(expect.objectContaining({ workerId: "w1" }));
     }
   });
 

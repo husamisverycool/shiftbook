@@ -161,6 +161,15 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
   let grossCents = 0;
 
   for (const line of fixture.payLines) {
+    try {
+      addLine(line);
+    } catch (error) {
+      // Every refusal about one line is that line's worker's.
+      if (error instanceof ExportError && error.workerId === undefined) throw new ExportError(error.code, error.message, line.workerId);
+      throw error;
+    }
+  }
+  function addLine(line: ExportFixture["payLines"][number]): void {
     const worker = workersById.get(line.workerId);
     if (!worker) throw new ExportError("missing_payroll_id", `Pay line for unknown worker ${line.workerId}.`);
     const target = columnFor(line.type, fixture.earningCodeMap, `${worker.lastName}, ${worker.firstName}`);
@@ -183,7 +192,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
       minutesByType[line.type] = (minutesByType[line.type] ?? 0) + line.minutes;
       amountsByType[line.type] = (amountsByType[line.type] ?? 0) + line.amountCents;
       grossCents += line.amountCents;
-      continue;
+      return;
     }
     const column = target.column;
     checkLine(line, `${worker.lastName}, ${worker.firstName}`);
@@ -221,6 +230,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
       throw new ExportError(
         "several_pay_rates",
         `${w.lastName}, ${w.firstName} has ${line.column} but no regular hours, so the base rate Gusto multiplies is unknown.`,
+        line.workerId,
       );
     }
     const m = GUSTO_MULTIPLIER[line.column];
@@ -228,6 +238,7 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
       throw new ExportError(
         "several_pay_rates",
         `${w.lastName}, ${w.firstName}: ${line.column} is paid at ${formatRate(line.rate)}, but Gusto pays it at ${exactDecimal(m.num, m.den)} × the regular rate (${formatRate({ num: reg.num * m.num, den: reg.den * m.den })}).`,
+        line.workerId,
       );
     }
   }
