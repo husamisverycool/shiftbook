@@ -502,7 +502,8 @@
       "blockingTitle": "Detienen la nómina",
       "warningsTitle": "Avisos",
       "warningsHint": "Los avisos nunca detienen la nómina. Al aprobar, los das por vistos.",
-      "noWarnings": "Sin avisos."
+      "noWarnings": "Sin avisos.",
+      "openClientSettings": "Abrir la configuración de facturas de {client}"
     },
     "approval": {
       "approvedTitle": "Aprobada por {name} el {when}",
@@ -585,7 +586,9 @@
     "approvals": "Aprobaciones de clientes",
     "shortcuts": "Atajos de teclado",
     "settings": "Configuración",
-    "agencyMenu": "Menú de la agencia"
+    "agencyMenu": "Menú de la agencia",
+    "invoices": "Facturas",
+    "clients": "Clientes"
   },
   "list": {
     "filter": "Filtrar",
@@ -796,7 +799,8 @@
       "pay": "Tarifa de pago",
       "bill": "Tarifa de cobro",
       "rates": "Tarifas",
-      "source": "Origen"
+      "source": "Origen",
+      "po": "Orden de compra"
     },
     "status": {
       "active": "Activa",
@@ -837,7 +841,15 @@
       "already_cancelled": "Esta asignación ya estaba cancelada."
     },
     "chooseJobOrder": "Elegir una orden de trabajo…",
-    "createdOne": "Se asignó a {name}."
+    "createdOne": "Se asignó a {name}.",
+    "poHint": "Vacío: la orden de compra del cliente, {po}.",
+    "poHintNone": "Vacío: el cliente no tiene orden de compra.",
+    "poSaved": "Guardado.",
+    "poErrors": {
+      "po_number": "Una orden de compra tiene de 1 a 64 caracteres, sin espacios al principio ni al final.",
+      "not_found": "Esta asignación ya no existe.",
+      "invoiced": "Las horas de esta asignación se facturaron con su orden de compra."
+    }
   },
   "approvals": {
     "title": "Aprobaciones de clientes",
@@ -1561,6 +1573,207 @@
         "invalid": "Revise los campos marcados abajo.",
         "busy": "Ahora mismo se están preparando archivos de nómina. Inténtelo de nuevo en un momento."
       }
+    }
+  },
+  "statement": {
+    "title": "Estado de cuenta",
+    "date": "Fecha del estado de cuenta",
+    "number": "Factura",
+    "period": "Período de pago",
+    "issued": "Emitida",
+    "due": "Vence",
+    "amount": "Importe",
+    "total": "Total de estas facturas",
+    "paidSeparately": "Cada factura se paga con su propio número. Este estado de cuenta las reúne por comodidad y no es una nueva factura.",
+    "supplemental": "complementaria",
+    "creditNote": "nota de crédito"
+  },
+  "invoices": {
+    "title": "Facturas",
+    "all": "Todas",
+    "any": "Cualquiera",
+    "status": {
+      "draft": "Borrador",
+      "issued": "Emitida",
+      "paid": "Pagada",
+      "void": "Anulada"
+    },
+    "filterStatus": "Estado",
+    "filterClient": "Cliente",
+    "clearFilters": "Quitar filtros",
+    "selection": "Facturas seleccionadas",
+    "selectedCount": "{count, plural, one {# seleccionada} other {# seleccionadas}}",
+    "makeStatement": "Crear estado de cuenta",
+    "oneClientOnly": "Un estado de cuenta reúne facturas de un solo cliente.",
+    "beforeStatements": "{number} se creó antes de que los estados de cuenta pudieran incluirla: descargue su PDF por separado.",
+    "clearSelection": "Quitar",
+    "empty": "Aún no hay facturas. Las facturas se crean con los archivos de cada semana.",
+    "emptyLink": "Convertir hojas de horas",
+    "noResults": "Ninguna factura coincide con estos filtros.",
+    "selectAll": "Seleccionar todas las facturas",
+    "select": "Seleccionar {number}",
+    "rowMenu": "Más opciones para {number}",
+    "downloadPdf": "Descargar PDF",
+    "downloadCsv": "Descargar CSV",
+    "downloadVms": "Descargar archivo del VMS",
+    "col": {
+      "amount": "Importe",
+      "status": "Estado",
+      "number": "Número",
+      "client": "Cliente",
+      "period": "Período de pago",
+      "issued": "Emitida",
+      "due": "Vence",
+      "actions": "Acciones"
+    },
+    "kind": {
+      "invoice": "Factura",
+      "supplemental": "Complementaria",
+      "credit_note": "Nota de crédito"
+    },
+    "kindTitle": {
+      "invoice": "Factura",
+      "supplemental": "Factura complementaria",
+      "credit_note": "Nota de crédito"
+    },
+    "template": {
+      "standard": "Estándar",
+      "per_worker_detail": "Detalle por trabajador",
+      "po_header": "Orden de compra en el encabezado"
+    },
+    "detail": {
+      "back": "Facturas",
+      "credited": "Acreditado",
+      "amountDue": "Importe a pagar",
+      "issued": "Emitida",
+      "due": "Vence",
+      "period": "Período de pago",
+      "po": "Orden de compra",
+      "worksite": "Lugar de trabajo",
+      "template": "Plantilla",
+      "noOtherFiles": "No hay otros archivos",
+      "lines": "Líneas",
+      "description": "Descripción",
+      "hours": "Horas",
+      "rate": "Tarifa",
+      "amount": "Importe",
+      "workerSubtotal": "Subtotal de {worker}",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "totalCredited": "Total acreditado",
+      "linesInPdf": "Esta factura se creó antes de que se guardaran sus líneas; están en su PDF.",
+      "backup": "Respaldo",
+      "noBackup": "La configuración del cliente no envió respaldo con esta factura.",
+      "hoursDetail": "Páginas de detalle de horas",
+      "included": "Incluidas",
+      "notIncluded": "No incluidas",
+      "page": "Página {page}",
+      "related": "Documentos relacionados",
+      "credits": "Acredita la factura",
+      "addsTo": "Se suma a la factura",
+      "run": "Los archivos de la semana (versión {version})",
+      "openFiles": "Abrir los archivos"
+    }
+  },
+  "clients": {
+    "title": "Clientes",
+    "empty": "Aún no hay clientes. Los clientes llegan con las órdenes de trabajo.",
+    "emptyLink": "Órdenes de trabajo",
+    "col": {
+      "name": "Nombre",
+      "code": "Código",
+      "template": "Plantilla de factura",
+      "separateBy": "Separar facturas por",
+      "terms": "Plazo de pago",
+      "vms": "Carga al VMS"
+    },
+    "notSeparated": "Sin separar",
+    "separate": {
+      "po": "Orden de compra",
+      "worksite": "Lugar de trabajo"
+    },
+    "termsDays": "{days, plural, =0 {Al recibir} one {# día} other {# días}}",
+    "vms": {
+      "fieldglass_time_sheet_invoice": "Carga de factura de hojas de horas de SAP Fieldglass"
+    },
+    "vmsNone": "Ninguno",
+    "noSettings": "No hay configuración de facturas vigente hoy",
+    "settings": "Configuración de facturas",
+    "edit": "Editar",
+    "readOnly": "Solo el Propietario y Facturación pueden cambiar la configuración de facturas.",
+    "groups": {
+      "invoice": "Factura",
+      "backup": "Respaldo",
+      "delivery": "Entrega",
+      "billing": "Cobro"
+    },
+    "field": {
+      "template": "Plantilla",
+      "separateBy": "Separar facturas por",
+      "poRequired": "Orden de compra obligatoria",
+      "poNumber": "Orden de compra del cliente",
+      "backupDetail": "Páginas de detalle de horas",
+      "backupImages": "Fotos de las hojas de horas",
+      "vmsFormat": "Archivo de carga al VMS",
+      "terms": "Plazo de pago (días)",
+      "otRule": "Cobro de horas extra",
+      "billPremiums": "Cobrar primas",
+      "billGuarantees": "Cobrar mínimos garantizados"
+    },
+    "yes": "Sí",
+    "no": "No",
+    "included": "Incluidas",
+    "notIncluded": "No incluidas",
+    "otRule": {
+      "multiplier": "Con el multiplicador de horas extra",
+      "straight_time": "A tarifa normal",
+      "not_billable": "No se cobran",
+      "own_sites_only": "Solo horas extra trabajadas en los lugares de este cliente"
+    },
+    "inEffectFrom": "Vigente desde el {from}.",
+    "inEffectBetween": "Vigente del {from} al {to}.",
+    "noSettingsToday": "No hay configuración de facturas vigente hoy. Edite para empezarla.",
+    "versions": "Versiones",
+    "versionFrom": "Desde el {from}",
+    "versionBetween": "Del {from} al {to}",
+    "current": "Vigente",
+    "upcoming": "Próxima",
+    "noInvoices": "Aún no hay facturas para este cliente.",
+    "editTitle": "Configuración de facturas de {client}",
+    "editBody": "Al guardar empieza una nueva versión desde la fecha de abajo; la versión anterior termina el día antes.",
+    "templateHint": {
+      "standard": "Una línea por trabajador, tipo de horas y tarifa.",
+      "per_worker_detail": "Las líneas de cada trabajador bajo su nombre, con un subtotal.",
+      "po_header": "El número de orden de compra arriba de cada página."
+    },
+    "separateHint": "Elija ambos para separar por cada par de orden de compra y lugar. Ninguno: una factura por semana.",
+    "poRequiredHint": "Las horas sin orden de compra (de la asignación o del cliente) detienen la nómina de la semana.",
+    "poNumberHint": "Se usa para las asignaciones que no tienen orden de compra propia.",
+    "backupDetailHint": "Los días, horarios y quién los aprobó de cada trabajador, después de la factura.",
+    "backupImagesHint": "Las fotos de las hojas de horas, con los números de Seguro Social y las fechas de nacimiento tapados.",
+    "vmsHint": "Se crea con cada factura, a partir de los números de hoja de horas de la descarga del cliente.",
+    "appliesFrom": "Se aplica desde",
+    "appliesFromHint": "Las facturas de los períodos que terminan en esta fecha o después usan esta configuración.",
+    "appliesFromHintInvoiced": "Los períodos hasta el día antes del {date} ya se facturaron: una nueva versión empieza el {date} o después.",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saved": "Guardado. Vigente desde el {date}.",
+    "rules": {
+      "choose_template": "Elija una plantilla.",
+      "choose_separate": "Elija orden de compra, lugar, ambos o ninguno.",
+      "yes_or_no": "Elija sí o no.",
+      "po_number": "Una orden de compra tiene de 1 a 64 caracteres, sin espacios al principio ni al final.",
+      "choose_vms": "Elija un archivo del VMS o ninguno.",
+      "terms_days": "El plazo de pago es un número entero de días, de 0 a 365.",
+      "choose_ot_rule": "Elija cómo se cobran las horas extra.",
+      "date": "Elija una fecha.",
+      "invoiced_through": "El cliente está facturado hasta el {date}: una nueva versión empieza después."
+    },
+    "errors": {
+      "not_allowed": "Solo el Propietario y Facturación pueden cambiar la configuración de facturas.",
+      "not_found": "Este cliente ya no existe.",
+      "busy": "Se están creando los archivos en este momento. Inténtelo de nuevo en un momento.",
+      "generic": "Algo salió mal. No se guardó nada."
     }
   }
 }

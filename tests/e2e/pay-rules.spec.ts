@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { demoUuid } from "../../src/server/demo/dataset";
 import { money } from "../../src/components/shiftbook/format";
-import { approveAndCreateFiles, toExceptions, toTotals } from "./flow";
+import { approveAndCreateFiles, toExceptions, toTotals, vmsFileOff } from "./flow";
 
 const en = JSON.parse(readFileSync("messages/en.json", "utf8")) as typeof import("../../messages/en.json");
 const es = JSON.parse(readFileSync("messages/es.json", "utf8")) as typeof import("../../messages/en.json");
@@ -40,6 +40,8 @@ for (const locale of ["en", "es"] as const) {
     execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
+    // Pacific Crest's hours come from its time clock here, not from SAP Fieldglass time sheets.
+    await vmsFileOff(page, locale, "Pacific Crest Distribution (demo)");
     // Luis Hernández, Ontario CA at $19.50: 8, 10, 13, 8, 8, 6 and 10 hours, Monday to Sunday.
     const day = (date: string, out: string, total: string) => `30101,"Hernández, Luis",Warehouse,${date},7:00 AM,${out},30,${total}`;
     await uploadClock(page, locale, "pacific-crest-week.csv", [

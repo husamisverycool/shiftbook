@@ -10,6 +10,8 @@ import { ExportError } from "./errors";
 import { twoDecimals } from "./lines";
 
 export interface InvoiceFileLine {
+  /** Names the worker in a refusal, so the run can offer to skip them. */
+  workerId?: string;
   workerName: string;
   worksite: string | null;
   poNumber: string | null;
@@ -80,8 +82,8 @@ export function fieldglassUpload(input: InvoiceFileInput): Uint8Array {
   for (const l of input.lines) {
     const ids = [...new Set(l.timeSheetIds ?? [])];
     const week = weekEnding(l.workweekStart, input.period);
-    if (ids.length === 0) throw new ExportError("missing_payroll_id", `${l.workerName}: hours for the week ending ${week} did not come from a SAP Fieldglass time sheet, so the upload cannot name one. Leave this client's VMS file off, or invoice it in SAP Fieldglass.`);
-    if (ids.length > 1) throw new ExportError("unsupported_earning_type", `${l.workerName}: the ${l.type} line for the week ending ${week} has hours from two SAP Fieldglass time sheets (${ids.join(", ")}), and its amount cannot be split between them.`);
+    if (ids.length === 0) throw new ExportError("missing_payroll_id", `${l.workerName}: hours for the week ending ${week} did not come from a SAP Fieldglass time sheet, so the upload cannot name one. Upload the client's time sheet download for these hours, or turn this client's VMS file off.`, l.workerId);
+    if (ids.length > 1) throw new ExportError("unsupported_earning_type", `${l.workerName}: the ${l.type} line for the week ending ${week} has hours from two SAP Fieldglass time sheets (${ids.join(", ")}), and its amount cannot be split between them.`, l.workerId);
     const s = sheets.get(ids[0]!) ?? { worker: l.vmsWorkerId ?? null, cents: 0 };
     s.cents += l.amountCents;
     sheets.set(ids[0]!, s);

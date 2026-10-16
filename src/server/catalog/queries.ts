@@ -162,6 +162,9 @@ export interface AssignmentRow {
   payRateCents: number | null;
   billRateCents: number | null;
   source: string | null;
+  /** The client's PO for this placement (slice g); null: the client's own PO. */
+  poNumber: string | null;
+  clientPo: string | null;
 }
 
 export async function listAssignments(tx: Tx, today: string, where?: { jobOrderId: string }): Promise<AssignmentRow[]> {
@@ -173,6 +176,7 @@ export async function listAssignments(tx: Tx, today: string, where?: { jobOrderI
     .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId))
     .where(where ? eq(s.assignments.jobOrderId, where.jobOrderId) : undefined);
   const cards = await tx.select().from(s.rateCards);
+  const profiles = await tx.select().from(s.clientBillingProfiles);
   return rows
     .map(({ a, w, j, c }) => {
       const own = cards.filter((r) => r.assignmentId === a.id);
@@ -193,6 +197,8 @@ export async function listAssignments(tx: Tx, today: string, where?: { jobOrderI
         payRateCents: card?.payRateCents ?? null,
         billRateCents: card?.billRateCents ?? null,
         source: a.externalSource,
+        poNumber: a.poNumber,
+        clientPo: profiles.find((p) => p.clientId === c.id && p.effectiveFrom <= today && (p.effectiveTo === null || today <= p.effectiveTo))?.poNumber ?? null,
       };
     })
     .sort((x, y) => cmp(x.workerName.toLowerCase(), y.workerName.toLowerCase()) || cmp(x.startDate, y.startDate) || cmp(x.id, y.id));

@@ -502,7 +502,8 @@
       "blockingTitle": "Blocking",
       "warningsTitle": "Warnings",
       "warningsHint": "Warnings never stop the run. Approving acknowledges them.",
-      "noWarnings": "No warnings."
+      "noWarnings": "No warnings.",
+      "openClientSettings": "Open {client}'s invoice settings"
     },
     "approval": {
       "approvedTitle": "Approved by {name} on {when}",
@@ -585,7 +586,9 @@
     "approvals": "Client approvals",
     "shortcuts": "Keyboard shortcuts",
     "settings": "Settings",
-    "agencyMenu": "Agency menu"
+    "agencyMenu": "Agency menu",
+    "invoices": "Invoices",
+    "clients": "Clients"
   },
   "list": {
     "filter": "Filter",
@@ -796,7 +799,8 @@
       "pay": "Pay rate",
       "bill": "Bill rate",
       "rates": "Rates",
-      "source": "Source"
+      "source": "Source",
+      "po": "PO"
     },
     "status": {
       "active": "Active",
@@ -837,7 +841,15 @@
       "already_cancelled": "This assignment was already cancelled."
     },
     "chooseJobOrder": "Choose a job order…",
-    "createdOne": "{name} assigned."
+    "createdOne": "{name} assigned.",
+    "poHint": "Empty: the client's PO, {po}.",
+    "poHintNone": "Empty: the client has no PO.",
+    "poSaved": "Saved.",
+    "poErrors": {
+      "po_number": "A PO is 1 to 64 characters, with no spaces at either end.",
+      "not_found": "This assignment no longer exists.",
+      "invoiced": "Hours of this placement were invoiced under its PO."
+    }
   },
   "approvals": {
     "title": "Client approvals",
@@ -1561,6 +1573,207 @@
         "invalid": "Check the fields marked below.",
         "busy": "Payroll files are being made right now. Try again in a moment."
       }
+    }
+  },
+  "statement": {
+    "title": "Statement",
+    "date": "Statement date",
+    "number": "Invoice",
+    "period": "Pay period",
+    "issued": "Issued",
+    "due": "Due",
+    "amount": "Amount",
+    "total": "Total of these invoices",
+    "paidSeparately": "Each invoice is paid on its own number. This statement puts them together for convenience and is not a new bill.",
+    "supplemental": "supplemental",
+    "creditNote": "credit note"
+  },
+  "invoices": {
+    "title": "Invoices",
+    "all": "All",
+    "any": "Any",
+    "status": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "paid": "Paid",
+      "void": "Void"
+    },
+    "filterStatus": "Status",
+    "filterClient": "Client",
+    "clearFilters": "Clear filters",
+    "selection": "Selected invoices",
+    "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+    "makeStatement": "Make statement",
+    "oneClientOnly": "A statement puts together invoices of one client.",
+    "beforeStatements": "{number} was made before statements could include it: download its PDF on its own.",
+    "clearSelection": "Clear",
+    "empty": "No invoices yet. Invoices are made with each week's files.",
+    "emptyLink": "Convert timesheets",
+    "noResults": "No invoices match these filters.",
+    "selectAll": "Select all invoices",
+    "select": "Select {number}",
+    "rowMenu": "More for {number}",
+    "downloadPdf": "Download PDF",
+    "downloadCsv": "Download CSV",
+    "downloadVms": "Download VMS file",
+    "col": {
+      "amount": "Amount",
+      "status": "Status",
+      "number": "Number",
+      "client": "Client",
+      "period": "Pay period",
+      "issued": "Issued",
+      "due": "Due",
+      "actions": "Actions"
+    },
+    "kind": {
+      "invoice": "Invoice",
+      "supplemental": "Supplemental",
+      "credit_note": "Credit note"
+    },
+    "kindTitle": {
+      "invoice": "Invoice",
+      "supplemental": "Supplemental invoice",
+      "credit_note": "Credit note"
+    },
+    "template": {
+      "standard": "Standard",
+      "per_worker_detail": "Per-worker detail",
+      "po_header": "PO header"
+    },
+    "detail": {
+      "back": "Invoices",
+      "credited": "Credited",
+      "amountDue": "Amount due",
+      "issued": "Issued",
+      "due": "Due",
+      "period": "Pay period",
+      "po": "PO",
+      "worksite": "Worksite",
+      "template": "Template",
+      "noOtherFiles": "No other files",
+      "lines": "Line items",
+      "description": "Description",
+      "hours": "Hours",
+      "rate": "Rate",
+      "amount": "Amount",
+      "workerSubtotal": "Subtotal for {worker}",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "totalCredited": "Total credited",
+      "linesInPdf": "This invoice was made before its lines were kept with it; they are in its PDF.",
+      "backup": "Backup",
+      "noBackup": "The client's settings sent no backup with this invoice.",
+      "hoursDetail": "Hours detail pages",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "page": "Page {page}",
+      "related": "Related documents",
+      "credits": "Credits invoice",
+      "addsTo": "Adds to invoice",
+      "run": "The week's files (version {version})",
+      "openFiles": "Open the files"
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "empty": "No clients yet. Clients come with job orders.",
+    "emptyLink": "Job orders",
+    "col": {
+      "name": "Name",
+      "code": "Code",
+      "template": "Invoice template",
+      "separateBy": "Separate invoices by",
+      "terms": "Payment terms",
+      "vms": "VMS upload"
+    },
+    "notSeparated": "Not separated",
+    "separate": {
+      "po": "PO",
+      "worksite": "Worksite"
+    },
+    "termsDays": "{days, plural, =0 {Due on receipt} one {# day} other {# days}}",
+    "vms": {
+      "fieldglass_time_sheet_invoice": "SAP Fieldglass time sheet invoice upload"
+    },
+    "vmsNone": "None",
+    "noSettings": "No invoice settings in force today",
+    "settings": "Invoice settings",
+    "edit": "Edit",
+    "readOnly": "Only the Owner and Billing can change invoice settings.",
+    "groups": {
+      "invoice": "Invoice",
+      "backup": "Backup",
+      "delivery": "Delivery",
+      "billing": "Billing"
+    },
+    "field": {
+      "template": "Template",
+      "separateBy": "Separate invoices by",
+      "poRequired": "PO required",
+      "poNumber": "Client PO",
+      "backupDetail": "Hours detail pages",
+      "backupImages": "Timesheet pictures",
+      "vmsFormat": "VMS upload file",
+      "terms": "Payment terms (days)",
+      "otRule": "Overtime billing",
+      "billPremiums": "Bill premiums",
+      "billGuarantees": "Bill minimum guarantees"
+    },
+    "yes": "Yes",
+    "no": "No",
+    "included": "Included",
+    "notIncluded": "Not included",
+    "otRule": {
+      "multiplier": "At the overtime multiplier",
+      "straight_time": "At straight time",
+      "not_billable": "Not billed",
+      "own_sites_only": "Only overtime worked at this client's sites"
+    },
+    "inEffectFrom": "In effect from {from}.",
+    "inEffectBetween": "In effect from {from} to {to}.",
+    "noSettingsToday": "No invoice settings are in effect today. Edit to start them.",
+    "versions": "Versions",
+    "versionFrom": "From {from}",
+    "versionBetween": "{from} to {to}",
+    "current": "In effect",
+    "upcoming": "Upcoming",
+    "noInvoices": "No invoices for this client yet.",
+    "editTitle": "Invoice settings for {client}",
+    "editBody": "Saving starts a new version from the date below; the version before it ends the day before.",
+    "templateHint": {
+      "standard": "One line per worker, kind of hours and rate.",
+      "per_worker_detail": "Each worker's lines under their name, with a subtotal.",
+      "po_header": "The PO number at the top of every page."
+    },
+    "separateHint": "Choose both to separate by each PO and worksite pair. Nothing chosen: one invoice a week.",
+    "poRequiredHint": "Hours without a PO (on the placement, or the client's) stop the week's run.",
+    "poNumberHint": "Used for placements that carry no PO of their own.",
+    "backupDetailHint": "Each worker's days, times and who approved them, after the invoice.",
+    "backupImagesHint": "The timesheet pictures, with Social Security numbers and birth dates blacked out.",
+    "vmsHint": "Made with each invoice, from the time sheet ids in the client's download.",
+    "appliesFrom": "Applies from",
+    "appliesFromHint": "Invoices for pay periods ending on or after this date use these settings.",
+    "appliesFromHintInvoiced": "Periods up to the day before {date} are invoiced: a new version starts on {date} or later.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saved": "Saved. In effect from {date}.",
+    "rules": {
+      "choose_template": "Choose a template.",
+      "choose_separate": "Choose PO, worksite, both or neither.",
+      "yes_or_no": "Choose yes or no.",
+      "po_number": "A PO is 1 to 64 characters, with no spaces at either end.",
+      "choose_vms": "Choose a VMS file or none.",
+      "terms_days": "Payment terms are a whole number of days, 0 to 365.",
+      "choose_ot_rule": "Choose how overtime is billed.",
+      "date": "Choose a date.",
+      "invoiced_through": "The client is invoiced through {date}: a new version starts after it."
+    },
+    "errors": {
+      "not_allowed": "Only the Owner and Billing can change invoice settings.",
+      "not_found": "This client no longer exists.",
+      "busy": "Files are being created right now. Try again in a moment.",
+      "generic": "Something went wrong. Nothing was saved."
     }
   }
 }

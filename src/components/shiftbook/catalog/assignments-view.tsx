@@ -6,7 +6,7 @@ import { UploadIcon, UsersIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createAssignmentAction, endAssignmentsAction } from "@/app/[locale]/(app)/job-orders/actions";
+import { createAssignmentAction, endAssignmentsAction, setAssignmentPoAction } from "@/app/[locale]/(app)/job-orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -107,6 +107,12 @@ export function AssignmentsView({ rows, options, today }: { rows: AssignmentRow[
             <dd className="tabular-nums">{rate(r.billRateCents)}</dd>
             <dt className="text-muted-foreground">{t("col.rates")}</dt>
             <dd>{t(r.ownRates ? "ratesKind.own" : "ratesKind.job")}</dd>
+            <dt className="pt-2 text-muted-foreground">
+              <label htmlFor={`po-${r.id}`}>{t("col.po")}</label>
+            </dt>
+            <dd>
+              <PoField key={r.id} row={r} />
+            </dd>
           </dl>
         )}
         onCreate={() => setCreating(true)}
@@ -246,5 +252,58 @@ function CreateAssignment({ options, today, onClose }: { options: CatalogOptions
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * The client's PO for this placement (decision G4; Bullhorn placement PO): saves when the field is
+ * left or Enter is pressed, as the payroll worker ids do; empty means the client's own PO.
+ */
+function PoField({ row }: { row: AssignmentRow }) {
+  const t = useTranslations("assignments");
+  const te = useTranslations("convert.errors");
+  const router = useRouter();
+  const [value, setValue] = useState(row.poNumber ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [pending, run] = useTransition();
+  const save = () => {
+    if (value.trim() === (row.poNumber ?? "")) return;
+    run(async () => {
+      const r = await setAssignmentPoAction(row.id, value.trim());
+      if (r.ok) {
+        setError(null);
+        setSaved(true);
+        router.refresh();
+      } else setError(r.error === "busy" ? te("busy") : t(`poErrors.${r.error}`));
+    });
+  };
+  return (
+    <div className="flex flex-col gap-1">
+      <Input
+        id={`po-${row.id}`}
+        value={value}
+        maxLength={64}
+        placeholder={row.clientPo ?? ""}
+        disabled={pending}
+        onChange={(e) => {
+          setValue(e.target.value);
+          setSaved(false);
+        }}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            save();
+          }
+        }}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={`po-${row.id}-hint`}
+        data-testid="assignment-po"
+      />
+      <p id={`po-${row.id}-hint`} className={error ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+        {error ?? (saved ? t("poSaved") : row.clientPo ? t("poHint", { po: row.clientPo }) : t("poHintNone"))}
+      </p>
+    </div>
   );
 }

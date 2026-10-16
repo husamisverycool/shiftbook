@@ -48,6 +48,8 @@ export interface RunIssue extends Omit<Issue, "code"> {
   grossCents?: number;
   /** A correction: pay an earlier correction of the period left with the worker (an offset may cover more pay). */
   heldCents?: number;
+  /** An invoice problem's client (slice g): the fix opens the client's invoice settings. */
+  clientName?: string;
 }
 
 export interface RunResult {
@@ -601,17 +603,28 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
         lines = lines.filter((l) => l.workerId !== workerId);
       }
     }
-    for (const problem of invoicePlan.problems) blockers.push({ code: problem.code, clientId: problem.clientId, message: problem.message });
+    for (const problem of invoicePlan.problems) blockers.push({ code: problem.code, clientId: problem.clientId, clientName: problem.clientName, message: problem.message });
     // The VMS upload refuses hours it cannot place on a time sheet: said now, not at "Create files".
+    // A refusal names the worker (who can be skipped and paid by hand); the file is tried again
+    // without them, so every such worker is named at once.
     const vmsPlans = invoicePlan.plans.filter(makesVms);
     if (vmsPlans.length > 0) {
       const entries = await planEntries(tx, vmsPlans);
       for (const p of vmsPlans) {
-        try {
-          fieldglassUpload(vmsInput(p, { workersById, period }, entries));
-        } catch (error) {
-          if (!(error instanceof ExportError)) throw error;
-          blockers.push({ code: "vms_refused", clientId: p.clientId, message: `${p.client.name}, invoice ${p.number}: ${error.message}` });
+        const refused = new Set<string>();
+        for (let tries = 0; tries <= workersById.size; tries++) {
+          const lines = p.lines.filter((l) => !refused.has(l.workerId));
+          if (lines.length === 0) break;
+          try {
+            fieldglassUpload(vmsInput({ ...p, lines }, { workersById, period }, entries));
+            break;
+          } catch (error) {
+            if (!(error instanceof ExportError)) throw error;
+            const w = error.workerId ? workersById.get(error.workerId) : undefined;
+            blockers.push({ code: "vms_refused", clientId: p.clientId, clientName: p.client.name, workerId: error.workerId, workerName: w ? `${w.firstName} ${w.lastName}` : undefined, message: `${p.client.name}, invoice ${p.number}: ${error.message}` });
+            if (!error.workerId) break;
+            refused.add(error.workerId);
+          }
         }
       }
     }

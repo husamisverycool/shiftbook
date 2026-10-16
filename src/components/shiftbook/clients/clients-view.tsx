@@ -1,0 +1,67 @@
+"use client";
+
+// Pattern: docs/patterns/clients.md — Stripe customers list (the name opens the customer's page).
+import { Building2Icon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { buttonVariants } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Link } from "@/i18n/navigation";
+import type { ClientRow } from "@/server/clients/queries";
+
+export function ClientsView({ rows }: { rows: ClientRow[] }) {
+  const t = useTranslations("clients");
+  const ti = useTranslations("invoices");
+  return (
+    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4 px-4 py-6">
+      <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      {rows.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground" data-testid="clients-empty">
+          <Building2Icon className="size-5" />
+          <p>{t("empty")}</p>
+          <Link href="/job-orders" className={buttonVariants({ variant: "link", size: "sm" })}>
+            {t("emptyLink")}
+          </Link>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border">
+          <Table aria-label={t("title")} data-testid="clients-list">
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("col.name")}</TableHead>
+                <TableHead>{t("col.code")}</TableHead>
+                <TableHead>{t("col.template")}</TableHead>
+                <TableHead>{t("col.separateBy")}</TableHead>
+                <TableHead className="text-right">{t("col.terms")}</TableHead>
+                <TableHead>{t("col.vms")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((c) => (
+                <TableRow key={c.id} data-testid="client-row">
+                  <TableCell className="font-medium">
+                    <Link href={`/clients/${c.id}`} className="underline-offset-4 hover:underline">
+                      {c.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="tabular-nums">{c.code}</TableCell>
+                  {c.settings ? (
+                    <>
+                      <TableCell>{ti(`template.${c.settings.invoiceTemplate}`)}</TableCell>
+                      <TableCell>{c.settings.separateBy.length === 0 ? t("notSeparated") : c.settings.separateBy.map((x) => t(`separate.${x}`)).join(", ")}</TableCell>
+                      <TableCell className="text-right tabular-nums">{t("termsDays", { days: c.settings.paymentTermsDays })}</TableCell>
+                      <TableCell>{c.settings.vmsFormat ? t(`vms.${c.settings.vmsFormat}`) : "—"}</TableCell>
+                    </>
+                  ) : (
+                    <TableCell colSpan={4} className="text-muted-foreground">
+                      {t("noSettings")}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}

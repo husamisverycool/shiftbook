@@ -50,6 +50,11 @@ export function longDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 }
 
+/** A pay period: "Oct 5 – 11, 2026" / "5–11 oct 2026". */
+export function dateRange(start: string, end: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).formatRange(new Date(`${start}T00:00:00Z`), new Date(`${end}T00:00:00Z`));
+}
+
 /** "7:30", "07:30", "7:30 PM", "19:30" → minutes after midnight; null when not a time. */
 export function parseClock(text: string): number | null {
   const m = /^\s*(\d{1,2})(?::(\d{2}))?\s*([ap])?\.?\s*m?\.?\s*$/i.exec(text);

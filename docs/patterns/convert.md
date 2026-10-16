@@ -74,7 +74,9 @@ period is the first row.
      Review hours, skip the workers for this run with a reason, both are real, open Client
      approvals, open the payroll file settings on the missing worker ids — Workyard maps missing
      pay types inside the export and ClickTime names the missing ids (`settings/payroll.md`) —
-     back to Upload).
+     open the client's invoice settings when an invoice cannot be made as they say (a PO the client
+     requires, its VMS upload; Bullhorn One blocks invoicing on the client's Invoice Terms;
+     `clients/[id].md`), back to Upload).
    - H2 "Warnings", the same rows without blocking (they never stop the run; Rise: "warnings do not
      block approval").
    - Forward action "Review totals", disabled while any blocking row remains (Gusto: calculate is

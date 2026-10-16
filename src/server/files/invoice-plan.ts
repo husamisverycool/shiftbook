@@ -89,6 +89,7 @@ export interface InvoicePlan {
 export interface InvoiceProblem {
   code: "invoice_problem" | "po_missing";
   clientId?: string;
+  clientName?: string;
   workerIds?: string[];
   /** The invoice number the problem is about, when it is one number. */
   number?: string;
@@ -145,6 +146,7 @@ async function poMissing(tx: Tx, client: typeof s.clients.$inferSelect, lines: {
   return {
     code: "po_missing",
     clientId: client.id,
+    clientName: client.name,
     workerIds: ids,
     message: `${client.name} requires a PO on every invoice, but the hours of ${names.join(", ")} have none (no PO on their assignment, and none for the client).`,
   };
@@ -161,7 +163,7 @@ export async function planInvoices(tx: Tx, period: { startsOn: string; endsOn: s
     const client = clients.find((c) => c.id === clientId)!;
     const profile = inEffect(clientId);
     if (profile.length !== 1) {
-      problems.push({ code: "invoice_problem", clientId, message: `${client.name}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect on ${period.endsOn}, the invoice date basis, so its PO and payment terms are unknown.` });
+      problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect on ${period.endsOn}, the invoice date basis, so its PO and payment terms are unknown.` });
       continue;
     }
     const p = profile[0]!;
@@ -188,7 +190,7 @@ export async function planInvoices(tx: Tx, period: { startsOn: string; endsOn: s
       const totalCents = part.reduce((sum, m) => sum + m.line.amountCents, 0);
       const number = ordered.length === 1 ? base : `${base}-${i + 1}`;
       if (totalCents < 0 || totalCents > INT4_MAX) {
-        problems.push({ code: "invoice_problem", clientId, message: `${client.name}: the invoice total is too large to store; check the bill rates.` });
+        problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: the invoice total is too large to store; check the bill rates.` });
         return;
       }
       plans.push({
@@ -215,8 +217,8 @@ async function numbersTaken(tx: Tx, plans: InvoicePlan[]): Promise<InvoiceProble
   const taken = numbers.length > 0 ? await tx.select({ number: s.invoices.number }).from(s.invoices).where(inArray(s.invoices.number, numbers)) : [];
   const problems: InvoiceProblem[] = [];
   for (const p of plans) {
-    if (taken.some((t) => t.number === p.number)) problems.push({ code: "invoice_problem", clientId: p.clientId, number: p.number, message: `${p.client.name}: invoice number ${p.number} was already issued.` });
-    else if (plans.filter((x) => x.number === p.number).length > 1) problems.push({ code: "invoice_problem", clientId: p.clientId, number: p.number, message: `${p.client.name}: another client billed in this run has the same client code (${p.client.code}), so two invoices would be numbered ${p.number}.` });
+    if (taken.some((t) => t.number === p.number)) problems.push({ code: "invoice_problem", clientId: p.clientId, clientName: p.client.name, number: p.number, message: `${p.client.name}: invoice number ${p.number} was already issued.` });
+    else if (plans.filter((x) => x.number === p.number).length > 1) problems.push({ code: "invoice_problem", clientId: p.clientId, clientName: p.client.name, number: p.number, message: `${p.client.name}: another client billed in this run has the same client code (${p.client.code}), so two invoices would be numbered ${p.number}.` });
   }
   return problems;
 }
@@ -265,7 +267,7 @@ export async function planCorrectionInvoices(
     const client = clients.find((c) => c.id === clientId)!;
     const profile = inEffect(clientId);
     if (profile.length !== 1) {
-      problems.push({ code: "invoice_problem", clientId, message: `${client.name}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect on ${period.endsOn}, so the correction's payment terms are unknown.` });
+      problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: ${profile.length === 0 ? "no billing profile is" : `${profile.length} billing profiles are`} in effect on ${period.endsOn}, so the correction's payment terms are unknown.` });
       continue;
     }
     const p = profile[0]!;
@@ -288,14 +290,14 @@ export async function planCorrectionInvoices(
       const net = netOf(g.lines.map((x) => x.line));
       if (!net.real || net.netCents === 0) continue;
       if (Math.abs(net.netCents) > INT4_MAX) {
-        problems.push({ code: "invoice_problem", clientId, message: `${client.name}: the correction's total is too large to store; check the bill rates.` });
+        problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: the correction's total is too large to store; check the bill rates.` });
         continue;
       }
       const po = poOf(g.lines.map((x) => x.po));
       const common = { clientId, client, profile: p, totalCents: net.netCents, splitKey: g.key, ...po, worksite: p.separateBy.includes("worksite") ? (g.lines[0]!.worksite ?? null) : null, lines: g.lines.map((x) => ({ ...x.line, po: x.po, worksite: x.worksite })) };
       if (!g.original) {
         if (net.netCents < 0) {
-          problems.push({ code: "invoice_problem", clientId, message: `${client.name}: ${formatCents(-net.netCents)} less would be credited on hours this period never invoiced; check the bill rates.` });
+          problems.push({ code: "invoice_problem", clientId, clientName: client.name, message: `${client.name}: ${formatCents(-net.netCents)} less would be credited on hours this period never invoiced; check the bill rates.` });
           continue;
         }
         if (p.poRequired) {

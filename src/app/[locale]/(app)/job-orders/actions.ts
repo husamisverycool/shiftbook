@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { setAssignmentPo, type PoResult } from "@/server/catalog/billing";
 import { cancelAssignment, createAssignment, endAssignments, setAssignmentDates, type AssignmentResult } from "@/server/catalog/assignments";
 import { createJobOrder, updateJobOrder, type JobOrderInput, type JobOrderResult } from "@/server/catalog/job-orders";
 import { addRateVersion, deleteRateVersion, editRateVersion, type RateResult } from "@/server/catalog/rate-cards";
@@ -120,4 +121,11 @@ export async function cancelAssignmentAction(assignmentId: string, reason: strin
   const actor = currentActor();
   if (!id.safeParse(assignmentId).success || typeof reason !== "string") return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => cancelAssignment(tx, actor, assignmentId, reason.slice(0, 2000))));
+}
+
+/** The client's PO for one placement (slice g, decision G4); empty means the client's own PO. */
+export async function setAssignmentPoAction(assignmentId: string, poNumber: string): Promise<PoResult | { ok: false; error: "busy" }> {
+  const actor = currentActor();
+  if (!id.safeParse(assignmentId).success || !z.string().max(200).safeParse(poNumber).success) return { ok: false, error: "not_found" };
+  return run(() => withAgency(actor.agencyId, (tx) => setAssignmentPo(tx, actor, assignmentId, poNumber)));
 }

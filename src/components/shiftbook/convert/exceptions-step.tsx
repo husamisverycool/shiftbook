@@ -30,6 +30,10 @@ const TO_APPROVALS = new Set(["client_dispute_open", "client_approval_missing"])
 
 type Group = TotalsData["blockers"][number];
 
+/** Blockers about a client's invoice settings (slice g): the fix opens the client's page. */
+const CLIENT_SETTINGS = new Set(["po_missing", "vms_refused", "invoice_problem"]);
+const clientsOf = (g: Group) => [...new Map(g.issues.filter((i) => i.clientId && i.clientName).map((i) => [i.clientId!, { id: i.clientId!, name: i.clientName! }])).values()];
+
 export function ExceptionsStep({ periodId, data, locked }: { periodId: string; data: Pick<TotalsData, "blockers" | "warnings" | "skipped" | "correction" | "canApprove">; locked: boolean }) {
   const t = useTranslations("convert.totals");
   const tr = useTranslations("convert.correction");
@@ -141,6 +145,20 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
         <Link href={{ pathname: "/settings/payroll", query: g.code === "missing_payroll_id" ? { tab: "workers", filter: "missing" } : {} }} className={buttonVariants({ size: "sm", variant: "outline" })} data-testid="open-payroll-settings">
           {t("openPayrollSettings")}
         </Link>
+        {skippable(g.workerIds).length > 0 && (
+          <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: skippable(g.workerIds) })} data-testid="skip-workers">
+            {t("skipWorkers", { count: skippable(g.workerIds).length })}
+          </Button>
+        )}
+      </div>
+    ) : CLIENT_SETTINGS.has(g.code) && clientsOf(g).length > 0 ? (
+      // An invoice the client's settings cannot make (slice g): open those settings.
+      <div className="flex flex-wrap gap-2 sm:justify-end">
+        {clientsOf(g).map((c) => (
+          <Link key={c.id} href={`/clients/${c.id}`} className={buttonVariants({ size: "sm", variant: "outline" })} data-testid="open-client-settings">
+            {te("openClientSettings", { client: c.name })}
+          </Link>
+        ))}
         {skippable(g.workerIds).length > 0 && (
           <Button size="sm" variant="outline" onClick={() => setSkipping({ workerIds: skippable(g.workerIds) })} data-testid="skip-workers">
             {t("skipWorkers", { count: skippable(g.workerIds).length })}

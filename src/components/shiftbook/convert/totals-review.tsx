@@ -34,7 +34,7 @@ export interface TotalsData {
     ruleCode: string | null;
     jurisdiction: string | null;
     ruleCodes: string[];
-    issues: { message: string; workerId?: string; workerName?: string; entryIds?: string[]; grossCents?: number; heldCents?: number }[];
+    issues: { message: string; workerId?: string; workerName?: string; entryIds?: string[]; grossCents?: number; heldCents?: number; clientId?: string; clientName?: string }[];
     workerIds: string[];
     workerNames: string[];
   }[];

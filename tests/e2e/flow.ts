@@ -46,3 +46,17 @@ export async function approveAndCreateFiles(page: Page, m: Messages) {
   await page.getByTestId("forward").click();
   await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.files })).toBeVisible({ timeout: 60_000 });
 }
+
+/**
+ * A client's VMS upload file turned off (slice g): hours typed or clocked for a client on SAP
+ * Fieldglass come from no Fieldglass time sheet, so its upload would refuse them.
+ */
+export async function vmsFileOff(page: Page, locale: "en" | "es", client: string) {
+  await page.goto(`/${locale}/clients`);
+  await page.getByRole("link", { name: client }).click();
+  await page.getByTestId("edit-settings").click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByTestId("field-vms").selectOption("");
+  await dialog.getByTestId("save-settings").click();
+  await expect(dialog).toBeHidden();
+}

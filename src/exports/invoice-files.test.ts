@@ -52,6 +52,12 @@ describe("SAP Fieldglass time sheet invoice upload", () => {
 
   it("refuses hours that did not come from a Fieldglass time sheet, naming the worker", () => {
     expect(() => fieldglassUpload(input({ lines: [{ ...input().lines[2]!, timeSheetIds: [] }] }))).toThrowError(/Anita Patel: hours for the week ending 2026-10-11 did not come from a SAP Fieldglass time sheet/);
+    // The refusal carries the worker's id when the line has one (the run offers to skip them).
+    try {
+      fieldglassUpload(input({ lines: [{ ...input().lines[2]!, workerId: "w-anita", timeSheetIds: [] }] }));
+    } catch (e) {
+      expect((e as { workerId?: string }).workerId).toBe("w-anita");
+    }
   });
 
   it("refuses a line whose hours span two time sheets (the line's amount cannot be split)", () => {

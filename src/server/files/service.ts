@@ -174,7 +174,7 @@ export async function createRunFiles(
         action: "export",
         entityType: "invoice",
         entityId: inv!.id,
-        after: { number, kind, original: original?.number ?? null, totalCents: p.totalCents, sha256: pdfSha, lines: p.lines.length, csvSha256: sha(docs.csv), ...(docs.vms ? { vms: docs.vms.format, vmsSha256: sha(docs.vms.bytes) } : {}), backup: { detail: docs.issued.backup.detail, pictures: docs.issued.backup.images.reduce((n, x) => n + x.pages, 0) } },
+        after: { number, kind, original: original?.number ?? null, totalCents: p.totalCents, sha256: pdfSha, lines: p.lines.length, csvSha256: sha(docs.csv), ...(docs.vms ? { vms: docs.vms.format, vmsSha256: sha(docs.vms.bytes) } : {}), backup: { detail: docs.issued.backup.detail, pictures: docs.issued.backup.images.reduce((n, x) => n + x.pages.length, 0) } },
       },
     ]);
     invoicesOut.push({ invoiceId: inv!.id, clientId, clientName: client.name, number, kind, originalNumber: original?.number ?? null, totalCents: p.totalCents, storageKey: pdfKey, sha256: pdfSha });

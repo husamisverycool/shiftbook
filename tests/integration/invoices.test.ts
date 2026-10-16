@@ -24,7 +24,7 @@ import { pdfPages, pdfText } from "../../src/server/files/pdf-text";
 import { createRunFiles } from "../../src/server/files/service";
 import { editEntry } from "../../src/server/review/service";
 import { startCorrection } from "../../src/server/run/corrections";
-import { computeRun } from "../../src/server/run/service";
+import { computeRun, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { approveAsOwner, openAppDb, openOwnerDb } from "./helpers";
@@ -312,19 +312,27 @@ describe("backup pages (decisions G6, G7)", () => {
     const pages = await pdfOf("PLM-20261005");
     expect(pages).toHaveLength(2);
     expect(pages[1]).toBe("Hours are from the approved timesheets for the service period. Amounts are computed from whole minutes and rounded once per line. Page 2 of 2");
-    expect((await invoices())[0]!.document!.backup).toEqual({ detail: false, images: [{ documentId: doc!.id, filename: "sign-in.jpg", pages: 1 }] });
+    expect((await invoices())[0]!.document!.backup).toEqual({ detail: false, images: [{ documentId: doc!.id, filename: "sign-in.jpg", pages: [1] }] });
   });
 });
 
 describe("the SAP Fieldglass upload (decision G9)", () => {
   beforeEach(theWeek);
 
-  it("blocks the run when hours did not come from a Fieldglass time sheet", async () => {
+  it("blocks the run when hours did not come from a Fieldglass time sheet, naming every such worker (who can be skipped)", async () => {
     await settings({ vmsFormat: "fieldglass_time_sheet_invoice" });
+    await owner.db.update(s.timeEntries).set({ vmsRefs: { timeSheetIds: ["TS-1003"], workerId: "FG-0003" } }).where(eq(s.timeEntries.id, shifts.trevor![0]!.id));
     const run = await compute();
-    expect(run.blockers.map((b) => [b.code, b.clientId])).toEqual([["vms_refused", PLM]]);
+    expect(run.blockers.map((b) => [b.code, b.clientId, b.workerName])).toEqual([
+      ["vms_refused", PLM, "Marcus Bell"],
+      ["vms_refused", PLM, "Anita Patel"],
+    ]);
     expect(run.blockers[0]!.message).toContain("Prairie Line");
     expect(run.blockers[0]!.message).toContain("did not come from a SAP Fieldglass time sheet");
+    // Skipping both leaves an upload of Trevor's time sheet.
+    await inAgency((tx) => setSkipped(tx, theOwner, w2, workerId("marcus-bell"), { skipped: true, reason: "paid by hand" }));
+    await inAgency((tx) => setSkipped(tx, theOwner, w2, workerId("anita-patel"), { skipped: true, reason: "paid by hand" }));
+    expect((await compute()).blockers).toEqual([]);
   });
 
   it("one row per time sheet, with the invoice's amounts; a line from two time sheets is refused", async () => {

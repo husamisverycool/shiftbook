@@ -177,12 +177,8 @@ export const worksites = pgTable(
   ],
 );
 
-export const INVOICE_TEMPLATES = ["standard", "per_worker_detail", "po_header"] as const;
-export type InvoiceTemplate = (typeof INVOICE_TEMPLATES)[number];
-export const SEPARATE_BY = ["po", "worksite"] as const;
-export type SeparateBy = (typeof SEPARATE_BY)[number];
-export const VMS_FORMATS = ["fieldglass_time_sheet_invoice"] as const;
-export type VmsFormat = (typeof VMS_FORMATS)[number];
+export { INVOICE_TEMPLATES, SEPARATE_BY, VMS_FORMATS, type InvoiceTemplate, type SeparateBy, type VmsFormat } from "../../lib/invoice-options";
+import type { InvoiceTemplate, SeparateBy, VmsFormat } from "../../lib/invoice-options";
 
 export const clientBillingProfiles = pgTable(
   "client_billing_profiles",
@@ -584,7 +580,8 @@ export interface IssuedInvoice {
   /** The PDF's text, as rendered (labels without the page function). */
   pdf: Record<string, unknown>;
   lines: IssuedLine[];
-  backup: { detail: boolean; images: { documentId: string; filename: string; pages: number }[] };
+  /** The timesheet pages whose redacted pictures follow the invoice (page numbers of each document). */
+  backup: { detail: boolean; images: { documentId: string; filename: string; pages: number[] }[] };
 }
 export interface IssuedLine {
   workerId: string;

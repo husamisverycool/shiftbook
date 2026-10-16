@@ -188,8 +188,8 @@ async function imagesOf(tx: Tx, store: DocumentStore, plan: InvoicePlan, lines: 
       done.add(key);
       images.push({ data: Buffer.from(await store.get(page.redactedStorageKey)), format: "jpg" });
       const u = used.find((x) => x.documentId === doc.id);
-      if (u) u.pages += 1;
-      else used.push({ documentId: doc.id, filename: doc.filename, pages: 1 });
+      if (u) u.pages.push(p);
+      else used.push({ documentId: doc.id, filename: doc.filename, pages: [p] });
     }
   }
   return { images, used };
@@ -224,7 +224,7 @@ export function vmsInput(plan: InvoicePlan, ctx: Workers & Pick<DocumentContext,
 export const makesVms = (plan: InvoicePlan) => plan.profile.vmsFormat !== null && plan.kind === "invoice";
 
 function fileLine(ctx: Workers, l: PlannedLine): InvoiceFileLine {
-  return { workerName: nameOf(ctx, l.workerId), worksite: l.worksite?.name ?? null, poNumber: l.po, workweekStart: l.workweekStart, type: l.type, minutes: l.minutes, rate: l.rate, amountCents: l.amountCents };
+  return { workerId: l.workerId, workerName: nameOf(ctx, l.workerId), worksite: l.worksite?.name ?? null, poNumber: l.po, workweekStart: l.workweekStart, type: l.type, minutes: l.minutes, rate: l.rate, amountCents: l.amountCents };
 }
 
 export async function invoiceDocuments(

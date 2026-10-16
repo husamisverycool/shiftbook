@@ -29,7 +29,8 @@ it. Invoices are made only by the weekly run; this page changes nothing in them 
    rate, amount — with the subtotal and total under it.
 4. **Backup** (TempWorks preview with timecards; Fieldglass "Related"): what the PDF carries after
    the invoice — line detail on or off, and the timesheets whose pictures are included (file name,
-   pages), each opening the timesheet in the converter.
+   then each page included), each page opening its picture as it was sent (TempWorks previews the
+   timecard images with the invoice; the period's converter is closed once its files exist).
 5. **Related documents** (Stripe history; Bullhorn credit links): the invoice this one corrects, or
    the supplemental invoices and credit notes that correct it, each linking to its page; and the
    week's run (link to the Files step).
