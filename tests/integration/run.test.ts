@@ -11,7 +11,7 @@ import { readStoredDocument, receiveDocument, type ImageReader } from "../../src
 import { computeRun, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
-import { openAppDb, openOwnerDb } from "./helpers";
+import { inLineOrder, openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
 const owner = openOwnerDb();
@@ -37,8 +37,8 @@ async function freshPeriodWithTimeClock() {
 
 const lines = (runId: string, who: string) =>
   inAgency(async (tx) => ({
-    pay: await tx.select().from(payLines).where(and(eq(payLines.payRunId, runId), eq(payLines.workerId, workerId(who)))),
-    bill: await tx.select().from(billLines).where(and(eq(billLines.payRunId, runId), eq(billLines.workerId, workerId(who)))),
+    pay: inLineOrder(await tx.select().from(payLines).where(and(eq(payLines.payRunId, runId), eq(payLines.workerId, workerId(who))))),
+    bill: inLineOrder(await tx.select().from(billLines).where(and(eq(billLines.payRunId, runId), eq(billLines.workerId, workerId(who))))),
   }));
 const brief = (rows: { type: string; minutes: number; amountCents: number }[]) => rows.map((r) => [r.type, r.minutes, r.amountCents]);
 

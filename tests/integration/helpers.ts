@@ -1,4 +1,5 @@
 import { createDatabase } from "../../src/server/db/client";
+import { earningType } from "../../src/server/db/schema";
 
 const PORT = process.env.SHIFTBOOK_PG_PORT ?? "54329";
 const TEST_DB = process.env.SHIFTBOOK_TEST_DB ?? "shiftbook_test";
@@ -25,4 +26,13 @@ export async function databaseError(promise: Promise<unknown>): Promise<string> 
     return error instanceof Error ? error.message : String(error);
   }
   throw new Error("expected the database to refuse this operation, but it succeeded");
+}
+
+/**
+ * Pay or bill lines in the engine's order (workweek, earning type, then minutes). Postgres returns
+ * rows in no promised order, so a test that compares lines in order sorts them first.
+ */
+export function inLineOrder<T extends { workweekStart: string; type: (typeof earningType.enumValues)[number]; minutes: number }>(rows: T[]): T[] {
+  const rank = (t: T["type"]) => earningType.enumValues.indexOf(t);
+  return [...rows].sort((a, b) => (a.workweekStart < b.workweekStart ? -1 : a.workweekStart > b.workweekStart ? 1 : 0) || rank(a.type) - rank(b.type) || a.minutes - b.minutes);
 }

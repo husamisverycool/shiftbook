@@ -20,7 +20,7 @@ import { createRunFiles } from "../../src/server/files/service";
 import { computeRun, setSkipped } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
-import { openAppDb, openOwnerDb } from "./helpers";
+import { inLineOrder, openAppDb, openOwnerDb } from "./helpers";
 
 const app = openAppDb();
 const owner = openOwnerDb();
@@ -65,7 +65,7 @@ describe("pay rules through the weekly run", () => {
     await inAgency((tx) => tx.insert(premiumConfirmations).values({ agencyId: actor.agencyId, workerId: workerId("luis-hernandez"), assignmentId: entry!.assignmentId!, workDate: "2026-10-08", kind: "meal_period_missed", confirmedBy: actor.userId }));
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers.map((b) => b.code)).not.toContain("pay_bill_mismatch");
-    const lines = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, workerId("luis-hernandez")))));
+    const lines = inLineOrder(await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, workerId("luis-hernandez"))))));
     // 8 hours at $19.50 (no overtime): the regular rate is $19.50, so the premium is $19.50.
     expect(lines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
       ["REG", 480, 15_600],
@@ -81,7 +81,7 @@ describe("pay rules through the weekly run", () => {
     await inAgency((tx) => tx.insert(premiumConfirmations).values({ agencyId: actor.agencyId, workerId: workerId("luis-hernandez"), assignmentId: entry!.assignmentId!, workDate: "2026-10-08", kind: "meal_period_missed", confirmedBy: actor.userId }));
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers.map((b) => b.code)).not.toContain("pay_bill_mismatch");
-    const bill = await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.workerId, workerId("luis-hernandez")))));
+    const bill = inLineOrder(await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.workerId, workerId("luis-hernandez"))))));
     expect(bill.map((l) => [l.type, l.minutes, l.ruleId])).toEqual([
       ["REG", 480, "bill_regular"],
       ["MEAL_PREMIUM", 60, "bill_premium"],
@@ -100,7 +100,7 @@ describe("pay rules through the weekly run", () => {
     // names the worker, who can be skipped and paid by hand.
     expect(run.blockers.filter((b) => b.workerId === workerId("luis-hernandez") && b.code !== "export_refused")).toEqual([]);
     expect(run.blockers.find((b) => b.code === "export_refused")?.message).toContain("reporting-time pay");
-    const lines = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, workerId("luis-hernandez")))));
+    const lines = inLineOrder(await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, workerId("luis-hernandez"))))));
     // Thursday: 2 h worked of 8 scheduled → half the day (4 h) is due: 2 h more. Friday: no work → 4 h.
     expect(lines.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
       ["REG", 120, 3900],
@@ -124,7 +124,7 @@ describe("pay rules through the weekly run", () => {
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(run.blockers.filter((b) => (b.workerId === luis && b.code !== "export_refused") || b.code === "pay_bill_mismatch")).toEqual([]);
     expect(run.blockers.find((b) => b.code === "export_refused")).toMatchObject({ workerId: luis });
-    const pay = await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, luis))));
+    const pay = inLineOrder(await inAgency((tx) => tx.select().from(payLines).where(and(eq(payLines.payRunId, run.runId), eq(payLines.workerId, luis)))));
     // $19.50: the worked holiday adds 0.5 × $19.50 for 8 h; the holiday not worked pays 8 h; the bonus as entered.
     expect(pay.map((l) => [l.type, l.minutes, l.amountCents])).toEqual([
       ["REG", 480, 15_600],
@@ -132,7 +132,7 @@ describe("pay rules through the weekly run", () => {
       ["HOL_NOT_WORKED", 480, 15_600],
       ["BONUS", 0, 2500],
     ]);
-    const bill = await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.workerId, luis))));
+    const bill = inLineOrder(await inAgency((tx) => tx.select().from(billLines).where(and(eq(billLines.payRunId, run.runId), eq(billLines.workerId, luis)))));
     expect(bill.map((l) => [l.type, l.minutes])).toEqual([
       ["REG", 480],
       ["HOL", 480],
