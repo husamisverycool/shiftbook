@@ -5,6 +5,8 @@
  * on the agency's schedule (Stripe "send reminders … before, when, or after the invoice is due").
  * Money is integer cents; every change is audited; every email is recorded (email_messages).
  */
+import { billingInForce } from "../catalog/billing";
+import { statementPdf } from "../invoices/queries";
 import { addDays, formatCents } from "@shiftbook/rules";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { and, asc, desc, eq, gt, inArray, like, ne, or } from "drizzle-orm";
@@ -100,12 +102,14 @@ interface Prepared {
   to: { email: string; name: string | null };
   rendered: { subject: string; text: string; html: string };
   attachment: { filename: string; key: string };
+  /** Made at send time and not stored: the consolidated statement of a client that asks for one. */
+  extra: { filename: string; content: Uint8Array }[];
 }
 
 async function deliver(deps: CollectionsDeps, p: Prepared): Promise<boolean> {
   try {
     const content = await deps.store.get(p.attachment.key);
-    const { providerId } = await deps.mailTransport(p.agencyId).send({ id: p.mailId, fromName: p.fromName, replyTo: p.replyTo, to: p.to, ...p.rendered, attachments: [{ filename: p.attachment.filename, content }] });
+    const { providerId } = await deps.mailTransport(p.agencyId).send({ id: p.mailId, fromName: p.fromName, replyTo: p.replyTo, to: p.to, ...p.rendered, attachments: [{ filename: p.attachment.filename, content }, ...p.extra] });
     await deps.withAgency(p.agencyId, (tx) => tx.update(s.emailMessages).set({ status: "sent", providerId, sentAt: nowOf(deps) }).where(eq(s.emailMessages.id, p.mailId)));
     return true;
   } catch (error) {
@@ -115,6 +119,25 @@ async function deliver(deps: CollectionsDeps, p: Prepared): Promise<boolean> {
 }
 
 export type SendError = "forbidden" | "not_found" | "no_email" | "no_pdf" | "invalid";
+
+/**
+ * A client whose invoice settings ask for a consolidated statement (SPEC §4 ClientBillingProfile
+ * "consolidate"; §12 "consolidated statement") gets, with each invoice of a week, the statement of every
+ * invoice that week made for it (QuickBooks statements: one document listing the open invoices). None
+ * for a credit note, nor when the week has a single invoice.
+ */
+async function consolidatedStatement(tx: Tx, invoice: s.InvoiceRow): Promise<{ filename: string; content: Uint8Array }[]> {
+  if (invoice.kind === "credit_note" || !invoice.payRunId) return [];
+  const [profile] = (await billingInForce(tx, [invoice.clientId], invoice.issuedOn)).get(invoice.clientId) ?? [];
+  if (!profile?.consolidate) return [];
+  const week = await tx
+    .select({ id: s.invoices.id })
+    .from(s.invoices)
+    .where(and(eq(s.invoices.payRunId, invoice.payRunId), eq(s.invoices.clientId, invoice.clientId), eq(s.invoices.kind, "invoice"), ne(s.invoices.status, "void")));
+  if (week.length < 2) return [];
+  const statement = await statementPdf(tx, week.map((w) => w.id), invoice.issuedOn);
+  return statement.ok ? [{ filename: statement.filename, content: statement.bytes }] : [];
+}
 
 /** "Send invoice" / "Resend": the client's billing email gets the PDF (with its backup pages). */
 export async function sendInvoice(deps: CollectionsDeps, actor: Actor, invoiceId: unknown, rawMessage: unknown): Promise<{ ok: true; to: string } | { ok: false; error: SendError | "failed" }> {
@@ -132,12 +155,13 @@ export async function sendInvoice(deps: CollectionsDeps, actor: Actor, invoiceId
     const agency = await agencyOf(tx);
     const rendered = renderInvoiceEmail({ locale: await clientLocale(tx, client.id), agency, invoice, originalNumber: original?.number ?? null, message });
     const attachment = { filename: pdfName(invoice.number, invoice.kind), key: invoice.pdfStorageKey };
+    const extra = await consolidatedStatement(tx, invoice);
     const [mail] = await tx
       .insert(s.emailMessages)
-      .values({ agencyId: actor.agencyId, kind: "invoice", invoiceId, toEmail: client.billingEmail, toName: client.name, subject: rendered.subject, textBody: rendered.text, status: "sending", attachments: [{ filename: attachment.filename, bytes: 0 }], createdAt: nowOf(deps) })
+      .values({ agencyId: actor.agencyId, kind: "invoice", invoiceId, toEmail: client.billingEmail, toName: client.name, subject: rendered.subject, textBody: rendered.text, status: "sending", attachments: [{ filename: attachment.filename, bytes: 0 }, ...extra.map((x) => ({ filename: x.filename, bytes: x.content.byteLength }))], createdAt: nowOf(deps) })
       .returning({ id: s.emailMessages.id });
     await audit(tx, actor, [{ action: "export", entityType: "invoice", entityId: invoiceId, after: { number: invoice.number, emailedTo: client.billingEmail, emailId: mail!.id } }]);
-    return { mailId: mail!.id, agencyId: actor.agencyId, fromName: agency.name, replyTo: agency.email, to: { email: client.billingEmail, name: client.name }, rendered, attachment };
+    return { mailId: mail!.id, agencyId: actor.agencyId, fromName: agency.name, replyTo: agency.email, to: { email: client.billingEmail, name: client.name }, rendered, attachment, extra };
   });
   if ("error" in prepared) return { ok: false, error: prepared.error };
   return (await deliver(deps, prepared)) ? { ok: true, to: prepared.to.email } : { ok: false, error: "failed" };
@@ -427,7 +451,7 @@ export async function sweepReminders(deps: CollectionsDeps, agencyId: string): P
         await tx.insert(s.reminders).values({ agencyId, invoiceId: b.invoice.id, stage, locale, how: "emailed", emailMessageId: mail!.id, createdByLabel: "Granite" });
         mailId = mail!.id;
       }
-      out.push({ mailId, agencyId, fromName: agency.name, replyTo: agency.email, to: { email: client.billingEmail, name: client.name }, rendered, attachment: { filename, key: b.invoice.pdfStorageKey } });
+      out.push({ mailId, agencyId, fromName: agency.name, replyTo: agency.email, to: { email: client.billingEmail, name: client.name }, rendered, attachment: { filename, key: b.invoice.pdfStorageKey }, extra: [] });
     }
     return out;
   });

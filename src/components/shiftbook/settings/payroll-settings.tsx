@@ -7,7 +7,7 @@
 // chosen one's fields in a panel whose foot holds Save.
 import { CircleAlertIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { saveTargetAction, type SettingsActionResult } from "@/app/[locale]/(app)/settings/payroll/actions";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -108,7 +108,7 @@ function setQuery(change: Record<string, string | null>) {
   window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
 }
 
-export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }: { view: PayrollSettingsView; tab: PayrollTab; filter: WorkerFilter }) {
+export function PayrollSettings({ view, tab: initialTab, filter: initialFilter, payWeek }: { view: PayrollSettingsView; tab: PayrollTab; filter: WorkerFilter; payWeek?: ReactNode }) {
   const t = useTranslations("settings");
   const tp = useTranslations("settings.payroll");
   const when = useDateTime();
@@ -279,6 +279,8 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
           </SettingsPanel>
         )}
       </SettingsSection>
+
+      {payWeek}
 
       {inUse && view.codes && view.system && (
         <Tabs value={tab} onValueChange={(v) => setTab(v as PayrollTab)} className="gap-6">

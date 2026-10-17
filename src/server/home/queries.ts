@@ -13,13 +13,22 @@ import { marginPeriod, marginView } from "../margin/queries";
 import { payrollTarget } from "../payroll/settings";
 import { receivablesView } from "../receivables/queries";
 
-export const SETUP_STEPS = ["payroll", "placements", "convert", "approval", "files", "bank", "ssn"] as const;
+export const SETUP_STEPS = ["agency", "clients", "branches", "payroll", "placements", "convert", "approval", "files", "bank", "ssn"] as const;
 export type SetupStep = (typeof SETUP_STEPS)[number];
 
 const exists = async (q: Promise<{ n: number }[]>) => ((await q)[0]?.n ?? 0) > 0;
 
 /** Each step of the setup guide, done or not, from the agency's own records. */
 export async function setupSteps(tx: Tx, periodsStarted: boolean): Promise<Record<SetupStep, boolean>> {
+  // The business set up first (completeness audit G1): its details, time zone and pay week; a client
+  // with a worksite; a branch.
+  const [agency] = await tx.select({ addressLines: s.agencies.addressLines }).from(s.agencies);
+  const [settingRows, clientsWithSites, branches] = await Promise.all([
+    tx.select({ key: s.agencySettings.key }).from(s.agencySettings).where(inArray(s.agencySettings.key, ["time_zone", "workweek_starts_on"])),
+    exists(tx.select({ n: count() }).from(s.worksites).innerJoin(s.clients, eq(s.clients.id, s.worksites.clientId))),
+    exists(tx.select({ n: count() }).from(s.branches)),
+  ]);
+  const agencySet = (agency?.addressLines.length ?? 0) > 0 && ["time_zone", "workweek_starts_on"].every((k) => settingRows.some((r) => r.key === k));
   const [payroll, placements, approval, files, bank, ssn] = await Promise.all([
     payrollTarget(tx).then((t) => t !== null),
     exists(tx.select({ n: count() }).from(s.assignments).where(eq(s.assignments.status, "active"))),
@@ -42,7 +51,7 @@ export async function setupSteps(tx: Tx, periodsStarted: boolean): Promise<Recor
         ),
     ),
   ]);
-  return { payroll, placements, convert: periodsStarted, approval, files, bank, ssn };
+  return { agency: agencySet, clients: clientsWithSites, branches, payroll, placements, convert: periodsStarted, approval, files, bank, ssn };
 }
 
 export type PeriodState = "none" | "draft" | "validating" | "blocked" | "ready" | "approved" | "exported" | "closed" | "correcting";

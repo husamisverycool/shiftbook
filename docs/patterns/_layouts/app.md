@@ -36,6 +36,9 @@ root frame (demo banner above it).
       Billing (decision 0036; Linear's Administration › Billing, Vercel's Settings › Billing) after it,
       for the Owner only. Collections (slice r; Stripe's reminder settings) after Compliance settings,
       for everyone (only the Owner changes them); Money settings (slice w) after it, likewise.
+      Agency (business details and time zone; Linear's Workspace › General, Gusto's company details)
+      and Branches (Gusto's company locations) right after Settings, for everyone (only the Owner
+      changes them; completeness audit G1).
       Below a separator, the person's own items (slice k): their name and role (not a link),
       **Your account**, **Notifications** (slice r; Linear: Account › Notifications), and **Sign out**. Linear's docs do not say where its log-out item sits —
       listed as a difference.

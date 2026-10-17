@@ -8,10 +8,11 @@ import { currentActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientsPage(props: { params: Promise<{ locale: string }> }) {
+export default async function ClientsPage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
+  const showArchived = (await props.searchParams).archived === "1";
   const actor = await currentActor();
   const rows = await withAgency(actor.agencyId, async (tx) => listClients(tx, await agencyToday(tx)));
-  return <ClientsView rows={rows} />;
+  return <ClientsView rows={showArchived ? rows : rows.filter((r) => !r.archived)} archivedCount={rows.filter((r) => r.archived).length} showArchived={showArchived} />;
 }

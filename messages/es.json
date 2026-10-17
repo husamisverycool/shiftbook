@@ -647,7 +647,9 @@
     "money": "Dinero",
     "moneySettings": "Configuración de Dinero",
     "connections": "Conexiones",
-    "schedule": "Horario"
+    "schedule": "Horario",
+    "agencySettings": "Agencia",
+    "branches": "Sucursales"
   },
   "list": {
     "filter": "Filtrar",
@@ -1844,7 +1846,8 @@
       "terms": "Plazo de pago (días)",
       "otRule": "Cobro de horas extra",
       "billPremiums": "Cobrar primas",
-      "billGuarantees": "Cobrar mínimos garantizados"
+      "billGuarantees": "Cobrar mínimos garantizados",
+      "consolidate": "Estado de cuenta consolidado"
     },
     "yes": "Sí",
     "no": "No",
@@ -1902,7 +1905,8 @@
       "generic": "Algo salió mal. No se guardó nada."
     },
     "emptyTitle": "Aún no hay clientes",
-    "emptyBody": "Los clientes se agregan con sus órdenes de trabajo."
+    "emptyBody": "Agregue un cliente y sus lugares de trabajo antes de su primera orden de trabajo.",
+    "consolidateHint": "Cada factura de una semana se envía por correo con un estado de cuenta que enumera todas las facturas de esa semana para este cliente."
   },
   "reminderTemplate": {
     "before_due": {
@@ -3910,7 +3914,7 @@
     "showGuide": "Guía de configuración",
     "guide": {
       "title": "Guía de configuración",
-      "intro": "Siete pasos llevan una semana de las hojas de horas a las facturas cobradas. Cada uno se marca como hecho cuando ocurre.",
+      "intro": "Estos pasos llevan a una agencia nueva de sus propios datos a una semana de hojas de horas convertida en facturas pagadas. Cada uno se marca como hecho cuando ocurre.",
       "progress": "{done} de {total} pasos hechos",
       "hide": "Ocultar la guía",
       "collapse": "Contraer la guía",
@@ -3919,13 +3923,28 @@
       "done": "Hecho",
       "notDone": "Pendiente",
       "steps": {
+        "agency": {
+          "title": "Agregue los datos de su agencia",
+          "body": "Su dirección y teléfono aparecen en las facturas; su zona horaria y el día en que empieza su semana de pago fijan los vencimientos y los periodos de pago.",
+          "action": "Abrir la configuración de la agencia"
+        },
+        "clients": {
+          "title": "Agregue un cliente y su lugar de trabajo",
+          "body": "El condado y la ciudad de un lugar de trabajo deciden qué reglas salariales se aplican, por eso salen de la lista del Censo.",
+          "action": "Abrir clientes"
+        },
+        "branches": {
+          "title": "Agregue una sucursal",
+          "body": "Las órdenes de trabajo cuentan en el margen de una sucursal; los registros de Illinois nombran sucursales.",
+          "action": "Abrir sucursales"
+        },
         "payroll": {
           "title": "Elija su sistema de nómina",
           "body": "Granite crea el archivo que importa su sistema de nómina: Gusto, ADP, QuickBooks o una hoja de cálculo.",
           "action": "Abrir la configuración del archivo de nómina"
         },
         "placements": {
-          "title": "Agregue clientes y órdenes de trabajo",
+          "title": "Agregue órdenes de trabajo y asigne trabajadores",
           "body": "Las tarifas de pago y de cobro vienen de cada orden de trabajo. Importe asignaciones desde una hoja de cálculo o agréguelas una por una.",
           "action": "Abrir órdenes de trabajo"
         },
@@ -5022,6 +5041,10 @@
       "worker_message": {
         "title": "Mensaje de un trabajador",
         "line": "{worker} escribió en la aplicación para trabajadores."
+      },
+      "run_ready": {
+        "title": "Nómina semanal lista para aprobar",
+        "line": "La nómina semanal de {period} pasó sus comprobaciones y espera su aprobación."
       }
     },
     "settings": {
@@ -5041,7 +5064,8 @@
         "promise_broken": "Cuando pasa la fecha de un pago prometido sin pagarse.",
         "shift_confirmed": "Cuando un trabajador confirma un turno.",
         "staff_requested": "Cuando un cliente solicita trabajadores en su portal.",
-        "worker_message": "Cuando un trabajador escribe en la aplicación para trabajadores."
+        "worker_message": "Cuando un trabajador escribe en la aplicación para trabajadores.",
+        "run_ready": "Cuando una nómina semanal pasa sus comprobaciones y espera aprobación."
       }
     },
     "email": {
@@ -6517,5 +6541,188 @@
       "open": "Sigue abierto"
     },
     "nothing": "No hay turnos en estas cuatro semanas."
+  },
+  "clientSetup": {
+    "add": "Agregar cliente",
+    "addTitle": "Agregar cliente",
+    "addBody": "Empieza con la configuración de facturación estándar; cámbiela en su página, donde también agrega sus lugares de trabajo.",
+    "editTitle": "Editar cliente",
+    "update": "Actualizar cliente",
+    "actions": "Acciones",
+    "edit": "Editar información",
+    "archive": "Archivar cliente",
+    "restore": "Restaurar cliente",
+    "archived": "Archivado",
+    "showArchived": "Mostrar archivados",
+    "hideArchived": "Ocultar archivados",
+    "added": "Cliente agregado",
+    "updated": "Cliente actualizado",
+    "archivedDone": "Cliente archivado",
+    "restored": "Cliente restaurado",
+    "activePlacements": "Todavía hay trabajadores asignados a este cliente. Termine primero sus asignaciones.",
+    "busy": "Se están creando archivos en este momento. Inténtelo de nuevo en un momento.",
+    "generic": "No funcionó. Inténtelo de nuevo.",
+    "readOnly": "Solo el Propietario, los coordinadores y Facturación agregan y cambian clientes.",
+    "field": {
+      "name": "Nombre",
+      "code": "Código",
+      "codeHint": "Cómo nombran al cliente los archivos y las facturas: letras, dígitos, - o _, hasta 20.",
+      "billingEmail": "Correo de facturación",
+      "billingEmailHint": "Las facturas y los recordatorios se envían a este correo.",
+      "address": "Dirección de facturación",
+      "addressHint": "Hasta cuatro líneas, como la imprimen las facturas.",
+      "terms": "Plazo de pago (días)"
+    },
+    "rules": {
+      "required": "Obligatorio.",
+      "code": "Use letras, dígitos, - o _, hasta 20.",
+      "code_taken": "Otro cliente ya usa este código.",
+      "address": "Hasta cuatro líneas de hasta 200 caracteres cada una.",
+      "email": "Escriba un correo como nombre@empresa.com.",
+      "terms_days": "Un número entero de días de 0 a 365."
+    },
+    "worksites": {
+      "title": "Lugares de trabajo",
+      "add": "Agregar lugar de trabajo",
+      "addTitle": "Agregar lugar de trabajo",
+      "addBody": "La dirección decide qué reglas salariales estatales y locales se aplican, por eso su condado y su ciudad o pueblo salen de la lista del Censo.",
+      "editTitle": "Editar lugar de trabajo",
+      "fixed": "Aquí se trabajaron horas, así que su estado, condado y ciudad o pueblo no cambian. Para una mudanza, agregue un lugar de trabajo nuevo.",
+      "save": "Guardar lugar de trabajo",
+      "saved": "Lugar de trabajo guardado",
+      "none": "Todavía no hay lugares de trabajo. Una orden de trabajo necesita uno.",
+      "menu": "Acciones de {name}",
+      "edit": "Editar lugar de trabajo",
+      "archive": "Archivar lugar de trabajo",
+      "restore": "Restaurar lugar de trabajo",
+      "archived": "Archivado",
+      "archivedDone": "Lugar de trabajo archivado",
+      "restored": "Lugar de trabajo restaurado",
+      "activePlacements": "Todavía hay trabajadores asignados a este lugar de trabajo. Termine primero sus asignaciones.",
+      "where": "Condado de {county} · {place}",
+      "outside": "Fuera de cualquier ciudad o pueblo",
+      "chooseState": "Estado",
+      "chooseCounty": "Elija un condado",
+      "choosePlace": "Elija una ciudad o pueblo",
+      "placeHint": "Escriba para saltar en la lista. Elija Fuera de cualquier ciudad o pueblo para una zona no incorporada.",
+      "field": {
+        "name": "Nombre",
+        "street": "Dirección",
+        "city": "Ciudad",
+        "state": "Estado",
+        "zip": "Código postal",
+        "county": "Condado",
+        "place": "Ciudad o pueblo (Censo)"
+      },
+      "rules": {
+        "required": "Obligatorio.",
+        "state": "Elija un estado.",
+        "zip": "Escriba un código postal de 5 dígitos.",
+        "county": "Elija el condado de la lista.",
+        "place": "Elija la ciudad o pueblo de la lista, o Fuera de cualquier ciudad o pueblo.",
+        "place_in_use": "Aquí se trabajaron horas, así que su estado, condado y ciudad o pueblo no pueden cambiar. Agregue un lugar de trabajo nuevo para la dirección nueva."
+      }
+    }
+  },
+  "periodSetup": {
+    "start": "Iniciar un periodo de pago",
+    "body": "Elija una fecha: se agrega la semana de pago que la contiene, para una semana pagada tarde o antes de usar Granite.",
+    "date": "Un día de esa semana",
+    "started": "Periodo de pago agregado",
+    "noWeekTitle": "Elija el día en que empieza su semana de pago",
+    "noWeekBody": "Los periodos de pago siguen su semana de pago, la semana en que se cuentan las horas extra. Configure su primer día en la configuración del archivo de nómina.",
+    "noWeekAction": "Abrir la configuración del archivo de nómina",
+    "errors": {
+      "not_allowed": "Solo el Propietario y los coordinadores agregan periodos de pago.",
+      "no_workweek": "Primero configure el día en que empieza su semana de pago.",
+      "future": "Elija una fecha de esta semana o anterior.",
+      "exists": "Esa semana ya tiene un periodo de pago.",
+      "date": "Elija una fecha."
+    }
+  },
+  "agencySetup": {
+    "context": "Configuración",
+    "title": "Agencia",
+    "readOnly": "Solo el Propietario cambia los datos de la agencia.",
+    "detailsTitle": "Datos de la empresa",
+    "detailsIntro": "Sus facturas, estados de cuenta y correos los llevan.",
+    "detailsNote": "Las respuestas a facturas y correos llegan al correo de facturación.",
+    "zoneTitle": "Zona horaria",
+    "zoneIntro": "Dónde es \"hoy\" para los vencimientos, las semanas de pago y los recordatorios.",
+    "chooseZone": "Elija una zona horaria",
+    "saved": "Datos de la agencia guardados",
+    "generic": "No funcionó. Inténtelo de nuevo.",
+    "field": {
+      "name": "Nombre legal",
+      "address": "Dirección",
+      "addressHint": "Hasta cuatro líneas, como la imprimen las facturas.",
+      "phone": "Teléfono",
+      "email": "Correo de facturación",
+      "emailHint": "Los clientes responden aquí.",
+      "timeZone": "Zona horaria",
+      "timeZoneHint": "La zona horaria de la agencia."
+    },
+    "rules": {
+      "required": "Obligatorio.",
+      "address": "Hasta cuatro líneas de hasta 200 caracteres cada una.",
+      "phone": "Escriba un teléfono de EE. UU., como (815) 555-0100.",
+      "email": "Escriba un correo como nombre@empresa.com.",
+      "time_zone": "Elija una zona horaria."
+    },
+    "zones": {
+      "America_New_York": "Este (Nueva York)",
+      "America_Chicago": "Centro (Chicago)",
+      "America_Denver": "Montaña (Denver)",
+      "America_Phoenix": "Arizona (Phoenix)",
+      "America_Los_Angeles": "Pacífico (Los Ángeles)",
+      "America_Anchorage": "Alaska (Anchorage)",
+      "Pacific_Honolulu": "Hawái (Honolulu)",
+      "America_Puerto_Rico": "Atlántico (Puerto Rico)"
+    },
+    "payWeek": {
+      "title": "Semana de pago",
+      "intro": "Las horas extra se cuentan en esta semana, y cada periodo de pago es una de ellas.",
+      "label": "La semana de pago empieza el",
+      "hint": "Puede cambiar hasta que se registren horas o se procese una semana.",
+      "fixed": "Fija ahora que hay horas registradas: un cambio requiere cuidado con las horas extra ya contadas.",
+      "choose": "Elija un día",
+      "saved": "Semana de pago guardada",
+      "in_use": "Ya hay horas registradas, así que el día de la semana de pago es fijo.",
+      "days": {
+        "d0": "domingo",
+        "d1": "lunes",
+        "d2": "martes",
+        "d3": "miércoles",
+        "d4": "jueves",
+        "d5": "viernes",
+        "d6": "sábado"
+      }
+    }
+  },
+  "branchSetup": {
+    "title": "Sucursales",
+    "listTitle": "Sucursales",
+    "intro": "Las órdenes de trabajo cuentan en el margen de una sucursal, y los registros de Illinois nombran sucursales.",
+    "readOnly": "Solo el Propietario cambia las sucursales.",
+    "add": "Agregar sucursal",
+    "addTitle": "Agregar sucursal",
+    "rename": "Cambiar nombre",
+    "renameTitle": "Cambiar el nombre de la sucursal",
+    "name": "Nombre",
+    "archive": "Archivar",
+    "restore": "Restaurar",
+    "archived": "Archivada",
+    "menu": "Acciones de {name}",
+    "jobOrders": "{count, plural, =0 {Sin órdenes de trabajo} one {# orden de trabajo} other {# órdenes de trabajo}}",
+    "none": "Todavía no hay sucursales. Las órdenes de trabajo se pueden guardar sin una.",
+    "added": "Sucursal agregada",
+    "renamed": "Nombre de la sucursal cambiado",
+    "archivedDone": "Sucursal archivada",
+    "restored": "Sucursal restaurada",
+    "generic": "No funcionó. Inténtelo de nuevo.",
+    "rules": {
+      "required": "Escriba un nombre de hasta 100 caracteres.",
+      "name_taken": "Otra sucursal abierta tiene este nombre."
+    }
   }
 }

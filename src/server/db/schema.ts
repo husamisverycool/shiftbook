@@ -107,6 +107,8 @@ export const branches = pgTable("branches", {
   id: id(),
   agencyId: agencyId(),
   name: text("name").notNull(),
+  /** Archived branches leave the pickers; margin and registrations keep naming them (drizzle/0061). */
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
 
@@ -229,6 +231,8 @@ export const clients = pgTable("clients", {
   approvalRequired: boolean("approval_required").notNull().default(false),
   /** Whether workers may clock in from the worker app at this client, and with their location (slice t; drizzle/0046). */
   workerClock: text("worker_clock").$type<WorkerClock>().notNull().default("off"),
+  /** Archived clients leave the lists and pickers; their runs and invoices stay (drizzle/0061). */
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
 export type WorkerClock = "off" | "on" | "location";
@@ -251,6 +255,7 @@ export const worksites = pgTable(
     countyFips: countyFips(),
     placeFips: placeFips(),
     outsideAnyPlace: boolean("outside_any_place").notNull().default(false),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -1713,7 +1718,7 @@ export const promisesToPay = pgTable(
 );
 
 // ---------- notifications (slice r; drizzle/0045; Linear's Inbox) ----------
-export const NOTIFICATION_KINDS = ["approval_returned", "approval_disputed", "run_blocked", "obligation_due_soon", "obligation_overdue", "invoice_overdue", "promise_broken", "shift_confirmed", "staff_requested", "worker_message"] as const;
+export const NOTIFICATION_KINDS = ["approval_returned", "approval_disputed", "run_blocked", "obligation_due_soon", "obligation_overdue", "invoice_overdue", "promise_broken", "shift_confirmed", "staff_requested", "worker_message", "run_ready"] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 export const notifications = pgTable(

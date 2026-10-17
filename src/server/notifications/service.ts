@@ -41,6 +41,12 @@ export async function gatherFacts(tx: Tx, today: string, now: Date): Promise<Not
     .from(s.payRuns)
     .innerJoin(s.payPeriods, eq(s.payPeriods.id, s.payRuns.payPeriodId))
     .where(eq(s.payRuns.status, "blocked"));
+  // A run that passed its checks and waits for the Owner (the version a person is about to approve).
+  const readyRuns = await tx
+    .select({ id: s.payRuns.id, payPeriodId: s.payRuns.payPeriodId, periodStart: s.payPeriods.startsOn, periodEnd: s.payPeriods.endsOn })
+    .from(s.payRuns)
+    .innerJoin(s.payPeriods, eq(s.payPeriods.id, s.payRuns.payPeriodId))
+    .where(eq(s.payRuns.status, "ready"));
   const obligations = await tx.select({ id: s.obligations.id, kind: s.obligations.kind, dueOn: s.obligations.dueOn, remindOn: s.obligations.remindOn }).from(s.obligations).where(eq(s.obligations.status, "open"));
   const owed = (await invoiceBalances(tx)).filter((b) => b.invoice.status === "issued" && b.balanceCents > 0);
   const overdueInvoices = owed.filter((b) => b.invoice.dueOn < today).map((b) => ({ id: b.invoice.id, number: b.invoice.number, clientName: b.clientName, dueOn: b.invoice.dueOn, balanceCents: b.balanceCents }));
@@ -74,6 +80,7 @@ export async function gatherFacts(tx: Tx, today: string, now: Date): Promise<Not
   return {
     decisions: decisions.map((d) => ({ ...d, disputed: Number(d.disputed) })),
     blockedRuns: blockedRuns.map((r) => ({ ...r, blockers: Number(r.blockers) })),
+    readyRuns,
     obligations,
     overdueInvoices,
     brokenPromises,
@@ -166,6 +173,7 @@ export function kindsFor(role: Role): s.NotificationKind[] {
     shift_confirmed: "placements",
     staff_requested: "placements",
     worker_message: "workerApp",
+    run_ready: "run",
   };
   return s.NOTIFICATION_KINDS.filter((k) => can({ role }, ability[k]));
 }

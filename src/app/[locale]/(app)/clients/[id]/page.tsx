@@ -4,6 +4,8 @@ import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { ClientPage } from "@/components/shiftbook/clients/client-page";
 import { mayChangeBilling } from "@/server/catalog/billing";
+import { CENSUS_STATES } from "@/server/places/census";
+import { mayManageClients } from "@/server/setup/clients";
 import { clientDetail } from "@/server/clients/queries";
 import { withAgency } from "@/server/db";
 import { clientReceivables, openInvoicesByClient } from "@/server/receivables/queries";
@@ -33,5 +35,5 @@ export default async function ClientDetailPage(props: { params: Promise<{ locale
     };
   });
   if (!view.detail || !view.owes) notFound();
-  return <ClientPage detail={view.detail} mayChange={mayChangeBilling(actor)} today={view.today} owes={view.owes} clients={view.clients} mayCollect={mayCollect(actor)} portal={{ rows: view.portal, demo: isDemo() }} />;
+  return <ClientPage detail={view.detail} mayChange={mayChangeBilling(actor)} today={view.today} owes={view.owes} clients={view.clients} mayCollect={mayCollect(actor)} portal={{ rows: view.portal, demo: isDemo() }} setup={{ mayChange: mayManageClients(actor), states: CENSUS_STATES }} />;
 }

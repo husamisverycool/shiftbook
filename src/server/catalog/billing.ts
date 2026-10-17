@@ -29,6 +29,8 @@ export interface BillingSettings {
   overtimeBillingRule: (typeof s.otBillingRule.enumValues)[number];
   billPremiums: boolean;
   billGuarantees: boolean;
+  /** Send a consolidated statement of the week's invoices with each of them (SPEC §12). */
+  consolidate: boolean;
 }
 
 export interface BillingProblem {
@@ -47,7 +49,7 @@ export function billingProblems(value: unknown): BillingProblem[] {
   if (!s.INVOICE_TEMPLATES.includes(v.invoiceTemplate as s.InvoiceTemplate)) problems.push({ field: "invoiceTemplate", rule: "choose_template" });
   const sep = v.separateBy;
   if (!Array.isArray(sep) || sep.some((x) => !s.SEPARATE_BY.includes(x as s.SeparateBy)) || new Set(sep).size !== sep.length) problems.push({ field: "separateBy", rule: "choose_separate" });
-  for (const key of ["poRequired", "backupDetail", "backupImages", "billPremiums", "billGuarantees"] as const) {
+  for (const key of ["poRequired", "backupDetail", "backupImages", "billPremiums", "billGuarantees", "consolidate"] as const) {
     if (typeof v[key] !== "boolean") problems.push({ field: key, rule: "yes_or_no" });
   }
   const po = v.poNumber;
@@ -71,6 +73,7 @@ const pick = (v: BillingSettings): BillingSettings => ({
   overtimeBillingRule: v.overtimeBillingRule,
   billPremiums: v.billPremiums,
   billGuarantees: v.billGuarantees,
+  consolidate: v.consolidate,
 });
 
 /** The last day of the latest period this client was invoiced for, or null. */
@@ -93,7 +96,7 @@ export type BillingResult =
 /**
  * Starts a version of a client's invoice settings on `effectiveFrom`: the version before it ends the
  * day before; a version that already starts that day is replaced. Fields this page does not edit
- * (the VMS's name, consolidate) carry over from the version in force on that day.
+ * (the VMS's name, reminders off) carry over from the version in force on that day.
  */
 export async function setBillingSettings(tx: Tx, actor: Actor, clientId: string, values: unknown, effectiveFrom: string): Promise<BillingResult> {
   if (!mayChangeBilling(actor)) return { ok: false, error: "not_allowed" };
@@ -112,7 +115,7 @@ export async function setBillingSettings(tx: Tx, actor: Actor, clientId: string,
   const sameDay = versions.find((v) => v.effectiveFrom === effectiveFrom);
   const before = [...versions].filter((v) => v.effectiveFrom <= effectiveFrom).sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0];
   // A client switched off collection reminders stays off in the new version (money review A3).
-  const carried = { vmsName: before?.vmsName ?? null, consolidate: before?.consolidate ?? false, remindersOff: before?.remindersOff ?? false };
+  const carried = { vmsName: before?.vmsName ?? null, remindersOff: before?.remindersOff ?? false };
   if (sameDay) {
     await tx.update(s.clientBillingProfiles).set(settings).where(eq(s.clientBillingProfiles.id, sameDay.id));
     await audit(tx, actor, [{ action: "update", entityType: "billing_profile", entityId: sameDay.id, before: pick(sameDay as unknown as BillingSettings), after: { ...settings, clientId, effectiveFrom } }]);

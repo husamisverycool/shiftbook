@@ -46,7 +46,10 @@ person fix what needs review, and hand back the payroll file and one client invo
 ## Hierarchy
 **Landing (Gusto payroll list):** a page heading, then a table of pay periods — period · client ·
 status — with the row's action (start, or continue a saved run) at the row's end. Last week's
-period is the first row.
+period is the first row. Opening the page makes this week's and last week's periods when they do not
+exist yet (completeness audit G1); **Start a pay period** at the heading's right opens a small dialog
+with a date — the earlier week that contains it is added (a week paid late, or before Granite). Until
+the pay week's day is set, the page says so with a link to Settings › Payroll file.
 
 **Every step (Gusto flow frame), top to bottom:**
 1. **Header row:** the step trail on the left; **Save and exit** on the right (returns to the

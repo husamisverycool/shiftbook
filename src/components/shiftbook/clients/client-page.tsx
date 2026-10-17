@@ -28,6 +28,7 @@ import { ClientOwes } from "../receivables/client-owes";
 import { ReadOnlyNote } from "../abilities";
 import type { PortalAccessRow } from "@/server/portal/service";
 import { PortalAccess } from "./portal-access";
+import { ClientActions, WorksitesSection } from "./client-setup";
 
 type Profile = NonNullable<ClientDetail["current"]>;
 
@@ -43,6 +44,7 @@ const settingsOf = (p: Profile | null): BillingSettings => ({
   overtimeBillingRule: p?.overtimeBillingRule ?? "multiplier",
   billPremiums: p?.billPremiums ?? true,
   billGuarantees: p?.billGuarantees ?? true,
+  consolidate: p?.consolidate ?? false,
 });
 
 export function ClientPage({
@@ -53,6 +55,7 @@ export function ClientPage({
   clients,
   mayCollect,
   portal,
+  setup,
 }: {
   detail: ClientDetail;
   mayChange: boolean;
@@ -61,7 +64,10 @@ export function ClientPage({
   clients: PaymentClients;
   mayCollect: boolean;
   portal: { rows: PortalAccessRow[]; demo: boolean };
+  /** Who may change the client's details and worksites, and the Census states (completeness audit G1). */
+  setup: { mayChange: boolean; states: string[] };
 }) {
+  const ts = useTranslations("clientSetup");
   const t = useTranslations("clients");
   const ti = useTranslations("invoices");
   const tc = useTranslations("common");
@@ -115,7 +121,10 @@ export function ClientPage({
             [t("field.backupDetail"), p.backupDetail ? t("included") : t("notIncluded")],
             [t("field.backupImages"), p.backupImages ? t("included") : t("notIncluded")],
           ])}
-          {group(t("groups.delivery"), [[t("field.vmsFormat"), p.vmsFormat ? t(`vms.${p.vmsFormat}`) : t("vmsNone")]])}
+          {group(t("groups.delivery"), [
+            [t("field.vmsFormat"), p.vmsFormat ? t(`vms.${p.vmsFormat}`) : t("vmsNone")],
+            [t("field.consolidate"), yes(p.consolidate)],
+          ])}
           {group(t("groups.billing"), [
             [t("field.terms"), t("termsDays", { days: p.paymentTermsDays })],
             [t("field.otRule"), t(`otRule.${p.overtimeBillingRule}`)],
@@ -154,6 +163,8 @@ export function ClientPage({
             {detail.client.name} <span className="text-muted-foreground">· {detail.client.code}</span>
           </>
         }
+        status={detail.client.archived ? <Badge variant="secondary">{ts("archived")}</Badge> : undefined}
+        actions={setup.mayChange ? <ClientActions client={detail.client} archived={detail.client.archived} /> : undefined}
         description={facts.length > 0 ? <span data-testid="client-facts">{facts.join(" · ")}</span> : undefined}
       />
 
@@ -166,6 +177,8 @@ export function ClientPage({
         }
       >
         <ClientOwes clientId={detail.client.id} owes={owes} clients={clients} today={today} canChange={mayCollect} />
+
+        <WorksitesSection clientId={detail.client.id} rows={detail.worksites} states={setup.states} mayChange={setup.mayChange} />
 
         <Section id="client-invoices-title" title={ti("title")} accessory={detail.invoices.length > 0 ? detail.invoices.length : undefined}>
           {detail.invoices.length === 0 ? <p className="text-sm text-muted-foreground">{t("noInvoices")}</p> : <InvoicesTable rows={detail.invoices} showClient={false} today={today} />}
@@ -205,7 +218,7 @@ function EditSettings({ detail, today, onClose }: { detail: ClientDetail; today:
     ) : null;
   };
   const invalid = (field: BillingProblem["field"]) => (problem(field) ? { "aria-invalid": true, "aria-describedby": `bill-${field}-error` } : {});
-  const check = (key: "poRequired" | "backupDetail" | "backupImages" | "billPremiums" | "billGuarantees", label: string, hint?: string) => (
+  const check = (key: "poRequired" | "backupDetail" | "backupImages" | "billPremiums" | "billGuarantees" | "consolidate", label: string, hint?: string) => (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <Checkbox id={`bill-${key}`} checked={values[key]} onCheckedChange={(on) => set(key, on === true)} data-testid={`field-${key}`} />
@@ -307,6 +320,7 @@ function EditSettings({ detail, today, onClose }: { detail: ClientDetail; today:
               <p className="text-xs text-muted-foreground">{t("vmsHint")}</p>
               {error("vmsFormat")}
             </div>
+            {check("consolidate", t("field.consolidate"), t("consolidateHint"))}
           </fieldset>
 
           <fieldset className="flex flex-col gap-3">

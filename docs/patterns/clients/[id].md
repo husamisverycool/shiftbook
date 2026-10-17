@@ -14,6 +14,7 @@ Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/AddInvoiceTerms.htm
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/understandingInvoiceTerms.htm
 Source URL: https://support.avionte.com/hc/en-us/articles/56451748020243-BOLD-Front-Office-Billing-Preferences
 Source URL: https://support.freshbooks.com/hc/en-us/articles/217181797-What-are-clients
+Source URL: https://support.gusto.com/article/106622257100000/edit-company-details-for-admins
 Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §5.3). Confidence: high for the
 sections and the dated versions; the page layout follows Stripe's documented Details → Edit flow.
 
@@ -26,7 +27,9 @@ and the client's invoices.
 2. **Invoice settings** section (Stripe Details; Avionté sections), with **Edit** at its right:
    - Invoice: template; separate invoices by (PO, worksite); PO required; client PO.
    - Backup: line detail; timesheet pictures.
-   - Delivery: VMS upload file.
+   - Delivery: VMS upload file; consolidated statement (SPEC §12: each invoice of a week is emailed
+     with a statement of all that week's invoices for the client — QuickBooks statements; completeness
+     audit G1).
    - Billing: payment terms (days); overtime billing; bill premiums; bill guarantees.
    - "In effect from {date}" and the earlier versions as a list (Bullhorn Invoice Term versions):
      each with its dates.
@@ -44,6 +47,22 @@ and the client's invoices.
    link. In the demo, each person's latest email as delivered, with its working link.
    Source URL: https://linear.app/docs/members-roles
    Source URL: https://docs.stripe.com/customer-management
+
+## Client details and worksites (completeness audit G1, `docs/research/agency-setup-g1.md`)
+- **Actions** menu at the header's right (Stripe's customer page): **Edit information** opens a dialog
+  (name, code, billing email, billing address) whose button is **Update client**; **Archive client** /
+  **Restore client** (Stripe's Delete customer, kept as archive), refused with a line saying why while
+  workers are still placed there. An archived client says so beside its name.
+- **Worksites** module on the left, under what the client owes (Gusto's company locations): each
+  site a row — name, address, city and state, its county and city or town as the Census names them —
+  with a "…" menu: **Edit worksite**, **Archive worksite** (Gusto's Deactivate this location).
+  **Add worksite** at the heading's right opens a dialog (Gusto's Add location): name, street, city,
+  state, ZIP, then the county chosen from the state's Census list and the city or town searched in
+  the Census list of that county, or "Outside any city or town". A worksite where hours were already
+  worked keeps its state, county and place (Gusto: "If the employee used to work at that address, the
+  address cannot be edited"): the dialog says so and those fields are read only; a move is a new
+  worksite. No worksites: one muted row with **Add worksite**.
+- Who: the Owner, coordinators and Billing; anyone else sees it read only.
 
 ## Interactions
 - **Edit** opens a dialog (Stripe "Update customer") with the same fields and an "Applies from"

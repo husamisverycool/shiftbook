@@ -647,7 +647,9 @@
     "money": "Money",
     "moneySettings": "Money settings",
     "connections": "Connections",
-    "schedule": "Schedule"
+    "schedule": "Schedule",
+    "agencySettings": "Agency",
+    "branches": "Branches"
   },
   "list": {
     "filter": "Filter",
@@ -1844,7 +1846,8 @@
       "terms": "Payment terms (days)",
       "otRule": "Overtime billing",
       "billPremiums": "Bill premiums",
-      "billGuarantees": "Bill minimum guarantees"
+      "billGuarantees": "Bill minimum guarantees",
+      "consolidate": "Consolidated statement"
     },
     "yes": "Yes",
     "no": "No",
@@ -1902,7 +1905,8 @@
       "generic": "Something went wrong. Nothing was saved."
     },
     "emptyTitle": "No clients yet",
-    "emptyBody": "Clients are added with their job orders."
+    "emptyBody": "Add a client and its worksites before its first job order.",
+    "consolidateHint": "Each invoice of a week is emailed with a statement listing all of that week's invoices for this client."
   },
   "reminderTemplate": {
     "before_due": {
@@ -3910,7 +3914,7 @@
     "showGuide": "Setup guide",
     "guide": {
       "title": "Setup guide",
-      "intro": "Seven steps take a week from timesheets to paid invoices. Each is marked done when it happens.",
+      "intro": "These steps take a new agency from its own details to a week of timesheets turned into paid invoices. Each is marked done when it happens.",
       "progress": "{done} of {total} steps done",
       "hide": "Hide guide",
       "collapse": "Collapse the guide",
@@ -3919,13 +3923,28 @@
       "done": "Done",
       "notDone": "Not done",
       "steps": {
+        "agency": {
+          "title": "Add your agency's details",
+          "body": "Your address and phone go on invoices; your time zone and the day your pay week starts set due dates and pay periods.",
+          "action": "Open agency settings"
+        },
+        "clients": {
+          "title": "Add a client and its worksite",
+          "body": "A worksite's county and city decide which wage rules apply, so they come from the Census list.",
+          "action": "Open clients"
+        },
+        "branches": {
+          "title": "Add a branch",
+          "body": "Job orders count in a branch's margin; Illinois registrations name branches.",
+          "action": "Open branches"
+        },
         "payroll": {
           "title": "Choose your payroll system",
           "body": "Granite makes the file your payroll system imports: Gusto, ADP, QuickBooks or a spreadsheet.",
           "action": "Open payroll file settings"
         },
         "placements": {
-          "title": "Add clients and job orders",
+          "title": "Add job orders and place workers",
           "body": "Pay and bill rates come from each job order. Import placements from a spreadsheet or add them one at a time.",
           "action": "Open job orders"
         },
@@ -5022,6 +5041,10 @@
       "worker_message": {
         "title": "Message from a worker",
         "line": "{worker} wrote in the worker app."
+      },
+      "run_ready": {
+        "title": "Run ready to approve",
+        "line": "The run for {period} passed its checks and waits for your approval."
       }
     },
     "settings": {
@@ -5041,7 +5064,8 @@
         "promise_broken": "When a promised payment date passes unpaid.",
         "shift_confirmed": "When a worker confirms a shift.",
         "staff_requested": "When a client asks for workers in its portal.",
-        "worker_message": "When a worker writes in the worker app."
+        "worker_message": "When a worker writes in the worker app.",
+        "run_ready": "When a weekly run passes its checks and waits for approval."
       }
     },
     "email": {
@@ -6517,5 +6541,188 @@
       "open": "Still open"
     },
     "nothing": "No shifts in these four weeks."
+  },
+  "clientSetup": {
+    "add": "Add client",
+    "addTitle": "Add client",
+    "addBody": "It starts with standard invoice settings; change them on its page, where you also add its worksites.",
+    "editTitle": "Edit client",
+    "update": "Update client",
+    "actions": "Actions",
+    "edit": "Edit information",
+    "archive": "Archive client",
+    "restore": "Restore client",
+    "archived": "Archived",
+    "showArchived": "Show archived",
+    "hideArchived": "Hide archived",
+    "added": "Client added",
+    "updated": "Client updated",
+    "archivedDone": "Client archived",
+    "restored": "Client restored",
+    "activePlacements": "Workers are still placed at this client. End their placements first.",
+    "busy": "Files are being made right now. Try again in a moment.",
+    "generic": "That didn't work. Try again.",
+    "readOnly": "Only the Owner, coordinators and Billing add and change clients.",
+    "field": {
+      "name": "Name",
+      "code": "Code",
+      "codeHint": "How files and invoices name the client: letters, digits, - or _, up to 20.",
+      "billingEmail": "Billing email",
+      "billingEmailHint": "Invoices and reminders are emailed here.",
+      "address": "Billing address",
+      "addressHint": "Up to four lines, as invoices print it.",
+      "terms": "Payment terms (days)"
+    },
+    "rules": {
+      "required": "Required.",
+      "code": "Use letters, digits, - or _, up to 20.",
+      "code_taken": "Another client already uses this code.",
+      "address": "Up to four lines of up to 200 characters each.",
+      "email": "Enter an email address like name@company.com.",
+      "terms_days": "A whole number of days from 0 to 365."
+    },
+    "worksites": {
+      "title": "Worksites",
+      "add": "Add worksite",
+      "addTitle": "Add worksite",
+      "addBody": "The address decides which state and local wage rules apply, so its county and city or town come from the Census list.",
+      "editTitle": "Edit worksite",
+      "fixed": "Hours were worked here, so its state, county and city or town stay as they are. For a move, add a new worksite.",
+      "save": "Save worksite",
+      "saved": "Worksite saved",
+      "none": "No worksites yet. A job order needs one.",
+      "menu": "Actions for {name}",
+      "edit": "Edit worksite",
+      "archive": "Archive worksite",
+      "restore": "Restore worksite",
+      "archived": "Archived",
+      "archivedDone": "Worksite archived",
+      "restored": "Worksite restored",
+      "activePlacements": "Workers are still placed at this worksite. End their placements first.",
+      "where": "{county} County · {place}",
+      "outside": "Outside any city or town",
+      "chooseState": "State",
+      "chooseCounty": "Choose a county",
+      "choosePlace": "Choose a city or town",
+      "placeHint": "Type to jump in the list. Choose Outside any city or town for an unincorporated area.",
+      "field": {
+        "name": "Name",
+        "street": "Street address",
+        "city": "City",
+        "state": "State",
+        "zip": "ZIP code",
+        "county": "County",
+        "place": "City or town (Census)"
+      },
+      "rules": {
+        "required": "Required.",
+        "state": "Choose a state.",
+        "zip": "Enter a 5-digit ZIP code.",
+        "county": "Choose the county from the list.",
+        "place": "Choose the city or town from the list, or Outside any city or town.",
+        "place_in_use": "Hours were worked here, so its state, county and city or town cannot change. Add a new worksite for the new address."
+      }
+    }
+  },
+  "periodSetup": {
+    "start": "Start a pay period",
+    "body": "Choose a date: the pay week that contains it is added, for a week paid late or before you used Granite.",
+    "date": "A day in that week",
+    "started": "Pay period added",
+    "noWeekTitle": "Choose the day your pay week starts",
+    "noWeekBody": "Pay periods follow your pay week, the week overtime is counted in. Set its first day in the payroll file settings.",
+    "noWeekAction": "Open payroll file settings",
+    "errors": {
+      "not_allowed": "Only the Owner and coordinators add pay periods.",
+      "no_workweek": "Set the day your pay week starts first.",
+      "future": "Choose a date in this week or earlier.",
+      "exists": "That week already has a pay period.",
+      "date": "Choose a date."
+    }
+  },
+  "agencySetup": {
+    "context": "Settings",
+    "title": "Agency",
+    "readOnly": "Only the Owner changes the agency's details.",
+    "detailsTitle": "Business details",
+    "detailsIntro": "Your invoices, statements and emails carry these.",
+    "detailsNote": "Replies to invoices and emails go to the billing email.",
+    "zoneTitle": "Time zone",
+    "zoneIntro": "Where \"today\" is for due dates, pay weeks and reminders.",
+    "chooseZone": "Choose a time zone",
+    "saved": "Agency details saved",
+    "generic": "That didn't work. Try again.",
+    "field": {
+      "name": "Legal name",
+      "address": "Address",
+      "addressHint": "Up to four lines, as invoices print it.",
+      "phone": "Phone",
+      "email": "Billing email",
+      "emailHint": "Clients reply here.",
+      "timeZone": "Time zone",
+      "timeZoneHint": "The agency's own time zone."
+    },
+    "rules": {
+      "required": "Required.",
+      "address": "Up to four lines of up to 200 characters each.",
+      "phone": "Enter a US phone number, like (815) 555-0100.",
+      "email": "Enter an email address like name@company.com.",
+      "time_zone": "Choose a time zone."
+    },
+    "zones": {
+      "America_New_York": "Eastern (New York)",
+      "America_Chicago": "Central (Chicago)",
+      "America_Denver": "Mountain (Denver)",
+      "America_Phoenix": "Arizona (Phoenix)",
+      "America_Los_Angeles": "Pacific (Los Angeles)",
+      "America_Anchorage": "Alaska (Anchorage)",
+      "Pacific_Honolulu": "Hawaii (Honolulu)",
+      "America_Puerto_Rico": "Atlantic (Puerto Rico)"
+    },
+    "payWeek": {
+      "title": "Pay week",
+      "intro": "Overtime is counted in this week, and each pay period is one of them.",
+      "label": "Pay week starts on",
+      "hint": "Can change until hours are filed or a week is run.",
+      "fixed": "Fixed now that hours are filed: a change needs care with overtime already counted.",
+      "choose": "Choose a day",
+      "saved": "Pay week saved",
+      "in_use": "Hours are already filed, so the pay week's day is fixed.",
+      "days": {
+        "d0": "Sunday",
+        "d1": "Monday",
+        "d2": "Tuesday",
+        "d3": "Wednesday",
+        "d4": "Thursday",
+        "d5": "Friday",
+        "d6": "Saturday"
+      }
+    }
+  },
+  "branchSetup": {
+    "title": "Branches",
+    "listTitle": "Branches",
+    "intro": "Job orders count in a branch's margin, and Illinois registrations name branches.",
+    "readOnly": "Only the Owner changes branches.",
+    "add": "Add branch",
+    "addTitle": "Add branch",
+    "rename": "Rename",
+    "renameTitle": "Rename branch",
+    "name": "Name",
+    "archive": "Archive",
+    "restore": "Restore",
+    "archived": "Archived",
+    "menu": "Actions for {name}",
+    "jobOrders": "{count, plural, =0 {No job orders} one {# job order} other {# job orders}}",
+    "none": "No branches yet. Job orders can still be saved without one.",
+    "added": "Branch added",
+    "renamed": "Branch renamed",
+    "archivedDone": "Branch archived",
+    "restored": "Branch restored",
+    "generic": "That didn't work. Try again.",
+    "rules": {
+      "required": "Enter a name of up to 100 characters.",
+      "name_taken": "Another open branch has this name."
+    }
   }
 }

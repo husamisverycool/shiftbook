@@ -12,6 +12,8 @@ Researched: 2026-10-17. Confidence: medium (Stripe's email text is not published
 3. Amount due and due date (credit note: amount credited and the invoice it credits).
 4. The agency's message when one was typed.
 5. The PDF attached (with its backup pages when the client's settings include them).
+   When the client gets a consolidated statement and the week has two or more of its invoices, the
+   statement PDF is attached too (completeness audit G1).
 6. Footer: the agency's contact details.
 
 ## Hierarchy (reminder)

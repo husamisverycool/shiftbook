@@ -62,6 +62,11 @@ centred column, each section's rows in a rounded bordered panel, a form's Save i
       field, kept on Save) and the codes found, for the Codes tab. The file is read in the browser.
    4. That panel's foot: when it was last changed and by whom at the left; "Saved" and **Save** (7shifts
       saves explicitly) at the right.
+2b. **Pay week** section (completeness audit G1; Gusto's pay schedule, which names the day a pay period
+   starts): one row — "Pay week starts on" over a muted line (overtime is counted in this week,
+   29 C.F.R. § 778.105) and a select of the seven days at the right, saved when changed. Once hours are
+   filed or a run is made the select is read only and the line says the day is now fixed.
+   Source URL: https://support.gusto.com/article/106622257100000/edit-company-details-for-admins
 3. **Tabs** (7shifts Settings tabs) for the system in use: **Earning codes** · **Worker ids** ·
    **Spreadsheet columns** (only when the system is Spreadsheet). Under each tab, its muted line, then
    its panel (the tab names the section; its heading is for screen readers).

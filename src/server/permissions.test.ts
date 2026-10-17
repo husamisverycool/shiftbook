@@ -17,7 +17,7 @@ describe("what each role may change (SPEC §2)", () => {
 
   it("a coordinator: intake and hours, placements, the roster (never a whole SSN), their compliance duties; no run approval, money, settings or margin", () => {
     const yes = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: "coordinator" }, a));
-    expect(yes.sort()).toEqual(["compliance", "employment", "hours", "placementTerms", "placements", "workerApp", "workers"]);
+    expect(yes.sort()).toEqual(["clients", "compliance", "employment", "hours", "placementTerms", "placements", "workerApp", "workers"]);
   });
 
   it("a recruiter (SPEC §2, §27): job orders and placements, the roster and onboarding, messages with workers; no hours, run, money, settings or margin", () => {
@@ -31,7 +31,7 @@ describe("what each role may change (SPEC §2)", () => {
 
   it("billing: client billing, cash, their compliance duties; no hours, run, settings or margin", () => {
     const yes = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: "billing" }, a));
-    expect(yes.sort()).toEqual(["cash", "clientBilling", "compliance"]);
+    expect(yes.sort()).toEqual(["cash", "clientBilling", "clients", "compliance"]);
   });
 });
 

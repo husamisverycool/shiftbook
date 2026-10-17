@@ -408,7 +408,7 @@ for (const locale of ["en", "es"] as const) {
 
     // Home: every step of the guide is done.
     await go(m.nav.home);
-    await expect(page.getByTestId("setup-progress")).toHaveText(m.home.guide.progress.replace("{done}", "7").replace("{total}", "7"));
+    await expect(page.getByTestId("setup-progress")).toHaveText(m.home.guide.progress.replace("{done}", "10").replace("{total}", "10"));
     await fitsFrame(page);
     expect(errors).toEqual([]);
     await context.close();

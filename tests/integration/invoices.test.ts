@@ -82,6 +82,7 @@ async function current(): Promise<BillingSettings> {
     overtimeBillingRule: p!.overtimeBillingRule,
     billPremiums: p!.billPremiums,
     billGuarantees: p!.billGuarantees,
+    consolidate: p!.consolidate,
   };
 }
 

@@ -25,6 +25,11 @@ export const ABILITIES = {
   placementTerms: ["owner", "coordinator"],
   /** A client's billing details. */
   clientBilling: ["owner", "billing"],
+  /**
+   * Adding and editing clients and their worksites, archiving a client (the audit of an agency that
+   * signs itself up): placements need the client and site, billing needs the bill-to.
+   */
+  clients: ["owner", "coordinator", "billing"],
   /** Payments, credits, write-offs, short-pays, reminders, the bank file. */
   cash: ["owner", "billing"],
   /** Compliance duties (each duty also names the roles that act on it). */

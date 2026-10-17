@@ -11,6 +11,8 @@ export interface NotificationFacts {
   decisions: { id: string; requestId: string; clientName: string; periodStart: string; periodEnd: string; disputed: number }[];
   /** A weekly run stopped by its blocking checks. */
   blockedRuns: { id: string; payPeriodId: string; periodStart: string; periodEnd: string; blockers: number }[];
+  /** A weekly run that passed its checks and waits for the Owner's approval. */
+  readyRuns?: { id: string; payPeriodId: string; periodStart: string; periodEnd: string }[];
   /** An open compliance duty; `remindOn` is the duty's own reminder day (its rule's lead time). */
   obligations: { id: string; kind: string; dueOn: string; remindOn: string | null }[];
   /** An invoice past its due date with money still owed. */
@@ -47,6 +49,9 @@ export function noticesFrom(f: NotificationFacts, today: string): Notice[] {
   }
   for (const r of f.blockedRuns) {
     out.push({ kind: "run_blocked", dedupeKey: `run:${r.id}:blocked`, href: `/convert?period=${r.payPeriodId}&step=exceptions`, params: { start: r.periodStart, end: r.periodEnd, blockers: r.blockers }, ability: "run" });
+  }
+  for (const r of f.readyRuns ?? []) {
+    out.push({ kind: "run_ready", dedupeKey: `run:${r.id}:ready`, href: `/convert?period=${r.payPeriodId}&step=totals`, params: { start: r.periodStart, end: r.periodEnd }, ability: "run" });
   }
   for (const o of f.obligations) {
     const params = { kind: o.kind, dueOn: o.dueOn };

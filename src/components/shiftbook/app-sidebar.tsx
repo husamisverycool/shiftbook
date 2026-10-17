@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BellIcon, BriefcaseIcon, Building2Icon, CalendarDaysIcon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, CoinsIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HandCoinsIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, PlugIcon, ReceiptTextIcon, SearchIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BellIcon, BriefcaseIcon, Building2Icon, CalendarDaysIcon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, CoinsIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HandCoinsIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, PlugIcon, ReceiptTextIcon, SearchIcon, SettingsIcon, ShieldCheckIcon, StoreIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -81,6 +81,8 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
           ]
         : []),
       { href: "/settings/payroll", label: t("settings"), icon: SettingsIcon },
+      { href: "/settings/agency", label: `${t("settings")} › ${t("agencySettings")}`, icon: StoreIcon },
+      { href: "/settings/branches", label: `${t("settings")} › ${t("branches")}`, icon: Building2Icon },
       ...(showMargin ? [{ href: "/settings/margin", label: t("marginSettings"), icon: ChartColumnIcon }] : []),
       { href: "/settings/compliance", label: t("complianceSettings"), icon: ShieldCheckIcon },
       { href: "/settings/collections", label: t("collections"), icon: HandCoinsIcon },
@@ -162,6 +164,15 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
               <DropdownMenuItem render={<Link href="/settings/payroll" />} data-testid="menu-settings">
                 <SettingsIcon />
                 {t("settings")}
+              </DropdownMenuItem>
+              {/* Completeness audit G1: the agency's own details and its branches (Gusto's company details and locations). */}
+              <DropdownMenuItem render={<Link href="/settings/agency" />} data-testid="menu-agency">
+                <StoreIcon />
+                {t("agencySettings")}
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/settings/branches" />} data-testid="menu-branches">
+                <Building2Icon />
+                {t("branches")}
               </DropdownMenuItem>
               {showMargin && (
                 <DropdownMenuItem render={<Link href="/settings/margin" />} data-testid="menu-margin-settings">

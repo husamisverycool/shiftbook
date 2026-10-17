@@ -22,6 +22,9 @@ import { PeriodBusyError, periodState } from "@/server/run/period-lock";
 import { scheduledWithoutHours } from "@/server/schedule/queries";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
+import { can } from "@/server/permissions";
+import { ensurePayPeriods, WORKWEEK_KEY } from "@/server/setup/agency";
+import { agencyToday, settingOn } from "@/server/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +37,14 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
 
   const periodId = typeof sp.period === "string" ? sp.period : null;
   if (!periodId || !/^[0-9a-f-]{36}$/i.test(periodId)) {
+    // This week's and last week's periods exist once the pay week's day is set (completeness audit G1).
+    const setup = await inAgency(async (tx) => {
+      const today = await agencyToday(tx);
+      await ensurePayPeriods(tx, actor.agencyId, today);
+      return { weekSet: typeof (await settingOn<number>(tx, WORKWEEK_KEY, today)) === "number", canStart: can(actor, "hours"), today };
+    });
     const periods = await inAgency((tx) => listPeriods(tx));
-    return <Landing periods={periods} />;
+    return <Landing periods={periods} setup={setup} />;
   }
   const period = await inAgency((tx) => getPeriod(tx, periodId));
   if (!period) notFound();
