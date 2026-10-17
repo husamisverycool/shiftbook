@@ -94,6 +94,8 @@ export interface JobOrderRow {
   prevailingWage: boolean;
   createdAt: string;
   recent: ActivityItem[];
+  /** Made from a client's request in the portal (slice v). */
+  requestedByClient: boolean;
 }
 
 /** Every job order with today's rates and how many workers are on it now or later. */
@@ -105,6 +107,7 @@ export async function listJobOrders(tx: Tx, today: string): Promise<JobOrderRow[
     .innerJoin(s.worksites, eq(s.worksites.id, s.jobOrders.worksiteId));
   const cards = await tx.select().from(s.rateCards);
   const assignments = await tx.select().from(s.assignments);
+  const requested = new Set((await tx.select({ id: s.staffRequests.jobOrderId }).from(s.staffRequests).where(eq(s.staffRequests.status, "accepted"))).map((r) => r.id));
   const rows: JobOrderRow[] = [];
   for (const { job, client, site } of jobs) {
     const card = inForce(cards.filter((c) => c.jobOrderId === job.id && c.assignmentId === null), today);
@@ -125,6 +128,7 @@ export async function listJobOrders(tx: Tx, today: string): Promise<JobOrderRow[
       prevailingWage: job.prevailingWage,
       createdAt: job.createdAt.toISOString(),
       recent: await activityOf(tx, job.id, 3),
+      requestedByClient: requested.has(job.id),
     });
   }
   return rows.sort((a, b) => cmp(a.clientName, b.clientName) || cmp(a.position, b.position) || cmp(a.shift ?? "", b.shift ?? "") || cmp(a.id, b.id));

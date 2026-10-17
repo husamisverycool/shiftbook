@@ -26,6 +26,8 @@ import { Crumbs, Page, PageHeader, RecordLayout, Section } from "../page";
 import { ClientClockSetting } from "../worker-app/client-clock";
 import { ClientOwes } from "../receivables/client-owes";
 import { ReadOnlyNote } from "../abilities";
+import type { PortalAccessRow } from "@/server/portal/service";
+import { PortalAccess } from "./portal-access";
 
 type Profile = NonNullable<ClientDetail["current"]>;
 
@@ -43,7 +45,23 @@ const settingsOf = (p: Profile | null): BillingSettings => ({
   billGuarantees: p?.billGuarantees ?? true,
 });
 
-export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect }: { detail: ClientDetail; mayChange: boolean; today: string; owes: ClientReceivables; clients: PaymentClients; mayCollect: boolean }) {
+export function ClientPage({
+  detail,
+  mayChange,
+  today,
+  owes,
+  clients,
+  mayCollect,
+  portal,
+}: {
+  detail: ClientDetail;
+  mayChange: boolean;
+  today: string;
+  owes: ClientReceivables;
+  clients: PaymentClients;
+  mayCollect: boolean;
+  portal: { rows: PortalAccessRow[]; demo: boolean };
+}) {
   const t = useTranslations("clients");
   const ti = useTranslations("invoices");
   const tc = useTranslations("common");
@@ -152,6 +170,8 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
         <Section id="client-invoices-title" title={ti("title")} accessory={detail.invoices.length > 0 ? detail.invoices.length : undefined}>
           {detail.invoices.length === 0 ? <p className="text-sm text-muted-foreground">{t("noInvoices")}</p> : <InvoicesTable rows={detail.invoices} showClient={false} today={today} />}
         </Section>
+
+        <PortalAccess clientId={detail.client.id} rows={portal.rows} mayChange={mayChange} demo={portal.demo} />
       </RecordLayout>
 
       {editing && <EditSettings detail={detail} today={today} onClose={() => setEditing(false)} />}

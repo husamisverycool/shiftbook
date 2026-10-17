@@ -39,6 +39,15 @@ workers, the rate in force today. Open one to see its details, assignments and r
    list stays usable and the previewed row stays highlighted. Panel header: "N of M" in this view,
    previous and next arrows, an expand control to the job order's page, and close. Body: the key
    fields (Attio "Highlights") and the most recent activity with a link to all of it.
+7. **Requested by clients** (slice v; Linear's Triage — what came in from outside waits above the
+   team's list until someone accepts or declines it; TempWorks order requests, where a rejection
+   carries a comment): a tinted band with its count above the rows, one row per client request —
+   position, client and contact, start, shift, number of workers, where, notes — with **Create job
+   order** (a dialog choosing the client's worksite; the job order takes the request's position,
+   shift and number of workers) and **Decline** (a dialog with the reason the client sees). Job orders
+   made this way carry a "Requested by client" badge in their own column.
+   Source URL: https://linear.app/docs/triage
+   Source URL: https://kb.tempworks.com/help/customer-portal-how-to-create-and-submit-orders
 
 ## Interactions
 - The command menu's "Create a job order…" opens this page with the create form open

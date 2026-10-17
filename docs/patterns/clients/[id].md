@@ -36,6 +36,14 @@ and the client's invoices.
    invoices it counts); **Record payment**.
 4. **Invoices** (Stripe customer page): this client's invoices, newest first, the same rows as the
    invoices list, linking to each.
+5. **Portal access** (slice v; Linear's members list: people as rows, name over email, initials
+   tile, a muted line at the right, a "…" menu; Stripe's customer portal login link): one muted line
+   on what the portal holds; each person with their last visit and how long their link works; the
+   menu: Send new link, Remove access (with a confirmation, Linear's "Remove member"); **Give
+   access** at the heading's right opens a dialog — name, email, language of emails — that sends the
+   link. In the demo, each person's latest email as delivered, with its working link.
+   Source URL: https://linear.app/docs/members-roles
+   Source URL: https://docs.stripe.com/customer-management
 
 ## Interactions
 - **Edit** opens a dialog (Stripe "Update customer") with the same fields and an "Applies from"

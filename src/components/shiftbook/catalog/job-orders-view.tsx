@@ -17,8 +17,11 @@ import { money } from "../format";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
 import { RecordList, type Column, type RowIcon } from "./record-list";
+import { StaffRequests } from "./staff-requests";
+import type { StaffRequestView } from "@/server/portal/service";
 
-export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options: CatalogOptions }) {
+export function JobOrdersView({ rows, options, requests = [] }: { rows: JobOrderRow[]; options: CatalogOptions; requests?: StaffRequestView[] }) {
+  const ts = useTranslations("staffRequests");
   const t = useTranslations("jobOrders");
   const locale = useLocale();
   // Decision 0026: job orders are changed by the Owner and coordinators (placements).
@@ -46,6 +49,7 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
     { key: "shift", label: t("col.shift"), cell: (r) => r.shift ?? "—", className: "w-28 truncate text-right", chip: true, icon: ClockIcon },
     { key: "soc", label: t("col.soc"), cell: (r) => r.socCode ?? "—", className: "w-20 tabular-nums" },
     { key: "prevailing", label: t("col.prevailing"), cell: (r) => (r.prevailingWage ? <Badge variant="outline">{t("prevailing")}</Badge> : null), className: "w-28" },
+    { key: "requested", label: ts("marker"), cell: (r) => (r.requestedByClient ? <Badge variant="outline" data-testid="requested-by-client">{ts("marker")}</Badge> : null), className: "w-40" },
   ];
 
   return (
@@ -58,7 +62,8 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
         secondary={(r, grouping) => (grouping === "client" ? r.worksiteName : `${r.clientName} · ${r.worksiteName}`)}
         hrefFor={(r) => `/job-orders/${r.id}`}
         columns={columns}
-        defaultColumns={["worksite", "headcount", "pay", "bill"]}
+        defaultColumns={["worksite", "headcount", "pay", "bill", "requested"]}
+        above={<StaffRequests requests={requests} mayDecide={mayChange} />}
         status={fill}
         groupings={[
           { key: "client", label: t("group.client"), value: (r) => r.clientName, icon: () => ({ icon: Building2Icon, tone: "neutral", label: t("group.client") }) },

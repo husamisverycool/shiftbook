@@ -5,7 +5,8 @@
 import { createHash, randomBytes } from "node:crypto";
 
 const TOKEN = /^sbap_[A-Za-z0-9_-]{43}$/;
-const ANY_TOKEN = /sbap_[A-Za-z0-9_-]{20,}/g;
+// Approval links (sbap_) and client portal links (sbcp_, slice v): both hidden wherever text is kept.
+const ANY_TOKEN = /sb(?:ap|cp)_[A-Za-z0-9_-]{20,}/g;
 
 /** What stands in for a link wherever a text is kept or shown to the agency. */
 export const HIDDEN_LINK = "[approval link hidden]";

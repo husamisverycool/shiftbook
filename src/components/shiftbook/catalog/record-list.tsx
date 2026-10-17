@@ -95,6 +95,8 @@ interface Props<R extends { id: string }> {
   onCreate?: () => void;
   bulk?: (selected: R[], clear: () => void) => ReactNode;
   empty: ReactNode;
+  /** Something waiting on the reader, above the rows (Linear's Triage: requests from outside first). */
+  above?: ReactNode;
 }
 
 interface Display {
@@ -405,6 +407,8 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
             </Button>
           </div>
         )}
+
+        {p.above}
 
         {/* Rows, in groups */}
         <div className={cn(filtered.length > 0 && "border-t")} role="grid" aria-label={p.title} aria-multiselectable="true">
