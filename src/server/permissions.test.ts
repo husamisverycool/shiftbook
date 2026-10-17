@@ -96,7 +96,8 @@ describe("every server action checks the table first", () => {
   // An action either asks for an ability (actorAllowedTo("…")), is one of the person's own settings
   // (currentActor("setup") / their own session), is a client's link (the portal), or only reads.
   const READS = new Set(["entryHistory"]);
-  const OWN = new Set(["resetDemoAction"]);
+  // Slice r: a person's own notices and their own email switches change nothing of the agency's.
+  const OWN = new Set(["resetDemoAction", "markReadAction", "markAllReadAction", "deleteAction", "deleteReadAction", "setEmailAction"]);
   for (const file of files) {
     const text = readFileSync(file, "utf8");
     if (file.includes("(portal)") || file.includes("(auth)")) continue;

@@ -140,6 +140,8 @@ describe("scheduled collection reminders (Stripe: before, when or after the due 
   beforeEach(invoicedWeek);
 
   it("off by default; once on, each stage goes once on its day with the PDF; a client can be left out", async () => {
+    // The demo agency switches reminders on; this test starts from an agency that never did.
+    await owner.db.delete(s.agencySettings).where(and(eq(s.agencySettings.agencyId, DEMO_AGENCY.id), eq(s.agencySettings.key, "collection_reminders")));
     expect(await sweepReminders(deps("2026-11-19"), theOwner.agencyId)).toEqual({ sent: 0, failed: 0 });
     expect(await inAgency((tx) => saveSchedule(tx, coordinator, { enabled: true, beforeDueDays: 3, overdueDays: 7, finalDays: 30 }))).toEqual({ ok: false, error: "forbidden" });
     expect(await inAgency((tx) => saveSchedule(tx, theOwner, { enabled: true, beforeDueDays: 3, overdueDays: 5, finalDays: 30 }))).toEqual({ ok: false, error: "invalid" });

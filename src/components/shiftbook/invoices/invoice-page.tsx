@@ -3,9 +3,9 @@
 // Pattern: docs/patterns/invoices/[id].md — Stripe invoice details (header with the number, status
 // and actions; amount and dates; line items; history with related documents); TempWorks "Preview
 // Invoice w/ Timecards" and SAP Fieldglass "Related" for the backup; Bullhorn One credit links.
-import { EllipsisIcon, FileImageIcon } from "lucide-react";
+import { EllipsisIcon, FileImageIcon, SendIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -17,10 +17,21 @@ import { dateRange, longDate, money } from "../format";
 import { Crumbs, Facts, Page, PageHeader, RECORD_LINK, RecordLayout, Section } from "../page";
 import { InvoicePayments } from "../receivables/invoice-payments";
 import { downloadHref, InvoiceStatusBadge } from "./invoices-table";
+import { CreditNoteDialog, PromiseDialog, SendInvoiceDialog } from "./collect-dialogs";
+import { useDateTime } from "../agency-zone";
+
+/** Slice r: when it was last emailed, what may still be credited, the promises to pay (invoices/[id].md). */
+export interface InvoiceCollect {
+  lastSent: { to: string; at: string } | null;
+  reminders: number;
+  billingEmail: string | null;
+  roomCents: number;
+  promises: { promisedOn: string; amountCents: number | null; note: string | null; by: string; at: string }[];
+}
 
 type Line = NonNullable<InvoiceDetail["printed"]>["lines"][number];
 
-export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { detail: InvoiceDetail; back: string; ar: InvoiceReceivables | null; clients: PaymentClients; today: string; canCollect: boolean }) {
+export function InvoicePage({ detail, back, ar, clients, today, canCollect, collect }: { detail: InvoiceDetail; back: string; ar: InvoiceReceivables | null; clients: PaymentClients; today: string; canCollect: boolean; collect: InvoiceCollect }) {
   const t = useTranslations("invoices");
   const td = useTranslations("invoices.detail");
   const tc = useTranslations("common");
@@ -29,6 +40,10 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
   const locale = useLocale();
   const r = detail.row;
   const credit = r.kind === "credit_note";
+  const tk = useTranslations("collect");
+  const when = useDateTime();
+  const [dialog, setDialog] = useState<"send" | "credit" | "promise" | null>(null);
+  const live = r.status !== "void";
   // Each line's detail in the reader's language when its parts say exactly what was printed; else as printed.
   const detailOf = (l: Line) =>
     l.parts
@@ -72,6 +87,8 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
   const summary: { label: string; value: ReactNode; testId?: string }[] = [
     ...amounts,
     { label: td("issued"), value: longDate(r.issuedOn, locale) },
+    // Stripe shows when an invoice was sent; Granite says to whom too.
+    { label: tk("send.action"), value: collect.lastSent ? tk("send.lastSent", { date: when(collect.lastSent.at, { time: false }), email: collect.lastSent.to }) : tk("send.never"), testId: "summary-sent" },
     ...(credit ? [] : [{ label: td("due"), value: longDate(r.dueOn, locale) }]),
     { label: td("period"), value: dateRange(r.period.startsOn, r.period.endsOn, locale) },
     { label: td("po"), value: detail.poNumber ?? "—" },
@@ -98,11 +115,27 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
                 <EllipsisIcon />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {canCollect && live && !credit && (
+                  <DropdownMenuItem onClick={() => setDialog("credit")} data-testid="issue-credit-note">
+                    {tk("credit.action")}
+                  </DropdownMenuItem>
+                )}
+                {canCollect && live && !credit && ar && ar.balanceCents > 0 && (
+                  <DropdownMenuItem onClick={() => setDialog("promise")} data-testid="record-promise">
+                    {tk("promise.action")}
+                  </DropdownMenuItem>
+                )}
                 {r.hasCsv && <DropdownMenuItem render={<a href={downloadHref(r.id, "csv")} download data-testid="download-csv" />}>{t("downloadCsv")}</DropdownMenuItem>}
                 {r.hasVms && <DropdownMenuItem render={<a href={downloadHref(r.id, "vms")} download data-testid="download-vms" />}>{t("downloadVms")}</DropdownMenuItem>}
                 {!r.hasCsv && !r.hasVms && <DropdownMenuItem disabled>{td("noOtherFiles")}</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
+            {canCollect && live && (
+              <Button size="sm" variant="outline" onClick={() => setDialog("send")} data-testid="send-invoice">
+                <SendIcon />
+                {credit ? tk("send.creditAction") : collect.lastSent ? tk("send.resend") : tk("send.action")}
+              </Button>
+            )}
             <a href={downloadHref(r.id, "pdf")} download className={buttonVariants({ size: "sm" })} data-testid="download-pdf">
               {t("downloadPdf")}
             </a>
@@ -202,7 +235,10 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
         )}
       </Section>
 
-      {ar && !credit && <InvoicePayments invoiceId={r.id} number={r.number} clientId={detail.client.id} ar={ar} clients={clients} today={today} canChange={canCollect} />}
+      {ar && !credit && <InvoicePayments invoiceId={r.id} number={r.number} clientId={detail.client.id} ar={ar} clients={clients} today={today} canChange={canCollect} promises={collect.promises} onPromise={() => setDialog("promise")} />}
+      {dialog === "send" && <SendInvoiceDialog invoiceId={r.id} number={r.number} kind={r.kind} billingEmail={collect.billingEmail} onClose={() => setDialog(null)} />}
+      {dialog === "credit" && <CreditNoteDialog invoiceId={r.id} number={r.number} roomCents={collect.roomCents} balanceCents={ar?.balanceCents ?? r.totalCents} onClose={() => setDialog(null)} />}
+      {dialog === "promise" && <PromiseDialog invoiceId={r.id} number={r.number} today={today} onClose={() => setDialog(null)} />}
 
       <Section id="related-title" title={td("related")}>
         <ul className="flex flex-col divide-y text-sm" data-testid="related-list">

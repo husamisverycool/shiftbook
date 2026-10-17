@@ -306,11 +306,14 @@ async function seedDemoIfMissing(ownerUrl: string): Promise<void> {
 }
 
 async function sendReminders(port: string, secret: string): Promise<void> {
-  try {
-    const response = await fetch(`http://127.0.0.1:${port}/api/approvals/reminders`, { headers: { authorization: `Bearer ${secret}` } });
-    if (!response.ok) say(`approval reminders answered ${response.status}`);
-  } catch (error) {
-    say(`approval reminders could not run: ${error instanceof Error ? error.message : String(error)}`);
+  // Approval reminders (decision 0013), then notices and collection reminders (slice r).
+  for (const path of ["/api/approvals/reminders", "/api/notifications/sweep"]) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}${path}`, { headers: { authorization: `Bearer ${secret}` } });
+      if (!response.ok) say(`${path} answered ${response.status}`);
+    } catch (error) {
+      say(`${path} could not run: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
 

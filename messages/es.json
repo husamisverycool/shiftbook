@@ -632,7 +632,11 @@
       "oversight": "Supervisión"
     },
     "sso": "Inicio de sesión único",
-    "billing": "Suscripción"
+    "billing": "Suscripción",
+    "notifications": "Notificaciones",
+    "notificationsBadge": "{count} sin leer",
+    "notificationSettings": "Notificaciones",
+    "collections": "Cobranza"
   },
   "list": {
     "filter": "Filtrar",
@@ -3838,7 +3842,8 @@
       "wc_rate": "Tarifa de compensación laboral",
       "worker": "Trabajador",
       "write_off": "Saldo dado por perdido",
-      "subscription": "Suscripción"
+      "subscription": "Suscripción",
+      "promise_to_pay": "Promesa de pago"
     },
     "allTypes": "Todos",
     "gone": "ya no está en el sistema"
@@ -4951,10 +4956,5 @@
       "emailed": "Enviado por correo a {email} · {date}",
       "reminderEmailed": "Recordatorio enviado por correo el {date} · {stage}"
     }
-  },
-  "navR": {
-    "notifications": "Notificaciones",
-    "notificationSettings": "Notificaciones",
-    "collections": "Cobranza"
   }
 }

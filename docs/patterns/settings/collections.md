@@ -22,5 +22,6 @@ The settings column (`_components/settings.md`):
 
 ## States
 - Read-only roles see the values without controls.
+- Loading: the settings shape (`_components/loading.md`).
 
 Deviations allowed: none

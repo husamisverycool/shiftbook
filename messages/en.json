@@ -632,7 +632,11 @@
       "oversight": "Oversight"
     },
     "sso": "Single sign-on",
-    "billing": "Billing"
+    "billing": "Billing",
+    "notifications": "Notifications",
+    "notificationsBadge": "{count} unread",
+    "notificationSettings": "Notifications",
+    "collections": "Collections"
   },
   "list": {
     "filter": "Filter",
@@ -3838,7 +3842,8 @@
       "wc_rate": "Workers' comp rate",
       "worker": "Worker",
       "write_off": "Write-off",
-      "subscription": "Subscription"
+      "subscription": "Subscription",
+      "promise_to_pay": "Promise to pay"
     },
     "allTypes": "All",
     "gone": "no longer on file"
@@ -4951,10 +4956,5 @@
       "emailed": "Emailed to {email} · {date}",
       "reminderEmailed": "Reminder emailed on {date} · {stage}"
     }
-  },
-  "navR": {
-    "notifications": "Notifications",
-    "notificationSettings": "Notifications",
-    "collections": "Collections"
   }
 }
