@@ -88,6 +88,17 @@ export function subscriptionFacts(value: unknown): SubscriptionFacts | null {
   };
 }
 
+/** An address Stripe hosts (checkout.stripe.com, billing.stripe.com): the only kind the page is sent to. */
+export function isStripeHosted(url: unknown): url is string {
+  if (typeof url !== "string") return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && (u.hostname === "stripe.com" || u.hostname.endsWith(".stripe.com")) && !u.username && !u.password;
+  } catch {
+    return false;
+  }
+}
+
 export interface CheckoutSessionFacts {
   id: string;
   customer: string | null;
@@ -157,13 +168,13 @@ export class StripeHttp implements StripeApi {
       },
       input.idempotencyKey,
     );
-    if (typeof r.id !== "string" || typeof r.url !== "string" || !r.url.startsWith("https://")) throw new StripeError("Stripe answered without a checkout address.", 502);
+    if (typeof r.id !== "string" || !isStripeHosted(r.url)) throw new StripeError("Stripe answered without a checkout address.", 502);
     return { id: r.id, url: r.url };
   }
 
   async createPortalSession(input: { customer: string; returnUrl: string; locale: string }) {
     const r = await this.call("POST", "/billing_portal/sessions", { customer: input.customer, return_url: input.returnUrl, locale: input.locale });
-    if (typeof r.url !== "string" || !r.url.startsWith("https://")) throw new StripeError("Stripe answered without a portal address.", 502);
+    if (!isStripeHosted(r.url)) throw new StripeError("Stripe answered without a portal address.", 502);
     return { url: r.url };
   }
 

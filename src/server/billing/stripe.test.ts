@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formEncode, STRIPE_API_VERSION, StripeError, StripeHttp, subscriptionFacts } from "./stripe";
+import { formEncode, isStripeHosted, STRIPE_API_VERSION, StripeError, StripeHttp, subscriptionFacts } from "./stripe";
 
 /** Obviously fake (decision 0036). */
 const KEY = "sk_test_not_real";
@@ -153,5 +153,24 @@ describe("the HTTP client (plain fetch, decision 0036)", () => {
 
   it("refuses to be built without a key", () => {
     expect(() => new StripeHttp({ secretKey: "" })).toThrow(/STRIPE_SECRET_KEY/);
+  });
+});
+
+describe("only Stripe's own pages are opened", () => {
+  it("https on stripe.com or a subdomain; nothing else", () => {
+    expect(isStripeHosted("https://checkout.stripe.com/c/pay/cs_test_1")).toBe(true);
+    expect(isStripeHosted("https://billing.stripe.com/p/session/test_1")).toBe(true);
+    expect(isStripeHosted("http://checkout.stripe.com/c/pay/cs_test_1")).toBe(false);
+    expect(isStripeHosted("https://checkout.stripe.com.evil.example/x")).toBe(false);
+    expect(isStripeHosted("https://evilstripe.com/x")).toBe(false);
+    expect(isStripeHosted("https://user:pw@checkout.stripe.com/x")).toBe(false);
+    expect(isStripeHosted("javascript:alert(1)")).toBe(false);
+    expect(isStripeHosted(null)).toBe(false);
+  });
+
+  it("a session whose address is not Stripe's is refused", async () => {
+    const fetchFn = (async () => new Response(JSON.stringify({ id: "cs_test1", url: "https://example.com/pay" }), { status: 200 })) as unknown as typeof fetch;
+    const stripe = new StripeHttp({ secretKey: KEY, fetch: fetchFn });
+    await expect(stripe.createCheckoutSession({ customer: "cus_test1", priceId: "price_test1", agencyId: "a", trialEnd: null, locale: "en", successUrl: "https://app.example/s", cancelUrl: "https://app.example/c", idempotencyKey: "k" })).rejects.toThrow(StripeError);
   });
 });
