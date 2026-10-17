@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useRouter } from "@/i18n/navigation";
-import { ROLES, type Role } from "@/server/permissions";
+import { fewerRights, ROLES, type Role } from "@/server/permissions";
 import { useConfirmed } from "../auth/confirm-access";
 import { LinkedText } from "../linked-text";
 import { Status, type Tone } from "../status";
@@ -55,7 +55,11 @@ const NEEDS_APP: Role[] = ["owner", "coordinator"];
 /** One status language (_components/status.md): active is in good standing, an invite waits on the person, suspended has lost access. */
 const STATUS_TONE: Record<MemberRow["status"], Tone> = { active: "success", invited: "info", suspended: "critical" };
 
-export function MembersView({ members, me, canManage, now }: { members: MemberRow[]; me: string; canManage: boolean; now: string }) {
+/**
+ * `paused` (decision 0036): the agency's changes are paused; only what takes access away is offered —
+ * suspend, cancel an invite, a role with fewer rights (security review).
+ */
+export function MembersView({ members, me, canManage, now, paused = false }: { members: MemberRow[]; me: string; canManage: boolean; now: string; paused?: boolean }) {
   const t = useTranslations("members");
   const tr = useTranslations("roles");
   const tl = useTranslations("list");
@@ -97,7 +101,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
   const STATUSES = ["active", "invited", "suspended"] as const;
 
   return (
-    <SettingsPage context={t("eyebrow")} title={t("title")} description={canManage ? undefined : t("ownerOnly")}>
+    <SettingsPage context={t("eyebrow")} title={t("title")} description={canManage ? (paused ? t("pausedNote") : undefined) : t("ownerOnly")}>
       <div className="flex min-w-0 flex-col gap-4">
         {/* Linear Members: the search and Filters at the left, Invite at the right, on one line. */}
         <div className="flex flex-wrap items-center gap-2">
@@ -156,7 +160,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
           <p className="ml-auto text-sm text-muted-foreground tabular-nums" aria-live="polite">
             {t("count", { count: shown.length })}
           </p>
-          {canManage && (
+          {canManage && !paused && (
             <Button onClick={() => setInviting(true)} data-testid="invite-member">
               <PlusIcon />
               {t("invite")}
@@ -223,7 +227,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
                         <DropdownMenuContent align="end">
                           {m.status === "invited" ? (
                             <>
-                              <DropdownMenuItem onClick={() => run(() => resendInviteAction(m.id, m.email), t("resent", { email: m.email }), (r) => r.demoCopy && setCopy({ email: m.email, text: r.demoCopy }))}>{t("resend")}</DropdownMenuItem>
+                              {!paused && <DropdownMenuItem onClick={() => run(() => resendInviteAction(m.id, m.email), t("resent", { email: m.email }), (r) => r.demoCopy && setCopy({ email: m.email, text: r.demoCopy }))}>{t("resend")}</DropdownMenuItem>}
                               <DropdownMenuItem onClick={() => setPending({ kind: "cancel", member: m })}>{t("cancelInvite")}</DropdownMenuItem>
                               {m.demoCopy && (
                                 <DropdownMenuItem onClick={() => setCopy({ email: m.email, text: m.demoCopy! })} data-testid="open-invite">
@@ -233,12 +237,14 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
                             </>
                           ) : (
                             <>
-                              <DropdownMenuItem onClick={() => setPending({ kind: "role", member: m })} data-testid="change-role">
-                                {t("changeRole")}
-                              </DropdownMenuItem>
+                              {(!paused || ROLES.some((r) => fewerRights(m.role, r))) && (
+                                <DropdownMenuItem onClick={() => setPending({ kind: "role", member: m })} data-testid="change-role">
+                                  {t("changeRole")}
+                                </DropdownMenuItem>
+                              )}
                               {m.id !== me &&
                                 (m.status === "suspended" ? (
-                                  <DropdownMenuItem onClick={() => run(() => setSuspendedAction(m.id, false), t("restored", { name: m.name }))}>{t("restore")}</DropdownMenuItem>
+                                  !paused && <DropdownMenuItem onClick={() => run(() => setSuspendedAction(m.id, false), t("restored", { name: m.name }))}>{t("restore")}</DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem onClick={() => setPending({ kind: "suspend", member: m })} data-testid="suspend">
                                     {t("suspend")}
@@ -276,7 +282,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
           }}
         />
       )}
-      {pending?.kind === "role" && <RoleDialog member={pending.member} busy={busy} onClose={() => setPending(null)} onSave={(r) => run(() => changeRoleAction(pending.member.id, r), t("roleChanged", { name: pending.member.name, role: tr(`${r}.name`) }))} />}
+      {pending?.kind === "role" && <RoleDialog member={pending.member} busy={busy} paused={paused} onClose={() => setPending(null)} onSave={(r) => run(() => changeRoleAction(pending.member.id, r), t("roleChanged", { name: pending.member.name, role: tr(`${r}.name`) }))} />}
       <AlertDialog open={pending?.kind === "suspend" || pending?.kind === "cancel"} onOpenChange={(open) => !open && setPending(null)}>
         <AlertDialogContent>
           {pending && (
@@ -319,13 +325,13 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
   );
 }
 
-function RoleChoices({ value, onChange, name }: { value: Role; onChange: (r: Role) => void; name: string }) {
+function RoleChoices({ value, onChange, name, allowed }: { value: Role; onChange: (r: Role) => void; name: string; allowed?: (r: Role) => boolean }) {
   const tr = useTranslations("roles");
   return (
     <div role="radiogroup" className="flex flex-col gap-2">
       {ROLES.map((r) => (
-        <label key={r} className="flex cursor-pointer items-start gap-3 rounded-md border p-3 has-[:checked]:border-primary">
-          <input type="radio" name={name} value={r} checked={value === r} onChange={() => onChange(r)} className="mt-1 size-4 accent-primary" data-testid={`role-${r}`} />
+        <label key={r} className="flex cursor-pointer items-start gap-3 rounded-md border p-3 has-[:checked]:border-primary has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+          <input type="radio" name={name} value={r} checked={value === r} disabled={allowed ? !allowed(r) : false} onChange={() => onChange(r)} className="mt-1 size-4 accent-primary" data-testid={`role-${r}`} />
           <span className="flex flex-col">
             <span className="font-medium">{tr(`${r}.name`)}</span>
             <span className="text-sm text-muted-foreground">{tr(`${r}.line`)}</span>
@@ -336,7 +342,7 @@ function RoleChoices({ value, onChange, name }: { value: Role; onChange: (r: Rol
   );
 }
 
-function RoleDialog({ member, busy, onClose, onSave }: { member: MemberRow; busy: boolean; onClose: () => void; onSave: (r: Role) => void }) {
+function RoleDialog({ member, busy, paused, onClose, onSave }: { member: MemberRow; busy: boolean; paused: boolean; onClose: () => void; onSave: (r: Role) => void }) {
   const t = useTranslations("members");
   const [role, setRole] = useState<Role>(member.role);
   return (
@@ -345,7 +351,8 @@ function RoleDialog({ member, busy, onClose, onSave }: { member: MemberRow; busy
         <DialogHeader>
           <DialogTitle>{t("changeRoleTitle", { name: member.name })}</DialogTitle>
         </DialogHeader>
-        <RoleChoices value={role} onChange={setRole} name="change-role" />
+        {paused && <p className="text-sm text-muted-foreground">{t("pausedRoles")}</p>}
+        <RoleChoices value={role} onChange={setRole} name="change-role" allowed={paused ? (r) => r === member.role || fewerRights(member.role, r) : undefined} />
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             {t("keep")}

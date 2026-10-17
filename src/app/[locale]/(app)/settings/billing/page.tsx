@@ -27,8 +27,8 @@ export default async function BillingSettingsPage(props: { params: Promise<{ loc
   // Back from Stripe's checkout: read the session back so the page is right before the webhook arrives.
   if (checkout === "done" && session) await syncFromCheckout(billingDeps(), actor, session);
   const now = new Date();
-  const { demo, billing } = await agencyStanding({ db, now: () => now }, actor.agencyId);
-  const plan = planView({ demo, billing, now });
+  const { demo, billing, priceId } = await agencyStanding({ db, now: () => now }, actor.agencyId);
+  const plan = planView({ demo, billing, now, priceId });
   const subscribed = plan.state === "active" || plan.state === "trialing";
   const notice = checkout === "left" ? "left" : checkout === "done" && !subscribed ? "done" : null;
   const iso = (d: Date | null) => d?.toISOString() ?? null;

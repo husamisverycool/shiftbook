@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formEncode, isStripeHosted, STRIPE_API_VERSION, StripeError, StripeHttp, subscriptionFacts } from "./stripe";
+import { bestSubscription, formEncode, isStripeHosted, STRIPE_API_VERSION, StripeError, StripeHttp, subscriptionFacts, type SubscriptionFacts } from "./stripe";
 
 /** Obviously fake (decision 0036). */
 const KEY = "sk_test_not_real";
@@ -43,11 +43,11 @@ describe("a subscription's facts, read defensively", () => {
     cancel_at: null,
     cancel_at_period_end: false,
     trial_end: null,
-    items: { data: [{ current_period_end: 1792800000, quantity: 2, price: { unit_amount: 4900, currency: "usd", recurring: { interval: "month" } } }] },
+    items: { data: [{ current_period_end: 1792800000, quantity: 2, price: { id: "price_test1", unit_amount: 4900, currency: "usd", recurring: { interval: "month" } } }] },
   };
 
   it("takes the period end from the item (API versions since 2025-03-31) and the price times quantity in cents", () => {
-    expect(subscriptionFacts(sub)).toEqual({ id: "sub_test1", customer: "cus_test1", status: "active", currentPeriodEnd: new Date(1792800000 * 1000), cancelAt: null, trialEnd: null, amountCents: 9800, currency: "usd", interval: "month" });
+    expect(subscriptionFacts(sub)).toEqual({ id: "sub_test1", customer: "cus_test1", status: "active", currentPeriodEnd: new Date(1792800000 * 1000), cancelAt: null, trialEnd: null, amountCents: 9800, currency: "usd", interval: "month", priceId: "price_test1" });
   });
 
   it("falls back to the subscription's own period end (older versions)", () => {
@@ -172,5 +172,37 @@ describe("only Stripe's own pages are opened", () => {
     const fetchFn = (async () => new Response(JSON.stringify({ id: "cs_test1", url: "https://example.com/pay" }), { status: 200 })) as unknown as typeof fetch;
     const stripe = new StripeHttp({ secretKey: KEY, fetch: fetchFn });
     await expect(stripe.createCheckoutSession({ customer: "cus_test1", priceId: "price_test1", agencyId: "a", trialEnd: null, locale: "en", successUrl: "https://app.example/s", cancelUrl: "https://app.example/c", idempotencyKey: "k" })).rejects.toThrow(StripeError);
+  });
+});
+
+describe("the customer's subscriptions, and the one that counts (security review)", () => {
+  const facts = (over: Partial<SubscriptionFacts>): SubscriptionFacts => ({ id: "sub_a", customer: "cus_test1", status: "active", currentPeriodEnd: new Date(1792800000 * 1000), cancelAt: null, trialEnd: null, amountCents: 9900, currency: "usd", interval: "month", priceId: "price_test1", ...over });
+
+  it("Granite's price first, then the best state: active, trialing, past due…, canceled last; the later period on a tie", () => {
+    const canceled = facts({ id: "sub_c", status: "canceled" });
+    const trialing = facts({ id: "sub_t", status: "trialing" });
+    const active = facts({ id: "sub_a", status: "active" });
+    const pastDue = facts({ id: "sub_p", status: "past_due" });
+    expect(bestSubscription([canceled, trialing, active, pastDue], "price_test1")?.id).toBe("sub_a");
+    expect(bestSubscription([canceled, trialing, pastDue], "price_test1")?.id).toBe("sub_t");
+    expect(bestSubscription([canceled, pastDue], "price_test1")?.id).toBe("sub_p");
+    expect(bestSubscription([facts({ id: "sub_old", currentPeriodEnd: new Date(1792700000 * 1000) }), facts({ id: "sub_new" })], "price_test1")?.id).toBe("sub_new");
+    // A cheaper plan never wins over Granite's, even active over canceled.
+    expect(bestSubscription([facts({ id: "sub_cheap", priceId: "price_cheap" }), canceled], "price_test1")?.id).toBe("sub_c");
+    // Only other plans: the best of them (the page says it is not Granite's plan).
+    expect(bestSubscription([facts({ id: "sub_cheap", priceId: "price_cheap" })], "price_test1")?.id).toBe("sub_cheap");
+    expect(bestSubscription([], "price_test1")).toBeNull();
+  });
+
+  it("lists every subscription of the customer (all statuses), keeping only those that are the customer's", async () => {
+    const calls: string[] = [];
+    const fetchFn = (async (url: string) => {
+      calls.push(url);
+      return new Response(JSON.stringify({ object: "list", data: [{ id: "sub_a", customer: "cus_test1", status: "active", items: { data: [] } }, { id: "sub_x", customer: "cus_other", status: "active", items: { data: [] } }, { nonsense: true }] }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const stripe = new StripeHttp({ secretKey: KEY, fetch: fetchFn });
+    expect((await stripe.listSubscriptions("cus_test1")).map((x) => x.id)).toEqual(["sub_a"]);
+    expect(calls).toEqual(["https://api.stripe.com/v1/subscriptions?customer=cus_test1&status=all&limit=100"]);
+    await expect(stripe.listSubscriptions("cus_bad id")).rejects.toThrow(StripeError);
   });
 });

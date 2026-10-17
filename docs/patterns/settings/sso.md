@@ -49,6 +49,8 @@ of its row, the setup's label over a full-width field and the action at the bott
 - Copy → the address is copied; a toast says so.
 
 ## States
+- Changes paused (decision 0036, security review): a muted line says so; the switch only turns single
+  sign-on off (it cannot be turned on); Save is not offered.
 - Not the Owner: the page holds only the header and the "not for your role" state the other
   settings pages use (margin settings), saying only the Owner manages single sign-on; the agency menu
   does not list it for them.

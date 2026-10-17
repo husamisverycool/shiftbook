@@ -85,3 +85,26 @@ and Customer Portal rather than building card forms.
   (checking it belongs to this agency's customer) and records the subscription at once.
 - Watch: two Checkout tabs could make two subscriptions; the billing row keeps the better one (active
   over past due over canceled) and the Owner can cancel the other in Stripe's portal.
+
+## Security review fixes (2026-10-17, drizzle/0044)
+1. **Taking access away is never paused**: while changes are paused, suspending someone, cancelling an
+   invite, a role with fewer rights (everything the new role may do, the old one may already; judged by
+   the service under the members lock) and turning single sign-on off still work. Inviting, resending,
+   restoring, raising a role and setting up single sign-on stay paused.
+2. **The sign-up throttle holds under parallel requests**: each throttle key is locked
+   (`pg_advisory_xact_lock`, keys sorted) before counting; an IPv6 visitor is counted by its /64.
+3. **Two subscriptions**: every webhook (and the return from Checkout) lists the customer's
+   subscriptions and keeps the one that counts — Granite's price first, then active, trialing, past
+   due… — so cancelling one of two paid subscriptions does not pause an agency that still pays.
+4. Sign-up links get the same no-referrer, no-store and noindex headers as invite and reset links.
+5. Sign-up emails carry no display name either (`to: { email, name: null }`); the renderer is given only
+   the language.
+6. The webhook reads its body with a hard 512 KB cap on the stream itself, not only Content-Length.
+7. `signup_create_agency` takes the raw token and hashes it inside (Postgres's built-in `sha256`), so a
+   stored digest makes nothing; the app role lost DELETE on sign-up requests and may update only
+   `used_at`, `sent_at` and `send_failed_at`; a used request stays used (a trigger).
+8. **Only Granite's price counts**: the subscription's item price (kept as `stripe_price_id`) must equal
+   `STRIPE_PRICE_ID`; any other price — a cheaper or free plan in the same Stripe account — is shown as
+   "Other plan" and does not keep changes going. Consequence: to change the monthly amount, the owner
+   keeps the same price for existing agencies or moves them in Stripe; a new `STRIPE_PRICE_ID` alone would
+   stop counting the old one (docs/hosting-settings.md says so).

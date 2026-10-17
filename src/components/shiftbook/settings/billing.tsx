@@ -27,7 +27,7 @@ export interface BillingViewProps {
   notice: "done" | "left" | null;
 }
 
-const TONE: Record<PlanState, Tone> = { demo: "success", active: "success", trialing: "info", free_days: "info", ending: "warning", past_due: "critical", unpaid: "critical", paused: "warning", incomplete: "warning", canceled: "neutral", none: "neutral" };
+const TONE: Record<PlanState, Tone> = { demo: "success", active: "success", trialing: "info", free_days: "info", ending: "warning", past_due: "critical", unpaid: "critical", paused: "warning", incomplete: "warning", canceled: "neutral", none: "neutral", other_plan: "warning" };
 
 /** Integer cents in the price's currency: US dollars as everywhere else; any other exactly, with its code. */
 function priceText(cents: number, currency: string | null, locale: string): string {

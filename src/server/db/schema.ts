@@ -1791,6 +1791,8 @@ export const agencySubscriptions = pgTable("agency_subscriptions", {
   amountCents: integer("amount_cents"),
   currency: text("currency"),
   billingInterval: text("billing_interval").$type<"day" | "week" | "month" | "year">(),
+  /** The subscription's price (drizzle/0044): only Granite's own (STRIPE_PRICE_ID) counts as paying. */
+  stripePriceId: text("stripe_price_id"),
   updatedAt: updatedAt(),
 });
 

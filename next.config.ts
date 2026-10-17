@@ -46,8 +46,8 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
-      // Invite and password reset links carry a secret in the path too (decision K1).
-      ...["/:locale(en|es)/invite/:token*", "/:locale(en|es)/sign-in/reset/:token+"].map((source) => ({
+      // Invite, password reset and sign-up links carry a secret in the path too (decision K1, decision 0036).
+      ...["/:locale(en|es)/invite/:token*", "/:locale(en|es)/sign-in/reset/:token+", "/:locale(en|es)/sign-up/:token+"].map((source) => ({
         source,
         headers: [
           { key: "Referrer-Policy", value: "no-referrer" },

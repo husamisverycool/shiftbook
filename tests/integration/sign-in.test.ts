@@ -89,6 +89,21 @@ async function invited(role: "coordinator" | "billing" | "accountant" | "owner",
   return { userId: r.userId, ...accepted };
 }
 
+describe("while changes are paused, a role change only lowers rights (decision 0036, security review)", () => {
+  it("an Owner may move someone to a role with fewer rights, never to one with more", async () => {
+    const pat = await invited("owner", "pat.paused@agency.example");
+    const session = (await readSession(deps, pat.token))!;
+    expect(session.role).toBe("owner");
+    expect(await changeRole(deps, theOwner, pat.userId, "coordinator", { onlyFewerRights: true })).toEqual({ ok: true });
+    // Coordinator → accountant adds reading the margin and the whole log: not fewer rights.
+    expect(await changeRole(deps, theOwner, pat.userId, "accountant", { onlyFewerRights: true })).toEqual({ ok: false, error: "paused" });
+    expect(await changeRole(deps, theOwner, pat.userId, "owner", { onlyFewerRights: true })).toEqual({ ok: false, error: "paused" });
+    expect((await listMembers(deps, DEMO_AGENCY.id)).find((m) => m.id === pat.userId)!.role).toBe("coordinator");
+    // Not paused: any role, as before.
+    expect(await changeRole(deps, theOwner, pat.userId, "accountant")).toEqual({ ok: true });
+  });
+});
+
 describe("sign-in through the database", () => {
   it("an invite: Owner only, one email in one agency, a working link sent once; accepted with a 15-character password", async () => {
     expect(await inviteMember(deps, { ...theOwner, role: "coordinator" }, { name: "Pat", email: "pat@agency.example", role: "billing", locale: "en" }, render, "https://app.example")).toEqual({ ok: false, error: "not_allowed" });

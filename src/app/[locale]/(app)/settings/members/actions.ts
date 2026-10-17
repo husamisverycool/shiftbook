@@ -10,7 +10,7 @@ import { withAgency } from "@/server/db";
 import { ROLES } from "@/server/permissions";
 import { requestOrigin } from "@/server/request-info";
 import { linkBaseUrl } from "@/server/services";
-import { actorAllowedTo, isDemo, mustConfirmNow, type Actor } from "@/server/session";
+import { actorAllowedTo, changesPaused, isDemo, mustConfirmNow, type Actor } from "@/server/session";
 import { settingOn } from "@/server/settings";
 
 export type MemberResult = { ok: true; demoCopy?: string | null } | { ok: false; error: MemberError | "generic" | "confirm" };
@@ -54,7 +54,8 @@ export async function resendInviteAction(userId: string, email: string): Promise
 }
 
 export async function cancelInviteAction(userId: string): Promise<MemberResult> {
-  const actor = await actorAllowedTo("members");
+  // Taking access away works even while changes are paused (decision 0036, security review).
+  const actor = await actorAllowedTo("members", { whilePaused: { kind: "cancel_invite" } });
   // Changing the agency's people needs the Owner to have confirmed it's them recently (GitHub's sudo mode).
   if (await mustConfirmNow()) return { ok: false, error: "confirm" };
   if (!id.safeParse(userId).success) return { ok: false, error: "not_found" };
@@ -64,18 +65,21 @@ export async function cancelInviteAction(userId: string): Promise<MemberResult> 
 }
 
 export async function changeRoleAction(userId: string, role: string): Promise<MemberResult> {
-  const actor = await actorAllowedTo("members");
+  // While changes are paused, only a role with fewer rights (decision 0036, security review): the service
+  // judges it against the person's role under the members lock.
+  const actor = await actorAllowedTo("members", { whilePaused: { kind: "role_lowered_only" } });
   // Changing the agency's people needs the Owner to have confirmed it's them recently (GitHub's sudo mode).
   if (await mustConfirmNow()) return { ok: false, error: "confirm" };
   if (!id.safeParse(userId).success) return { ok: false, error: "not_found" };
   if (!(ROLES as readonly string[]).includes(role)) return { ok: false, error: "invalid_role" };
-  const r = await changeRole(authDeps(), actor, userId, role as (typeof ROLES)[number]);
+  const r = await changeRole(authDeps(), actor, userId, role as (typeof ROLES)[number], { onlyFewerRights: await changesPaused(actor) });
   refresh();
   return r;
 }
 
 export async function setSuspendedAction(userId: string, suspended: boolean): Promise<MemberResult> {
-  const actor = await actorAllowedTo("members");
+  // Suspending takes access away and works even while changes are paused; restoring does not (decision 0036).
+  const actor = await actorAllowedTo("members", { whilePaused: { kind: suspended === true ? "suspend" : "restore" } });
   // Changing the agency's people needs the Owner to have confirmed it's them recently (GitHub's sudo mode).
   if (await mustConfirmNow()) return { ok: false, error: "confirm" };
   if (!id.safeParse(userId).success || typeof suspended !== "boolean") return { ok: false, error: "not_found" };

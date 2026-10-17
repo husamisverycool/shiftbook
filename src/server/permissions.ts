@@ -64,3 +64,43 @@ export const pausedWhenUnpaid = (ability: Ability): boolean => !WHILE_PAUSED.inc
  */
 export const abilitiesOf = (who: { role: Role }, opts: { changesPaused?: boolean } = {}): Record<Ability, boolean> =>
   Object.fromEntries((Object.keys(ABILITIES) as Ability[]).map((a) => [a, can(who, a) && !(opts.changesPaused && pausedWhenUnpaid(a))])) as Record<Ability, boolean>;
+
+/** Whether `to` has fewer rights than `from`: everything `to` may do, `from` may already, and less (decision 0036). */
+export const fewerRights = (from: Role, to: Role): boolean => {
+  const ofFrom = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: from }, a));
+  const ofTo = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: to }, a));
+  return ofTo.every((a) => ofFrom.includes(a)) && ofTo.length < ofFrom.length;
+};
+
+/** A change to the agency's people or its single sign-on (the "members" ability). */
+export type MemberChange =
+  | { kind: "invite" }
+  | { kind: "resend_invite" }
+  | { kind: "cancel_invite" }
+  | { kind: "suspend" }
+  | { kind: "restore" }
+  | { kind: "role"; from: Role; to: Role }
+  /** A role change the service makes only when the new role has fewer rights (changeRole's onlyFewerRights). */
+  | { kind: "role_lowered_only" }
+  | { kind: "sso"; enabled: boolean }
+  | { kind: "sso_settings" };
+
+/**
+ * While the agency's changes are paused (decision 0036; security review), what only takes access away
+ * still works — suspending someone, cancelling an invite, a role with fewer rights, single sign-on off —
+ * so an Owner can always remove a person's access. Everything that grants access stays paused.
+ */
+export function allowedWhilePaused(change: MemberChange): boolean {
+  switch (change.kind) {
+    case "suspend":
+    case "cancel_invite":
+    case "role_lowered_only":
+      return true;
+    case "role":
+      return fewerRights(change.from, change.to);
+    case "sso":
+      return !change.enabled;
+    default:
+      return false;
+  }
+}

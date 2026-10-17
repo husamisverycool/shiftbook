@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import type { Role } from "@/server/permissions";
+import { can, type Role } from "@/server/permissions";
 import { useCan } from "./abilities";
 import { initialsOf, withoutNote } from "./person";
 
@@ -51,7 +51,8 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
   const pendingG = useRef<number | null>(null);
   const areas = useMemo(() => AREAS.filter((a) => a.key !== "margin" || showMargin), [showMargin]);
   const mayViewActivity = useCan()("viewActivity");
-  const mayManageMembers = useCan()("members");
+  // Single sign-on stays in the menu while changes are paused (turning it off still works; decision 0036).
+  const mayManageMembers = can({ role: person.role }, "members");
   const mayManageBilling = useCan()("billing");
 
   useEffect(() => {

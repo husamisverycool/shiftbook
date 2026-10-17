@@ -22,6 +22,8 @@ import { SettingsField, SettingsFooter, SettingsPage, SettingsPanel, SettingsRow
 
 export interface SsoSettingsProps {
   canManage: boolean;
+  /** The agency's changes are paused (decision 0036): single sign-on can be turned off, nothing else. */
+  paused?: boolean;
   demo: boolean;
   redirectUri: string;
   settings: { enabled: boolean; issuer: string; clientId: string; secretLast4: string; updatedAt: string; updatedByLabel: string } | null;
@@ -41,7 +43,7 @@ export function SsoNotForRole() {
   );
 }
 
-export function SsoSettingsView({ canManage, demo, redirectUri, settings }: SsoSettingsProps) {
+export function SsoSettingsView({ canManage, paused = false, demo, redirectUri, settings }: SsoSettingsProps) {
   const t = useTranslations("sso.settings");
   const dateTime = useDateTime();
   const id = useId();
@@ -104,7 +106,7 @@ export function SsoSettingsView({ canManage, demo, redirectUri, settings }: SsoS
               <Switch
                 id={`${id}-switch`}
                 checked={Boolean(settings?.enabled)}
-                disabled={!canManage || !settings || switching}
+                disabled={!canManage || !settings || switching || (paused && !settings.enabled)}
                 onCheckedChange={(on) => toggle(on)}
                 aria-describedby={`${id}-switch-line`}
                 data-testid="sso-enabled"
@@ -113,6 +115,7 @@ export function SsoSettingsView({ canManage, demo, redirectUri, settings }: SsoS
           />
         </SettingsRows>
         {!canManage && <p className="text-sm text-muted-foreground">{t("ownerOnly")}</p>}
+        {canManage && paused && <p className="text-sm text-muted-foreground" data-testid="sso-paused">{t("pausedNote")}</p>}
       </div>
 
       {canManage && (
@@ -150,9 +153,11 @@ export function SsoSettingsView({ canManage, demo, redirectUri, settings }: SsoS
               <SettingsPanel
                 footer={
                   <SettingsFooter note={settings ? t("lastChange", { name: settings.updatedByLabel, date: dateTime(settings.updatedAt, { date: "long" }) }) : undefined}>
-                    <Button type="submit" disabled={saving} data-testid="sso-save">
-                      {saving ? t("saving") : t("save")}
-                    </Button>
+                    {!paused && (
+                      <Button type="submit" disabled={saving} data-testid="sso-save">
+                        {saving ? t("saving") : t("save")}
+                      </Button>
+                    )}
                   </SettingsFooter>
                 }
               >

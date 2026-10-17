@@ -309,6 +309,13 @@
       "when": 1792179700000,
       "tag": "0043_signup_and_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1792179800000,
+      "tag": "0044_signup_hardening",
+      "breakpoints": true
     }
   ]
 }

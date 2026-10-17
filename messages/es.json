@@ -3457,8 +3457,11 @@
       "last_owner": "La agencia necesita al menos un Propietario activo.",
       "self": "No puede suspenderse a sí mismo.",
       "generic": "Eso no funcionó. Inténtelo de nuevo.",
-      "confirm": "Primero confirme que es usted."
-    }
+      "confirm": "Primero confirme que es usted.",
+      "paused": "Los cambios están en pausa: mientras la suscripción no esté activa, solo se puede bajar un rol."
+    },
+    "pausedNote": "Los cambios están en pausa mientras la suscripción no esté activa. Aún puede suspender personas, cancelar invitaciones y asignar un rol con menos permisos.",
+    "pausedRoles": "Mientras los cambios estén en pausa, solo puede elegir un rol con menos permisos."
   },
   "authEmail": {
     "greeting": "Hola, {name}:",
@@ -4527,7 +4530,8 @@
         "issuer_private": "Esa dirección es una dirección IP o apunta dentro de una red privada. Use la dirección https pública del proveedor.",
         "secret_too_short": "Ese secreto es demasiado corto: los proveedores emiten secretos de al menos 16 caracteres."
       },
-      "notForRoleTitle": "El inicio de sesión único es para el Propietario"
+      "notForRoleTitle": "El inicio de sesión único es para el Propietario",
+      "pausedNote": "Los cambios están en pausa mientras la suscripción no esté activa. Aún puede desactivar el inicio de sesión único."
     }
   },
   "linkProof": {
@@ -4657,7 +4661,8 @@
       "unpaid": "Sin pagar",
       "paused": "En pausa",
       "incomplete": "Incompleta",
-      "canceled": "Cancelada"
+      "canceled": "Cancelada",
+      "other_plan": "Otro plan"
     },
     "line": {
       "demo": "La agencia de la demostración siempre está activa.",
@@ -4670,7 +4675,8 @@
       "unpaid": "Los pagos fallaron y Stripe dejó de intentarlo. Actualice la tarjeta en Administrar pagos.",
       "paused": "La prueba terminó sin tarjeta. Agregue una en Administrar pagos.",
       "incomplete": "El primer pago no se completó. Inicie la suscripción de nuevo.",
-      "canceled": "Cancelada. Inicie la suscripción de nuevo para hacer cambios."
+      "canceled": "Cancelada. Inicie la suscripción de nuevo para hacer cambios.",
+      "other_plan": "Esta suscripción no es al plan de Granite, así que no mantiene los cambios activos. Cámbiela en Administrar pagos o inicie la suscripción."
     },
     "nextCharge": "Próximo cobro",
     "nextChargeAmount": "{amount} el {date}",
@@ -4684,7 +4690,8 @@
       "past_due": "Stripe vuelve a intentar el pago que falló.",
       "unpaid": "Ninguno hasta que se actualice la tarjeta.",
       "paused": "Ninguno hasta que se agregue una tarjeta.",
-      "incomplete": "Ninguno. El primer pago no se completó."
+      "incomplete": "Ninguno. El primer pago no se completó.",
+      "other_plan": "Ninguno para el plan de Granite."
     },
     "footNote": "Los datos de la tarjeta, las facturas y la cancelación están en las páginas de Stripe.",
     "start": "Iniciar la suscripción",
@@ -4720,7 +4727,8 @@
       "paused": "La prueba de esta agencia terminó sin tarjeta.",
       "incomplete": "El primer pago de la suscripción de esta agencia no se completó.",
       "incomplete_expired": "El primer pago de la suscripción de esta agencia no se completó.",
-      "canceled": "La suscripción de esta agencia se canceló."
+      "canceled": "La suscripción de esta agencia se canceló.",
+      "other_plan": "La suscripción de esta agencia no es al plan de Granite."
     },
     "kept": "Todo se puede seguir leyendo y descargando, y no se borra nada.",
     "owner": "Ir a Suscripción",

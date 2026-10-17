@@ -8,7 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
 export type BillingBannerProps =
-  | { kind: "paused"; reason: "none" | "past_due" | "unpaid" | "paused" | "incomplete" | "incomplete_expired" | "canceled"; owner: boolean; tried: boolean }
+  | { kind: "paused"; reason: "none" | "past_due" | "unpaid" | "paused" | "incomplete" | "incomplete_expired" | "canceled" | "other_plan"; owner: boolean; tried: boolean }
   | { kind: "trial_ending"; date: string };
 
 export function BillingBanner(props: BillingBannerProps) {

@@ -19,7 +19,7 @@ import { auditBy, type AuditInput } from "../audit";
 import type { Db, Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { MailTransport, OutgoingMail } from "../mail/transport";
-import { can, ROLES, type Role } from "../permissions";
+import { can, fewerRights, ROLES, type Role } from "../permissions";
 import { appKey, digest, randomToken, seal, unseal } from "./crypto";
 import { hashPassword, PasswordBusyError, passwordProblem, verifyPassword } from "./password";
 import { newRecoveryCodes, spendRecoveryCode, unusedCodes } from "./recovery";
@@ -832,7 +832,7 @@ export interface ByOwner {
   label: string;
   role: Role;
 }
-export type MemberError = "not_allowed" | "invalid_email" | "email_taken" | "invalid_name" | "invalid_role" | "not_found" | "last_owner" | "self";
+export type MemberError = "not_allowed" | "invalid_email" | "email_taken" | "invalid_name" | "invalid_role" | "not_found" | "last_owner" | "self" | "paused";
 
 /** An invite by email with a role (Stripe's Add member; Linear's Invite): valid for 10 days. */
 export async function inviteMember(
@@ -968,8 +968,12 @@ async function activeOwners(tx: Tx, agencyId: string): Promise<string[]> {
   return (await tx.select({ id: s.users.id }).from(s.users).where(and(eq(s.users.agencyId, agencyId), eq(s.users.role, "owner"), eq(s.users.status, "active")))).map((u) => u.id);
 }
 
-/** A new role (the Owner); the agency always keeps an active Owner. A role that needs the code asks for it at the next request. */
-export async function changeRole(deps: AuthDeps, by: ByOwner, userId: string, role: Role): Promise<{ ok: true } | { ok: false; error: MemberError }> {
+/**
+ * A new role (the Owner); the agency always keeps an active Owner. A role that needs the code asks for it
+ * at the next request. `onlyFewerRights` (while the agency's changes are paused, decision 0036): only a
+ * role with fewer rights than the person has now, judged under the members lock; anything else is "paused".
+ */
+export async function changeRole(deps: AuthDeps, by: ByOwner, userId: string, role: Role, opts: { onlyFewerRights?: boolean } = {}): Promise<{ ok: true } | { ok: false; error: MemberError }> {
   if (!can(by, "members")) return { ok: false, error: "not_allowed" };
   if (!(ROLES as readonly string[]).includes(role)) return { ok: false, error: "invalid_role" };
   return withAuth(deps, async (tx) => {
@@ -978,6 +982,7 @@ export async function changeRole(deps: AuthDeps, by: ByOwner, userId: string, ro
     const [user] = await tx.select().from(s.users).where(and(eq(s.users.id, userId), eq(s.users.agencyId, by.agencyId)));
     if (!user) return { ok: false, error: "not_found" };
     if (user.role === role) return { ok: true };
+    if (opts.onlyFewerRights && !fewerRights(user.role, role)) return { ok: false, error: "paused" };
     const owners = await activeOwners(tx, by.agencyId);
     if (user.role === "owner" && owners.length === 1 && owners[0] === user.id) return { ok: false, error: "last_owner" };
     await tx.update(s.users).set({ role }).where(eq(s.users.id, user.id));
