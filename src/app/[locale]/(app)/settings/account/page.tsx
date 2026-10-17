@@ -6,6 +6,7 @@ import { ConnectedAccountsData } from "@/components/shiftbook/settings/connected
 import { authDeps } from "@/server/auth/deps";
 import { identitiesOf } from "@/server/auth/identities";
 import { providerOffered } from "@/server/auth/oidc-flow";
+import { listPasskeys } from "@/server/auth/passkeys";
 import { accountOf, requiresSecondStep } from "@/server/auth/service";
 import { currentActor, currentSession } from "@/server/session";
 
@@ -22,6 +23,7 @@ export default async function AccountPage(props: { params: Promise<{ locale: str
     offered: { google: providerOffered("google"), microsoft: providerOffered("microsoft") },
     identities: identities.map((i) => ({ id: i.id, provider: i.provider, email: i.email, createdAt: i.createdAt.toISOString() })),
   };
+  const passkeys = await listPasskeys(authDeps(), session);
   return (
     <ConnectedAccountsData value={connected}>
     <AccountView
@@ -33,6 +35,7 @@ export default async function AccountPage(props: { params: Promise<{ locale: str
       hasPassword={account.hasPassword}
       passwordChangedAt={account.passwordChangedAt?.toISOString() ?? null}
       authenticatorSince={account.authenticatorSince?.toISOString() ?? null}
+      passkeys={passkeys.map((p) => ({ id: p.id, name: p.name, createdAt: p.createdAt.toISOString(), lastUsedAt: p.lastUsedAt?.toISOString() ?? null }))}
       recoveryCodesLeft={account.recoveryCodesLeft}
     />
     </ConnectedAccountsData>

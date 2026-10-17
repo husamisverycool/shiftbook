@@ -3,14 +3,16 @@
 // Pattern: docs/patterns/_components/confirm-access.md — GitHub's sudo mode: before a change to how one
 // signs in or to the agency's people, the password (or a code) again; then the change goes ahead.
 import { useTranslations } from "next-intl";
-import { createContext, useCallback, useContext, useId, useRef, useState, useTransition, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useId, useRef, useState, type ReactNode } from "react";
 import { confirmAccessAction } from "@/app/[locale]/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Ask = () => Promise<boolean>;
+/** What checks the password or code: "confirm it's you" itself, or a change that takes it along (decision 0032). */
+type Submit = (secret: string) => Promise<{ ok: true } | { ok: false; error: "invalid" | "locked" | "busy" }>;
+type Ask = (submit?: Submit) => Promise<boolean>;
 const Confirm = createContext<Ask | null>(null);
 
 export function ConfirmAccessProvider({ method, children }: { method: "code" | "password"; children: ReactNode }) {
@@ -19,12 +21,16 @@ export function ConfirmAccessProvider({ method, children }: { method: "code" | "
   const [open, setOpen] = useState(false);
   const [secret, setSecret] = useState("");
   const [error, setError] = useState<"invalid" | "locked" | "busy" | null>(null);
-  const [pending, start] = useTransition();
+  // Plain state, not a transition: the change that asked is itself waiting in a transition, and React
+  // would keep this one pending with it — after a wrong try, Confirm could never be pressed again.
+  const [pending, setPending] = useState(false);
   const settle = useRef<((yes: boolean) => void) | null>(null);
+  const submitWith = useRef<Submit>(confirmAccessAction);
 
   const ask = useCallback<Ask>(
-    () =>
+    (submit) =>
       new Promise<boolean>((resolve) => {
+        submitWith.current = submit ?? confirmAccessAction;
         settle.current = resolve;
         setSecret("");
         setError(null);
@@ -53,14 +59,20 @@ export function ConfirmAccessProvider({ method, children }: { method: "code" | "
             onSubmit={(e) => {
               e.preventDefault();
               if (!secret.trim()) return;
-              start(async () => {
-                const r = await confirmAccessAction(secret);
-                if (r.ok) finish(true);
-                else {
-                  setError(r.error);
-                  setSecret("");
+              if (pending) return;
+              setPending(true);
+              void (async () => {
+                try {
+                  const r = await submitWith.current(secret);
+                  if (r.ok) finish(true);
+                  else {
+                    setError(r.error);
+                    setSecret("");
+                  }
+                } finally {
+                  setPending(false);
                 }
-              });
+              })();
             }}
           >
             <div className="flex flex-col gap-2">
@@ -113,3 +125,10 @@ export function useConfirmed() {
     [ask],
   );
 }
+
+/**
+ * The dialog itself, for a change that must take the password or code along with it rather than rely
+ * on a recent confirmation (decision 0032: adding a passkey). `submit` checks it and makes the change;
+ * true once it succeeded, false when cancelled. Null outside the app frame.
+ */
+export const useAskToConfirm = () => useContext(Confirm);

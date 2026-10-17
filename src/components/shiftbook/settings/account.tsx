@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Role } from "@/server/permissions";
+// Decision 0032.
+import { PasskeysSection, type PasskeyItem } from "./passkeys";
 import { AuthenticatorSetup, RecoveryCodes } from "../auth/authenticator-setup";
 import { useConfirmed } from "../auth/confirm-access";
 import { NewPasswordFields } from "../auth/fields";
@@ -27,6 +29,8 @@ export interface AccountProps {
   hasPassword: boolean;
   passwordChangedAt: string | null;
   authenticatorSince: string | null;
+  /** Decision 0032. */
+  passkeys: PasskeyItem[];
   recoveryCodesLeft: number | null;
 }
 
@@ -192,7 +196,7 @@ export function AccountView(props: AccountProps) {
           </div>
         )}
       </Section>
-      {/* Sign-in methods: passkeys (decision 0032) go here. */}
+      <PasskeysSection passkeys={props.passkeys} frame={(title, body) => <Section id={`${id}-passkeys`} title={title}>{body}</Section>} />
       <ConnectedAccounts />
 
       <div className="border-t pt-6">

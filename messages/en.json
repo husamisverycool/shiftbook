@@ -3757,7 +3757,10 @@
       "file_opened": "File opened",
       "ssn_changed": "SSN changed",
       "identity_connected": "Account connected",
-      "identity_disconnected": "Account disconnected"
+      "identity_disconnected": "Account disconnected",
+      "passkey_added": "Passkey added",
+      "passkey_clone_suspected": "Passkey may be copied",
+      "passkey_removed": "Passkey removed"
     },
     "types": {
       "aca_monthly_hours": "ACA hours",
@@ -4455,5 +4458,50 @@
         "generic": "That did not work. Try again."
       }
     }
+  },
+  "passkeys": {
+    "add": "Add a passkey",
+    "addFailed": "The passkey was not added. Try again.",
+    "added": "Added {date}",
+    "addedBody": "“{name}” is ready. Next time, choose Passkey on the sign-in page and unlock your device.",
+    "addedTitle": "Passkey added",
+    "adding": "Adding…",
+    "alreadyAdded": "This device already has a passkey for your account.",
+    "cancel": "Cancel",
+    "defaultName": {
+      "multiDevice": "Synced passkey",
+      "singleDevice": "Passkey on one device"
+    },
+    "done": "Done",
+    "email": {
+      "footer": "Sent by Shiftbook on behalf of {agency}.",
+      "greeting": "Hello {name},",
+      "ifNot": "If you did not, open Your account, remove the passkey and change your password, then tell your agency's Owner.",
+      "ifYou": "If you added it, there is nothing to do.",
+      "intro": "A passkey named “{passkey}” was added to the account you use for {agency} on {when}.",
+      "open": "Open Your account",
+      "subject": "A passkey was added to your Shiftbook account"
+    },
+    "intro": "Sign in with your device's fingerprint, face or screen lock instead of your password and code. A passkey counts as both steps.",
+    "lastUsed": "Last used {date}",
+    "listLabel": "Your passkeys",
+    "neverUsed": "Not used yet",
+    "none": "No passkeys yet.",
+    "remove": "Remove",
+    "removeBody": "“{name}” will no longer sign you in. You can also delete it from your device's password manager.",
+    "removeLabel": "Remove {name}",
+    "removeTitle": "Remove this passkey?",
+    "removed": "Passkey removed.",
+    "signIn": {
+      "invalid": "That passkey did not work. Try another way to sign in.",
+      "locked": "Too many tries from here. Wait 15 minutes and try again.",
+      "unavailable": "Passkeys are not set up on this server yet. Sign in another way.",
+      "unsupported": "This browser cannot use passkeys. Sign in another way.",
+      "working": "Waiting for your passkey…"
+    },
+    "title": "Passkeys",
+    "tooMany": "You have 20 passkeys, the most an account can have. Remove one to add another.",
+    "unavailable": "Passkeys are not set up on this server yet.",
+    "unsupported": "This browser cannot make passkeys."
   }
 }
