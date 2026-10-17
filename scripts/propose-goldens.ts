@@ -9,6 +9,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addDays, computePay, type PayInput, type Shift } from "@shiftbook/rules";
 import { ExportError } from "../src/exports/errors";
+import { withoutSay } from "../tests/golden-runners/shared";
 import type { InvoiceFileInput } from "../src/exports/invoice-files";
 import { renderExport, type ExportFixture } from "../src/exports/registry";
 import { INVOICE_FILES, type InvoiceFileFormat } from "../tests/golden-runners/exports";
@@ -56,6 +57,7 @@ const input = (shifts: Shift[]): PayInput => ({
   regularRateRules: REFERENCE_REGULAR_RATE_RULES,
 });
 const MA = { jurisdiction: "MA", countyFips: "25027", placeFips: "2582000" } as const; // Worcester County; Worcester
+const NJ = { jurisdiction: "NJ", countyFips: "34013", placeFips: "3451000" } as const; // Essex County; Newark
 const CA = { jurisdiction: "CA", countyFips: "06071", placeFips: "0653896" } as const; // San Bernardino County; Ontario
 
 type Expect = { pay: [string, number, number][]; bill: [string, number, number][]; blockers?: string[]; obligations?: [string, string, number | null, number][]; warnings?: string[] };
@@ -73,7 +75,7 @@ function ruleCase(name: string, summary: string, inp: PayInput, hand: Expect) {
   }
   if (!writes(name)) return;
   mkdirSync(join(OUT, "rules"), { recursive: true });
-  writeFileSync(join(OUT, "rules", `${name}.json`), JSON.stringify({ name, summary, input: inp, expected: result }, null, 2) + "\n");
+  writeFileSync(join(OUT, "rules", `${name}.json`), JSON.stringify({ name, summary, input: inp, expected: withoutSay(result) }, null, 2) + "\n");
   console.log(`proposed rules/${name}`);
 }
 
@@ -103,6 +105,20 @@ ruleCase(
   "Massachusetts worker, 40 hours 37 minutes at $18.25/h. The 37 overtime minutes at $27.375/h are exactly 1688.125 cents; rounded once, half-up, to $16.88. Billed 37 minutes at $39.75/h = 2451.25 cents, rounded to $24.51. The rounding is written in each line's explanation.",
   input([...WEEK.slice(0, 5).map((d) => shift(d, 480, MA)), shift(WEEK[5]!, 37, MA)]),
   { pay: [["REG", 2400, 73000], ["OT", 37, 1688]], bill: [["REG", 2400, 106000], ["OT", 37, 2451]] },
+);
+
+ruleCase(
+  "nj-weekly-overtime-44h",
+  "New Jersey worker, 44 hours (four 9-hour days and one 8-hour day) at $17.00/h, billed at $25.00/h with overtime at the 1.5x multiplier. New Jersey pays 1.5x the regular hourly wage over 40 hours in a week (N.J.S.A. 34:11-56a4(b)(1)): 40 h × $17.00 = $680.00 and 4 h × $25.50 = $102.00. Billed 40 h × $25.00 = $1,000.00 and 4 h × $37.50 = $150.00.",
+  input([...WEEK.slice(0, 4).map((d) => shift(d, 540, { ...NJ, payRateCents: 1700, billRateCents: 2500 })), shift(WEEK[4]!, 480, { ...NJ, payRateCents: 1700, billRateCents: 2500 })]),
+  { pay: [["REG", 2400, 68000], ["OT", 240, 10200]], bill: [["REG", 2400, 100000], ["OT", 240, 15000]] },
+);
+
+ruleCase(
+  "nj-below-minimum-wage-topped-up",
+  "New Jersey worker on a $15.50/h rate card in October 2026, 8 hours. The New Jersey minimum wage is $15.92/h from January 1, 2026 (N.J.S.A. 34:11-56a4(a)), so the 8 hours are paid at the rate card (8 × $15.50 = $124.00) plus a minimum-wage top-up of 8 × $0.42 = $3.36 on its own line. The client is billed at the bill rate only: 8 × $24.00 = $192.00.",
+  input([shift(WEEK[0]!, 480, { ...NJ, payRateCents: 1550, billRateCents: 2400 })]),
+  { pay: [["REG", 480, 12400], ["MW_TRUEUP", 480, 336]], bill: [["REG", 480, 19200]] },
 );
 
 ruleCase(

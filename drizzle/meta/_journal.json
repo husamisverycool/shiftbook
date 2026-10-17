@@ -316,6 +316,13 @@
       "when": 1792179800000,
       "tag": "0044_signup_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1792179900000,
+      "tag": "0047_new_jersey_rules",
+      "breakpoints": true
     }
   ]
 }
