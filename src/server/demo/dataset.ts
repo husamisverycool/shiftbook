@@ -273,6 +273,11 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   // are paid 5 days after the period ends (the Friday after a Sunday).
   { key: "margin.wc_excludes_ot_premium", value: true },
   { key: "payroll.pay_day_after_period_end", value: 5 },
+  // Slice w: wage access on at half of what was earned, faster delivery $2.99 beside the free one;
+  // invoice funding on at a 90% advance and a 3% flat fee. The demo has three clients and runs one
+  // week for one of them, so no concentration limit (a real agency would set one; factors flag 20–30%).
+  { key: "money.wage_access", value: { enabled: true, capBps: 5000, maxPerRequestCents: 0, expeditedFeeCents: 299 } },
+  { key: "money.funding", value: { enabled: true, advanceBps: 9000, feeBps: 300, maxConcentrationBps: 10000, maxAgeDays: 90, requireClientApproval: true } },
   // The payroll file (slice f, decision F1): Gusto in the demo; every system's codes ready to switch to.
   { key: "payroll.target", value: { format: "gusto_hours_csv" } },
   { key: "earning_code_map.gusto_hours_csv", value: { REG: "regular_hours", OT: "overtime_hours", DT: "double_overtime_hours", BONUS: "bonus" } },

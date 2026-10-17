@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, CoinsIcon, HandCoinsIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -24,6 +24,8 @@ const AREAS = [
   { href: "/receivables", key: "receivables", jump: "r", icon: WalletIcon, group: "billing" },
   { href: "/payments", key: "payments", jump: "y", icon: BanknoteIcon, group: "billing" },
   { href: "/bank", key: "bank", jump: "b", icon: LandmarkIcon, group: "billing" },
+  // Slice w: the partner handoffs (payroll, wage access, funding, the broker); nothing moves.
+  { href: "/money", key: "money", jump: "n", icon: HandCoinsIcon, group: "billing" },
   { href: "/job-orders", key: "jobOrders", jump: "j", icon: BriefcaseIcon, group: "staffing" },
   { href: "/assignments", key: "assignments", jump: "a", icon: UsersIcon, group: "staffing" },
   // Slice k: the roster, read by everyone; the Owner and coordinators change it.
@@ -146,6 +148,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                   {t("billing")}
                 </DropdownMenuItem>
               )}
+              {/* Slice w: the money rules (wage access, invoice funding); everyone reads them, the Owner changes them. */}
+              <DropdownMenuItem render={<Link href="/settings/money" />} data-testid="menu-money-settings">
+                <CoinsIcon />
+                {t("moneySettings")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* The person's own items (slice k). */}
               <DropdownMenuGroup>
