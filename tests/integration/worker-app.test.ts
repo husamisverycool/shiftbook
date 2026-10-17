@@ -19,7 +19,7 @@ import { sendAgencyMessage, sendOnboardingLink, setClientWorkerClock, setWorkerP
 import { addressBucket, chooseWorkerAgency, demoWorkerSignIn, readWorkerSession, requestWorkerCode, verifyWorkerCode } from "../../src/server/worker-app/auth";
 import { withWorker } from "../../src/server/worker-app/fence";
 import { phoneIndex } from "../../src/server/worker-app/phone";
-import { clockIn, clockOf, clockOut, formAnswers, homeOf, hoursOf, onboardingOf, payStubOf, payStubsOf, postMessage, saveStep, threadOf } from "../../src/server/worker-app/service";
+import { clockIn, clockOf, clockOut, formAnswers, homeOf, hoursOf, onboardingOf, payStubOf, payStubsOf, postMessage, saveStep, threadOf, workerMessagesLastHour } from "../../src/server/worker-app/service";
 import { approveEntries } from "../../src/server/review/service";
 import { DemoSmsTransport } from "../../src/server/worker-app/sms";
 import { DemoTranslator } from "../../src/server/worker-app/translate";
@@ -320,6 +320,14 @@ describe("pay stubs, messages and the agency's side", () => {
     ]);
     const agencyView = await inAgency((tx) => workerAppOf(tx, DANIEL, TODAY));
     expect(agencyView).toMatchObject({ phone: "(•••) •••-0142", unread: 1, workerLanguage: "es" });
+  });
+
+  it("refuses a worker's 31st message in an hour, before any translation", async () => {
+    const now = new Date();
+    await owner.db.insert(s.workerMessages).values(Array.from({ length: 30 }, (_, i) => ({ agencyId: DEMO_AGENCY.id, workerId: DANIEL, sender: "worker" as const, authorLabel: "Daniel", body: `message ${i}`, bodyLocale: "es" as const, createdAt: new Date(now.getTime() - i * 60_000) })));
+    expect(await asDaniel((tx) => workerMessagesLastHour(tx, DANIEL, now))).toBe(30);
+    const r = await asDaniel((tx) => postMessage(tx, { ...daniel, sender: "worker", authorLabel: daniel.label, authorUserId: null, body: "una más", bodyLocale: "es", otherLocale: "en" }, { translation: null }, now));
+    expect(r).toEqual({ ok: false, error: "too_many" });
   });
 
   it("texts the onboarding link to the worker's number, and refuses a number another worker has", async () => {

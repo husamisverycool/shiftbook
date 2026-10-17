@@ -9,7 +9,7 @@
  *   deductions are the payroll provider's), messages with the agency, and clock in and out (a time
  *   entry waiting for review, never approved here).
  */
-import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { addDays, workweekStart, type Weekday } from "@shiftbook/rules";
 import { auditBy } from "../audit";
 import { appKey, digest, seal, unseal } from "../auth/crypto";
@@ -109,7 +109,9 @@ export async function saveStep(tx: Tx, who: Who, step: Step, a: Answers, ctx: St
       return { ok: true };
     }
     // The "already on another worker" answer could probe for colleagues' numbers: five refusals an
-    // hour, then none (as the roster limits the people who enter SSNs).
+    // hour, then none (as the roster limits the people who enter SSNs). Counted under the worker's own
+    // lock, so requests sent at once cannot each see four.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`ssn-refusals:${who.workerId}`}, 0))`);
     const [refused] = await tx
       .select({ n: sql<number>`count(*)::int` })
       .from(s.auditEvents)
@@ -317,15 +319,37 @@ export async function markReadByWorker(tx: Tx, workerId: string, now: Date): Pro
 
 const cleanBody = (text: string) => (typeof text === "string" ? text.replace(/\r\n?/g, "\n").trim() : "");
 
+/** How many messages a worker may send in an hour (enough for any conversation; not a flood). */
+export const WORKER_MESSAGES_PER_HOUR = 30;
+
+/** The worker's messages in the hour before `now`. */
+export async function workerMessagesLastHour(tx: Tx, workerId: string, now: Date): Promise<number> {
+  const [r] = await tx
+    .select({ n: sql<number>`count(*)::int` })
+    .from(s.workerMessages)
+    .where(and(eq(s.workerMessages.workerId, workerId), eq(s.workerMessages.sender, "worker"), gt(s.workerMessages.createdAt, new Date(now.getTime() - 60 * 60_000))));
+  return r?.n ?? 0;
+}
+
+/** A translation made before the message is written, outside any transaction (the model can be slow). */
+export async function translateMessage(translator: Translator, body: string, from: Lang, to: Lang): Promise<string | null> {
+  const text = cleanBody(body);
+  if (!text || text.length > 2000 || from === to) return null;
+  return translator.translate(text, from, to);
+}
+
 /**
  * A message in the thread, translated for the other side when the worker's language is not the
  * agency's (the agency works in English; a Spanish-speaking worker's message gets an English line).
+ * `translated`: the translator, or the translation already made (translateMessage) so no model call
+ * waits inside the transaction.
  */
-export async function postMessage(tx: Tx, m: { agencyId: string; workerId: string; sender: "worker" | "agency"; authorLabel: string; authorUserId: string | null; body: string; bodyLocale: Lang; otherLocale: Lang }, translator: Translator): Promise<{ ok: true; id: string } | { ok: false; error: "empty" | "too_long" }> {
+export async function postMessage(tx: Tx, m: { agencyId: string; workerId: string; sender: "worker" | "agency"; authorLabel: string; authorUserId: string | null; body: string; bodyLocale: Lang; otherLocale: Lang }, translated: Translator | { translation: string | null }, now = new Date()): Promise<{ ok: true; id: string } | { ok: false; error: "empty" | "too_long" | "too_many" }> {
   const body = cleanBody(m.body);
   if (!body) return { ok: false, error: "empty" };
   if (body.length > 2000) return { ok: false, error: "too_long" };
-  const translation = m.bodyLocale === m.otherLocale ? null : await translator.translate(body, m.bodyLocale, m.otherLocale);
+  if (m.sender === "worker" && (await workerMessagesLastHour(tx, m.workerId, now)) >= WORKER_MESSAGES_PER_HOUR) return { ok: false, error: "too_many" };
+  const translation = m.bodyLocale === m.otherLocale ? null : "translate" in translated ? await translated.translate(body, m.bodyLocale, m.otherLocale) : translated.translation;
   const [row] = await tx
     .insert(s.workerMessages)
     .values({ agencyId: m.agencyId, workerId: m.workerId, sender: m.sender, authorLabel: m.authorLabel, authorUserId: m.authorUserId, body, bodyLocale: m.bodyLocale, translation, translationLocale: translation ? m.otherLocale : null })

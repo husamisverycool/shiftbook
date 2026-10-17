@@ -5760,7 +5760,8 @@
       "errors": {
         "empty": "Escriba un mensaje primero.",
         "too_long": "Escriba menos de 2,000 caracteres.",
-        "generic": "No se envió. Inténtelo de nuevo."
+        "generic": "No se envió. Inténtelo de nuevo.",
+        "too_many": "Son muchos mensajes en esta hora. Espere un poco o llame a su agencia."
       }
     },
     "more": {

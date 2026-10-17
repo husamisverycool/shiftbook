@@ -13,7 +13,8 @@ import { db, withAgency } from "@/server/db";
 import { requestOrigin } from "@/server/request-info";
 import { linkBaseUrl } from "@/server/services";
 import { actorAllowedTo, mustConfirmNow } from "@/server/session";
-import { FORM_KINDS, formGrantSubject, recordFormOpened, sendAgencyMessage, sendOnboardingLink, setClientWorkerClock, setWorkerPhone, type FormKind } from "@/server/worker-app/agency";
+import { FORM_KINDS, formGrantSubject, recordFormOpened, sendAgencyMessage, sendOnboardingLink, setClientWorkerClock, setWorkerPhone, workerLanguageOf, type FormKind } from "@/server/worker-app/agency";
+import { translateMessage } from "@/server/worker-app/service";
 import { deliverSms, smsTransport } from "@/server/worker-app/sms";
 import { translator } from "@/server/worker-app/translate";
 import { fileGrant } from "@/server/workers/file-grant";
@@ -57,7 +58,11 @@ export async function sendAgencyMessageAction(workerId: string, body: string): P
   const actor = await actorAllowedTo("workerApp");
   if (!id.safeParse(workerId).success) return { ok: false, error: "generic" };
   const writer = (await getLocale()) === "es" ? "es" : "en";
-  const r = await withAgency(actor.agencyId, (tx) => sendAgencyMessage(tx, actor, workerId, String(body ?? "").slice(0, 4000), writer, translator()));
+  const text = String(body ?? "").slice(0, 4000);
+  // Translated before the transaction opens: a slow model never holds a database connection.
+  const reader = await withAgency(actor.agencyId, (tx) => workerLanguageOf(tx, workerId));
+  const translation = reader ? await translateMessage(translator(), text, writer, reader) : null;
+  const r = await withAgency(actor.agencyId, (tx) => sendAgencyMessage(tx, actor, workerId, text, writer, { translation }));
   refresh();
   if (r.ok) return r;
   return { ok: false, error: r.error === "empty" || r.error === "too_long" ? r.error : "generic" };

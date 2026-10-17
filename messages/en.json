@@ -5760,7 +5760,8 @@
       "errors": {
         "empty": "Write a message first.",
         "too_long": "Keep messages under 2,000 characters.",
-        "generic": "That didn't send. Try again."
+        "generic": "That didn't send. Try again.",
+        "too_many": "That's a lot of messages this hour. Wait a little, or call your agency."
       }
     },
     "more": {

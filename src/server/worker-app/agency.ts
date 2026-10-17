@@ -129,12 +129,22 @@ export async function markReadByAgency(tx: Tx, actor: Actor, workerId: string, n
   await tx.update(s.workerMessages).set({ readByAgencyAt: now }).where(and(eq(s.workerMessages.workerId, workerId), eq(s.workerMessages.sender, "worker"), isNull(s.workerMessages.readByAgencyAt)));
 }
 
-/** The agency writes to the worker, in the writer's language; the worker gets a translation in theirs. */
-export async function sendAgencyMessage(tx: Tx, actor: Actor, workerId: string, body: string, writerLocale: Lang, translator: Translator): Promise<{ ok: true } | { ok: false; error: AgencyError | "empty" | "too_long" }> {
+/** The worker's language, for translating a message to them before it is written. */
+export async function workerLanguageOf(tx: Tx, workerId: string): Promise<Lang | null> {
+  if (!UUID.test(workerId)) return null;
+  const [w] = await tx.select({ language: s.workers.preferredLanguage }).from(s.workers).where(eq(s.workers.id, workerId));
+  return w ? (w.language === "es" ? "es" : "en") : null;
+}
+
+/**
+ * The agency writes to the worker, in the writer's language; the worker gets a translation in theirs.
+ * `translated`: the translator, or the translation already made outside the transaction.
+ */
+export async function sendAgencyMessage(tx: Tx, actor: Actor, workerId: string, body: string, writerLocale: Lang, translated: Translator | { translation: string | null }): Promise<{ ok: true } | { ok: false; error: AgencyError | "empty" | "too_long" | "too_many" }> {
   if (!can(actor, "workerApp")) return { ok: false, error: "not_allowed" };
   const w = await workerRow(tx, workerId);
   if (!w) return { ok: false, error: "not_found" };
-  const r = await postMessage(tx, { agencyId: actor.agencyId, workerId: w.id, sender: "agency", authorLabel: actor.label, authorUserId: actor.userId, body, bodyLocale: writerLocale, otherLocale: w.preferredLanguage === "es" ? "es" : "en" }, translator);
+  const r = await postMessage(tx, { agencyId: actor.agencyId, workerId: w.id, sender: "agency", authorLabel: actor.label, authorUserId: actor.userId, body, bodyLocale: writerLocale, otherLocale: w.preferredLanguage === "es" ? "es" : "en" }, translated);
   if (!r.ok) return r;
   await audit(tx, actor, [{ action: "create", entityType: "worker_message", entityId: r.id, after: { workerId: w.id } }]);
   return { ok: true };
