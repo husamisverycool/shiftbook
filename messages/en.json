@@ -4779,5 +4779,31 @@
     "differs": "{name}: the columns are not the ones Granite writes.",
     "clientIdFound": "Client ID in the sample: {id} (filled in above; Save to keep it).",
     "codesFound": "Codes in the sample, to use on the Codes tab:"
+  },
+  "scheduleOfAccounts": {
+    "pdf": {
+      "title": "Schedule of accounts",
+      "number": "Schedule number",
+      "date": "Date",
+      "seller": "Seller",
+      "assignedTo": "Assigned to",
+      "debtor": "Debtor",
+      "invoice": "Invoice",
+      "issued": "Invoice date",
+      "due": "Due date",
+      "reference": "PO / reference",
+      "amount": "Amount",
+      "total": "Total of {count} invoices",
+      "certification": "{seller} certifies that each invoice listed above is for work performed and approved, that each amount is owed by the debtor named and is not paid, disputed or subject to any credit, and assigns these invoices to the party named above under the agreement between them.",
+      "signature": "Signature",
+      "printedName": "Printed name",
+      "titleLine": "Title",
+      "dateLine": "Date",
+      "factorUse": "For the factor's use"
+    },
+    "action": "Schedule of accounts",
+    "hint": "For your factor: the schedule to sign, as PDF and CSV, with each invoice and its timesheets, in one file.",
+    "onlyOpen": "Only open invoices can go on a schedule: {number} is not.",
+    "refused": "That schedule could not be made: {message}"
   }
 }

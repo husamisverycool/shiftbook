@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/invoices.md — Stripe invoices list (the statuses as boxes with their counts,
 // the filters as pills under them, a status badge per row, a ⋯ menu, the row opens the invoice, the
 // number of results under it); Bullhorn "# Selected" actions; Avionté Invoice Merge (one customer's
-// invoices) for Make statement.
+// invoices) for Make statement; a factor's schedule of accounts form for Schedule of accounts.
 import { ListFilterIcon, ReceiptTextIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -11,15 +11,18 @@ import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { InvoiceRow } from "@/server/invoices/queries";
+import { useCan } from "../abilities";
 import { EmptyState } from "../empty-state";
 import { FilterPill, ListToolbar, PillChoices, ResultsCount, StatusTabs } from "../list-controls";
 import { Page, PageHeader } from "../page";
+import { Tip } from "../tip";
 import { InvoicesTable } from "./invoices-table";
 
 const STATUSES = ["issued", "paid", "void"] as const;
 
 export function InvoicesView({ rows, today }: { rows: InvoiceRow[]; today: string }) {
   const t = useTranslations("invoices");
+  const ts = useTranslations("scheduleOfAccounts");
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -40,6 +43,9 @@ export function InvoicesView({ rows, today }: { rows: InvoiceRow[]; today: strin
   const chosen = rows.filter((r) => selected.has(r.id));
   const oneClient = new Set(chosen.map((r) => r.clientId)).size === 1;
   const early = chosen.find((r) => !r.hasDocument);
+  // A factor buys open receivables only (decision 0040): issued, owing, not a credit note.
+  const can = useCan();
+  const notOpen = chosen.find((r) => r.status !== "issued" || r.kind === "credit_note" || r.totalCents <= 0);
   const select = (ids: string[], on: boolean) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -86,7 +92,20 @@ export function InvoicesView({ rows, today }: { rows: InvoiceRow[]; today: strin
                 {t("makeStatement")}
               </Button>
             )}
+            {can("cash") &&
+              (!notOpen && !early ? (
+                <Tip label={ts("hint")}>
+                  <a href={`/api/files/schedule-of-accounts?ids=${chosen.map((r) => r.id).join(",")}`} download className={buttonVariants({ size: "sm", variant: "outline" })} data-testid="schedule-of-accounts">
+                    {ts("action")}
+                  </a>
+                </Tip>
+              ) : (
+                <Button size="sm" variant="outline" disabled data-testid="schedule-of-accounts">
+                  {ts("action")}
+                </Button>
+              ))}
             {!oneClient && <span className="text-muted-foreground">{t("oneClientOnly")}</span>}
+            {can("cash") && notOpen && <span className="text-muted-foreground">{ts("onlyOpen", { number: notOpen.number })}</span>}
             {oneClient && early && <span className="text-muted-foreground">{t("beforeStatements", { number: early.number })}</span>}
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
               {t("clearSelection")}

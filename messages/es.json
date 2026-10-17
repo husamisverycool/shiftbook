@@ -4779,5 +4779,31 @@
     "differs": "{name}: las columnas no son las que Granite escribe.",
     "clientIdFound": "ID de cliente en la muestra: {id} (completado arriba; guarde para conservarlo).",
     "codesFound": "Códigos en la muestra, para usar en la pestaña Códigos:"
+  },
+  "scheduleOfAccounts": {
+    "pdf": {
+      "title": "Relación de cuentas",
+      "number": "Número de relación",
+      "date": "Fecha",
+      "seller": "Vendedor",
+      "assignedTo": "Cedido a",
+      "debtor": "Deudor",
+      "invoice": "Factura",
+      "issued": "Fecha de factura",
+      "due": "Vencimiento",
+      "reference": "OC / referencia",
+      "amount": "Importe",
+      "total": "Total de {count} facturas",
+      "certification": "{seller} certifica que cada factura enumerada arriba corresponde a trabajo realizado y aprobado, que cada importe lo debe el deudor indicado y no está pagado, en disputa ni sujeto a ningún crédito, y cede estas facturas a la parte indicada arriba conforme al contrato entre ellas.",
+      "signature": "Firma",
+      "printedName": "Nombre en letra de molde",
+      "titleLine": "Cargo",
+      "dateLine": "Fecha",
+      "factorUse": "Para uso del factor"
+    },
+    "action": "Relación de cuentas",
+    "hint": "Para su factor: la relación para firmar, en PDF y CSV, con cada factura y sus hojas de horas, en un solo archivo.",
+    "onlyOpen": "Solo las facturas abiertas pueden ir en una relación: {number} no lo está.",
+    "refused": "No se pudo hacer esa relación: {message}"
   }
 }
