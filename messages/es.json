@@ -282,7 +282,8 @@
         "assignment_at_other_client": "La asignación del trabajador ese día es con otro cliente",
         "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas",
         "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edite para asignar estas horas allí si son de ese cliente",
-        "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edite para asignar estas horas allí si son de ese cliente"
+        "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edite para asignar estas horas allí si son de ese cliente",
+        "worker_app": "Marcado en la aplicación del trabajador"
       },
       "fields": {
         "worker": "trabajador",
@@ -4749,5 +4750,365 @@
     "notFoundBody": "Es posible que la dirección esté mal escrita o que el registro ya no exista.",
     "goHome": "Ir a Inicio",
     "loadingPage": "Cargando la página"
+  },
+  "workerApp": {
+    "meta": "Sus horas y su pago",
+    "tabs": {
+      "home": "Inicio",
+      "time": "Horas",
+      "pay": "Pago",
+      "messages": "Mensajes",
+      "more": "Más",
+      "label": "Aplicación del trabajador"
+    },
+    "profile": "Su perfil",
+    "signIn": {
+      "title": "Inicie sesión para ver sus horas y su pago",
+      "body": "Le enviaremos un código por mensaje de texto a su celular.",
+      "phone": "Número de celular",
+      "send": "Enviarme un código",
+      "sending": "Enviando…",
+      "sentTitle": "Revise sus mensajes",
+      "sentBody": "Enviamos un código a {phone}. Es válido por 10 minutos.",
+      "code": "Código",
+      "submit": "Iniciar sesión",
+      "submitting": "Iniciando sesión…",
+      "resend": "Enviar un código nuevo",
+      "otherNumber": "Usar otro número",
+      "invalidPhone": "Escriba un número de celular de EE. UU., como (312) 555-0142.",
+      "invalid": "Ese código no funcionó. Revíselo e inténtelo de nuevo.",
+      "expired": "Ese código venció. Pida un código nuevo.",
+      "throttled": "Demasiados intentos. Inténtelo de nuevo en unos minutos.",
+      "chooseTitle": "Elija una agencia",
+      "chooseBody": "Su número está registrado en más de una agencia.",
+      "demoCopy": "Mensaje de texto de demostración",
+      "demoTitle": "O continúe como un trabajador de demostración",
+      "demoAs": "Continuar como {name}",
+      "agencySignIn": "¿Trabaja en una agencia? Inicie sesión aquí"
+    },
+    "home": {
+      "greeting": "Hola, {name}",
+      "onboardingTitle": "Termine su incorporación",
+      "onboardingBody": "{done} de {total} pasos listos",
+      "onboardingAction": "Continuar",
+      "weekTitle": "Esta semana",
+      "weekEmpty": "Todavía no hay horas esta semana.",
+      "seeHours": "Ver horas",
+      "payTitle": "Último pago",
+      "payEmpty": "Sus talones de pago aparecerán aquí después de su primera semana pagada.",
+      "seePay": "Ver pago",
+      "weekOf": "Semana del {range}"
+    },
+    "clock": {
+      "title": "Marcar entrada",
+      "at": "{position} en {client}",
+      "in": "Marcar entrada",
+      "out": "Marcar salida",
+      "since": "Entrada marcada a las {time}",
+      "working": "Trabajando",
+      "locationNote": "Este cliente pide su ubicación al marcar la entrada y la salida.",
+      "errors": {
+        "not_allowed": "Esta asignación no usa el reloj de esta aplicación.",
+        "already_in": "Ya marcó la entrada.",
+        "not_in": "No ha marcado la entrada.",
+        "location_required": "Este cliente pide su ubicación. Permita la ubicación e inténtelo de nuevo.",
+        "too_short": "Marque la salida al menos un minuto después de la entrada.",
+        "period_paid": "Esa semana ya se pagó. Pida a su agencia que agregue las horas.",
+        "generic": "No funcionó. Inténtelo de nuevo."
+      },
+      "done": "Salida marcada. Su agencia revisará las horas antes del día de pago."
+    },
+    "time": {
+      "title": "Horas",
+      "empty": "Todavía no hay horas.",
+      "total": "{hours} h",
+      "note": "Las horas de sus hojas de horas y de esta aplicación van a su agencia para revisarlas antes del día de pago.",
+      "fromApp": "Desde la aplicación",
+      "status": {
+        "waiting": "En revisión",
+        "approved": "Aprobadas",
+        "paid": "Pagadas",
+        "questioned": "Cuestionadas"
+      }
+    },
+    "pay": {
+      "title": "Pago",
+      "year": "Pago bruto en {year}",
+      "empty": "Sus talones de pago aparecerán aquí después de su primera semana pagada.",
+      "correction": "Corrección",
+      "note": "Pago bruto, antes de impuestos y deducciones, que calcula su proveedor de nómina.",
+      "back": "Pago",
+      "period": "Periodo de pago",
+      "agency": "Agencia",
+      "worker": "Trabajador",
+      "dates": "Fechas",
+      "earnings": "Ingresos",
+      "description": "Descripción",
+      "rate": "Tarifa",
+      "hours": "Horas",
+      "current": "Actual",
+      "ytd": "En lo que va del año",
+      "gross": "Pago bruto",
+      "download": "Descargar PDF"
+    },
+    "messages": {
+      "empty": "Escriba a su agencia sobre turnos, horas o pagos.",
+      "placeholder": "Mensaje",
+      "send": "Enviar",
+      "translated": "Traducido",
+      "you": "Usted",
+      "errors": {
+        "empty": "Escriba un mensaje primero.",
+        "too_long": "Escriba menos de 2,000 caracteres.",
+        "generic": "No se envió. Inténtelo de nuevo."
+      }
+    },
+    "more": {
+      "documents": "Documentos",
+      "documentsEmpty": "Sus formularios firmados aparecerán aquí después de la incorporación.",
+      "onboarding": "Incorporación",
+      "onboardingDone": "Terminada el {date}",
+      "onboardingLeft": "{done} de {total} pasos listos",
+      "continue": "Continuar",
+      "language": "Idioma",
+      "signOut": "Cerrar sesión",
+      "download": "Descargar",
+      "forms": {
+        "w4": "Formulario W-4",
+        "i9": "Formulario I-9, Sección 1",
+        "deposit": "Autorización de depósito directo"
+      }
+    },
+    "onboarding": {
+      "title": "Incorporación",
+      "steps": {
+        "personal": "Información personal",
+        "w4": "Impuestos (Formulario W-4)",
+        "i9": "Elegibilidad de empleo (Formulario I-9, Sección 1)",
+        "payment": "Pago",
+        "policies": "Políticas",
+        "sign": "Revisar y firmar"
+      },
+      "done": "Listo",
+      "todo": "Pendiente",
+      "current": "Actual",
+      "save": "Guardar y continuar",
+      "saving": "Guardando…",
+      "allSet": "Todo listo",
+      "allSetBody": "Su agencia tiene sus formularios. Puede verlos en Más.",
+      "home": "Ir a Inicio",
+      "personal": {
+        "legalFirstName": "Nombre legal",
+        "legalLastName": "Apellido legal",
+        "ssn": "Número de Seguro Social",
+        "ssnHint": "Nueve dígitos. Solo se volverán a mostrar los últimos cuatro.",
+        "birthDate": "Fecha de nacimiento",
+        "addressLine": "Dirección de su casa",
+        "city": "Ciudad",
+        "state": "Estado",
+        "zip": "Código postal",
+        "email": "Correo electrónico (opcional)"
+      },
+      "w4": {
+        "intro": "Estas respuestas fijan cuánto impuesto federal sobre los ingresos retiene su proveedor de nómina. Responda como en el Formulario W-4 de 2020 en adelante.",
+        "filingStatus": "Estado civil para la declaración (Paso 1c)",
+        "single": "Soltero o casado que declara por separado",
+        "married_jointly": "Casado que declara en conjunto",
+        "head_of_household": "Cabeza de familia",
+        "multipleJobs": "Tengo más de un empleo, o mi cónyuge trabaja (Paso 2c)",
+        "dependents": "Monto por dependientes (Paso 3)",
+        "otherIncome": "Otros ingresos (Paso 4a)",
+        "deductions": "Deducciones (Paso 4b)",
+        "extraWithholding": "Retención adicional por periodo de pago (Paso 4c)",
+        "exempt": "Reclamo la exención de la retención"
+      },
+      "i9": {
+        "intro": "Formulario I-9, Sección 1. Su agencia completa la Sección 2 cuando vea sus documentos en persona.",
+        "status": "Declaro que soy",
+        "citizen": "Ciudadano de los Estados Unidos",
+        "noncitizen_national": "Nacional no ciudadano de los Estados Unidos",
+        "permanent_resident": "Residente permanente legal",
+        "authorized_alien": "Extranjero autorizado para trabajar",
+        "uscisNumber": "Número de USCIS o número A",
+        "expiresOn": "Fecha en que vence la autorización de trabajo (si la hay)",
+        "i94Number": "Número de admisión del Formulario I-94",
+        "passportNumber": "Número de pasaporte extranjero",
+        "passportCountry": "País de emisión",
+        "oneOf": "Dé uno: el número de USCIS o número A, el número del I-94, o un número de pasaporte extranjero con su país."
+      },
+      "payment": {
+        "kind": "¿Cómo quiere recibir su pago?",
+        "direct_deposit": "Depósito directo",
+        "paper_check": "Cheque en papel",
+        "routing": "Número de ruta",
+        "account": "Número de cuenta",
+        "confirm": "Número de cuenta otra vez",
+        "accountType": "Tipo de cuenta",
+        "checking": "Cheques",
+        "savings": "Ahorros"
+      },
+      "policies": {
+        "intro": "Lea cada política y luego confirme.",
+        "read": "Lo he leído",
+        "safety": "Seguridad en el lugar de trabajo: use el equipo de protección que el trabajo requiere y reporte cualquier lesión el mismo día.",
+        "harassment": "No se permite el acoso ni la discriminación. Repórtelos a su agencia en cualquier momento.",
+        "timekeeping": "Registre solo las horas que trabaja. Marque usted mismo la entrada y la salida, nunca por otra persona."
+      },
+      "sign": {
+        "intro": "Revise sus respuestas y luego firme.",
+        "ssn": "Seguro Social que termina en {last4}",
+        "deposit": "Depósito directo a una cuenta que termina en {last4}",
+        "check": "Cheque en papel",
+        "name": "Escriba su nombre legal completo para firmar",
+        "agree": "Acepto que escribir mi nombre es mi firma electrónica en estos formularios, y que mis respuestas son verdaderas.",
+        "submit": "Firmar y terminar"
+      },
+      "errors": {
+        "legalFirstName": "Escriba su nombre legal.",
+        "legalLastName": "Escriba su apellido legal.",
+        "ssn": "Escriba nueve dígitos. Si es correcto, puede que su agencia ya lo tenga en otro perfil; llámela.",
+        "birthDate": "Escriba su fecha de nacimiento.",
+        "addressLine": "Escriba la dirección de su casa.",
+        "city": "Escriba su ciudad.",
+        "state": "Elija su estado.",
+        "zip": "Escriba un código postal de cinco dígitos.",
+        "email": "Escriba un correo electrónico, o déjelo vacío.",
+        "filingStatus": "Elija un estado civil para la declaración.",
+        "dependents": "Escriba un monto en dólares y centavos.",
+        "otherIncome": "Escriba un monto en dólares y centavos.",
+        "deductions": "Escriba un monto en dólares y centavos.",
+        "extraWithholding": "Escriba un monto en dólares y centavos.",
+        "status": "Elija una opción.",
+        "uscisNumber": "Escriba el número de USCIS o número A (de 7 a 9 dígitos).",
+        "expiresOn": "Escriba una fecha.",
+        "i94Number": "Escriba el número del I-94 de 11 caracteres, o un número de pasaporte.",
+        "passportNumber": "Escriba el número de pasaporte.",
+        "passportCountry": "Escriba el país que emitió el pasaporte.",
+        "kind": "Elija cómo recibir su pago.",
+        "routing": "Revise el número de ruta: tiene nueve dígitos y un dígito de control que debe coincidir.",
+        "account": "Escriba el número de cuenta (de 4 a 17 dígitos).",
+        "confirm": "Los números de cuenta no coinciden.",
+        "accountType": "Elija cheques o ahorros.",
+        "policies": "Confirme cada política.",
+        "steps": "Termine primero cada paso.",
+        "name": "Escriba su nombre legal completo tal como en el paso 1.",
+        "agree": "Marque la casilla para firmar.",
+        "signed": "Estos formularios ya están firmados. Pida a su agencia que los cambie.",
+        "generic": "No se guardó. Inténtelo de nuevo."
+      }
+    }
+  },
+  "workerAppAgency": {
+    "tabs": {
+      "onboarding": "Incorporación",
+      "messages": "Mensajes"
+    },
+    "phone": "Número de celular",
+    "phoneHint": "El trabajador inicia sesión en la aplicación del trabajador con este número.",
+    "phoneNone": "Sin número",
+    "phoneErrors": {
+      "invalid": "Escriba un número de celular de EE. UU., como (312) 555-0142.",
+      "taken": "Otro trabajador tiene este número.",
+      "generic": "No se guardó. Inténtelo de nuevo."
+    },
+    "send": "Enviar enlace de incorporación",
+    "sendHint": "Envía al trabajador por mensaje de texto la dirección de la aplicación, para iniciar sesión y completar la incorporación.",
+    "sent": "Enlace enviado por mensaje de texto",
+    "sentOn": "Último envío el {date} por {by}",
+    "noPhone": "Agregue primero un número de celular.",
+    "checklist": "Lista de pasos",
+    "doneOn": "Listo el {date}",
+    "todo": "Pendiente",
+    "payment": {
+      "direct_deposit": "Depósito directo ••••{last4}",
+      "paper_check": "Cheque en papel",
+      "none": "Sin elegir"
+    },
+    "forms": "Formularios firmados",
+    "formsNone": "Todavía no hay formularios firmados.",
+    "open": "Abrir",
+    "openTitle": "Abrir {form}",
+    "openBody": "Contiene datos bancarios y números de elegibilidad de empleo. Indique por qué lo necesita; la apertura queda registrada.",
+    "reason": "Motivo de negocio",
+    "openOnlyOwner": "El Propietario abre los formularios firmados de un trabajador, con un motivo.",
+    "thread": "Mensajes",
+    "threadEmpty": "Todavía no hay mensajes. Escriba a {name}; lo leerá en la aplicación del trabajador.",
+    "placeholder": "Mensaje para {name}",
+    "messageSend": "Enviar",
+    "translated": "Traducido",
+    "worker": "{name}",
+    "clock": {
+      "title": "Marcar entrada en la aplicación del trabajador",
+      "hint": "Si los trabajadores de este cliente pueden marcar la entrada y la salida desde la aplicación del trabajador.",
+      "off": "No",
+      "on": "Sí",
+      "location": "Sí, con ubicación"
+    }
+  },
+  "workerAppSms": {
+    "code": "{code} es su código para ver sus horas y su pago. Vence en 10 minutos. No lo comparta con nadie.",
+    "invite": "{agency}: termine su incorporación y vea sus horas y su pago en {url}"
+  },
+  "workerAppForms": {
+    "subtitle": "Registro de las respuestas dadas en la aplicación del trabajador de Granite.",
+    "worker": "Empleado",
+    "ssn": "Número de Seguro Social",
+    "signedBy": "Firma electrónica",
+    "signedOn": "Firmado el",
+    "statement": "Firmado al escribir el nombre legal completo y marcar la casilla que acepta que es la firma electrónica en este formulario.",
+    "notSigned": "Todavía sin firmar",
+    "yes": "Sí",
+    "no": "No",
+    "w4": {
+      "title": "Formulario W-4 (Certificado de retenciones del empleado)",
+      "filingStatus": "Paso 1(c): Estado civil para la declaración",
+      "multipleJobs": "Paso 2(c): Varios empleos o el cónyuge trabaja",
+      "dependents": "Paso 3: Dependientes y otros créditos",
+      "otherIncome": "Paso 4(a): Otros ingresos (no de empleos)",
+      "deductions": "Paso 4(b): Deducciones",
+      "extraWithholding": "Paso 4(c): Retención adicional",
+      "exempt": "Exento de la retención",
+      "address": "Paso 1(b): Dirección",
+      "filing": {
+        "single": "Soltero o casado que declara por separado",
+        "married_jointly": "Casado que declara en conjunto",
+        "head_of_household": "Cabeza de familia"
+      }
+    },
+    "i9": {
+      "title": "Formulario I-9, Sección 1 (Información y declaración del empleado)",
+      "lastName": "Apellido",
+      "firstName": "Nombre",
+      "address": "Dirección",
+      "birthDate": "Fecha de nacimiento",
+      "email": "Correo electrónico del empleado",
+      "phone": "Teléfono del empleado",
+      "attestation": "Declaro, bajo pena de perjurio, que soy",
+      "status": {
+        "citizen": "1. Ciudadano de los Estados Unidos",
+        "noncitizen_national": "2. Nacional no ciudadano de los Estados Unidos",
+        "permanent_resident": "3. Residente permanente legal",
+        "authorized_alien": "4. Extranjero (distinto del punto 3) autorizado para trabajar"
+      },
+      "uscisNumber": "Número A de USCIS",
+      "expiresOn": "Fecha de vencimiento de la autorización de trabajo",
+      "i94Number": "Número de admisión del Formulario I-94",
+      "passport": "Número de pasaporte extranjero y país de emisión"
+    },
+    "deposit": {
+      "title": "Autorización de depósito directo",
+      "authorize": "Autorizo a mi empleador a depositar mi pago en esta cuenta.",
+      "bank": "Número de ruta",
+      "account": "Número de cuenta",
+      "type": "Tipo de cuenta",
+      "types": {
+        "checking": "Cheques",
+        "savings": "Ahorros"
+      }
+    },
+    "stub": {
+      "title": "Talón de pago",
+      "note": "Pago bruto, antes de impuestos y deducciones, que calcula el proveedor de nómina de la agencia. Generado por Granite."
+    }
   }
 }

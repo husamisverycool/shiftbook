@@ -23,6 +23,7 @@ import { INVOICE_TEMPLATES, OT_BILLING_RULES, SEPARATE_BY, VMS_FORMATS } from "@
 import { longDate } from "../format";
 import { InvoicesTable } from "../invoices/invoices-table";
 import { Crumbs, Page, PageHeader, RecordLayout, Section } from "../page";
+import { ClientClockSetting } from "../worker-app/client-clock";
 import { ClientOwes } from "../receivables/client-owes";
 import { ReadOnlyNote } from "../abilities";
 
@@ -138,7 +139,14 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
         description={facts.length > 0 ? <span data-testid="client-facts">{facts.join(" · ")}</span> : undefined}
       />
 
-      <RecordLayout aside={settings}>
+      <RecordLayout
+        aside={
+          <>
+            {settings}
+            <ClientClockSetting clientId={detail.client.id} value={detail.client.workerClock} />
+          </>
+        }
+      >
         <ClientOwes clientId={detail.client.id} owes={owes} clients={clients} today={today} canChange={mayCollect} />
 
         <Section id="client-invoices-title" title={ti("title")} accessory={detail.invoices.length > 0 ? detail.invoices.length : undefined}>

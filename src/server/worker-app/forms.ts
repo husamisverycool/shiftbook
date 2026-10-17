@@ -114,7 +114,8 @@ const STATES = new Set("AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA
 export interface PersonalAnswers {
   legalFirstName: string;
   legalLastName: string;
-  ssn: string;
+  /** Null when left blank with one already on file (a reopened step keeps it). */
+  ssn: string | null;
   birthDate: string;
   addressLine: string;
   city: string;
@@ -124,12 +125,13 @@ export interface PersonalAnswers {
 }
 
 /** Gusto's Personal information step: legal name, SSN, birthday, home address (email optional). */
-export function readPersonal(a: Answers, today: string): Read<PersonalAnswers> {
+export function readPersonal(a: Answers, today: string, opts: { ssnOnFile?: boolean } = {}): Read<PersonalAnswers> {
   const legalFirstName = text(a.legalFirstName);
   const legalLastName = text(a.legalLastName);
   if (!legalFirstName || legalFirstName.length > 100) return { ok: false, field: "legalFirstName" };
   if (!legalLastName || legalLastName.length > 100) return { ok: false, field: "legalLastName" };
-  if (ssnProblem(a.ssn ?? "")) return { ok: false, field: "ssn" };
+  const keepSsn = opts.ssnOnFile === true && (a.ssn ?? "").trim() === "";
+  if (!keepSsn && ssnProblem(a.ssn ?? "")) return { ok: false, field: "ssn" };
   const birthDate = (a.birthDate ?? "").trim();
   // At least 14 (the youngest a person may work in most non-farm jobs, 29 CFR 570.2).
   const latest = `${Number(today.slice(0, 4)) - 14}${today.slice(4)}`;
@@ -144,7 +146,7 @@ export function readPersonal(a: Answers, today: string): Read<PersonalAnswers> {
   if (!/^\d{5}(-\d{4})?$/.test(zip)) return { ok: false, field: "zip" };
   const email = text(a.email).toLowerCase();
   if (email && (email.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) return { ok: false, field: "email" };
-  return { ok: true, value: { legalFirstName, legalLastName, ssn: readSsn(a.ssn!)!, birthDate, addressLine, city, state, zip, email: email || null } };
+  return { ok: true, value: { legalFirstName, legalLastName, ssn: keepSsn ? null : readSsn(a.ssn!)!, birthDate, addressLine, city, state, zip, email: email || null } };
 }
 
 /** Gusto's signing: "Type your full name and check the box to sign electronically". */

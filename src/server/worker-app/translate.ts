@@ -23,7 +23,7 @@ export function redactForModel(text: string): string {
 
 /** The demo's messages and their translations, [English, Spanish], both ways. */
 const DEMO_PAIRS: [string, string][] = [
-  ["Hi Ana, can you work Saturday 7 AM to 3:30 PM at Prairie Line?", "Hola Ana, ¿puede trabajar el sábado de 7 a. m. a 3:30 p. m. en Prairie Line?"],
+  ["Hi Daniel, can you work Saturday 7 AM to 3:30 PM at Prairie Line?", "Hola Daniel, ¿puede trabajar el sábado de 7 a. m. a 3:30 p. m. en Prairie Line?"],
   ["Yes, I can work Saturday. Do I need to bring safety boots?", "Sí, puedo trabajar el sábado. ¿Necesito llevar botas de seguridad?"],
   ["Yes, steel-toe boots please. Thank you!", "Sí, botas con punta de acero, por favor. ¡Gracias!"],
   ["Thank you. When do I get paid for this week?", "Gracias. ¿Cuándo recibo mi pago de esta semana?"],

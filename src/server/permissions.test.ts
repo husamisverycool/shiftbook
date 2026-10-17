@@ -17,7 +17,12 @@ describe("what each role may change (SPEC §2)", () => {
 
   it("a coordinator: intake and hours, placements, the roster (never a whole SSN), their compliance duties; no run approval, money, settings or margin", () => {
     const yes = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: "coordinator" }, a));
-    expect(yes.sort()).toEqual(["compliance", "hours", "placements", "workers"]);
+    expect(yes.sort()).toEqual(["compliance", "hours", "placements", "workerApp", "workers"]);
+  });
+
+  it("a recruiter (SPEC §2, §27): job orders and placements, the roster and onboarding, messages with workers; no hours, run, money, settings or margin", () => {
+    const yes = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: "recruiter" }, a));
+    expect(yes.sort()).toEqual(["placements", "workerApp", "workers"]);
   });
 
   it("billing: client billing, cash, their compliance duties; no hours, run, settings or margin", () => {
@@ -99,7 +104,7 @@ describe("every server action checks the table first", () => {
   const OWN = new Set(["resetDemoAction"]);
   for (const file of files) {
     const text = readFileSync(file, "utf8");
-    if (file.includes("(portal)") || file.includes("(auth)")) continue;
+    if (file.includes("(portal)") || file.includes("(auth)") || file.includes("(worker)")) continue;
     const actions = [...text.matchAll(/export async function (\w+)\(/g)].map((m) => [m[1]!, m.index!] as const);
     for (const [name, at] of actions) {
       it(`${file.split("/app/")[1]} ${name}`, () => {
@@ -113,3 +118,21 @@ describe("every server action checks the table first", () => {
     }
   }
 });
+
+describe("the worker app's actions act for the signed-in worker only (slice t)", () => {
+  const file = join(__dirname, "../app/[locale]/(worker)/w/actions.ts");
+  const text = readFileSync(file, "utf8");
+  const actions = [...text.matchAll(/export async function (\w+)\(/g)].map((m) => [m[1]!, m.index!] as const);
+  // Signing in and out, before there is a worker: each goes through the sign-in service's own checks.
+  const SIGN_IN = new Set(["requestCodeAction", "verifyCodeAction", "chooseAgencyAction", "demoWorkerAction", "workerSignOutAction"]);
+  for (const [name, at] of actions) {
+    it(name, () => {
+      if (SIGN_IN.has(name)) return;
+      const next = actions.find(([, i]) => i > at)?.[1] ?? text.length;
+      const body = text.slice(at, next);
+      expect(body).toMatch(/currentWorker\(/);
+      expect(body).toMatch(/asWorker\(/);
+    });
+  }
+});
+

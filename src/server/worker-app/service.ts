@@ -97,9 +97,16 @@ export async function saveStep(tx: Tx, who: Who, step: Step, a: Answers, ctx: St
   const log = (after: Record<string, unknown>) => auditBy(tx, by(who), [{ action: "update", entityType: "worker", entityId: who.workerId, after: { onboarding: step, ...after } }]);
 
   if (step === "personal") {
-    const r = readPersonal(a, ctx.today);
+    const [onFile] = await tx.select({ ssnIndex: s.workers.ssnIndex, ssnLast4: s.workers.ssnLast4 }).from(s.workers).where(eq(s.workers.id, who.workerId));
+    const r = readPersonal(a, ctx.today, { ssnOnFile: Boolean(onFile?.ssnIndex) });
     if (!r.ok) return r;
     const p = r.value;
+    const personal: s.OnboardingPersonal = { legalFirstName: p.legalFirstName, legalLastName: p.legalLastName, addressLine: p.addressLine, city: p.city, state: p.state, zip: p.zip, email: p.email };
+    if (p.ssn === null) {
+      await set({ personal, personalAt: now, birthSealed: seal(Buffer.from(p.birthDate, "utf8"), kek, `birth:${who.workerId}`) });
+      await log({ ssn: "unchanged", last4: onFile?.ssnLast4 ?? null });
+      return { ok: true };
+    }
     const index = ssnIndex(p.ssn, kek, who.agencyId);
     // The one look at the agency's other workers: is the number already on one? Yes or no only.
     const taken = await outsideWorkerFence(tx, who.workerId, async () => {
@@ -111,9 +118,8 @@ export async function saveStep(tx: Tx, who: Who, step: Step, a: Answers, ctx: St
       await log({ ssn: "duplicate_refused" });
       return { ok: false, field: "ssn" };
     }
-    const [w] = await tx.select({ ssnIndex: s.workers.ssnIndex }).from(s.workers).where(eq(s.workers.id, who.workerId));
+    const w = onFile;
     if (w?.ssnIndex !== index) await tx.update(s.workers).set({ ssnSealed: sealSsn(p.ssn, kek, who.workerId), ssnLast4: last4Of(p.ssn), ssnIndex: index, ssnChangedAt: now }).where(eq(s.workers.id, who.workerId));
-    const personal: s.OnboardingPersonal = { legalFirstName: p.legalFirstName, legalLastName: p.legalLastName, addressLine: p.addressLine, city: p.city, state: p.state, zip: p.zip, email: p.email };
     await set({ personal, personalAt: now, birthSealed: seal(Buffer.from(p.birthDate, "utf8"), kek, `birth:${who.workerId}`) });
     await log({ ssn: w?.ssnIndex === index ? "unchanged" : "changed", last4: last4Of(p.ssn) });
     return { ok: true };

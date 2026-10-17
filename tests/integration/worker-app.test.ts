@@ -57,6 +57,10 @@ async function fresh() {
     await clearDemoAgency(tx);
     await seedDemoAgency(tx);
   });
+  // Start every test from no worker-app data (the demo seeds some: tests/…/demo checks it separately).
+  await owner.db.delete(s.workerMessages).where(eq(s.workerMessages.agencyId, DEMO_AGENCY.id));
+  await owner.db.delete(s.workerOnboarding).where(eq(s.workerOnboarding.agencyId, DEMO_AGENCY.id));
+  await owner.db.update(s.clients).set({ workerClock: "off" }).where(eq(s.clients.agencyId, DEMO_AGENCY.id));
   await owner.db.update(s.workers).set({ phone: null, phoneIndex: null }).where(eq(s.workers.agencyId, DEMO_AGENCY.id));
   await inAgency((tx) => setWorkerPhone(tx, theOwner, DANIEL, PHONE));
 }
@@ -268,5 +272,24 @@ describe("pay stubs, messages and the agency's side", () => {
     expect(row!.invitedByLabel).toBe("Test recruiter");
     const [sms] = await owner.db.select().from(s.smsMessages).where(eq(s.smsMessages.kind, "onboarding_invite"));
     expect(sms).toMatchObject({ toPhone: E164, workerId: DANIEL });
+  });
+});
+
+describe("the demo's worker app", () => {
+  it("seeds numbers, Daniel onboarded with a translated thread, Maribel part-way, clock-in at the Illinois client", async () => {
+    await inAgency(async (tx) => {
+      await clearDemoAgency(tx);
+      await seedDemoAgency(tx);
+    });
+    const view = await inAgency((tx) => workerAppOf(tx, DANIEL, TODAY));
+    expect(view).toMatchObject({ phone: "(•••) •••-0142", workerLanguage: "es", unread: 1 });
+    expect(view!.onboarding.progress.complete).toBe(true);
+    expect(view!.thread.map((m) => m.translation !== null)).toEqual([true, true, true, true]);
+    const maribel = await inAgency((tx) => workerAppOf(tx, workerId("maribel-torres"), TODAY));
+    expect(maribel!.onboarding.progress).toMatchObject({ done: 2, next: "i9" });
+    expect((await asDaniel((tx) => clockOf(tx, DANIEL, TODAY))).choices.length).toBe(1);
+    const opened = await asDaniel((tx) => formAnswers(tx, DANIEL));
+    expect(opened?.deposit).toMatchObject({ routing: "021000021" });
+    expect((await asDaniel((tx) => hoursOf(tx, DANIEL))).length).toBeGreaterThan(0);
   });
 });

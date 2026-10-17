@@ -125,6 +125,9 @@ export async function setClientWorkerClock(tx: Tx, actor: Actor, clientId: strin
 export const FORM_KINDS = ["w4", "i9", "deposit"] as const;
 export type FormKind = (typeof FORM_KINDS)[number];
 
+/** The file grant's subject for a form (decision 0027's grant): never a worker file's link id, so neither opens the other. */
+export const formGrantSubject = (workerId: string, kind: FormKind) => `form:${workerId}:${kind}`;
+
 /** The Owner opens a signed form (it holds bank details and the I-9's numbers): a reason, recorded. */
 export async function recordFormOpened(tx: Tx, actor: Actor, workerId: string, kind: FormKind, reason: string): Promise<{ ok: true } | { ok: false; error: AgencyError | "reason_required" }> {
   if (!can(actor, "revealSsn")) return { ok: false, error: "not_allowed" };
