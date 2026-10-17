@@ -18,6 +18,8 @@ for (const locale of ["en", "es"] as const) {
   test(`a slow page shows its outline inside the frame, then the page (${locale})`, async ({ page }) => {
     await page.goto(`/${locale}`);
     await expect(page.getByRole("navigation").first()).toBeVisible();
+    // A click before the page is interactive is a full page load, which has no outline to show.
+    await page.waitForLoadState("networkidle");
     // Hold the server's answer for the next page so its outline has time to show.
     let release!: () => void;
     const held = new Promise<void>((r) => (release = r));
