@@ -110,7 +110,7 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
       key={i.id}
       href={`/compliance/${i.id}`}
       className={cn(
-        "block truncate rounded px-1.5 py-0.5 text-xs outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+        "block truncate rounded px-1.5 py-0.5 text-xs outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
         i.status === "overdue" ? "border border-destructive text-destructive" : i.status === "due_soon" ? "bg-primary/10" : i.status === "done" || i.status === "not_applicable" ? "text-muted-foreground line-through" : "bg-muted/60",
       )}
       title={`${t(`kinds.${i.kind}` as "kinds.ma_job_order")} — ${i.subject} (${t(`statuses.${i.status}`)})`}
@@ -150,7 +150,7 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
               type="button"
               aria-pressed={v === view}
               onClick={() => go({ view: v })}
-              className={cn("rounded-md px-3 py-1 text-sm font-medium text-foreground/60 hover:text-foreground dark:text-muted-foreground", v === view && "bg-background text-foreground shadow-sm dark:text-foreground")}
+              className={cn("rounded-md px-3 py-1 text-sm font-medium text-foreground/60 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 dark:text-muted-foreground", v === view && "bg-background text-foreground shadow-sm dark:text-foreground")}
               data-testid={`calendar-view-${v}`}
             >
               {tc(`views.${v}`)}
@@ -172,8 +172,8 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
                 <h3 className={cn("border-b bg-muted/40 px-3 py-1.5 text-sm font-medium", d === today && "text-primary")}>{longDate(d, locale)}</h3>
                 <ul>
                   {on(d).map((i) => (
-                    <li key={i.id} className="flex items-center gap-3 border-b px-3 py-2 last:border-b-0">
-                      <Link href={`/compliance/${i.id}`} className="flex min-w-0 flex-1 flex-col">
+                    <li key={i.id} className="flex items-center gap-3 border-b px-3 py-2 transition-colors last:border-b-0 hover:bg-muted/40">
+                      <Link href={`/compliance/${i.id}`} className="flex min-w-0 flex-1 flex-col rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                         <span className="truncate text-sm font-medium">{t(`kinds.${i.kind}` as "kinds.ma_job_order")}</span>
                         <span className="truncate text-xs text-muted-foreground">{i.subject}</span>
                       </Link>
@@ -201,7 +201,7 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
                   <span className={cn("w-fit rounded-full px-1.5 text-xs tabular-nums", d === today && "bg-primary text-primary-foreground")}>{Number(d.slice(8))}</span>
                   {shown.map(chip)}
                   {list.length > shown.length && (
-                    <button type="button" className="w-fit rounded px-1.5 text-xs text-muted-foreground hover:bg-muted" onClick={() => setDay(d)} data-testid="calendar-more">
+                    <button type="button" className="w-fit rounded px-1.5 text-xs text-muted-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50" onClick={() => setDay(d)} data-testid="calendar-more">
                       {tc("more", { count: list.length - shown.length })}
                     </button>
                   )}

@@ -1,6 +1,6 @@
 # 0037 — Motion, hover, press and focus from Primer's motion tokens (Carbon where Primer is silent)
 
-Status: proposed (waiting for the owner's "go")
+Status: accepted (owner: "go", 2026-10-17)
 Date: 2026-10-17
 
 ## Context
@@ -18,7 +18,7 @@ of interaction (hover, state change, enter, exit) with a written rule for each.
 ## Decision
 1. Primer's functional motion tokens are the app's only durations and curves (pattern file
    `_components/motion.md`): hover 100ms, state change 200ms, enter 300ms, exit 200ms.
-2. Carbon fills what Primer does not state: the dialog's 24px rise, the skeleton's slow pulse, the
+2. Carbon fills what Primer does not state: the dialog's 24px settle, the skeleton's slow pulse, the
    toast's exit easing. Fluent: navigation fades rather than slides.
 3. Tooltips follow Primer React: 50ms delay, 100ms fade in, close immediately.
 4. The tokens live once, as CSS variables in `globals.css` with Tailwind utilities; a unit test fails

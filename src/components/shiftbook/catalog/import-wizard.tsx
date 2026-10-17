@@ -135,7 +135,7 @@ function SourceStep() {
             setError(null);
           }
         }}
-        className={cn("flex flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center text-sm", dragging && "bg-muted")}
+        className={cn("flex flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center text-sm transition-colors", dragging && "bg-muted")}
       >
         <UploadIcon className="size-5 text-muted-foreground" />
         <p>{file ? t("chosen", { name: file.name }) : t("drop")}</p>
@@ -293,7 +293,7 @@ function ValuesStep({ view, options }: { view: ImportView; options: CatalogOptio
               type="button"
               aria-current={k === kind ? "true" : undefined}
               onClick={() => setKind(k)}
-              className={cn("flex items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted", k === kind && "bg-muted font-medium")}
+              className={cn("flex items-center justify-between rounded-md px-3 py-2 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50", k === kind && "bg-muted font-medium")}
             >
               {t(`kinds.${k}`)}
               {k === "dates" && invalidDates > 0 ? (

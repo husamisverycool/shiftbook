@@ -65,13 +65,13 @@ export function FilterPill({ label, value, onClear, children, testId, align = "s
   return (
     <span className={cn("inline-flex h-6 shrink-0 items-center rounded-full border text-[13px] font-medium", used ? "border-border" : "border-dashed border-foreground/25")}>
       {used && onClear && (
-        <button type="button" onClick={onClear} aria-label={t("removeFilter", { name: label })} className="-mr-0.5 flex h-full items-center rounded-l-full pl-1.5 text-foreground/60 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50" data-testid={testId ? `${testId}-clear` : undefined}>
+        <button type="button" onClick={onClear} aria-label={t("removeFilter", { name: label })} className="-mr-0.5 flex h-full items-center rounded-l-full pl-1.5 text-foreground/60 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50" data-testid={testId ? `${testId}-clear` : undefined}>
           <CircleXIcon className="size-3.5" aria-hidden />
         </button>
       )}
       <DropdownMenu>
         <DropdownMenuTrigger
-          className={cn("flex h-full items-center gap-1 rounded-full pr-2 text-foreground/70 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 data-popup-open:text-foreground", used && onClear ? "pl-1" : "pl-1.5")}
+          className={cn("flex h-full items-center gap-1 rounded-full pr-2 text-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 data-popup-open:text-foreground", used && onClear ? "pl-1" : "pl-1.5")}
           data-testid={testId}
         >
           {!used && <CirclePlusIcon className="size-3.5" aria-hidden />}

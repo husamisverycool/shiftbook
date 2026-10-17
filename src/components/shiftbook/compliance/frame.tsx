@@ -130,7 +130,7 @@ export function ComplianceFrame({
                     aria-current={area === a ? "true" : undefined}
                     onClick={() => go({ area: a === "all" ? "" : a })}
                     className={cn(
-                      "flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                      "flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50",
                       area === a && "bg-muted font-medium",
                     )}
                     data-testid={`area-${a}`}

@@ -45,9 +45,20 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    /* Motion (decision 0037): Primer's functional tokens. Every transition-* utility defaults to hover. */
+    --ease-hover: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --ease-move: cubic-bezier(0.6, 0, 0.2, 1);
+    --ease-enter: cubic-bezier(0.3, 0.8, 0.6, 1);
+    --ease-exit: cubic-bezier(0.7, 0.1, 0.75, 0.9);
+    --default-transition-duration: var(--motion-micro);
+    --default-transition-timing-function: var(--ease-hover);
 }
 
 :root {
+    /* Primer motion.duration: micro (hover, focus), short (state change, exit), medium (enter). */
+    --motion-micro: 100ms;
+    --motion-short: 200ms;
+    --motion-medium: 300ms;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -126,4 +137,90 @@
   html {
     @apply font-sans;
     }
+}
+/* Primer motion.transition.stateChange: toggles, expand/collapse, tab switch, row actions appearing. */
+@utility motion-state {
+  --tw-duration: var(--motion-short);
+  --tw-ease: var(--ease-move);
+  transition-duration: var(--motion-short);
+  transition-timing-function: var(--ease-move);
+}
+
+/* Primer motion.transition.enter: menus, popovers, tooltips, dialogs, sheets, toasts appearing. */
+@utility motion-enter {
+  --tw-duration: var(--motion-medium);
+  --tw-ease: var(--ease-enter);
+  transition-duration: var(--motion-medium);
+  transition-timing-function: var(--ease-enter);
+}
+
+/* Primer motion.transition.exit: "shorter than enter to feel snappy". */
+@utility motion-exit {
+  --tw-duration: var(--motion-short);
+  --tw-ease: var(--ease-exit);
+  transition-duration: var(--motion-short);
+  transition-timing-function: var(--ease-exit);
+}
+
+/* Primer React tooltip: a 100ms fade in. */
+@utility motion-fade {
+  --tw-duration: var(--motion-micro);
+  --tw-ease: var(--ease-hover);
+}
+
+/* Fluent: after navigation, "a quick fade transition instead of moving or sliding". */
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+@utility animate-page-in {
+  animation: page-in var(--motion-short) var(--ease-enter);
+}
+
+/* Carbon skeleton: a slow 3000ms ease-in-out pulse. */
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+@utility animate-skeleton {
+  animation: skeleton-pulse 3000ms var(--ease-move) infinite;
+}
+
+/*
+ * Reduced motion (Apple HIG: replace movement with fades; WCAG 2.2 C39): nothing slides or scales,
+ * fades and colour changes stay, looping pulses stop. Spinners keep turning: they are the progress.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+    --tw-exit-translate-x: 0 !important;
+    --tw-exit-translate-y: 0 !important;
+    --tw-enter-scale: 1 !important;
+    --tw-exit-scale: 1 !important;
+    --tw-enter-rotate: 0 !important;
+    --tw-exit-rotate: 0 !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-skeleton,
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/*
+ * Toasts (Carbon: "closing a modal or toaster" uses exit easing): Sonner's own 400ms becomes Primer's
+ * enter, and a dismissed toast leaves with the shorter exit. Sonner already drops motion when reduced.
+ */
+[data-sonner-toast] {
+  transition-duration: var(--motion-medium), var(--motion-medium), var(--motion-medium), var(--motion-micro) !important;
+  transition-timing-function: var(--ease-enter) !important;
+}
+[data-sonner-toast][data-removed="true"] {
+  transition-duration: var(--motion-short) !important;
+  transition-timing-function: var(--ease-exit) !important;
 }

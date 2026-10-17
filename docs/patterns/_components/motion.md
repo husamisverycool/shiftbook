@@ -1,6 +1,6 @@
 # Pattern: Motion, hover, press and focus (shared, every screen)
 
-Status: proposed — decision 0037 (2026-10-17), waiting for the owner's "go"
+Status: adopted — decision 0037 (2026-10-17; the owner said "go")
 Reference product: GitHub Primer motion tokens (the one system that names a token for each kind of
 interaction); IBM Carbon motion where Primer is silent; Apple's Human Interface Guidelines and WCAG
 2.2 for reduced motion
@@ -37,9 +37,9 @@ Primer's ceiling: nothing in the interface moves for longer than 300ms; never ov
    when the pointer or focus leaves. Keyboard focus opens them with no delay. Icon-only buttons and
    truncated names get a tooltip instead of the browser's plain `title` box.
 5. **Menus, popovers, select lists**: Enter 300ms (fade and a short move away from the trigger),
-   Exit 200ms.
-6. **Dialogs**: the dim layer fades; the dialog fades and rises 24px (Carbon modal) — Enter in, Exit
-   out. **Sheets and the list's side panel** slide from their edge with the same pair.
+   Exit 200ms. The move is 4px (Polaris appear-below: one space unit); no scaling.
+6. **Dialogs**: the dim layer fades; the dialog fades and settles 24px down into place (Carbon modal:
+   the container moves from -24px to 0) — Enter in, Exit out back up. **Sheets and the list's side panel** slide from their edge with the same pair.
 7. **Toasts**: Enter in, Exit out (Carbon: exit easing for "closing a modal or toaster").
 8. **Expand/collapse** (setup guide, approval rows, list groups): the chevron turns and the body opens
    with the state-change timing.

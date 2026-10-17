@@ -147,7 +147,7 @@ export function BankImport({ demo }: { demo: boolean }) {
               setDragging(false);
               choose(e.dataTransfer.files[0]);
             }}
-            className={cn("flex flex-col items-center gap-2 rounded-lg border border-dashed p-10 text-center text-sm", dragging && "bg-muted")}
+            className={cn("flex flex-col items-center gap-2 rounded-lg border border-dashed p-10 text-center text-sm transition-colors", dragging && "bg-muted")}
           >
             <UploadIcon className="size-5 text-muted-foreground" />
             <p>{file ? t("chosen", { name: file.name }) : t("drop")}</p>

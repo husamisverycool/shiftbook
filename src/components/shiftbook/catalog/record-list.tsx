@@ -10,7 +10,7 @@
 // detail, then the properties as small rounded chips each with its icon; groups as tinted bands with
 // their icon and count; applied filters as segmented chips (field · operator · value · ×); display
 // options as a panel of Grouping and Ordering choices and property toggles. The icons are lucide's.
-import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronRightIcon, ListFilterIcon, Maximize2Icon, PanelRightOpenIcon, Rows3Icon, SlidersHorizontalIcon, XIcon, type LucideIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronDownIcon, ListFilterIcon, Maximize2Icon, PanelRightOpenIcon, Rows3Icon, SlidersHorizontalIcon, XIcon, type LucideIcon } from "lucide-react";
 export type { RowIcon } from "../status-icon";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -184,6 +184,10 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
 
   const panelRow = panelId ? (filtered.find((r) => r.id === panelId) ?? null) : null;
   const panelIndex = panelRow ? navigable.findIndex((r) => r.id === panelRow.id) : -1;
+  // The closed panel stays for its exit (Primer motion.transition.exit), then goes (decision 0037).
+  const [shownRow, setShownRow] = useState<R | null>(panelRow);
+  if (panelRow && panelRow !== shownRow) setShownRow(panelRow);
+  const leaving = !panelRow && shownRow !== null;
 
   const move = useCallback(
     (delta: number, extend: boolean) => {
@@ -418,7 +422,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                         type="button"
                         aria-expanded={!collapsed.has(g.key)}
                         aria-label={t(collapsed.has(g.key) ? "expandGroup" : "collapseGroup", { name: g.label })}
-                        className="rounded p-0.5 text-muted-foreground hover:bg-background hover:text-foreground"
+                        className="rounded p-0.5 text-muted-foreground outline-none transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
                         onClick={() =>
                           setCollapsed((cur) => {
                             const next = new Set(cur);
@@ -428,7 +432,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                           })
                         }
                       >
-                        {collapsed.has(g.key) ? <ChevronRightIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+                        <ChevronDownIcon className={cn("size-4 transition-transform motion-state", collapsed.has(g.key) && "-rotate-90")} />
                       </button>
                       {grouping.icon && g.rows[0] && <StatusIcon status={grouping.icon(g.rows[0])} decorative />}
                       {g.label}
@@ -453,7 +457,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                         }}
                         onMouseEnter={() => setHighlight(r.id)}
                         className={cn(
-                          "group flex min-h-11 items-center gap-3 border-b border-border/70 px-2 text-sm",
+                          "group flex min-h-11 items-center gap-3 border-b border-border/70 px-2 text-sm transition-colors",
                           isHighlighted && "bg-muted/60",
                           isSelected && "bg-muted",
                           panelId === r.id && "ring-1 ring-ring ring-inset",
@@ -464,14 +468,14 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                             checked={isSelected}
                             onCheckedChange={() => toggleSelect(r.id)}
                             aria-label={t("selectRow", { name: p.primary(r) })}
-                            className={cn("transition-opacity", !isSelected && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100", selected.size > 0 && "opacity-100")}
+                            className={cn("transition-opacity motion-state", !isSelected && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100", selected.size > 0 && "opacity-100")}
                           />
                         </span>
                         {/* One line, as Linear's rows: the status icon, the name, its muted detail; the properties at the right. */}
                         <span role="gridcell" className="flex min-w-0 flex-1 items-center gap-2.5">
                           {p.status && <StatusIcon status={p.status(r)} />}
                           <span className="flex min-w-0 flex-1 items-baseline gap-2">
-                            <Link href={p.hrefFor(r)} className="max-w-[60%] shrink-0 truncate font-medium hover:underline">
+                            <Link href={p.hrefFor(r)} className="max-w-[60%] shrink-0 truncate rounded-sm font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50">
                               {p.primary(r)}
                             </Link>
                             {p.secondary?.(r, grouping.key) && <span className="min-w-0 truncate text-muted-foreground">{p.secondary(r, grouping.key)}</span>}
@@ -494,7 +498,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                             variant="ghost"
                             size="icon-sm"
                             aria-label={t("preview", { name: p.primary(r) })}
-                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                            className="opacity-0 transition-opacity motion-state group-hover:opacity-100 focus-visible:opacity-100"
                             onClick={() => {
                               setHighlight(r.id);
                               setPanelId((cur) => (cur === r.id ? null : r.id));
@@ -513,17 +517,24 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
       </div>
 
       {/* Side panel (Attio record preview) */}
-      {panelRow && (
-        <aside aria-label={t("panel")} data-testid="side-panel" className="sticky top-0 hidden h-svh w-96 shrink-0 overflow-y-auto border-l bg-background lg:block">
+      {shownRow && (
+        <aside
+          aria-label={t("panel")}
+          data-testid={leaving ? undefined : "side-panel"}
+          data-leaving={leaving || undefined}
+          inert={leaving}
+          onTransitionEnd={(e) => leaving && e.target === e.currentTarget && setShownRow(null)}
+          className="sticky top-0 hidden h-svh w-96 shrink-0 overflow-y-auto border-l bg-background transition-[opacity,translate] motion-enter starting:opacity-0 motion-safe:starting:translate-x-4 data-leaving:opacity-0 data-leaving:motion-exit motion-safe:data-leaving:translate-x-4 lg:block"
+        >
           <div className="flex items-center gap-1 border-b px-3 py-2 text-sm">
-            <span className="mr-auto text-muted-foreground tabular-nums">{t("position", { n: panelIndex + 1, total: navigable.length })}</span>
+            <span className="mr-auto text-muted-foreground tabular-nums">{t("position", { n: navigable.findIndex((r) => r.id === shownRow.id) + 1, total: navigable.length })}</span>
             <Button variant="ghost" size="icon-sm" aria-label={t("previous")} disabled={panelIndex <= 0} onClick={() => move(-1, false)}>
               <ArrowUpIcon />
             </Button>
             <Button variant="ghost" size="icon-sm" aria-label={t("next")} disabled={panelIndex >= navigable.length - 1} onClick={() => move(1, false)}>
               <ArrowDownIcon />
             </Button>
-            <Link href={p.hrefFor(panelRow)} aria-label={t("expand")} className="inline-flex size-7 items-center justify-center rounded-md hover:bg-muted">
+            <Link href={p.hrefFor(shownRow)} aria-label={t("expand")} className="inline-flex size-7 items-center justify-center rounded-md outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50">
               <Maximize2Icon className="size-4" />
             </Link>
             <Button variant="ghost" size="icon-sm" aria-label={t("close")} onClick={() => setPanelId(null)}>
@@ -531,8 +542,8 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
             </Button>
           </div>
           <div className="flex flex-col gap-4 p-4">
-            <h2 className="text-lg font-semibold">{p.primary(panelRow)}</h2>
-            {p.panel(panelRow)}
+            <h2 className="text-lg font-semibold">{p.primary(shownRow)}</h2>
+            {p.panel(shownRow)}
           </div>
         </aside>
       )}

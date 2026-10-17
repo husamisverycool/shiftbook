@@ -1,6 +1,6 @@
 # Slice (n) — motion, hover, press and focus everywhere (decision 0037)
 
-Status: planned (2026-10-17), waiting for the owner's "go"
+Status: building (owner: "go", 2026-10-17)
 
 ## Plain summary
 Every button, row, link, icon, menu, tooltip, dialog, tab and panel moves the same calm, quick way,

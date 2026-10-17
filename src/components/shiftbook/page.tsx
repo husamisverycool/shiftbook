@@ -4,6 +4,7 @@ import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { TabUnderline } from "./tab-underline";
 
 const WIDTHS = {
   /** Lists with many columns and dashboards (Polaris: full width for wide index pages). */
@@ -87,7 +88,7 @@ export function PageTabs({ tabs, current, label, className, end }: { tabs: PageT
       </div>
     );
   return (
-    <nav aria-label={label} className={cn("flex gap-6 overflow-x-auto border-b", className)}>
+    <nav aria-label={label} className={cn("group/tabs relative flex gap-6 overflow-x-auto border-b", className)}>
       {tabs.map((tab) => {
         const active = tab.key === current;
         return (
@@ -98,7 +99,7 @@ export function PageTabs({ tabs, current, label, className, end }: { tabs: PageT
             data-testid={tab.testId}
             className={cn(
               "relative -mb-px inline-flex items-center gap-1.5 border-b-2 border-transparent px-1 pt-1 pb-2.5 text-sm font-medium whitespace-nowrap text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50",
-              active && "border-foreground text-foreground",
+              active && "border-foreground text-foreground group-data-[underline=ready]/tabs:border-transparent",
             )}
           >
             {tab.label}
@@ -106,6 +107,7 @@ export function PageTabs({ tabs, current, label, className, end }: { tabs: PageT
           </Link>
         );
       })}
+      <TabUnderline id={label} />
     </nav>
   );
 }

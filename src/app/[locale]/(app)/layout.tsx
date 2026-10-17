@@ -6,6 +6,7 @@ import { Suspense, type ReactNode } from "react";
 import { AppSidebar } from "@/components/shiftbook/app-sidebar";
 import { AbilitiesProvider } from "@/components/shiftbook/abilities";
 import { AgencyZoneProvider } from "@/components/shiftbook/agency-zone";
+import { PageFade } from "@/components/shiftbook/page-fade";
 import { ConfirmAccessProvider } from "@/components/shiftbook/auth/confirm-access";
 import { SignInNotice } from "@/components/shiftbook/auth/sign-in-notice";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -35,6 +36,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
           <SidebarProvider className="min-h-0">
             <AppSidebar agencyName={agency?.name ?? ""} person={{ name: actor.label, role: actor.role }} showMargin={mayViewMargin(actor)} complianceCount={urgent} />
             <SidebarInset className="min-w-0">
+              <PageFade />
               <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden">
                 <SidebarTrigger />
                 <span className="truncate text-sm font-medium">{agency?.name}</span>

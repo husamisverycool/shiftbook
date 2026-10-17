@@ -236,7 +236,7 @@ export function ActivityView({ today, filters, page, selected: initial, options,
                       data-event-id={e.id}
                       aria-current={on ? "true" : undefined}
                       onClick={() => choose(e)}
-                      className={cn("flex w-full min-w-0 flex-col gap-0.5 px-4 py-2.5 text-left text-sm outline-none hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset", on && "bg-muted/40 shadow-[inset_3px_0_0_var(--color-primary)]")}
+                      className={cn("flex w-full min-w-0 flex-col gap-0.5 px-4 py-2.5 text-left text-sm outline-none transition-colors hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset", on && "bg-muted/40 shadow-[inset_3px_0_0_var(--color-primary)]")}
                       data-testid="activity-row"
                     >
                       <span className="truncate">
