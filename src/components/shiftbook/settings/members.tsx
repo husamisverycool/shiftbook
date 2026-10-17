@@ -1,10 +1,11 @@
 "use client";
 
-// Pattern: docs/patterns/settings/members.md — Linear Members (filters by role and status, a row's
-// overflow menu: Change role…, Suspend…; Invite: email, "Invite as…", Send); Stripe Add member (what each
-// role can do; invites expire after 10 days); GitHub's two-factor filter and invitations sent again or
-// cancelled.
-import { MoreHorizontalIcon, PlusIcon } from "lucide-react";
+// Pattern: docs/patterns/settings/members.md — Linear Members (the search, Filters and Invite on one line
+// over the rows; each row the person's initials, name over email, their role and status, the overflow
+// menu: Change role…, Suspend…; Invite: email, "Invite as…", Send); Stripe Add member (what each role can
+// do; invites expire after 10 days); GitHub's two-factor filter and invitations sent again or cancelled.
+// The page's frame and the Roles panel: docs/patterns/_components/settings.md.
+import { ListFilterIcon, MoreHorizontalIcon, PlusIcon, XIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useId, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -12,17 +13,30 @@ import { cancelInviteAction, changeRoleAction, inviteAction, resendInviteAction,
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "@/i18n/navigation";
 import { ROLES, type Role } from "@/server/permissions";
 import { useConfirmed } from "../auth/confirm-access";
 import { LinkedText } from "../linked-text";
 import { Status, type Tone } from "../status";
 import { useDateTime } from "../agency-zone";
+import { EmptyState } from "../empty-state";
+import { PersonAvatar } from "../person";
+import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
 
 export interface MemberRow {
   id: string;
@@ -44,8 +58,8 @@ const STATUS_TONE: Record<MemberRow["status"], Tone> = { active: "success", invi
 export function MembersView({ members, me, canManage, now }: { members: MemberRow[]; me: string; canManage: boolean; now: string }) {
   const t = useTranslations("members");
   const tr = useTranslations("roles");
+  const tl = useTranslations("list");
   const router = useRouter();
-  const id = useId();
   const [role, setRole] = useState<Role | "all">("all");
   const [status, setStatus] = useState<MemberRow["status"] | "all">("all");
   const [search, setSearch] = useState("");
@@ -75,162 +89,182 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
       router.refresh();
     });
 
+  const clearFilters = () => {
+    setRole("all");
+    setStatus("all");
+    setSearch("");
+  };
+  const STATUSES = ["active", "invited", "suspended"] as const;
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
-      <header className="flex flex-wrap items-end gap-3">
-        <div className="mr-auto flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground">{t("eyebrow")}</p>
-          <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
+    <SettingsPage context={t("eyebrow")} title={t("title")} description={canManage ? undefined : t("ownerOnly")}>
+      <div className="flex min-w-0 flex-col gap-4">
+        {/* Linear Members: the search and Filters at the left, Invite at the right, on one line. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Input type="search" aria-label={t("search")} placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full sm:w-64" data-testid="member-search" />
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" data-testid="member-filters" />}>
+              <ListFilterIcon />
+              {tl("filter")}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger data-testid="filter-role">{t("role")}</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup value={role} onValueChange={(v) => setRole(v as Role | "all")}>
+                    <DropdownMenuRadioItem value="all">{t("all")}</DropdownMenuRadioItem>
+                    {ROLES.map((r) => (
+                      <DropdownMenuRadioItem key={r} value={r}>
+                        {tr(`${r}.name`)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger data-testid="filter-status">{t("status")}</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup value={status} onValueChange={(v) => setStatus(v as MemberRow["status"] | "all")}>
+                    <DropdownMenuRadioItem value="all">{t("all")}</DropdownMenuRadioItem>
+                    {STATUSES.map((st) => (
+                      <DropdownMenuRadioItem key={st} value={st}>
+                        {t(`statusLabels.${st}`)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Applied filters as chips (Linear), each removable. */}
+          {role !== "all" && (
+            <Badge variant="secondary" className="gap-1 pr-1" data-testid="chip-role">
+              {t("role")}: {tr(`${role}.name`)}
+              <button type="button" className="rounded p-0.5 hover:bg-muted" aria-label={tl("removeFilter", { name: t("role") })} onClick={() => setRole("all")}>
+                <XIcon className="size-3" />
+              </button>
+            </Badge>
+          )}
+          {status !== "all" && (
+            <Badge variant="secondary" className="gap-1 pr-1" data-testid="chip-status">
+              {t("status")}: {t(`statusLabels.${status}`)}
+              <button type="button" className="rounded p-0.5 hover:bg-muted" aria-label={tl("removeFilter", { name: t("status") })} onClick={() => setStatus("all")}>
+                <XIcon className="size-3" />
+              </button>
+            </Badge>
+          )}
+          <p className="ml-auto text-sm text-muted-foreground tabular-nums" aria-live="polite">
+            {t("count", { count: shown.length })}
+          </p>
+          {canManage && (
+            <Button onClick={() => setInviting(true)} data-testid="invite-member">
+              <PlusIcon />
+              {t("invite")}
+            </Button>
+          )}
         </div>
-        {canManage && (
-          <Button onClick={() => setInviting(true)} data-testid="invite-member">
-            <PlusIcon />
-            {t("invite")}
-          </Button>
+
+        {shown.length === 0 ? (
+          <EmptyState
+            kind="filtered"
+            icon={ListFilterIcon}
+            title={t("noMatch")}
+            className="min-h-0 py-12"
+            action={
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                {t("clear")}
+              </Button>
+            }
+          />
+        ) : (
+          // Linear's member rows: hairlines between them, the initials, name over email, then role and
+          // status, the overflow menu at the end.
+          <ul aria-label={t("title")} className="flex flex-col divide-y" data-testid="members">
+            {shown.map((m) => {
+              const lapsed = m.status === "invited" && (!m.inviteExpiresAt || m.inviteExpiresAt < now);
+              const needed = NEEDS_APP.includes(m.role) && !m.hasAuthenticator;
+              return (
+                <li key={m.id} className="flex min-h-15 items-center gap-3 py-2.5" data-testid="member" data-email={m.email}>
+                  <PersonAvatar name={m.name} size="default" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-sm leading-5 font-medium">
+                      {m.name}
+                      {m.id === me && <span className="ml-2 text-xs font-normal text-muted-foreground">{t("you")}</span>}
+                    </span>
+                    <span className="truncate text-[13px] leading-[18px] text-muted-foreground">
+                      {m.email}
+                      <span className="sm:hidden"> · {tr(`${m.role}.name`)}</span>
+                    </span>
+                  </div>
+                  <div className="hidden w-40 shrink-0 flex-col items-start gap-0.5 whitespace-nowrap sm:flex">
+                    <span className="text-sm leading-5">{tr(`${m.role}.name`)}</span>
+                    {m.hasAuthenticator ? (
+                      <span className="text-[13px] leading-5 text-muted-foreground">{t("authLine.on")}</span>
+                    ) : needed && m.status !== "invited" ? (
+                      <Status tone="warning">{t("authLine.needed")}</Status>
+                    ) : (
+                      <span className="text-[13px] leading-5 text-muted-foreground">{t("authLine.off")}</span>
+                    )}
+                  </div>
+                  <div className="flex w-48 shrink-0 flex-col items-start gap-0.5">
+                    <Status tone={STATUS_TONE[m.status]} data-testid="member-status">
+                      {t(`statusLabels.${m.status}`)}
+                    </Status>
+                    <span className="text-[13px] leading-5 whitespace-nowrap text-muted-foreground">
+                      {m.status === "invited" ? (lapsed ? t("inviteLapsed") : t("expires", { date: date(m.inviteExpiresAt!) })) : m.lastSeenAt ? t("lastSeen", { date: dateTime(m.lastSeenAt) }) : t("neverSeen")}
+                    </span>
+                  </div>
+                  {canManage && (
+                    <div className="w-8 shrink-0">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label={t("menu", { name: m.name })} disabled={busy} data-testid="member-menu" />}>
+                          <MoreHorizontalIcon />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {m.status === "invited" ? (
+                            <>
+                              <DropdownMenuItem onClick={() => run(() => resendInviteAction(m.id, m.email), t("resent", { email: m.email }), (r) => r.demoCopy && setCopy({ email: m.email, text: r.demoCopy }))}>{t("resend")}</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setPending({ kind: "cancel", member: m })}>{t("cancelInvite")}</DropdownMenuItem>
+                              {m.demoCopy && (
+                                <DropdownMenuItem onClick={() => setCopy({ email: m.email, text: m.demoCopy! })} data-testid="open-invite">
+                                  {t("openInvite")}
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <DropdownMenuItem onClick={() => setPending({ kind: "role", member: m })} data-testid="change-role">
+                                {t("changeRole")}
+                              </DropdownMenuItem>
+                              {m.id !== me &&
+                                (m.status === "suspended" ? (
+                                  <DropdownMenuItem onClick={() => run(() => setSuspendedAction(m.id, false), t("restored", { name: m.name }))}>{t("restore")}</DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem onClick={() => setPending({ kind: "suspend", member: m })} data-testid="suspend">
+                                    {t("suspend")}
+                                  </DropdownMenuItem>
+                                ))}
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </header>
-
-      <section aria-labelledby={`${id}-roles`} className="flex flex-col gap-2">
-        <h2 id={`${id}-roles`} className="sr-only">
-          {t("rolesTitle")}
-        </h2>
-        <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-          {ROLES.map((r) => (
-            <div key={r} className="contents">
-              <dt className="font-medium">{tr(`${r}.name`)}</dt>
-              <dd className="text-muted-foreground">{tr(`${r}.line`)}</dd>
-            </div>
-          ))}
-        </dl>
-        {!canManage && <p className="text-sm text-muted-foreground">{t("ownerOnly")}</p>}
-      </section>
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor={`${id}-role`}>{t("role")}</Label>
-          <NativeSelect id={`${id}-role`} value={role} onChange={(e) => setRole(e.target.value as Role | "all")} data-testid="filter-role">
-            <NativeSelectOption value="all">{t("all")}</NativeSelectOption>
-            {ROLES.map((r) => (
-              <NativeSelectOption key={r} value={r}>
-                {tr(`${r}.name`)}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor={`${id}-status`}>{t("status")}</Label>
-          <NativeSelect id={`${id}-status`} value={status} onChange={(e) => setStatus(e.target.value as MemberRow["status"] | "all")} data-testid="filter-status">
-            <NativeSelectOption value="all">{t("all")}</NativeSelectOption>
-            {(["active", "invited", "suspended"] as const).map((s) => (
-              <NativeSelectOption key={s} value={s}>
-                {t(`statusLabels.${s}`)}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
-        <Input type="search" aria-label={t("search")} placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-64" data-testid="member-search" />
-        <p className="ml-auto text-sm text-muted-foreground" aria-live="polite">
-          {t("count", { count: shown.length })}
-        </p>
       </div>
 
-      {shown.length === 0 ? (
-        <div className="flex flex-col items-start gap-2 rounded-xl border bg-card p-6">
-          <p className="text-sm">{t("noMatch")}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setRole("all");
-              setStatus("all");
-              setSearch("");
-            }}
-          >
-            {t("clear")}
-          </Button>
-        </div>
-      ) : (
-        <div className="min-w-0">
-          <Table data-testid="members">
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("columns.name")}</TableHead>
-                <TableHead>{t("columns.role")}</TableHead>
-                <TableHead>{t("columns.status")}</TableHead>
-                <TableHead>{t("columns.authenticator")}</TableHead>
-                <TableHead>{t("columns.lastSeen")}</TableHead>
-                {canManage && <TableHead className="w-12">{<span className="sr-only">{t("columns.actions")}</span>}</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shown.map((m) => {
-                const lapsed = m.status === "invited" && (!m.inviteExpiresAt || m.inviteExpiresAt < now);
-                const needed = NEEDS_APP.includes(m.role) && !m.hasAuthenticator;
-                return (
-                  <TableRow key={m.id} data-testid="member" data-email={m.email}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {m.name}
-                          {m.id === me && <span className="ml-2 text-xs font-normal text-muted-foreground">{t("you")}</span>}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{m.email}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{tr(`${m.role}.name`)}</TableCell>
-                    <TableCell>
-                      <span className="flex flex-wrap items-center gap-2">
-                        <Status tone={STATUS_TONE[m.status]} data-testid="member-status">
-                          {t(`statusLabels.${m.status}`)}
-                        </Status>
-                        {m.status === "invited" && <span className="text-xs text-muted-foreground">{lapsed ? t("inviteLapsed") : t("expires", { date: date(m.inviteExpiresAt!) })}</span>}
-                      </span>
-                    </TableCell>
-                    <TableCell>{m.hasAuthenticator ? t("auth.on") : needed && m.status !== "invited" ? <Status tone="warning">{t("auth.needed")}</Status> : <span className="text-muted-foreground">{t("auth.off")}</span>}</TableCell>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">{m.lastSeenAt ? dateTime(m.lastSeenAt) : t("never")}</TableCell>
-                    {canManage && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label={t("menu", { name: m.name })} disabled={busy} data-testid="member-menu" />}>
-                            <MoreHorizontalIcon />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {m.status === "invited" ? (
-                              <>
-                                <DropdownMenuItem onClick={() => run(() => resendInviteAction(m.id, m.email), t("resent", { email: m.email }), (r) => r.demoCopy && setCopy({ email: m.email, text: r.demoCopy }))}>{t("resend")}</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setPending({ kind: "cancel", member: m })}>{t("cancelInvite")}</DropdownMenuItem>
-                                {m.demoCopy && (
-                                  <DropdownMenuItem onClick={() => setCopy({ email: m.email, text: m.demoCopy! })} data-testid="open-invite">
-                                    {t("openInvite")}
-                                  </DropdownMenuItem>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                <DropdownMenuItem onClick={() => setPending({ kind: "role", member: m })} data-testid="change-role">
-                                  {t("changeRole")}
-                                </DropdownMenuItem>
-                                {m.id !== me &&
-                                  (m.status === "suspended" ? (
-                                    <DropdownMenuItem onClick={() => run(() => setSuspendedAction(m.id, false), t("restored", { name: m.name }))}>{t("restore")}</DropdownMenuItem>
-                                  ) : (
-                                    <DropdownMenuItem onClick={() => setPending({ kind: "suspend", member: m })} data-testid="suspend">
-                                      {t("suspend")}
-                                    </DropdownMenuItem>
-                                  ))}
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      {/* What each role can do (Stripe's roles), as a panel of rows. */}
+      <SettingsSection title={t("rolesTitle")}>
+        <SettingsRows as="ul" aria-label={t("rolesTitle")}>
+          {ROLES.map((r) => (
+            <SettingsRow key={r} as="li" label={tr(`${r}.name`)} description={tr(`${r}.line`)} />
+          ))}
+        </SettingsRows>
+      </SettingsSection>
 
       {inviting && (
         <InviteDialog
@@ -281,7 +315,7 @@ export function MembersView({ members, me, canManage, now }: { members: MemberRo
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </SettingsPage>
   );
 }
 

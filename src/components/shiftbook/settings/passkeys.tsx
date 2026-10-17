@@ -3,11 +3,12 @@
 // Pattern: docs/patterns/settings/account.md — the Passkeys section (decision 0032; GitHub's
 // "Passkeys" under "Password and authentication": each passkey listed, removed after a confirmation;
 // "Add a passkey" re-authenticates — here every time, the password or code going with the request —
-// then the device's prompt, then a confirmation and Done).
+// then the device's prompt, then a confirmation and Done). Laid out as Linear's SAML domains list
+// (docs/patterns/_components/settings.md): a tile, the name over when it was added, the action at the right.
 import { browserSupportsWebAuthn, startRegistration } from "@simplewebauthn/browser";
-import { KeyRoundIcon } from "lucide-react";
+import { KeyRoundIcon, PlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useId, useState, useTransition, type ReactNode } from "react";
+import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { addPasskeyAction, passkeyRegistrationOptionsAction, removePasskeyAction } from "@/app/[locale]/(auth)/passkey-actions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -17,6 +18,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useDateTime } from "../agency-zone";
 import { cancelledByPerson } from "../auth/passkey";
 import { useAskToConfirm, useConfirmed } from "../auth/confirm-access";
+import { SettingsEmpty, SettingsRow, SettingsRows, SettingsSection, SettingsTile } from "../settings-panel";
 
 export interface PasskeyItem {
   id: string;
@@ -35,8 +37,8 @@ const alreadyThere = (error: unknown) => {
   return e?.name === "InvalidStateError" || e?.code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED";
 };
 
-/** The section's body, put in the account page's own section frame (`frame`) under its title. */
-export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; frame: (title: string, body: ReactNode) => ReactNode }) {
+/** The account page's Passkeys section. */
+export function PasskeysSection({ passkeys }: { passkeys: PasskeyItem[] }) {
   const t = useTranslations("passkeys");
   const router = useRouter();
   const id = useId();
@@ -93,44 +95,53 @@ export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; 
       router.refresh();
     });
 
-  return frame(
-    t("title"),
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">{t("intro")}</p>
-      {passkeys.length === 0 ? (
-        <p className="text-sm" data-testid="passkeys-none">
-          {t("none")}
-        </p>
-      ) : (
-        <ul aria-label={t("listLabel")} className="divide-y rounded-lg border" data-testid="passkey-list">
-          {passkeys.map((p) => (
-            <li key={p.id} className="flex items-center gap-3 px-4 py-3" data-testid="passkey">
-              <KeyRoundIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate text-sm font-medium" data-testid="passkey-name">
-                  {p.name}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {t("added", { date: when(p.createdAt) })} · {p.lastUsedAt ? t("lastUsed", { date: when(p.lastUsedAt) }) : t("neverUsed")}
-                </span>
-              </div>
-              <Button variant="outline" size="sm" disabled={removing} aria-label={t("removeLabel", { name: p.name })} onClick={() => setToRemove(p)} data-testid="passkey-remove">
-                {t("remove")}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="flex flex-col gap-2">
-        <Button className="w-fit" disabled={adding} aria-describedby={error ? `${id}-error` : undefined} onClick={add} data-testid="passkey-add">
+  return (
+    <SettingsSection
+      title={t("title")}
+      description={t("intro")}
+      action={
+        <Button variant="outline" size="sm" disabled={adding} aria-describedby={error ? `${id}-error` : undefined} onClick={add} data-testid="passkey-add">
+          <PlusIcon />
           {adding ? t("adding") : t("add")}
         </Button>
-        {error && (
-          <p id={`${id}-error`} role="alert" className="text-sm text-destructive" data-testid="passkey-add-error">
-            {t(error)}
-          </p>
-        )}
-      </div>
+      }
+    >
+      {passkeys.length === 0 ? (
+        <SettingsRows>
+          <SettingsEmpty testId="passkeys-none">{t("none")}</SettingsEmpty>
+        </SettingsRows>
+      ) : (
+        <SettingsRows as="ul" aria-label={t("listLabel")} testId="passkey-list">
+          {passkeys.map((p) => (
+            <SettingsRow
+              key={p.id}
+              as="li"
+              testId="passkey"
+              leading={
+                <SettingsTile>
+                  <KeyRoundIcon aria-hidden />
+                </SettingsTile>
+              }
+              label={
+                <span className="block truncate" data-testid="passkey-name">
+                  {p.name}
+                </span>
+              }
+              description={`${t("added", { date: when(p.createdAt) })} · ${p.lastUsedAt ? t("lastUsed", { date: when(p.lastUsedAt) }) : t("neverUsed")}`}
+              control={
+                <Button variant="ghost" className="text-destructive hover:text-destructive" disabled={removing} aria-label={t("removeLabel", { name: p.name })} onClick={() => setToRemove(p)} data-testid="passkey-remove">
+                  {t("remove")}
+                </Button>
+              }
+            />
+          ))}
+        </SettingsRows>
+      )}
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-sm text-destructive" data-testid="passkey-add-error">
+          {t(error)}
+        </p>
+      )}
 
       <AlertDialog open={toRemove !== null} onOpenChange={(open) => !open && setToRemove(null)}>
         <AlertDialogContent>
@@ -160,6 +171,6 @@ export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; 
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>,
+    </SettingsSection>
   );
 }

@@ -3,10 +3,11 @@
 // Pattern: docs/patterns/settings/account.md §5 (decision 0033) — Vercel's "Login Connections" in the
 // account's Authentication settings: one row per outside service, its mark and name, the account
 // connected (one per service), Connect / Disconnect; a change to how one signs in confirms it's them
-// first (GitHub's sudo mode, `_components/confirm-access.md`).
+// first (GitHub's sudo mode, `_components/confirm-access.md`). Laid out as Linear's notification methods
+// (docs/patterns/_components/settings.md): a tile with the mark, the name over its state, the action at the right.
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { createContext, useContext, useEffect, useId, useTransition, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { connectIdentityAction, disconnectIdentityAction } from "@/app/[locale]/(auth)/identity-actions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -15,6 +16,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { useDateTime } from "../agency-zone";
 import { useConfirmed } from "../auth/confirm-access";
 import { GoogleMark, MicrosoftMark } from "../auth/provider-marks";
+import { SettingsRow, SettingsRows, SettingsSection, SettingsTile } from "../settings-panel";
 
 type Provider = "google" | "microsoft";
 export interface ConnectedAccountsValue {
@@ -36,7 +38,6 @@ export function ConnectedAccounts() {
   const data = useContext(Data);
   const t = useTranslations("identities");
   const dateTime = useDateTime();
-  const id = useId();
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
@@ -78,49 +79,51 @@ export function ConnectedAccounts() {
     });
 
   return (
-    <section aria-labelledby={`${id}-connected`} className="flex max-w-2xl flex-col gap-3 border-t pt-6" data-testid="connected-accounts">
-      <h2 id={`${id}-connected`} className="text-lg font-semibold">
-        {t("connectedTitle")}
-      </h2>
-      <p className="text-sm text-muted-foreground">{t("connectedBody")}</p>
-      <ul className="flex flex-col divide-y rounded-lg border">
+    <SettingsSection title={t("connectedTitle")} description={t("connectedBody")} testId="connected-accounts">
+      <SettingsRows as="ul">
         {rows.map((provider) => {
           const Mark = MARKS[provider];
           const linked = data.identities.find((i) => i.provider === provider);
           return (
-            <li key={provider} className="flex items-center gap-3 px-3 py-3" data-testid={`connected-${provider}`}>
-              <Mark className="size-5 shrink-0" />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="text-sm font-medium">{name(provider)}</span>
-                <span className="truncate text-sm text-muted-foreground" data-testid={`connected-${provider}-state`}>
-                  {linked ? [linked.email, t("connectedOn", { date: when(linked.createdAt) })].filter(Boolean).join(" · ") : t("notConnected")}
-                </span>
-              </div>
-              {linked ? (
-                <AlertDialog>
-                  <AlertDialogTrigger render={<Button variant="outline" size="sm" disabled={pending} data-testid={`disconnect-${provider}`} />}>{t("disconnect")}</AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t("disconnectTitle", { provider: name(provider) })}</AlertDialogTitle>
-                      <AlertDialogDescription>{t("disconnectBody", { provider: name(provider) })}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => disconnect(linked.id, provider)} data-testid={`disconnect-${provider}-confirm`}>
-                        {t("disconnect")}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              ) : (
-                <Button variant="outline" size="sm" disabled={pending || !data.offered[provider]} onClick={() => connect(provider)} data-testid={`connect-${provider}`}>
-                  {pending ? t("connecting") : t("connect")}
-                </Button>
-              )}
-            </li>
+            <SettingsRow
+              key={provider}
+              as="li"
+              testId={`connected-${provider}`}
+              leading={
+                <SettingsTile>
+                  <Mark className="size-4" />
+                </SettingsTile>
+              }
+              label={name(provider)}
+              description={<span className="block truncate">{linked ? [linked.email, t("connectedOn", { date: when(linked.createdAt) })].filter(Boolean).join(" · ") : t("notConnected")}</span>}
+              descriptionTestId={`connected-${provider}-state`}
+              control={
+                linked ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger render={<Button variant="ghost" className="text-destructive hover:text-destructive" disabled={pending} data-testid={`disconnect-${provider}`} />}>{t("disconnect")}</AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("disconnectTitle", { provider: name(provider) })}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("disconnectBody", { provider: name(provider) })}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => disconnect(linked.id, provider)} data-testid={`disconnect-${provider}-confirm`}>
+                          {t("disconnect")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : (
+                  <Button variant="ghost" disabled={pending || !data.offered[provider]} onClick={() => connect(provider)} data-testid={`connect-${provider}`}>
+                    {pending ? t("connecting") : t("connect")}
+                  </Button>
+                )
+              }
+            />
           );
         })}
-      </ul>
-    </section>
+      </SettingsRows>
+    </SettingsSection>
   );
 }

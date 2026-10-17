@@ -3353,7 +3353,7 @@
     "eyebrow": "Settings",
     "title": "Your account",
     "who": "{email} · {role}",
-    "languageTitle": "Language",
+    "preferencesTitle": "Preferences",
     "language": "Language",
     "languageHint": "Your screens, your sign-in page and the emails Shiftbook sends you.",
     "languageSaved": "Language saved.",
@@ -3368,6 +3368,7 @@
     "saving": "Saving…",
     "passwordSaved": "Password saved. Anywhere else you were signed in is signed out.",
     "authTitle": "Authenticator",
+    "authApp": "Authenticator app",
     "authOff": "Off. With it on, each sign-in also asks for a code from an authenticator app.",
     "authRequired": "Your role needs it.",
     "setUp": "Set up authenticator",
@@ -3381,6 +3382,7 @@
     "setUpAgain": "Set up again",
     "setUpAgainHint": "For a new phone. The old app keeps working until the new one is verified.",
     "signOut": "Sign out",
+    "signOutLine": "Sign out of Shiftbook in this browser",
     "demoNote": "Demo: nothing here leaves the demo; try the password and the authenticator freely."
   },
   "members": {
@@ -3393,14 +3395,6 @@
     "status": "Status",
     "all": "All",
     "search": "Search name or email",
-    "columns": {
-      "name": "Name",
-      "role": "Role",
-      "status": "Status",
-      "authenticator": "Authenticator",
-      "lastSeen": "Last seen",
-      "actions": "Actions"
-    },
     "you": "You",
     "statusLabels": {
       "active": "Active",
@@ -3409,12 +3403,13 @@
     },
     "expires": "expires {date}",
     "inviteLapsed": "invite expired",
-    "auth": {
-      "on": "On",
-      "off": "Off",
-      "needed": "Needed"
+    "authLine": {
+      "on": "Authenticator on",
+      "off": "Authenticator off",
+      "needed": "Authenticator needed"
     },
-    "never": "Never",
+    "lastSeen": "Last seen {date}",
+    "neverSeen": "Never signed in",
     "count": "{count, plural, one {# member} other {# members}}",
     "noMatch": "No one matches these filters.",
     "clear": "Clear filters",

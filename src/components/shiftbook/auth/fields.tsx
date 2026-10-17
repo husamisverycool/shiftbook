@@ -3,7 +3,7 @@
 // Shared fields of the sign-in pages: a new password with its confirmation (GitHub "Password" and
 // "Confirm password"), and the six-digit code / recovery code (GitHub's two-factor step).
 import { useTranslations } from "next-intl";
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ export function NewPasswordFields({
   onSubmit,
   currentField,
   labels,
+  frame,
 }: {
   email: string;
   pending: boolean;
@@ -39,6 +40,8 @@ export function NewPasswordFields({
   currentField?: { label: string };
   /** The account page's own labels ("New password", "Confirm new password"). */
   labels?: { password: string; confirm: string };
+  /** The account page puts the fields in its settings panel and the button in the panel's foot. */
+  frame?: (fields: ReactNode, submit: ReactNode) => ReactNode;
 }) {
   const t = useTranslations("newPassword");
   const id = useId();
@@ -54,10 +57,8 @@ export function NewPasswordFields({
     setIssue(problem);
     if (!problem) onSubmit(password, current);
   };
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-      {/* Lets a password manager tie the new password to the right account. */}
-      <input type="email" name="username" autoComplete="username" value={email} readOnly hidden />
+  const fields = (
+    <>
       {currentField && (
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${id}-current`}>{currentField.label}</Label>
@@ -105,9 +106,25 @@ export function NewPasswordFields({
           {message}
         </p>
       )}
-      <Button type="submit" disabled={pending} className="w-full" data-testid="password-submit">
-        {pending ? pendingLabel : submitLabel}
-      </Button>
+    </>
+  );
+  const button = (
+    <Button type="submit" disabled={pending} className={frame ? undefined : "w-full"} data-testid="password-submit">
+      {pending ? pendingLabel : submitLabel}
+    </Button>
+  );
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+      {/* Lets a password manager tie the new password to the right account. */}
+      <input type="email" name="username" autoComplete="username" value={email} readOnly hidden />
+      {frame ? (
+        frame(fields, button)
+      ) : (
+        <>
+          {fields}
+          {button}
+        </>
+      )}
     </form>
   );
 }

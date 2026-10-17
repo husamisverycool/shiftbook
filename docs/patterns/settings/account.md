@@ -17,8 +17,13 @@ Source URL: https://vercel.com/docs/accounts
 Source URL: https://docs.github.com/en/authentication/authenticating-with-a-passkey/managing-your-passkeys
 Source URL: https://docs.github.com/en/authentication/authenticating-with-a-passkey/signing-in-with-a-passkey
 Source URL: https://passkeys.dev/docs/use-cases/bootstrapping/
-Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3a, §4). Confidence: high
-for the sections and their actions; the page's spacing is not documented.
+Source URL: https://linear.app/docs/account-preferences
+Source URL: https://linear.app/docs/notifications
+Source URL: https://linear.app/docs/saml-and-access-control
+Source URL: https://linear.app/docs/profile
+Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3a, §4); laid out on
+2026-10-17 as Linear's settings, from Linear's own screenshots (`_components/settings.md`). Confidence:
+high for the sections, their actions and the layout.
 
 ## Purpose in Shiftbook
 Each person's own settings, whatever their role (the read-only accountant too: these change only
@@ -26,39 +31,48 @@ their own account): their language, their password, their authenticator and reco
 passkeys and the outside accounts they sign in with.
 
 ## Hierarchy
-1. **Page header:** "Settings" above, H1 "Your account"; under it the person's name, email and role.
-2. **Language** section (Slack "Language & region"): a **Language** select (English, Español), saved
-   when chosen; the line under it says it sets their screens, their sign-in page and the emails
-   Shiftbook sends them (Square).
-3. **Password** section (GitHub "Change password"): **Current password**, **New password** (the
-   rule under it), **Confirm new password**, **Update password**. The line under the heading says
-   when it was last changed. A person with no password yet (a demo person) sees no current-password
+Laid out as Linear's settings (`_components/settings.md`): the shared header, then sections in the
+centred column, each section's rows in a rounded bordered panel.
+1. **Page header:** "Settings" above, H1 "Your account"; under it the person's name, then their email
+   and role, then (demo) the demo line.
+2. **Preferences** section (Linear's Preferences "General": rows in a panel): one row — **Language**
+   over its muted line (it sets their screens, their sign-in page and the emails Shiftbook sends them;
+   Square), the select (English, Español) at the row's right, saved when chosen (Slack's Language).
+3. **Password** section (GitHub "Change password"), the muted line under the heading saying when it was
+   last changed: a panel holding **Current password**, **New password** (the rule under it), **Confirm
+   new password**, label over a full-width field (Linear's SAML setup); the panel's foot holds **Update
+   password** at the right. A person with no password yet (a demo person) sees no current-password
    field and the button says **Set password**.
-4. **Authenticator** section (GitHub two-factor authentication):
-   - Off: one line on what it is (required for the Owner and Coordinators), **Set up authenticator**,
-     which opens the three-part setup (the same component as `sign-in/setup.md`) in place.
-   - On: "On since <date>"; **Recovery codes**: how many are left, **Make new recovery codes** (a
-     confirmation says the old ones stop working; then the new ten with Download, Print, Copy and
-     **I have saved my recovery codes**); **Set up again** for a new phone (the same three-part
-     setup; the old authenticator works until the new one is verified).
+4. **Authenticator** section (GitHub's two-factor methods, as Linear rows):
+   - Off: one row — **Authenticator app** over "Off…" (and that their role needs it, for the Owner and
+     Coordinators), **Set up authenticator** at the right as a text action; it opens the three-part
+     setup (the same component as `sign-in/setup.md`) in the panel.
+   - On: two rows — **Authenticator app** over "On since <date>" and what **Set up again** is for (a new
+     phone; the old authenticator works until the new one is verified), **Set up again** at the right;
+     **Recovery codes** over how many are left, **Make new recovery codes** at the right (a confirmation
+     says the old ones stop working; then the new ten with Download, Print, Copy and **I have saved my
+     recovery codes**).
 5. **Passkeys** section (GitHub "Passkeys" under "Password and authentication"; passkeys.dev
    "Bootstrapping": the account's settings, once signed in, are where a passkey is added):
-   - One muted line: what a passkey is (the device's fingerprint, face or screen lock instead of the
-     password and code) and that it counts as both steps.
-   - **The list** (GitHub's list of registered passkeys, each with a delete control beside it): one row
-     per passkey — its name (from its device type: synced, or on one device — GitHub's "Synced"
-     label), when it was added and when it was last used (or not yet), and **Remove** at the right.
-     None yet: one line saying so.
-   - **Add a passkey** (GitHub: "Add a passkey" under "Passkeys").
-6. **Connected accounts** (decision 0033; Vercel's "Login Connections" in the account's
-   Authentication settings, one connection per outside service): one line on what they are (another
-   way to sign in; the authenticator code is still asked when the role needs it); one row each for
-   **Google** and **Microsoft** (shown when that way in is offered), the provider's own mark and name:
-   - Not connected: **Connect** — confirm it's them, then the provider (the demo's stand-in in the
-     demo), then back here with a toast.
-   - Connected: the account's email as the provider gave it, "Connected <date>", and **Disconnect**
-     (a confirmation; confirm it's them first).
-7. **Sign out** (a secondary button at the bottom).
+   - The muted line under the heading: what a passkey is (the device's fingerprint, face or screen lock
+     instead of the password and code) and that it counts as both steps; **Add a passkey** at the
+     heading's right (Linear's add action beside a section heading).
+   - **The list** in the panel (GitHub's list of registered passkeys, each with a delete control beside
+     it; laid out as Linear's SAML domains: a tile, the name over when it was added): one row per passkey
+     — a key in a 32px tile, its name (from its device type: synced, or on one device — GitHub's
+     "Synced" label) over when it was added and when it was last used (or not yet), **Remove** at the
+     right in the destructive colour. None yet: the panel's one muted row says so (Linear's empty panel).
+6. **Connected accounts** (decision 0033; Vercel's "Login Connections" in the account's Authentication
+   settings, one connection per outside service; laid out as Linear's notification methods: a 32px tile,
+   the name over its state): the muted line under the heading says what they are (another way to sign
+   in; the authenticator code is still asked when the role needs it); one row each for **Google** and
+   **Microsoft** (shown when that way in is offered), the provider's own mark in the tile:
+   - Not connected: "Not connected" under the name, **Connect** at the right — confirm it's them, then
+     the provider (the demo's stand-in in the demo), then back here with a toast.
+   - Connected: the account's email as the provider gave it and "Connected <date>" under the name, and
+     **Disconnect** at the right in the destructive colour (a confirmation; confirm it's them first).
+7. **Sign out:** a last panel of one row (Linear's "Workspace access"): "Sign out of Shiftbook in this
+   browser", **Sign out** at the right.
 
 ## Interactions
 - Set up authenticator, Set up again and Make new recovery codes first ask the person to confirm it's
@@ -91,8 +105,15 @@ passkeys and the outside accounts they sign in with.
   Add a passkey; a wrong password or code — said in the confirmation, which stays open; adding — the
   button says so.
 
+## Look (checked against Linear's screenshots, 2026-10-17)
+As `_components/settings.md`: 688px column; Preferences' row 60px with the select at the right; text
+actions (Set up authenticator, Set up again, Make new recovery codes, Connect, Sign out) as Linear's
+plain-text actions; Remove and Disconnect in the destructive colour (Linear's "Leave workspace").
+Remaining differences: the title keeps the app's 28px bold (rule 2) where Linear's is 24px medium; our
+type is 14px where Linear's is 13px (lengths scaled to match).
+
 ## Never copy
-GitHub's, Slack's, Square's or passkeys.dev's wording, icons, colors or logos (the key is lucide's
-icon).
+GitHub's, Slack's, Square's, passkeys.dev's or Linear's wording, icons, colors or logos (the key is
+lucide's icon).
 
 Deviations allowed: none
