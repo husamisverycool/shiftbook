@@ -24,6 +24,7 @@ import type { MarginSettings as View } from "@/server/margin/queries";
 import { longDate } from "../format";
 import { useDateTime } from "../agency-zone";
 import { SettingsEmpty, SettingsFooter, SettingsRow, SettingsRows, SettingsSection, SettingsPage } from "../settings-panel";
+import { ReadOnlyNote } from "../abilities";
 
 type Problem = { field: string; rule: string };
 
@@ -68,7 +69,7 @@ export function MarginSettingsView({ view, today, states, canChange }: { view: V
       description={
         <>
           <p>{t("description")}</p>
-          {!canChange && <p>{t("readOnly")}</p>}
+          {!canChange && <p>{<ReadOnlyNote text={t("readOnly")} />}</p>}
         </>
       }
     >

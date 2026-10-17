@@ -18,30 +18,31 @@ export function BillingBanner(props: BillingBannerProps) {
       <Alert role="status" className="gap-1 px-4 py-3" data-testid="billing-banner-trial">
         <InfoIcon />
         <AlertTitle>{t("trialTitle", { date: props.date })}</AlertTitle>
-        <AlertDescription className="flex flex-col items-start gap-2 text-foreground/80">
-          <p>{t("trialBody")}</p>
+        <AlertDescription className="text-foreground/80">{t("trialBody")}</AlertDescription>
+        {/* Polaris: the banner's action under its text (outside the description, which underlines its links). */}
+        <div className="col-start-2 pt-2">
           <Link href="/settings/billing" className={buttonVariants({ variant: "outline", size: "sm" })} data-testid="billing-banner-start">
             {t("trialAction")}
           </Link>
-        </AlertDescription>
+        </div>
       </Alert>
     );
   return (
     <Alert variant="destructive" className="gap-1 border-destructive/40 px-4 py-3" data-testid="billing-banner-paused">
       <CircleAlertIcon />
       <AlertTitle>{t("pausedTitle")}</AlertTitle>
-      <AlertDescription className="flex flex-col items-start gap-2">
-        <p>
-          {props.tried && <>{t("tried")} </>}
-          {t(`why.${props.reason}`)} {t("kept")}
-          {!props.owner && <> {t("others")}</>}
-        </p>
-        {props.owner && (
+      <AlertDescription>
+        {props.tried && <>{t("tried")} </>}
+        {t(`why.${props.reason}`)} {t("kept")}
+        {!props.owner && <> {t("others")}</>}
+      </AlertDescription>
+      {props.owner && (
+        <div className="col-start-2 pt-2">
           <Link href="/settings/billing" className={buttonVariants({ variant: "outline", size: "sm" })} data-testid="billing-banner-go">
             {t("owner")}
           </Link>
-        )}
-      </AlertDescription>
+        </div>
+      )}
     </Alert>
   );
 }

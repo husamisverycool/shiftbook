@@ -29,7 +29,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
   // While the subscription is not active, the screens hide every change, as for the accountant (decision 0036).
   const paused = await changesPaused(actor);
   return (
-    <AbilitiesProvider abilities={abilitiesOf(actor, { changesPaused: paused })}>
+    <AbilitiesProvider abilities={abilitiesOf(actor, { changesPaused: paused })} paused={paused}>
       <AgencyZoneProvider zone={zone}>
         <ConfirmAccessProvider method={confirmMethod}>
           <SidebarProvider className="min-h-0">

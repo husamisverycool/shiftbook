@@ -7,7 +7,7 @@
 // actions in the panel's foot, the primary last.
 import { LockIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { manageBillingAction, startSubscriptionAction } from "@/app/[locale]/(app)/settings/billing/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -51,9 +51,11 @@ export function BillingSettingsView({ demo, plan, notice }: BillingViewProps) {
   const locale = useLocale();
   const dateTime = useDateTime();
   const [opening, open] = useTransition();
+  const [pressed, setPressed] = useState<"start" | "manage" | null>(null);
   const day = (iso: string) => dateTime(iso, { date: "long", time: false });
 
-  const go = (action: () => Promise<BillingActionResult>) =>
+  const go = (which: "start" | "manage", action: () => Promise<BillingActionResult>) => {
+    setPressed(which);
     open(async () => {
       if (demo) {
         toast.info(t("demoPressed"));
@@ -72,6 +74,7 @@ export function BillingSettingsView({ demo, plan, notice }: BillingViewProps) {
         await new Promise(() => {});
       } else toast.error(t(`errors.${r.error}`));
     });
+  };
 
   const charge = plan.nextCharge;
   const chargeLine = charge
@@ -105,16 +108,19 @@ export function BillingSettingsView({ demo, plan, notice }: BillingViewProps) {
           footer={
             (showStart || showManage) && (
               <SettingsFooter note={t("footNote")}>
-                {showManage && (
-                  <Button variant="outline" size="sm" disabled={opening} onClick={() => go(manageBillingAction)} data-testid="billing-manage">
-                    {opening ? t("opening") : t("manage")}
-                  </Button>
-                )}
-                {showStart && (
-                  <Button size="sm" disabled={opening} onClick={() => go(startSubscriptionAction)} data-testid="billing-start">
-                    {opening ? t("opening") : t("start")}
-                  </Button>
-                )}
+                {/* The two actions stay together at the right when the note takes the line (Linear's setup foot). */}
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  {showManage && (
+                    <Button variant="outline" size="sm" disabled={opening} onClick={() => go("manage", manageBillingAction)} data-testid="billing-manage">
+                      {opening && pressed === "manage" ? t("opening") : t("manage")}
+                    </Button>
+                  )}
+                  {showStart && (
+                    <Button size="sm" disabled={opening} onClick={() => go("start", startSubscriptionAction)} data-testid="billing-start">
+                      {opening && pressed === "start" ? t("opening") : t("start")}
+                    </Button>
+                  )}
+                </div>
               </SettingsFooter>
             )
           }

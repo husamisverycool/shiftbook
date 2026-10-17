@@ -4727,6 +4727,7 @@
     "others": "Pida al Propietario de la agencia que reanude la suscripción en Configuración › Suscripción.",
     "trialTitle": "La prueba gratis termina el {date}",
     "trialBody": "Inicie la suscripción para seguir haciendo cambios después.",
-    "trialAction": "Iniciar la suscripción"
+    "trialAction": "Iniciar la suscripción",
+    "pausedNote": "Los cambios están en pausa: la suscripción de esta agencia no está activa. El Propietario puede reanudarla en Configuración › Suscripción."
   }
 }

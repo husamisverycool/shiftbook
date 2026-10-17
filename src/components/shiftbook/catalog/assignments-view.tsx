@@ -21,6 +21,7 @@ import { EmptyState } from "../empty-state";
 import { listDate, longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
 import { RecordList, type Column, type RowIcon } from "./record-list";
+import { ReadOnlyNote } from "../abilities";
 
 export function AssignmentsView({ rows, options, today, canChange = true }: { rows: AssignmentRow[]; options: CatalogOptions; today: string; canChange?: boolean }) {
   const t = useTranslations("assignments");
@@ -148,7 +149,7 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
               </Button>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">{t("readOnly")}</p>
+            <p className="text-sm text-muted-foreground">{<ReadOnlyNote text={t("readOnly")} />}</p>
           )
         }
         bulk={

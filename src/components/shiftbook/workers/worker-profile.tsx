@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import type { WorkerProfile } from "@/server/workers/queries";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { longDate } from "../format";
 import { Crumbs, Facts as DetailFacts, Page, PageHeader, RECORD_LINK, RecordLayout, Section as RecordSection } from "../page";
 import { Status } from "../status";
@@ -77,7 +77,7 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
           facts.length > 0 || !mayChange ? (
             <span className="flex flex-col gap-1">
               {facts.length > 0 && <span data-testid="worker-facts">{facts.join(" · ")}</span>}
-              {!mayChange && <span>{t("profile.readOnly")}</span>}
+              {!mayChange && <span>{<ReadOnlyNote text={t("profile.readOnly")} />}</span>}
             </span>
           ) : undefined
         }

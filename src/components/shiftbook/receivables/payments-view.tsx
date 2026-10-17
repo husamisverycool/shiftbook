@@ -24,6 +24,7 @@ import { FilterPill, ListAmount, ListToolbar, PillChoices, ResultsCount, StatusT
 import { Page, PageHeader, TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
+import { ReadOnlyNote } from "../abilities";
 
 const FILTERS = ["credit", "voided"] as const;
 /** One status language (decision 0029). */
@@ -53,7 +54,7 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
     <Page>
       <PageHeader
         title={t("title")}
-        description={canChange ? undefined : t("readOnly")}
+        description={canChange ? undefined : <ReadOnlyNote text={t("readOnly")} />}
         actions={
           canChange && (
             <Button size="sm" onClick={() => setDialog({ kind: "record" })} data-testid="record-payment">

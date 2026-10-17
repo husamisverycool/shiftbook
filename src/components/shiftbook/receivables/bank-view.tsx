@@ -21,6 +21,7 @@ import { longDate, money } from "../format";
 import { Page, PageHeader, PageTabs, TableFrame } from "../page";
 import { Status } from "../status";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
+import { ReadOnlyNote } from "../abilities";
 
 export type BankTab = "review" | "posted" | "excluded";
 const REASONS = ["not_a_client_payment", "transfer", "duplicate", "other"] as const;
@@ -59,7 +60,7 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
     <Page>
       <PageHeader
         title={t("title")}
-        description={canChange ? undefined : t("readOnly")}
+        description={canChange ? undefined : <ReadOnlyNote text={t("readOnly")} />}
         actions={
           canChange && (
             <Link href="/bank/import" className={buttonVariants({ size: "sm" })} data-testid="import-bank">

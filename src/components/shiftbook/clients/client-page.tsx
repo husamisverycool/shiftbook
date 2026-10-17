@@ -24,6 +24,7 @@ import { longDate } from "../format";
 import { InvoicesTable } from "../invoices/invoices-table";
 import { Crumbs, Page, PageHeader, RecordLayout, Section } from "../page";
 import { ClientOwes } from "../receivables/client-owes";
+import { ReadOnlyNote } from "../abilities";
 
 type Profile = NonNullable<ClientDetail["current"]>;
 
@@ -79,7 +80,7 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
         ) : undefined
       }
     >
-      {!mayChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+      {!mayChange && <p className="text-sm text-muted-foreground">{<ReadOnlyNote text={t("readOnly")} />}</p>}
       {p ? (
         <div className="flex flex-col gap-6 pt-1">
           <p className="text-sm" data-testid="in-effect">

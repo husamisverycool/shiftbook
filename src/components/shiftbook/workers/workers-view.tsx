@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Link } from "@/i18n/navigation";
 import type { PayrollSystem } from "@/exports/targets";
 import type { WorkerRow } from "@/server/workers/queries";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { typing } from "../app-sidebar";
 import { EmptyState } from "../empty-state";
 import { listDate } from "../format";
@@ -61,7 +61,7 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
     <Page>
       <PageHeader
         title={t("title")}
-        description={mayChange ? undefined : t("readOnly")}
+        description={mayChange ? undefined : <ReadOnlyNote text={t("readOnly")} />}
         actions={
           mayChange && (
             <Button size="sm" onClick={() => setAdding(true)} data-testid="add-worker">

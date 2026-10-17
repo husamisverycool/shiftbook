@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { JobOrderRow } from "@/server/catalog/queries";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { EmptyState } from "../empty-state";
 import { money } from "../format";
 import { ActivityList } from "./activity";
@@ -110,7 +110,7 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
               {t("create")}
             </Button>
           ) : (
-            <p className="text-sm text-muted-foreground">{t("readOnly")}</p>
+            <p className="text-sm text-muted-foreground">{<ReadOnlyNote text={t("readOnly")} />}</p>
           )
         }
         empty={

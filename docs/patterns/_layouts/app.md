@@ -65,6 +65,10 @@ root frame (demo banner above it).
 - `?` (or the sidebar's Keyboard shortcuts) opens the list of keyboard shortcuts (Linear, Stripe).
 
 ## States
+- Changes paused (decision 0036: the agency's subscription is not active after its free days): the
+  screens hide every change, as for the accountant, and a page's "only these roles change this" line
+  says instead that changes are paused and the Owner can restart the subscription in Settings › Billing
+  (the role line would be wrong for the Owner). Home's banner says why (`home.md`).
 - Narrow screens: not documented by Linear for the web app. Granite uses shadcn's sidebar default
   (collapses behind a menu button; the sheet fills the width) — listed as a difference.
 

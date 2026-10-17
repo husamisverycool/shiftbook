@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { JobOrderPage } from "@/server/catalog/queries";
 import { inForce } from "@/server/catalog/versions";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { longDate, money } from "../format";
 import { KeyFigure, KeyFigures } from "../key-figures";
 import { Crumbs, Facts, Page, PageHeader, RecordLayout, Section } from "../page";
@@ -95,7 +95,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
             {active.length >= job.headcount ? t("filled") : t("open")}
           </Status>
         }
-        description={mayChange ? `${job.clientName} · ${job.worksite.name}, ${job.worksite.city}, ${job.worksite.state}` : t("readOnly")}
+        description={mayChange ? `${job.clientName} · ${job.worksite.name}, ${job.worksite.city}, ${job.worksite.state}` : <ReadOnlyNote text={t("readOnly")} />}
         actions={
           mayChange && (
             <>

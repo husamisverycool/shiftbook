@@ -22,7 +22,7 @@ import { Crumbs, Page, PageHeader, Steps } from "../page";
 import { FIELDS, SOURCES, type Field, type Mapping, type Source } from "@/server/placements/fields";
 import type { DateOrder, DistinctValue, PlannedRow } from "@/server/placements/plan";
 import type { ImportView } from "@/server/placements/service";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
 import { useDateTime } from "../agency-zone";
@@ -42,9 +42,9 @@ export function ImportWizard({ view, history, options, step: asked }: { view: Im
       <PageHeader
         context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("breadcrumb"), href: "/assignments" }]} />}
         title={t("title")}
-        description={view ? t("fileLine", { file: view.filename, source: t(`sources.${view.source}`), rows: view.rowCount }) : !mayImport ? t("readOnly") : undefined}
+        description={view ? t("fileLine", { file: view.filename, source: t(`sources.${view.source}`), rows: view.rowCount }) : !mayImport ? <ReadOnlyNote text={t("readOnly")} /> : undefined}
       />
-      {view && !mayImport && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+      {view && !mayImport && <p className="text-sm text-muted-foreground">{<ReadOnlyNote text={t("readOnly")} />}</p>}
       {mayImport && <Steps label={t("steps")} current={step} steps={STEPS.map((s) => ({ key: s, label: t(`step.${s}`) }))} />}
       {mayImport && step === "source" && <SourceStep />}
       {mayImport && view && step === "map" && <MapStep view={view} />}
