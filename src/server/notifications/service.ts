@@ -95,6 +95,11 @@ export async function inboxOf(tx: Tx, userId: string, opts: { unreadOnly?: boole
   return rows.map((r) => ({ id: r.id, kind: r.kind, href: r.href, params: r.params, createdAt: r.createdAt, read: r.readAt !== null }));
 }
 
+/** Whether the agency has any notice at all (deleted ones count: they are kept as rows). */
+export async function hasAnyNotice(tx: Tx): Promise<boolean> {
+  return (await tx.select({ id: s.notifications.id }).from(s.notifications).limit(1)).length > 0;
+}
+
 export async function unreadCount(tx: Tx, userId: string): Promise<number> {
   const [row] = await tx.select({ n: sql<number>`count(*)::int` }).from(s.notifications).where(and(eq(s.notifications.userId, userId), isNull(s.notifications.readAt), isNull(s.notifications.deletedAt)));
   return row?.n ?? 0;

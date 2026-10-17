@@ -7,7 +7,7 @@ import { after } from "next/server";
 import { withAgency } from "../db";
 import { linkBaseUrl, mailTransport } from "../services";
 import type { Actor } from "../session";
-import { emailNotices, syncNotifications, unreadCount } from "./service";
+import { emailNotices, hasAnyNotice, syncNotifications, unreadCount } from "./service";
 
 const SWEEP_EVERY_MS = 60_000;
 const globalForSweep = globalThis as unknown as { notificationSweeps?: Map<string, number> };
@@ -15,7 +15,9 @@ const lastSweep = (globalForSweep.notificationSweeps ??= new Map<string, number>
 
 export async function refreshNotifications(actor: Pick<Actor, "agencyId" | "userId">, requestOrigin: string | null): Promise<number> {
   const now = Date.now();
-  if ((lastSweep.get(actor.agencyId) ?? 0) <= now - SWEEP_EVERY_MS) {
+  // An agency with no notices at all (new, or a demo just reset) is swept at once.
+  const due = (lastSweep.get(actor.agencyId) ?? 0) <= now - SWEEP_EVERY_MS || !(await withAgency(actor.agencyId, (tx) => hasAnyNotice(tx)));
+  if (due) {
     lastSweep.set(actor.agencyId, now);
     try {
       const made = await withAgency(actor.agencyId, (tx) => syncNotifications(tx, actor.agencyId));
