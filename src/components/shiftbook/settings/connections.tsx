@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { Connection, ConnectionKind, ConnectionsView } from "@/server/connections/queries";
+import { useCan } from "../abilities";
 import { useDateTime } from "../agency-zone";
 import { SettingsEmpty, SettingsPage, SettingsRow, SettingsRows, SettingsSection, SettingsTile } from "../settings-panel";
 import { Status } from "../status";
@@ -86,6 +87,7 @@ function ConnectionRow({ c, canForget }: { c: Connection; canForget: boolean }) 
   const [testing, test] = useTransition();
   const [forgetting, forget] = useTransition();
   const [confirm, setConfirm] = useState(false);
+  const can = useCan();
   const Icon = ICON[c.kind];
   const attention = c.attention ? t(`attention.${c.attention.key}` as "attention.noMapping", c.attention.values ?? {}) : null;
   const runTest = () =>
@@ -122,9 +124,11 @@ function ConnectionRow({ c, canForget }: { c: Connection; canForget: boolean }) 
               <EllipsisIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={runTest} data-testid="connection-test">
-                {t("actions.test")}
-              </DropdownMenuItem>
+              {((c.kind === "payroll" && can("settings")) || (c.kind === "recruiting" && can("placements"))) && (
+                <DropdownMenuItem onClick={runTest} data-testid="connection-test">
+                  {t("actions.test")}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem render={<Link href={c.href} />}>{t("actions.open")}</DropdownMenuItem>
               {c.kind === "recruiting" && <DropdownMenuItem render={<a href={`/api/files/placement-template?source=${c.system}`} download />}>{t("actions.template")}</DropdownMenuItem>}
               {c.forgettable && canForget && (

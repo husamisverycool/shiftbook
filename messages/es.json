@@ -1184,7 +1184,7 @@
       "jobadder": "Una exportación de asignaciones (CSV).",
       "spott": "Una exportación de asignaciones (Excel o CSV).",
       "other": "Cualquier CSV o Excel con una asignación por fila.",
-      "avionte": "Un informe de colocaciones exportado como CSV o Excel."
+      "avionte": "Un informe de asignaciones exportado como CSV o Excel."
     },
     "whichSource": "¿De dónde vienen las asignaciones?",
     "drop": "Suelte el archivo aquí",
@@ -4878,7 +4878,7 @@
     },
     "groupHints": {
       "payroll": "Granite prepara el archivo de horas que importa cada sistema; un sistema a la vez.",
-      "recruiting": "Traiga las colocaciones desde el archivo de exportación de un sistema de reclutamiento.",
+      "recruiting": "Traiga las asignaciones desde el archivo de exportación de un sistema de reclutamiento.",
       "time": "Archivos de horas que Granite lee en Convertir hojas de horas.",
       "partners": "Paquetes para socios con licencia. No se mueve dinero a través de Granite."
     },
@@ -4912,11 +4912,11 @@
       "paychex_flex_csv": "La importación estándar de nómina de Paychex Flex, horas con su tarifa o dólares.",
       "paylocity_time_csv": "El lote de importación de horas de Paylocity, por código de ingreso.",
       "spreadsheet_csv": "La plantilla de cualquier PEO o factor: usted elige las columnas.",
-      "bullhorn": "Colocaciones desde una lista de colocaciones exportada de Bullhorn.",
-      "jobadder": "Colocaciones desde una exportación de colocaciones de JobAdder.",
-      "spott": "Colocaciones desde una exportación de colocaciones de Spott.",
-      "avionte": "Colocaciones desde un informe de colocaciones de Avionté.",
-      "other": "Cualquier archivo CSV o Excel con una colocación por fila.",
+      "bullhorn": "Asignaciones desde una lista de asignaciones exportada de Bullhorn.",
+      "jobadder": "Asignaciones desde una exportación de asignaciones de JobAdder.",
+      "spott": "Asignaciones desde una exportación de asignaciones de Spott.",
+      "avionte": "Asignaciones desde un informe de asignaciones de Avionté.",
+      "other": "Cualquier archivo CSV o Excel con una asignación por fila.",
       "fieldglass-approved-time-sheet": "Hojas de horas aprobadas descargadas de SAP Fieldglass.",
       "timeclock-punch-export": "Marcaciones exportadas de un reloj de control, leídas como horas.",
       "vmsNotYet": "Granite todavía no puede leer la exportación de este sistema.",
