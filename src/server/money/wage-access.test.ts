@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_WAGE_ACCESS, requestProblem, wageAccessAvailability, type UnpaidShift } from "./wage-access";
+import { DEFAULT_WAGE_ACCESS, recoveringRun, requestProblem, wageAccessAvailability, type UnpaidShift } from "./wage-access";
 
 const on = { ...DEFAULT_WAGE_ACCESS, enabled: true };
 const shift = (entryId: string, minutes: number, payRateCents: number | null): UnpaidShift => ({ entryId, workDate: "2026-10-12", minutes, payRateCents });
@@ -43,5 +43,23 @@ describe("earned wage access", () => {
     expect(requestProblem(99, a)).toBe("amount");
     expect(requestProblem(10.5, a)).toBe("amount");
     expect(requestProblem(100, { ...a, availableCents: 0 })).toBe("none");
+  });
+});
+
+describe("recoveringRun (money review B2)", () => {
+  // Week 1: one hour (e1) paid by run r1; week 2: forty hours (e2) paid by run r2. An access drawing on
+  // both is repaid by r2 — the run that pays the last of its hours — never by r1's small paycheck.
+  const lines = [
+    { payRunId: "r1", timeEntryIds: ["e1"] },
+    { payRunId: "r2", timeEntryIds: ["e2"] },
+  ];
+  const order = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+  it("is the run that pays the last drawn hours", () => {
+    expect(recoveringRun(new Set(["e1", "e2"]), lines, order)).toBe("r2");
+    expect(recoveringRun(new Set(["e1"]), lines, order)).toBe("r1");
+  });
+  it("is none while some drawn hours are unpaid", () => {
+    expect(recoveringRun(new Set(["e1", "e3"]), lines, order)).toBeNull();
+    expect(recoveringRun(new Set(["e1", "e2"]), lines.slice(0, 1), order)).toBeNull();
   });
 });

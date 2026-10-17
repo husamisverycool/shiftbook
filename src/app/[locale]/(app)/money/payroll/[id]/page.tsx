@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { PayrollRunView } from "@/components/shiftbook/money/payroll-run";
 import { withAgency } from "@/server/db";
 import { handoffs, payrollHandoffView } from "@/server/money/queries";
+import { MoneyNotForRole } from "@/components/shiftbook/money/frame";
+import { can } from "@/server/permissions";
 import { currentActor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,7 @@ export default async function PayrollHandoffPage(props: { params: Promise<{ loca
   setRequestLocale(locale);
   if (!UUID.test(id)) notFound();
   const actor = await currentActor();
+  if (!can(actor, "money")) return <MoneyNotForRole />;
   const found = await withAgency(actor.agencyId, async (tx) => {
     const view = await payrollHandoffView(tx, id);
     return view ? { view, handoff: (await handoffs(tx, { kind: "payroll", subjectId: id }))[0] ?? null } : null;

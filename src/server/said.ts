@@ -111,6 +111,7 @@ export const SAID_EN = {
   correctionSeveralProfiles: "{client}: {count} billing profiles are in effect on {date}, so the correction's payment terms are unknown.",
   correctionTooLarge: "{client}: the correction's total is too large to store; check the bill rates.",
   creditNeverInvoiced: "{client}: {amount} less would be credited on hours this period never invoiced; check the bill rates.",
+  correctionCreditTooLarge: "{client}: the correction would credit {amount} on invoice {number}, which has only {room} left to credit after its earlier credit notes and write-offs; reverse a credit note or a write-off first.",
 
   // Days to pay (receivables/aging.ts).
   daysToPayNone: "No invoice paid in full in the window.",

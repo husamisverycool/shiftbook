@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_FUNDING, fundingPacket, offerFor, type FundingFacts, type FundingInvoice } from "./funding";
+import { fundingProblems } from "./settings";
 
 const on = { ...DEFAULT_FUNDING, enabled: true };
 const invoice: FundingInvoice = { id: "inv-1", number: "INV-1001", clientId: "c1", clientName: "Client One", issuedOn: "2026-10-01", dueOn: "2026-10-31", totalCents: 185500, balanceCents: 185500, status: "issued", kind: "invoice", poNumber: "PO-7", hasBackup: true };
@@ -13,6 +14,8 @@ const facts: FundingFacts = {
   approvedShifts: 95,
   disputedShifts: 5,
   openDisputes: 0,
+  invoiceShifts: 24,
+  approvedInvoiceShifts: 24,
   approvals: [{ approverName: "Approver One", decidedAt: "2026-10-13T16:00:00.000Z", approvedShifts: 24, disputedShifts: 0 }],
 };
 
@@ -35,10 +38,15 @@ describe("invoice funding", () => {
     expect(p.schedule).toEqual({ debtor: "Client One", invoiceNumber: "INV-1001", invoiceDate: "2026-10-01", poNumber: "PO-7", amountCents: 185500 });
   });
 
+  it("is approved only when every shift the invoice bills was approved (money review B6)", () => {
+    expect(fundingPacket(invoice, { ...facts, approvedInvoiceShifts: 23 }, on)).toMatchObject({ approved: false, eligible: false, reasons: ["no_approval"] });
+    expect(fundingPacket(invoice, { ...facts, invoiceShifts: 0, approvedInvoiceShifts: 0 }, on).approved).toBe(false);
+  });
+
   it("names every reason an invoice is not eligible", () => {
     const p = fundingPacket(
       { ...invoice, issuedOn: "2026-06-01", dueOn: "2026-07-01", status: "paid", balanceCents: 0 },
-      { ...facts, clientOpenCents: 400000, allOpenCents: 742000, openDisputes: 2, approvals: [] },
+      { ...facts, clientOpenCents: 400000, allOpenCents: 742000, openDisputes: 2, approvals: [], approvedInvoiceShifts: 0 },
       DEFAULT_FUNDING,
     );
     expect(p.reasons).toEqual(["disabled", "not_open", "no_balance", "too_old", "concentration", "no_approval", "open_disputes"]);
@@ -51,5 +59,14 @@ describe("invoice funding", () => {
     const p = fundingPacket({ ...invoice, kind: "credit_note" }, { ...facts, approvedShifts: 0, disputedShifts: 0 }, on);
     expect(p.reasons).toContain("credit_note");
     expect(p.disputeRateBps).toBeNull();
+  });
+});
+
+describe("funding settings (money review B6)", () => {
+  const rules = { enabled: true, advanceBps: 9000, feeBps: 300, maxConcentrationBps: 10000, maxAgeDays: 90, requireClientApproval: true };
+  it("refuse an advance and fee that together pass 100%, which would release less than nothing", () => {
+    expect(fundingProblems(rules)).toEqual([]);
+    expect(fundingProblems({ ...rules, advanceBps: 9800, feeBps: 200 })).toEqual([]);
+    expect(fundingProblems({ ...rules, advanceBps: 9900, feeBps: 200 })).toEqual([{ field: "feeBps", rule: "range" }]);
   });
 });

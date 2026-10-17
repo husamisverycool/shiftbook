@@ -41,5 +41,9 @@ describe("creditNoteRoom", () => {
     expect(creditNoteRoom(100_000, [])).toBe(100_000);
     expect(creditNoteRoom(100_000, [-25_000, -50_000])).toBe(25_000);
     expect(creditNoteRoom(100_000, [-100_000])).toBe(0);
+    // Paid $900, $100 written off: only the $900 actually paid can still be credited.
+    expect(creditNoteRoom(100_000, [], [10_000])).toBe(90_000);
+    expect(creditNoteRoom(100_000, [-50_000], [10_000])).toBe(40_000);
+    expect(creditNoteRoom(100_000, [-95_000], [10_000])).toBe(0);
   });
 });

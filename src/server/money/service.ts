@@ -17,7 +17,7 @@ import { payloadBytes } from "./payroll-payload";
 import { fundingView, payrollHandoffView, wageAccessView } from "./queries";
 import { requestProblem } from "./wage-access";
 
-export type MoneyError = "not_allowed" | "not_found" | "not_ready" | "already" | "amount" | "too_much" | "none" | "range";
+export type MoneyError = "not_allowed" | "not_found" | "not_ready" | "zeal_differs" | "already" | "amount" | "too_much" | "none" | "range";
 export type MoneyResult = { ok: true; handoffId: string } | { ok: false; error: MoneyError };
 
 const PAYROLL_PARTNERS = ["check", "zeal", "file"] as const;
@@ -63,6 +63,9 @@ export async function recordPayrollHandoff(tx: Tx, actor: Actor, runId: string, 
   if (!view) return { ok: false, error: "not_found" };
   if (!view.payload.ready) return { ok: false, error: "not_ready" };
   const p = partner as PayrollPartner;
+  // Zeal recomputes hours × wage; a line it would pay a cent differently is not the approved run
+  // (money review B3): handed off as Check's shape or the file instead.
+  if (p === "zeal" && view.payload.zeal.differences.length > 0) return { ok: false, error: "zeal_differs" };
   const shaped = p === "check" ? view.payload.check : p === "zeal" ? view.payload.zeal : view.payload.neutral;
   return record(
     tx,

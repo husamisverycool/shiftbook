@@ -27,7 +27,8 @@ export default async function WorkerPage(props: { params: Promise<{ locale: stri
     // Who looked at the SSN is the Owner's to see (Retrieve SSN); the other roles' pages carry none of it.
     const profile = await workerProfile(tx, id, today, { ssnActivity: can(actor, "revealSsn") });
     // Slice w: what the worker may draw on of pay earned from unpaid hours (Money › Wage access).
-    const { rules, rows } = profile ? await wageAccessView(tx, { workerId: id }) : { rules: null, rows: [] };
+    // Only to whoever may see money (money review B5).
+    const { rules, rows } = profile && can(actor, "money") ? await wageAccessView(tx, { workerId: id }) : { rules: null, rows: [] };
     const a = rows[0]?.availability;
     // Opening the Messages tab reads the worker's messages (WhatsApp's read state).
     if (profile && tab === "messages") await markReadByAgency(tx, actor, id, new Date());

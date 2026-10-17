@@ -358,6 +358,13 @@
       "when": 1792180300000,
       "tag": "0053_connections_and_row_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1792180400000,
+      "tag": "0054_money_review_fixes",
+      "breakpoints": true
     }
   ]
 }

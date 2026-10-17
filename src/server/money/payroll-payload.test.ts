@@ -82,6 +82,12 @@ describe("payroll payload", () => {
     expect((p.check as { items: { metadata: Record<string, string> }[] }).items[0]!.metadata.wage_access_recovery).toBe("4.00");
   });
 
+  it("holds a worker whose wage-access repayment is larger than this paycheck (money review B2)", () => {
+    const p = buildPayrollPayload({ run, runGrossCents: 1500, workers: [worker("w1")], workplaces: [site], lines: [line("l1", "w1", "REG", 60, { num: 1500, den: 1 }, 1500)], recoveries: [{ workerId: "w1", handoffId: "h1", amountCents: 30000 }] });
+    expect(p.neutral.employees[0]!.readiness.missing).toContain("covers_recovery");
+    expect(p.ready).toBe(false);
+  });
+
   it("refuses readiness when the payload does not equal the run's gross", () => {
     const p = buildPayrollPayload({ run, runGrossCents: 999, workers: [worker("w1")], workplaces: [site], lines: [line("l1", "w1", "REG", 60, { num: 1000, den: 1 }, 1000)] });
     expect(p.neutral.reconciliation.equal).toBe(false);

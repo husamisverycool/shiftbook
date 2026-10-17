@@ -130,6 +130,9 @@ export async function createRunFiles(
   const positions = new Map(assignmentRows.map((a) => [a.id, a.position]));
   const invoicesOut: RunFiles["invoices"] = [];
   // Exactly the invoices the run checked (the run would have been blocked by any problem).
+  // A correction's credit notes are checked against what their originals may still be credited, so
+  // no payment, write-off or credit note by hand moves under them between the check and the insert.
+  if (correction) await lockReceivables(tx, agency!.id);
   const plan = correction ? await planCorrectionInvoices(tx, period!, billDifferences(correction.bill)) : await planInvoices(tx, period!, bill.map(planLineOf));
   if (plan.problems.length > 0) throw new Error(`Invoice problems: ${plan.problems.map((p) => p.message).join(" ")}`);
   const entries = await planEntries(tx, plan.plans);

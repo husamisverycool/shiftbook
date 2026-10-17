@@ -4428,7 +4428,8 @@
     "whyNamed": "; el cliente aparece en el depósito",
     "whyOnlyClient": "; es el único cliente con facturas que suman eso",
     "noPayrollIdPaychex": "{name} no tiene ID de trabajador de Paychex, así que el archivo de Paychex Flex no pudo identificar a esta persona.",
-    "noPayrollIdPaylocity": "{name} no tiene ID de empleado de Paylocity, así que el archivo de Paylocity no pudo identificar a esta persona."
+    "noPayrollIdPaylocity": "{name} no tiene ID de empleado de Paylocity, así que el archivo de Paylocity no pudo identificar a esta persona.",
+    "correctionCreditTooLarge": "{client}: la corrección acreditaría {amount} en la factura {number}, a la que solo le quedan {room} por acreditar después de sus notas de crédito y cancelaciones anteriores; revierta primero una nota de crédito o una cancelación."
   },
   "identities": {
     "connectedTitle": "Cuentas conectadas",
@@ -5240,7 +5241,8 @@
       "missing": {
         "start_date": "fecha de inicio",
         "workplace": "lugar de trabajo",
-        "ssn": "número de Seguro Social registrado"
+        "ssn": "número de Seguro Social registrado",
+        "covers_recovery": "pago suficiente para el reembolso del acceso al salario ganado"
       },
       "missingList": "Falta: {items}",
       "collectsTitle": "Lo que solicita el socio",
@@ -5292,7 +5294,8 @@
         "not_found": "Esta nómina semanal no se puede entregar.",
         "not_ready": "Corrija lo que falta antes de entregar.",
         "already": "La nómina de esta nómina semanal ya se entregó.",
-        "generic": "No funcionó. Inténtelo de nuevo."
+        "generic": "No funcionó. Inténtelo de nuevo.",
+        "zeal_differs": "Zeal pagaría algunas líneas con un centavo de diferencia respecto a la nómina aprobada. Entréguela en el formato de Check o como archivo."
       }
     },
     "wage": {
@@ -5507,7 +5510,9 @@
       "line": "{available} disponible de {earned} ganado en horas sin pagar",
       "off": "El acceso al salario está desactivado para la agencia.",
       "open": "Abrir acceso al salario"
-    }
+    },
+    "notForRoleTitle": "Dinero es del Propietario",
+    "notForRole": "Los datos de nómina, el acceso al salario ganado y los paquetes de financiamiento muestran el pago de cada trabajador, por eso solo el Propietario los ve."
   },
   "payrollSample": {
     "title": "Leer un archivo de muestra",
