@@ -1,8 +1,11 @@
 "use client";
 
-// Pattern: docs/patterns/home.md — Polaris setup guide, as its published screenshot shows it: "Setup
-// guide" with hide and collapse buttons, one intro line, "0 out of 3 steps completed", then the steps
-// in a bordered box, each a checkbox, its title and a chevron; one step open at a time.
+// Pattern: docs/patterns/home.md — Polaris setup guide, as Shopify's own composition builds it
+// (https://shopify.dev/docs/api/app-home/patterns/compositions/setup-guide): a card with "Setup guide",
+// a dismiss (×) and a collapse (⌃) button; one intro line; "0 out of 3 steps completed" in the subdued
+// colour; then the steps in a bordered box with dividers — each a checkbox and its title, with its own
+// chevron button at the right; an open step shows, inset on a subdued rounded panel, its paragraph and
+// its button. One step open at a time.
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -33,57 +36,61 @@ export function SetupGuide({ steps, demo }: { steps: GuideStep[]; demo: boolean 
   };
 
   return (
-    <section aria-labelledby="setup-guide-title" className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-xs" data-testid="setup-guide">
-      <div className="flex items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <h2 id="setup-guide-title" className="text-base font-semibold">
+    <section aria-labelledby="setup-guide-title" className="flex flex-col gap-4 rounded-xl border bg-card p-4 shadow-xs" data-testid="setup-guide">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <h2 id="setup-guide-title" className="min-w-0 flex-1 text-sm font-semibold">
             {t("title")}
           </h2>
-          <p className="text-sm">{done === steps.length ? t("allDone") : t("intro")}</p>
-          <p className="text-sm tabular-nums" data-testid="setup-progress">
-            {t("progress", { done, total: steps.length })}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={hide} aria-label={t("hide")} title={t("hide")} data-testid="setup-hide">
+          <Button variant="ghost" size="icon-sm" className="text-foreground/60" onClick={hide} aria-label={t("hide")} title={t("hide")} data-testid="setup-hide">
             <XIcon />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => setCollapsed((c) => !c)} aria-expanded={!collapsed} aria-controls="setup-guide-steps" aria-label={collapsed ? t("expand") : t("collapse")} title={collapsed ? t("expand") : t("collapse")}>
+          <Button variant="ghost" size="icon-sm" className="text-foreground/60 aria-expanded:bg-transparent aria-expanded:text-foreground/60 hover:aria-expanded:bg-muted" onClick={() => setCollapsed((c) => !c)} aria-expanded={!collapsed} aria-controls="setup-guide-steps" aria-label={collapsed ? t("expand") : t("collapse")} title={collapsed ? t("expand") : t("collapse")}>
             {collapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
           </Button>
         </div>
+        <p className="text-sm">{done === steps.length ? t("allDone") : t("intro")}</p>
+        <p className="text-sm text-muted-foreground tabular-nums" data-testid="setup-progress">
+          {t("progress", { done, total: steps.length })}
+        </p>
       </div>
       {!collapsed && (
         <ol id="setup-guide-steps" className="flex flex-col divide-y rounded-lg border">
           {steps.map((s) => {
             const expanded = open === s.key;
             return (
-              <li key={s.key} className={cn(expanded && "bg-muted/40")} data-testid={`setup-step-${s.key}`} data-done={s.done}>
+              <li key={s.key} data-testid={`setup-step-${s.key}`} data-done={s.done}>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                  className="flex w-full items-center gap-2 py-3 pr-3 pl-3 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
                   aria-expanded={expanded}
                   aria-controls={`setup-step-${s.key}-body`}
                   onClick={() => setOpen(expanded ? null : s.key)}
                 >
-                  {/* A checkbox the guide ticks itself when the step has happened (Polaris). */}
-                  <span aria-hidden className={cn("flex size-5 shrink-0 items-center justify-center rounded-[5px] border", s.done ? "border-foreground bg-foreground text-background" : "border-input bg-background")}>
-                    {s.done && <CheckIcon className="size-3.5" strokeWidth={3} />}
+                  {/* A checkbox the guide ticks itself when the step has happened (Polaris: "Mark tasks as complete when merchants finish them"). */}
+                  <span aria-hidden className={cn("flex size-4 shrink-0 items-center justify-center rounded-[4px] border", s.done ? "border-foreground bg-foreground text-background" : "border-foreground/40 bg-background")}>
+                    {s.done && <CheckIcon className="size-3" strokeWidth={3} />}
                   </span>
                   <span className="flex-1">{t(`steps.${s.key}.title`)}</span>
                   <span className="sr-only">{s.done ? t("done") : t("notDone")}</span>
-                  <ChevronDownIcon className={cn("size-4 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")} aria-hidden />
+                  {/* The step's own chevron, at the right as Polaris's tertiary icon button. */}
+                  <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/60">
+                    {expanded ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+                  </span>
                 </button>
                 {expanded && (
-                  <div id={`setup-step-${s.key}-body`} className="flex flex-col items-start gap-3 pr-4 pb-4 pl-12 text-sm">
-                    <p className="text-muted-foreground">
-                      {t(`steps.${s.key}.body`)}
-                      {s.key === "convert" && demo && <> {t("steps.convert.demo")}</>}
-                      {s.key === "bank" && demo && <> {t("steps.bank.demo")}</>}
-                    </p>
-                    <Link href={s.href} className={buttonVariants({ size: "sm", variant: s.done ? "outline" : "default" })} data-testid={`setup-action-${s.key}`}>
-                      {t(`steps.${s.key}.action`)}
-                    </Link>
+                  <div id={`setup-step-${s.key}-body`} className="px-3 pb-3">
+                    {/* Inset on a subdued rounded panel, as Polaris's open step. */}
+                    <div className="flex flex-col items-start gap-2 rounded-lg bg-muted/70 p-4 text-sm">
+                      <p>
+                        {t(`steps.${s.key}.body`)}
+                        {s.key === "convert" && demo && <> {t("steps.convert.demo")}</>}
+                        {s.key === "bank" && demo && <> {t("steps.bank.demo")}</>}
+                      </p>
+                      <Link href={s.href} className={buttonVariants({ size: "sm", variant: s.done ? "outline" : "default" })} data-testid={`setup-action-${s.key}`}>
+                        {t(`steps.${s.key}.action`)}
+                      </Link>
+                    </div>
                   </div>
                 )}
               </li>

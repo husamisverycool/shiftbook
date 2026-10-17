@@ -4,34 +4,36 @@
 // filter and display options; filters in the URL; sticky collapsible group headers with counts;
 // J/K or arrows to highlight, X to select, Shift to extend, Cmd/Ctrl+A, Esc; F filters, Shift+V
 // display options, C create; bulk bar at the bottom) with Attio's record preview as the side panel
-// ("N of M", previous/next, expand, close), opened and closed with Space as in Linear's peek.
-import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronRightIcon, Maximize2Icon, PanelRightOpenIcon, SlidersHorizontalIcon, ListFilterIcon, XIcon } from "lucide-react";
+// ("N of M", previous/next, expand, close), opened and closed with Space as in Linear's peek. Drawn
+// as Linear's own screenshots show its list (https://linear.app/docs/filters,
+// https://linear.app/docs/display-options): one line per row — a status icon, the title, its muted
+// detail, then the properties as small rounded chips each with its icon; groups as tinted bands with
+// their icon and count; applied filters as segmented chips (field · operator · value · ×); display
+// options as a panel of Grouping and Ordering choices and property toggles. The icons are lucide's.
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronRightIcon, ListFilterIcon, Maximize2Icon, PanelRightOpenIcon, Rows3Icon, SlidersHorizontalIcon, XIcon, type LucideIcon } from "lucide-react";
+export type { RowIcon } from "../status-icon";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "../empty-state";
 import { PageHeader } from "../page";
 import { typing } from "../app-sidebar";
+import { StatusIcon, type RowIcon } from "../status-icon";
 
 export interface Column<R> {
   key: string;
@@ -40,13 +42,18 @@ export interface Column<R> {
   className?: string;
   /** Shown as a small rounded chip, as Linear's rows show labels and projects; dates stay plain text. */
   chip?: boolean;
+  /** The chip's icon (Linear's chips each lead with one). */
+  icon?: LucideIcon;
 }
 export interface Grouping<R> {
   key: string;
   label: string;
   /** Null groups nothing. */
   value: ((r: R) => string) | null;
+  /** The band's icon, from a row of the group (Linear's group headers lead with the status's or project's icon). */
+  icon?: (sample: R) => RowIcon;
 }
+
 export interface Ordering<R> {
   key: string;
   label: string;
@@ -55,6 +62,8 @@ export interface Ordering<R> {
 export interface FilterDef<R> {
   key: string;
   label: string;
+  /** Leads the applied filter's chip (Linear's filter bar). */
+  icon?: LucideIcon;
   options: { value: string; label: string }[];
   test: (r: R, value: string) => boolean;
 }
@@ -71,6 +80,8 @@ interface Props<R extends { id: string }> {
   primary: (r: R) => string;
   /** The row's second line; `grouping` is the group the rows are in, so a property its band names is left out. */
   secondary?: (r: R, grouping: string) => string | null;
+  /** The row's status icon at its left (Linear). */
+  status?: (r: R) => RowIcon;
   hrefFor: (r: R) => string;
   columns: Column<R>[];
   defaultColumns: string[];
@@ -262,97 +273,118 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
           description={p.description}
           actions={
             <>
-          <DropdownMenu open={filterOpen} onOpenChange={setFilterOpen}>
-            <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
-              <ListFilterIcon />
-              {t("filter")}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {p.filters.map((f) => (
-                <DropdownMenuSub key={f.key}>
-                  <DropdownMenuSubTrigger>{f.label}</DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-80 overflow-auto">
-                    {f.options.map((o) => {
-                      const on = applied[f.key]?.includes(o.value) ?? false;
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={o.value}
-                          checked={on}
-                          onCheckedChange={() => setFilter(f.key, on ? (applied[f.key] ?? []).filter((v) => v !== o.value) : [...(applied[f.key] ?? []), o.value])}
-                        >
-                          {o.label}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu open={displayOpen} onOpenChange={setDisplayOpen}>
-            <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
-              <SlidersHorizontalIcon />
-              {t("display")}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-60">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>{t("grouping")}</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={display.grouping} onValueChange={(v) => saveDisplay({ ...display, grouping: String(v) })}>
-                  {p.groupings.map((g) => (
-                    <DropdownMenuRadioItem key={g.key} value={g.key}>
-                      {g.label}
-                    </DropdownMenuRadioItem>
+              <DropdownMenu open={filterOpen} onOpenChange={setFilterOpen}>
+                <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+                  <ListFilterIcon />
+                  {t("filter")}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {p.filters.map((f) => (
+                    <DropdownMenuSub key={f.key}>
+                      <DropdownMenuSubTrigger>
+                        {f.icon && <f.icon className="text-muted-foreground" />}
+                        {f.label}
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="max-h-80 overflow-auto">
+                        {f.options.map((o) => {
+                          const on = applied[f.key]?.includes(o.value) ?? false;
+                          return (
+                            <DropdownMenuCheckboxItem
+                              key={o.value}
+                              checked={on}
+                              onCheckedChange={() => setFilter(f.key, on ? (applied[f.key] ?? []).filter((v) => v !== o.value) : [...(applied[f.key] ?? []), o.value])}
+                            >
+                              {o.label}
+                            </DropdownMenuCheckboxItem>
+                          );
+                        })}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                   ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>{t("ordering")}</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={display.ordering} onValueChange={(v) => saveDisplay({ ...display, ordering: String(v) })}>
-                  {p.orderings.map((o) => (
-                    <DropdownMenuRadioItem key={o.key} value={o.key}>
-                      {o.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>{t("properties")}</DropdownMenuLabel>
-                {p.columns.map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.key}
-                    checked={display.columns.includes(c.key)}
-                    onCheckedChange={(on) => saveDisplay({ ...display, columns: on ? [...display.columns, c.key] : display.columns.filter((k) => k !== c.key) })}
-                  >
-                    {c.label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => saveDisplay(fallback)}>{t("reset")}</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {p.actions}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* Display options (Linear): Grouping and Ordering as choices, the properties as toggles. */}
+              <Popover open={displayOpen} onOpenChange={setDisplayOpen}>
+                <PopoverTrigger render={<Button variant="outline" size="sm" />}>
+                  <SlidersHorizontalIcon />
+                  {t("display")}
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 gap-0 p-0" data-testid="display-options">
+                  <div className="flex flex-col gap-2 p-3">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Rows3Icon className="size-4 text-muted-foreground" aria-hidden />
+                      <span className="flex-1 text-foreground/70">{t("grouping")}</span>
+                      <NativeSelect size="sm" className="w-40" value={display.grouping} onChange={(e) => saveDisplay({ ...display, grouping: e.target.value })} data-testid="display-grouping">
+                        {p.groupings.map((g) => (
+                          <NativeSelectOption key={g.key} value={g.key}>
+                            {g.label}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <ArrowUpDownIcon className="size-4 text-muted-foreground" aria-hidden />
+                      <span className="flex-1 text-foreground/70">{t("ordering")}</span>
+                      <NativeSelect size="sm" className="w-40" value={display.ordering} onChange={(e) => saveDisplay({ ...display, ordering: e.target.value })} data-testid="display-ordering">
+                        {p.orderings.map((o) => (
+                          <NativeSelectOption key={o.key} value={o.key}>
+                            {o.label}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </label>
+                  </div>
+                  <div className="flex flex-col gap-2 border-t p-3">
+                    <p className="text-xs font-medium text-foreground/70">{t("properties")}</p>
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("properties")}>
+                      {p.columns.map((c) => {
+                        const on = display.columns.includes(c.key);
+                        return (
+                          <button
+                            key={c.key}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => saveDisplay({ ...display, columns: on ? display.columns.filter((k) => k !== c.key) : [...display.columns, c.key] })}
+                            className={cn("h-6 rounded-md border px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50", on ? "border-border bg-muted text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}
+                          >
+                            {c.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="border-t p-1.5">
+                    <Button variant="ghost" size="sm" className="w-full justify-start text-foreground/70" onClick={() => saveDisplay(fallback)}>
+                      {t("reset")}
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {p.actions}
             </>
           }
         />
         {p.figures}
 
-        {/* Applied filters as chips (Linear) */}
+        {/* Applied filters as Linear's segmented chips: the field with its icon · the operator · the values · remove. */}
         {anyFilter && (
           <div className="-mt-2 flex flex-wrap items-center gap-2" data-testid="filter-chips">
             {p.filters
               .filter((f) => applied[f.key])
               .map((f) => (
-                <Badge key={f.key} variant="secondary" className="gap-1 pr-1">
-                  {f.label}: {applied[f.key]!.map((v) => optionLabel(f, v)).join(", ")}
-                  <button type="button" className="rounded p-0.5 hover:bg-muted" aria-label={t("removeFilter", { name: f.label })} onClick={() => setFilter(f.key, [])}>
-                    <XIcon className="size-3" />
+                <span key={f.key} className="inline-flex h-7 items-stretch divide-x overflow-hidden rounded-md border text-xs">
+                  <span className="flex items-center gap-1.5 px-2">
+                    {f.icon && <f.icon className="size-3.5 text-muted-foreground" aria-hidden />}
+                    {f.label}
+                  </span>
+                  <span className="flex items-center px-2 text-muted-foreground">{applied[f.key]!.length > 1 ? t("isAnyOf") : t("is")}</span>
+                  <span className="flex max-w-64 items-center truncate px-2 font-medium">{applied[f.key]!.map((v) => optionLabel(f, v)).join(", ")}</span>
+                  <button type="button" className="flex items-center px-1.5 text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:bg-muted" aria-label={t("removeFilter", { name: f.label })} onClick={() => setFilter(f.key, [])}>
+                    <XIcon className="size-3.5" />
                   </button>
-                </Badge>
+                </span>
               ))}
-            <Button variant="link" size="sm" className="h-auto px-0" onClick={clearFilters}>
+            <Button variant="ghost" size="sm" className="h-7 text-foreground/70" onClick={clearFilters}>
               {t("clearFilters")}
             </Button>
           </div>
@@ -379,13 +411,14 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
             groups.map((g) => (
               <Fragment key={g.key || "all"}>
                 {grouping.value && (
-                  <div role="row" className="sticky top-0 z-10 flex items-center gap-2 border-b bg-muted/70 px-2 py-2 text-sm font-medium backdrop-blur">
+                  // The group's band (Linear): its icon, its name, its count; the chevron hides its rows.
+                  <div role="row" className="sticky top-0 z-10 flex h-9 items-center gap-2 border-b bg-muted/70 px-2 text-sm font-medium backdrop-blur">
                     <span role="columnheader" className="flex items-center gap-2">
                       <button
                         type="button"
                         aria-expanded={!collapsed.has(g.key)}
                         aria-label={t(collapsed.has(g.key) ? "expandGroup" : "collapseGroup", { name: g.label })}
-                        className="rounded p-0.5 hover:bg-background"
+                        className="rounded p-0.5 text-muted-foreground hover:bg-background hover:text-foreground"
                         onClick={() =>
                           setCollapsed((cur) => {
                             const next = new Set(cur);
@@ -397,8 +430,9 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                       >
                         {collapsed.has(g.key) ? <ChevronRightIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
                       </button>
+                      {grouping.icon && g.rows[0] && <StatusIcon status={grouping.icon(g.rows[0])} decorative />}
                       {g.label}
-                      <span className="font-normal tabular-nums">{g.rows.length}</span>
+                      <span className="font-normal text-muted-foreground tabular-nums">{g.rows.length}</span>
                     </span>
                   </div>
                 )}
@@ -419,7 +453,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                         }}
                         onMouseEnter={() => setHighlight(r.id)}
                         className={cn(
-                          "group flex min-h-11 items-center gap-3 border-b px-2 text-sm",
+                          "group flex min-h-11 items-center gap-3 border-b border-border/70 px-2 text-sm",
                           isHighlighted && "bg-muted/60",
                           isSelected && "bg-muted",
                           panelId === r.id && "ring-1 ring-ring ring-inset",
@@ -433,16 +467,26 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                             className={cn("transition-opacity", !isSelected && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100", selected.size > 0 && "opacity-100")}
                           />
                         </span>
-                        {/* One line, as Linear's rows: the name, then its muted detail; the properties at the right. */}
-                        <span role="gridcell" className="flex min-w-0 flex-1 items-baseline gap-2">
-                          <Link href={p.hrefFor(r)} className="max-w-[60%] shrink-0 truncate font-medium hover:underline">
-                            {p.primary(r)}
-                          </Link>
-                          {p.secondary?.(r, grouping.key) && <span className="min-w-0 truncate text-muted-foreground">{p.secondary(r, grouping.key)}</span>}
+                        {/* One line, as Linear's rows: the status icon, the name, its muted detail; the properties at the right. */}
+                        <span role="gridcell" className="flex min-w-0 flex-1 items-center gap-2.5">
+                          {p.status && <StatusIcon status={p.status(r)} />}
+                          <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                            <Link href={p.hrefFor(r)} className="max-w-[60%] shrink-0 truncate font-medium hover:underline">
+                              {p.primary(r)}
+                            </Link>
+                            {p.secondary?.(r, grouping.key) && <span className="min-w-0 truncate text-muted-foreground">{p.secondary(r, grouping.key)}</span>}
+                          </span>
                         </span>
                         {visibleColumns.map((c) => (
                           <span key={c.key} role="gridcell" className={cn("hidden shrink-0 text-muted-foreground md:block", c.className)}>
-                            {c.chip ? <span className="inline-flex h-6 max-w-full items-center rounded-full border px-2.5 text-xs whitespace-nowrap text-foreground/80">{c.cell(r)}</span> : c.cell(r)}
+                            {c.chip ? (
+                              <span className="inline-flex h-6 max-w-full items-center gap-1.5 rounded-full border px-2 text-xs whitespace-nowrap text-foreground/80">
+                                {c.icon && <c.icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />}
+                                {c.cell(r)}
+                              </span>
+                            ) : (
+                              c.cell(r)
+                            )}
                           </span>
                         ))}
                         <span role="gridcell" className="shrink-0">

@@ -1,8 +1,8 @@
 "use client";
 
 // Pattern: docs/patterns/margin.md — Stripe Billing analytics (export the summary or the rows;
-// configure the definitions), Stripe home (date range), Mercury Insights (tabs; the time frame at
-// the top right).
+// configure the definitions), Stripe home (date range, as its pill "Date range | Last 7 days"),
+// Mercury Insights (tabs; the time frame at the top right).
 import { DownloadIcon, LockIcon, SettingsIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -11,9 +11,10 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { EmptyState } from "../empty-state";
+import { dateRange } from "../format";
+import { FilterPill, PillChoices } from "../list-controls";
 import { Page, PageHeader, PageTabs } from "../page";
 
 export type MarginTab = "overview" | "overtime" | "cash";
@@ -59,32 +60,21 @@ export function MarginFrame({ tab, period, exports, children }: { tab: MarginTab
         actions={
           <>
         {period && (
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="margin-period" className="text-sm text-muted-foreground">
-                {t("period")}
-              </Label>
-              <NativeSelect
-                id="margin-period"
-                className="w-44"
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterPill label={t("range")} value={custom ? (period.preset === "custom" ? dateRange(period.from, period.to, locale) : t("presets.custom")) : t(`presets.${period.preset as 4 | 13 | 52}`)} testId="margin-period" align="end">
+              <PillChoices
+                heading={t("range")}
                 value={custom ? "custom" : String(period.preset)}
-                onChange={(e) => {
-                  if (e.target.value === "custom") setCustom(true);
+                options={[...(["4", "13", "52"] as const).map((w) => ({ value: w, label: t(`presets.${w}`) })), { value: "custom", label: t("presets.custom") }]}
+                onChoose={(v) => {
+                  if (v === "custom") setCustom(true);
                   else {
                     setCustom(false);
-                    go({ weeks: e.target.value === "13" ? "" : e.target.value, from: "", to: "" });
+                    go({ weeks: v === "13" ? "" : v, from: "", to: "" });
                   }
                 }}
-                data-testid="margin-period"
-              >
-                {(["4", "13", "52"] as const).map((w) => (
-                  <NativeSelectOption key={w} value={w}>
-                    {t(`presets.${w}`)}
-                  </NativeSelectOption>
-                ))}
-                <NativeSelectOption value="custom">{t("presets.custom")}</NativeSelectOption>
-              </NativeSelect>
-            </div>
+              />
+            </FilterPill>
             {custom && (
               <form
                 className="flex flex-wrap items-end gap-2"

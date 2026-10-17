@@ -1,6 +1,7 @@
 "use client";
 
-// Pattern: docs/patterns/clients.md — Stripe customers list (the name opens the customer's page).
+// Pattern: docs/patterns/clients.md — Stripe customers list (the name opens the customer's page), drawn
+// as Stripe's current lists: the table under a hairline, sentence-case headings, the number of results under it.
 import { Building2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Link } from "@/i18n/navigation";
 import type { ClientRow } from "@/server/clients/queries";
 import { EmptyState } from "../empty-state";
+import { ResultsCount } from "../list-controls";
 import { Page, PageHeader, TableFrame } from "../page";
 
 export function ClientsView({ rows }: { rows: ClientRow[] }) {
@@ -29,7 +31,7 @@ export function ClientsView({ rows }: { rows: ClientRow[] }) {
           testId="clients-empty"
         />
       ) : (
-        <TableFrame>
+        <TableFrame className="flex flex-col gap-4 border-t">
           <Table aria-label={t("title")} data-testid="clients-list">
             <TableHeader>
               <TableRow>
@@ -66,6 +68,7 @@ export function ClientsView({ rows }: { rows: ClientRow[] }) {
               ))}
             </TableBody>
           </Table>
+          <ResultsCount shown={rows.length} testId="client-count" />
         </TableFrame>
       )}
     </Page>

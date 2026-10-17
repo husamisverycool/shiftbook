@@ -1,7 +1,8 @@
 "use client";
 
 // Pattern: docs/patterns/compliance.md — Vanta Tests page (most urgent first; an owner picked in the
-// row), Linear display options (grouped by status).
+// row), Linear display options (grouped by status), the groups drawn as Linear's list draws them: a
+// tinted band with the status's icon, its name and its count; rows edge to edge between hairlines.
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -11,10 +12,10 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Link, useRouter } from "@/i18n/navigation";
 import type { ComplianceItem } from "@/server/compliance/queries";
 import { STATUS_ORDER } from "@/server/compliance/status";
-import { longDate } from "../format";
-import { StatusBadge } from "./status-badge";
+import { listDate, longDate } from "../format";
+import { ComplianceStatusIcon, StatusBadge } from "./status-badge";
 
-export function ComplianceList({ items, users, nextUpcoming, filtered }: { items: ComplianceItem[]; users: { id: string; name: string }[]; nextUpcoming: string | null; filtered: boolean }) {
+export function ComplianceList({ items, users, nextUpcoming, filtered, today }: { items: ComplianceItem[]; users: { id: string; name: string }[]; nextUpcoming: string | null; filtered: boolean; today: string }) {
   const t = useTranslations("compliance");
   const locale = useLocale();
   const router = useRouter();
@@ -47,15 +48,16 @@ export function ComplianceList({ items, users, nextUpcoming, filtered }: { items
     <div className="flex flex-col border-t" aria-label={t("listLabel")}>
       {groups.map((g) => (
         <section key={g.status} aria-labelledby={`group-${g.status}`}>
-          <h2 id={`group-${g.status}`} className="flex items-center gap-2 border-b bg-muted/70 px-3 py-2 text-sm font-medium">
+          <h2 id={`group-${g.status}`} className="flex h-9 items-center gap-2 border-b bg-muted/70 px-3 text-sm font-medium">
+            <ComplianceStatusIcon status={g.status} />
             {t(`statuses.${g.status}`)}
-            <span className="text-xs text-muted-foreground tabular-nums">{g.items.length}</span>
+            <span className="font-normal text-muted-foreground tabular-nums">{g.items.length}</span>
           </h2>
           <ul>
             {g.items.map((i) => {
               const at = ordered.indexOf(i.id);
               return (
-                <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-2.5 hover:bg-muted/30" data-testid="obligation-row">
+                <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border/70 px-3 py-2 hover:bg-muted/50" data-testid="obligation-row">
                   <Link
                     href={`/compliance/${i.id}`}
                     ref={(el) => {
@@ -74,7 +76,7 @@ export function ComplianceList({ items, users, nextUpcoming, filtered }: { items
                   </Link>
                   <span className="w-28 text-xs text-muted-foreground">{t(`states.${i.jurisdiction}` as "states.IL")}</span>
                   <span className="w-44 text-sm tabular-nums">
-                    {longDate(i.dueOn, locale)}
+                    {listDate(i.dueOn, locale, today)}
                     {(i.status === "overdue" || i.status === "due_soon" || i.status === "upcoming") && <span className={`block text-xs ${i.status === "overdue" ? "text-destructive" : "text-muted-foreground"}`}>{dueIn(t, i.dueInDays)}</span>}
                   </span>
                   <OwnerPicker item={i} users={users} />

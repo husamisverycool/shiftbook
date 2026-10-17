@@ -15,8 +15,8 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ReceivablesView as View } from "@/server/receivables/queries";
 import { EmptyState } from "../empty-state";
 import { useEngineSay } from "../engine-say";
-import { longDate, money, tableDate } from "../format";
-import { KeyFigure } from "../key-figures";
+import { longDate, money, moneyParts, tableDate } from "../format";
+import { KeyFigure, RaisedCents } from "../key-figures";
 import { Page, PageHeader, PageTabs, TableFrame } from "../page";
 import { useDateTime } from "../agency-zone";
 
@@ -87,10 +87,11 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
         }
       />
       {/* Figures as Mercury's Transactions page sets them (https://mercury.com/blog/updated-transactions-page):
-          the headline owed with its date, then what is overdue and the credit not yet applied as rows under
-          it, each label on the left and its amount on the right. What each means is on its label. */}
-      <div className="flex w-full max-w-xs flex-col gap-4" data-testid="figures">
-        <KeyFigure size="lg" label={t("figures.owed")} value={money(view.totalCents, locale)} note={t("figures.owedNote", { date: longDate(view.asOf, locale) })} testId="figure-owed" />
+          the headline owed large and light with its cents small and raised, its date under it; then what is
+          overdue and the credit not yet applied as rows under it, each label on the left and its amount, cents
+          raised the same way, on the right. What each means is on its label. */}
+      <div className="flex w-full max-w-xs flex-col gap-5" data-testid="figures">
+        <KeyFigure size="lg" label={t("figures.owed")} value={<RaisedCents {...moneyParts(view.totalCents, locale)} />} note={t("figures.owedNote", { date: longDate(view.asOf, locale) })} testId="figure-owed" />
         <dl className="flex flex-col gap-2 text-sm">
           {(
             [
@@ -99,11 +100,11 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
             ] as const
           ).map(([key, label, means, cents]) => (
             <div key={key} className="flex items-baseline justify-between gap-6" data-testid={`figure-${key}`}>
-              <dt className="text-muted-foreground" title={means}>
+              <dt className="text-foreground/70" title={means}>
                 {label}
               </dt>
-              <dd className="font-medium tabular-nums" data-testid={`figure-${key}-value`}>
-                {money(cents, locale)}
+              <dd className="tabular-nums" data-testid={`figure-${key}-value`}>
+                <RaisedCents {...moneyParts(cents, locale)} />
               </dd>
             </div>
           ))}
