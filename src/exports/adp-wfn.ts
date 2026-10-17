@@ -151,9 +151,9 @@ export function renderAdpWfn(fixture: ExportFixture): ExportResult {
             : `${cell.minutes} min written as ${twoDecimals(h)} h (${exactDecimal(cell.minutes, 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
           const rateNote = exactRate ? "" : `, at a Temp Rate of ${rateText(row.t4)} (${formatRate(row.rate)} exactly, to ADP's four decimals)`;
           const factor = cell.factor.num === cell.factor.den ? "" : ` × ${factorText(cell.factor)}`;
-          const why = exactHours && exactRate ? ", because Shiftbook rounds each pay line separately" : "";
+          const why = exactHours && exactRate ? ", because Granite rounds each pay line separately" : "";
           workerNotes.push(
-            `${who(w.worker)} — ${[...cell.types].join(", ")}: ${written}${rateNote}. ADP pays ${twoDecimals(h)} h × ${rateText(row.t4)}${factor} = ${formatCents(cents)}; Shiftbook computed ${formatCents(cell.amountCents)} (${signedCents(cents - cell.amountCents)})${why}.`,
+            `${who(w.worker)} — ${[...cell.types].join(", ")}: ${written}${rateNote}. ADP pays ${twoDecimals(h)} h × ${rateText(row.t4)}${factor} = ${formatCents(cents)}; Granite computed ${formatCents(cell.amountCents)} (${signedCents(cents - cell.amountCents)})${why}.`,
           );
         }
       }

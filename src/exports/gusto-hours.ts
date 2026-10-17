@@ -261,9 +261,9 @@ export function renderGustoHours(fixture: ExportFixture): ExportResult {
         const written = exactHours
           ? `${minutes[col]} min written as ${hoursText(hours[i]!)} h (exact)`
           : `${minutes[col]} min written as ${hoursText(hours[i]!)} h (${exactDecimal(minutes[col], 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
-        const why = exactHours ? ", because Shiftbook rounds each pay line separately" : "";
+        const why = exactHours ? ", because Granite rounds each pay line separately" : "";
         notes.push(
-          `${w.lastName}, ${w.firstName} — ${type}: ${written}. Gusto pays ${hoursText(hours[i]!)} h × ${formatRate(rate)} = ${formatCents(gustoCents)}; Shiftbook computed ${formatCents(amounts[col])} (${signedCents(gustoCents - amounts[col])})${why}.`,
+          `${w.lastName}, ${w.firstName} — ${type}: ${written}. Gusto pays ${hoursText(hours[i]!)} h × ${formatRate(rate)} = ${formatCents(gustoCents)}; Granite computed ${formatCents(amounts[col])} (${signedCents(gustoCents - amounts[col])})${why}.`,
         );
       }
     });

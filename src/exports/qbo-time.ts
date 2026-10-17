@@ -39,7 +39,7 @@ export function renderQboTime(fixture: ExportFixture): ExportResult {
       const cents = Number(lineCents(t.minutes, w.base!));
       payrollSystemGrossCents += cents;
       if (cents !== t.amountCents) {
-        notes.push(`${who(w.worker)} — REG: QuickBooks Online pays ${hoursMinutes(t.minutes)} × ${formatRate(w.base!)} = ${formatCents(cents)}; Shiftbook computed ${formatCents(t.amountCents)} (${signedCents(cents - t.amountCents)}), because Shiftbook rounds each workweek's line separately.`);
+        notes.push(`${who(w.worker)} — REG: QuickBooks Online pays ${hoursMinutes(t.minutes)} × ${formatRate(w.base!)} = ${formatCents(cents)}; Granite computed ${formatCents(t.amountCents)} (${signedCents(cents - t.amountCents)}), because Granite rounds each workweek's line separately.`);
       }
     }
   }

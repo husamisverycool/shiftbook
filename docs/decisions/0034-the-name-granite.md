@@ -32,8 +32,10 @@ own.
    names, folder names in the code, cookie and link prefixes. Records written before the rename
    (decision records, research notes, screen records, earlier plans) stay as they were written.
 5. **Answer keys.** Three sentences flow into the approved answer keys (the Illinois equal-pay
-   note "The 600-hour heads-up is Shiftbook's …" and the payroll files' rounding notes "Shiftbook
-   computed …"). They change only with the owner's approval of the matching answer keys.
+   note "The 600-hour heads-up is … not law" and the payroll files' rounding notes "… computed …").
+   The owner approved the answer keys ("approve all goldens", 2026-10-17): the sentences, the answer
+   keys that hold them and their explanations say Granite, and the one approved run whose result
+   carries the Illinois note has a new fingerprint (src/server/run/fingerprint.test.ts).
 
 ## Consequences
 Authenticator apps that were set up before keep showing the old label until set up again; existing

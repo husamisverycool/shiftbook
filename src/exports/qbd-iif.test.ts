@@ -81,7 +81,7 @@ describe("QuickBooks Desktop IIF time file", () => {
     );
     // 2 min × $27.375/h = $0.9125 → $0.91; Granite rounded each minute's line: $0.46 + $0.46 = $0.92.
     expect(r.controlTotals.payrollSystemDifferenceCents).toBe(-1);
-    expect(r.notes).toEqual(["Álvarez, Ana — OT: QuickBooks pays 0:02 × $27.375/h = $0.91; Shiftbook computed $0.92 (−$0.01), because Shiftbook rounds each workweek's line separately."]);
+    expect(r.notes).toEqual(["Álvarez, Ana — OT: QuickBooks pays 0:02 × $27.375/h = $0.91; Granite computed $0.92 (−$0.01), because Granite rounds each workweek's line separately."]);
   });
 
   it("writes the Timer header for QuickBooks Desktop 2021 and earlier", () => {

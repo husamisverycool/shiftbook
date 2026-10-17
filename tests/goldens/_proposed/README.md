@@ -1,6 +1,6 @@
 # Proposed golden cases
 
-Golden cases are the answer key for the parts of Shiftbook that must never be wrong: the pay rules,
+Golden cases are the answer key for the parts of Granite that must never be wrong: the pay rules,
 the document reader, the payroll export files, and the compliance dates and figures (the duties'
 due dates, the ACA full-time test, the workers' comp premium split).
 

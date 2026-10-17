@@ -1015,7 +1015,7 @@
         "longTriggerMinutes": 249600,
         "effectiveFrom": "2024-08-09",
         "effectiveTo": null,
-        "citation": "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Shiftbook's (SPEC §9), not law."
+        "citation": "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Granite's (SPEC §9), not law."
       }
     ],
     "regularRateRules": [
@@ -1757,7 +1757,7 @@
           "entry-145",
           "entry-146"
         ],
-        "citation": "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Shiftbook's (SPEC §9), not law.",
+        "citation": "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Granite's (SPEC §9), not law.",
         "message": "Worker One passed 720 hours of work at Client X on 2026-10-14 at 11:00 (the 12 months from 2025-10-15): from then on the Illinois equal-pay rule applies: at least the pay of the client's comparable direct hires, with equal benefits or their hourly cash value (820 ILCS 175/42). Get the client's pay, seniority and benefits data before the next pay period begins (56 Ill. Adm. Code 260.505(b)), then enter the equal-pay rate."
       }
     ]

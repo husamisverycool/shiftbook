@@ -71,7 +71,7 @@ describe("Spreadsheet (the agency's own layout)", () => {
     // 0.62 h × $27.3750 = $16.9725 → $16.97 against $16.88.
     expect(r.controlTotals.payrollSystemDifferenceCents).toBe(9);
     expect(r.notes).toEqual([
-      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). The receiver pays 0.62 h × 27.3750 = $16.97; Shiftbook computed $16.88 (+$0.09).",
+      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). The receiver pays 0.62 h × 27.3750 = $16.97; Granite computed $16.88 (+$0.09).",
     ]);
   });
 

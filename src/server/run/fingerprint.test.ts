@@ -4,7 +4,8 @@
  * engine's part of the fingerprint input — the result as JSON through the run service's own replacer —
  * is pinned to the SHA-256 of what the engine wrote before the keys: sha256(JSON.stringify(computePay(input)))
  * with the engine at commit b927d82. A later change to an answer key the owner approves changes its
- * fingerprint too, and this test says so.
+ * fingerprint too, and this test says so: il-s42-720h-crossing-midweek carries the Illinois equal-pay
+ * note, renamed "Granite's" with the owner's approval of the answer keys (2026-10-17, decision 0034).
  */
 import { createHash } from "node:crypto";
 import { computePay } from "@shiftbook/rules";
@@ -26,7 +27,7 @@ const BEFORE_KEYS: Record<string, string> = {
   "cook-county-minimum-wage": "feb9eabaedaa0d65b97b81a1854ede82ae3d3b9d11f2e60bb645e3d7c7258e40",
   "il-day-labor-four-hour-minimum": "eedc507e094ba66b9a85c4361002345895b2e4ec16da49de47482c1222b9e406",
   "il-nondiscretionary-bonus-in-regular-rate": "e986c0d64471f444bde0bd7402ebf3508d113d78b69bbc7120f33964c8bf485a",
-  "il-s42-720h-crossing-midweek": "4a28437a08698a2a6ae72fa93c9b69eb8a0679d860bc8f46472a63a3e2c75a35",
+  "il-s42-720h-crossing-midweek": "5964a9e045b828b9c31c1cd0789602765e11c8873f48b758764db673040d4ed0",
   "il-straight-time-38h": "c08f4f7cd3357bf3acbbddc10b54499394133c5e0e52b78afa2a73dbc0689a3a",
   "il-weekly-overtime-44h": "c6a81cf3eea77ca70ac75cd26e863db3d3ead6254bc4310d833a9c6cb21bae83",
   "ma-exactly-40h-no-overtime": "af69a8a0fa205f65b4deb11605182ab578c9a166a5902f6cb52f63d4d92c0471",

@@ -140,7 +140,7 @@ export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
     if (!exactHours || cents !== row.amountCents) {
       const written = exactHours ? `${row.minutes} min written as ${twoDecimals(h)} h (exact)` : `${row.minutes} min written as ${twoDecimals(h)} h (${exactDecimal(row.minutes, 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
       const worker = c.workers[row.workerIndex]!.worker;
-      notes.push(`${who(worker)} — ${row.type}: ${written}. The receiver pays ${twoDecimals(h)} h × ${rateText(t4)} = ${formatCents(cents)}; Shiftbook computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
+      notes.push(`${who(worker)} — ${row.type}: ${written}. The receiver pays ${twoDecimals(h)} h × ${rateText(t4)} = ${formatCents(cents)}; Granite computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
     }
   }
 

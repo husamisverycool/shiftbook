@@ -1,5 +1,5 @@
 {
-  "summary": "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Shiftbook's ($365.00 + $400.00 + $57.50). Only the multiples note.",
+  "summary": "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Granite's ($365.00 + $400.00 + $57.50). Only the multiples note.",
   "fixture": {
     "format": "adp_wfn_paydata",
     "mappingVersion": "adp-wfn-v1",

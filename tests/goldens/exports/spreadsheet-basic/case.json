@@ -1,5 +1,5 @@
 {
-  "summary": "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Shiftbook's own (REG), overtime under the agency's code OT15. The amount column carries Shiftbook's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
+  "summary": "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Granite's own (REG), overtime under the agency's code OT15. The amount column carries Granite's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
   "fixture": {
     "format": "spreadsheet_csv",
     "mappingVersion": "spreadsheet-v1",
