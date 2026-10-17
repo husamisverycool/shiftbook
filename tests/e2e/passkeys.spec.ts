@@ -2,8 +2,10 @@
  * Passkeys in the browser (decision 0032), with Chromium's virtual authenticator standing in for the
  * device (DevTools WebAuthn domain: CTAP2, internal, resident keys, user verification): the demo
  * coordinator adds a passkey on Your account, signs out, signs in with the "Passkey" tile and lands
- * where she was going, with no code; a closed prompt says nothing; a removed passkey is refused.
- * Accessibility of the account page and the sign-in page, in English and Spanish.
+ * where she was going, with no code; a closed prompt says nothing; a removed passkey is refused. Rosa,
+ * signed in with her password, gives it again for each passkey she adds ("confirm it's you"), and the
+ * device that already holds one is told so. Accessibility of the account page, the confirmation and
+ * the sign-in page, in English and Spanish.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -11,6 +13,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser, type CDPSession, type Page } from "@playwright/test";
 
 type Messages = typeof import("../../messages/en.json");
+const PASSWORD = "correct horse battery staple";
 const MESSAGES = {
   en: JSON.parse(readFileSync("messages/en.json", "utf8")) as Messages,
   es: JSON.parse(readFileSync("messages/es.json", "utf8")) as Messages,
@@ -114,5 +117,62 @@ for (const locale of ["en", "es"] as const) {
     await expect(page).toHaveURL(/\/sign-in/);
     await check(page, `sign-in, passkey refused (${locale})`);
     expect(errors).toEqual([]);
+    await page.context().close();
   });
 }
+
+test("Rosa, signed in with her password, gives it for each passkey she adds; a device that has one is told so", async ({ browser }) => {
+  const m = MESSAGES.en;
+  const { page } = await withDevice(browser);
+  // Rosa sets a password in the demo (the demo people have none), then signs in with it.
+  await page.goto("/en/sign-in");
+  await page.getByTestId("continue-billing").click();
+  await expect(page).toHaveURL(/\/en$/);
+  await page.goto("/en/settings/account");
+  await page.getByTestId("new-password").fill(PASSWORD);
+  await page.getByTestId("confirm-password").fill(PASSWORD);
+  await page.getByTestId("password-submit").click();
+  await expect(page.getByText(m.account.passwordSaved)).toBeVisible();
+  await page.getByTestId("account-sign-out").click();
+  await page.getByTestId("email").fill("billing@cedarrow.example.com");
+  await page.getByTestId("password").fill(PASSWORD);
+  await page.getByTestId("sign-in").click();
+  await expect(page).toHaveURL(/\/en$/);
+
+  // Signed in a moment ago, yet adding a passkey asks for the password.
+  await page.goto("/en/settings/account");
+  await page.getByTestId("passkey-add").click();
+  const confirm = page.getByTestId("confirm-access");
+  await expect(confirm).toBeVisible();
+  await check(page, "confirm it's you, for a passkey");
+  await page.getByTestId("confirm-secret").fill("not the password at all");
+  await page.getByTestId("confirm-submit").click();
+  await expect(page.getByTestId("confirm-error")).toHaveText(m.confirmAccess.invalid);
+  await page.getByTestId("confirm-secret").fill(PASSWORD);
+  await page.getByTestId("confirm-submit").click();
+  await expect(page.getByTestId("passkey-added")).toBeVisible();
+  await page.getByTestId("passkey-added-done").click();
+  await expect(page.getByTestId("passkey")).toHaveCount(1);
+
+  // Again: the password again; this device already holds her passkey, and says so.
+  await page.getByTestId("passkey-add").click();
+  await expect(confirm).toBeVisible();
+  await page.getByTestId("confirm-secret").fill(PASSWORD);
+  await page.getByTestId("confirm-submit").click();
+  await expect(page.getByTestId("passkey-add-error")).toHaveText(m.passkeys.alreadyAdded);
+  await expect(page.getByTestId("passkey")).toHaveCount(1);
+  // Cancelling the confirmation changes nothing and says nothing.
+  await page.getByTestId("passkey-add").click();
+  await expect(confirm).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByTestId("passkey-add-error")).toHaveCount(0);
+
+  // Out, and back in with the passkey: no password, no code.
+  await page.getByTestId("account-sign-out").click();
+  await page.getByTestId("sign-in-passkey").click();
+  await expect(page).toHaveURL(/\/en$/);
+  await page.getByTestId("agency-menu").click();
+  await expect(page.getByTestId("menu-person")).toContainText("Rosa Delgado");
+  await page.context().close();
+});

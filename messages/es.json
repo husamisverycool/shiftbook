@@ -3748,7 +3748,8 @@
       "file_opened": "Archivo abierto",
       "ssn_changed": "Número de Seguro Social cambiado",
       "passkey_added": "Llave de acceso agregada",
-      "passkey_removed": "Llave de acceso quitada"
+      "passkey_removed": "Llave de acceso quitada",
+      "passkey_clone_suspected": "Posible copia de una llave de acceso"
     },
     "types": {
       "aca_monthly_hours": "Horas ACA",
@@ -4335,6 +4336,8 @@
     "removeBody": "«{name}» ya no le permitirá iniciar sesión. También puede borrarla del administrador de contraseñas de su dispositivo.",
     "removed": "Llave de acceso quitada.",
     "cancel": "Cancelar",
+    "tooMany": "Tiene 20 llaves de acceso, el máximo para una cuenta. Quite una para agregar otra.",
+    "unavailable": "Las llaves de acceso aún no están configuradas en este servidor.",
     "defaultName": {
       "singleDevice": "Llave de acceso en un solo dispositivo",
       "multiDevice": "Llave de acceso sincronizada"
@@ -4343,7 +4346,17 @@
       "working": "Esperando su llave de acceso…",
       "invalid": "Esa llave de acceso no funcionó. Inicie sesión de otra forma.",
       "locked": "Demasiados intentos desde aquí. Espere 15 minutos y vuelva a intentarlo.",
-      "unsupported": "Este navegador no puede usar llaves de acceso. Inicie sesión de otra forma."
+      "unsupported": "Este navegador no puede usar llaves de acceso. Inicie sesión de otra forma.",
+      "unavailable": "Las llaves de acceso aún no están configuradas en este servidor. Inicie sesión de otra forma."
+    },
+    "email": {
+      "subject": "Se agregó una llave de acceso a su cuenta de Shiftbook",
+      "greeting": "Hola, {name}:",
+      "intro": "Se agregó una llave de acceso llamada «{passkey}» a la cuenta que usa para {agency}, el {when}.",
+      "ifYou": "Si la agregó usted, no tiene que hacer nada.",
+      "ifNot": "Si no fue usted, abra Su cuenta, quite la llave de acceso y cambie su contraseña; después avise al Propietario de su agencia.",
+      "open": "Abrir Su cuenta",
+      "footer": "Enviado por Shiftbook en nombre de {agency}."
     }
   }
 }

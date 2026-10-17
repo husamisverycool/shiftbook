@@ -1356,7 +1356,7 @@ export const clientDisputes = pgTable(
   ],
 );
 
-export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset";
+export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset" | "passkey_added";
 
 /** Every email sent, with any approval link hidden (Stripe keeps a log of customer emails). */
 export const emailMessages = pgTable(

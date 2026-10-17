@@ -36,6 +36,8 @@ export interface CeremonyOverrides {
   challenge?: string;
   /** The signature counter to report (default: one more than the last). */
   counter?: number;
+  /** clientDataJSON's crossOrigin (true when the page asking is framed by another site). */
+  crossOrigin?: boolean;
 }
 
 export class SoftAuthenticator {
@@ -75,7 +77,7 @@ export class SoftAuthenticator {
         ["authData", new Uint8Array(authData)],
       ]),
     );
-    const clientDataJSON = JSON.stringify({ type: "webauthn.create", challenge: o.challenge ?? options.challenge, origin: o.origin, crossOrigin: false });
+    const clientDataJSON = JSON.stringify({ type: "webauthn.create", challenge: o.challenge ?? options.challenge, origin: o.origin, crossOrigin: o.crossOrigin ?? false });
     this.credentials.set(id, { id, privateKey, rpId, userHandle: options.user.id, counter });
     return {
       id,
@@ -88,14 +90,14 @@ export class SoftAuthenticator {
   }
 
   /** navigator.credentials.get(), answered with one of its passkeys (the only one, or the one named). */
-  get(options: PublicKeyCredentialRequestOptionsJSON, o: CeremonyOverrides & { credentialId?: string }): AuthenticationResponseJSON {
+  get(options: PublicKeyCredentialRequestOptionsJSON, o: CeremonyOverrides & { credentialId?: string; withoutUserHandle?: boolean }): AuthenticationResponseJSON {
     const held = o.credentialId ? this.credentials.get(o.credentialId) : [...this.credentials.values()].at(-1);
     if (!held) throw new Error("The software authenticator holds no passkey.");
     const rpId = o.rpId ?? options.rpId ?? held.rpId;
     const counter = o.counter ?? (this.settings.counts ? held.counter + 1 : 0);
     held.counter = Math.max(held.counter, counter);
     const authData = Buffer.concat([sha256(rpId), Buffer.from([this.flags(o.userVerified ?? this.settings.userVerified)]), u32(counter)]);
-    const clientDataJSON = Buffer.from(JSON.stringify({ type: "webauthn.get", challenge: o.challenge ?? options.challenge, origin: o.origin, crossOrigin: false }));
+    const clientDataJSON = Buffer.from(JSON.stringify({ type: "webauthn.get", challenge: o.challenge ?? options.challenge, origin: o.origin, crossOrigin: o.crossOrigin ?? false }));
     const signature = sign("sha256", Buffer.concat([authData, sha256(clientDataJSON)]), held.privateKey);
     return {
       id: held.id,
@@ -103,7 +105,7 @@ export class SoftAuthenticator {
       type: "public-key",
       authenticatorAttachment: "platform",
       clientExtensionResults: {},
-      response: { clientDataJSON: b64url(clientDataJSON), authenticatorData: b64url(authData), signature: b64url(signature), userHandle: held.userHandle },
+      response: { clientDataJSON: b64url(clientDataJSON), authenticatorData: b64url(authData), signature: b64url(signature), ...(o.withoutUserHandle ? {} : { userHandle: held.userHandle }) },
     };
   }
 }

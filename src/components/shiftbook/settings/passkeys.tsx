@@ -2,7 +2,8 @@
 
 // Pattern: docs/patterns/settings/account.md — the Passkeys section (decision 0032; GitHub's
 // "Passkeys" under "Password and authentication": each passkey listed, removed after a confirmation;
-// "Add a passkey" re-authenticates, then the device's prompt, then a confirmation and Done).
+// "Add a passkey" re-authenticates — here every time, the password or code going with the request —
+// then the device's prompt, then a confirmation and Done).
 import { browserSupportsWebAuthn, startRegistration } from "@simplewebauthn/browser";
 import { KeyRoundIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRouter } from "@/i18n/navigation";
 import { cancelledByPerson } from "../auth/passkey";
-import { useConfirmed } from "../auth/confirm-access";
+import { useAskToConfirm, useConfirmed } from "../auth/confirm-access";
 
 export interface PasskeyItem {
   id: string;
@@ -22,6 +23,10 @@ export interface PasskeyItem {
   createdAt: string;
   lastUsedAt: string | null;
 }
+
+type Problem = "addFailed" | "alreadyAdded" | "unsupported" | "tooMany" | "unavailable";
+type Options = Awaited<ReturnType<typeof passkeyRegistrationOptionsAction>>;
+const problemOf = (error: string): Problem => (error === "too_many" ? "tooMany" : error === "unavailable" ? "unavailable" : error === "exists" ? "alreadyAdded" : "addFailed");
 
 /** The device already holds a passkey for this person (one listed in excludeCredentials). */
 const alreadyThere = (error: unknown) => {
@@ -36,9 +41,10 @@ export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; 
   const router = useRouter();
   const id = useId();
   const confirmed = useConfirmed();
+  const askToConfirm = useAskToConfirm();
   const [adding, startAdding] = useTransition();
   const [removing, startRemoving] = useTransition();
-  const [error, setError] = useState<"addFailed" | "alreadyAdded" | "unsupported" | null>(null);
+  const [error, setError] = useState<Problem | null>(null);
   const [added, setAdded] = useState<string | null>(null);
   const [toRemove, setToRemove] = useState<PasskeyItem | null>(null);
   const when = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(iso));
@@ -47,9 +53,22 @@ export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; 
     startAdding(async () => {
       setError(null);
       if (!browserSupportsWebAuthn()) return setError("unsupported");
-      const options = await confirmed(() => passkeyRegistrationOptionsAction());
-      if (!options) return; // "Confirm it's you" was cancelled.
-      if (!options.ok) return setError("addFailed");
+      let options: Options = await passkeyRegistrationOptionsAction(null);
+      if (!options.ok && options.error === "confirm") {
+        // "Confirm it's you", the password or code going with the request for this passkey.
+        const box: { answer?: Options } = {};
+        const yes = askToConfirm
+          ? await askToConfirm(async (secret) => {
+              const r = await passkeyRegistrationOptionsAction(secret);
+              if (!r.ok && (r.error === "invalid" || r.error === "locked" || r.error === "busy")) return { ok: false, error: r.error };
+              box.answer = r;
+              return { ok: true };
+            })
+          : false;
+        if (!yes || !box.answer) return; // Cancelled.
+        options = box.answer;
+      }
+      if (!options.ok) return setError(problemOf(options.error));
       let response;
       try {
         response = await startRegistration({ optionsJSON: options.options });
@@ -58,9 +77,8 @@ export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; 
         else if (!cancelledByPerson(e)) setError("addFailed");
         return;
       }
-      const r = await confirmed(() => addPasskeyAction(response));
-      if (!r) return;
-      if (!r.ok) return setError(r.error === "exists" ? "alreadyAdded" : "addFailed");
+      const r = await addPasskeyAction(response);
+      if (!r.ok) return setError(problemOf(r.error));
       setAdded(r.passkey.name);
       router.refresh();
     });

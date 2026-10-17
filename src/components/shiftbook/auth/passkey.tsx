@@ -17,7 +17,7 @@ export function cancelledByPerson(error: unknown): boolean {
 export function PasskeySignIn({ next, className, children }: { next: string | null; className?: string; children: ReactNode }) {
   const t = useTranslations("passkeys.signIn");
   const id = useId();
-  const [error, setError] = useState<"invalid" | "locked" | "unsupported" | null>(null);
+  const [error, setError] = useState<"invalid" | "locked" | "unsupported" | "unavailable" | null>(null);
   const [pending, start] = useTransition();
 
   const signIn = () =>

@@ -3748,7 +3748,8 @@
       "file_opened": "File opened",
       "ssn_changed": "SSN changed",
       "passkey_added": "Passkey added",
-      "passkey_removed": "Passkey removed"
+      "passkey_removed": "Passkey removed",
+      "passkey_clone_suspected": "Passkey may be copied"
     },
     "types": {
       "aca_monthly_hours": "ACA hours",
@@ -4335,6 +4336,8 @@
     "removeBody": "“{name}” will no longer sign you in. You can also delete it from your device's password manager.",
     "removed": "Passkey removed.",
     "cancel": "Cancel",
+    "tooMany": "You have 20 passkeys, the most an account can have. Remove one to add another.",
+    "unavailable": "Passkeys are not set up on this server yet.",
     "defaultName": {
       "singleDevice": "Passkey on one device",
       "multiDevice": "Synced passkey"
@@ -4343,7 +4346,17 @@
       "working": "Waiting for your passkey…",
       "invalid": "That passkey did not work. Try another way to sign in.",
       "locked": "Too many tries from here. Wait 15 minutes and try again.",
-      "unsupported": "This browser cannot use passkeys. Sign in another way."
+      "unsupported": "This browser cannot use passkeys. Sign in another way.",
+      "unavailable": "Passkeys are not set up on this server yet. Sign in another way."
+    },
+    "email": {
+      "subject": "A passkey was added to your Shiftbook account",
+      "greeting": "Hello {name},",
+      "intro": "A passkey named “{passkey}” was added to the account you use for {agency} on {when}.",
+      "ifYou": "If you added it, there is nothing to do.",
+      "ifNot": "If you did not, open Your account, remove the passkey and change your password, then tell your agency's Owner.",
+      "open": "Open Your account",
+      "footer": "Sent by Shiftbook on behalf of {agency}."
     }
   }
 }

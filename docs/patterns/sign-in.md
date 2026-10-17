@@ -62,8 +62,9 @@ opens with no password (decision K3).
 - Already signed in: the page opens the app instead.
 - Passkey: while the device is asked, the tile cannot be pressed again; the person closes the prompt —
   nothing is said; refused (unknown, removed, someone suspended, a copied device) — one message under
-  the tiles, the same for every reason; too many tries from one place — wait 15 minutes; a browser
-  without passkeys — sign in another way.
+  the tiles, the same for every reason; too many refused tries from one place — wait 15 minutes (a
+  passkey that works always signs in); a browser without passkeys, or passkeys not set up on this
+  server — sign in another way.
 
 ## Never copy
 GitHub's, Linear's or Notion's wording, icons, colors or logos.

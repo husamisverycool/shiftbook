@@ -24,3 +24,10 @@ Coordinators need no code on top. A passkey can be removed (after "confirm it's 
 
 ## Done when
 Typecheck, lint, unit, integration, goldens, proposed, hooks tests and the e2e specs pass.
+
+## Second-opinion fixes (2026-10-16/17)
+The password or a code goes with every new passkey and the person is emailed; removing one signs out
+the other sessions; capped, race-safe sign-in challenges (per address group and in all); the site
+only from SHIFTBOOK_APP_URL in live mode; no user handle or a framed response refused; 20 passkeys a
+person; the throttle never blocks a good signature and ignores unknown passkeys; a counter going back
+flagged; the demo's passkey sessions marked demo. Recorded in decision 0032.

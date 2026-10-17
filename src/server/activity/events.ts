@@ -4,7 +4,7 @@
  */
 
 /** What happened: the audit action, with a look at the SSN or a worker's file, and an SSN change, told apart. */
-export const ACTIVITY_EVENTS = ["create", "update", "delete", "approve", "export", "import", "reset", "sign_in", "sign_out", "sign_in_failed", "refuse", "ssn_viewed", "file_opened", "ssn_changed", "passkey_added", "passkey_removed"] as const;
+export const ACTIVITY_EVENTS = ["create", "update", "delete", "approve", "export", "import", "reset", "sign_in", "sign_out", "sign_in_failed", "refuse", "ssn_viewed", "file_opened", "ssn_changed", "passkey_added", "passkey_removed", "passkey_clone_suspected"] as const;
 export type ActivityEventKind = (typeof ACTIVITY_EVENTS)[number];
 
 /** The kinds of record the log names (the filter offers these; anything else reads as "Other"). */

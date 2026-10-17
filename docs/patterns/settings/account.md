@@ -56,21 +56,27 @@ passkeys.
   them when they have not given their password or a code in the last 15 minutes (GitHub's sudo mode;
   `_components/confirm-access.md`).
 - Language → saved at once; the page reloads in that language.
-- Add a passkey → "confirm it's you" when due (GitHub: "If prompted, authenticate with your password
-  or another existing method"), then the browser's own passkey prompt; then a confirmation that the
-  passkey was added, with its name, and **Done** (GitHub: "review the information confirming that a
-  passkey was successfully registered, then click Done"); the list shows it.
+- Add a passkey → "confirm it's you" every time — the password or code goes with that passkey's
+  request, never a recent sign-in or a confirmation given for something else (GitHub: "If prompted,
+  authenticate with your password or another existing method"; decision 0032); not asked in the
+  demo's shared sessions or of someone with neither — then the browser's own passkey prompt; then a
+  confirmation that the passkey was added, with its name, and **Done** (GitHub: "review the
+  information confirming that a passkey was successfully registered, then click Done"); the list
+  shows it, and the person is emailed (`_emails/passkey-added.md`).
 - Remove → a confirmation naming the passkey (GitHub's "Delete confirmation" pop-up), then "confirm
-  it's you" when due; the row goes and a toast says so. A removed passkey never signs in again.
+  it's you" when due; the row goes and a toast says so. A removed passkey never signs in again, and
+  every other place the person is signed in is signed out (as a new password does).
 - Update password → saved; the other places they were signed in are signed out; a toast says so.
 
 ## States
 - Wrong current password, the passwords differ, or the rule is broken: a message under the field.
 - Demo person: the authenticator and password can be tried; nothing is sent anywhere.
 - Saving: the button shows it is working.
-- Passkeys: the person closes the browser's prompt — nothing is said; this device already holds one of
-  their passkeys, the browser cannot make passkeys, or the passkey is refused — one line under
-  Add a passkey; adding — the button says so.
+- Passkeys: the person closes the browser's prompt or cancels "confirm it's you" — nothing is said;
+  this device already holds one of their passkeys, the browser cannot make passkeys, the passkey is
+  refused, they already have 20 (the most), or passkeys are not set up on this server — one line under
+  Add a passkey; a wrong password or code — said in the confirmation, which stays open; adding — the
+  button says so.
 
 ## Never copy
 GitHub's, Slack's, Square's or passkeys.dev's wording, icons, colors or logos (the key is lucide's

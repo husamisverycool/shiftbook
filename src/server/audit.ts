@@ -4,7 +4,7 @@ import { auditEvents } from "./db/schema";
 import type { Actor } from "./session";
 
 export interface AuditInput {
-  action: "create" | "update" | "approve" | "export" | "reveal" | "reset" | "delete" | "import" | "sign_in" | "sign_out" | "sign_in_failed" | "refuse" | "passkey_added" | "passkey_removed";
+  action: "create" | "update" | "approve" | "export" | "reveal" | "reset" | "delete" | "import" | "sign_in" | "sign_out" | "sign_in_failed" | "refuse" | "passkey_added" | "passkey_removed" | "passkey_clone_suspected";
   entityType: string;
   entityId: string;
   before?: unknown;

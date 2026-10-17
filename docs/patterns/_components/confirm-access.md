@@ -12,8 +12,9 @@ shown in screenshots, not described.
 ## Purpose in Shiftbook
 A stolen or forgotten-open session must not change how someone signs in, or the agency's people,
 without the password or a code (decision 0025). Asked before: setting up or replacing an
-authenticator, making new recovery codes, inviting, changing roles, suspending; and (step 2)
-revealing an SSN.
+authenticator, making new recovery codes, inviting, changing roles, suspending; removing a passkey;
+and (step 2) revealing an SSN. Adding a passkey asks every time, the password or code going with that
+passkey's request (decision 0032).
 
 ## Hierarchy
 1. **Title** "Confirm it's you".

@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { SoftAuthenticator } from "../../../tests/support/soft-authenticator";
 import {
+  addressGroup,
   CHALLENGE_MS,
   challengeOf,
   defaultPasskeyName,
@@ -34,6 +35,18 @@ async function registered(device = new SoftAuthenticator()): Promise<{ device: S
   if (!r.ok) throw new Error(r.reason);
   return { device, stored: { id: "pk1", userId: PERSON.id, agencyId: "agency", credentialId: r.passkey.credentialId, publicKey: r.passkey.publicKey, counter: r.passkey.counter, transports: r.passkey.transports, removedAt: null } };
 }
+
+describe("the visitor's address, as the caps and the throttle count it", () => {
+  it("is an IPv4 address as it is, an IPv6 address's /64 network, an IPv4-mapped IPv6 address's IPv4", () => {
+    expect(addressGroup("203.0.113.5")).toBe("203.0.113.5");
+    expect(addressGroup("2001:db8:1:2:3:4:5:6")).toBe("2001:db8:1:2::/64");
+    expect(addressGroup("2001:0DB8:0001:0002::9")).toBe("2001:db8:1:2::/64");
+    expect(addressGroup("2001:db8::1")).toBe("2001:db8:0:0::/64");
+    expect(addressGroup("fe80::1%eth0")).toBe("fe80:0:0:0::/64");
+    expect(addressGroup("::ffff:203.0.113.5")).toBe("203.0.113.5");
+    expect(addressGroup("::1")).toBe("0:0:0:0::/64");
+  });
+});
 
 describe("the site a passkey belongs to", () => {
   it("is the base URL's hostname and origin", () => {
@@ -71,6 +84,8 @@ describe("adding a passkey", () => {
     expect(await judge(new SoftAuthenticator().create(options, { origin: "https://app.example.evil.example" }))).toMatchObject({ ok: false, reason: "invalid" });
     expect(await judge(new SoftAuthenticator().create(options, { origin: ORIGIN, rpId: "evil.example" }))).toMatchObject({ ok: false, reason: "invalid" });
     expect(await judge(new SoftAuthenticator().create(options, { origin: ORIGIN, userVerified: false }))).toMatchObject({ ok: false, reason: "no_user_verification" });
+    // Made inside a frame from another site.
+    expect(await judge(new SoftAuthenticator().create(options, { origin: ORIGIN, crossOrigin: true }))).toMatchObject({ ok: false, reason: "cross_origin" });
   });
 
   it("refuses a challenge used before, expired, for someone else or for signing in", async () => {
@@ -120,7 +135,11 @@ describe("signing in with a passkey", () => {
     const impostor = await registered();
     expect(await judge({ ...impostor.device.get(options, { origin: ORIGIN }), id: stored.credentialId, rawId: stored.credentialId })).toMatchObject({ ok: false, reason: "invalid" });
     const response = device.get(options, { origin: ORIGIN });
-    expect(await judge({ ...response, response: { ...response.response, userHandle: userHandleOf(OTHER) } })).toMatchObject({ ok: false, reason: "invalid" });
+    expect(await judge({ ...response, response: { ...response.response, userHandle: userHandleOf(OTHER) } })).toMatchObject({ ok: false, reason: "user_handle" });
+    // A discoverable passkey always returns its user handle: one without is refused.
+    expect(await judge(device.get(options, { origin: ORIGIN, withoutUserHandle: true }))).toMatchObject({ ok: false, reason: "user_handle" });
+    // Asked from inside a frame from another site.
+    expect(await judge(device.get(options, { origin: ORIGIN, crossOrigin: true }))).toMatchObject({ ok: false, reason: "cross_origin" });
     // No passkey with that id, or the one found is another.
     expect(await judgeSignIn({ response, challengeRow: open("sign_in", null), passkey: undefined, member: { status: "active" }, rp, now: NOW })).toMatchObject({ ok: false, reason: "unknown_passkey" });
     expect(await judge(response, { ...stored, credentialId: "another" })).toMatchObject({ ok: false, reason: "unknown_passkey" });
