@@ -5022,6 +5022,10 @@
       "worker_message": {
         "title": "Mensaje de un trabajador",
         "line": "{worker} escribió en la aplicación para trabajadores."
+      },
+      "email_received": {
+        "title": "Hojas de horas por correo",
+        "line": "{held, select, 1 {{from} envió hojas de horas por correo; esperan una semana.} other {{from} envió hojas de horas por correo; se agregaron a la semana pasada.}}"
       }
     },
     "settings": {
@@ -5041,7 +5045,8 @@
         "promise_broken": "Cuando pasa la fecha de un pago prometido sin pagarse.",
         "shift_confirmed": "Cuando un trabajador confirma un turno.",
         "staff_requested": "Cuando un cliente solicita trabajadores en su portal.",
-        "worker_message": "Cuando un trabajador escribe en la aplicación para trabajadores."
+        "worker_message": "Cuando un trabajador escribe en la aplicación para trabajadores.",
+        "email_received": "Cuando llegan hojas de horas a la dirección de reenvío."
       }
     },
     "email": {
@@ -6517,5 +6522,74 @@
       "open": "Sigue abierto"
     },
     "nothing": "No hay turnos en estas cuatro semanas."
+  },
+  "forwarding": {
+    "title": "Dirección de reenvío",
+    "description": "Envíe o reenvíe hojas de horas a esta dirección: fotos del teléfono, escaneos, PDF y archivos del reloj marcador. Se agregan a las hojas de horas de la semana pasada, como si las hubiera cargado.",
+    "copy": "Copiar",
+    "copied": "Dirección copiada",
+    "notSetUp": "Aún no está configurada: falta el dominio de correo entrante en la configuración del hospedaje (INBOUND_EMAIL_DOMAIN).",
+    "rotate": "Nueva dirección",
+    "rotateTitle": "¿Reemplazar la dirección de reenvío?",
+    "rotateBody": "La dirección actual deja de funcionar de inmediato. Quien le envíe hojas de horas necesitará la nueva.",
+    "rotateConfirm": "Reemplazar dirección",
+    "rotated": "Se reemplazó la dirección de reenvío",
+    "senders": {
+      "title": "Remitentes aceptados",
+      "description": "Déjelo vacío para aceptar a cualquiera que tenga la dirección. Agregue direcciones o dominios completos (@empresa.com) para aceptar solo esos; el correo de un remitente de la lista debe pasar DMARC.",
+      "anyone": "Cualquiera que tenga la dirección",
+      "add": "Agregar remitente",
+      "placeholder": "nombre@empresa.com o @empresa.com",
+      "remove": "Quitar {sender}",
+      "saved": "Remitentes aceptados guardados",
+      "invalid": "“{value}” no es una dirección de correo ni un dominio.",
+      "tooMany": "Como máximo 50 remitentes."
+    },
+    "recent": {
+      "title": "Correos recientes",
+      "empty": "Aún no hay correos. Reenvíe una hoja de horas a la dirección para probarla.",
+      "from": "De {from}",
+      "received": "Recibido el {date}",
+      "noSubject": "(sin asunto)",
+      "status": {
+        "filed": "Agregado",
+        "held": "Necesita una semana",
+        "refused": "No aceptado"
+      },
+      "refused": {
+        "sender_not_allowed": "El remitente no está en la lista de aceptados, o el correo no pasó DMARC.",
+        "no_files": "No se adjuntaron archivos de hojas de horas."
+      },
+      "heldHelp": "Las hojas de horas de la semana pasada ya se pagaron, así que estos archivos esperan aquí. Elija una semana abierta para agregarlos.",
+      "chooseWeek": "Elija una semana",
+      "file": "Agregar a la semana",
+      "filed": "Se agregaron a la semana",
+      "week": "Semana del {start}",
+      "openWeek": "Abrir la semana",
+      "outcome": {
+        "filed": "Agregado",
+        "duplicate": "Ya agregado",
+        "held": "En espera",
+        "unsupported": "No es un archivo de hoja de horas",
+        "too_large": "Demasiado grande",
+        "too_many": "Más de 10 archivos"
+      }
+    },
+    "demo": {
+      "send": "Enviar un correo de prueba",
+      "sending": "Enviando un correo de prueba",
+      "sent": "Llegó un correo de prueba con {count, plural, one {# archivo} other {# archivos}}",
+      "heldNotice": "Llegó un correo de prueba; sus archivos esperan una semana",
+      "refusedNotice": "Llegó un correo de prueba, pero no se aceptó",
+      "note": "Demostración: no se envía nada; el correo de prueba se procesa aquí igual que uno real."
+    },
+    "convertHint": "O envíe las hojas de horas por correo a esta dirección:",
+    "errors": {
+      "not_found": "Ese correo ya no está aquí.",
+      "not_held": "Esos archivos ya se agregaron.",
+      "busy": "Otra persona está cambiando esa semana en este momento. Inténtelo de nuevo en un momento.",
+      "locked": "Los archivos de esa semana ya se crearon. Elija otra semana.",
+      "generic": "No funcionó. Inténtelo de nuevo."
+    }
   }
 }

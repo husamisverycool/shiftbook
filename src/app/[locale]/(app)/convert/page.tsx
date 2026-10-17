@@ -18,6 +18,9 @@ import { longDate } from "@/components/shiftbook/format";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { filesStep, getPeriod, hoursStep, latestRun, listPeriods, openCorrectionOf, totalsStep, uploadStep } from "@/server/convert/queries";
 import { withAgency } from "@/server/db";
+import { addressOf } from "@/server/inbound/address";
+import { inboundDomain } from "@/server/inbound/config";
+import { ensureAddress } from "@/server/inbound/service";
 import { PeriodBusyError, periodState } from "@/server/run/period-lock";
 import { scheduledWithoutHours } from "@/server/schedule/queries";
 import { processQueuedDocuments } from "@/server/services";
@@ -60,13 +63,14 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
   ) : null;
 
   if (step === "upload") {
-    const documents = await inAgency((tx) => uploadStep(tx, periodId));
+    const domain = inboundDomain();
+    const [documents, address] = await inAgency(async (tx) => [await uploadStep(tx, periodId), domain ? await ensureAddress(tx, actor.agencyId) : null] as const);
     const reading = documents.some((d) => (d.status === "received" || d.status === "reading") && !d.stuck);
     // Waiting uploads are read now; a reading cut off by a restart is picked up again.
     if (documents.some((d) => d.status === "received" || d.stuck)) after(() => processQueuedDocuments(actor).catch(() => undefined));
     return (
       <ConvertFrame {...frame} alerts={correctionAlert} forward={{ kind: "link", step: "hours", disabled: documents.length === 0 || reading }}>
-        <UploadStep periodId={periodId} documents={documents} demo={isDemo()} />
+        <UploadStep periodId={periodId} documents={documents} demo={isDemo()} forwardTo={address && domain ? addressOf(address.token, domain) : null} />
       </ConvertFrame>
     );
   }

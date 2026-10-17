@@ -430,8 +430,8 @@ export function localMinute(zone: string, at: Date): { date: string; minute: num
   return { date: `${p("year")}-${p("month")}-${p("day")}`, minute: Number(p("hour")) * 60 + Number(p("minute")) };
 }
 
-/** The pay week holding a date, made from the agency's workweek when there is none yet. */
-async function periodFor(tx: Tx, agencyId: string, date: string): Promise<{ id: string } | null> {
+/** The pay week holding a date, made from the agency's workweek when there is none yet (also the forwarding address's week). */
+export async function periodFor(tx: Tx, agencyId: string, date: string): Promise<{ id: string } | null> {
   const [found] = await tx.select({ id: s.payPeriods.id }).from(s.payPeriods).where(and(lte(s.payPeriods.startsOn, date), gte(s.payPeriods.endsOn, date)));
   if (found) return found;
   const startsOnDay = await settingOn<number>(tx, "workweek_starts_on", date);

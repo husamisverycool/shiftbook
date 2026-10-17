@@ -107,6 +107,10 @@ period is the first row.
    - A correction's Review totals shows was / now / difference per worker and per client.
 
 ## Interactions
+- **Timesheets by email (decision 0042; Expensify's receipts address beside its upload):** under the
+  drop zone, for those who upload, one muted line "Or email timesheets to this address:" with the
+  agency's forwarding address in a code chip and a copy button. Emailed files appear in the list as
+  uploads do. Hidden when the address is not set up.
 - **Demo only (decision 0031):** under the drop zone, while nothing is uploaded, "Trying the demo? Use the sample timesheets" puts the demo's sample folder into the same upload as dropped files (the download in the banner stays).
 - **Gating (Gusto hours step):** the forward action is disabled while any blocker exists, while
   files are still being read, and while totals are being computed. While computing, its label

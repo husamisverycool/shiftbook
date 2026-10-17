@@ -6,7 +6,7 @@
 // category, each system's name over one sentence and Set up at the right. Linear's settings look.
 import { BanknoteIcon, BriefcaseIcon, ClockIcon, EllipsisIcon, HandshakeIcon, ReceiptTextIcon, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { forgetMappingAction, testConnectionAction } from "@/app/[locale]/(app)/settings/connections/actions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -23,7 +23,7 @@ import { Status } from "../status";
 const ICON: Record<ConnectionKind, LucideIcon> = { payroll: BanknoteIcon, recruiting: BriefcaseIcon, time_file: ClockIcon, invoice_upload: ReceiptTextIcon, partner: HandshakeIcon };
 const ORDER: ConnectionKind[] = ["payroll", "recruiting", "time_file", "invoice_upload", "partner"];
 
-export function ConnectionsSettings({ view, tab, canForget }: { view: ConnectionsView; tab: "connected" | "available"; canForget: boolean }) {
+export function ConnectionsSettings({ view, tab, canForget, forwarding }: { view: ConnectionsView; tab: "connected" | "available"; canForget: boolean; forwarding?: ReactNode }) {
   const t = useTranslations("connections");
   const tSettings = useTranslations("settings");
   const router = useRouter();
@@ -45,7 +45,9 @@ export function ConnectionsSettings({ view, tab, canForget }: { view: Connection
             {t("tabs.available")}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="connected">
+        <TabsContent value="connected" className="flex flex-col gap-12">
+          {/* Decision 0042: the forwarding address leads, as the one connection every agency has. */}
+          {forwarding}
           <SettingsSection title={t("tabs.connected")} titleHidden>
             <SettingsRows as="ul" testId="connections">
               {connected.length === 0 ? (

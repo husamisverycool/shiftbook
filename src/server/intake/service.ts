@@ -5,7 +5,7 @@
  */
 import { createHash } from "node:crypto";
 import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
-import { audit } from "../audit";
+import { audit, auditBy } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { StaleRequestError } from "../errors";
@@ -50,7 +50,8 @@ const safeName = (filename: string) => filename.replace(/[^A-Za-z0-9._-]+/g, "_"
 /** Stores the file and records it. The same file in the same period is recognised, not duplicated. */
 export async function receiveDocument(
   tx: Tx,
-  actor: Actor,
+  // A signed-in person, or the forwarding address acting for an email's sender (decision 0042).
+  actor: { agencyId: string; userId: string | null; label: string },
   store: DocumentStore,
   input: { payPeriodId: string; filename: string; bytes: Uint8Array; receivedVia?: "upload" | "email" | "manual" },
 ): Promise<{ documentId: string; duplicate: boolean }> {
@@ -83,7 +84,7 @@ export async function receiveDocument(
     })
     .returning();
   await tx.insert(s.jobs).values({ agencyId: actor.agencyId, kind: "read_document", payload: { documentId: doc!.id } });
-  await audit(tx, actor, [{ action: "create", entityType: "source_document", entityId: doc!.id, after: { filename: input.filename, sha256, kind: type.kind } }]);
+  await auditBy(tx, actor, [{ action: "create", entityType: "source_document", entityId: doc!.id, after: { filename: input.filename, sha256, kind: type.kind, ...(input.receivedVia === "email" ? { receivedVia: "email" } : {}) } }]);
   return { documentId: doc!.id, duplicate: false };
 }
 

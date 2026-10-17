@@ -71,6 +71,11 @@ export async function gatherFacts(tx: Tx, today: string, now: Date): Promise<Not
     .from(s.workerMessages)
     .innerJoin(s.workers, eq(s.workers.id, s.workerMessages.workerId))
     .where(and(eq(s.workerMessages.sender, "worker"), isNull(s.workerMessages.readByAgencyAt), gte(s.workerMessages.createdAt, since)));
+  // Timesheets that came by email (slice y): filed into a week, or held for a person to file.
+  const emails = await tx
+    .select({ id: s.inboundEmails.id, from: s.inboundEmails.fromAddress, status: s.inboundEmails.status, payPeriodId: s.inboundEmails.payPeriodId })
+    .from(s.inboundEmails)
+    .where(and(inArray(s.inboundEmails.status, ["filed", "held"]), gte(s.inboundEmails.receivedAt, since)));
   return {
     decisions: decisions.map((d) => ({ ...d, disputed: Number(d.disputed) })),
     blockedRuns: blockedRuns.map((r) => ({ ...r, blockers: Number(r.blockers) })),
@@ -80,6 +85,7 @@ export async function gatherFacts(tx: Tx, today: string, now: Date): Promise<Not
     confirmedShifts: confirmedShifts.map((c) => ({ eventId: String(c.eventId), shiftId: c.shiftId, workDate: c.workDate, workerName: `${c.firstName} ${c.lastName}` })),
     staffRequests,
     workerMessages: workerMessages.map((m) => ({ id: m.id, workerId: m.workerId, workerName: `${m.firstName} ${m.lastName}` })),
+    receivedEmails: emails.map((e) => ({ id: e.id, from: e.from, held: e.status === "held", payPeriodId: e.payPeriodId })),
   };
 }
 
@@ -166,6 +172,7 @@ export function kindsFor(role: Role): s.NotificationKind[] {
     shift_confirmed: "placements",
     staff_requested: "placements",
     worker_message: "workerApp",
+    email_received: "hours",
   };
   return s.NOTIFICATION_KINDS.filter((k) => can({ role }, ability[k]));
 }

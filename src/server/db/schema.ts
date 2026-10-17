@@ -1713,7 +1713,7 @@ export const promisesToPay = pgTable(
 );
 
 // ---------- notifications (slice r; drizzle/0045; Linear's Inbox) ----------
-export const NOTIFICATION_KINDS = ["approval_returned", "approval_disputed", "run_blocked", "obligation_due_soon", "obligation_overdue", "invoice_overdue", "promise_broken", "shift_confirmed", "staff_requested", "worker_message"] as const;
+export const NOTIFICATION_KINDS = ["approval_returned", "approval_disputed", "run_blocked", "obligation_due_soon", "obligation_overdue", "invoice_overdue", "promise_broken", "shift_confirmed", "staff_requested", "worker_message", "email_received"] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 export const notifications = pgTable(
@@ -1833,6 +1833,9 @@ export const TENANT_TABLES = [
   "staff_requests",
   "shifts",
   "shift_offers",
+  "inbound_addresses",
+  "inbound_emails",
+  "inbound_attachments",
 ] as const;
 
 // ---------- partner-ready money flows (slice w, SPEC §27 item 9; drizzle/0052) ----------
@@ -2216,3 +2219,65 @@ export const shiftOffers = pgTable(
   },
   (t) => [uniqueIndex("shift_offers_one").on(t.shiftId, t.workerId), index("shift_offers_worker").on(t.agencyId, t.workerId, t.status)],
 );
+
+// ---------- the forwarding address for timesheets (slice y, decision 0042; drizzle/0059) ----------
+
+/** The agency's address: timesheets+<token>@<inbound domain>; Ramp's receipt forwarding senders. */
+export const inboundAddresses = pgTable("inbound_addresses", {
+  agencyId: uuid("agency_id")
+    .primaryKey()
+    .references(() => agencies.id),
+  token: text("token").notNull(),
+  allowedSenders: text("allowed_senders").array().notNull().default(sql`'{}'::text[]`),
+  createdAt: createdAt(),
+  rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+  updatedByLabel: text("updated_by_label"),
+});
+export type InboundAddressRow = typeof inboundAddresses.$inferSelect;
+
+export type InboundStatus = "filed" | "held" | "refused";
+export type InboundRefusal = "sender_not_allowed" | "no_files";
+
+/** One email received at the address: who sent it, its subject and body, and where its files went. */
+export const inboundEmails = pgTable(
+  "inbound_emails",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    providerEmailId: text("provider_email_id").notNull(),
+    fromAddress: text("from_address").notNull(),
+    subject: text("subject").notNull().default(""),
+    bodyText: text("body_text").notNull().default(""),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
+    status: text("status").$type<InboundStatus>().notNull(),
+    refusedReason: text("refused_reason").$type<InboundRefusal>(),
+    payPeriodId: uuid("pay_period_id").references(() => payPeriods.id),
+    demo: boolean("demo").notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("inbound_emails_provider_unique").on(t.providerEmailId), index("inbound_emails_recent").on(t.agencyId, t.receivedAt)],
+);
+export type InboundEmailRow = typeof inboundEmails.$inferSelect;
+
+export type InboundOutcome = "filed" | "duplicate" | "held" | "unsupported" | "too_large" | "too_many";
+
+/** Each file an email carried: filed as a timesheet, held for a person, or refused with why. */
+export const inboundAttachments = pgTable(
+  "inbound_attachments",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    emailId: uuid("email_id")
+      .notNull()
+      .references(() => inboundEmails.id),
+    filename: text("filename").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    storageKey: text("storage_key"),
+    outcome: text("outcome").$type<InboundOutcome>().notNull(),
+    documentId: uuid("document_id").references(() => sourceDocuments.id),
+    filedAt: timestamp("filed_at", { withTimezone: true }),
+  },
+  (t) => [index("inbound_attachments_email").on(t.agencyId, t.emailId)],
+);
+export type InboundAttachmentRow = typeof inboundAttachments.$inferSelect;
+

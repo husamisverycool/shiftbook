@@ -11,7 +11,10 @@ Source URL: https://help.zapier.com/hc/en-us/articles/8496258785421-Connect-your
 Source URL: https://docs.stripe.com/use-stripe-apps.md
 Source URL: https://support.stripe.com/questions/who-can-use-stripe-apps-on-my-account
 Source URL: https://linear.app/docs/api-and-webhooks
-Researched: 2026-10-17 (`docs/research/connections-exports-slice-s.md` §1–2). Confidence: high for
+Source URL: https://support.ramp.com/how-to-automatically-forward-receipts-to-ramp
+Source URL: https://support.ramp.com/submitting-receipts-memos-and-accounting-for-your-ramp-transactions
+Researched: 2026-10-17 (`docs/research/connections-exports-slice-s.md` §1–2; the forwarding address
+`docs/research/forwarding-email-slice-y.md` §3, decision 0042). Confidence: high for
 Zapier's columns, statuses and row menu and Stripe's catalogue; the look follows Granite's settings
 pages (decision 0029 rule 11).
 
@@ -23,14 +26,29 @@ each is used for, when it was last used, whether it is ready, and where to set o
 ## Hierarchy
 1. The settings page header: "Settings" above the title **Connections** (decision 0029 rule 2).
 2. **Tabs** (Zapier: Connections | Apps): **Connected** with its count · **Available**.
-3. **Connected**: one panel of rows (Linear's rows; Zapier's columns as the row's lines): a 32px
+3. **Connected** opens with the **forwarding address** (decision 0042; Ramp's Profile settings ›
+   Receipt forwarding), three sections 48px apart:
+   - **Forwarding address**: heading, one muted line (what to send and where it goes), and at the
+     heading's right in the demo **Send a test email**; one row — a mail tile, the address in a code
+     chip with a copy button (the check for a moment after copying, decision 0037), the demo's note
+     under it, and at the right **New address** (Owner) with a confirmation that the old one stops.
+   - **Accepted senders** (Ramp's list of forwarding emails with a plus): heading, one muted line, at
+     the right **Add sender** (Owner); one row per address or @domain with a remove button; empty: one
+     muted row "Anyone who has the address"; adding opens one field with Add and Cancel, a wrong value
+     said under it.
+   - **Recent emails** (the last 20, newest first): the subject over a muted line (from, when), each
+     file with what happened to it (Added · Already added · Waiting · Not a timesheet file · Too large
+     · Over 10 files), a refusal's reason; at the right **Open the week** for a filed one and the
+     status badge (Filed = success, Needs a week = warning, Not taken = neutral). A held email shows
+     why and a week chooser with **Add to week** (hours ability). Empty: one muted row.
+4. Then the connections: one panel of rows (Linear's rows; Zapier's columns as the row's lines): a 32px
    tile with the kind's icon; the connection's name over one muted line — its kind (Recruiting
    system · Payroll system · Time file · Invoice upload · Partner) and when it was last used, or
    "Not used yet" (Zapier: last modified); at the right the status badge (`_components/status.md`:
    Ready = success; Needs attention = warning, with the reason as the row's second line) and a ⋯
    menu (Zapier's row menu). Rows are grouped in this order: Payroll system, Recruiting systems,
    Time files, Invoice uploads. An empty Connected tab is one muted row pointing to Available.
-4. **Available** (Stripe's catalogue): one section per category — Payroll systems, Recruiting systems,
+5. **Available** (Stripe's catalogue): one section per category — Payroll systems, Recruiting systems,
    Time clocks and VMS, Partners — each a heading with one muted line and a panel of rows: the
    system's name over one sentence of what Granite exchanges with it, and at the right **Set up**
    (a link to where it is set up) or "In use" for one already connected, or "Not available yet"
@@ -54,6 +72,8 @@ each is used for, when it was last used, whether it is ready, and where to set o
 
 ## States
 - Loading: the settings outline (`_components/loading.md`); failure: `_components/error.md`.
+- Forwarding address not set up (live without INBOUND_EMAIL_DOMAIN): the row says so in place of the
+  address; nothing else changes.
 - A partner row says partner handoffs arrive with the partner-ready money flows (SPEC §27 item 9).
 
 ## Never copy

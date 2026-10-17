@@ -23,6 +23,8 @@ export interface NotificationFacts {
   staffRequests?: { id: string; clientName: string; position: string; headcount: number; startsOn: string }[];
   /** A worker's message the agency has not read (slice t). */
   workerMessages?: { id: string; workerId: string; workerName: string }[];
+  /** An email of timesheets at the forwarding address: filed into a week, or held for a person (slice y). */
+  receivedEmails?: { id: string; from: string; held: boolean; payPeriodId: string | null }[];
 }
 
 export interface Notice {
@@ -67,6 +69,15 @@ export function noticesFrom(f: NotificationFacts, today: string): Notice[] {
   }
   for (const m of f.workerMessages ?? []) {
     out.push({ kind: "worker_message", dedupeKey: `worker_message:${m.id}`, href: `/workers/${m.workerId}?tab=messages`, params: { worker: m.workerName }, ability: "workerApp" });
+  }
+  for (const e of f.receivedEmails ?? []) {
+    out.push({
+      kind: "email_received",
+      dedupeKey: `email:${e.id}`,
+      href: e.held || !e.payPeriodId ? "/settings/connections#forwarding" : `/convert?period=${e.payPeriodId}`,
+      params: { from: e.from, held: e.held ? 1 : 0 },
+      ability: "hours",
+    });
   }
   return out;
 }

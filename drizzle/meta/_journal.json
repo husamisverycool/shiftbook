@@ -400,6 +400,13 @@
       "when": 1792180800000,
       "tag": "0058_integration",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792180900000,
+      "tag": "0059_forwarding_email",
+      "breakpoints": true
     }
   ]
 }

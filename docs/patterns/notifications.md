@@ -29,6 +29,8 @@ Researched: 2026-10-17 (`docs/research/notifications-slice-r.md`). Confidence: h
   for workers in its portal; a worker wrote in the worker app. Each goes to the roles that act on it
   (placements; the worker app's messages) and opens the schedule's week, Job orders, or the worker's
   Messages tab.
+- Timesheets by email (slice y, decision 0042): to whoever converts timesheets (hours ability); a filed
+  email opens its week, a held one opens Settings › Connections at the forwarding section.
 
 ## States
 - Loading and errors: `_components/loading.md`, `_components/error.md` (list shape).

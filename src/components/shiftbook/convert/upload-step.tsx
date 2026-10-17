@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { MAX_TIMESHEET_BYTES } from "@/lib/limits";
 import { useCan } from "../abilities";
+import { CopyAddress } from "../settings/forwarding";
 import { Status } from "../status";
 import { REFUSAL_MESSAGE, type ActionRefusal } from "./types";
 
@@ -38,8 +39,9 @@ export interface UploadDoc {
 
 const MEDIA_TYPES: Record<string, string> = { csv: "text/csv", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", heic: "image/heic", heif: "image/heif", pdf: "application/pdf", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
 
-export function UploadStep({ periodId, documents, demo = false }: { periodId: string; documents: UploadDoc[]; demo?: boolean }) {
+export function UploadStep({ periodId, documents, demo = false, forwardTo = null }: { periodId: string; documents: UploadDoc[]; demo?: boolean; forwardTo?: string | null }) {
   const t = useTranslations("convert.upload");
+  const tf = useTranslations("forwarding");
   // Why a timesheet could not be read, in the reader's language (the stored reason is Granite's English).
   const said = (error: string | null) => {
     const why = readError(error);
@@ -157,6 +159,13 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
               {t("select")}
             </Button>
           </div>
+          {/* Expensify beside its upload: the address receipts can be emailed to (decision 0042). */}
+          {forwardTo && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground" data-testid="convert-forwarding">
+              <span>{tf("convertHint")}</span>
+              <CopyAddress address={forwardTo} testId="convert-forwarding-address" />
+            </p>
+          )}
           {demo && documents.length === 0 && (
             <p className="text-sm text-muted-foreground">
               {t("demoSamples")}{" "}

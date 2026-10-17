@@ -88,12 +88,17 @@ Keep the demo as it is. Make a second, separate copy for real customers:
    there, and on the Twilio console's first page copy the **Account SID** and **Auth Token**. In
    Railway, add three variables: `TWILIO_ACCOUNT_SID` (the Account SID), `TWILIO_AUTH_TOKEN` (the Auth
    Token) and `TWILIO_FROM` (the number you bought, written like `+13125550100`). Click **Deploy**.
-8. **Reminders on a schedule** (client approvals, notifications and collection reminders): nothing to
+8. **Timesheets by email** (optional: agencies forward timesheets to their own address). A developer
+   sets this up in Resend in about half an hour: a receiving domain, and a webhook for "email.received"
+   pointed at your app's `/api/inbound/email`. Then add two variables in Railway: `INBOUND_EMAIL_DOMAIN`
+   (that receiving domain) and `INBOUND_EMAIL_SECRET` (the webhook's signing secret, which Resend shows
+   on the webhook's page). Click **Deploy**. `docs/hosting-settings.md` has the details.
+9. **Reminders on a schedule** (client approvals, notifications and collection reminders): nothing to
    do. Granite sends them by itself every 15 minutes. (`CRON_SECRET` exists only for a developer who
    wants an outside scheduler to trigger them instead; see `docs/hosting-settings.md`.)
-9. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
+10. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
    about an hour; `docs/hosting-settings.md` lists exactly what they set.
-10. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
+11. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
    Then do the same in the live **shiftbook** box's **Backups** tab: its disk holds the uploaded files
    and the key that locks Social Security numbers. Never delete that disk. If it is ever lost, Granite
    will refuse to start (it never quietly makes a new key) until the disk is restored from a backup.

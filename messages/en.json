@@ -5022,6 +5022,10 @@
       "worker_message": {
         "title": "Message from a worker",
         "line": "{worker} wrote in the worker app."
+      },
+      "email_received": {
+        "title": "Timesheets by email",
+        "line": "{held, select, 1 {{from} emailed timesheets; they wait for a week.} other {{from} emailed timesheets; they were added to last week.}}"
       }
     },
     "settings": {
@@ -5041,7 +5045,8 @@
         "promise_broken": "When a promised payment date passes unpaid.",
         "shift_confirmed": "When a worker confirms a shift.",
         "staff_requested": "When a client asks for workers in its portal.",
-        "worker_message": "When a worker writes in the worker app."
+        "worker_message": "When a worker writes in the worker app.",
+        "email_received": "When timesheets arrive at the forwarding address."
       }
     },
     "email": {
@@ -6517,5 +6522,74 @@
       "open": "Still open"
     },
     "nothing": "No shifts in these four weeks."
+  },
+  "forwarding": {
+    "title": "Forwarding address",
+    "description": "Send or forward timesheets to this address — phone photos, scans, PDFs and time-clock files. They go to last week's timesheets, as if you uploaded them.",
+    "copy": "Copy",
+    "copied": "Address copied",
+    "notSetUp": "Not set up yet: the inbound email domain is missing from the hosting settings (INBOUND_EMAIL_DOMAIN).",
+    "rotate": "New address",
+    "rotateTitle": "Replace the forwarding address?",
+    "rotateBody": "The current address stops working at once. Anyone who sends you timesheets will need the new one.",
+    "rotateConfirm": "Replace address",
+    "rotated": "The forwarding address was replaced",
+    "senders": {
+      "title": "Accepted senders",
+      "description": "Leave empty to accept anyone who has the address. Add addresses or whole domains (@company.com) to accept only those; a listed sender's email must pass DMARC.",
+      "anyone": "Anyone who has the address",
+      "add": "Add sender",
+      "placeholder": "name@company.com or @company.com",
+      "remove": "Remove {sender}",
+      "saved": "Accepted senders saved",
+      "invalid": "“{value}” is not an email address or a domain.",
+      "tooMany": "At most 50 senders."
+    },
+    "recent": {
+      "title": "Recent emails",
+      "empty": "No emails yet. Forward a timesheet to the address to try it.",
+      "from": "From {from}",
+      "received": "Received {date}",
+      "noSubject": "(no subject)",
+      "status": {
+        "filed": "Filed",
+        "held": "Needs a week",
+        "refused": "Not taken"
+      },
+      "refused": {
+        "sender_not_allowed": "The sender is not on the accepted list, or the email failed DMARC.",
+        "no_files": "No timesheet files were attached."
+      },
+      "heldHelp": "Last week's timesheets were already paid, so these files wait here. Choose an open week to add them to.",
+      "chooseWeek": "Choose a week",
+      "file": "Add to week",
+      "filed": "Added to the week",
+      "week": "Week of {start}",
+      "openWeek": "Open the week",
+      "outcome": {
+        "filed": "Added",
+        "duplicate": "Already added",
+        "held": "Waiting",
+        "unsupported": "Not a timesheet file",
+        "too_large": "Too large",
+        "too_many": "Over 10 files"
+      }
+    },
+    "demo": {
+      "send": "Send a test email",
+      "sending": "Sending a test email",
+      "sent": "A test email arrived with {count, plural, one {# file} other {# files}}",
+      "heldNotice": "A test email arrived; its files wait for a week",
+      "refusedNotice": "A test email arrived but was not taken",
+      "note": "Demo: nothing is sent; the test email runs here exactly as a real one would."
+    },
+    "convertHint": "Or email timesheets to this address:",
+    "errors": {
+      "not_found": "That email is no longer here.",
+      "not_held": "Those files were already added.",
+      "busy": "Someone else is changing that week right now. Try again in a moment.",
+      "locked": "That week's files are already made. Choose another week.",
+      "generic": "That did not work. Try again."
+    }
   }
 }

@@ -49,6 +49,10 @@ const SINCE = "2026-01-01";
 
 /** Tenant tables in delete-safe order. audit_events is append-only and is never cleared. */
 const CLEAR_ORDER = [
+  // The forwarding address (slice y): its emails name documents and periods.
+  "inbound_attachments",
+  "inbound_emails",
+  "inbound_addresses",
   "shift_offers",
   "shifts",
   // The worker app (slice t): a reset signs demo workers out of it (their sessions name the worker rows).
