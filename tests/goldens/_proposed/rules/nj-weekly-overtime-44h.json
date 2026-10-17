@@ -190,7 +190,7 @@
         "earningType": "OT",
         "effectiveFrom": "2000-01-01",
         "effectiveTo": null,
-        "citation": "New Jersey Wage and Hour Law, N.J.S.A. 34:11-56a4(b)(1) — over 40 hours in a week at 1.5x the regular hourly wage"
+        "citation": "New Jersey Wage and Hour Law, N.J.S.A. 34:11-56a4(b)(1) — over 40 hours in a week at 1.5x the regular hourly rate"
       },
       {
         "jurisdiction": "CA",
@@ -903,8 +903,18 @@
         "scopeName": null,
         "rateCents": 1592,
         "effectiveFrom": "2026-01-01",
-        "effectiveTo": null,
+        "effectiveTo": "2026-12-31",
         "citation": "N.J.S.A. 34:11-56a4(a) — $15.92 per hour from January 1, 2026 (most employers; NJDOL notice of October 1, 2025)"
+      },
+      {
+        "jurisdiction": "NJ",
+        "countyFips": null,
+        "placeFips": null,
+        "scopeName": null,
+        "rateCents": 1648,
+        "effectiveFrom": "2027-01-01",
+        "effectiveTo": null,
+        "citation": "N.J.S.A. 34:11-56a4(a); N.J.A.C. 12:56-3.1 — $16.48 per hour from January 1, 2027 (most employers; NJDOL release of September 29, 2026)"
       },
       {
         "jurisdiction": "CA",
@@ -1060,6 +1070,20 @@
         "citation": "Day and Temporary Labor Services Act, 820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b) — sent and not utilized: at least 4 hours at the agreed rate; placed elsewhere the same shift: at least 2 hours",
         "effectiveFrom": "2000-01-01",
         "effectiveTo": null
+      },
+      {
+        "jurisdiction": "NJ",
+        "ruleCode": "nj_sent_not_used",
+        "dueMinutes": 240,
+        "reassignedDueMinutes": 120,
+        "scheduledFraction": null,
+        "minMinutes": null,
+        "maxMinutes": null,
+        "minScheduledMinutes": null,
+        "basis": "pay_rate",
+        "effectiveFrom": "2024-09-16",
+        "effectiveTo": null,
+        "citation": "Temporary Workers' Bill of Rights, N.J.S.A. 34:8D-6(g) — a temporary laborer sent to a client and not used: at least 4 hours at the agreed rate; placed elsewhere the same shift: at least 2 hours"
       }
     ],
     "equalPayRules": [
@@ -1129,7 +1153,7 @@
         },
         "amountCents": 10200,
         "ruleId": "weekly_overtime",
-        "explain": "Overtime: 4h 00m (240 min) × $25.50/h (1.5 × $17.00) = 10200¢ exactly → $102.00. Rule weekly_overtime: 44h 00m worked in the workweek starting 2026-10-05 is 4h 00m over the 40h 00m threshold (New Jersey Wage and Hour Law, N.J.S.A. 34:11-56a4(b)(1) — over 40 hours in a week at 1.5x the regular hourly wage; Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate).",
+        "explain": "Overtime: 4h 00m (240 min) × $25.50/h (1.5 × $17.00) = 10200¢ exactly → $102.00. Rule weekly_overtime: 44h 00m worked in the workweek starting 2026-10-05 is 4h 00m over the 40h 00m threshold (New Jersey Wage and Hour Law, N.J.S.A. 34:11-56a4(b)(1) — over 40 hours in a week at 1.5x the regular hourly rate; Fair Labor Standards Act, 29 U.S.C. § 207(a)(1); 29 C.F.R. Part 778 — over 40 hours in a workweek at not less than 1.5x the regular rate).",
         "entryIds": [
           "entry-026"
         ]

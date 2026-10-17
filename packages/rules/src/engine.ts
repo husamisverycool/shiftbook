@@ -30,6 +30,7 @@ import { CA_DAILY_DOUBLE_TIME, CA_DAILY_OVERTIME, CA_SEVENTH_DAY, CALIFORNIA_RUL
 import { selectWeeklyRule, splitAtThreshold, WEEKLY_OVERTIME } from "./rules/weekly-overtime";
 import { CA_REPORTING_TIME, caReportingTime } from "./rules/ca-reporting-time";
 import { IL_DAY_LABOR_MINIMUM, ilDayLaborMinimum } from "./rules/il-day-labor-minimum";
+import { NJ_SENT_NOT_USED, njSentNotUsed } from "./rules/nj-sent-not-used";
 import { MA_REPORTING_PAY, maReportingPay } from "./rules/ma-reporting-pay";
 import { guaranteeRuleFor, PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
 import { HOLIDAY_NOT_WORKED, HOLIDAY_NOT_WORKED_CITATION, HOLIDAY_WORKED, HOLIDAY_WORKED_CITATION, holidayTermsFor, premiumCountsInRegularRate, premiumExclusionOn, type HolidayTerms } from "./rules/holiday-pay";
@@ -967,7 +968,8 @@ export function computePay(input: PayInput): PayResult {
     }
 
     // 6. minimum pay for a confirmed short day: California reporting time, Massachusetts reporting pay,
-    // the Illinois day-labor minimum. Not hours worked; never counted toward overtime.
+    // the Illinois day-labor minimum, New Jersey's sent-and-not-used minimum. Not hours worked; never
+    // counted toward overtime.
     const shortDays = new Set<string>();
     for (const c of confirmed.filter((x) => x.kind === "reported_short")) {
       if (shortDays.has(`${c.assignmentId}|${c.date}`)) continue;
@@ -985,7 +987,8 @@ export function computePay(input: PayInput): PayResult {
         notHere(phrase("whyNoGuaranteeRule", { jurisdiction: String(sample.jurisdiction) }));
         continue;
       }
-      if (rule.ruleCode === IL_DAY_LABOR_MINIMUM && sample.dayAndTemporaryLabor === false) {
+      const sentNotUsed = rule.ruleCode === IL_DAY_LABOR_MINIMUM || rule.ruleCode === NJ_SENT_NOT_USED;
+      if (sentNotUsed && sample.dayAndTemporaryLabor === false) {
         notHere(phrase("whyNotDayLabor"));
         continue;
       }
@@ -1007,8 +1010,8 @@ export function computePay(input: PayInput): PayResult {
         const r = maReportingPay(rule, c.scheduledMinutes!, atAssignment);
         shortfall = r.shortfall;
         story = phrase("whyReportingMassachusetts", { ...ruled, scheduled: time(c.scheduledMinutes!), due: time(r.dueMinutes), worked: time(atAssignment), more: time(shortfall) });
-      } else if (rule.ruleCode === IL_DAY_LABOR_MINIMUM) {
-        const r = ilDayLaborMinimum(rule, c.reassigned === true, atClient, allDay);
+      } else if (sentNotUsed) {
+        const r = (rule.ruleCode === NJ_SENT_NOT_USED ? njSentNotUsed : ilDayLaborMinimum)(rule, c.reassigned === true, atClient, allDay);
         shortfall = r.shortfall;
         story = c.reassigned
           ? phrase("whyDayLaborReassigned", { ...ruled, due: time(r.dueMinutes), worked: time(allDay), more: time(shortfall) })
@@ -1019,7 +1022,7 @@ export function computePay(input: PayInput): PayResult {
       }
       if (shortfall <= 0) continue;
       const rate: Fraction = rule.basis === "regular_rate" ? premiumBase(premiumRate, floorOf.get(sample)!).base : { num: effective(sample), den: 1 };
-      const type: EarningType = rule.ruleCode === IL_DAY_LABOR_MINIMUM ? "MIN_GUARANTEE" : "REPORTING_PAY";
+      const type: EarningType = sentNotUsed ? "MIN_GUARANTEE" : "REPORTING_PAY";
       const dayLabor = type === "MIN_GUARANTEE";
       const basisNote = rule.basis === "regular_rate" ? weekRegularRate : [phrase(sample.payRateCents < effective(sample) ? "noteMinimumWageThatDay" : sample.payRateExplain ? "noteEqualPayRate" : "noteAgreedPayRate")];
       const guaranteeWhy: Say = sample.payRateExplain ? [phrase("gap"), ...worded(sample.payRateExplain, sample.payRateSay).say] : [];

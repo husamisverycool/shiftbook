@@ -357,8 +357,12 @@ fill, v client portal, w partner-ready money flows, x New Jersey and the whole a
    underwriting packet and eligibility decision per approved invoice; a payroll-by-class export for
    insurance brokers. Each "send to partner" records a handoff and nothing else; every such screen
    says no money moves in this version.
-10. **New Jersey**: weekly overtime over 40; the Temporary Workers' Bill of Rights notice per
-    assignment.
+10. **New Jersey**: weekly overtime over 40 and the minimum wage by year; the Temporary Workers'
+    Bill of Rights notice per assignment, the four-hour (two when placed elsewhere) minimum for a
+    laborer sent and not used, and a duty per designated-classification placement to confirm its pay
+    against the client's comparable employees from the first day (N.J.S.A. 34:8D-7(b)) — Granite
+    cannot know the client's averages, so a person confirms it. Not modelled: the one-hour reporting
+    pay of N.J.A.C. 12:56-5.5 outside designated classifications; long-term-care direct care rates.
 11. **Acceptance** (§24) grows to cover these: a worker signs in to the worker app in Spanish and sees
     hours and a pay stub; a shift is offered and confirmed; the handoff packets are generated and
     recorded; invoices are emailed.

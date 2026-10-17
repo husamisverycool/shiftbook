@@ -22,6 +22,8 @@ for (const locale of ["en", "es"] as const) {
     let release!: () => void;
     const held = new Promise<void>((r) => (release = r));
     await page.route(/\/invoices(\?|$)/, async (route) => {
+      // Background prefetches go through; only the navigation itself waits.
+      if (route.request().headers()["next-router-prefetch"]) return route.continue();
       await held;
       await route.continue();
     });

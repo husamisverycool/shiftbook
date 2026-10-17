@@ -59,6 +59,7 @@ const RULES: ComplianceRule[] = [
   rule("il_client_proof_contract", { jurisdiction: "IL", area: "clients", subjectKind: "client", anchor: "start", remindDays: 7, windowDays: 183 }),
   rule("ma_job_order", { jurisdiction: "MA", area: "placements", subjectKind: "assignment", anchor: "first_pay_period_end" }),
   rule("nj_language_notice", { jurisdiction: "NJ", area: "placements", subjectKind: "assignment", anchor: "start", socGroups: ["51", "53"], effectiveFrom: "2024-09-16" }),
+  rule("nj_equal_pay_check", { jurisdiction: "NJ", area: "equal_pay", subjectKind: "assignment", anchor: "start", remindDays: 7, socGroups: ["51", "53"], effectiveFrom: "2024-09-16" }),
   rule("i9_section1", { windowDays: 30 }),
   rule("i9_section2", { businessDays: 3, windowDays: 30 }),
   rule("i9_reverify", { anchor: "expiry", remindDays: 90 }),
@@ -191,12 +192,24 @@ describe("placement notices (J3)", () => {
   });
 
   it("New Jersey: a designated classification whose worker prefers another language gets the notice in both, by the start", () => {
-    const nj = (over: Partial<Placement>) => kinds({ placements: [placement({ state: "NJ", startDate: "2026-10-19", workerLanguage: "es", ...over })] });
+    const nj = (over: Partial<Placement>) => kinds({ placements: [placement({ state: "NJ", startDate: "2026-10-19", workerLanguage: "es", ...over })] }).filter(([k]) => k === "nj_language_notice");
     expect(nj({})).toEqual([["nj_language_notice", "", "2026-10-19", "2026-10-19", null]]);
     expect(nj({ workerLanguage: "en" })).toEqual([]);
     expect(nj({ socCode: "43-6014" })).toEqual([]);
     expect(nj({ socCode: null })).toEqual([]);
     expect(wantedObligations({ ...base, placements: [placement({ state: "NJ", startDate: "2026-10-19", workerLanguage: "es" })] })[0]!.facts).toMatchObject({ language: "es" });
+  });
+});
+
+describe("New Jersey equal pay from the first day (N.J.S.A. 34:8D-7(b))", () => {
+  it("every designated-classification placement gets a duty to confirm its pay against the client's comparable employees, by the start, whatever the worker's language", () => {
+    const nj = (over: Partial<Placement>) => kinds({ placements: [placement({ state: "NJ", startDate: "2026-10-19", ...over })] }).filter(([k]) => k === "nj_equal_pay_check");
+    expect(nj({ workerLanguage: "en" })).toEqual([["nj_equal_pay_check", "", "2026-10-19", "2026-10-12", null]]);
+    expect(nj({ workerLanguage: "es" })).toEqual([["nj_equal_pay_check", "", "2026-10-19", "2026-10-12", null]]);
+    expect(nj({ socCode: "43-6014" })).toEqual([]);
+    expect(nj({ socCode: null })).toEqual([]);
+    expect(nj({ startDate: "2024-09-01" })).toEqual([]);
+    expect(kinds({ placements: [placement({ state: "MA", startDate: "2026-10-19" })] }).filter(([k]) => k === "nj_equal_pay_check")).toEqual([]);
   });
 });
 

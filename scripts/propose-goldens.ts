@@ -122,6 +122,23 @@ ruleCase(
 );
 
 ruleCase(
+  "nj-minimum-wage-2027",
+  "New Jersey worker on a $16.00/h rate card in the week of January 4, 2027, 8 hours on Monday. The New Jersey minimum wage is $16.48/h from January 1, 2027 (NJDOL release of September 29, 2026), so the 8 hours are paid at the rate card (8 × $16.00 = $128.00) plus a top-up of 8 × $0.48 = $3.84. Billed 8 × $24.00 = $192.00.",
+  input([shift("2027-01-04", 480, { ...NJ, payRateCents: 1600, billRateCents: 2400 })]),
+  { pay: [["REG", 480, 12800], ["MW_TRUEUP", 480, 384]], bill: [["REG", 480, 19200]] },
+);
+
+ruleCase(
+  "nj-sent-not-used-four-hours",
+  "A New Jersey temporary laborer at $17.00/h is sent to a client on Monday, works 1 hour and is sent home; a person confirmed the client did not use the worker, who was not placed elsewhere. The Temporary Workers' Bill of Rights requires at least 4 hours of pay at the agreed rate (N.J.S.A. 34:8D-6(g)): the hour worked is paid (1 h × $17.00 = $17.00) and 4 h − 1 h = 3 h × $17.00 = $51.00 more, not as hours worked. Billed 1 h × $25.00 = $25.00 (the minimum itself is not billed).",
+  {
+    ...input([shift(WEEK[0]!, 60, { ...NJ, payRateCents: 1700, billRateCents: 2500 })]),
+    confirmations: [{ id: "confirmation-1", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[0]! }],
+  },
+  { pay: [["REG", 60, 1700], ["MIN_GUARANTEE", 180, 5100]], bill: [["REG", 60, 2500]] },
+);
+
+ruleCase(
   "client-overtime-billing-variants",
   "Three workers each work 44 hours at $18.25/h (pay is identical: $730.00 + $109.50). Their clients bill overtime differently: client A at the 1.5x multiplier (4h × $39.75 = $159.00), client B at straight time (4h × $26.50 = $106.00), client C not at all ($0.00, the 4 hours are still listed).",
   input(

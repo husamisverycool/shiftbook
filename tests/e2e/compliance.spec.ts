@@ -19,7 +19,7 @@ const es = JSON.parse(readFileSync("messages/es.json", "utf8")) as typeof import
 const MESSAGES = { en, es } as const;
 
 async function check(page: Page, where: string) {
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity));
   // A client navigation sets the page's title a moment after its address.
   await page.waitForFunction(() => document.title.length > 0);
   const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();

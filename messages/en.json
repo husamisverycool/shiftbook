@@ -2522,7 +2522,8 @@
       "i9_reverify": "Form I-9 reverification",
       "wc_policy_renewal": "Workers' comp policy renewal",
       "wc_audit": "Workers' comp premium audit",
-      "aca_offer": "ACA: offer coverage"
+      "aca_offer": "ACA: offer coverage",
+      "nj_equal_pay_check": "New Jersey equal pay check"
     },
     "asks": {
       "il_registration_renewal": "Apply to renew the agency's Illinois day and temporary labor registration at least {days} days before it expires. The agency and each branch office register; a lapse in workers' comp suspends the registration.",
@@ -2539,7 +2540,8 @@
       "i9_reverify": "Reverify the worker's employment authorization by the day it ends (Supplement B).",
       "wc_policy_renewal": "Keep workers' comp in force: the next policy starts by the day this one ends.",
       "wc_audit": "Give the insurer's premium auditor the payroll by class, with the overtime premium shown apart by worker and by class.",
-      "aca_offer": "Offer health coverage to each worker measured full-time (at least 30 hours of service a week on average in a measurement period) by the end of the administrative period, so it is in place from the first day of the stability period."
+      "aca_offer": "Offer health coverage to each worker measured full-time (at least 30 hours of service a week on average in a measurement period) by the end of the administrative period, so it is in place from the first day of the stability period.",
+      "nj_equal_pay_check": "Confirm the pay rate is at least the average the client pays its own employees for substantially similar work, plus the average cost of their benefits or its cash equivalent, before the placement starts."
     },
     "emptyOpen": "No compliance duty is open.",
     "nextUpcoming": "The next one is due {date}.",
@@ -2981,7 +2983,8 @@
       "noteRenewed": "Renewed: {number}, expires {expires}.",
       "notePolicyRenewed": "Renewed: {number}, from {from} to {to}.",
       "noteCompleted": "{part, select, section1 {Section 1} other {Section 2}} completed on {date}.",
-      "noteRateEntered": "Equal-pay rate entered from {date}."
+      "noteRateEntered": "Equal-pay rate entered from {date}.",
+      "njEqualPay": "The placement (SOC {socCode}, a designated classification) starts {startDate}; its pay is confirmed against the client's comparable employees by then"
     },
     "explainUnits": {
       "hours": "{count, plural, one {{n} hour} other {{n} hours}}"
@@ -3001,7 +3004,8 @@
       "nj_certification_renewal": "N.J.S.A. 34:8D-8 (certified each year); N.J.A.C. 13:45B-12A (no lead time stated: 30 days before is the safe reading)",
       "nj_language_notice": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the assignment notice in English and the worker's primary language)",
       "wc_audit": "The policy's premium audit: premium on payroll by class; the overtime premium left out only when shown apart by employee and by class (NCRB Basic Manual Rule 2-C-2-a)",
-      "wc_policy_renewal": "Workers' compensation must not lapse: 820 ILCS 175/45 (a lapse suspends an Illinois registration); N.J.S.A. 34:8D-8"
+      "wc_policy_renewal": "Workers' compensation must not lapse: 820 ILCS 175/45 (a lapse suspends an Illinois registration); N.J.S.A. 34:8D-8",
+      "nj_equal_pay_check": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no less than the average rate of pay and average cost of benefits, or their cash equivalent, of the client's employees doing substantially similar work)"
     }
   },
   "complianceSettings": {

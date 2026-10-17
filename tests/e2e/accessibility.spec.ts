@@ -35,7 +35,7 @@ test("converter steps have no serious accessibility problems", async ({ page }) 
   await page.getByTestId("hours-row").first().getByRole("button", { name: "Open source" }).click();
   await expect(page.getByTestId("source-panel")).toBeVisible();
   // Let the panel's slide-in finish: mid-animation colours are half-transparent.
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity));
   await check(page, "source panel");
 });
 
@@ -62,7 +62,7 @@ test("exceptions, totals and files steps, with their dialogs, have no serious ac
   await toExceptions(page, en);
   await check(page, "exceptions (blocked)");
   await page.getByTestId("skip-workers").first().click();
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity));
   await check(page, "skip dialog");
   await page.locator("#skip-reason").fill("Paid separately (test)");
   await page.getByTestId("confirm-skip").click();

@@ -264,7 +264,8 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
     }
   }
 
-  // Placements: the Massachusetts job order; the New Jersey notice in the worker's language.
+  // Placements: the Massachusetts job order; the New Jersey notice in the worker's language and its
+  // equal-pay check.
   for (const p of live) {
     if (p.state === "MA") {
       const r = ruleOn("ma_job_order", p.startDate);
@@ -288,6 +289,26 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
           done: null,
           anchorText: `The placement (SOC ${p.socCode}, a designated classification) starts ${p.startDate}; the worker's language is "${p.workerLanguage}"; due by then`,
           parts: [{ key: "njNotice", values: { socCode: p.socCode, startDate: { date: p.startDate }, language: { language: p.workerLanguage } } }],
+        });
+      }
+    }
+    // New Jersey equal pay from the first day: Granite cannot know the client's averages, so a person
+    // confirms the rate against them by the start (N.J.S.A. 34:8D-7(b)).
+    if (p.state === "NJ" && p.socCode) {
+      const r = ruleOn("nj_equal_pay_check", p.startDate);
+      if (r && r.socGroups.includes(p.socCode.slice(0, 2))) {
+        const dueOn = addDays(p.startDate, r.offsetDays);
+        push(r, {
+          ...none,
+          workerId: p.workerId,
+          clientId: p.clientId,
+          assignmentId: p.id,
+          occurrence: "",
+          dueOn,
+          facts: { startDate: p.startDate, socCode: p.socCode },
+          done: null,
+          anchorText: `The placement (SOC ${p.socCode}, a designated classification) starts ${p.startDate}; its pay is confirmed against the client's comparable employees by then`,
+          parts: [{ key: "njEqualPay", values: { socCode: p.socCode, startDate: { date: p.startDate } } }],
         });
       }
     }

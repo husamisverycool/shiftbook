@@ -2522,7 +2522,8 @@
       "i9_reverify": "Reverificación del Formulario I-9",
       "wc_policy_renewal": "Renovación de la póliza de compensación laboral",
       "wc_audit": "Auditoría de prima de compensación laboral",
-      "aca_offer": "ACA: ofrecer cobertura"
+      "aca_offer": "ACA: ofrecer cobertura",
+      "nj_equal_pay_check": "Verificación de igualdad salarial de Nueva Jersey"
     },
     "asks": {
       "il_registration_renewal": "Solicite la renovación del registro de mano de obra temporal de Illinois al menos {days} días antes de que venza. Se registran la agencia y cada sucursal; si la compensación laboral se interrumpe, el registro se suspende.",
@@ -2539,7 +2540,8 @@
       "i9_reverify": "Reverifique la autorización de empleo del trabajador a más tardar el día en que vence (Suplemento B).",
       "wc_policy_renewal": "Mantenga vigente la compensación laboral: la siguiente póliza empieza a más tardar el día en que termina esta.",
       "wc_audit": "Entregue al auditor de primas de la aseguradora la nómina por clase, con la prima de horas extra aparte por trabajador y por clase.",
-      "aca_offer": "Ofrezca cobertura médica a cada trabajador medido como de tiempo completo (en promedio al menos 30 horas de servicio por semana en un periodo de medición) antes de que termine el periodo administrativo, para que rija desde el primer día del periodo de estabilidad."
+      "aca_offer": "Ofrezca cobertura médica a cada trabajador medido como de tiempo completo (en promedio al menos 30 horas de servicio por semana en un periodo de medición) antes de que termine el periodo administrativo, para que rija desde el primer día del periodo de estabilidad.",
+      "nj_equal_pay_check": "Confirme que la tarifa de pago es al menos el promedio que el cliente paga a sus propios empleados por un trabajo sustancialmente similar, más el costo promedio de sus beneficios o su equivalente en efectivo, antes de que empiece la asignación."
     },
     "emptyOpen": "No hay ninguna obligación de cumplimiento abierta.",
     "nextUpcoming": "La siguiente vence el {date}.",
@@ -2981,7 +2983,8 @@
       "noteRenewed": "Renovado: {number}, vence el {expires}.",
       "notePolicyRenewed": "Renovada: {number}, del {from} al {to}.",
       "noteCompleted": "{part, select, section1 {Sección 1} other {Sección 2}} completada el {date}.",
-      "noteRateEntered": "Se ingresó la tarifa de igualdad salarial vigente desde el {date}."
+      "noteRateEntered": "Se ingresó la tarifa de igualdad salarial vigente desde el {date}.",
+      "njEqualPay": "La asignación (SOC {socCode}, una clasificación designada) empieza el {startDate}; su pago se confirma frente a los empleados comparables del cliente para entonces"
     },
     "explainUnits": {
       "hours": "{count, plural, one {{n} hora} other {{n} horas}}"
@@ -3001,7 +3004,8 @@
       "nj_certification_renewal": "N.J.S.A. 34:8D-8 (certificación cada año); N.J.A.C. 13:45B-12A (no fija una anticipación: 30 días antes es la lectura prudente)",
       "nj_language_notice": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (el aviso de asignación en inglés y en el idioma principal del trabajador)",
       "wc_audit": "La auditoría de prima de la póliza: la prima se calcula sobre la nómina por clase; la prima de horas extra se excluye solo cuando se muestra por separado por empleado y por clase (NCRB Basic Manual Rule 2-C-2-a)",
-      "wc_policy_renewal": "La compensación laboral no debe interrumpirse: 820 ILCS 175/45 (una interrupción suspende el registro en Illinois); N.J.S.A. 34:8D-8"
+      "wc_policy_renewal": "La compensación laboral no debe interrumpirse: 820 ILCS 175/45 (una interrupción suspende el registro en Illinois); N.J.S.A. 34:8D-8",
+      "nj_equal_pay_check": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no menos que la tarifa de pago promedio y el costo promedio de los beneficios, o su equivalente en efectivo, de los empleados del cliente que hacen un trabajo sustancialmente similar)"
     }
   },
   "complianceSettings": {
