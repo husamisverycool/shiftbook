@@ -54,12 +54,38 @@ Keep the demo as it is. Make a second, separate copy for real customers:
    **Custom Domain**, type for example `app.yourdomain.com`, and copy the records it shows into your
    domain company's DNS page. Then add the variable `SHIFTBOOK_APP_URL` with the value
    `https://app.yourdomain.com` and click **Deploy**.
-4. **Reading photos of timesheets** (optional; spreadsheets and time-clock files work without it).
+4. **Payments** (agencies pay you monthly by card; Stripe's own pages take the card, Granite never
+   sees it). Sign up at **stripe.com** and finish its account steps, then in the Stripe dashboard:
+   1. Open **Product catalog**, click **Add product**, name it (for example "Granite monthly"),
+      choose **Recurring** and **Monthly**, type your price, and save. Open the product and copy the
+      price's ID (it starts with `price_`). In Railway, add the variable `STRIPE_PRICE_ID` with it.
+   2. Open **Developers**, then **API keys**, click **Reveal** next to **Secret key**, and copy it (it
+      starts with `sk_live_`). In Railway, add the variable `STRIPE_SECRET_KEY` with it.
+   3. Open **Developers**, then **Webhooks**, and click **Add destination**. Choose these six events:
+      `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`,
+      `customer.subscription.deleted`, `customer.subscription.paused`,
+      `customer.subscription.resumed`. Choose **Webhook endpoint** and type your address followed by
+      `/api/billing/webhook` (for example `https://app.yourdomain.com/api/billing/webhook`). Save,
+      then click **Reveal** under **Signing secret** and copy it (it starts with `whsec_`). In Railway,
+      add the variable `STRIPE_WEBHOOK_SECRET` with it.
+   4. Open **Settings**, then **Billing**, then **Customer portal**, and click **Activate**. Allow
+      customers to update their card, see their invoices and cancel.
+   5. Optional: in Railway, add `STRIPE_TRIAL_DAYS` with the number of free days a new agency gets,
+      for example `14`. Then click **Deploy**.
+
+   To try all of this without real money first, switch on **Test mode** at the top of the Stripe
+   dashboard and do the same steps there (the key then starts with `sk_test_`; Stripe's test card is
+   4242 4242 4242 4242). Repeat in normal mode when you are ready to charge.
+5. **Try it as a customer would.** Open your address, click **New to Granite? Create an agency**,
+   and sign up with your own email. Open the emailed link, choose a password, set up the
+   authenticator app on your phone, then open **Settings › Billing** and click **Start
+   subscription**. Agencies sign themselves up the same way: send them your address.
+6. **Reading photos of timesheets** (optional; spreadsheets and time-clock files work without it).
    Sign up at **console.anthropic.com**, open **API Keys**, create one, and add it in Railway as
    `ANTHROPIC_API_KEY`.
-5. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
+7. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
    about an hour; `docs/hosting-settings.md` lists exactly what they set.
-6. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
+8. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
    Then do the same in the live **shiftbook** box's **Backups** tab: its disk holds the uploaded files
    and the key that locks Social Security numbers. Never delete that disk. If it is ever lost, Granite
    will refuse to start (it never quietly makes a new key) until the disk is restored from a backup.
@@ -69,7 +95,8 @@ Keep the demo as it is. Make a second, separate copy for real customers:
 These are people, not settings. Granite is careful, but it is new:
 
 1. **An employment lawyer** reads the pay rules (overtime, Illinois equal pay, holiday pay) and the
-   compliance duties. Ask Claude for "a summary of the pay rules for a lawyer".
+   compliance duties. Give them `docs/legal-review-brief.md`: every rule as built, with the
+   questions to answer.
 2. **A security firm** tests the live copy (a "penetration test") before real Social Security
    numbers go in.
 3. **Terms of service and a privacy policy**, from the same lawyer.
