@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ClientApprovalRow, ClientApprovalState } from "@/server/approvals/service";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { EmptyState } from "../empty-state";
 import { dateRange, hoursMinutes } from "../format";
 import { FilterPill, ListToolbar, NavPill, PillChoices, ResultsCount, StatusTabs } from "../list-controls";
@@ -94,7 +94,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
     <Page>
       <PageHeader
         title={t("title")}
-        description={mayAsk ? undefined : t("readOnly")}
+        description={mayAsk ? undefined : <ReadOnlyNote text={t("readOnly")} />}
         actions={
           // Harvest's timeframe, as Stripe's date range pill.
           <NavPill

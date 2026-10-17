@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ABILITIES, can, readsOnly, ROLES, type Ability } from "./permissions";
+import { ABILITIES, abilitiesOf, can, pausedWhenUnpaid, readsOnly, ROLES, type Ability } from "./permissions";
 
 describe("what each role may change (SPEC §2)", () => {
   it("the Owner does everything", () => {
@@ -23,6 +23,26 @@ describe("what each role may change (SPEC §2)", () => {
   it("billing: client billing, cash, their compliance duties; no hours, run, settings or margin", () => {
     const yes = (Object.keys(ABILITIES) as Ability[]).filter((a) => can({ role: "billing" }, a));
     expect(yes.sort()).toEqual(["cash", "clientBilling", "compliance"]);
+  });
+});
+
+describe("changes paused while the agency's subscription is not active (decision 0036)", () => {
+  it("the Owner manages billing; no one else", () => {
+    expect(ROLES.filter((role) => can({ role }, "billing"))).toEqual(["owner"]);
+  });
+
+  it("paused: every ability that changes the agency's records is off; reading, the audited SSN look-up and billing stay", () => {
+    const paused = abilitiesOf({ role: "owner" }, { changesPaused: true });
+    expect((Object.keys(paused) as Ability[]).filter((a) => paused[a]).sort()).toEqual(["billing", "revealSsn", "viewActivity", "viewMargin"]);
+    expect(pausedWhenUnpaid("billing")).toBe(false);
+    expect(pausedWhenUnpaid("hours")).toBe(true);
+    // A role keeps only what it had: the accountant still reads, a coordinator gets nothing new.
+    expect(abilitiesOf({ role: "accountant" }, { changesPaused: true })).toEqual(abilitiesOf({ role: "accountant" }));
+    expect(Object.values(abilitiesOf({ role: "coordinator" }, { changesPaused: true })).some(Boolean)).toBe(false);
+  });
+
+  it("not paused: the same table as before", () => {
+    for (const role of ROLES) expect(abilitiesOf({ role }, { changesPaused: false })).toEqual(abilitiesOf({ role }));
   });
 });
 

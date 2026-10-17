@@ -46,3 +46,26 @@ export function renderResetEmail(link: string, user: { name: string; locale: str
     { text: t("footer", { agency: user.agencyName }) },
   ]);
 }
+
+/**
+ * The sign-up emails (docs/patterns/_emails/sign-up.md, decision 0036): the link that finishes creating
+ * the agency, or the note for an email that already signs in. Neither carries anything the requester
+ * typed (the address is not proved yet), so neither can carry a stranger's words.
+ */
+export function renderSignupEmail(link: string, who: { locale: string }): RenderedEmail {
+  const t = translator(localeOf(who.locale));
+  return assemble(t("signUp.subject"), [{ text: t("hello") }, { text: t("signUp.intro") }, { link, label: t("signUp.open") }, { text: t("signUp.expires") }, { text: t("signUp.unexpected") }, { text: t("signUp.footer") }]);
+}
+
+export function renderSignupExistingEmail(links: { signIn: string; reset: string }, who: { locale: string }): RenderedEmail {
+  const t = translator(localeOf(who.locale));
+  return assemble(t("signUpExisting.subject"), [
+    { text: t("hello") },
+    { text: t("signUpExisting.intro") },
+    { link: links.signIn, label: t("signUpExisting.signIn") },
+    { link: links.reset, label: t("signUpExisting.reset") },
+    { text: t("signUpExisting.invited") },
+    { text: t("signUpExisting.unexpected") },
+    { text: t("signUp.footer") },
+  ]);
+}

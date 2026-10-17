@@ -1,6 +1,7 @@
 # Pattern: Sign in (`/sign-in`)
 
-Status: adopted — slice (k); revised by decision 0031 (2026-10-16); the passkey tile by decision 0032
+Status: adopted — slice (k); revised by decision 0031 (2026-10-16); the passkey tile by decision 0032;
+the sign-up line by decision 0036 (2026-10-17)
 Reference product and screen: GitHub — sign-in (email and password, then a separate two-factor step;
 "Forgot password?" leads to the password reset page); Linear — login page (each way to sign in is a
 full-width "Continue with …" button, one under another)
@@ -12,6 +13,8 @@ Source URL: https://www.notion.so/help/saml-sso-configuration
 Source URL: https://developers.google.com/identity/branding-guidelines
 Source URL: https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-branding-in-apps
 Source URL: https://docs.github.com/en/authentication/authenticating-with-a-passkey/signing-in-with-a-passkey
+Source URL: https://linear.app/signup
+Source URL: https://dashboard.stripe.com/register
 Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3). Confidence: high for
 the steps (password first, then the code; reset by email); the page's exact layout is shown in
 screenshots, not described in text.
@@ -49,6 +52,9 @@ opens with no password (decision K3).
    two-column grid of tiles, each the way's mark over its name: **Google** and **Microsoft** (each
    provider's own mark, as its branding rules require; shown once its keys are set, always in the
    demo through the demo's stand-in), **Passkey** (decision 0032), **SSO** (to `/sign-in/sso`).
+7. **New to Granite? Create an agency** (decision 0036): one muted line, centred, "Create an agency" a
+   link to `/sign-up` (`sign-up.md`) — the mirror of the foot line Stripe's register page and Linear's
+   signup page end with, which links back to signing in (screenshots, 2026-10-17).
 
 ## Interactions
 - Enter in either field submits. Focus starts in Email, except in demo mode (the demo people come
@@ -65,6 +71,7 @@ opens with no password (decision K3).
   sent to it comes first (`sign-in/link.md`).
 - SSO → `/sign-in/sso`; Email me a sign-in code → `/sign-in/email`; both carry the page they were
   going to.
+- Create an agency → `/sign-up` (in the demo it says the demo uses its own agency).
 - **Passkey** tile (GitHub's "Sign in with a passkey": the browser or the device then asks for a
   passkey on this device or a nearby one, unlocked with a fingerprint, face or PIN) → no email is
   asked; once the device answers, straight into the app where sign-in goes (the page they were going

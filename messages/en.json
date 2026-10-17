@@ -631,7 +631,8 @@
       "staffing": "Staffing",
       "oversight": "Oversight"
     },
-    "sso": "Single sign-on"
+    "sso": "Single sign-on",
+    "billing": "Billing"
   },
   "list": {
     "filter": "Filter",
@@ -3247,7 +3248,9 @@
       "microsoft": "Microsoft",
       "passkey": "Passkey",
       "sso": "SSO"
-    }
+    },
+    "newHere": "New to Granite?",
+    "createAgency": "Create an agency"
   },
   "signInCode": {
     "title": "Enter your code",
@@ -3473,6 +3476,23 @@
       "open": "Choose a new password",
       "expires": "The link works once, for one hour.",
       "unexpected": "If it was not you, ignore this email: your password stays as it is."
+    },
+    "hello": "Hello,",
+    "signUp": {
+      "subject": "Finish creating your agency on Granite",
+      "intro": "Someone asked to create an agency on Granite with this email address. If it was you, set your password to finish.",
+      "open": "Set your password",
+      "expires": "The link works once, for 24 hours. As the agency's Owner, you will set up an authenticator app next.",
+      "unexpected": "If it was not you, ignore this email: nothing is created.",
+      "footer": "Sent by Granite."
+    },
+    "signUpExisting": {
+      "subject": "You already have a Granite account",
+      "intro": "Someone tried to create an agency on Granite with this email address, which already signs in to Granite. No agency was created.",
+      "signIn": "Sign in",
+      "reset": "Reset your password",
+      "invited": "If you were invited and have not joined yet, use the link in your invite email.",
+      "unexpected": "If it was not you, nothing changed and you can ignore this email."
     }
   },
   "confirmAccess": {
@@ -3814,7 +3834,8 @@
       "wc_policy": "Workers' comp policy",
       "wc_rate": "Workers' comp rate",
       "worker": "Worker",
-      "write_off": "Write-off"
+      "write_off": "Write-off",
+      "subscription": "Subscription"
     },
     "allTypes": "All",
     "gone": "no longer on file"
@@ -4577,5 +4598,136 @@
     "tooMany": "You have 20 passkeys, the most an account can have. Remove one to add another.",
     "unavailable": "Passkeys are not set up on this server yet.",
     "unsupported": "This browser cannot make passkeys."
+  },
+  "signUp": {
+    "title": "Create your agency",
+    "subtitle": "You will set a password and an authenticator app next.",
+    "subtitleTrial": "{days, plural, one {The first day is free.} other {The first # days are free.}} You will set a password and an authenticator app next.",
+    "email": "Work email",
+    "name": "Your name",
+    "agencyName": "Agency name",
+    "submit": "Create agency",
+    "submitting": "Sending…",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "errors": {
+      "invalid_email": "Enter your work email address.",
+      "invalid_name": "Enter your name (up to 120 characters).",
+      "invalid_agency_name": "Enter the agency's name (up to 200 characters).",
+      "too_many": "Too many tries. Wait an hour and try again.",
+      "demo": "The demo makes no agencies.",
+      "generic": "That didn't work. Try again."
+    },
+    "sentTitle": "Check your email",
+    "sentBody": "We sent an email to {email}. Open the link in it to set your password and finish. The link works once, for 24 hours.",
+    "sentHint": "Nothing there? Check your spam folder, or",
+    "differentEmail": "use a different email",
+    "back": "Back to sign in",
+    "demoBody": "The demo uses its own made-up agency, so no agency is created here. To look around, continue as one of the demo people.",
+    "demoContinue": "Continue as a demo person"
+  },
+  "signUpFinish": {
+    "title": "Set your password",
+    "body": "You are creating {agency} and will be its Owner.",
+    "email": "You will sign in with {email}.",
+    "submit": "Create agency",
+    "submitting": "Creating…",
+    "nextSetup": "Owners need an authenticator app: you set it up next.",
+    "expiredTitle": "This link no longer works",
+    "expiredBody": "A sign-up link works once, for 24 hours, and a newer one replaces it. Start again to get a new link.",
+    "startAgain": "Create your agency",
+    "toSignIn": "Go to sign in",
+    "taken": "This email already signs in to Granite. Sign in instead."
+  },
+  "billing": {
+    "eyebrow": "Settings",
+    "title": "Billing",
+    "body": "Your agency's monthly subscription to Granite. Cards, invoices and canceling are handled on Stripe's secure pages.",
+    "demoNote": "This is the demo: nothing is charged and Stripe is never opened.",
+    "plan": "Plan",
+    "planName": "Granite monthly",
+    "status": {
+      "demo": "Active (demo)",
+      "free_days": "Free trial",
+      "none": "No subscription",
+      "trialing": "Trial",
+      "active": "Active",
+      "ending": "Ending",
+      "past_due": "Past due",
+      "unpaid": "Unpaid",
+      "paused": "Paused",
+      "incomplete": "Incomplete",
+      "canceled": "Canceled"
+    },
+    "line": {
+      "demo": "The demo agency is always active.",
+      "free_days": "Free until {date}. Start the subscription to keep making changes after that.",
+      "none": "No subscription. Changes are paused until one starts.",
+      "trialing": "Trial until {date}. The first charge is then.",
+      "active": "Renews on {date}.",
+      "ending": "Canceled. It ends on {date}; changes are paused after that.",
+      "past_due": "The last payment failed. Update the card in Manage billing; Stripe tries again.",
+      "unpaid": "Payments failed and Stripe stopped trying. Update the card in Manage billing.",
+      "paused": "The trial ended without a card. Add one in Manage billing.",
+      "incomplete": "The first payment was not completed. Start the subscription again.",
+      "canceled": "Canceled. Start the subscription again to make changes."
+    },
+    "nextCharge": "Next charge",
+    "nextChargeAmount": "{amount} on {date}",
+    "nextChargeDate": "On {date}",
+    "noCharge": {
+      "demo": "None. Nothing is charged in the demo.",
+      "ending": "None. The subscription ends.",
+      "canceled": "None. There is no subscription.",
+      "none": "None. There is no subscription.",
+      "free_days": "None during the free trial.",
+      "past_due": "Stripe tries the failed payment again.",
+      "unpaid": "None until the card is updated.",
+      "paused": "None until a card is added.",
+      "incomplete": "None. The first payment was not completed."
+    },
+    "footNote": "Card details, invoices and canceling are on Stripe's pages.",
+    "start": "Start subscription",
+    "manage": "Manage billing",
+    "opening": "Opening Stripe…",
+    "demoPressed": "This is the demo: nothing is charged and Stripe is never opened.",
+    "stops": "If the subscription stops",
+    "stopsTitle": "Nothing is deleted",
+    "stopsBody": "Everyone can still sign in, read everything and download files. Changes are paused until the subscription is active again.",
+    "notForRoleTitle": "Billing is for the Owner",
+    "ownerOnly": "Only the agency's Owner manages the subscription. Ask them if something needs to change.",
+    "notice": {
+      "done": "Thank you. Your subscription is being set up; it shows here in a moment.",
+      "left": "You left Stripe's checkout. Nothing was charged."
+    },
+    "errors": {
+      "not_set_up": "Payments are not available right now. Nothing was charged.",
+      "stripe": "Stripe could not be reached. Try again in a moment.",
+      "already_subscribed": "The agency already has a subscription. Use Manage billing.",
+      "no_customer": "Start the subscription first.",
+      "not_allowed": "Only the Owner manages billing.",
+      "demo": "This is the demo: nothing is charged and Stripe is never opened.",
+      "generic": "That didn't work. Try again."
+    }
+  },
+  "billingBanner": {
+    "pausedTitle": "Changes are paused",
+    "tried": "The change you tried was not made.",
+    "why": {
+      "none": "This agency's free trial is over and it has no subscription.",
+      "past_due": "The last payment for this agency's subscription failed.",
+      "unpaid": "Payments for this agency's subscription failed and Stripe stopped trying.",
+      "paused": "This agency's trial ended without a card.",
+      "incomplete": "The first payment for this agency's subscription was not completed.",
+      "incomplete_expired": "The first payment for this agency's subscription was not completed.",
+      "canceled": "This agency's subscription was canceled."
+    },
+    "kept": "Everything can still be read and downloaded, and nothing is deleted.",
+    "owner": "Go to Billing",
+    "others": "Ask the agency's Owner to restart the subscription in Settings › Billing.",
+    "trialTitle": "The free trial ends on {date}",
+    "trialBody": "Start the subscription to keep making changes after that.",
+    "trialAction": "Start subscription",
+    "pausedNote": "Changes are paused: this agency's subscription is not active. The Owner can restart it in Settings › Billing."
   }
 }

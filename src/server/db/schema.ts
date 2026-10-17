@@ -1648,6 +1648,7 @@ export const TENANT_TABLES = [
   "user_identities",
   "email_sign_in_codes",
   "agency_sso",
+  "agency_subscriptions",
 ] as const;
 
 // ---------- other ways in: Google, Microsoft, an agency's single sign-on, emailed codes (decision 0033; drizzle/0039) ----------
@@ -1750,4 +1751,52 @@ export const webauthnChallenges = pgTable("webauthn_challenges", {
   createdAt: createdAt(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   usedAt: timestamp("used_at", { withTimezone: true }),
+});
+
+// ---------- sign-up and billing (decision 0036; drizzle/0043) ----------
+
+/** The Stripe subscription statuses (docs.stripe.com/api/subscriptions/object, status). */
+export const SUBSCRIPTION_STATUSES = ["incomplete", "incomplete_expired", "trialing", "active", "past_due", "canceled", "unpaid", "paused"] as const;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+/** A sign-up waiting for its email to be proved: only the link's SHA-256 is kept; 24 hours, once. Sign-in mode only. */
+export const signupRequests = pgTable("signup_requests", {
+  id: id(),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  agencyName: text("agency_name").notNull(),
+  locale: text("locale").notNull().default("en"),
+  tokenHash: text("token_hash").notNull(),
+  addressHash: text("address_hash"),
+  createdAt: createdAt(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  sendFailedAt: timestamp("send_failed_at", { withTimezone: true }),
+  createdAgencyId: uuid("created_agency_id").references(() => agencies.id),
+});
+
+/** An agency's own free days and what Stripe says of its subscription (money in integer cents). */
+export const agencySubscriptions = pgTable("agency_subscriptions", {
+  agencyId: uuid("agency_id")
+    .primaryKey()
+    .references(() => agencies.id),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  status: text("status").$type<SubscriptionStatus>(),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  cancelAt: timestamp("cancel_at", { withTimezone: true }),
+  stripeTrialEnd: timestamp("stripe_trial_end", { withTimezone: true }),
+  amountCents: integer("amount_cents"),
+  currency: text("currency"),
+  billingInterval: text("billing_interval").$type<"day" | "week" | "month" | "year">(),
+  updatedAt: updatedAt(),
+});
+
+/** Stripe events already handled (their ids): a repeated delivery changes nothing. Webhook mode only. */
+export const billingEvents = pgTable("billing_events", {
+  eventId: text("event_id").primaryKey(),
+  type: text("type").notNull(),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
 });

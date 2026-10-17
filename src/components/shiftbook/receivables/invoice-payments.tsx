@@ -22,6 +22,7 @@ import type { InvoiceReceivables, PaymentClients } from "@/server/receivables/qu
 import { longDate, money } from "../format";
 import { PaymentDialog } from "./payment-dialog";
 import { useDateTime } from "../agency-zone";
+import { ReadOnlyNote } from "../abilities";
 
 const WRITE_OFF_REASONS = ["small_balance", "disputed_hours", "rate_difference", "bank_fee", "bad_debt", "other"] as const;
 const SHORT_PAY_REASONS = ["disputed_hours", "rate_difference", "bank_fee", "client_deduction", "unknown", "other"] as const;
@@ -138,7 +139,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
           </div>
         ))}
       </div>
-      {!canChange && <p className="text-sm text-muted-foreground">{tp("readOnly")}</p>}
+      {!canChange && <p className="text-sm text-muted-foreground">{<ReadOnlyNote text={tp("readOnly")} />}</p>}
       {dialog === "pay" && <PaymentDialog clients={clients} mode={{ kind: "record", clientId, invoiceId }} today={today} onClose={() => setDialog(null)} />}
       {dialog === "credit" && <PaymentDialog clients={clients} mode={{ kind: "credit", fromInvoiceId: invoiceId, clientId, unusedCents: -ar.balanceCents }} today={today} onClose={() => setDialog(null)} />}
       {dialog === "writeOff" && <WriteOffDialog invoiceId={invoiceId} number={number} balanceCents={ar.balanceCents} onClose={() => setDialog(null)} />}

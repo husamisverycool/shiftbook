@@ -26,6 +26,7 @@ import { dueIn, OwnerPicker } from "./list";
 import { Status } from "../status";
 import { StatusBadge } from "./status-badge";
 import { useDateTime } from "../agency-zone";
+import { ReadOnlyNote } from "../abilities";
 
 export type DetailTab = "overview" | "evidence" | "history" | "notes";
 const TABS: DetailTab[] = ["overview", "evidence", "history", "notes"];
@@ -101,7 +102,7 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
             (d.closedBySystem ? ` ${systemNote(td, d, locale)}` : d.noteKey ? ` ${td("note", { note: say(d.noteKey) })}` : d.statusNote ? ` ${td("note", { note: d.statusNote })}` : "")}
         </p>
       )}
-      {!i.mayAct && <p className="text-sm text-muted-foreground">{td("readOnly", { who: t(`who.${whoFor(d)}`) })}</p>}
+      {!i.mayAct && <p className="text-sm text-muted-foreground"><ReadOnlyNote text={td("readOnly", { who: t(`who.${whoFor(d)}`) })} /></p>}
       <RecordLayout aside={<Summary d={d} />}>
         <div className="flex min-w-0 flex-col gap-6">
       <PageTabs

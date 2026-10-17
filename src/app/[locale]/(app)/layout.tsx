@@ -14,7 +14,7 @@ import { agencies } from "@/server/db/schema";
 import { urgentCount } from "@/server/compliance/queries";
 import { mayViewMargin } from "@/server/margin/service";
 import { abilitiesOf } from "@/server/permissions";
-import { confirmWith, currentActor } from "@/server/session";
+import { changesPaused, confirmWith, currentActor } from "@/server/session";
 import { agencyToday, agencyZone } from "@/server/settings";
 
 export default async function AppLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
@@ -26,8 +26,10 @@ export default async function AppLayout({ children, params }: { children: ReactN
     return { agency, urgent: await urgentCount(tx, actor.agencyId, await agencyToday(tx)), zone: await agencyZone(tx) };
   });
   const confirmMethod = await confirmWith();
+  // While the subscription is not active, the screens hide every change, as for the accountant (decision 0036).
+  const paused = await changesPaused(actor);
   return (
-    <AbilitiesProvider abilities={abilitiesOf(actor)}>
+    <AbilitiesProvider abilities={abilitiesOf(actor, { changesPaused: paused })} paused={paused}>
       <AgencyZoneProvider zone={zone}>
         <ConfirmAccessProvider method={confirmMethod}>
           <SidebarProvider className="min-h-0">

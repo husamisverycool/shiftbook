@@ -35,6 +35,8 @@ export const ABILITIES = {
   viewMargin: ["owner", "accountant"],
   /** The agency's whole activity log (reading; decision 0028). */
   viewActivity: ["owner", "accountant"],
+  /** The agency's subscription to Granite: Stripe's checkout and billing pages (decision 0036). */
+  billing: ["owner"],
 } as const satisfies Record<string, readonly Role[]>;
 export type Ability = keyof typeof ABILITIES;
 
@@ -46,5 +48,19 @@ const READING: Ability[] = ["viewMargin", "viewActivity"];
 /** True for a role that changes nothing at all (the outside accountant). */
 export const readsOnly = (who: { role: Role }): boolean => !(Object.keys(ABILITIES) as Ability[]).some((a) => !READING.includes(a) && can(who, a));
 
-/** Every ability as yes or no, for the screens (they hide what the role cannot change). */
-export const abilitiesOf = (who: { role: Role }): Record<Ability, boolean> => Object.fromEntries((Object.keys(ABILITIES) as Ability[]).map((a) => [a, can(who, a)])) as Record<Ability, boolean>;
+/**
+ * What stays possible while the agency's subscription is not active (decision 0036): reading, the
+ * Owner's audited SSN look-up (a reading), and billing itself (to start paying again). Everything else
+ * changes the agency's records and is paused.
+ */
+const WHILE_PAUSED: Ability[] = [...READING, "revealSsn", "billing"];
+
+/** Whether an ability is paused while the agency's subscription is not active. */
+export const pausedWhenUnpaid = (ability: Ability): boolean => !WHILE_PAUSED.includes(ability);
+
+/**
+ * Every ability as yes or no, for the screens (they hide what the role cannot change). While changes
+ * are paused (decision 0036), the screens hide every change as they do for the accountant.
+ */
+export const abilitiesOf = (who: { role: Role }, opts: { changesPaused?: boolean } = {}): Record<Ability, boolean> =>
+  Object.fromEntries((Object.keys(ABILITIES) as Ability[]).map((a) => [a, can(who, a) && !(opts.changesPaused && pausedWhenUnpaid(a))])) as Record<Ability, boolean>;

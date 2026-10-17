@@ -631,7 +631,8 @@
       "staffing": "Personal",
       "oversight": "Supervisión"
     },
-    "sso": "Inicio de sesión único"
+    "sso": "Inicio de sesión único",
+    "billing": "Suscripción"
   },
   "list": {
     "filter": "Filtrar",
@@ -3247,7 +3248,9 @@
       "microsoft": "Microsoft",
       "passkey": "Llave de acceso",
       "sso": "SSO"
-    }
+    },
+    "newHere": "¿Es nuevo en Granite?",
+    "createAgency": "Cree una agencia"
   },
   "signInCode": {
     "title": "Escriba su código",
@@ -3473,6 +3476,23 @@
       "open": "Elegir una contraseña nueva",
       "expires": "El enlace funciona una vez, durante una hora.",
       "unexpected": "Si no fue usted, ignore este correo: su contraseña sigue igual."
+    },
+    "hello": "Hola:",
+    "signUp": {
+      "subject": "Termine de crear su agencia en Granite",
+      "intro": "Alguien pidió crear una agencia en Granite con esta dirección de correo. Si fue usted, elija su contraseña para terminar.",
+      "open": "Elegir su contraseña",
+      "expires": "El enlace funciona una vez, durante 24 horas. Como Propietario de la agencia, a continuación configurará una aplicación de autenticación.",
+      "unexpected": "Si no fue usted, ignore este correo: no se crea nada.",
+      "footer": "Enviado por Granite."
+    },
+    "signUpExisting": {
+      "subject": "Usted ya tiene una cuenta de Granite",
+      "intro": "Alguien intentó crear una agencia en Granite con esta dirección de correo, que ya inicia sesión en Granite. No se creó ninguna agencia.",
+      "signIn": "Iniciar sesión",
+      "reset": "Restablecer su contraseña",
+      "invited": "Si recibió una invitación y aún no se ha unido, use el enlace de su correo de invitación.",
+      "unexpected": "Si no fue usted, nada cambió y puede ignorar este correo."
     }
   },
   "confirmAccess": {
@@ -3814,7 +3834,8 @@
       "wc_policy": "Póliza de compensación laboral",
       "wc_rate": "Tarifa de compensación laboral",
       "worker": "Trabajador",
-      "write_off": "Saldo dado por perdido"
+      "write_off": "Saldo dado por perdido",
+      "subscription": "Suscripción"
     },
     "allTypes": "Todos",
     "gone": "ya no está en el sistema"
@@ -4577,5 +4598,136 @@
     "tooMany": "Tiene 20 llaves de acceso, el máximo para una cuenta. Quite una para agregar otra.",
     "unavailable": "Las llaves de acceso aún no están configuradas en este servidor.",
     "unsupported": "Este navegador no puede crear llaves de acceso."
+  },
+  "signUp": {
+    "title": "Cree su agencia",
+    "subtitle": "A continuación elegirá una contraseña y una aplicación de autenticación.",
+    "subtitleTrial": "{days, plural, one {El primer día es gratis.} other {Los primeros # días son gratis.}} A continuación elegirá una contraseña y una aplicación de autenticación.",
+    "email": "Correo del trabajo",
+    "name": "Su nombre",
+    "agencyName": "Nombre de la agencia",
+    "submit": "Crear la agencia",
+    "submitting": "Enviando…",
+    "haveAccount": "¿Ya tiene una cuenta?",
+    "signIn": "Inicie sesión",
+    "errors": {
+      "invalid_email": "Escriba su dirección de correo del trabajo.",
+      "invalid_name": "Escriba su nombre (hasta 120 caracteres).",
+      "invalid_agency_name": "Escriba el nombre de la agencia (hasta 200 caracteres).",
+      "too_many": "Demasiados intentos. Espere una hora e inténtelo de nuevo.",
+      "demo": "La demostración no crea agencias.",
+      "generic": "Eso no funcionó. Inténtelo de nuevo."
+    },
+    "sentTitle": "Revise su correo",
+    "sentBody": "Enviamos un correo a {email}. Abra el enlace que contiene para elegir su contraseña y terminar. El enlace funciona una vez, durante 24 horas.",
+    "sentHint": "¿No llegó nada? Revise su carpeta de correo no deseado, o",
+    "differentEmail": "use otro correo",
+    "back": "Volver a iniciar sesión",
+    "demoBody": "La demostración usa su propia agencia inventada, así que aquí no se crea ninguna agencia. Para recorrerla, continúe como una de las personas de la demostración.",
+    "demoContinue": "Continuar como una persona de la demostración"
+  },
+  "signUpFinish": {
+    "title": "Elija su contraseña",
+    "body": "Está creando {agency} y será su Propietario.",
+    "email": "Iniciará sesión con {email}.",
+    "submit": "Crear la agencia",
+    "submitting": "Creando…",
+    "nextSetup": "Los Propietarios necesitan una aplicación de autenticación: la configura a continuación.",
+    "expiredTitle": "Este enlace ya no funciona",
+    "expiredBody": "Un enlace de registro funciona una vez, durante 24 horas, y uno más nuevo lo reemplaza. Empiece de nuevo para recibir un enlace nuevo.",
+    "startAgain": "Cree su agencia",
+    "toSignIn": "Ir a iniciar sesión",
+    "taken": "Este correo ya inicia sesión en Granite. Inicie sesión en su lugar."
+  },
+  "billing": {
+    "eyebrow": "Configuración",
+    "title": "Suscripción",
+    "body": "La suscripción mensual de su agencia a Granite. Las tarjetas, las facturas y la cancelación se manejan en las páginas seguras de Stripe.",
+    "demoNote": "Esta es la demostración: no se cobra nada y nunca se abre Stripe.",
+    "plan": "Plan",
+    "planName": "Granite mensual",
+    "status": {
+      "demo": "Activa (demostración)",
+      "free_days": "Prueba gratis",
+      "none": "Sin suscripción",
+      "trialing": "Prueba",
+      "active": "Activa",
+      "ending": "Por terminar",
+      "past_due": "Pago vencido",
+      "unpaid": "Sin pagar",
+      "paused": "En pausa",
+      "incomplete": "Incompleta",
+      "canceled": "Cancelada"
+    },
+    "line": {
+      "demo": "La agencia de la demostración siempre está activa.",
+      "free_days": "Gratis hasta el {date}. Inicie la suscripción para seguir haciendo cambios después.",
+      "none": "Sin suscripción. Los cambios están en pausa hasta que empiece una.",
+      "trialing": "Prueba hasta el {date}. El primer cobro es ese día.",
+      "active": "Se renueva el {date}.",
+      "ending": "Cancelada. Termina el {date}; después los cambios quedan en pausa.",
+      "past_due": "El último pago falló. Actualice la tarjeta en Administrar pagos; Stripe lo vuelve a intentar.",
+      "unpaid": "Los pagos fallaron y Stripe dejó de intentarlo. Actualice la tarjeta en Administrar pagos.",
+      "paused": "La prueba terminó sin tarjeta. Agregue una en Administrar pagos.",
+      "incomplete": "El primer pago no se completó. Inicie la suscripción de nuevo.",
+      "canceled": "Cancelada. Inicie la suscripción de nuevo para hacer cambios."
+    },
+    "nextCharge": "Próximo cobro",
+    "nextChargeAmount": "{amount} el {date}",
+    "nextChargeDate": "El {date}",
+    "noCharge": {
+      "demo": "Ninguno. En la demostración no se cobra nada.",
+      "ending": "Ninguno. La suscripción termina.",
+      "canceled": "Ninguno. No hay suscripción.",
+      "none": "Ninguno. No hay suscripción.",
+      "free_days": "Ninguno durante la prueba gratis.",
+      "past_due": "Stripe vuelve a intentar el pago que falló.",
+      "unpaid": "Ninguno hasta que se actualice la tarjeta.",
+      "paused": "Ninguno hasta que se agregue una tarjeta.",
+      "incomplete": "Ninguno. El primer pago no se completó."
+    },
+    "footNote": "Los datos de la tarjeta, las facturas y la cancelación están en las páginas de Stripe.",
+    "start": "Iniciar la suscripción",
+    "manage": "Administrar pagos",
+    "opening": "Abriendo Stripe…",
+    "demoPressed": "Esta es la demostración: no se cobra nada y nunca se abre Stripe.",
+    "stops": "Si la suscripción se detiene",
+    "stopsTitle": "No se borra nada",
+    "stopsBody": "Todos pueden seguir iniciando sesión, leyendo todo y descargando archivos. Los cambios quedan en pausa hasta que la suscripción vuelva a estar activa.",
+    "notForRoleTitle": "La suscripción es para el Propietario",
+    "ownerOnly": "Solo el Propietario de la agencia administra la suscripción. Pídaselo si algo debe cambiar.",
+    "notice": {
+      "done": "Gracias. Su suscripción se está configurando; aparecerá aquí en un momento.",
+      "left": "Salió del pago de Stripe. No se cobró nada."
+    },
+    "errors": {
+      "not_set_up": "Los pagos no están disponibles en este momento. No se cobró nada.",
+      "stripe": "No se pudo contactar a Stripe. Inténtelo de nuevo en un momento.",
+      "already_subscribed": "La agencia ya tiene una suscripción. Use Administrar pagos.",
+      "no_customer": "Inicie primero la suscripción.",
+      "not_allowed": "Solo el Propietario administra la suscripción.",
+      "demo": "Esta es la demostración: no se cobra nada y nunca se abre Stripe.",
+      "generic": "Eso no funcionó. Inténtelo de nuevo."
+    }
+  },
+  "billingBanner": {
+    "pausedTitle": "Los cambios están en pausa",
+    "tried": "El cambio que intentó no se hizo.",
+    "why": {
+      "none": "La prueba gratis de esta agencia terminó y no tiene suscripción.",
+      "past_due": "El último pago de la suscripción de esta agencia falló.",
+      "unpaid": "Los pagos de la suscripción de esta agencia fallaron y Stripe dejó de intentarlo.",
+      "paused": "La prueba de esta agencia terminó sin tarjeta.",
+      "incomplete": "El primer pago de la suscripción de esta agencia no se completó.",
+      "incomplete_expired": "El primer pago de la suscripción de esta agencia no se completó.",
+      "canceled": "La suscripción de esta agencia se canceló."
+    },
+    "kept": "Todo se puede seguir leyendo y descargando, y no se borra nada.",
+    "owner": "Ir a Suscripción",
+    "others": "Pida al Propietario de la agencia que reanude la suscripción en Configuración › Suscripción.",
+    "trialTitle": "La prueba gratis termina el {date}",
+    "trialBody": "Inicie la suscripción para seguir haciendo cambios después.",
+    "trialAction": "Iniciar la suscripción",
+    "pausedNote": "Los cambios están en pausa: la suscripción de esta agencia no está activa. El Propietario puede reanudarla en Configuración › Suscripción."
   }
 }

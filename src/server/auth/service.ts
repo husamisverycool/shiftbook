@@ -79,7 +79,10 @@ export function withAuth<T>(deps: AuthDeps, fn: (tx: Tx) => Promise<T>): Promise
 /** From here on in this transaction, the agency's own tables are visible too. */
 export const enterAgency = (tx: Tx, agencyId: string) => tx.execute(sql`select set_config('app.agency_id', ${agencyId}, true)`);
 
-const linkToken = () => `sbau_${randomToken()}`;
+/** A one-time link's token (invites, resets, sign-ups): only its digest is kept. */
+export const linkToken = () => `sbau_${randomToken()}`;
+/** The shape every one-time link token has. */
+export const LINK_TOKEN_SHAPE = /^sbau_[A-Za-z0-9_-]{43}$/;
 export const hideAuthLinks = (text: string) => text.replace(LINK_TOKEN, HIDDEN_AUTH_LINK);
 export const normalEmail = (email: string) => email.trim().toLowerCase();
 type Login = typeof s.userLogins.$inferSelect;
@@ -866,27 +869,62 @@ export async function inviteMember(
   return { ok: true, userId: result.userId };
 }
 
+/** An email's shape (the database checks it again). */
+export const looksLikeEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+
 /**
- * A new agency's first Owner (scripts/create-agency.ts): invited like anyone, but the link is handed
- * to whoever runs the script instead of emailed. Refused once the agency has an Owner.
+ * A new agency's first Owner, its login and its billing row, in a transaction in sign-in mode that
+ * has entered the agency (decision 0036: the one way both scripts/create-agency.ts and sign-up make
+ * an agency's Owner). Invited (the script hands over an invite link) or active with a password (a
+ * sign-up has just proved the mailbox and chosen it). Refused when the email already signs in to
+ * Granite, or the agency already has an Owner.
  */
-export async function firstOwnerInvite(deps: AuthDeps, agencyId: string, input: { name: string; email: string; locale: string }, baseUrl: string): Promise<{ ok: true; link: string } | { ok: false; error: "invalid_email" | "invalid_name" | "email_taken" | "has_owner" }> {
+export async function addFirstOwner(
+  tx: Tx,
+  agencyId: string,
+  input: { name: string; email: string; locale: string; status: "invited" | "active"; passwordHash?: string; trialEndsAt: Date | null; byLabel: string },
+  now: Date,
+): Promise<{ ok: true; user: User } | { ok: false; error: "email_taken" | "has_owner" }> {
   const email = normalEmail(input.email);
   const name = input.name.trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return { ok: false, error: "invalid_email" };
+  const [taken] = await tx.select({ userId: s.userLogins.userId }).from(s.userLogins).where(eq(s.userLogins.email, email));
+  if (taken) return { ok: false, error: "email_taken" };
+  const [owner] = await tx.select({ id: s.users.id }).from(s.users).where(and(eq(s.users.agencyId, agencyId), eq(s.users.role, "owner")));
+  if (owner) return { ok: false, error: "has_owner" };
+  const [user] = await tx.insert(s.users).values({ agencyId, name, email, role: "owner", preferredLocale: input.locale === "es" ? "es" : "en", status: input.status }).returning();
+  await tx.insert(s.userLogins).values({ userId: user!.id, agencyId, email, ...(input.passwordHash ? { passwordHash: input.passwordHash, passwordChangedAt: now } : {}) });
+  await tx.insert(s.agencySubscriptions).values({ agencyId, trialEndsAt: input.trialEndsAt, updatedAt: now }).onConflictDoNothing();
+  const by = { agencyId, userId: null, label: input.byLabel };
+  await auditBy(tx, by, [
+    { action: "create", entityType: "user", entityId: user!.id, after: { name, email, role: "owner", status: input.status } },
+    { action: "create", entityType: "subscription", entityId: agencyId, after: { freeDaysUntil: input.trialEndsAt?.toISOString() ?? null } },
+  ]);
+  return { ok: true, user: user! };
+}
+
+/**
+ * A new agency's first Owner (scripts/create-agency.ts): invited like anyone, but the link is handed
+ * to whoever runs the script instead of emailed. Refused once the agency has an Owner. The agency's
+ * free days (decision 0036) start now, as a signed-up agency's do.
+ */
+export async function firstOwnerInvite(
+  deps: AuthDeps,
+  agencyId: string,
+  input: { name: string; email: string; locale: string },
+  baseUrl: string,
+  opts: { trialEndsAt?: Date | null } = {},
+): Promise<{ ok: true; link: string } | { ok: false; error: "invalid_email" | "invalid_name" | "email_taken" | "has_owner" }> {
+  const email = normalEmail(input.email);
+  const name = input.name.trim();
+  if (!looksLikeEmail(email)) return { ok: false, error: "invalid_email" };
   if (name.length === 0 || name.length > 120) return { ok: false, error: "invalid_name" };
   const now = nowOf(deps);
   return withAuth(deps, async (tx) => {
-    const [taken] = await tx.select({ userId: s.userLogins.userId }).from(s.userLogins).where(eq(s.userLogins.email, email));
-    if (taken) return { ok: false, error: "email_taken" };
     await enterAgency(tx, agencyId);
-    const [owner] = await tx.select({ id: s.users.id }).from(s.users).where(and(eq(s.users.agencyId, agencyId), eq(s.users.role, "owner")));
-    if (owner) return { ok: false, error: "has_owner" };
-    const [user] = await tx.insert(s.users).values({ agencyId, name, email, role: "owner", preferredLocale: input.locale === "es" ? "es" : "en", status: "invited" }).returning();
-    await tx.insert(s.userLogins).values({ userId: user!.id, agencyId, email });
-    const token = await newLink(tx, user!, "invite", new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000), "Granite setup", now);
-    await auditBy(tx, { agencyId, userId: null, label: "Granite setup" }, [{ action: "create", entityType: "user", entityId: user!.id, after: { name, email, role: "owner", status: "invited" } }]);
-    return { ok: true, link: `${baseUrl}/${user!.preferredLocale}/invite/${token}` };
+    const made = await addFirstOwner(tx, agencyId, { name, email, locale: input.locale, status: "invited", trialEndsAt: opts.trialEndsAt ?? null, byLabel: "Granite setup" }, now);
+    if (!made.ok) return made;
+    const token = await newLink(tx, made.user, "invite", new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000), "Granite setup", now);
+    return { ok: true, link: `${baseUrl}/${made.user.preferredLocale}/invite/${token}` };
   });
 }
 

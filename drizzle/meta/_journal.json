@@ -302,6 +302,13 @@
       "when": 1792179600000,
       "tag": "0042_granite_citation",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792179700000,
+      "tag": "0043_signup_and_billing",
+      "breakpoints": true
     }
   ]
 }

@@ -32,7 +32,9 @@ root frame (demo banner above it).
       changes them); Members (slice k) after it, for everyone (only the Owner manages them); Single
       sign-on (decision 0033) after it, for the Owner only (Linear and Notion keep it with the
       workspace's security and members settings, for owners and admins);
-      Activity (slice k, the agency's log) after it, for the Owner and the accountant.
+      Activity (slice k, the agency's log) after it, for the Owner and the accountant;
+      Billing (decision 0036; Linear's Administration › Billing, Vercel's Settings › Billing) after it,
+      for the Owner only.
       Below a separator, the person's own items (slice k): their name and role (not a link),
       **Your account**, and **Sign out**. Linear's docs do not say where its log-out item sits —
       listed as a difference.
@@ -63,6 +65,10 @@ root frame (demo banner above it).
 - `?` (or the sidebar's Keyboard shortcuts) opens the list of keyboard shortcuts (Linear, Stripe).
 
 ## States
+- Changes paused (decision 0036: the agency's subscription is not active after its free days): the
+  screens hide every change, as for the accountant, and a page's "only these roles change this" line
+  says instead that changes are paused and the Owner can restart the subscription in Settings › Billing
+  (the role line would be wrong for the Owner). Home's banner says why (`home.md`).
 - Narrow screens: not documented by Linear for the web app. Granite uses shadcn's sidebar default
   (collapses behind a menu button; the sheet fills the width) — listed as a difference.
 

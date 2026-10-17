@@ -13,7 +13,7 @@ import { approveRunAction, computeTotalsAction, createFilesAction } from "@/app/
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { REFUSAL_MESSAGE, STEPS, type Step } from "./types";
 
 
@@ -151,7 +151,7 @@ export function ConvertFrame(props: {
           <div className="flex flex-col gap-1">
             <h1 className="text-[28px] leading-9 font-bold tracking-tight">{props.title}</h1>
             <p className="text-sm text-muted-foreground">{props.periodLine}</p>
-            {!mayHours && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+            {!mayHours && <p className="text-sm text-muted-foreground">{<ReadOnlyNote text={t("readOnly")} />}</p>}
           </div>
           {(forwardButton || editButton) && (
             <div className="flex gap-2 max-md:grid max-md:grid-cols-[repeat(auto-fit,minmax(0,1fr))]">

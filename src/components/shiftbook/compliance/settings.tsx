@@ -24,6 +24,7 @@ import { longDate } from "../format";
 import { StatusBadge } from "./status-badge";
 import { useDateTime } from "../agency-zone";
 import { SettingsEmpty, SettingsField, SettingsFooter, SettingsPage, SettingsPanel, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
+import { ReadOnlyNote } from "../abilities";
 
 function useSave() {
   const t = useTranslations("complianceSettings");
@@ -90,7 +91,7 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
       description={
         <>
           <p>{t("description")}</p>
-          {!canChange && <p>{t("readOnly")}</p>}
+          {!canChange && <p>{<ReadOnlyNote text={t("readOnly")} />}</p>}
         </>
       }
     >

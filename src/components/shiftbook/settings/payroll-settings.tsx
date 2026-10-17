@@ -24,6 +24,7 @@ import { SpreadsheetColumns } from "./spreadsheet-columns";
 import { WorkerIds } from "./worker-ids";
 import { useDateTime } from "../agency-zone";
 import { SettingsField, SettingsFooter, SettingsPage, SettingsPanel, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
+import { ReadOnlyNote } from "../abilities";
 
 export type PayrollTab = "codes" | "workers" | "columns";
 export type WorkerFilter = "all" | "missing" | "set";
@@ -180,7 +181,7 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
   const fileName = format ? fileNameOf(format, fields) : null;
 
   return (
-    <SettingsPage context={t("title")} title={tp("title")} description={view.canEdit ? undefined : tp("readOnly")}>
+    <SettingsPage context={t("title")} title={tp("title")} description={view.canEdit ? undefined : <ReadOnlyNote text={tp("readOnly")} />}>
       {/* Linear's rows: each system a row, its hint under its name, the choice at the right (Deputy's format list). */}
       <SettingsSection id="system-title" title={tp("systemTitle")} description={tp("systemHint")}>
         {!inUse && (

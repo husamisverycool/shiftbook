@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { ApprovalDetail } from "@/server/approvals/service";
-import { useCan } from "../abilities";
+import { ReadOnlyNote, useCan } from "../abilities";
 import { clock, hoursMinutes, longDate, shortDate } from "../format";
 import { LinkedText } from "../linked-text";
 import { Crumbs, Page, PageHeader, Section } from "../page";
@@ -118,7 +118,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
         description={
           <span className="flex flex-col gap-1">
             <span>{td("sentTo", { name: r.approverName, email: r.approverEmail, language: t(r.locale === "es" ? "spanish" : "english") })}</span>
-            {!mayAsk && <span>{t("readOnly")}</span>}
+            {!mayAsk && <span>{<ReadOnlyNote text={t("readOnly")} />}</span>}
             {detail.needsReview > 0 && <span className="text-destructive">{td("needsReview", { count: detail.needsReview })}</span>}
           </span>
         }

@@ -6,6 +6,8 @@ Reference product and screen: Stripe Dashboard Home; Shopify Polaris setup guide
 Source URL: https://support.stripe.com/questions/dashboard-home-page-charts-for-business-insights
 Source URL: https://docs.stripe.com/dashboard/basics
 Source URL: https://shopify.dev/docs/api/app-home/patterns/compositions/setup-guide
+Source URL: https://shopify.dev/docs/api/app-home/polaris-web-components/feedback-and-status-indicators/banner
+Source URL: https://vercel.com/docs/plans/pro-plan/billing
 Researched: 2026-10-16 from the products' own screenshots (`docs/research/design-gravity-slice-l.md`
 part C). Confidence: high for the parts and their order (Stripe's screenshot shows "Today" then
 "Your overview"; Polaris puts the setup guide on the homepage).
@@ -16,6 +18,18 @@ stranger in the demo, SPEC §24 — through a week), the week now, what needs so
 quarter at a glance.
 
 ## Hierarchy
+0. **Billing banner** (decision 0036; only when there is something to say), at the very top of the page,
+   outside the sections (Polaris's banner: page-wide messages at the top; a heading, one or two plain
+   sentences, one action; not dismissible while it must be acted on; Vercel: an overdue account keeps
+   its data but cannot change things until it pays):
+   - **Changes are paused** (critical tone): one sentence on why — the free days are over with no
+     subscription, the last payment failed, payments failed and Stripe stopped trying, the trial ended
+     without a card, the first payment was not completed, or the subscription was canceled — then that
+     everything can still be read and downloaded and nothing is deleted. After a change was refused, a
+     first sentence says that change was not made. For the Owner: **Go to Billing**. For everyone else:
+     ask the agency's Owner to restart it in Settings › Billing (no button).
+   - **Free days end soon** (info tone; the last 7 days of the agency's free days with no
+     subscription): for the Owner only, **Start subscription** → Billing.
 1. **Setup guide** (Polaris, as its screenshot shows it; for the Owner, while not hidden): a white
    card with "Setup guide", hide (×) and collapse (⌃) buttons on the right, one intro line, "N of M
    steps done", then the steps in a bordered box with dividers — each a checkbox (ticked by
@@ -53,6 +67,8 @@ quarter at a glance.
 - G then H opens Home (`_layouts/app.md`).
 
 ## States
+- Changes paused (decision 0036): the banner above; the setup guide, figures and notices stay; every
+  button that would change something is hidden, as for the accountant.
 - A role that cannot do the steps (coordinator, Billing, the accountant) sees no guide.
 - No pay period yet: Today says so.
 - Figures for a new agency read zero; the charts draw a flat line.
