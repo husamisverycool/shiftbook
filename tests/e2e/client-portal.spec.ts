@@ -97,11 +97,13 @@ for (const locale of ["en", "es"] as const) {
     // The agency sees it above its job orders and makes the job order.
     await page.goto(`/${locale}/job-orders`);
     const band = page.getByTestId("staff-requests");
-    await expect(band.getByTestId("staff-request")).toContainText("Forklift operator");
-    await band.getByTestId("staff-request-accept").click();
+    // The demo also has its own waiting request (Harborview's event servers): take this contact's.
+    const request = band.getByTestId("staff-request").filter({ hasText: "Forklift operator" });
+    await expect(request).toBeVisible();
+    await request.getByTestId("staff-request-accept").click();
     await page.getByTestId("staff-request-accept-confirm").click();
     await expect(page.getByText(m.staffRequests.created)).toBeVisible();
-    await expect(page.getByTestId("staff-requests")).toHaveCount(0);
+    await expect(page.getByTestId("staff-request").filter({ hasText: "Forklift operator" })).toHaveCount(0);
     await expect(page.getByTestId("requested-by-client").first()).toBeVisible();
 
     // The contact sees it accepted.
