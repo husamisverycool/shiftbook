@@ -92,9 +92,10 @@ test("the list works from the keyboard: highlight, preview panel, select, displa
   await expect(rows.nth(1)).toHaveAttribute("data-highlighted", "true");
   await page.keyboard.press("Space");
   const panel = page.getByTestId("side-panel");
-  await expect(panel).toContainText("2 of 5");
+  // 6 open job orders: the demo's five and its Newark packers (New Jersey duties in the demo).
+  await expect(panel).toContainText("2 of 6");
   await page.keyboard.press("j");
-  await expect(panel).toContainText("3 of 5");
+  await expect(panel).toContainText("3 of 6");
   await noSeriousProblems(page, "job orders with preview");
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();

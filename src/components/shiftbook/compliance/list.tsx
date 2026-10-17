@@ -51,7 +51,7 @@ export function ComplianceList({ items, users, nextUpcoming, filtered, today }: 
           <h2 id={`group-${g.status}`} className="flex h-9 items-center gap-2 border-b bg-muted/70 px-3 text-sm font-medium">
             <ComplianceStatusIcon status={g.status} />
             {t(`statuses.${g.status}`)}
-            <span className="font-normal text-muted-foreground tabular-nums">{g.items.length}</span>
+            <span className="font-normal text-foreground tabular-nums">{g.items.length}</span>
           </h2>
           <ul>
             {g.items.map((i) => {

@@ -531,8 +531,8 @@ export function UploadStep({ periodId, documents, demo = false, forwardTo = null
                       <TableCell className={cn("whitespace-nowrap text-muted-foreground tabular-nums", rowPad)}>{when(d.receivedAt)}</TableCell>
                       <TableCell className={rowPad}>{d.clientName ?? "—"}</TableCell>
                       <TableCell className={rowPad}>{t(`kind.${d.kind}`)}</TableCell>
-                      <TableCell className={cn("text-right tabular-nums", rowPad)}>{d.entries}</TableCell>
-                      <TableCell className={cn("text-right tabular-nums", rowPad)}>{d.needsReview}</TableCell>
+                      <TableCell className={cn("text-right tabular-nums", rowPad)} data-testid="document-entries">{d.entries}</TableCell>
+                      <TableCell className={cn("text-right tabular-nums", rowPad)} data-testid="document-review-count">{d.needsReview}</TableCell>
                     </TableRow>
                   );
                 })}

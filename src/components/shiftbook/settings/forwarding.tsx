@@ -33,7 +33,7 @@ export function CopyAddress({ address, testId = "forwarding-address" }: { addres
   const [copied, mark] = useCopied();
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5">
-      <code className="truncate rounded-md bg-muted px-2 py-1 font-mono text-[13px]" data-testid={testId}>
+      <code className="truncate rounded-md bg-muted px-2 py-1 font-mono text-[13px] text-foreground" data-testid={testId}>
         {address}
       </code>
       <Tip label={t("copy")}>

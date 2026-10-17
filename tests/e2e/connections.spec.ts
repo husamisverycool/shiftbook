@@ -45,8 +45,9 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("tab-available").click();
     await expect(page).toHaveURL(/tab=available/);
     await expect(page.getByTestId("available-payroll")).toContainText(c.systems.paychex_flex_csv);
-    await expect(page.getByTestId("available-time")).toContainText(c.systems.beeline);
-    await expect(page.getByTestId("available-time")).toContainText(c.notYet);
+    // Beeline, Coupa and Magnit have profiles now (decision 0043): none is "not available yet".
+    for (const vms of [c.systems.beeline, c.systems.coupa, c.systems.magnit]) await expect(page.getByTestId("available-time")).toContainText(vms);
+    await expect(page.getByTestId("available-time")).not.toContainText(c.notYet);
     await page.getByTestId("set-up-paychex_flex_csv").click();
 
     // Payroll settings: Paychex Flex reads a sample file and fills the client id (not saved).

@@ -148,8 +148,8 @@ for (const locale of ["en", "es"] as const) {
       ["photo-sign-in-2026-10-07.jpg", "3", "2"],
     ] as const) {
       await expect(doc(name)).toContainText(m.convert.upload.status.read);
-      await expect(doc(name).getByRole("cell").nth(4)).toHaveText(entries);
-      await expect(doc(name).getByRole("cell").nth(5)).toHaveText(review);
+      await expect(doc(name).getByTestId("document-entries")).toHaveText(entries);
+      await expect(doc(name).getByTestId("document-review-count")).toHaveText(review);
     }
     // The demo's own photos and signed PDF: no recorded reading yet, said plainly; archived together.
     const unrecorded = SAMPLE_FILES.filter((f) => !f.endsWith(".csv"));

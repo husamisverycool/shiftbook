@@ -43,7 +43,11 @@ for (const lang of LANGS) {
     await check(page, `${lang} demo provider`);
     await page.getByTestId("demo-account-lena@cedarrow.example.com").click();
     await expect(page).toHaveURL(new RegExp(`/${lang}$`));
-    await page.getByTestId("agency-menu").click();
+    // A click before the page is interactive opens nothing: open the menu until it shows.
+    await expect(async () => {
+      if (!(await page.getByTestId("menu-person").isVisible())) await page.getByTestId("agency-menu").click();
+      await expect(page.getByTestId("menu-person")).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
     await expect(page.getByTestId("menu-person")).toHaveText(`Lena Ortiz (demo) · ${m.roles.coordinator.name}`);
   });
 
