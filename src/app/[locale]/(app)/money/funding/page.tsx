@@ -2,9 +2,10 @@
 // open invoice with its funding decision under the agency's rules.
 import { setRequestLocale } from "next-intl/server";
 import { FundingList } from "@/components/shiftbook/money/funding";
-import { MoneyFrame } from "@/components/shiftbook/money/frame";
+import { MoneyFrame, MoneyNotForRole } from "@/components/shiftbook/money/frame";
 import { withAgency } from "@/server/db";
 import { fundingRules, fundingView } from "@/server/money/queries";
+import { can } from "@/server/permissions";
 import { currentActor } from "@/server/session";
 import { agencyToday } from "@/server/settings";
 
@@ -14,6 +15,7 @@ export default async function FundingPage(props: { params: Promise<{ locale: str
   const { locale } = await props.params;
   setRequestLocale(locale);
   const actor = await currentActor();
+  if (!can(actor, "money")) return <MoneyNotForRole />;
   const view = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     return { ...(await fundingView(tx, today)), rules: await fundingRules(tx), today };

@@ -36,6 +36,8 @@ Nothing moves in this version. This page is the record of every handoff.
 ## States
 - Empty (`_components/empty-state.md`): the icon, "Nothing handed off yet", one line saying handoffs
   start from a run's payroll, and the action **Go to Payroll**.
+- Not the Owner (the "money" permission; money review B5): every Money page shows the title and the
+  not-for-your-role empty state, as Margin does; the worker profile's wage-access box is hidden.
 
 ## Loading and errors (slice o)
 - Loading: the page's outline in the list shape (`_components/loading.md`).

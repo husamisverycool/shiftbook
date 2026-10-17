@@ -20,6 +20,7 @@ import { billingProblems, earliestNewVersion, setAssignmentPo, setBillingSetting
 import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
+import { issueCreditNote } from "../../src/server/collections/service";
 import { pdfPages, pdfText } from "../../src/server/files/pdf-text";
 import { createRunFiles } from "../../src/server/files/service";
 import { editEntry } from "../../src/server/review/service";
@@ -435,6 +436,16 @@ describe("second opinion (slice g): corrections go to the invoice that billed th
     expect(c2.invoices.map((i) => [i.number, i.kind, i.totalCents, i.originalNumber])).toEqual([["PLM-20261005-3-CN-01", "credit_note", -5300, "PLM-20261005-3"]]);
     const [cn] = await inAgency((tx) => tx.select().from(s.invoices).where(eq(s.invoices.number, "PLM-20261005-3-CN-01")));
     expect(cn!.poNumber).toBe("PO-48213");
+  });
+
+  it("a correction's credit never takes an invoice past what it may still be credited (money review A2)", async () => {
+    await jeromeAddedThenCut("PO-1001");
+    // The whole invoice was already credited by hand: the correction's $53.00 credit has no room.
+    const [original] = await inAgency((tx) => tx.select().from(s.invoices).where(eq(s.invoices.number, "PLM-20261005-3")));
+    expect(await inAgency((tx) => issueCreditNote(tx, store, theOwner, original!.id, { reason: "disputed_hours", amountCents: original!.totalCents, memo: null }))).toMatchObject({ ok: true });
+    const blockers = (await compute()).blockers;
+    expect(blockers.map((b) => b.code)).toContain("invoice_problem");
+    expect(blockers.find((b) => b.code === "invoice_problem")!.message).toMatch(/PLM-20261005-3, which has only \$0\.00 left to credit/);
   });
 
   it("…whatever PO the placement carries now, even one never invoiced", async () => {

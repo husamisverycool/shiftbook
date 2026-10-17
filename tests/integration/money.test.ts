@@ -109,6 +109,13 @@ describe("embedded payroll handoff", () => {
     const [run] = await inAgency((tx) => payrollRuns(tx));
     await inAgency((tx) => recordPayrollHandoff(tx, theOwner, run!.id, "file"));
     expect(await databaseError(inAgency((tx) => tx.update(s.partnerHandoffs).set({ amountCents: 1 })))).toMatch(/permission denied/);
+    // Only the demo's reset deletes: an agency that is not a demo keeps every handoff.
+    await owner.db.update(s.agencies).set({ isDemo: false }).where(eq(s.agencies.id, DEMO_AGENCY.id));
+    try {
+      expect(await databaseError(inAgency((tx) => tx.delete(s.partnerHandoffs)))).toMatch(/partner_handoffs rows are kept/);
+    } finally {
+      await owner.db.update(s.agencies).set({ isDemo: true }).where(eq(s.agencies.id, DEMO_AGENCY.id));
+    }
   });
 });
 

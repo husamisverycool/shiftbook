@@ -55,6 +55,8 @@ export function fundingProblems(v: unknown): MoneySettingsProblem[] {
   if (typeof r.enabled !== "boolean") problems.push({ field: "enabled", rule: "type" });
   if (!int(r.advanceBps, 100, 10_000)) problems.push({ field: "advanceBps", rule: "range" });
   if (!int(r.feeBps, 0, 2_000)) problems.push({ field: "feeBps", rule: "range" });
+  // The fee comes out of the reserve: an advance and fee over 100% would leave a negative release.
+  else if (int(r.advanceBps, 100, 10_000) && (r.advanceBps as number) + (r.feeBps as number) > 10_000) problems.push({ field: "feeBps", rule: "range" });
   if (!int(r.maxConcentrationBps, 100, 10_000)) problems.push({ field: "maxConcentrationBps", rule: "range" });
   if (!int(r.maxAgeDays, 1, 365)) problems.push({ field: "maxAgeDays", rule: "range" });
   if (typeof r.requireClientApproval !== "boolean") problems.push({ field: "requireClientApproval", rule: "type" });

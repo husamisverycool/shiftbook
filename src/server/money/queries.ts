@@ -13,7 +13,7 @@ import { payDates, rateCards, firstDays } from "../payroll/paid-lines";
 import { fundingPacket, type FundingFacts, type FundingInvoice, type FundingPacket } from "./funding";
 import { buildPayrollPayload, type PayrollPayload } from "./payroll-payload";
 import { fundingRules, wageAccessRules } from "./settings";
-import { wageAccessAvailability, type Availability, type UnpaidShift, type WageAccessRules } from "./wage-access";
+import { recoveringRun, wageAccessAvailability, type Availability, type UnpaidShift, type WageAccessRules } from "./wage-access";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -124,8 +124,9 @@ export async function payrollHandoffView(tx: Tx, runId: string): Promise<Payroll
     rateCards(tx),
     firstDays(tx, lines),
   ]);
-  // Wage access this payroll repays: a request is recovered by the earliest run that pays any of the
-  // hours it drew on (so it is deducted once even when its hours span two weeks).
+  // Wage access this payroll repays: a request is recovered by the run that pays the last of the hours
+  // it drew on — until then it is outstanding (wage-access.ts), so the two always agree, and it is
+  // deducted once even when its hours span two weeks (money review B2).
   const requests = workerIds.length > 0 ? (await handoffs(tx, { kind: "wage_access" })).filter((h) => workerIds.includes(h.subjectId)) : [];
   const recoveries: { workerId: string; handoffId: string; amountCents: number }[] = [];
   if (requests.length > 0) {
@@ -137,8 +138,8 @@ export async function payrollHandoffView(tx: Tx, runId: string): Promise<Payroll
     const startOf = new Map(doneRuns.map((r) => [r.id, `${r.periodStart}|${String(r.version).padStart(4, "0")}`]));
     for (const h of requests) {
       const drawn = new Set(Array.isArray(h.summary.entryIds) ? (h.summary.entryIds as string[]) : []);
-      const paying = [...new Set(otherLines.filter((l) => l.workerId === h.subjectId && l.timeEntryIds.some((id) => drawn.has(id))).map((l) => l.payRunId))].sort((a, b) => cmp(startOf.get(a) ?? "", startOf.get(b) ?? ""));
-      if (paying[0] === runId) recoveries.push({ workerId: h.subjectId, handoffId: h.id, amountCents: h.amountCents ?? 0 });
+      const mine = otherLines.filter((l) => l.workerId === h.subjectId);
+      if (recoveringRun(drawn, mine, (a, b) => cmp(startOf.get(a) ?? "", startOf.get(b) ?? "")) === runId) recoveries.push({ workerId: h.subjectId, handoffId: h.id, amountCents: h.amountCents ?? 0 });
     }
   }
   // The gross the payroll file carried (the first file made), else what the Owner approved.
@@ -240,6 +241,9 @@ export async function fundingView(tx: Tx, today: string, opts: { invoiceId?: str
     requestIds.length > 0 ? tx.select().from(s.approvalDecisions).where(inArray(s.approvalDecisions.requestId, requestIds)) : Promise.resolve([]),
     requestIds.length > 0 ? tx.select({ requestId: s.clientDisputes.requestId, status: s.clientDisputes.status }).from(s.clientDisputes).where(and(inArray(s.clientDisputes.requestId, requestIds), ne(s.clientDisputes.status, "draft"))) : Promise.resolve([]),
   ]);
+  // The shifts each invoice bills: its period's hours on the placements its lines name.
+  const periodIds = [...new Set(runs.map((r) => r.payPeriodId))];
+  const periodEntries = periodIds.length > 0 ? await tx.select({ id: s.timeEntries.id, payPeriodId: s.timeEntries.payPeriodId, assignmentId: s.timeEntries.assignmentId, minutes: s.timeEntries.minutes }).from(s.timeEntries).where(inArray(s.timeEntries.payPeriodId, periodIds)) : [];
   const funded = await handoffs(tx, { kind: "funding" });
   const packets = wanted.map((b) => {
     const inv = b.invoice;
@@ -249,8 +253,13 @@ export async function fundingView(tx: Tx, today: string, opts: { invoiceId?: str
     const decided = decisions.filter((d) => mine.some((r) => r.id === d.requestId));
     const paidOff = balances.filter((x) => x.invoice.clientId === inv.clientId && x.paidOffOn).map((x) => ({ issuedOn: x.invoice.issuedOn, dueOn: x.invoice.dueOn, paidOn: x.paidOffOn! }));
     const dtp = daysToPay(paidOff);
+    const placements = new Set((inv.document?.lines ?? []).map((l) => l.assignmentId).filter((x): x is string => x !== null));
+    const billed = periodEntries.filter((e) => e.payPeriodId === period && e.assignmentId !== null && placements.has(e.assignmentId) && (e.minutes ?? 0) > 0);
+    const approvedIds = new Set(decisions.filter((d) => forPeriod.includes(d.requestId)).flatMap((d) => d.approved.map((x) => x.entryId)));
     const facts: FundingFacts = {
       asOf: today,
+      invoiceShifts: billed.length,
+      approvedInvoiceShifts: billed.filter((e) => approvedIds.has(e.id)).length,
       clientOpenCents: open.filter((x) => x.invoice.clientId === inv.clientId).reduce((t, x) => t + x.balanceCents, 0),
       allOpenCents,
       paidInvoices: dtp.invoices,

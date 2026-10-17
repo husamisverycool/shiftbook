@@ -63,8 +63,10 @@ export function reminderDue(invoice: { dueOn: string; balanceCents: number }, sc
 
 /**
  * How much a new credit note may credit (Stripe: "The sum of all credit notes issued for an invoice
- * can't exceed the total amount of the invoice"). Earlier credit notes are negative totals.
+ * can't exceed the total amount of the invoice"): its total less the credit notes already issued against it
+ * (their totals are negative) and less what was written off — a written-off amount was never paid, so
+ * crediting it too would give the client credit it never paid for.
  */
-export function creditNoteRoom(invoiceTotalCents: number, earlierCreditNoteTotals: readonly number[]): number {
-  return Math.max(0, invoiceTotalCents + earlierCreditNoteTotals.reduce((sum, c) => sum + c, 0));
+export function creditNoteRoom(invoiceTotalCents: number, earlierCreditNoteTotals: readonly number[], writeOffCents: readonly number[] = []): number {
+  return Math.max(0, invoiceTotalCents + earlierCreditNoteTotals.reduce((sum, c) => sum + c, 0) - writeOffCents.reduce((sum, w) => sum + w, 0));
 }

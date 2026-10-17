@@ -111,7 +111,8 @@ export async function setBillingSettings(tx: Tx, actor: Actor, clientId: string,
   const versions = await tx.select().from(s.clientBillingProfiles).where(eq(s.clientBillingProfiles.clientId, clientId));
   const sameDay = versions.find((v) => v.effectiveFrom === effectiveFrom);
   const before = [...versions].filter((v) => v.effectiveFrom <= effectiveFrom).sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0];
-  const carried = { vmsName: before?.vmsName ?? null, consolidate: before?.consolidate ?? false };
+  // A client switched off collection reminders stays off in the new version (money review A3).
+  const carried = { vmsName: before?.vmsName ?? null, consolidate: before?.consolidate ?? false, remindersOff: before?.remindersOff ?? false };
   if (sameDay) {
     await tx.update(s.clientBillingProfiles).set(settings).where(eq(s.clientBillingProfiles.id, sameDay.id));
     await audit(tx, actor, [{ action: "update", entityType: "billing_profile", entityId: sameDay.id, before: pick(sameDay as unknown as BillingSettings), after: { ...settings, clientId, effectiveFrom } }]);

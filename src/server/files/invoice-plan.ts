@@ -11,9 +11,10 @@
  * "same as billing contact"). A client that requires a PO cannot be invoiced for a line without one.
  */
 import { formatCents, type EarningType, type Fraction } from "@shiftbook/rules";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { creditNoteRoom } from "../collections/schedule";
 import { settlement, type DiffLine } from "../run/differences";
 import { dated, message, say, type Said } from "../said";
 
@@ -354,6 +355,17 @@ export async function planCorrectionInvoices(
         continue;
       }
       const kind: s.InvoiceKind = net.netCents > 0 ? "supplemental" : "credit_note";
+      // A credit never takes the original past what it may still be credited: its total less every
+      // credit note against it (by hand too) and its write-offs (the money review's A2).
+      if (kind === "credit_note") {
+        const credits = await tx.select({ totalCents: s.invoices.totalCents }).from(s.invoices).where(and(eq(s.invoices.originalInvoiceId, g.original.id), eq(s.invoices.kind, "credit_note"), ne(s.invoices.status, "void")));
+        const offs = await tx.select({ amountCents: s.writeOffs.amountCents }).from(s.writeOffs).where(eq(s.writeOffs.invoiceId, g.original.id));
+        const room = creditNoteRoom(g.original.totalCents, credits.map((c) => c.totalCents), offs.map((o) => o.amountCents));
+        if (-net.netCents > room) {
+          problems.push({ code: "invoice_problem", clientId, clientName: client.name, ...message([say("correctionCreditTooLarge", { client: client.name, amount: formatCents(-net.netCents), number: g.original.number, room: formatCents(room) })]) });
+          continue;
+        }
+      }
       const earlier = all.filter((i) => i.originalInvoiceId === g.original!.id && i.kind === kind).length;
       const n = earlier + 1;
       const number = kind === "supplemental" ? `${g.original.number}-S${n}` : `${g.original.number}-CN-${String(n).padStart(2, "0")}`;

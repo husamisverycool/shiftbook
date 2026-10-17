@@ -61,7 +61,7 @@ export function PayrollRunView({ view, handoff }: { view: PayrollHandoffView; ha
       const r = await recordPayrollHandoffAction(run.id, format);
       setConfirming(false);
       if (r.ok) toast.success(tr("done"));
-      else toast.error(tr(`errors.${r.error === "already" || r.error === "not_allowed" || r.error === "not_found" || r.error === "not_ready" ? r.error : "generic"}`));
+      else toast.error(tr(`errors.${r.error === "already" || r.error === "not_allowed" || r.error === "not_found" || r.error === "not_ready" || r.error === "zeal_differs" ? r.error : "generic"}`));
     });
 
   return (

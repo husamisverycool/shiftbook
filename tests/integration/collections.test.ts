@@ -10,8 +10,9 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { setBillingSettings } from "../../src/server/catalog/billing";
 import { issueCreditNote, recordPromise, saveSchedule, sendInvoice, setClientReminders, sweepReminders, type CollectionsDeps } from "../../src/server/collections/service";
 import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY, DEMO_OWNER, demoUuid, RECRUITERS } from "../../src/server/demo/dataset";
@@ -20,7 +21,7 @@ import { createRunFiles } from "../../src/server/files/service";
 import type { MailTransport, OutgoingMail } from "../../src/server/mail/transport";
 import { deleteRead, emailNotices, inboxOf, markAllRead, markRead, setEmailSetting, syncNotifications, unreadCount } from "../../src/server/notifications/service";
 import { invoiceBalances } from "../../src/server/receivables/balances";
-import { recordPayment } from "../../src/server/receivables/service";
+import { recordPayment, writeOff } from "../../src/server/receivables/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { approveAsOwner, databaseError, openAppDb, openOwnerDb } from "./helpers";
@@ -99,6 +100,16 @@ describe("credit notes issued by hand (Stripe credit notes)", () => {
     expect(await balanceOf()).toMatchObject({ paidCents: 142_500, creditedCents: 10_000, balanceCents: -10_000 });
   });
 
+  it("never credits what was written off: the client's credit is at most what it actually paid", async () => {
+    expect(await inAgency((tx) => recordPayment(tx, theOwner, { clientId: PLM, receivedOn: "2026-10-14", amountCents: 130_000, method: "check", reference: "1043", memo: null, applications: [{ invoiceId: invoice.id, amountCents: 130_000 }] }))).toMatchObject({ ok: true });
+    expect(await inAgency((tx) => writeOff(tx, theOwner, invoice.id, { amountCents: 12_500, reason: "small_balance", note: null }))).toEqual({ ok: true });
+    expect(await balanceOf()).toMatchObject({ balanceCents: 0 });
+    // $1,425.00 less the $125.00 written off: $1,300.00 is all that can be credited.
+    expect(await credit(142_500)).toEqual({ ok: false, error: "amount", roomCents: 130_000 });
+    expect(await credit(130_000)).toMatchObject({ ok: true });
+    expect(await balanceOf()).toMatchObject({ balanceCents: -130_000 });
+  });
+
   it("refuses a role that cannot, a reason not on the list, a memo too long, a credit note credited", async () => {
     expect(await credit(1000, coordinator)).toEqual({ ok: false, error: "forbidden" });
     expect(await credit(1000, theOwner, "fraud")).toEqual({ ok: false, error: "reason" });
@@ -162,6 +173,39 @@ describe("scheduled collection reminders (Stripe: before, when or after the due 
     expect(await databaseError(inAgency((tx) => tx.insert(s.reminders).values({ agencyId: theOwner.agencyId, invoiceId: invoice.id, stage: "overdue", locale: "en", how: "emailed", createdByLabel: "x" })))).toMatch(/reminders_emailed_once/);
     expect(await inAgency((tx) => setClientReminders(tx, theOwner, PLM, false))).toEqual({ ok: true });
     expect(await sweepReminders(deps("2026-12-12"), theOwner.agencyId)).toEqual({ sent: 0, failed: 0 });
+  });
+});
+
+describe("a reminder whose email failed is tried again (money review A4)", () => {
+  beforeEach(invoicedWeek);
+
+  it("the next sweep resends the same stage's email; once sent, never again", async () => {
+    expect(await inAgency((tx) => saveSchedule(tx, theOwner, { enabled: true, beforeDueDays: 3, overdueDays: 7, finalDays: 30 }))).toEqual({ ok: true });
+    const broken: MailTransport = { send: async () => Promise.reject(new Error("provider down")) };
+    expect(await sweepReminders({ ...deps("2026-11-09"), mailTransport: () => broken }, theOwner.agencyId)).toEqual({ sent: 0, failed: 1 });
+    expect(await sweepReminders(deps("2026-11-10"), theOwner.agencyId)).toEqual({ sent: 1, failed: 0 });
+    expect(await sweepReminders(deps("2026-11-10"), theOwner.agencyId)).toEqual({ sent: 0, failed: 0 });
+    const rows = await inAgency((tx) => tx.select().from(s.reminders).where(eq(s.reminders.invoiceId, invoice.id)));
+    expect(rows.map((r) => r.stage)).toEqual(["before_due"]);
+    expect(outbox).toHaveLength(1);
+  });
+});
+
+describe("a client left out of reminders stays out (money review A3)", () => {
+  beforeEach(invoicedWeek);
+
+  it("switching off reaches the versions set to start later, and a new version carries it", async () => {
+    const versions = () => inAgency((tx) => tx.select().from(s.clientBillingProfiles).where(eq(s.clientBillingProfiles.clientId, PLM)).orderBy(asc(s.clientBillingProfiles.effectiveFrom)));
+    const [today] = await versions();
+    expect(await inAgency((tx) => setBillingSettings(tx, theOwner, PLM, today, "2026-12-01"))).toMatchObject({ ok: true });
+    expect(await inAgency((tx) => setClientReminders(tx, theOwner, PLM, false))).toEqual({ ok: true });
+    expect((await versions()).map((v) => [v.effectiveFrom, v.remindersOff])).toEqual([
+      [today!.effectiveFrom, true],
+      ["2026-12-01", true],
+    ]);
+    const [, later] = await versions();
+    expect(await inAgency((tx) => setBillingSettings(tx, theOwner, PLM, later, "2027-01-01"))).toMatchObject({ ok: true });
+    expect((await versions()).map((v) => v.remindersOff)).toEqual([true, true, true]);
   });
 });
 

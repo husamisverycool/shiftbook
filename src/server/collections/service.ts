@@ -7,7 +7,7 @@
  */
 import { addDays, formatCents } from "@shiftbook/rules";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
-import { and, asc, desc, eq, inArray, like, ne } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, like, ne, or } from "drizzle-orm";
 import { createTranslator } from "next-intl";
 import { createElement, type ReactElement } from "react";
 import en from "../../../messages/en.json";
@@ -163,12 +163,13 @@ export interface CreditInput {
   memo: unknown;
 }
 
-/** How much the invoice may still be credited (its total less the credit notes that name it). */
+/** How much the invoice may still be credited (its total less the credit notes that name it and its write-offs). */
 export async function creditRoomOf(tx: Tx, invoiceId: string): Promise<number> {
   const [invoice] = await tx.select().from(s.invoices).where(eq(s.invoices.id, invoiceId));
   if (!invoice) return 0;
   const credits = await tx.select({ totalCents: s.invoices.totalCents }).from(s.invoices).where(and(eq(s.invoices.originalInvoiceId, invoiceId), eq(s.invoices.kind, "credit_note"), ne(s.invoices.status, "void")));
-  return creditNoteRoom(invoice.totalCents, credits.map((c) => c.totalCents));
+  const offs = await tx.select({ amountCents: s.writeOffs.amountCents }).from(s.writeOffs).where(eq(s.writeOffs.invoiceId, invoiceId));
+  return creditNoteRoom(invoice.totalCents, credits.map((c) => c.totalCents), offs.map((o) => o.amountCents));
 }
 
 const t = en.invoice;
@@ -351,7 +352,12 @@ export async function setClientReminders(tx: Tx, actor: Actor, clientId: unknown
   if (typeof clientId !== "string" || !UUID.test(clientId) || typeof on !== "boolean") return { ok: false, error: "invalid" };
   const profile = await profileToday(tx, clientId, await agencyToday(tx));
   if (!profile) return { ok: false, error: "not_found" };
-  await tx.update(s.clientBillingProfiles).set({ remindersOff: !on }).where(eq(s.clientBillingProfiles.id, profile.id));
+  // Today's version and every one already set to start later, so a scheduled new version does not
+  // switch the reminders back (money review A3).
+  await tx
+    .update(s.clientBillingProfiles)
+    .set({ remindersOff: !on })
+    .where(and(eq(s.clientBillingProfiles.clientId, clientId), or(eq(s.clientBillingProfiles.id, profile.id), gt(s.clientBillingProfiles.effectiveFrom, profile.effectiveFrom))));
   await audit(tx, actor, [{ action: "update", entityType: "billing_profile", entityId: profile.id, before: { remindersOff: profile.remindersOff }, after: { remindersOff: !on } }]);
   return { ok: true };
 }
@@ -385,9 +391,17 @@ export async function sweepReminders(deps: CollectionsDeps, agencyId: string): P
     const out: Prepared[] = [];
     for (const b of await invoiceBalances(tx)) {
       if (b.invoice.status !== "issued" || b.balanceCents <= 0 || !b.invoice.pdfStorageKey) continue;
-      const sent = (await tx.select({ stage: s.reminders.stage }).from(s.reminders).where(and(eq(s.reminders.invoiceId, b.invoice.id), eq(s.reminders.how, "emailed")))).map((r) => r.stage);
+      // A stage whose email failed is not sent yet: the next sweep tries the same email again (money
+      // review A4); the stage keeps its one reminder row.
+      const rows = await tx
+        .select({ stage: s.reminders.stage, mailId: s.reminders.emailMessageId, status: s.emailMessages.status })
+        .from(s.reminders)
+        .leftJoin(s.emailMessages, eq(s.emailMessages.id, s.reminders.emailMessageId))
+        .where(and(eq(s.reminders.invoiceId, b.invoice.id), eq(s.reminders.how, "emailed")));
+      const sent = rows.filter((r) => r.status !== "failed").map((r) => r.stage);
       const stage = reminderDue({ dueOn: b.invoice.dueOn, balanceCents: b.balanceCents }, schedule, today, sent);
       if (!stage) continue;
+      const failed = rows.find((r) => r.stage === stage && r.status === "failed");
       const [client] = await tx.select().from(s.clients).where(eq(s.clients.id, b.invoice.clientId));
       const profile = await profileToday(tx, b.invoice.clientId, today);
       if (!client?.billingEmail || !profile || profile.remindersOff) continue;
@@ -395,12 +409,25 @@ export async function sweepReminders(deps: CollectionsDeps, agencyId: string): P
       const view = await invoiceReceivables(tx, b.invoice.id, today);
       const rendered = renderReminderEmail(view!.reminder.drafts[locale][stage]);
       const filename = pdfName(b.invoice.number, b.invoice.kind);
-      const [mail] = await tx
-        .insert(s.emailMessages)
-        .values({ agencyId, kind: "invoice_reminder", invoiceId: b.invoice.id, toEmail: client.billingEmail, toName: client.name, subject: rendered.subject, textBody: rendered.text, status: "sending", attachments: [{ filename, bytes: 0 }], createdAt: nowOf(deps) })
-        .returning({ id: s.emailMessages.id });
-      await tx.insert(s.reminders).values({ agencyId, invoiceId: b.invoice.id, stage, locale, how: "emailed", emailMessageId: mail!.id, createdByLabel: "Granite" });
-      out.push({ mailId: mail!.id, agencyId, fromName: agency.name, replyTo: agency.email, to: { email: client.billingEmail, name: client.name }, rendered, attachment: { filename, key: b.invoice.pdfStorageKey } });
+      let mailId: string;
+      if (failed?.mailId) {
+        // Taken back from "failed" once, so two sweeps at the same moment retry it once.
+        const [retry] = await tx
+          .update(s.emailMessages)
+          .set({ status: "sending", error: null })
+          .where(and(eq(s.emailMessages.id, failed.mailId), eq(s.emailMessages.status, "failed")))
+          .returning({ id: s.emailMessages.id });
+        if (!retry) continue;
+        mailId = retry.id;
+      } else {
+        const [mail] = await tx
+          .insert(s.emailMessages)
+          .values({ agencyId, kind: "invoice_reminder", invoiceId: b.invoice.id, toEmail: client.billingEmail, toName: client.name, subject: rendered.subject, textBody: rendered.text, status: "sending", attachments: [{ filename, bytes: 0 }], createdAt: nowOf(deps) })
+          .returning({ id: s.emailMessages.id });
+        await tx.insert(s.reminders).values({ agencyId, invoiceId: b.invoice.id, stage, locale, how: "emailed", emailMessageId: mail!.id, createdByLabel: "Granite" });
+        mailId = mail!.id;
+      }
+      out.push({ mailId, agencyId, fromName: agency.name, replyTo: agency.email, to: { email: client.billingEmail, name: client.name }, rendered, attachment: { filename, key: b.invoice.pdfStorageKey } });
     }
     return out;
   });

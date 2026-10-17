@@ -60,7 +60,12 @@ export async function GET(req: Request): Promise<Response> {
     const from = url.searchParams.get("from") ?? "";
     const to = url.searchParams.get("to") ?? "";
     if (!isIsoDate(from) || !isIsoDate(to) || to < from) return notFound();
-    const csv = await withAgency(actor.agencyId, async (tx) => brokerCsv(await wcPacketView(tx, { from, to, order: "class" })));
+    // Audited like the payroll and funding files (money review B4).
+    const csv = await withAgency(actor.agencyId, async (tx) => {
+      const text = brokerCsv(await wcPacketView(tx, { from, to, order: "class" }));
+      await audit(tx, actor, [{ action: "export", entityType: "agency", entityId: actor.agencyId, after: { file: "payroll_by_class", from, to, sha256: sha(text) } }]);
+      return text;
+    });
     return new Response(csv, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="payroll-by-class-${from}-to-${to}.csv"` } });
   }
 

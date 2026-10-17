@@ -99,7 +99,7 @@ export interface EarningOut {
 /** What Granite holds for the partner's onboarding, and what the partner collects from the worker. */
 export interface Readiness {
   /** Missing in Granite: fix before handing off. */
-  missing: ("start_date" | "workplace" | "ssn")[];
+  missing: ("start_date" | "workplace" | "ssn" | "covers_recovery")[];
   /** Never held by Granite; the partner's own onboarding collects these (Check `onboard`). */
   partnerCollects: ("dob" | "residence" | "payment_method" | "withholdings")[];
 }
@@ -209,6 +209,10 @@ export function buildPayrollPayload(input: PayloadInput): PayrollPayload {
     if (!w.hireDate) missing.push("start_date");
     if (lines.some((l) => !l.workplaceId)) missing.push("workplace");
     if (!w.ssnLast4) missing.push("ssn");
+    // A repayment larger than the pay would leave a negative paycheck (money review B2): held.
+    const recovering = (input.recoveries ?? []).filter((r) => r.workerId === w.id).reduce((t, r) => t + r.amountCents, 0);
+    const earned = lines.reduce((t, l) => t + l.amountCents, 0);
+    if (recovering > earned) missing.push("covers_recovery");
     employees.push({
       external_id: ref("worker", w.id),
       first_name: w.firstName,

@@ -84,3 +84,17 @@ export function requestProblem(amountCents: unknown, availability: Availability)
   if (amountCents > availability.availableCents) return "too_much";
   return null;
 }
+
+/**
+ * The run that repays an access: the one that pays the last of the hours it drew on, in pay order —
+ * exactly when it stops being outstanding (money review B2). Null while some of its hours are unpaid.
+ */
+export function recoveringRun(drawn: ReadonlySet<string>, lines: readonly { payRunId: string; timeEntryIds: readonly string[] }[], order: (a: string, b: string) => number): string | null {
+  const runs = [...new Set(lines.filter((l) => l.timeEntryIds.some((id) => drawn.has(id))).map((l) => l.payRunId))].sort(order);
+  const paid = new Set<string>();
+  for (const r of runs) {
+    for (const l of lines) if (l.payRunId === r) for (const id of l.timeEntryIds) if (drawn.has(id)) paid.add(id);
+    if (paid.size === drawn.size) return r;
+  }
+  return null;
+}

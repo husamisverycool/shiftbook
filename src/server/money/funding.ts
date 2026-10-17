@@ -67,6 +67,9 @@ export interface FundingFacts {
   disputedShifts: number;
   /** Disputes on this invoice's period still waiting on the agency. */
   openDisputes: number;
+  /** The shifts this invoice bills, and how many of them the client approved by link. */
+  invoiceShifts: number;
+  approvedInvoiceShifts: number;
   approvals: ApprovalStep[];
 }
 
@@ -89,6 +92,7 @@ export interface FundingPacket {
 
 const bps = (part: number, whole: number) => (whole <= 0 ? 0 : roundHalfUp(part * 10_000, whole));
 
+/** The advance rounds down; the flat fee rounds half up once, as every amount in Granite does (at most half a cent). */
 export function offerFor(balanceCents: number, rules: Pick<FundingRules, "advanceBps" | "feeBps">) {
   const advanceCents = Number((BigInt(balanceCents) * BigInt(rules.advanceBps)) / 10_000n);
   const feeCents = roundHalfUp(balanceCents * rules.feeBps, 10_000);
@@ -101,7 +105,8 @@ export function fundingPacket(invoice: FundingInvoice, facts: FundingFacts, rule
   const concentrationBps = bps(facts.clientOpenCents, facts.allOpenCents);
   const shifts = facts.approvedShifts + facts.disputedShifts;
   const disputeRateBps = shifts > 0 ? bps(facts.disputedShifts, shifts) : null;
-  const approved = facts.approvals.some((a) => a.approvedShifts > 0);
+  // Approved means every shift the invoice bills was approved, not any one of them (money review B6).
+  const approved = facts.invoiceShifts > 0 && facts.approvedInvoiceShifts === facts.invoiceShifts;
   const reasons: FundingReason[] = [];
   if (!rules.enabled) reasons.push("disabled");
   if (invoice.kind === "credit_note") reasons.push("credit_note");

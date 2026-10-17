@@ -4428,7 +4428,8 @@
     "whyNamed": "; the client is named on the deposit",
     "whyOnlyClient": "; the only client with invoices adding up to it",
     "noPayrollIdPaychex": "{name} has no Paychex worker id, so the Paychex Flex file could not match them.",
-    "noPayrollIdPaylocity": "{name} has no Paylocity employee id, so the Paylocity file could not match them."
+    "noPayrollIdPaylocity": "{name} has no Paylocity employee id, so the Paylocity file could not match them.",
+    "correctionCreditTooLarge": "{client}: the correction would credit {amount} on invoice {number}, which has only {room} left to credit after its earlier credit notes and write-offs; reverse a credit note or a write-off first."
   },
   "identities": {
     "connectedTitle": "Connected accounts",
@@ -5240,7 +5241,8 @@
       "missing": {
         "start_date": "start date",
         "workplace": "worksite",
-        "ssn": "SSN on file"
+        "ssn": "SSN on file",
+        "covers_recovery": "pay that covers the wage-access repayment"
       },
       "missingList": "Missing: {items}",
       "collectsTitle": "What the partner collects",
@@ -5292,7 +5294,8 @@
         "not_found": "This run can't be handed off.",
         "not_ready": "Fix what is missing before handing off.",
         "already": "This run's payroll was already handed off.",
-        "generic": "That didn't work. Try again."
+        "generic": "That didn't work. Try again.",
+        "zeal_differs": "Zeal would pay some lines a cent differently from the approved run. Hand off in Check's format or as the file instead."
       }
     },
     "wage": {
@@ -5507,7 +5510,9 @@
       "line": "{available} available of {earned} earned from unpaid hours",
       "off": "Wage access is off for the agency.",
       "open": "Open wage access"
-    }
+    },
+    "notForRoleTitle": "Money is the Owner's",
+    "notForRole": "Payroll payloads, wage access and funding packets carry every worker's pay, so only the Owner sees them."
   },
   "payrollSample": {
     "title": "Read a sample file",

@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { FundingDetail } from "@/components/shiftbook/money/funding";
 import { withAgency } from "@/server/db";
 import { fundingView, handoffs } from "@/server/money/queries";
+import { MoneyNotForRole } from "@/components/shiftbook/money/frame";
+import { can } from "@/server/permissions";
 import { currentActor } from "@/server/session";
 import { agencyToday } from "@/server/settings";
 
@@ -17,6 +19,7 @@ export default async function FundingDetailPage(props: { params: Promise<{ local
   setRequestLocale(locale);
   if (!UUID.test(id)) notFound();
   const actor = await currentActor();
+  if (!can(actor, "money")) return <MoneyNotForRole />;
   const found = await withAgency(actor.agencyId, async (tx) => {
     const { packets } = await fundingView(tx, await agencyToday(tx), { invoiceId: id });
     return packets[0] ? { packet: packets[0], handoff: (await handoffs(tx, { kind: "funding", subjectId: id }))[0] ?? null } : null;

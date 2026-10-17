@@ -3,9 +3,10 @@
 import { isIsoDate } from "@shiftbook/rules";
 import { setRequestLocale } from "next-intl/server";
 import { InsuranceView } from "@/components/shiftbook/money/insurance";
-import { MoneyFrame } from "@/components/shiftbook/money/frame";
+import { MoneyFrame, MoneyNotForRole } from "@/components/shiftbook/money/frame";
 import { packetRange, wcPacketView } from "@/server/compliance/documents";
 import { withAgency } from "@/server/db";
+import { can } from "@/server/permissions";
 import { currentActor } from "@/server/session";
 import { agencyToday } from "@/server/settings";
 
@@ -15,6 +16,7 @@ export default async function InsurancePage(props: { params: Promise<{ locale: s
   const { locale } = await props.params;
   setRequestLocale(locale);
   const actor = await currentActor();
+  if (!can(actor, "money")) return <MoneyNotForRole />;
   const sp = await props.searchParams;
   const view = await withAgency(actor.agencyId, async (tx) => {
     const range = await packetRange(tx, await agencyToday(tx));
