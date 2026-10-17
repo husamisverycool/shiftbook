@@ -344,6 +344,68 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("activity-apply").click();
     await expect(page.getByTestId("activity-row").first()).toContainText("Dana Approver");
 
+    // SPEC §27 item 11. The invoice is emailed to Prairie Line's billing contact (the demo keeps it).
+    await page.goto(`/${locale}/invoices`);
+    await page.getByRole("link", { name: invoice[PRAIRIE]!.number }).first().click();
+    await page.getByTestId("send-invoice").click();
+    const to = await dialog.getByTestId("send-to").inputValue();
+    expect(to).toMatch(/@/);
+    await dialog.getByTestId("confirm-send").click();
+    await expect(page.getByTestId("summary-sent")).toContainText(to);
+
+    // The schedule is published: the changes, every client, asking for answers.
+    await page.goto(`/${locale}/schedule`);
+    await page.getByTestId("schedule-publish").click();
+    const publish = page.getByTestId("publish-dialog");
+    await publish.getByTestId("publish-next").click();
+    await publish.getByTestId("publish-next").click();
+    await publish.getByTestId("publish-notify-confirm").check();
+    await publish.getByTestId("publish-confirm").click();
+    await expect(publish).toBeHidden();
+
+    // A demo worker in the worker app (Marcus Bell, in Spanish for the Spanish run) confirms his
+    // shift, and sees the week's hours and the pay stub of the run just paid.
+    const phone = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
+    const worker = await phone.newPage();
+    worker.on("pageerror", (e) => errors.push(`worker app: ${e.message}`));
+    await worker.goto(`/${locale}/w/sign-in`);
+    await worker.getByRole("button", { name: m.workerApp.signIn.demoAs.replace("{name}", "Marcus Bell") }).click();
+    await expect(worker).toHaveURL(/\/en\/w$/);
+    if (locale === "es") {
+      await worker.getByTestId("worker-tab-more").click();
+      await worker.getByTestId("worker-language-es").click();
+      await expect(worker).toHaveURL(/\/es\/w/);
+    }
+    await expect(worker.getByTestId("worker-tab-shifts")).toContainText(MESSAGES[locale].workerApp.tabs.shifts);
+    await expect(worker.getByTestId("worker-shifts-waiting")).toHaveText("1");
+    await worker.getByTestId("worker-tab-shifts").click();
+    await worker.getByTestId("worker-confirm").first().click();
+    await expect(worker.getByText(MESSAGES[locale].shiftsWorker.done).first()).toBeVisible();
+    await worker.getByTestId("worker-tab-time").click();
+    await expect(worker.getByTestId("worker-week-hours").first()).toBeVisible();
+    await worker.getByTestId("worker-tab-pay").click();
+    await worker.getByTestId("worker-stub").first().click();
+    await expect(worker.getByTestId("worker-stub-gross")).toContainText("$");
+    await expect(worker.getByTestId("worker-stub-lines")).toBeVisible();
+    await phone.close();
+
+    // The payroll payload and Prairie Line's funding packet are recorded for partners; nothing moves.
+    const mo = m.money;
+    await page.goto(`/${locale}/money/payroll`);
+    await page.getByTestId("payroll-run-row").first().getByRole("link").click();
+    await page.getByTestId("record-payroll-handoff").click();
+    await page.getByTestId("confirm-payroll-handoff").click();
+    await expect(page.getByTestId("payroll-run-status")).toHaveText(mo.run.status.recorded);
+    await page.goto(`/${locale}/money/funding`);
+    // Only Prairie Line's invoice is still owed ($25.00 short-paid above).
+    await page.getByTestId("funding-row").first().getByRole("link").click();
+    await expect(page.getByTestId("funding-status")).toHaveText(mo.funding.prequalified);
+    await page.getByTestId("submit-funding").click();
+    await page.getByTestId("confirm-funding").click();
+    await expect(page.getByTestId("funding-status")).toHaveText(mo.funding.submitted);
+    await page.goto(`/${locale}/money`);
+    await expect(page.getByTestId("handoff-row")).toHaveCount(2);
+
     // Home: every step of the guide is done.
     await go(m.nav.home);
     await expect(page.getByTestId("setup-progress")).toHaveText(m.home.guide.progress.replace("{done}", "7").replace("{total}", "7"));

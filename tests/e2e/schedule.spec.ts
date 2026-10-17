@@ -20,7 +20,7 @@ async function check(page: Page, where: string) {
 }
 
 for (const locale of ["en", "es"] as const) {
-  test(`schedule: grid, warnings, a new open shift, publish, a worker confirms, attendance (${locale})`, async ({ page }) => {
+  test(`schedule: grid, warnings, a new open shift, publish, a worker confirms, attendance (${locale})`, async ({ page, browser }) => {
     test.setTimeout(240_000);
     const m = MESSAGES[locale];
     execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
@@ -60,24 +60,23 @@ for (const locale of ["en", "es"] as const) {
     await expect(publish).toBeHidden();
     await expect(page.getByTestId("schedule-status-unpublished")).toBeDisabled();
 
-    // A demo worker answers in the Shifts screen: the first one with a shift waiting for an answer.
-    await page.goto(`/${locale}/shifts-preview`);
-    await expect(page.getByTestId("worker-shifts")).toBeVisible();
-    const picker = page.getByTestId("worker-picker");
-    const options = await picker.locator("option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
-    let confirmed = false;
-    for (const value of options) {
-      await picker.selectOption(value);
-      await page.waitForURL(new RegExp(`worker=${value}`));
-      if ((await page.getByTestId("worker-confirm").count()) > 0) {
-        await page.getByTestId("worker-confirm").first().click();
-        await expect(page.getByText(m.shiftsWorker.done).first()).toBeVisible();
-        confirmed = true;
-        break;
-      }
-    }
-    expect(confirmed).toBe(true);
-    await check(page, "worker shifts");
+    // A demo worker answers in the worker app's Shifts tab (Marcus Bell in English, Daniel Ruiz — who
+    // prefers Spanish — in Spanish); the publish told them in the app's thread.
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
+    const worker = await context.newPage();
+    const name = locale === "en" ? "Marcus Bell" : "Daniel Ruiz";
+    const wm = MESSAGES[locale];
+    await worker.goto(`/${locale}/w/sign-in`);
+    await worker.getByRole("button", { name: wm.workerApp.signIn.demoAs.replace("{name}", name) }).click();
+    await expect(worker).toHaveURL(new RegExp(`/${locale}/w$`));
+    await expect(worker.getByTestId("worker-next-shift")).toBeVisible();
+    await expect(worker.getByTestId("worker-shifts-waiting")).toBeVisible();
+    await worker.getByTestId("worker-tab-shifts").click();
+    await expect(worker.getByTestId("worker-shifts")).toBeVisible();
+    await worker.getByTestId("worker-confirm").first().click();
+    await expect(worker.getByText(wm.shiftsWorker.done).first()).toBeVisible();
+    await check(worker, "worker shifts");
+    await context.close();
 
     // Attendance: the figures and the clients.
     await page.goto(`/${locale}/margin/attendance`);
