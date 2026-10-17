@@ -47,7 +47,7 @@ root frame (demo banner above it).
       - **Payroll**: Convert timesheets, Client approvals (slice d);
       - **Billing**: Invoices, Receivables, Payments, Bank (slices g, h), Money (slice w: the
         partner handoffs);
-      - **Staffing**: Job orders, Assignments, Workers (slice k), Clients (slice g);
+      - **Staffing**: Job orders, Assignments, Schedule (slice u), Workers (slice k), Clients (slice g);
       - **Oversight**: Margin (slice i; the Owner and the accountant only, SPEC §2), Compliance
         (slice j) with a badge count of the duties overdue or due soon (Linear's "count or dot").
    4. The current area's link is highlighted.
@@ -64,7 +64,7 @@ root frame (demo banner above it).
   "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R →
   Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M →
   Margin, G then O → Compliance (C is taken; O as in "Obligations"), G then W → Workers, G then N →
-  Notifications (slice r), G then F → Money (M is taken; F as in "Funding"). Not active
+  Notifications (slice r), G then F → Money (M is taken; F as in "Funding"), G then S → Schedule (slice u). Not active
   while typing in a field.
 - `?` (or the sidebar's Keyboard shortcuts) opens the list of keyboard shortcuts (Linear, Stripe).
 - ⌘K / Ctrl+K, or the search row under the workspace menu (Linear's search button), opens the command

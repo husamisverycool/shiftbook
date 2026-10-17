@@ -17,7 +17,7 @@ import { dateRange } from "../format";
 import { FilterPill, PillChoices } from "../list-controls";
 import { Page, PageHeader, PageTabs } from "../page";
 
-export type MarginTab = "overview" | "overtime" | "cash";
+export type MarginTab = "overview" | "overtime" | "cash" | "attendance";
 export interface Period {
   from: string;
   to: string;
@@ -28,6 +28,7 @@ const TABS: { tab: MarginTab; href: string }[] = [
   { tab: "overview", href: "/margin" },
   { tab: "overtime", href: "/margin/overtime" },
   { tab: "cash", href: "/margin/cash" },
+  { tab: "attendance", href: "/margin/attendance" },
 ];
 /** The address's period and grouping, carried between the tabs and into the exports. */
 const KEPT = ["weeks", "from", "to", "group", "sort"];

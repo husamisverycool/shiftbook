@@ -644,7 +644,8 @@
     "collections": "Cobranza",
     "money": "Dinero",
     "moneySettings": "Configuración de Dinero",
-    "connections": "Conexiones"
+    "connections": "Conexiones",
+    "schedule": "Horario"
   },
   "list": {
     "filter": "Filtrar",
@@ -2304,7 +2305,8 @@
     "tabs": {
       "overview": "Resumen",
       "overtime": "Horas extra no facturadas",
-      "cash": "Efectivo adelantado"
+      "cash": "Efectivo adelantado",
+      "attendance": "Asistencia"
     },
     "notForRole": "El margen es para el Propietario y el contador.",
     "chartTitle": "Margen bruto por semana",
@@ -6285,5 +6287,202 @@
     "none": "Todavía sin aplicar a una factura.",
     "recordedBy": "Registrado por {agency}",
     "page": "Página {page} de {pages}"
+  },
+  "schedule": {
+    "title": "Horario",
+    "client": "Cliente",
+    "allClients": "Todos los clientes",
+    "week": "Semana",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "thisWeek": "Esta semana",
+    "groupBy": "Agrupar por",
+    "groups": {
+      "worker": "Trabajador",
+      "jobOrder": "Orden de trabajo",
+      "worksite": "Lugar de trabajo"
+    },
+    "publish": "Publicar",
+    "publishCount": "Publicar ({count})",
+    "openShifts": "Turnos abiertos",
+    "rowCount": "{count, plural, one {# turno} other {# turnos}}",
+    "dayCounter": "{shifts, plural, one {# turno} other {# turnos}} · {hours} h",
+    "addShift": "Agregar un turno el {date}",
+    "noJobOrders": "Aún no hay órdenes de trabajo",
+    "noJobOrdersHint": "Los turnos pertenecen a una orden de trabajo. Cree una primero.",
+    "goToJobOrders": "Ir a Órdenes de trabajo",
+    "states": {
+      "open": "Abierto",
+      "assigned": "Asignado",
+      "awaiting": "Esperando confirmación",
+      "confirmed": "Confirmado",
+      "unpublished": "Sin publicar",
+      "declined": "Rechazado por {name}",
+      "expired": "Sin respuesta de {name}",
+      "noShow": "No se presentó",
+      "overlap": "Se superpone con otro turno"
+    },
+    "status": {
+      "label": "Turnos que requieren atención",
+      "open": "{count} abiertos",
+      "unpublished": "{count} sin publicar",
+      "awaiting": "{count} esperando confirmación",
+      "warnings": "{count, plural, one {# advertencia} other {# advertencias}}"
+    },
+    "dialog": {
+      "createTitle": "Turno nuevo",
+      "editTitle": "Turno",
+      "jobOrder": "Orden de trabajo",
+      "choose": "Elija…",
+      "date": "Fecha",
+      "start": "Inicio",
+      "end": "Fin",
+      "endHint": "Un fin anterior al inicio termina al día siguiente.",
+      "break": "Descanso no pagado (minutos)",
+      "assignTo": "Asignar a",
+      "open": "Abierto (ofrecer a los trabajadores elegibles)",
+      "eligible": "Asignados a esta orden de trabajo",
+      "samePosition": "Asignados al mismo puesto",
+      "others": "Todos los demás",
+      "conflict": "{name} ya tiene un turno que se superpone con este.",
+      "copies": "Cuántos",
+      "requireConfirmation": "Pedir al trabajador que confirme",
+      "offers": "Ofertas",
+      "noOffers": "Aún no se ha ofrecido: se ofrece al publicarlo.",
+      "offerStatus": {
+        "offered": "Ofrecido",
+        "accepted": "Aceptado",
+        "declined": "Rechazado",
+        "withdrawn": "Retirado"
+      },
+      "warningDeclined": "{name} indicó que no puede asistir: “{reason}”",
+      "warningExpired": "{name} no respondió antes del plazo.",
+      "save": "Guardar",
+      "create": "Agregar turno",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar este turno?",
+      "deletePublished": "El trabajador ya lo vio, así que aparece como cancelado en su lista.",
+      "deleteDraft": "No se ha publicado, así que nadie lo ha visto.",
+      "noShow": "Marcar como no presentado",
+      "noShowTitle": "¿Marcar como no presentado?",
+      "noShowBody": "El turno cuenta como no presentado en Asistencia.",
+      "noShowReplace": "Ofrecer el resto del turno a otros trabajadores elegibles",
+      "cancel": "Cancelar",
+      "readOnly": "Solo un Propietario o un Coordinador cambia el horario."
+    },
+    "publishDialog": {
+      "title": "Publicar turnos",
+      "stepOf": "Paso {step} de 3",
+      "what": "Qué publicar",
+      "changes": "Solo los cambios ({count})",
+      "all": "Todos los turnos a la vista ({count})",
+      "which": "Qué clientes",
+      "notify": "Cómo avisar a los trabajadores",
+      "notifyConfirm": "Avisar y pedirles que confirmen",
+      "notifyOnly": "Solo avisar",
+      "silent": "Marcar como publicados sin avisar",
+      "message": "Mensaje (opcional)",
+      "next": "Siguiente",
+      "back": "Atrás",
+      "publish": "Publicar",
+      "done": "{published, plural, one {# turno publicado} other {# turnos publicados}}; {offered, plural, one {# oferta enviada} other {# ofertas enviadas}}.",
+      "nothing": "No hay nada que publicar a la vista."
+    },
+    "errors": {
+      "not_found": "Ese turno ya no existe.",
+      "job_order_not_found": "Elija una orden de trabajo.",
+      "worker_not_found": "Ese trabajador ya no está en la lista.",
+      "invalid_date": "Ingrese una fecha.",
+      "invalid_time": "Ingrese un inicio y un fin, con un descanso más corto que el turno.",
+      "invalid_copies": "Elija entre 1 y 50 copias de un turno abierto.",
+      "not_started": "El turno aún no ha empezado.",
+      "busy": "Otra persona está cambiando las asignaciones en este momento. Inténtelo de nuevo en un momento.",
+      "generic": "No se pudo guardar. Inténtelo de nuevo."
+    },
+    "saved": "Guardado",
+    "noHours": {
+      "title": "{count, plural, one {# turno confirmado aún sin horas} other {# turnos confirmados aún sin horas}}",
+      "hint": "Programados y confirmados, pero hasta ahora sin hoja de horas para ese trabajador, día y cliente. Esto nunca detiene el proceso; las horas solo vienen de las hojas de horas."
+    }
+  },
+  "shiftsWorker": {
+    "title": "Sus turnos",
+    "previewNote": "Demo: la pantalla de Turnos de la aplicación del trabajador, vista como un trabajador de la demo.",
+    "viewingAs": "Visto como",
+    "tabs": {
+      "upcoming": "Próximos",
+      "past": "Anteriores",
+      "cancelled": "Cancelados"
+    },
+    "needsAnswer": "{count, plural, one {# requiere su respuesta} other {# requieren su respuesta}}",
+    "offered": "Ofrecidos a usted",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "confirm": "Confirmar",
+    "cantMakeIt": "No puedo asistir",
+    "reason": "¿Por qué no puede asistir?",
+    "reasonHint": "La agencia lo verá y ofrecerá el turno a otra persona.",
+    "send": "Enviar",
+    "cancel": "Cancelar",
+    "states": {
+      "assigned": "Programado",
+      "awaiting": "Esperando su respuesta",
+      "confirmed": "Confirmado",
+      "open": "Abierto",
+      "cancelled": "Cancelado por la agencia",
+      "declined": "Usted no pudo asistir"
+    },
+    "confirmBy": "Responda antes del {when}",
+    "empty": {
+      "upcoming": "No hay turnos próximos.",
+      "past": "No hay turnos anteriores.",
+      "cancelled": "No hay turnos cancelados."
+    },
+    "errors": {
+      "not_found": "Ese turno ya no está disponible.",
+      "not_yours": "Ese turno no es suyo.",
+      "already_answered": "Ya se respondió.",
+      "not_open": "Otra persona tomó ese turno.",
+      "reason_required": "Indique el motivo en pocas palabras.",
+      "generic": "No se completó. Inténtelo de nuevo."
+    },
+    "done": "Listo"
+  },
+  "attendance": {
+    "range": "{from} – {to}",
+    "figures": {
+      "scheduled": "Turnos programados",
+      "fill": "Tasa de cobertura",
+      "fillNote": "{filled} de {requested} turnos cubiertos",
+      "noShows": "No presentados",
+      "late": "Tarde",
+      "rateNote": "{count} · {rate} de los turnos pasados",
+      "lateNote": "Más de {minutes} minutos después del inicio"
+    },
+    "byClient": "Por cliente",
+    "columns": {
+      "client": "Cliente",
+      "requested": "Solicitados",
+      "filled": "Cubiertos",
+      "fillRate": "Tasa de cobertura",
+      "scheduled": "Turnos pasados",
+      "noShows": "No presentados",
+      "noShowRate": "Tasa de no presentados",
+      "late": "Tarde"
+    },
+    "problems": "Turnos con problemas",
+    "problemColumns": {
+      "date": "Fecha",
+      "client": "Cliente",
+      "worker": "Trabajador",
+      "jobOrder": "Orden de trabajo",
+      "issue": "Problema"
+    },
+    "issues": {
+      "no_show": "No se presentó",
+      "late": "{minutes} min tarde",
+      "open": "Sigue abierto"
+    },
+    "nothing": "No hay turnos en estas cuatro semanas."
   }
 }

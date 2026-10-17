@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { filesStep, getPeriod, hoursStep, latestRun, listPeriods, openCorrectionOf, totalsStep, uploadStep } from "@/server/convert/queries";
 import { withAgency } from "@/server/db";
 import { PeriodBusyError, periodState } from "@/server/run/period-lock";
+import { scheduledWithoutHours } from "@/server/schedule/queries";
 import { processQueuedDocuments } from "@/server/services";
 import { currentActor } from "@/server/session";
 
@@ -122,10 +123,12 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     // A blocked run never reaches Review totals (Gusto: calculate is disabled while blockers exist).
     if (step === "totals" && blocked) redirect(`/${locale}/convert?period=${periodId}&step=exceptions`);
     if (step === "exceptions") {
+      // Confirmed shifts with no hours yet (slice u): a list, never blocking.
+      const unworked = await inAgency((tx) => scheduledWithoutHours(tx, period.startsOn, period.endsOn));
       // Edit belongs to Review totals only (convert.md step 4); the trail leads back from here.
       return (
         <ConvertFrame {...frame} alerts={correctionAlert} forward={{ kind: "link", step: "totals", disabled: blocked }}>
-          <ExceptionsStep periodId={periodId} data={data} locked={locked} />
+          <ExceptionsStep periodId={periodId} data={data} locked={locked} scheduledNoHours={unworked} />
         </ConvertFrame>
       );
     }

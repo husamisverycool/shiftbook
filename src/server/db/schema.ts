@@ -1831,6 +1831,8 @@ export const TENANT_TABLES = [
   "portal_contacts",
   "portal_links",
   "staff_requests",
+  "shifts",
+  "shift_offers",
 ] as const;
 
 // ---------- partner-ready money flows (slice w, SPEC §27 item 9; drizzle/0052) ----------
@@ -2164,3 +2166,53 @@ export const smsMessages = pgTable("sms_messages", {
   createdAt: createdAt(),
   sentAt: timestamp("sent_at", { withTimezone: true }),
 });
+
+// ---------- scheduling and shift fill (slice u, decision 0041; drizzle/0049) ----------
+
+export const SHIFT_STATES = ["open", "assigned", "awaiting", "confirmed", "cancelled"] as const;
+export type ShiftState = (typeof SHIFT_STATES)[number];
+
+/** One shift of one job order on one day; minutes after the day's midnight (an overnight shift ends after 1440). */
+export const shifts = pgTable(
+  "shifts",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    jobOrderId: uuid("job_order_id").notNull().references(() => jobOrders.id),
+    workDate: isoDate("work_date").notNull(),
+    startMinute: integer("start_minute").notNull(),
+    endMinute: integer("end_minute").notNull(),
+    breakMinutes: integer("break_minutes").notNull().default(0),
+    workerId: uuid("worker_id").references(() => workers.id),
+    assignmentId: uuid("assignment_id").references(() => assignments.id),
+    state: text("state").$type<ShiftState>().notNull(),
+    requireConfirmation: boolean("require_confirmation").notNull().default(true),
+    confirmBy: timestamp("confirm_by", { withTimezone: true }),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+    warning: text("warning").$type<"declined" | "expired">(),
+    warningWorkerId: uuid("warning_worker_id").references(() => workers.id),
+    warningReason: text("warning_reason"),
+    noShow: boolean("no_show").notNull().default(false),
+    replacesShiftId: uuid("replaces_shift_id"),
+    createdBy: uuid("created_by"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("shifts_week").on(t.agencyId, t.workDate), index("shifts_worker").on(t.agencyId, t.workerId, t.workDate)],
+);
+
+/** An open published shift offered to an eligible worker; the first to accept takes it. */
+export const shiftOffers = pgTable(
+  "shift_offers",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    shiftId: uuid("shift_id").notNull().references(() => shifts.id, { onDelete: "cascade" }),
+    workerId: uuid("worker_id").notNull().references(() => workers.id),
+    status: text("status").$type<"offered" | "accepted" | "declined" | "withdrawn">().notNull().default("offered"),
+    reason: text("reason"),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("shift_offers_one").on(t.shiftId, t.workerId), index("shift_offers_worker").on(t.agencyId, t.workerId, t.status)],
+);
