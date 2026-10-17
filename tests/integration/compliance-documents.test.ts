@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { createJobOrderNotice, createPacketDocument, createProofPage, packetCsv, saveNoticeDetails, wcPacketView } from "../../src/server/compliance/documents";
+import { createJobOrderNotice, createNjAssignmentNotice, createPacketDocument, createProofPage, packetCsv, saveNoticeDetails, wcPacketView } from "../../src/server/compliance/documents";
 import { addRegistration } from "../../src/server/compliance/service";
 import { PAY_DAY_KEY } from "../../src/server/payroll/paid-lines";
 import { editEntry } from "../../src/server/review/service";
@@ -139,6 +139,51 @@ describe("documents (slice j step 2)", () => {
     // No details or no Department contact: it cannot be made.
     await owner.db.update(s.jobOrders).set({ noticeDetails: null }).where(eq(s.jobOrders.id, jobOrderId("ma-server")));
     expect(await inAgency((tx) => createJobOrderNotice(tx, theOwner, store, job.id, TODAY))).toEqual({ ok: false, error: "invalid", field: "details" });
+  });
+
+  it("the New Jersey assignment notice: form MW-23's fields in English and Spanish, from the placement, the rate card and the job order's details", async () => {
+    // Demo: Prairie Line's Newark packers earn $17.00 an hour; New Jersey's overtime is 1.5 × = $25.50.
+    const notice = await duty("nj_assignment_notice");
+    expect(await inAgency((tx) => createNjAssignmentNotice(tx, coordinator, store, notice.id, TODAY))).toEqual({ ok: true });
+    const files = await evidence(notice.id);
+    expect(files).toHaveLength(1);
+    expect(files[0]!.filename).toMatch(/^nj-assignment-notice-[a-z-]+-\d{4}-\d{2}-\d{2}\.pdf$/);
+    const t = await text(files[0]!.id);
+    for (const part of [
+      "Temporary Laborer Assignment Notification",
+      "Notificación de Asignación de Trabajadores Temporales",
+      "under N.J.S.A. 34:8D-3",
+      "Cedar Row Staffing (demo)",
+      "Prairie Line Manufacturing (demo)",
+      "(973) 555-0140",
+      "Example Mutual Insurance (demo)",
+      "Policy WC-0000-DEMO",
+      "Newark Packing Center",
+      "410 Example Port Street",
+      "Packer (SOC 53-7064)",
+      "Pack finished parts into cartons",
+      "$17.00 an hour; overtime, when worked, $25.50 an hour",
+      "7:00 AM – 3:30 PM",
+      "A one-hour safety orientation",
+      "Safety glasses and cut-resistant gloves",
+      "Earned Sick Leave is the law in New Jersey",
+      "Licencia Pagada Por Enfermedad",
+    ])
+      expect(t).toContain(part);
+    // The questions left empty answer No; meals and transport typed "No" are No too.
+    expect(t).toContain("No | No");
+    // The details are checked: the description is required; an empty question is the form's No.
+    const details = { employerPhone: "(973) 555-0199", startTime: "06:00", endTime: "14:30", overtime: "possible", requirements: "", meals: "No", transport: "A van from Newark Penn Station, no charge", strike: false };
+    const nj = { description: "Pack and label cartons", training: "", equipment: "", clothing: "", protective: "Gloves, from the client", licenses: "" };
+    expect(await inAgency((tx) => saveNoticeDetails(tx, coordinator, notice.id, { ...details, nj: { ...nj, description: " " } }))).toEqual({ ok: false, error: "invalid", field: "description" });
+    expect(await inAgency((tx) => saveNoticeDetails(tx, coordinator, notice.id, { ...details, nj }))).toEqual({ ok: true });
+    expect(await inAgency((tx) => createNjAssignmentNotice(tx, coordinator, store, notice.id, TODAY))).toEqual({ ok: true });
+    const again = await text((await evidence(notice.id)).find((f) => f.id !== files[0]!.id)!.id);
+    for (const part of ["(973) 555-0199", "6:00 AM – 2:30 PM", "A van from Newark Penn Station", "Pack and label cartons"]) expect(again).toContain(part);
+    // Details without the form's questions (saved for a Massachusetts job order only) cannot make it.
+    const [a] = await owner.db.select({ jobOrderId: s.assignments.jobOrderId }).from(s.assignments).where(eq(s.assignments.id, notice.links.assignmentId!));
+    await owner.db.update(s.jobOrders).set({ noticeDetails: { ...details, overtime: "possible" as const } }).where(eq(s.jobOrders.id, a!.jobOrderId));
+    expect(await inAgency((tx) => createNjAssignmentNotice(tx, coordinator, store, notice.id, TODAY))).toEqual({ ok: false, error: "invalid", field: "details" });
   });
 
   it("the workers' comp packet: by state, class and worker, tied to the payroll files; the audit duty keeps it", async () => {

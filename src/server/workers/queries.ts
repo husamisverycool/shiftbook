@@ -8,6 +8,7 @@ import { SYSTEM_OF, type PayrollSystem } from "../../exports/targets";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { payrollTarget } from "../payroll/settings";
+import { payStatementLanguage, placedStates } from "./pay-statement";
 
 export interface WorkerRow {
   id: string;
@@ -99,6 +100,8 @@ export interface WorkerProfile {
   system: PayrollSystem | null;
   documents: { id: string; documentId: string; filename: string; kind: s.WorkerDocumentKind; effectiveOn: string; addedBy: string; addedAt: string }[];
   placements: { id: string; jobOrderId: string; position: string; clientName: string; startDate: string; endDate: string | null; status: string; current: boolean }[];
+  /** New Jersey: the language the pay statements must also be in (SPEC §16), or null. */
+  payStatementLanguage: string | null;
 }
 
 /** `ssnActivity: true`: who looked at or changed the SSN, for the Owner's Retrieve SSN only (left out unless asked for). */
@@ -151,5 +154,6 @@ export async function workerProfile(tx: Tx, id: string, today: string, opts: { s
     system: target ? SYSTEM_OF[target.format] : null,
     documents: docs.map((d) => ({ ...d, addedAt: d.addedAt.toISOString() })),
     placements: placed.map((p) => ({ ...p, current: p.status === "active" && p.startDate <= today && (p.endDate === null || p.endDate >= today) })),
+    payStatementLanguage: payStatementLanguage(await placedStates(tx, w.id), w.preferredLanguage),
   };
 }

@@ -58,6 +58,19 @@ export function WorkerProfileView({ profile, today, wage, app, zone }: { profile
     },
     { label: t("col.hired"), value: profile.hireDate ? longDate(profile.hireDate, locale) : "—" },
     { label: t("profile.personal.language"), value: t(`language.${profile.preferredLanguage === "es" ? "es" : "en"}`) },
+    // New Jersey: pay statements in the worker's primary language too (SPEC §16).
+    ...(profile.payStatementLanguage
+      ? [
+          {
+            label: t("profile.personal.payStatement"),
+            value: (
+              <span data-testid="pay-statement-language">
+                {profile.payStatementLanguage === "es" ? t("profile.personal.payStatementSpanish") : t("profile.personal.payStatementOther", { language: profile.payStatementLanguage })}
+              </span>
+            ),
+          },
+        ]
+      : []),
   ];
   // The record's identifying facts under its title (_components/record-page.md item 3): the worker's
   // number in the payroll system in use, and when they were hired.

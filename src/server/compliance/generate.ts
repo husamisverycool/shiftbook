@@ -274,6 +274,26 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
         push(r, { ...none, workerId: p.workerId, clientId: p.clientId, assignmentId: p.id, occurrence: "", dueOn, facts: { startDate: p.startDate, firstPeriodEnd: p.firstPeriodEnd }, done: null, anchorText: `The placement starts ${p.startDate}; due by the end of its first pay period, ${dueOn}`, parts: [{ key: "maJobOrder", values: { startDate: { date: p.startDate }, dueOn: { date: dueOn } } }] });
       }
     }
+    // New Jersey's Temporary Laborer Assignment Notification (form MW-23): every designated
+    // classification, every language, when the laborer is sent (N.J.S.A. 34:8D-3(a)).
+    if (p.state === "NJ" && p.socCode) {
+      const r = ruleOn("nj_assignment_notice", p.startDate);
+      if (r && r.socGroups.includes(p.socCode.slice(0, 2))) {
+        const dueOn = addDays(p.startDate, r.offsetDays);
+        push(r, {
+          ...none,
+          workerId: p.workerId,
+          clientId: p.clientId,
+          assignmentId: p.id,
+          occurrence: "",
+          dueOn,
+          facts: { startDate: p.startDate, language: p.workerLanguage, socCode: p.socCode },
+          done: null,
+          anchorText: `The placement (SOC ${p.socCode}, a designated classification) starts ${p.startDate}; the notice is given when the worker is sent, by then`,
+          parts: [{ key: "njAssignmentNotice", values: { socCode: p.socCode, startDate: { date: p.startDate } } }],
+        });
+      }
+    }
     if (p.state === "NJ" && p.workerLanguage !== "en" && p.socCode) {
       const r = ruleOn("nj_language_notice", p.startDate);
       if (r && r.socGroups.includes(p.socCode.slice(0, 2))) {

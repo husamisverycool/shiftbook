@@ -243,6 +243,36 @@
     "effectiveTo": null
   },
   {
+    "code": "nj_assignment_notice",
+    "jurisdiction": "NJ",
+    "area": "placements",
+    "subjectKind": "assignment",
+    "anchor": "start",
+    "offsetDays": 0,
+    "businessDays": 0,
+    "remindDays": 0,
+    "fixedDates": [],
+    "lookbackDays": 365,
+    "windowDays": 0,
+    "socGroups": [
+      "33",
+      "35",
+      "37",
+      "39",
+      "47",
+      "49",
+      "51",
+      "53"
+    ],
+    "roles": [
+      "coordinator"
+    ],
+    "citation": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the Temporary Laborer Assignment Notification, form MW-23, when the laborer is sent to the assignment)",
+    "sourceUrl": "https://www.nj.gov/labor/wageandhour/assets/PDFs/Forms%20and%20Publications/MW-23%20(5-15-23)pkg.pdf",
+    "effectiveFrom": "2024-09-16",
+    "effectiveTo": null
+  },
+  {
     "code": "nj_language_notice",
     "jurisdiction": "NJ",
     "area": "placements",

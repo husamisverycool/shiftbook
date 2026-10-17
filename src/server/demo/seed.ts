@@ -31,6 +31,11 @@ import {
   OPENING_BALANCES,
   REGISTRATIONS,
   WC_POLICY,
+  NJ_JOB,
+  NJ_NOTICE_DETAILS,
+  NJ_PLACED,
+  NJ_SITE,
+  NJ_STARTS_IN_DAYS,
   WC_RATES,
   WORK_AUTH_ENDS,
   WORKERS,
@@ -278,6 +283,7 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
   // notice at 30 (Stripe's automatic reminders); its notices arrive from its own duties and invoices.
   await tx.insert(s.agencySettings).values({ agencyId, key: "collection_reminders", value: { enabled: true, beforeDueDays: 3, overdueDays: 7, finalDays: 30 }, effectiveFrom: SINCE });
   await tx.insert(s.hoursOpeningBalances).values(OPENING_BALANCES.map((b) => ({ agencyId, workerId: workerId(b.worker), clientId: clientId(b.client), minutes: b.minutes, throughOn: b.throughOn, note: b.note, createdByLabel: SETUP })));
+  await seedNewJersey(tx, await agencyToday(tx));
   await syncObligations(tx, agencyId, await agencyToday(tx));
   const done = { status: "done" as const, doneAt: new Date(), doneByLabel: SETUP };
   await tx
@@ -449,3 +455,44 @@ async function seedSchedule(tx: Tx, today: string): Promise<void> {
 }
 
 const SETUP = "Demo setup";
+
+/**
+ * New Jersey (SPEC §27.10): Prairie Line's Newark site, its packer job order with the details form
+ * MW-23 asks for, and three placements starting after the demo's pay weeks — one worker who prefers
+ * Spanish, so the notice in the worker's language and the pay-statement flag show too.
+ */
+async function seedNewJersey(tx: Tx, today: string): Promise<void> {
+  const site = demoUuid("worksite:nj-newark");
+  const job = demoUuid("job:nj-packer");
+  await tx.insert(s.worksites).values({ id: site, agencyId, clientId: clientId("il"), ...NJ_SITE });
+  await tx.insert(s.jobOrders).values({
+    id: job,
+    agencyId,
+    clientId: clientId("il"),
+    worksiteId: site,
+    position: NJ_JOB.position,
+    socCode: NJ_JOB.socCode,
+    shift: NJ_JOB.shift,
+    headcount: NJ_JOB.headcount,
+    payMinCents: NJ_JOB.payRateCents,
+    payMaxCents: NJ_JOB.payRateCents,
+    branchId: demoUuid("branch:main"),
+    noticeDetails: NJ_NOTICE_DETAILS,
+  });
+  await tx.insert(s.rateCards).values({
+    agencyId,
+    jobOrderId: job,
+    effectiveFrom: SINCE,
+    payRateCents: NJ_JOB.payRateCents,
+    billRateCents: NJ_JOB.billRateCents,
+    otMultiplierNum: 3,
+    otMultiplierDen: 2,
+    dtMultiplierNum: 2,
+    dtMultiplierDen: 1,
+    wcClassCode: NJ_JOB.wcClassCode,
+  });
+  const startDate = addDays(today, NJ_STARTS_IN_DAYS);
+  await tx.insert(s.assignments).values(
+    NJ_PLACED.map((key) => ({ id: demoUuid(`assignment:nj:${key}`), agencyId, workerId: workerId(key), jobOrderId: job, startDate, status: "active" as const, recruiterUserId: demoUuid(`user:${RECRUITERS[0]!.key}`) })),
+  );
+}

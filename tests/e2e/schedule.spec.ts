@@ -1,5 +1,5 @@
 /**
- * Slice u (decision 0041), in English and Spanish, from a fresh demo: the week's schedule with its open
+ * Slice u (decision 0039), in English and Spanish, from a fresh demo: the week's schedule with its open
  * row and status bar; a warning opened from the status bar; a new open shift; the three-step publish; a
  * demo worker confirming in the Shifts screen; Margin › Attendance. Accessibility on the new screens.
  */

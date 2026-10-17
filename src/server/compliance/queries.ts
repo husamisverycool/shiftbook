@@ -196,13 +196,22 @@ export async function obligationDetail(tx: Tx, actor: Actor, id: string, today: 
   const worker = o.workerId ? (await tx.select().from(s.workers).where(eq(s.workers.id, o.workerId)))[0] : undefined;
   const assignment = o.assignmentId ? (await tx.select({ id: s.assignments.id, jobOrderId: s.assignments.jobOrderId, startDate: s.assignments.startDate }).from(s.assignments).where(eq(s.assignments.id, o.assignmentId)))[0] : undefined;
   // The Massachusetts job order's details and what else it needs (slice j step 2).
+  // The placement notices' details and what else each needs: the Massachusetts job order (slice j step
+  // 2) and New Jersey's form MW-23, which asks no Department contact or statement.
   const notice =
-    o.kind === "ma_job_order" && assignment
+    (o.kind === "ma_job_order" || o.kind === "nj_assignment_notice") && assignment
       ? await (async () => {
           const [job] = await tx.select({ noticeDetails: s.jobOrders.noticeDetails }).from(s.jobOrders).where(eq(s.jobOrders.id, assignment.jobOrderId));
           const settings = await tx.select().from(s.agencySettings).where(and(inArray(s.agencySettings.key, [MA_CONTACT_KEY, MA_STATEMENT_KEY]), isNull(s.agencySettings.effectiveTo)));
           const [agency] = await tx.select({ phone: s.agencies.phone }).from(s.agencies).limit(1);
-          return { details: job?.noticeDetails ?? null, hasContact: settings.some((x) => x.key === MA_CONTACT_KEY), hasStatement: settings.some((x) => x.key === MA_STATEMENT_KEY), hasAgencyPhone: Boolean(agency?.phone) };
+          const nj = o.kind === "nj_assignment_notice";
+          return {
+            form: nj ? ("nj" as const) : ("ma" as const),
+            details: job?.noticeDetails ?? null,
+            hasContact: nj || settings.some((x) => x.key === MA_CONTACT_KEY),
+            hasStatement: nj || settings.some((x) => x.key === MA_STATEMENT_KEY),
+            hasAgencyPhone: Boolean(agency?.phone),
+          };
         })()
       : null;
   // The Illinois proof page shows the registration in force on the day the client checks.
@@ -241,7 +250,7 @@ export async function obligationDetail(tx: Tx, actor: Actor, id: string, today: 
     /** Form I-9 copies are never kept here (dates only). */
     keepsNoFiles: keepsNoFiles(o.kind),
     /** Duties Granite can make a document for. */
-    makes: ["il_client_proof", "il_client_proof_contract", "ma_job_order", "wc_audit"].includes(o.kind),
+    makes: ["il_client_proof", "il_client_proof_contract", "ma_job_order", "nj_assignment_notice", "wc_audit"].includes(o.kind),
   };
 }
 export type ObligationDetail = NonNullable<Awaited<ReturnType<typeof obligationDetail>>>;

@@ -45,7 +45,7 @@ for (const locale of ["en", "es"] as const) {
     await page.keyboard.press("g");
     await page.keyboard.press("o");
     await expect(page.getByRole("heading", { level: 1, name: m.compliance.title })).toBeVisible();
-    await expect(rows).toHaveCount(7);
+    await expect(rows).toHaveCount(11);
     await expect(rows.first()).toContainText(m.compliance.kinds.ma_job_order);
     await expect(rows.first()).toContainText("Kwame Boateng");
     await expect(rows.first().getByTestId("status-overdue")).toBeVisible();
@@ -55,12 +55,12 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("compliance-state").selectOption("MA");
     await expect(rows).toHaveCount(2);
     await page.getByTestId("compliance-state").selectOption("");
-    await expect(rows).toHaveCount(7);
+    await expect(rows).toHaveCount(11);
     await page.getByTestId("area-workers").click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("Kateryna Bondarenko");
     await page.getByTestId("area-all").click();
-    await expect(rows).toHaveCount(7);
+    await expect(rows).toHaveCount(11);
     await page.keyboard.press("/");
     await page.keyboard.type("IL-DTLSA");
     await page.keyboard.press("Enter");

@@ -233,6 +233,35 @@ for (const locale of ["en", "es"] as const) {
     await expect(prairie.getByTestId("approval-state")).toHaveText(m.approvals.state.approved);
     await expect(prairie).toContainText("Dana Approver");
 
+    // SPEC §27 (earned wage access): Marcus Bell asks, in the worker app, for part of what his
+    // approved, unpaid hours earned; the agency sees it outstanding, recovered by the run below.
+    const marcusOnPhone = async () => {
+      const phone = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
+      const worker = await phone.newPage();
+      worker.on("pageerror", (e) => errors.push(`worker app: ${e.message}`));
+      await worker.goto(`/${locale}/w/sign-in`);
+      await worker.getByRole("button", { name: m.workerApp.signIn.demoAs.replace("{name}", "Marcus Bell") }).click();
+      // The app opens in his saved language: English until the Spanish run changes it the first time.
+      await expect(worker).toHaveURL(/\/(en|es)\/w$/);
+      if (locale === "es" && worker.url().includes("/en/w")) {
+        await worker.getByTestId("worker-tab-more").click();
+        await worker.getByTestId("worker-language-es").click();
+        await expect(worker).toHaveURL(/\/es\/w/);
+      }
+      return { phone, worker };
+    };
+    {
+      const { phone, worker } = await marcusOnPhone();
+      await worker.getByTestId("worker-tab-home").click();
+      await worker.getByTestId("worker-wage-request").click();
+      await worker.getByTestId("wage-amount").fill("50.00");
+      await worker.getByTestId("wage-confirm").click();
+      await expect(worker.getByText(m.money.wage.done).first()).toBeVisible();
+      await phone.close();
+      await page.goto(`/${locale}/money/wage-access`);
+      await expect(page.getByTestId("wage-row").filter({ hasText: "Marcus Bell" }).getByTestId("wage-outstanding")).toHaveText(money(5000, locale));
+    }
+
     // 5. The run passes its checks: nothing blocks.
     await home("files");
     await expect(page.getByRole("heading", { level: 1, name: m.convert.steps.upload })).toBeVisible();
@@ -365,17 +394,7 @@ for (const locale of ["en", "es"] as const) {
 
     // A demo worker in the worker app (Marcus Bell, in Spanish for the Spanish run) confirms his
     // shift, and sees the week's hours and the pay stub of the run just paid.
-    const phone = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
-    const worker = await phone.newPage();
-    worker.on("pageerror", (e) => errors.push(`worker app: ${e.message}`));
-    await worker.goto(`/${locale}/w/sign-in`);
-    await worker.getByRole("button", { name: m.workerApp.signIn.demoAs.replace("{name}", "Marcus Bell") }).click();
-    await expect(worker).toHaveURL(/\/en\/w$/);
-    if (locale === "es") {
-      await worker.getByTestId("worker-tab-more").click();
-      await worker.getByTestId("worker-language-es").click();
-      await expect(worker).toHaveURL(/\/es\/w/);
-    }
+    const { phone, worker } = await marcusOnPhone();
     await expect(worker.getByTestId("worker-tab-shifts")).toContainText(MESSAGES[locale].workerApp.tabs.shifts);
     await expect(worker.getByTestId("worker-shifts-waiting")).toHaveText("1");
     await worker.getByTestId("worker-tab-shifts").click();
@@ -403,8 +422,16 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("submit-funding").click();
     await page.getByTestId("confirm-funding").click();
     await expect(page.getByTestId("funding-status")).toHaveText(mo.funding.submitted);
+    // The workers' comp wages for the broker: the period's pay by state and class, recorded as handed off.
+    await page.goto(`/${locale}/money/insurance`);
+    await expect(page.getByTestId("insurance-class").first()).toBeVisible();
+    await page.getByTestId("insurance-record").click();
+    await page.getByTestId("confirm-insurance").click();
+    await expect(page.getByText(mo.insurance.done).first()).toBeVisible();
     await page.goto(`/${locale}/money`);
-    await expect(page.getByTestId("handoff-row")).toHaveCount(2);
+    // Payroll, funding, Marcus's wage access and the broker's file.
+    await expect(page.getByTestId("handoff-row")).toHaveCount(4);
+    await expect(page.getByTestId("handoff-row").first()).toHaveAttribute("data-kind", "insurance");
 
     // Home: every step of the guide is done.
     await go(m.nav.home);

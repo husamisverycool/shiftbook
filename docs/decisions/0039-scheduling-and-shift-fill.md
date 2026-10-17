@@ -1,7 +1,10 @@
-# 0041 — Scheduling and shift fill (slice u)
+# 0039 — Scheduling and shift fill (slice u)
 
 Status: accepted (owner: "build everything … in full", 2026-10-17; SPEC §27 item 7)
 Date: 2026-10-17
+Number: first written as 0041, which the client portal's record also took when the slices were built
+in parallel; moved to the free 0039 the same day. The comment at the top of `drizzle/0049_scheduling.sql`
+still says 0041: applied migrations are not edited.
 
 ## Context
 SPEC §27 brings scheduling into version one: a shift board per client and worksite, offers to eligible

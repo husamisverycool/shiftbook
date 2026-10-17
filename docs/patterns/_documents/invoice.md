@@ -1,6 +1,6 @@
 # Pattern: Invoice PDF (`src/pdf/templates/invoice.tsx`)
 
-Status: researched — ready for owner review
+Status: adopted — `src/pdf/invoice.tsx` (slice g; decision 0016), with its templates (standard, per-worker detail, PO header) and the credit note (slice r).
 Reference product and screen: Stripe invoice PDF (primary, observed in public Stripe-generated
 invoices); QuickBooks Online invoice print template (secondary, documented)
 Source URL: https://docs.stripe.com/invoicing/customize

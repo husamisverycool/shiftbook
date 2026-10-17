@@ -1,5 +1,5 @@
 /**
- * Slice u (decision 0041): shifts, publishing, offers, the worker's answers, no-shows — in the
+ * Slice u (decision 0039): shifts, publishing, offers, the worker's answers, no-shows — in the
  * database. One agency never sees another's shifts or offers; a confirmed shift places the worker on
  * the job order; no answer by the deadline opens the shift again; a schedule never makes a time entry.
  */

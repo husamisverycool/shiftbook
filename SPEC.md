@@ -283,7 +283,7 @@ Each slice is usable end to end before the next starts.
 | r | Notifications, invoice email, credit notes, promises to pay, collection reminders — done |
 | s | Connections; Paychex Flex, Paylocity and factor schedule of accounts (decision 0040) — done |
 | t | Recruiter role, worker onboarding and the worker app — done |
-| u | Scheduling and shift fill (decision 0041) — done |
+| u | Scheduling and shift fill (decision 0039) — done |
 | v | Client portal — done |
 | w | Partner-ready money flows: compute everything, move nothing — done |
 | x | New Jersey rules and duties; the slices joined; the acceptance test grown (§27 item 11) — done |

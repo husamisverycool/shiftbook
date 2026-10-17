@@ -1,6 +1,7 @@
 # Pattern: Hours review grid (`/review`)
 
-Status: researched — ready for owner review
+Status: adopted — built in the converter's Review hours step (`convert/hours-grid.tsx`; the grid
+lives inside `/convert`, so `/review` has no page of its own). Owner, 2026-10-17: "Finish everything".
 Reference product and screen: Airtable — Grid view (primary: grid mechanics, keyboard, summary bar);
 Rippling — Time > Timesheets (secondary: hours content, approval status, per-entry actions);
 Rossum — validation screen (the source document beside the values: boxes, their states, review order);
@@ -99,10 +100,20 @@ Rules from the SPEC that apply to every interaction above:
   the history keeps both clients. A Granite rule (slice (b) plan, decision B5), not from the
   references: a timesheet's hours never move to another client's bill by themselves.
 
-## Not known from the references (ask the owner before building)
-- Order of the view-bar buttons (Airtable does not document it).
-- Whether Delete/Backspace clears a cell; Home/End behavior.
-- Empty and loading states (use `_components/empty-state.md` for empty).
+## Not known from the references (settled, owner 2026-10-17: build everything)
+- Order of the view-bar buttons: Airtable's toolbar as its help articles show it — Hide fields,
+  (Filter), Group, Sort, Row height — with the filters kept in Rippling's filters row above; undo,
+  redo and the shortcut list at the bar's right end.
+- Delete/Backspace does not clear a cell, and Home/End are not bound: neither reference documents
+  them, and clearing a payroll value without a reason would skip the required reason.
+- Empty state: `_components/empty-state.md`; loading: the converter's loading panel.
+- The view (row height, hidden fields, order, widths, group, sort, summaries) is the person's own,
+  kept in this browser — Airtable keeps a personal view; Granite does not store it on the server.
+- "Insert above / below" opens the add-entry row for the same worker and day: entries are hours,
+  not ordered rows, so where one is inserted is not kept. "Delete" is the row's Reject (an entry is
+  never deleted; SPEC §19).
+- Paste and undo are edits like any other: one reason for the whole paste, each entry saved and
+  audited on its own; undo and redo replay the change with the edit's reasons and a note saying so.
 
 ## Never copy
 Logos, product names, icons, illustrations, wording or colors from Airtable or Rippling.

@@ -237,3 +237,58 @@ test("review grid: editing a row at 1024 px scrolls inside the grid, never the p
     expect(box!.x + box!.width).toBeLessThanOrEqual(frame.x + frame.width);
   }
 });
+
+for (const locale of ["en", "es"] as const) {
+  test(`review grid view and history: hide a field, summaries, row menu, Cmd+/, undo and redo an edit (${locale})`, async ({ page }) => {
+    const m = JSON.parse(readFileSync(`messages/${locale}.json`, "utf8")) as typeof import("../../messages/en.json");
+    const h = m.convert.hours;
+    const g = h.grid;
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    await page.goto(`/${locale}/convert`);
+    await page.evaluate(() => localStorage.removeItem("granite.hoursGrid.view"));
+    await page.getByRole("link", { name: m.landing.start }).first().click();
+    await page.getByTestId("file-input").setInputFiles(FIXTURE);
+    await expect(page.getByTestId("document-row")).toHaveCount(1, { timeout: 60_000 });
+    await page.getByTestId("forward").click();
+    const grid = page.getByTestId("hours-grid");
+    await expect(grid.getByTestId("hours-row")).toHaveCount(3);
+
+    // Hide fields (Airtable): the field leaves the grid, and stays hidden after a reload (this browser).
+    await page.getByTestId("hide-fields").click();
+    await page.getByTestId("field-switch-confidence").click();
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("field-confidence")).toHaveCount(0);
+    await page.reload();
+    await expect(grid.getByTestId("hours-row")).toHaveCount(3);
+    await expect(page.getByTestId("field-confidence")).toHaveCount(0);
+    await expect(page.getByTestId("summary-bar")).toBeVisible();
+
+    // The row menu on a right click, and the shortcut list on Cmd+/.
+    await grid.getByTestId("hours-row").first().click({ button: "right" });
+    await expect(page.getByTestId("row-menu")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await grid.locator('[data-cell="0:0"]').click();
+    await page.keyboard.press("ControlOrMeta+/");
+    await expect(page.getByTestId("shortcuts-dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // An edit, undone and redone: each is saved as an edit of its own with the same reason. (All rows:
+    // a matched row leaves "needs review".)
+    await page.getByRole("button", { name: h.filterAll.replace("{count}", "4"), exact: true }).click();
+    const ortiz = grid.getByTestId("hours-row").filter({ hasText: "Ortiz" });
+    await ortiz.getByRole("button", { name: h.edit }).click();
+    await page.getByRole("combobox", { name: h.colWorker }).selectOption({ label: "Olivia Hart" });
+    await page.getByTestId("reason-trigger").click();
+    await page.getByRole("menuitemcheckbox", { name: h.editReasons.matched_worker }).click();
+    await page.keyboard.press("Escape");
+    await page.getByTestId("save-edit").click();
+    await expect(page.getByTestId("reason-row")).toHaveCount(0);
+    await expect(grid.getByTestId("hours-row").filter({ hasText: "Olivia Hart" })).toHaveCount(1);
+    await page.getByRole("button", { name: g.undo, exact: true }).click();
+    await expect(page.getByText(g.undone).first()).toBeVisible();
+    await expect(grid.getByTestId("hours-row").filter({ hasText: "Olivia Hart" })).toHaveCount(0);
+    await page.getByRole("button", { name: g.redo, exact: true }).click();
+    await expect(page.getByText(g.redone).first()).toBeVisible();
+    await expect(grid.getByTestId("hours-row").filter({ hasText: "Olivia Hart" })).toHaveCount(1);
+  });
+}

@@ -1,5 +1,5 @@
 /**
- * Scheduling and shift fill (slice u, decision 0041; docs/patterns/schedule.md). Shifts of job orders,
+ * Scheduling and shift fill (slice u, decision 0039; docs/patterns/schedule.md). Shifts of job orders,
  * published (When I Work's pending changes; Deputy's three-step publish), offered to eligible workers
  * (Deputy "send offers"), confirmed or declined by the worker (Deputy's lifecycle; Instawork's confirm
  * window), marked no-show with a replacement. A confirmed shift places the worker on the job order. A

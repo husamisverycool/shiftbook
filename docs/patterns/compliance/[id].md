@@ -33,7 +33,11 @@ attachments").
    from (for example "Contract started 2026-03-02"; "Hired 2026-10-12; Section 2 due 2026-10-15,
    three business days later"). Where the duty needs data, its form is here: the I-9 dates; the
    Massachusetts job order's details (the worksite employer's phone, times, overtime, requirements,
-   meals, transportation, strike; kept on the job order); the Illinois equal-pay rate (below); for a
+   meals, transportation, strike; kept on the job order); New Jersey's assignment notice details —
+   the questions form MW-23 asks (description of the position, training, equipment, special
+   clothing, protective equipment, licenses; empty answers No), with the employer's phone, times,
+   meals and transportation (`_documents/nj-assignment-notice.md`; kept on the same job order); the
+   Illinois equal-pay rate (below); for a
    registration or policy, a link to Compliance settings; for an ACA offer, a link to the ACA tab.
    **Illinois equal-pay rate** (an equal-pay crossing's duty; Drata's control form): from a date (the
    crossing day for the first rate, today once one is on file); how the client compared (a comparable

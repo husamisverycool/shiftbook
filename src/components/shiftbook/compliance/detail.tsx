@@ -253,12 +253,18 @@ function Summary({ d }: { d: ObligationDetail }) {
   );
 }
 
-/** The job order's details for its Massachusetts job orders (M.G.L. c. 149 § 159C(b)); kept on the job order. */
+/**
+ * The job order's details for its placements' notices, kept on the job order: the Massachusetts job
+ * order (M.G.L. c. 149 § 159C(b)) and New Jersey's form MW-23 (N.J.S.A. 34:8D-3), which asks its own
+ * questions — an empty answer is the form's "No".
+ */
 function NoticeForm({ d }: { d: ObligationDetail }) {
   const tn = useTranslations("compliance.detail.notice");
   const tc = useTranslations("common");
   const n = d.notice!.details;
+  const nj = d.notice!.form === "nj";
   const [v, setV] = useState({ employerPhone: n?.employerPhone ?? "", startTime: n?.startTime ?? "", endTime: n?.endTime ?? "", overtime: n?.overtime ?? "possible", requirements: n?.requirements ?? "", meals: n?.meals ?? "", transport: n?.transport ?? "", strike: n?.strike ?? false });
+  const [q, setQ] = useState({ description: n?.nj?.description ?? "", training: n?.nj?.training ?? "", equipment: n?.nj?.equipment ?? "", clothing: n?.nj?.clothing ?? "", protective: n?.nj?.protective ?? "", licenses: n?.nj?.licenses ?? "" });
   const { pending, act } = useAct();
   const can = d.item.mayAct;
   const text = (key: "requirements" | "meals" | "transport", label: string) => (
@@ -270,12 +276,30 @@ function NoticeForm({ d }: { d: ObligationDetail }) {
       <Textarea id={`notice-${key}`} rows={1} className="min-h-9" value={v[key]} maxLength={300} disabled={!can} onChange={(e) => setV({ ...v, [key]: e.target.value })} data-testid={`notice-${key}`} />
     </div>
   );
+  const question = (key: keyof typeof q, label: string) => (
+    <div className="flex flex-col gap-1 sm:col-span-2">
+      <Label htmlFor={`notice-nj-${key}`} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      <Textarea
+        id={`notice-nj-${key}`}
+        rows={1}
+        className="min-h-9"
+        value={q[key]}
+        maxLength={300}
+        disabled={!can}
+        placeholder={key === "description" ? undefined : tn("emptyMeansNo")}
+        onChange={(e) => setQ({ ...q, [key]: e.target.value })}
+        data-testid={`notice-nj-${key}`}
+      />
+    </div>
+  );
   return (
     <section className="flex flex-col gap-3" aria-labelledby="notice" data-testid="notice-form">
       <h2 id="notice" className="border-b pb-2 text-base font-semibold">
-        {tn("title")}
+        {nj ? tn("njTitle") : tn("title")}
       </h2>
-      <p className="text-xs text-muted-foreground">{tn("intro")}</p>
+      <p className="text-xs text-muted-foreground">{nj ? tn("njIntro") : tn("intro")}</p>
       <div className="grid gap-3 sm:grid-cols-4">
         <div className="flex flex-col gap-1 sm:col-span-4">
           <Label htmlFor="notice-phone" className="text-xs text-muted-foreground">
@@ -295,28 +319,43 @@ function NoticeForm({ d }: { d: ObligationDetail }) {
           </Label>
           <Input id="notice-end" type="time" value={v.endTime} disabled={!can} onChange={(e) => setV({ ...v, endTime: e.target.value })} data-testid="notice-end" />
         </div>
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <Label htmlFor="notice-overtime" className="text-xs text-muted-foreground">
-            {tn("overtime")}
-          </Label>
-          <NativeSelect id="notice-overtime" className="w-full" value={v.overtime} disabled={!can} onChange={(e) => setV({ ...v, overtime: e.target.value as "yes" | "no" | "possible" })}>
-            {(["yes", "possible", "no"] as const).map((o) => (
-              <NativeSelectOption key={o} value={o}>
-                {tn(`overtimeOptions.${o}`)}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
-        {text("requirements", tn("requirements"))}
-        {text("meals", tn("meals"))}
-        {text("transport", tn("transport"))}
-        <div className="flex items-center gap-2 sm:col-span-2">
-          <Checkbox id="notice-strike" checked={v.strike} disabled={!can} onCheckedChange={(on) => setV({ ...v, strike: on === true })} />
-          <Label htmlFor="notice-strike">{tn("strike")}</Label>
-        </div>
+        {nj ? (
+          <>
+            {question("description", tn("description"))}
+            {question("training", tn("training"))}
+            {text("meals", tn("meals"))}
+            {question("equipment", tn("equipment"))}
+            {question("clothing", tn("clothing"))}
+            {question("protective", tn("protective"))}
+            {question("licenses", tn("licenses"))}
+            {text("transport", tn("transport"))}
+          </>
+        ) : (
+          <>
+            <div className="flex flex-col gap-1 sm:col-span-2">
+              <Label htmlFor="notice-overtime" className="text-xs text-muted-foreground">
+                {tn("overtime")}
+              </Label>
+              <NativeSelect id="notice-overtime" className="w-full" value={v.overtime} disabled={!can} onChange={(e) => setV({ ...v, overtime: e.target.value as "yes" | "no" | "possible" })}>
+                {(["yes", "possible", "no"] as const).map((o) => (
+                  <NativeSelectOption key={o} value={o}>
+                    {tn(`overtimeOptions.${o}`)}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
+            {text("requirements", tn("requirements"))}
+            {text("meals", tn("meals"))}
+            {text("transport", tn("transport"))}
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <Checkbox id="notice-strike" checked={v.strike} disabled={!can} onCheckedChange={(on) => setV({ ...v, strike: on === true })} />
+              <Label htmlFor="notice-strike">{tn("strike")}</Label>
+            </div>
+          </>
+        )}
       </div>
       {can && (
-        <Button size="sm" className="w-fit" disabled={pending} onClick={() => act(() => saveNoticeDetailsAction(d.item.id, v), () => toast.success(tn("saved")))} data-testid="save-notice" loading={pending} loadingLabel={tc("loading")}>
+        <Button size="sm" className="w-fit" disabled={pending} onClick={() => act(() => saveNoticeDetailsAction(d.item.id, nj ? { ...v, nj: q } : v), () => toast.success(tn("saved")))} data-testid="save-notice" loading={pending} loadingLabel={tc("loading")}>
           {tn("save")}
         </Button>
       )}
@@ -433,7 +472,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
   );
   const notice = d.notice;
   const blocked = notice
-    ? !notice.details?.employerPhone
+    ? !notice.details?.employerPhone || (notice.form === "nj" && !notice.details.nj)
       ? td("notice.missing")
       : !notice.hasContact
         ? td("notice.department")

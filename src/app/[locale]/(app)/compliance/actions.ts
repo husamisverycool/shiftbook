@@ -6,7 +6,7 @@ import { addObligationFile, addObligationNote, addPolicy, addRegistration, close
 import { addOpeningBalance, removeOpeningBalance } from "@/server/compliance/counter-balances";
 import { importAcaHours, setAcaSettings, type ImportResult } from "@/server/compliance/aca-service";
 import { removeEqualPayRate, setEqualPayRate } from "@/server/compliance/equal-pay-rates";
-import { createJobOrderNotice, createPacketDocument, createProofPage, saveNoticeDetails } from "@/server/compliance/documents";
+import { createJobOrderNotice, createNjAssignmentNotice, createPacketDocument, createProofPage, saveNoticeDetails } from "@/server/compliance/documents";
 import { withAgency } from "@/server/db";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { actorAllowedTo, type Actor } from "@/server/session";
@@ -153,12 +153,27 @@ export async function setMaStatementAction(form: FormData): Promise<ComplianceAc
 /** Makes the duty's document (the proof page, the job order, the packet) and keeps it as evidence. */
 export async function makeDocumentAction(obligationId: string, kind: string): Promise<ComplianceActionResult> {
   if (!id.safeParse(obligationId).success) return { ok: false, error: "generic" };
-  const make = kind === "ma_job_order" ? createJobOrderNotice : kind === "wc_audit" ? createPacketDocument : kind === "il_client_proof" || kind === "il_client_proof_contract" ? createProofPage : null;
+  const make = kind === "ma_job_order" ? createJobOrderNotice : kind === "nj_assignment_notice" ? createNjAssignmentNotice : kind === "wc_audit" ? createPacketDocument : kind === "il_client_proof" || kind === "il_client_proof_contract" ? createProofPage : null;
   if (!make) return { ok: false, error: "generic" };
   return run("compliance", (tx, actor, today) => make(tx, actor, documentStore, obligationId, today));
 }
 
-const NoticeSchema = z.object({ employerPhone: z.string().max(80), startTime: z.string().max(5), endTime: z.string().max(5), overtime: z.enum(["yes", "no", "possible"]), requirements: z.string().max(600), meals: z.string().max(600), transport: z.string().max(600), strike: z.boolean() }).strict();
+const NjNoticeSchema = z
+  .object({ description: z.string().max(600), training: z.string().max(600), equipment: z.string().max(600), clothing: z.string().max(600), protective: z.string().max(600), licenses: z.string().max(600) })
+  .strict();
+const NoticeSchema = z
+  .object({
+    employerPhone: z.string().max(80),
+    startTime: z.string().max(5),
+    endTime: z.string().max(5),
+    overtime: z.enum(["yes", "no", "possible"]),
+    requirements: z.string().max(600),
+    meals: z.string().max(600),
+    transport: z.string().max(600),
+    strike: z.boolean(),
+    nj: NjNoticeSchema.optional(),
+  })
+  .strict();
 
 export async function saveNoticeDetailsAction(obligationId: string, input: unknown): Promise<ComplianceActionResult> {
   const parsed = NoticeSchema.safeParse(input);
