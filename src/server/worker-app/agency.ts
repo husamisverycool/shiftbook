@@ -17,7 +17,7 @@ import { recordSms, type OutgoingSms } from "./sms";
 import type { Lang, Translator } from "./translate";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export type AgencyError = "not_allowed" | "not_found" | "invalid" | "taken" | "no_phone";
+export type AgencyError = "not_allowed" | "not_found" | "invalid" | "taken" | "no_phone" | "owner_required" | "confirm";
 
 async function workerRow(tx: Tx, id: string) {
   if (!UUID.test(id)) return null;
@@ -25,27 +25,58 @@ async function workerRow(tx: Tx, id: string) {
   return w ?? null;
 }
 
-/** The worker's mobile number (US); refused when another worker in the agency has it. */
-export async function setWorkerPhone(tx: Tx, actor: Actor, workerId: string, text: string): Promise<{ ok: true } | { ok: false; error: AgencyError }> {
+/** Whether the worker has given sealed answers (date of birth, I-9, bank details) or signed. */
+async function holdsSealedAnswers(tx: Tx, workerId: string): Promise<boolean> {
+  const [o] = await tx
+    .select({ birth: s.workerOnboarding.birthSealed, i9: s.workerOnboarding.i9Sealed, deposit: s.workerOnboarding.depositSealed, signedAt: s.workerOnboarding.signedAt })
+    .from(s.workerOnboarding)
+    .where(eq(s.workerOnboarding.workerId, workerId));
+  return Boolean(o && (o.birth || o.i9 || o.deposit || o.signedAt));
+}
+
+/**
+ * The worker's mobile number (US); refused when another worker in the agency has it. The number is
+ * the key to the worker's app, so a change signs the worker out everywhere and tells the old number
+ * (Gusto and banks text the old number, too). Once the worker has given sealed answers or signed, only
+ * the Owner changes it, after confirming it is them (as opening those answers needs): otherwise anyone
+ * who may edit a number could point it at their own phone and read or change them.
+ * `confirmedRecently`: the person confirmed it was them a moment ago (the action asks the session).
+ * `oldNumberText`: the text to the old number, in the worker's language.
+ */
+export async function setWorkerPhone(
+  tx: Tx,
+  actor: Actor,
+  workerId: string,
+  text: string,
+  opts: { confirmedRecently: boolean; oldNumberText: (agencyName: string) => string; now: Date },
+): Promise<{ ok: true; notify: OutgoingSms | null } | { ok: false; error: AgencyError }> {
   if (!can(actor, "workerApp")) return { ok: false, error: "not_allowed" };
   const w = await workerRow(tx, workerId);
   if (!w) return { ok: false, error: "not_found" };
   const trimmed = typeof text === "string" ? text.trim() : "";
-  if (trimmed === "") {
-    if (!w.phone) return { ok: true };
-    await tx.update(s.workers).set({ phone: null, phoneIndex: null }).where(eq(s.workers.id, w.id));
-    await audit(tx, actor, [{ action: "update", entityType: "worker", entityId: w.id, before: { phone: maskPhone(w.phone) }, after: { phone: null } }]);
-    return { ok: true };
+  const phone = trimmed === "" ? null : readPhone(trimmed);
+  if (trimmed !== "" && !phone) return { ok: false, error: "invalid" };
+  if (phone === w.phone) return { ok: true, notify: null };
+  const index = phone ? phoneIndex(phone, appKey()) : null;
+  if (index) {
+    const [other] = await tx.select({ id: s.workers.id }).from(s.workers).where(and(eq(s.workers.phoneIndex, index), ne(s.workers.id, w.id)));
+    if (other) return { ok: false, error: "taken" };
   }
-  const phone = readPhone(trimmed);
-  if (!phone) return { ok: false, error: "invalid" };
-  if (phone === w.phone) return { ok: true };
-  const index = phoneIndex(phone, appKey());
-  const [other] = await tx.select({ id: s.workers.id }).from(s.workers).where(and(eq(s.workers.phoneIndex, index), ne(s.workers.id, w.id)));
-  if (other) return { ok: false, error: "taken" };
+  if (w.phone && (await holdsSealedAnswers(tx, w.id))) {
+    if (!can(actor, "revealSsn")) return { ok: false, error: "owner_required" };
+    if (!opts.confirmedRecently) return { ok: false, error: "confirm" };
+  }
   await tx.update(s.workers).set({ phone, phoneIndex: index }).where(eq(s.workers.id, w.id));
-  await audit(tx, actor, [{ action: "update", entityType: "worker", entityId: w.id, before: { phone: w.phone ? maskPhone(w.phone) : null }, after: { phone: maskPhone(phone) } }]);
-  return { ok: true };
+  // Whoever held the app on the old number is signed out.
+  await tx.update(s.workerSessions).set({ endedAt: opts.now }).where(and(eq(s.workerSessions.workerId, w.id), isNull(s.workerSessions.endedAt)));
+  let notify: OutgoingSms | null = null;
+  if (w.phone) {
+    const [agency] = await tx.select({ name: s.agencies.name }).from(s.agencies);
+    const body = opts.oldNumberText(agency?.name ?? "");
+    notify = await recordSms(tx, { agencyId: actor.agencyId, kind: "phone_changed", to: w.phone, workerId: w.id, text: body, kept: body });
+  }
+  await audit(tx, actor, [{ action: "update", entityType: "worker", entityId: w.id, before: { phone: w.phone ? maskPhone(w.phone) : null }, after: { phone: phone ? maskPhone(phone) : null, workerAppSignedOut: true } }]);
+  return { ok: true, notify };
 }
 
 /** Gusto's "Send and continue": a text with the worker app's address, to sign in and onboard. */
@@ -98,12 +129,22 @@ export async function markReadByAgency(tx: Tx, actor: Actor, workerId: string, n
   await tx.update(s.workerMessages).set({ readByAgencyAt: now }).where(and(eq(s.workerMessages.workerId, workerId), eq(s.workerMessages.sender, "worker"), isNull(s.workerMessages.readByAgencyAt)));
 }
 
-/** The agency writes to the worker, in the writer's language; the worker gets a translation in theirs. */
-export async function sendAgencyMessage(tx: Tx, actor: Actor, workerId: string, body: string, writerLocale: Lang, translator: Translator): Promise<{ ok: true } | { ok: false; error: AgencyError | "empty" | "too_long" }> {
+/** The worker's language, for translating a message to them before it is written. */
+export async function workerLanguageOf(tx: Tx, workerId: string): Promise<Lang | null> {
+  if (!UUID.test(workerId)) return null;
+  const [w] = await tx.select({ language: s.workers.preferredLanguage }).from(s.workers).where(eq(s.workers.id, workerId));
+  return w ? (w.language === "es" ? "es" : "en") : null;
+}
+
+/**
+ * The agency writes to the worker, in the writer's language; the worker gets a translation in theirs.
+ * `translated`: the translator, or the translation already made outside the transaction.
+ */
+export async function sendAgencyMessage(tx: Tx, actor: Actor, workerId: string, body: string, writerLocale: Lang, translated: Translator | { translation: string | null }): Promise<{ ok: true } | { ok: false; error: AgencyError | "empty" | "too_long" | "too_many" }> {
   if (!can(actor, "workerApp")) return { ok: false, error: "not_allowed" };
   const w = await workerRow(tx, workerId);
   if (!w) return { ok: false, error: "not_found" };
-  const r = await postMessage(tx, { agencyId: actor.agencyId, workerId: w.id, sender: "agency", authorLabel: actor.label, authorUserId: actor.userId, body, bodyLocale: writerLocale, otherLocale: w.preferredLanguage === "es" ? "es" : "en" }, translator);
+  const r = await postMessage(tx, { agencyId: actor.agencyId, workerId: w.id, sender: "agency", authorLabel: actor.label, authorUserId: actor.userId, body, bodyLocale: writerLocale, otherLocale: w.preferredLanguage === "es" ? "es" : "en" }, translated);
   if (!r.ok) return r;
   await audit(tx, actor, [{ action: "create", entityType: "worker_message", entityId: r.id, after: { workerId: w.id } }]);
   return { ok: true };
@@ -111,7 +152,7 @@ export async function sendAgencyMessage(tx: Tx, actor: Actor, workerId: string, 
 
 /** Whether a client's workers may clock in from the app (and with their location). */
 export async function setClientWorkerClock(tx: Tx, actor: Actor, clientId: string, value: string): Promise<{ ok: true } | { ok: false; error: AgencyError }> {
-  if (!can(actor, "placements")) return { ok: false, error: "not_allowed" };
+  if (!can(actor, "placementTerms")) return { ok: false, error: "not_allowed" };
   if (!UUID.test(clientId)) return { ok: false, error: "not_found" };
   if (value !== "off" && value !== "on" && value !== "location") return { ok: false, error: "invalid" };
   const [c] = await tx.select({ id: s.clients.id, workerClock: s.clients.workerClock }).from(s.clients).where(eq(s.clients.id, clientId)).for("update");

@@ -8,6 +8,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { can } from "../permissions";
 import { lockCatalog } from "../run/period-lock";
 import type { Actor } from "../session";
 import { paidThrough } from "./paid";
@@ -15,7 +16,7 @@ import { billFromMarkup, billOf, isFrozen, planDelete, planInsert, rateProblems,
 
 export const RATE_EDIT_REASONS = ["wrong_from_start", "client_agreed", "data_entry", "other"] as const;
 
-export type RateError = "not_found" | "invalid" | "same_start" | "paid" | "earliest" | "reason_required" | "note_required";
+export type RateError = "not_found" | "invalid" | "same_start" | "paid" | "earliest" | "reason_required" | "note_required" | "not_allowed";
 export type RateResult = { ok: true; id: string } | { ok: false; error: RateError; problems?: RateProblem[]; paidThrough?: string };
 
 /** Which card: the job order's (assignmentId null), or one assignment's own. */
@@ -83,6 +84,7 @@ async function setEnds(tx: Tx, updates: { id: string; effectiveTo: string | null
 
 /** Adds a version (Bullhorn "New version"); it must start after the card's last paid day. */
 export async function addRateVersion(tx: Tx, actor: Actor, ref: { jobOrderId: string } | { assignmentId: string }, input: RateInput): Promise<RateResult> {
+  if (!can(actor, "placementTerms")) return { ok: false, error: "not_allowed" };
   await lockCatalog(tx, actor.agencyId, "exclusive");
   const card = await cardOf(tx, ref);
   if (!card) return { ok: false, error: "not_found" };
@@ -108,6 +110,7 @@ export async function addRateVersion(tx: Tx, actor: Actor, ref: { jobOrderId: st
 
 /** Edits a version no paid week used, with a reason. Its start may move between its neighbours. */
 export async function editRateVersion(tx: Tx, actor: Actor, versionId: string, input: RateInput, reasons: string[], note: string): Promise<RateResult> {
+  if (!can(actor, "placementTerms")) return { ok: false, error: "not_allowed" };
   const reason = reasonText(reasons, note);
   if (!reason.ok) return reason;
   await lockCatalog(tx, actor.agencyId, "exclusive");
@@ -144,6 +147,7 @@ export async function editRateVersion(tx: Tx, actor: Actor, versionId: string, i
 
 /** Deletes a version no paid week used; the one before it is extended over its dates (Bullhorn). */
 export async function deleteRateVersion(tx: Tx, actor: Actor, versionId: string): Promise<RateResult> {
+  if (!can(actor, "placementTerms")) return { ok: false, error: "not_allowed" };
   await lockCatalog(tx, actor.agencyId, "exclusive");
   const [current] = await tx.select().from(s.rateCards).where(eq(s.rateCards.id, versionId));
   if (!current) return { ok: false, error: "not_found" };

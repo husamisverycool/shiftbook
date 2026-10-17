@@ -20,7 +20,7 @@ export function WorkerSignIn({ demoWorkers }: { demoWorkers: { id: string; name:
   const [phone, setPhone] = useState("");
   const [sent, setSent] = useState<{ phone: string; demoCopy: string | null } | null>(null);
   const [code, setCode] = useState("");
-  const [error, setError] = useState<"invalid" | "expired" | "throttled" | "invalidPhone" | null>(null);
+  const [error, setError] = useState<"invalid" | "throttled" | "invalidPhone" | null>(null);
   const [choice, setChoice] = useState<{ choice: string; agencies: { workerId: string; agencyName: string }[] } | null>(null);
   const [sending, startSend] = useTransition();
   const [checking, startCheck] = useTransition();

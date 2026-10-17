@@ -91,7 +91,7 @@ export async function updateJobOrderAction(jobOrderId: string, raw: JobOrderInpu
 }
 
 export async function addRateAction(rawRef: { jobOrderId: string } | { assignmentId: string }, raw: RateInput): Promise<RateResult | { ok: false; error: "busy" }> {
-  const actor = await actorAllowedTo("placements");
+  const actor = await actorAllowedTo("placementTerms");
   const ref = RefSchema.safeParse(rawRef);
   const input = RateSchema.safeParse(raw);
   if (!ref.success || !input.success) return { ok: false, error: "invalid", problems: [] };
@@ -99,14 +99,14 @@ export async function addRateAction(rawRef: { jobOrderId: string } | { assignmen
 }
 
 export async function editRateAction(versionId: string, raw: RateInput, reasons: string[], note: string): Promise<RateResult | { ok: false; error: "busy" }> {
-  const actor = await actorAllowedTo("placements");
+  const actor = await actorAllowedTo("placementTerms");
   const input = RateSchema.safeParse(raw);
   if (!input.success || !id.safeParse(versionId).success || !strings.safeParse(reasons).success || typeof note !== "string") return { ok: false, error: "invalid", problems: [] };
   return run(() => withAgency(actor.agencyId, (tx) => editRateVersion(tx, actor, versionId, input.data, reasons, note.slice(0, 2000))));
 }
 
 export async function deleteRateAction(versionId: string): Promise<RateResult | { ok: false; error: "busy" }> {
-  const actor = await actorAllowedTo("placements");
+  const actor = await actorAllowedTo("placementTerms");
   if (!id.safeParse(versionId).success) return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => deleteRateVersion(tx, actor, versionId)));
 }
@@ -140,7 +140,7 @@ export async function cancelAssignmentAction(assignmentId: string, reason: strin
 
 /** The client's PO for one placement (slice g, decision G4); empty means the client's own PO. */
 export async function setRecruiterAction(assignmentId: string, userId: string | null): Promise<MarginResult | { ok: false; error: "busy" }> {
-  const actor = await actorAllowedTo("placements");
+  const actor = await actorAllowedTo("placementTerms");
   if (!id.safeParse(assignmentId).success || (userId !== null && !id.safeParse(userId).success)) return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => setRecruiter(tx, actor, assignmentId, userId)));
 }

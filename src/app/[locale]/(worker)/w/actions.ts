@@ -20,7 +20,7 @@ import { auditBy } from "@/server/audit";
 import * as s from "@/server/db/schema";
 import { chooseWorkerAgency, demoCodeText, demoWorkerSignIn, endWorkerSession, requestWorkerCode, verifyWorkerCode, WORKER_SESSION_MS } from "@/server/worker-app/auth";
 import { STEPS, type Step } from "@/server/worker-app/forms";
-import { clockIn, clockOut, postMessage, saveStep, type ClockError } from "@/server/worker-app/service";
+import { clockIn, clockOut, postMessage, saveStep, translateMessage, WORKER_MESSAGES_PER_HOUR, workerMessagesLastHour, type ClockError } from "@/server/worker-app/service";
 import { asWorker, currentWorker, WORKER_COOKIE, workerDeps } from "@/server/worker-app/session";
 import { translator } from "@/server/worker-app/translate";
 import { eq } from "drizzle-orm";
@@ -46,7 +46,7 @@ export async function requestCodeAction(locale: string, phone: string): Promise<
   return { ok: true, demoCopy: isDemo() ? await demoCodeText({ db }, DEMO_AGENCY.id, r.phone) : null };
 }
 
-export async function verifyCodeAction(input: { phone: string; code: string }): Promise<{ ok: false; error: "invalid" | "expired" | "throttled" } | { ok: true; choice: string; agencies: { workerId: string; agencyName: string }[] }> {
+export async function verifyCodeAction(input: { phone: string; code: string }): Promise<{ ok: false; error: "invalid" | "throttled" } | { ok: true; choice: string; agencies: { workerId: string; agencyName: string }[] }> {
   const { ipAddress, userAgent } = await requestSender();
   const r = await verifyWorkerCode(workerDeps(), String(input?.phone ?? "").slice(0, 40), String(input?.code ?? "").slice(0, 20), userAgent, ipAddress);
   if (!r.ok) return r;
@@ -115,10 +115,16 @@ export async function clockOutAction(locale: string, location: unknown): Promise
   return r.ok ? { ok: true } : r;
 }
 
-export async function sendWorkerMessageAction(locale: string, body: string): Promise<{ ok: true } | { ok: false; error: "empty" | "too_long" | "generic" }> {
+export async function sendWorkerMessageAction(locale: string, body: string): Promise<{ ok: true } | { ok: false; error: "empty" | "too_long" | "too_many" | "generic" }> {
   const w = await currentWorker(localeOf(locale));
   const lang = localeOf(locale);
-  const r = await asWorker(w, (tx) => postMessage(tx, { agencyId: w.agencyId, workerId: w.workerId, sender: "worker", authorLabel: `${w.firstName} ${w.lastName}`, authorUserId: null, body: String(body ?? "").slice(0, 4000), bodyLocale: lang, otherLocale: "en" }, translator()));
+  const text = String(body ?? "").slice(0, 4000);
+  const now = new Date();
+  // Too many messages this hour: refused before any translation is paid for.
+  if ((await asWorker(w, (tx) => workerMessagesLastHour(tx, w.workerId, now))) >= WORKER_MESSAGES_PER_HOUR) return { ok: false, error: "too_many" };
+  // Translated before the transaction opens: a slow model never holds a database connection.
+  const translation = await translateMessage(translator(), text, lang, "en");
+  const r = await asWorker(w, (tx) => postMessage(tx, { agencyId: w.agencyId, workerId: w.workerId, sender: "worker", authorLabel: `${w.firstName} ${w.lastName}`, authorUserId: null, body: text, bodyLocale: lang, otherLocale: "en" }, { translation }, now));
   refresh();
   return r.ok ? { ok: true } : r;
 }

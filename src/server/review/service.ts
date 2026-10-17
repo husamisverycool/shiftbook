@@ -337,7 +337,8 @@ export async function approveEntries(tx: Tx, actor: Actor, ids: string[], opts: 
       period !== undefined &&
       e.workDate >= period.startsOn &&
       e.workDate <= period.endsOn &&
-      (!opts.bulk || e.confidence === "high");
+      // In bulk, only high-confidence rows, and never a worker's own clock (a person checks those one at a time).
+      (!opts.bulk || (e.confidence === "high" && !(e.reviewReasons ?? []).some((r) => r.startsWith("worker_app"))));
     if (!ready) {
       skipped.push(id);
       continue;

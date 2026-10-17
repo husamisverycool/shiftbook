@@ -6,13 +6,17 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "../db";
+import { env } from "../env";
 import type { Tx } from "../db/client";
 import { readWorkerSession, type WorkerAuthDeps, type WorkerSession } from "./auth";
 import { withWorker } from "./fence";
 import { smsTransport } from "./sms";
 
-/** The worker app's session cookie (apart from the agency's own, so the two never mix). */
-export const WORKER_COOKIE = "sb_worker";
+/**
+ * The worker app's session cookie (apart from the agency's own, so the two never mix). Live, its name
+ * carries the __Host- prefix: the browser then keeps it only from this host, over HTTPS, for every path.
+ */
+export const WORKER_COOKIE = env.mode === "live" ? "__Host-sb_worker" : "sb_worker";
 
 export const workerDeps = (): WorkerAuthDeps => ({ db, sms: smsTransport() });
 

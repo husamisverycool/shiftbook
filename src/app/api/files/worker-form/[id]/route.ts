@@ -25,7 +25,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const signature = url.searchParams.get("signature") ?? "";
   if (!can(actor, "revealSsn") || !grantHolds(appKey(), formGrantSubject(id, kind as FormKind), actor.userId, expires, signature, Math.floor(Date.now() / 1000))) return new Response("Not allowed", { status: 403 });
   const locale = url.searchParams.get("locale") === "es" ? "es" : "en";
-  const r = await withAgency(actor.agencyId, (tx) => onboardingFormPdf(tx, id, kind as FormKind, locale));
+  const r = await withAgency(actor.agencyId, (tx) => onboardingFormPdf(tx, id, kind as FormKind, locale, "full"));
   if (!r) return new Response("Not found", { status: 404 });
   return new Response(new Blob([r.bytes as BlobPart]), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${r.filename}"`, "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" } });
 }

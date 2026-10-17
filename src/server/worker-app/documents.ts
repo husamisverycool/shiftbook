@@ -44,8 +44,16 @@ export async function payStubPdf(tx: Tx, workerId: string, runId: string, locale
 
 const centsText = (c: number, locale: string) => money(c, locale);
 
-/** A signed onboarding form as a PDF; null when the worker has not given those answers. */
-export async function onboardingFormPdf(tx: Tx, workerId: string, kind: FormKind, locale: string): Promise<{ bytes: Uint8Array; filename: string } | null> {
+/** A number shown by its last four (as the SSN is), for the worker's own copy. */
+export const lastFour = (v: string) => `XXXX${v.replace(/\s+/g, "").slice(-4)}`;
+
+/**
+ * A signed onboarding form as a PDF; null when the worker has not given those answers. `copy`: the
+ * worker's own ("worker") shows bank, routing and immigration-document numbers and the date of birth
+ * only by their last four, so a phone in the wrong hands cannot read them; the full form ("full") is
+ * the Owner's, through the reason-and-grant route.
+ */
+export async function onboardingFormPdf(tx: Tx, workerId: string, kind: FormKind, locale: string, copy: "worker" | "full"): Promise<{ bytes: Uint8Array; filename: string } | null> {
   const opened = await formAnswers(tx, workerId);
   if (!opened) return null;
   const { row, birthDate, i9, deposit } = opened;
@@ -55,6 +63,8 @@ export async function onboardingFormPdf(tx: Tx, workerId: string, kind: FormKind
   const p = row.personal;
   const name = p ? `${p.legalFirstName} ${p.legalLastName}` : `${w.firstName} ${w.lastName}`;
   const yes = (v: boolean) => (v ? tf("yes") : tf("no"));
+  const shown = (v: string) => (copy === "full" ? v : lastFour(v));
+  const subtitle = copy === "full" ? tf("subtitle") : `${tf("subtitle")} ${tf("maskedNote")}`;
   const address = p ? `${p.addressLine}, ${p.city}, ${p.state} ${p.zip}` : "—";
   const signature = row.signedAt && row.signedName ? { label: tf("signedBy"), name: row.signedName, dateLabel: tf("signedOn"), date: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short", timeZone: "UTC" }).format(row.signedAt) + " UTC", statement: tf("statement") } : null;
   let data: OnboardingFormData;
@@ -63,7 +73,7 @@ export async function onboardingFormPdf(tx: Tx, workerId: string, kind: FormKind
     const x = row.w4;
     data = {
       title: tf("w4.title"),
-      subtitle: tf("subtitle"),
+      subtitle,
       worker: { label: tf("worker"), name, ssnLabel: tf("ssn"), ssn: w.ssnLast4 ? `XXX-XX-${w.ssnLast4}` : null },
       rows: [
         { label: tf("w4.address"), value: address },
@@ -83,25 +93,25 @@ export async function onboardingFormPdf(tx: Tx, workerId: string, kind: FormKind
       { label: tf("i9.lastName"), value: p?.legalLastName ?? w.lastName },
       { label: tf("i9.firstName"), value: p?.legalFirstName ?? w.firstName },
       { label: tf("i9.address"), value: address },
-      { label: tf("i9.birthDate"), value: birthDate ?? "—" },
+      { label: tf("i9.birthDate"), value: birthDate ? (copy === "full" ? birthDate : `XXXX-XX-${birthDate.slice(-2)}`) : "—" },
       { label: tf("i9.email"), value: p?.email ?? "—" },
       { label: tf("i9.phone"), value: w.phone ? maskPhone(w.phone) : "—" },
       { label: tf("i9.attestation"), value: tf(`i9.status.${i9.status}`) },
     ];
-    if (i9.uscisNumber) rows.push({ label: tf("i9.uscisNumber"), value: `A${i9.uscisNumber}` });
+    if (i9.uscisNumber) rows.push({ label: tf("i9.uscisNumber"), value: `A${shown(i9.uscisNumber)}` });
     if (i9.expiresOn) rows.push({ label: tf("i9.expiresOn"), value: i9.expiresOn });
-    if (i9.i94Number) rows.push({ label: tf("i9.i94Number"), value: i9.i94Number });
-    if (i9.passportNumber) rows.push({ label: tf("i9.passport"), value: `${i9.passportNumber}, ${i9.passportCountry ?? ""}` });
-    data = { title: tf("i9.title"), subtitle: tf("subtitle"), worker: { label: tf("worker"), name, ssnLabel: tf("ssn"), ssn: w.ssnLast4 ? `XXX-XX-${w.ssnLast4}` : null }, rows, signature };
+    if (i9.i94Number) rows.push({ label: tf("i9.i94Number"), value: shown(i9.i94Number) });
+    if (i9.passportNumber) rows.push({ label: tf("i9.passport"), value: `${shown(i9.passportNumber)}, ${i9.passportCountry ?? ""}` });
+    data = { title: tf("i9.title"), subtitle, worker: { label: tf("worker"), name, ssnLabel: tf("ssn"), ssn: w.ssnLast4 ? `XXX-XX-${w.ssnLast4}` : null }, rows, signature };
   } else {
     if (!deposit || deposit.kind !== "direct_deposit") return null;
     data = {
       title: tf("deposit.title"),
-      subtitle: tf("deposit.authorize"),
+      subtitle: copy === "full" ? tf("deposit.authorize") : `${tf("deposit.authorize")} ${tf("maskedNote")}`,
       worker: { label: tf("worker"), name, ssnLabel: tf("ssn"), ssn: null },
       rows: [
-        { label: tf("deposit.bank"), value: deposit.routing },
-        { label: tf("deposit.account"), value: deposit.account },
+        { label: tf("deposit.bank"), value: shown(deposit.routing) },
+        { label: tf("deposit.account"), value: shown(deposit.account) },
         { label: tf("deposit.type"), value: tf(`deposit.types.${deposit.accountType}`) },
       ],
       signature,

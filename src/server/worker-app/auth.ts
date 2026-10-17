@@ -10,6 +10,7 @@
  * the same, on file or not, so the page tells nothing about who works where.
  */
 import { hkdfSync, randomUUID } from "node:crypto";
+import { isIPv6 } from "node:net";
 import { and, count, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { auditBy } from "../audit";
 import { appKey, digest, randomToken } from "../auth/crypto";
@@ -48,6 +49,20 @@ const authOf = (db: Db): AuthDeps => ({
 const codeKey = () => Buffer.from(hkdfSync("sha256", appKey(), "shiftbook", "worker sign-in code", 32));
 
 const key = (kind: string, value: string) => digest(`worker-${kind}|${value}`);
+
+/**
+ * The place a request comes from, for the per-address limits: an IPv4 address as it is; an IPv6
+ * address by its /64, which one subscriber usually holds whole (so rotating within it changes nothing).
+ */
+export function addressBucket(address: string): string {
+  const a = address.trim().toLowerCase();
+  if (!isIPv6(a) || /^::ffff:\d+\.\d+\.\d+\.\d+$/.test(a)) return a.replace(/^::ffff:/, "");
+  const [head, tail = ""] = a.split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = a.includes("::") ? [...left, ...Array<string>(8 - left.length - right.length).fill("0"), ...right] : left;
+  return `${groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "")).join(":")}::/64`;
+}
 
 async function countSince(tx: Tx, keyHash: string, sinceMs: number, now: Date): Promise<number> {
   const [r] = await tx
@@ -88,7 +103,7 @@ export async function requestWorkerCode(
   const index = phoneIndex(phone, appKey());
   // The per-address limit answers at once; it counts every number alike, so it tells nothing.
   if (address) {
-    const k = key("request-address", address);
+    const k = key("request-address", addressBucket(address));
     const over = await withAuth(authOf(deps.db), async (tx) => {
       if ((await countSince(tx, k, HOUR, now)) >= REQUESTS_PER_ADDRESS_HOUR) return true;
       await note(tx, k, now);
@@ -125,11 +140,13 @@ async function issueAndRecord(deps: WorkerAuthDeps, index: string, phone: string
     const id = randomUUID();
     const code = newEmailCode();
     await tx.insert(s.workerSignInCodes).values({ id, phoneIndex: index, codeHash: hashEmailCode(codeKey(), id, code), createdAt: now, expiresAt: new Date(now.getTime() + EMAIL_CODE_TTL_MS) });
-    // The text goes out under the first agency's name; its log keeps the text without the code.
+    // The text names no agency. It is logged in the first agency's outbox without the code; for a
+    // number at several agencies it names no worker there either, so one agency cannot point its log
+    // at another agency's worker to watch them sign in.
     const first = candidates[0]!;
     await enterAgency(tx, first.agencyId);
     const body = text(code);
-    const sms = await recordSms(tx, { agencyId: first.agencyId, kind: "sign_in_code", to: phone, workerId: first.workerId, text: body, kept: body.split(code).join("[code hidden]") });
+    const sms = await recordSms(tx, { agencyId: first.agencyId, kind: "sign_in_code", to: phone, workerId: candidates.length === 1 ? first.workerId : null, text: body, kept: body.split(code).join("[code hidden]") });
     return { agencyId: first.agencyId, sms };
   });
 }
@@ -137,7 +154,7 @@ async function issueAndRecord(deps: WorkerAuthDeps, index: string, phone: string
 export type VerifyResult =
   | { ok: true; kind: "session"; token: string; agencyId: string; workerId: string }
   | { ok: true; kind: "choose"; choice: string; agencies: { workerId: string; agencyName: string }[] }
-  | { ok: false; error: "invalid" | "expired" | "throttled" };
+  | { ok: false; error: "invalid" | "throttled" };
 
 /**
  * The code typed for the number. A number at one agency signs in at once; at several, the agencies
@@ -149,17 +166,19 @@ export async function verifyWorkerCode(deps: WorkerAuthDeps, phoneText: string, 
   const now = nowOf(deps);
   const index = phoneIndex(phone, appKey());
   const numberKey = key("wrong-number", index);
-  const addressKey = address ? key("wrong-address", address) : null;
+  const addressKey = address ? key("wrong-address", addressBucket(address)) : null;
   return withAuth(authOf(deps.db), async (tx): Promise<VerifyResult> => {
     if ((await countSince(tx, numberKey, 15 * MINUTE, now)) >= WRONG_PER_NUMBER_15MIN) return { ok: false, error: "throttled" };
     if (addressKey && (await countSince(tx, addressKey, 15 * MINUTE, now)) >= WRONG_PER_ADDRESS_15MIN) return { ok: false, error: "throttled" };
     const [row] = await tx.select().from(s.workerSignInCodes).where(and(eq(s.workerSignInCodes.phoneIndex, index), isNull(s.workerSignInCodes.usedAt))).orderBy(desc(s.workerSignInCodes.createdAt)).limit(1).for("update");
     const state = row ? emailCodeState(row, now) : "expired";
     if (!row || state !== "open" || !codeMatches(codeKey(), row.id, row.codeHash, typed)) {
-      if (row && state === "open") await tx.update(s.workerSignInCodes).set({ failures: row.failures + 1 }).where(eq(s.workerSignInCodes.id, row.id));
+      // One answer for a wrong code, a spent or expired one, and a number with no code at all, after
+      // the same writes: nothing tells whether the number belongs to a worker anywhere.
+      await tx.update(s.workerSignInCodes).set({ failures: sql`${s.workerSignInCodes.failures} + 1` }).where(eq(s.workerSignInCodes.id, row && state === "open" ? row.id : randomUUID()));
       await note(tx, numberKey, now);
       if (addressKey) await note(tx, addressKey, now);
-      return { ok: false, error: row && state !== "open" ? "expired" : "invalid" };
+      return { ok: false, error: "invalid" };
     }
     const candidates = await candidatesOf(tx, index);
     if (candidates.length === 0) {

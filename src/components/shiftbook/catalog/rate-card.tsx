@@ -41,7 +41,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
   const locale = useLocale();
   const router = useRouter();
   // Decision 0026: rates are changed by the Owner and coordinators (placements).
-  const mayChange = useCan()("placements");
+  const mayChange = useCan()("placementTerms");
   const current = inForce(versions, today);
   const [shownId, setShownId] = useState<string | null>(null);
   const shown = versions.find((v) => v.id === shownId) ?? current ?? versions.at(-1) ?? null;

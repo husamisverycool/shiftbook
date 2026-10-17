@@ -173,7 +173,8 @@ export async function setPayDay(tx: Tx, actor: Actor, days: unknown, from: unkno
 
 /** The recruiter whose placement it is (any user of the agency), or none. */
 export async function setRecruiter(tx: Tx, actor: Actor, assignmentId: string, userId: string | null): Promise<MarginResult> {
-  if (!mayChangePlacement(actor)) return { ok: false, error: "not_allowed" };
+  // Who is credited with a placement's margin is not the Recruiter's to choose (security review, slice t).
+  if (!can(actor, "placementTerms")) return { ok: false, error: "not_allowed" };
   if (!UUID.test(assignmentId) || (userId !== null && !UUID.test(userId))) return { ok: false, error: "not_found" };
   await lockCatalog(tx, actor.agencyId, "exclusive");
   const [a] = await tx.select().from(s.assignments).where(eq(s.assignments.id, assignmentId));

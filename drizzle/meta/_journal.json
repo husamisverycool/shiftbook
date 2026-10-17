@@ -381,6 +381,13 @@
       "breakpoints": true
     },
     {
+      "idx": 55,
+      "version": "7",
+      "when": 1792180500000,
+      "tag": "0055_worker_app_security",
+      "breakpoints": true
+    },
+    {
       "idx": 57,
       "version": "7",
       "when": 1792180700000,

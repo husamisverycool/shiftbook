@@ -283,7 +283,9 @@
         "timesheet_client_unclear": "No está claro de qué cliente es esta hoja de horas",
         "assignment_at_other_client_named": "La asignación del trabajador ese día es con {client}; edite para asignar estas horas allí si son de ese cliente",
         "timesheet_client_unclear_named": "No está claro de qué cliente es esta hoja de horas; la asignación del trabajador ese día es con {client}. Edite para asignar estas horas allí si son de ese cliente",
-        "worker_app": "Marcado en la aplicación del trabajador"
+        "worker_app": "Marcado en la aplicación del trabajador",
+        "worker_app_too_long": "Marcado en la aplicación por un turno demasiado largo para ser correcto: indique cuándo terminó",
+        "worker_app_not_allowed": "Marcado después de que el cliente desactivó el reloj o terminó la asignación"
       },
       "fields": {
         "worker": "trabajador",
@@ -5681,7 +5683,7 @@
       "resend": "Enviar un código nuevo",
       "otherNumber": "Usar otro número",
       "invalidPhone": "Escriba un número de celular de EE. UU., como (312) 555-0142.",
-      "invalid": "Ese código no funcionó. Revíselo e inténtelo de nuevo.",
+      "invalid": "Ese código no funcionó o ya venció. Revíselo o envíe un código nuevo.",
       "expired": "Ese código venció. Pida un código nuevo.",
       "throttled": "Demasiados intentos. Inténtelo de nuevo en unos minutos.",
       "chooseTitle": "Elija una agencia",
@@ -5719,7 +5721,8 @@
         "location_required": "Este cliente pide su ubicación. Permita la ubicación e inténtelo de nuevo.",
         "too_short": "Marque la salida al menos un minuto después de la entrada.",
         "period_paid": "Esa semana ya se pagó. Pida a su agencia que agregue las horas.",
-        "generic": "No funcionó. Inténtelo de nuevo."
+        "generic": "No funcionó. Inténtelo de nuevo.",
+        "too_long": "Ese turno es demasiado largo para ser correcto, así que su agencia indicará cuándo terminó. Dígale a su coordinador cuándo dejó de trabajar."
       },
       "done": "Salida marcada. Su agencia revisará las horas antes del día de pago."
     },
@@ -5765,7 +5768,8 @@
       "errors": {
         "empty": "Escriba un mensaje primero.",
         "too_long": "Escriba menos de 2,000 caracteres.",
-        "generic": "No se envió. Inténtelo de nuevo."
+        "generic": "No se envió. Inténtelo de nuevo.",
+        "too_many": "Son muchos mensajes en esta hora. Espere un poco o llame a su agencia."
       }
     },
     "more": {
@@ -5909,12 +5913,13 @@
       "messages": "Mensajes"
     },
     "phone": "Número de celular",
-    "phoneHint": "El trabajador inicia sesión en la aplicación del trabajador con este número.",
+    "phoneHint": "El trabajador inicia sesión en la aplicación con este número. Cambiarlo cierra la sesión del trabajador y envía un mensaje al número anterior.",
     "phoneNone": "Sin número",
     "phoneErrors": {
       "invalid": "Escriba un número de celular de EE. UU., como (312) 555-0142.",
       "taken": "Otro trabajador tiene este número.",
-      "generic": "No se guardó. Inténtelo de nuevo."
+      "generic": "No se guardó. Inténtelo de nuevo.",
+      "owner_required": "Ahora solo el Propietario puede cambiar este número: el trabajador ya dio sus datos personales y bancarios."
     },
     "send": "Enviar enlace de incorporación",
     "sendHint": "Envía al trabajador por mensaje de texto la dirección de la aplicación, para iniciar sesión y completar la incorporación.",
@@ -5952,7 +5957,8 @@
   },
   "workerAppSms": {
     "code": "{code} es su código para ver sus horas y su pago. Vence en 10 minutos. No lo comparta con nadie.",
-    "invite": "{agency}: termine su incorporación y vea sus horas y su pago en {url}"
+    "invite": "{agency}: termine su incorporación y vea sus horas y su pago en {url}",
+    "phoneChanged": "{agency}: se cambió el número de celular de su aplicación de horas y pago, y se cerró su sesión. Si usted no lo pidió, llame a su agencia."
   },
   "workerAppForms": {
     "subtitle": "Registro de las respuestas dadas en la aplicación del trabajador de Granite.",
@@ -6014,7 +6020,8 @@
     "stub": {
       "title": "Talón de pago",
       "note": "Pago bruto, antes de impuestos y deducciones, que calcula el proveedor de nómina de la agencia. Generado por Granite."
-    }
+    },
+    "maskedNote": "Los números bancarios y de documentos se muestran por sus últimos cuatro dígitos; su agencia conserva el formulario completo."
   },
   "clientPortal": {
     "metaTitle": "Portal del cliente",

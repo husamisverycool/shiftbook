@@ -13,12 +13,23 @@ export interface Translator {
   translate(text: string, from: Lang, to: Lang): Promise<string | null>;
 }
 
-/** Nine digits shaped like an SSN, and dates (a date of birth among them), replaced before any model call. */
+const MONTHS_EN = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?";
+const MONTHS_ES = "enero|febrero|marzo|abril|mayo|junio|julio|agosto|sep?tiembre|octubre|noviembre|diciembre";
+
+/**
+ * Nine digits shaped like an SSN, dates (a date of birth among them: with slashes, dashes or dots, or
+ * written with the month's name in English or Spanish), and any longer run of digits (a bank account),
+ * replaced before any model call.
+ */
 export function redactForModel(text: string): string {
   return text
     .replace(/(?<!\d)\d{3}[-\s_.]?\d{2}[-\s_.]?\d{4}(?!\d)/g, "[number removed]")
-    .replace(/(?<!\d)\d{1,2}[/-]\d{1,2}[/-]\d{2,4}(?!\d)/g, "[date removed]")
-    .replace(/(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)/g, "[date removed]");
+    .replace(/(?<!\d)\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}(?!\d)/g, "[date removed]")
+    .replace(/(?<!\d)\d{4}[-/.]\d{2}[-/.]\d{2}(?!\d)/g, "[date removed]")
+    .replace(new RegExp(`\\b(?:${MONTHS_EN})\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+\\d{4}\\b`, "gi"), "[date removed]")
+    .replace(new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:of\\s+)?(?:${MONTHS_EN})\\.?,?\\s+\\d{4}\\b`, "gi"), "[date removed]")
+    .replace(new RegExp(`\\b\\d{1,2}\\s+de\\s+(?:${MONTHS_ES})\\s+(?:de\\s+|del\\s+)?\\d{4}\\b`, "gi"), "[date removed]")
+    .replace(/(?<!\d)\d(?:[\s-]?\d){7,}(?!\d)/g, "[number removed]");
 }
 
 /** The demo's messages and their translations, [English, Spanish], both ways. */
@@ -51,12 +62,16 @@ export class ModelTranslator implements Translator {
     if (from === to) return null;
     const names = { en: "English", es: "Spanish" };
     try {
-      const response = await this.client.messages.create({
-        model: TRANSLATION_MODEL,
-        max_tokens: 1200,
-        system: `Translate the user's message from ${names[from]} to ${names[to]}. It is a short message between a temporary worker and their staffing agency. Reply with the translation only. Keep [number removed] and [date removed] as they are.`,
-        messages: [{ role: "user", content: redactForModel(text) }],
-      });
+      const response = await this.client.messages.create(
+        {
+          model: TRANSLATION_MODEL,
+          max_tokens: 1200,
+          system: `Translate the user's message from ${names[from]} to ${names[to]}. It is a short message between a temporary worker and their staffing agency. Reply with the translation only. Keep [number removed] and [date removed] as they are.`,
+          messages: [{ role: "user", content: redactForModel(text) }],
+        },
+        // A translation is a courtesy: a slow one gives up rather than hold the message.
+        { timeout: 15_000, maxRetries: 1 },
+      );
       const out = response.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
       return out || null;
     } catch {
