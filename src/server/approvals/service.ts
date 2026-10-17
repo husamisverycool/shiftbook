@@ -16,7 +16,7 @@ import * as s from "../db/schema";
 import type { MailTransport, OutgoingMail } from "../mail/transport";
 import { lockPeriod, openPeriod, PeriodLockedError, PeriodNotFoundError, periodState } from "../run/period-lock";
 import type { Actor } from "../session";
-import { settingOn } from "../settings";
+import { agencyZone, settingOn } from "../settings";
 import { renderDecisionEmail, renderLinkEmail, type EmailAgency } from "./emails";
 import { approvedShift, clientShifts, snapshotSha256, summarize, unmatchedOnClientTimesheets, type ClientShift } from "./scope";
 import { hashApprovalToken, newApprovalToken, redactApprovalLinks } from "./token";
@@ -512,6 +512,8 @@ export interface PortalAgency {
   name: string;
   phone: string | null;
   email: string | null;
+  /** The agency's time zone: the page shows when hours were approved in the agency's time, as its emails do. */
+  timeZone: string;
 }
 
 export type PortalView =
@@ -553,7 +555,7 @@ type LinkState = "active" | "expired" | "replaced";
 const linkState = (c: LinkContext, now: Date): LinkState =>
   c.link.revokedAt !== null || c.request.status !== "open" ? "replaced" : c.link.expiresAt.getTime() <= now.getTime() ? "expired" : "active";
 
-const portalAgency = (a: { name: string; phone: string | null; email: string | null }): PortalAgency => ({ name: a.name, phone: a.phone, email: a.email });
+const portalAgency = (a: { name: string; phone: string | null; email: string | null }, timeZone: string): PortalAgency => ({ name: a.name, phone: a.phone, email: a.email, timeZone });
 
 const proposalOf = (d: { proposedInMinute: number | null; proposedOutMinute: number | null; proposedBreakMinutes: number | null }) =>
   d.proposedInMinute !== null && d.proposedOutMinute !== null && d.proposedBreakMinutes !== null ? { inMinute: d.proposedInMinute, outMinute: d.proposedOutMinute, breakMinutes: d.proposedBreakMinutes } : null;
@@ -591,7 +593,7 @@ export async function loadPortal(deps: ApprovalDeps, token: string): Promise<Por
     const c = await linkContext(tx, found.agencyId, found.linkId);
     if (!c) return { state: "invalid" as const };
     const [agency] = await tx.select().from(s.agencies);
-    const who = portalAgency(agency!);
+    const who = portalAgency(agency!, await agencyZone(tx, now));
     const state = linkState(c, now);
     if (state === "replaced") return { state: "replaced" as const, agency: who };
     const closed = (await periodState(tx, c.request.payPeriodId)) !== "open";

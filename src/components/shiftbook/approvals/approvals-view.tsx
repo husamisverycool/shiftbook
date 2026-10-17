@@ -24,10 +24,14 @@ import { hoursMinutes, longDate } from "../format";
 import { Page, PageHeader, TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 import { SendDialog, type SendTarget } from "./send-dialog";
+import { useDateTime } from "../agency-zone";
 
 export const STATE_ORDER: ClientApprovalState[] = ["disputed", "not_sent", "send_again", "waiting", "approved"];
-/** One status language (decision 0029): disputed needs the agency, waiting is the client's turn. */
-const STATE_TONE: Record<ClientApprovalState, Tone> = { disputed: "critical", not_sent: "warning", send_again: "warning", waiting: "info", approved: "success" };
+/**
+ * One status language (_components/status.md): not sent is not started yet (neutral), new hours to send
+ * need attention, waiting is the client's turn, approved is done, disputed needs the agency.
+ */
+const STATE_TONE: Record<ClientApprovalState, Tone> = { disputed: "critical", not_sent: "neutral", send_again: "warning", waiting: "info", approved: "success" };
 
 export function ApprovalStateBadge({ state }: { state: ClientApprovalState }) {
   const t = useTranslations("approvals");
@@ -60,7 +64,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
   const [sending, setSending] = useState<SendTarget | null>(null);
   const status = params.get("status") ?? "";
   const client = params.get("client") ?? "";
-  const when = (d: Date) => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(d));
+  const when = useDateTime();
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());
@@ -115,17 +119,16 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
         </Alert>
       )}
 
+      {/* Filter chips (approvals.md: Harvest's status filter, in the address), drawn as Payments draws them. */}
       <div className="flex flex-wrap items-center gap-2">
-        <NativeSelect aria-label={t("filterStatus")} value={status} onChange={(e) => setParam("status", e.target.value)} className="w-48">
-          <NativeSelectOption value="">
-            {t("filterStatus")}: {t("any")}
-          </NativeSelectOption>
-          {STATE_ORDER.map((s) => (
-            <NativeSelectOption key={s} value={s}>
-              {t(`state.${s}`)}
-            </NativeSelectOption>
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filterStatus")}>
+          {(["", ...STATE_ORDER] as const).map((s) => (
+            <Button key={s || "all"} size="sm" variant={status === s ? "secondary" : "outline"} aria-pressed={status === s} onClick={() => setParam("status", s)} data-testid={`status-chip-${s || "all"}`}>
+              {s === "" ? t("all") : t(`state.${s}`)}
+              <span className="text-muted-foreground tabular-nums">{props.rows.filter((r) => (s === "" || r.state === s) && (client === "" || r.clientId === client)).length}</span>
+            </Button>
           ))}
-        </NativeSelect>
+        </div>
         <NativeSelect aria-label={t("filterClient")} value={client} onChange={(e) => setParam("client", e.target.value)} className="w-64">
           <NativeSelectOption value="">
             {t("filterClient")}: {t("any")}
@@ -232,7 +235,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                         <TableCell>
                           <ApprovalStateBadge state={r.state} />
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{r.lastActivity ? t(`activity.${r.lastActivity.kind}` as "activity.decided", { when: when(r.lastActivity.at) }) : ""}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{r.lastActivity ? t(`activity.${r.lastActivity.kind}` as "activity.decided", { when: when(r.lastActivity.at) }) : "—"}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           {/* A period whose files exist cannot be asked about any more: only Open. */}
                           {mayAsk && props.periodOpen && (r.state === "not_sent" || r.state === "send_again") ? (

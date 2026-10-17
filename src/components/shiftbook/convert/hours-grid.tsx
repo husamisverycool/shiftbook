@@ -27,7 +27,15 @@ import type { EntryChange, EditError } from "@/server/review/service";
 import { useCan } from "../abilities";
 import { clock, hoursMinutes, parseClock, shortDate } from "../format";
 import { SourcePanel } from "./source-panel";
+import { Status, type Tone } from "../status";
 import { needsAttention, REFUSAL_MESSAGE, type ActionRefusal, type GridRow } from "./types";
+
+/**
+ * One status language (_components/status.md): read and not yet checked is not started (neutral), needs
+ * review needs attention, reviewed and client approved are done, disputed needs the agency, locked and
+ * rejected have ended.
+ */
+const STATUS_TONE: Record<GridRow["status"], Tone> = { extracted: "neutral", needs_review: "warning", reviewed: "success", client_approved: "success", disputed: "critical", locked: "neutral", rejected: "neutral" };
 
 const REASONS = ["misread_corrected", "confirmed_client", "confirmed_worker", "matched_worker", "other"] as const;
 const COLUMNS = ["worker", "client", "date", "in", "out", "break", "hours", "confidence", "status", "source"] as const;
@@ -282,7 +290,8 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
           )}
         </div>
       ) : (
-        <div className="@container overflow-hidden rounded-xl border bg-card" data-testid="hours-grid-frame">
+        // Full width with no box around it (_components/table.md); its own width, so a wide row scrolls inside the grid, never the page.
+        <div className="@container min-w-0" data-testid="hours-grid-frame">
           <Table ref={tableRef} onKeyDown={onKeyDown} aria-label={t("sectionTitle")} className="text-sm" data-testid="hours-grid">
             <TableHeader>
               <TableRow>
@@ -423,7 +432,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                       "text-right tabular-nums",
                     )}
                     {cell(7, <Badge variant={r.confidence === "high" ? "secondary" : r.confidence === "low" ? "destructive" : "outline"}>{t(`confidence.${r.confidence}`)}</Badge>)}
-                    {cell(8, <span className="whitespace-nowrap">{t(`status.${r.status}`)}</span>)}
+                    {cell(8, <Status tone={STATUS_TONE[r.status]}>{t(`status.${r.status}`)}</Status>)}
                     {cell(
                       9,
                       <button type="button" className="block max-w-28 truncate text-left text-muted-foreground underline-offset-4 hover:underline" title={r.document?.filename ?? t("manual")} onClick={() => setPanel({ id: r.id, field: null })}>

@@ -122,6 +122,17 @@ describe("messages", () => {
     }
   });
 
+  it("a client's answer in an approval's history names only what it did, never a zero part", () => {
+    const say = (locale: "en" | "es", approved: number, disputed: number) =>
+      createTranslator({ locale, messages: (locale === "en" ? en : es) as unknown as Tree, namespace: "approvals.detail.event" as never })("decided" as never, { typedName: "Dana", approved, disputed } as never) as string;
+    expect(say("en", 51, 0)).toBe("Dana approved 51 shifts");
+    expect(say("en", 1, 2)).toBe("Dana approved 1 shift and disputed 2 shifts");
+    expect(say("en", 0, 1)).toBe("Dana disputed 1 shift");
+    expect(say("es", 51, 0)).toBe("Dana aprobó 51 turnos");
+    expect(say("es", 1, 2)).toBe("Dana aprobó 1 turno y disputó 2 turnos");
+    expect(say("es", 0, 1)).toBe("Dana disputó 1 turno");
+  });
+
   describe("Spanish in one voice", () => {
     /** Informal "tú" words, and imperatives in the "tú" form where a sentence starts. */
     // "ven" and "sal" are left out: "se ven" (are seen) and "sal" are not always the informal voice.

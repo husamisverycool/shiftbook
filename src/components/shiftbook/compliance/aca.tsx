@@ -20,12 +20,14 @@ import { ACA_SHOWS } from "@/server/compliance/aca";
 import type { AcaView } from "@/server/compliance/aca-data";
 import type { ImportProblem } from "@/server/compliance/aca-service";
 import { dateRange, hoursMinutes, longDate } from "../format";
+import { useDateTime } from "../agency-zone";
 
 type Row = AcaView["rows"][number];
 
 export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) {
   const t = useTranslations("compliance.aca");
   const locale = useLocale();
+  const when = useDateTime();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -118,7 +120,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
           <p>{view.paid ? t("paidLine", { range: dateRange(view.paid.from, view.paid.through, locale) }) : t("noPaid")}</p>
           <p data-testid="aca-imports">
             {view.imports
-              ? t("importsLine", { rows: view.imports.rows, workers: view.imports.workers, range: dateRange(view.imports.from, view.imports.through, locale), source: view.imports.source, by: view.imports.by, date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(view.imports.at)) })
+              ? t("importsLine", { rows: view.imports.rows, workers: view.imports.workers, range: dateRange(view.imports.from, view.imports.through, locale), source: view.imports.source, by: view.imports.by, date: when(view.imports.at, { time: false }) })
               : t("noImports")}
           </p>
         </div>

@@ -4,7 +4,7 @@
 // Toast's Retrieve SSN: a business reason, then the number, and everyone who viewed or changed it),
 // Payroll numbers; each section with its own Edit (Toast, Square).
 import { EyeIcon } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useCallback, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { revealSsnAction, setPayrollNumberAction, setSsnAction, updatePersonalAction } from "@/app/[locale]/(app)/workers/actions";
@@ -20,9 +20,9 @@ import type { WorkerProfile } from "@/server/workers/queries";
 import { useCan } from "../abilities";
 import { useConfirmed } from "../auth/confirm-access";
 import { FieldProblem } from "../settings/payroll-settings";
-import { mediumDateTime } from "./dates";
 import { FieldError, useWorkerFailure } from "./results";
 import { EditButtons, Facts, Section, useEscapeCancels } from "./worker-profile";
+import { useDateTime } from "../agency-zone";
 
 const SYSTEMS: PayrollSystem[] = ["gusto", "qbd", "qbo", "adp_wfn", "adp_run", "spreadsheet"];
 
@@ -206,7 +206,7 @@ export function SsnSection({ profile, mayChange }: { profile: WorkerProfile; may
 function RevealDialog({ profile, onClose }: { profile: WorkerProfile; onClose: () => void }) {
   const t = useTranslations("workers.profile.reveal");
   const te = useTranslations("workers");
-  const locale = useLocale();
+  const when = useDateTime();
   const id = useId();
   const router = useRouter();
   const failure = useWorkerFailure();
@@ -285,7 +285,7 @@ function RevealDialog({ profile, onClose }: { profile: WorkerProfile; onClose: (
                 <li key={`${a.at}-${i}`} className="flex flex-col gap-0.5 px-3 py-2">
                   <span className="flex flex-wrap justify-between gap-x-3">
                     <span className="font-medium">{a.kind === "opened" ? t("opened", { who: a.by, file: a.document ?? "" }) : t(a.kind, { who: a.by })}</span>
-                    <span className="text-muted-foreground tabular-nums">{mediumDateTime(a.at, locale)}</span>
+                    <span className="text-muted-foreground tabular-nums">{when(a.at)}</span>
                   </span>
                   {a.reason && <span className="text-muted-foreground">“{a.reason}”</span>}
                 </li>

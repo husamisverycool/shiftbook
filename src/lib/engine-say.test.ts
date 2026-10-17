@@ -26,7 +26,7 @@ const strict = (locale: "en" | "es", messages: object): Speaker => {
 };
 const english = strict("en", en);
 const spanish = strict("es", es);
-const units = { hours: (n: number) => `${n} horas`, duration: (h: number, m: string) => `${h} h ${m} min` };
+const units = { hours: (n: number) => `${n} horas` };
 const spanishWay = readerFormat("es", units);
 const cases = [...loadRuleCases("tests/goldens/rules"), ...loadRuleCases("tests/goldens/_proposed/rules")];
 const sides = (s: string) => [s.length - s.trimStart().length, s.length - s.trimEnd().length];
@@ -70,6 +70,19 @@ describe("the engine's messages (decision 0030)", () => {
     });
   }
 
+  it("writes a length of time as every screen writes hours (670:00), in both languages", () => {
+    for (const locale of ["en", "es"]) {
+      const way = readerFormat(locale, { hours: (n: number) => `${n} hours` });
+      expect(way.duration(40200)).toBe("670:00");
+      expect(way.duration(90)).toBe("1:30");
+      expect(way.hours(40230)).toBe("670:30");
+      expect(way.hours(43200)).toBe("720 hours");
+    }
+    const say: Say = [{ key: "approachingEqualPay", values: { name: "Fatima Haddad", week: { date: "2026-10-05" }, duration: { duration: 40200 }, client: "Prairie Line", months: "12", date: { date: "2026-10-11" }, threshold: "720 hours" } }];
+    expect(speak({ message: engineEnglish(say), say }, english, readerFormat("en", { hours: (n: number) => `${n} hours` }))).toContain(": 670:00 worked at Prairie Line");
+    expect(speak({ message: engineEnglish(say), say }, spanish, spanishWay)).toContain("670:00");
+  });
+
   it("says a warning in Spanish, with dates and lengths of time the reader's way", () => {
     const say: Say = [
       { key: "belowMinimumWage", values: { name: "Ana Ruiz", date: { date: "2026-10-05" }, rate: "$14.00/h", minimum: "$15.00/h", citations: "820 ILCS 105/4(a)(1)" } },
@@ -79,7 +92,7 @@ describe("the engine's messages (decision 0030)", () => {
       "Ana Ruiz el 5 de octubre de 2026: la tarifa de pago de $14.00/h está por debajo del salario mínimo de $15.00/h (820 ILCS 105/4(a)(1)). Una línea de complemento paga la diferencia; corrija la tarjeta de tarifas.",
     );
     const line: Say = [{ key: "arithmeticExact", values: { label: { say: [{ key: "labelRegular" }] }, duration: { duration: 2400 }, minutes: "2400", rate: "$20.00/h", note: "", exact: "80000", amount: "$800.00" } }];
-    expect(speak({ explain: engineEnglish(line), say: line }, spanish, spanishWay)).toBe("Horas regulares: 40 h 00 min (2400 min) × $20.00/h = 80000¢ exactos → $800.00.");
+    expect(speak({ explain: engineEnglish(line), say: line }, spanish, spanishWay)).toBe("Horas regulares: 40:00 (2400 min) × $20.00/h = 80000¢ exactos → $800.00.");
   });
 
   it("falls back to the stored English: written before keys, or keys these messages do not have", () => {

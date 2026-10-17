@@ -58,4 +58,9 @@ reads everything except SSNs, and the log never holds one — decision 0028).
 ## Never copy
 Stripe's, GitHub's or Vercel's wording, icons, colors or logos.
 
+## Look (checked against the reference's own screenshots, 2026-10-17)
+Stripe Workbench's inspector (https://docs.stripe.com/workbench/overview) shows a record's fields by
+their recorded names with their raw values; so Changes lists each field as recorded with its value
+before and after, and Event data is the event as recorded — not relabelled or reformatted.
+
 Deviations allowed: none

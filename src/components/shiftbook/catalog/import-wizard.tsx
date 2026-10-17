@@ -25,6 +25,7 @@ import type { ImportView } from "@/server/placements/service";
 import { useCan } from "../abilities";
 import { longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
+import { useDateTime } from "../agency-zone";
 
 const STEPS = ["source", "map", "values", "preview", "run"] as const;
 type Step = (typeof STEPS)[number];
@@ -649,7 +650,7 @@ function RunStep({ view }: { view: ImportView }) {
 
 function HistoryList({ history }: { history: History }) {
   const t = useTranslations("import");
-  const locale = useLocale();
+  const when = useDateTime();
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">{t("history")}</h2>
@@ -678,7 +679,7 @@ function HistoryList({ history }: { history: History }) {
                     </Link>
                   </TableCell>
                   <TableCell>{t(`sources.${h.source as Source}`)}</TableCell>
-                  <TableCell>{longDate(h.createdAt.slice(0, 10), locale)}</TableCell>
+                  <TableCell>{when(h.createdAt, { date: "long", time: false })}</TableCell>
                   <TableCell>{h.status === "done" ? t("historyDone", { imported: h.imported, skipped: h.skipped }) : t("historyDraft")}</TableCell>
                 </TableRow>
               ))}

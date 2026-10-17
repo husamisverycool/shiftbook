@@ -18,6 +18,7 @@ import { PasskeysSection, type PasskeyItem } from "./passkeys";
 import { AuthenticatorSetup, RecoveryCodes } from "../auth/authenticator-setup";
 import { useConfirmed } from "../auth/confirm-access";
 import { NewPasswordFields } from "../auth/fields";
+import { useDateTime } from "../agency-zone";
 import { ConnectedAccounts } from "./connected-accounts";
 
 export interface AccountProps {
@@ -62,7 +63,8 @@ export function AccountView(props: AccountProps) {
   const [makingCodes, startCodes] = useTransition();
   const [leaving, leave] = useTransition();
   const confirmed = useConfirmed();
-  const when = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(iso));
+  const dateTime = useDateTime();
+  const when = (iso: string) => dateTime(iso, { date: "long", time: false });
 
   return (
     <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">

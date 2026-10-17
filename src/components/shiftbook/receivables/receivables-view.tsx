@@ -18,6 +18,7 @@ import { useEngineSay } from "../engine-say";
 import { longDate, money } from "../format";
 import { KeyFigure, KeyFigures } from "../key-figures";
 import { Page, PageHeader, PageTabs, TableFrame } from "../page";
+import { useDateTime } from "../agency-zone";
 
 const BUCKETS = ["current", "d1_30", "d31_60", "d61_90", "d91_plus"] as const;
 type Bucket = (typeof BUCKETS)[number];
@@ -27,6 +28,7 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
   // Days to pay's working in the reader's language (decision 0030).
   const say = useEngineSay();
   const locale = useLocale();
+  const when = useDateTime();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -230,7 +232,7 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                   <TableCell className="text-right tabular-nums">{money(r.paidCents, locale)}</TableCell>
                   <TableCell className="text-right tabular-nums">{money(r.balanceCents, locale)}</TableCell>
                   <TableCell>{r.reason ? t(`shortReasons.${r.reason}`) : <span className="text-muted-foreground">{t("noReason")}</span>}</TableCell>
-                  <TableCell>{r.remindedAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(r.remindedAt)) : "—"}</TableCell>
+                  <TableCell>{r.remindedAt ? when(r.remindedAt, { time: false }) : "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

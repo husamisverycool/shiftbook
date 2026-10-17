@@ -911,6 +911,7 @@
     "showDisputed": "Ver disputados",
     "filterStatus": "Estado",
     "filterClient": "Cliente",
+    "all": "Todos",
     "any": "Cualquiera",
     "clearFilters": "Quitar filtros",
     "colClient": "Cliente",
@@ -1021,7 +1022,7 @@
         "reminder_sent": "Recordatorio enviado",
         "link_renewed": "El aprobador pidió un nuevo enlace",
         "link_opened": "Enlace abierto por primera vez (puede ser un sistema de correo revisando el enlace)",
-        "decided": "{typedName} aprobó {approved, plural, one {# turno} other {# turnos}} y disputó {disputed, plural, one {# turno} other {# turnos}}",
+        "decided": "{typedName} {approved, plural, =0 {disputó {disputed, plural, one {# turno} other {# turnos}}} other {aprobó {approved, plural, one {# turno} other {# turnos}}{disputed, plural, =0 {} other { y disputó {disputed, plural, one {# turno} other {# turnos}}}}}}",
         "dispute_accepted": "Disputa resuelta: se aceptaron las horas del cliente",
         "dispute_edited": "Disputa resuelta: horas cambiadas en Revisar horas",
         "dispute_kept": "Disputa resuelta: se mantuvieron las horas",
@@ -1416,7 +1417,6 @@
     "title": "Configuración",
     "payroll": {
       "title": "Archivo de nómina",
-      "description": "El sistema de nómina para el que se prepara el archivo semanal, sus códigos y el número de cada trabajador en él.",
       "systemTitle": "Sistema de nómina",
       "systemHint": "Un sistema a la vez. Un cambio se aplica a todos los archivos de nómina que aún no se han preparado; los ya preparados conservan su formato.",
       "inUse": "En uso",
@@ -2798,7 +2798,7 @@
       "tieSettled": "Cuadra con los archivos de nómina con estas fechas de pago ({files}): bruto {gross}, y {settled} que las correcciones liquidaron fuera de los archivos ({decisions, plural, one {# decisión} other {# decisiones}})."
     },
     "counters": {
-      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Shiftbook se agregan como saldos iniciales, y la nómina también las cuenta.",
+      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica (820 ILCS 175/42) después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Shiftbook se agregan como saldos iniciales, y la nómina también las cuenta.",
       "search": "Buscar",
       "searchPlaceholder": "Trabajador",
       "client": "Cliente",
@@ -2964,8 +2964,7 @@
       "noteRateEntered": "Se ingresó la tarifa de igualdad salarial vigente desde el {date}."
     },
     "explainUnits": {
-      "hours": "{count, plural, one {{n} hora} other {{n} horas}}",
-      "duration": "{h} h {m} min"
+      "hours": "{count, plural, one {{n} hora} other {{n} horas}}"
     },
     "citations": {
       "aca_offer": "26 U.S.C. § 4980H; 26 C.F.R. § 54.4980H-3(d) (al trabajador medido como de tiempo completo se le trata como de tiempo completo durante el periodo de estabilidad: se ofrece cobertura desde su primer día)",

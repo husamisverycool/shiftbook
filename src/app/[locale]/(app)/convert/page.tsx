@@ -111,7 +111,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     // Someone else is changing the period, so the totals could not be brought up to date.
     if (!data) {
       return (
-        <ConvertFrame {...frame} editHref forward={step === "totals" ? { kind: "approve", disabled: true, fingerprint: null } : { kind: "link", step: "totals", disabled: true }}>
+        <ConvertFrame {...frame} editHref={step === "totals"} forward={step === "totals" ? { kind: "approve", disabled: true, fingerprint: null } : { kind: "link", step: "totals", disabled: true }}>
           <BusyNotice />
         </ConvertFrame>
       );
@@ -122,8 +122,9 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
     // A blocked run never reaches Review totals (Gusto: calculate is disabled while blockers exist).
     if (step === "totals" && blocked) redirect(`/${locale}/convert?period=${periodId}&step=exceptions`);
     if (step === "exceptions") {
+      // Edit belongs to Review totals only (convert.md step 4); the trail leads back from here.
       return (
-        <ConvertFrame {...frame} editHref alerts={correctionAlert} forward={{ kind: "link", step: "totals", disabled: blocked }}>
+        <ConvertFrame {...frame} alerts={correctionAlert} forward={{ kind: "link", step: "totals", disabled: blocked }}>
           <ExceptionsStep periodId={periodId} data={data} locked={locked} />
         </ConvertFrame>
       );

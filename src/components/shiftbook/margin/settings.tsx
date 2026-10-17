@@ -21,6 +21,7 @@ import { parseFourPlaces } from "@/lib/amounts";
 import { percentOf, perHundred } from "@/server/margin/burden";
 import type { MarginSettings as View } from "@/server/margin/queries";
 import { longDate } from "../format";
+import { useDateTime } from "../agency-zone";
 
 type Problem = { field: string; rule: string };
 
@@ -44,10 +45,11 @@ function useSave() {
 export function MarginSettingsView({ view, today, states, canChange }: { view: View; today: string; states: string[]; canChange: boolean }) {
   const t = useTranslations("marginSettings");
   const locale = useLocale();
+  const when = useDateTime();
   const [adding, setAdding] = useState<"tax" | "wc" | null>(null);
   const date = (d: string | null) => (d ? longDate(d, locale) : "—");
   const changed = (c: { at: Date | string; by: string } | null) =>
-    c ? <p className="text-xs text-muted-foreground">{t("changed", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(c.at)), by: c.by })}</p> : null;
+    c ? <p className="text-xs text-muted-foreground">{t("changed", { date: when(c.at, { time: false }), by: c.by })}</p> : null;
   const section = (id: string, title: string, intro: string, action: ReactNode, body: ReactNode, foot: ReactNode) => (
     <section className="flex flex-col gap-3" aria-labelledby={id}>
       <div className="flex flex-wrap items-center gap-3">

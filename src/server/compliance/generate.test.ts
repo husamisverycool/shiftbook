@@ -18,6 +18,18 @@ const wantedObligations = (input: GenerateInput) => {
   return out;
 };
 
+describe("a duty's explanation on its own page", () => {
+  it("says the facts alone, as one sentence, where the page already gives the rule's citation", () => {
+    const e = { parts: [{ key: "maJobOrder", values: { startDate: { date: "2026-08-03" }, dueOn: { date: "2026-08-09" } } }], citation: "M.G.L. c. 149 § 159C(b); 454 CMR 24.08 (the job order confirmed in writing before the end of the first pay period)" };
+    const say = (key: string, values: Record<string, string>) => english(key as "reverify", values);
+    // The stored sentence keeps its citation (and the citation's own brackets).
+    expect(renderExplain(e, say, PLAIN)).toBe("The placement starts 2026-08-03; due by the end of its first pay period, 2026-08-09 (M.G.L. c. 149 § 159C(b); 454 CMR 24.08 (the job order confirmed in writing before the end of the first pay period)).");
+    expect(renderExplain(e, say, PLAIN, undefined, { withoutCitation: true })).toBe("The placement starts 2026-08-03; due by the end of its first pay period, 2026-08-09.");
+    // Parts that carry their own citation are said as they are.
+    expect(renderExplain({ ...e, citation: null }, say, PLAIN, undefined, { withoutCitation: true })).toBe("The placement starts 2026-08-03; due by the end of its first pay period, 2026-08-09");
+  });
+});
+
 /** The rule rows of drizzle/0029 that these cases use (the numbers are the data, not the code's). */
 const rule = (code: string, over: Partial<ComplianceRule>): ComplianceRule => ({
   code,

@@ -114,7 +114,12 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
                         <span>
                           {l.suggestion.clientName} · {l.suggestion.applications.map((a) => `${a.number} (${money(a.amountCents, locale)})`).join(", ")}
                         </span>
-                        {l.suggestion.shortCents > 0 && <span className="text-destructive">{t("short", { amount: money(l.suggestion.shortCents, locale) })}</span>}
+                        {/* A short pay needs attention: a tinted badge, as every state (_components/status.md). */}
+                        {l.suggestion.shortCents > 0 && (
+                          <Status tone="warning" data-testid="short">
+                            {t("short", { amount: money(l.suggestion.shortCents, locale) })}
+                          </Status>
+                        )}
                         {l.suggestion.creditCents > 0 && <span>{t("credit", { amount: money(l.suggestion.creditCents, locale) })}</span>}
                       </span>
                       <span className="text-muted-foreground">{say(l.suggestion)}</span>

@@ -5,6 +5,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import type { ActivityItem } from "@/server/catalog/queries";
 import { money } from "../format";
+import { useDateTime } from "../agency-zone";
 
 const MONEY = new Set(["payRateCents", "billRateCents", "payMinCents", "payMaxCents"]);
 const SHOWN = ["position", "shift", "headcount", "effectiveFrom", "effectiveTo", "payRateCents", "billRateCents", "startDate", "endDate", "status", "payMinCents", "payMaxCents", "prevailingWage", "socCode"];
@@ -12,9 +13,9 @@ const SHOWN = ["position", "shift", "headcount", "effectiveFrom", "effectiveTo",
 export function ActivityList({ items, compact = false }: { items: ActivityItem[]; compact?: boolean }) {
   const t = useTranslations("activity");
   const locale = useLocale();
+  const when = useDateTime();
   if (items.length === 0) return <p className="text-sm text-muted-foreground">{t("none")}</p>;
   const show = (key: string, v: unknown) => (v === null || v === undefined ? "—" : MONEY.has(key) && typeof v === "number" ? money(v, locale) : typeof v === "boolean" ? t(v ? "yes" : "no") : String(v));
-  const when = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
   return (
     <ol className="flex flex-col gap-3" data-testid="activity">
       {items.map((e) => {

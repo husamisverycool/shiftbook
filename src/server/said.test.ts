@@ -31,7 +31,7 @@ const strict = (locale: "en" | "es", messages: object, namespace: "said" | "engi
 };
 const english = strict("en", en, "said");
 const spanish = strict("es", es, "said");
-const spanishWay = readerFormat("es", { hours: (n) => `${n} horas`, duration: (h, m) => `${h} h ${m} min` });
+const spanishWay = readerFormat("es", { hours: (n) => `${n} horas` });
 const sides = (s: string) => [s.length - s.trimStart().length, s.length - s.trimEnd().length];
 
 /** Each said says its English record (through next-intl too), and renders in Spanish. */

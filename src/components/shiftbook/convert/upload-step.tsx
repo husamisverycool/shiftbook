@@ -5,14 +5,13 @@
  * reading states). Refused files are listed with their reason at once; accepted files are read in
  * the background and the list refreshes until reading is done.
  */
-import { CircleAlertIcon, FileTextIcon, Loader2Icon, UploadIcon } from "lucide-react";
+import { FileTextIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { archiveAction, retryAction, uploadTimesheets, type UploadResult } from "@/app/[locale]/(app)/convert/actions";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { unzipSync } from "fflate";
@@ -21,6 +20,7 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { MAX_TIMESHEET_BYTES } from "@/lib/limits";
 import { useCan } from "../abilities";
+import { Status } from "../status";
 import { REFUSAL_MESSAGE, type ActionRefusal } from "./types";
 
 export interface UploadDoc {
@@ -226,10 +226,9 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
                     <TableCell>
                       {failed(d) ? (
                         <div className="flex flex-col gap-1">
-                          <span className="flex items-center gap-1.5 text-destructive">
-                            <CircleAlertIcon className="size-4" />
+                          <Status tone="critical" data-testid="document-status">
                             {t("status.failed")}
-                          </span>
+                          </Status>
                           {(d.stuck || d.error) && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.stuck ? t("stuck") : isNoRecording(d.error) ? t("noRecording") : d.error}</span>}
                           {mayChange && (
                             <div className="flex gap-3">
@@ -243,7 +242,10 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
                           )}
                         </div>
                       ) : (
-                        <Badge variant="secondary">{t(`status.${d.status}`)}</Badge>
+                        // Read is done; archived has ended (_components/status.md).
+                        <Status tone={d.status === "read" ? "success" : "neutral"} data-testid="document-status">
+                          {t(`status.${d.status}`)}
+                        </Status>
                       )}
                     </TableCell>
                     <TableCell>{d.clientName ?? "—"}</TableCell>

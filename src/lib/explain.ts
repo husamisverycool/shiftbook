@@ -46,11 +46,14 @@ export const PLAIN: ExplainFormat = {
   language: (c) => c,
 };
 
-/** The reader's way: their language's dates, numbers, month names and language names. */
-export function readerFormat(locale: string, units: { hours: (n: number) => string; duration: (h: number, m: string) => string }): ExplainFormat {
+/**
+ * The reader's way: their language's dates, numbers, month names and language names; a length of time
+ * as every screen writes hours, "670:00", in both languages (the stored English keeps "670h 00m").
+ */
+export function readerFormat(locale: string, units: { hours: (n: number) => string }): ExplainFormat {
   // US Spanish groups thousands as US English does ("4,160"), as the citations write them.
   const number = new Intl.NumberFormat(locale.startsWith("es") ? "es-US" : locale);
-  const duration = (minutes: number) => units.duration(Math.floor(minutes / 60), String(minutes % 60).padStart(2, "0"));
+  const duration = (minutes: number) => `${minutes < 0 ? "-" : ""}${Math.trunc(Math.abs(minutes) / 60)}:${String(Math.abs(minutes) % 60).padStart(2, "0")}`;
   return {
     date: (d) => new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`)),
     duration,
@@ -81,10 +84,13 @@ function valueText(v: ExplainValue, f: ExplainFormat): string {
 
 /**
  * The line in a language: `t` reads `compliance.explain.<key>` in it; `cite`, when given, says a rule's
- * citation in it (the stored text otherwise).
+ * citation in it (the stored text otherwise). `withoutCitation`: the facts alone, as one sentence, for a
+ * page that gives the rule's citation beside them (compliance/[id].md: About lists what the duty was
+ * worked out from; What the law asks gives the citation).
  */
-export function renderExplain(e: Explain, t: (key: string, values: Record<string, string>) => string, f: ExplainFormat, cite?: (code: string, stored: string) => string): string {
+export function renderExplain(e: Explain, t: (key: string, values: Record<string, string>) => string, f: ExplainFormat, cite?: (code: string, stored: string) => string, opts: { withoutCitation?: boolean } = {}): string {
   const said = e.parts.map((p) => t(p.key, Object.fromEntries(Object.entries(p.values ?? {}).map(([k, v]) => [k, valueText(v, f)])))).join("");
   if (!e.citation) return said;
+  if (opts.withoutCitation) return `${said}.`;
   return `${said} (${cite && e.citationCode ? cite(e.citationCode, e.citation) : e.citation}).`;
 }

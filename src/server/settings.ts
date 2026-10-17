@@ -27,6 +27,18 @@ export function dateIn(zone: unknown, now: Date): string {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
+/** The agency's time zone setting, as screens show moments in it; missing or unknown → UTC (as agencyToday reads it). */
+export async function agencyZone(tx: Tx, now: Date = new Date()): Promise<string> {
+  const zone = await settingOn<unknown>(tx, "time_zone", now.toISOString().slice(0, 10));
+  if (typeof zone !== "string") return "UTC";
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: zone });
+    return zone;
+  } catch {
+    return "UTC";
+  }
+}
+
 /** Today's date where the agency is (its time zone setting), as YYYY-MM-DD. */
 export async function agencyToday(tx: Tx, now: Date = new Date()): Promise<string> {
   return dateIn(await settingOn<unknown>(tx, "time_zone", now.toISOString().slice(0, 10)), now);

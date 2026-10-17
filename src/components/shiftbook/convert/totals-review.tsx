@@ -25,6 +25,7 @@ import type { Say } from "@shiftbook/rules";
 import type { Spoken } from "@/lib/engine-say";
 import { useEngineSay } from "../engine-say";
 import { hoursMinutes, money, signedHours, signedMoney } from "../format";
+import { useDateTime } from "../agency-zone";
 
 const PAGE = 25;
 
@@ -68,6 +69,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
   const ta = useTranslations("convert.approval");
   const tx = useTranslations("convert");
   const locale = useLocale();
+  const dateTime = useDateTime();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
@@ -95,7 +97,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
       {data.approval ? (
         <Alert data-testid="approval">
           <CircleCheckIcon />
-          <AlertTitle>{ta("approvedTitle", { name: data.approval.by, when: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(data.approval.at)) })}</AlertTitle>
+          <AlertTitle>{ta("approvedTitle", { name: data.approval.by, when: dateTime(data.approval.at) })}</AlertTitle>
           <AlertDescription className="flex flex-col gap-2">
             <p>{ta("approvedBody")}</p>
             {!locked && data.canApprove && (
@@ -185,7 +187,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
           </section>
 
           <Tabs defaultValue="hours">
-            <TabsList>
+            <TabsList variant="line" className="h-10! w-full justify-start border-b">
               <TabsTrigger value="hours">{t("tabHours")}</TabsTrigger>
               <TabsTrigger value="pay">{t("tabPay")}</TabsTrigger>
               <TabsTrigger value="billing">{t("tabBilling")}</TabsTrigger>
@@ -281,7 +283,7 @@ function CorrectionTotals({ c }: { c: CorrectionData }) {
       </section>
 
       <Tabs defaultValue="pay">
-        <TabsList>
+        <TabsList variant="line" className="h-10! w-full justify-start border-b">
           <TabsTrigger value="hours">{t("tabHours")}</TabsTrigger>
           <TabsTrigger value="pay">{t("tabPay")}</TabsTrigger>
           <TabsTrigger value="billing">{t("tabBilling")}</TabsTrigger>

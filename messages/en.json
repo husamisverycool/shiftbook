@@ -911,6 +911,7 @@
     "showDisputed": "Show disputed",
     "filterStatus": "Status",
     "filterClient": "Client",
+    "all": "All",
     "any": "Any",
     "clearFilters": "Clear filters",
     "colClient": "Client",
@@ -1021,7 +1022,7 @@
         "reminder_sent": "Reminder sent",
         "link_renewed": "The approver asked for a new link",
         "link_opened": "Link first opened (this may be a mail system checking the link)",
-        "decided": "{typedName} approved {approved, plural, one {# shift} other {# shifts}} and disputed {disputed, plural, one {# shift} other {# shifts}}",
+        "decided": "{typedName} {approved, plural, =0 {disputed {disputed, plural, one {# shift} other {# shifts}}} other {approved {approved, plural, one {# shift} other {# shifts}}{disputed, plural, =0 {} other { and disputed {disputed, plural, one {# shift} other {# shifts}}}}}}",
         "dispute_accepted": "Dispute settled: the client's times accepted",
         "dispute_edited": "Dispute settled: hours changed in Review hours",
         "dispute_kept": "Dispute settled: hours kept",
@@ -1416,7 +1417,6 @@
     "title": "Settings",
     "payroll": {
       "title": "Payroll file",
-      "description": "The payroll system your weekly payroll file is made for, its codes, and each worker's id there.",
       "systemTitle": "Payroll system",
       "systemHint": "One system at a time. A change applies to every payroll file not made yet; files already made keep their format.",
       "inUse": "In use",
@@ -2798,7 +2798,7 @@
       "tieSettled": "Ties to the payroll files with these pay dates ({files}): gross {gross}, and {settled} that corrections settled outside the files ({decisions, plural, one {# decision} other {# decisions}})."
     },
     "counters": {
-      "intro": "Hours of day and temporary labor at each Illinois client. Equal pay applies after more than {trigger} hours there in {months} months (or {longTrigger} in {longMonths}); past {warn} the worker is near. Hours worked before Shiftbook are added as opening balances, and the run counts them too.",
+      "intro": "Hours of day and temporary labor at each Illinois client. Equal pay applies (820 ILCS 175/42) after more than {trigger} hours there in {months} months (or {longTrigger} in {longMonths}); past {warn} the worker is near. Hours worked before Shiftbook are added as opening balances, and the run counts them too.",
       "search": "Search",
       "searchPlaceholder": "Worker",
       "client": "Client",
@@ -2964,8 +2964,7 @@
       "noteRateEntered": "Equal-pay rate entered from {date}."
     },
     "explainUnits": {
-      "hours": "{count, plural, one {{n} hour} other {{n} hours}}",
-      "duration": "{h}h {m}m"
+      "hours": "{count, plural, one {{n} hour} other {{n} hours}}"
     },
     "citations": {
       "aca_offer": "26 U.S.C. § 4980H; 26 C.F.R. § 54.4980H-3(d) (a worker measured full-time is treated as full-time for the stability period: offer coverage from its first day)",

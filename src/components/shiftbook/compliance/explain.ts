@@ -18,13 +18,13 @@ export function useReaderFormat(): ExplainFormat {
   return useMemo(() => {
     // The count written the way every other number on the line is (US Spanish groups as US English).
     const grouped = new Intl.NumberFormat(locale.startsWith("es") ? "es-US" : locale);
-    return readerFormat(locale, { hours: (count) => units("hours", { count, n: grouped.format(count) }), duration: (h, m) => units("duration", { h: String(h), m }) });
+    return readerFormat(locale, { hours: (count) => units("hours", { count, n: grouped.format(count) }) });
   }, [locale, units]);
 }
 
-export function useSay(): (e: Explain) => string {
+export function useSay(): (e: Explain, opts?: { withoutCitation?: boolean }) => string {
   const t = useTranslations("compliance.explain");
   const cite = useCite();
   const format = useReaderFormat();
-  return (e) => renderExplain(e, (key, values) => t(key as "reverify", values), format, cite);
+  return (e, opts) => renderExplain(e, (key, values) => t(key as "reverify", values), format, cite, opts);
 }

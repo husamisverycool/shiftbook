@@ -20,6 +20,7 @@ import { parseHoursToMinutes } from "@/lib/amounts";
 import type { CounterLine, CountersView } from "@/server/compliance/counter-balances";
 import { hoursMinutes, longDate, numberLocale } from "../format";
 import { useAct } from "./detail";
+import { useDateTime } from "../agency-zone";
 
 type Choice = { workerId: string; workerName: string; clientId: string; clientName: string };
 
@@ -196,7 +197,8 @@ function Balances({ line, canChange, onAdd }: { line: CounterLine; canChange: bo
   const t = useTranslations("compliance.counters");
   const locale = useLocale();
   const [removing, setRemoving] = useState<string | null>(null);
-  const date = (d: Date) => longDate(new Date(d).toISOString().slice(0, 10), locale);
+  const when = useDateTime();
+  const date = (d: Date) => when(d, { date: "long", time: false });
   return (
     <div className="flex flex-col gap-2 py-1">
       <div className="flex items-center gap-3">

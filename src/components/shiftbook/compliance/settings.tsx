@@ -20,6 +20,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import type { ComplianceSettings as View } from "@/server/compliance/queries";
 import { longDate } from "../format";
 import { StatusBadge } from "./status-badge";
+import { useDateTime } from "../agency-zone";
 
 function useSave() {
   const t = useTranslations("complianceSettings");
@@ -47,10 +48,11 @@ function useSave() {
 export function ComplianceSettingsView({ view, today, canChange }: { view: View; today: string; canChange: boolean }) {
   const t = useTranslations("complianceSettings");
   const locale = useLocale();
+  const when = useDateTime();
   const [adding, setAdding] = useState<"registration" | "policy" | null>(null);
   const date = (d: string | null) => (d ? longDate(d, locale) : "—");
   const changed = (c: { at: Date | string; by: string } | null) =>
-    c ? <p className="text-xs text-muted-foreground">{t("changed", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(c.at)), by: c.by })}</p> : null;
+    c ? <p className="text-xs text-muted-foreground">{t("changed", { date: when(c.at, { time: false }), by: c.by })}</p> : null;
   const duty = (r: { id: string; status: Parameters<typeof StatusBadge>[0]["status"]; dueOn: string } | null) =>
     r ? (
       <Link href={`/compliance/${r.id}`} className="flex w-fit flex-col items-start gap-0.5 underline-offset-4 hover:underline">
@@ -201,7 +203,7 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
 
 function Statement({ view, canChange }: { view: View; canChange: boolean }) {
   const t = useTranslations("complianceSettings.statement");
-  const locale = useLocale();
+  const when = useDateTime();
   const [file, setFile] = useState<File | null>(null);
   const [key, setKey] = useState(0);
   const [contact, setContact] = useState(view.contact ?? "");
@@ -231,7 +233,7 @@ function Statement({ view, canChange }: { view: View; canChange: boolean }) {
                 {chunks}
               </a>
             ),
-            date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(view.statement.at)),
+            date: when(view.statement.at, { time: false }),
             by: view.statement.by,
           })
         ) : (
