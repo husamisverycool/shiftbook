@@ -52,7 +52,7 @@ export interface MemberRow {
 }
 
 type Pending = { kind: "role" | "suspend" | "cancel" | "copy"; member: MemberRow } | null;
-const NEEDS_APP: Role[] = ["owner", "coordinator"];
+const NEEDS_APP: Role[] = ["owner", "coordinator", "recruiter"];
 /** One status language (_components/status.md): active is in good standing, an invite waits on the person, suspended has lost access. */
 const STATUS_TONE: Record<MemberRow["status"], Tone> = { active: "success", invited: "info", suspended: "critical" };
 

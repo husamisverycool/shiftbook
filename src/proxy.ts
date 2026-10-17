@@ -7,9 +7,10 @@ const intl = createMiddleware(routing);
 
 /**
  * Pages anyone may open (decision K2): sign-in and its steps, sign-up (decision 0036), an invite, a
- * client's approval link, and the free tools (SPEC §27: the Illinois 720-hour checker).
+ * client's approval link, the free tools (SPEC §27: the Illinois 720-hour checker), and the worker app
+ * (slice t), whose pages read the worker's own cookie.
  */
-const OPEN = /^\/(sign-in|sign-up|invite|approve|tools)(\/|$)/;
+const OPEN = /^\/(sign-in|sign-up|invite|approve|tools|w)(\/|$)/;
 
 /**
  * Someone with no session cookie is sent to sign-in, with the page they wanted kept for after.

@@ -40,12 +40,20 @@ import { scenario } from "./scenario";
 import { appKey, seal } from "../auth/crypto";
 import { DEMO_SSO_ISSUER, demoClientId, demoClientSecret } from "../auth/demo-idp-config";
 import { last4Of, sealSsn, ssnIndex } from "../workers/ssn";
+import { DEMO_PHONES } from "../worker-app/demo";
+import { phoneIndex } from "../worker-app/phone";
 
 const agencyId = DEMO_AGENCY.id;
 const SINCE = "2026-01-01";
 
 /** Tenant tables in delete-safe order. audit_events is append-only and is never cleared. */
 const CLEAR_ORDER = [
+  // The worker app (slice t): a reset signs demo workers out of it (their sessions name the worker rows).
+  "worker_clock_punches",
+  "worker_messages",
+  "worker_sessions",
+  "worker_onboarding",
+  "sms_messages",
   "partner_handoffs",
   "jobs",
   "burden_tax_rates",
@@ -116,6 +124,11 @@ export async function clearDemoAgency(tx: Tx): Promise<void> {
   for (const table of CLEAR_ORDER) {
     await tx.execute(sql.raw(`delete from ${table} where agency_id = '${agencyId}'`));
   }
+  // The demo numbers' text-message codes have no agency (sign-in mode only): a reset spends them too.
+  const indexes = Object.values(DEMO_PHONES).map((p) => phoneIndex(p, appKey()));
+  await tx.execute(sql`select set_config('app.auth', 'on', true)`);
+  await tx.delete(s.workerSignInCodes).where(inArray(s.workerSignInCodes.phoneIndex, indexes));
+  await tx.execute(sql`select set_config('app.auth', '', true)`);
 }
 
 export const clientId = (k: ClientKey) => demoUuid(`client:${k}`);
@@ -261,6 +274,80 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
     .where(and(eq(s.obligations.clientId, clientId("il")), inArray(s.obligations.kind, ["il_client_proof_contract", "il_client_proof"]), lte(s.obligations.dueOn, "2026-09-01")));
   const sent = WORKERS.filter((w) => JOB_ORDERS[w.job].client === "ma" && !MA_JOB_ORDER_OPEN.includes(w.key)).map((w) => assignmentId(w.key));
   await tx.update(s.obligations).set({ ...done, statusNote: "Job order sent by email the day the placement started (demo)." }).where(and(eq(s.obligations.kind, "ma_job_order"), inArray(s.obligations.assignmentId, sent)));
+  await seedWorkerApp(tx);
+}
+
+/**
+ * The worker app in the demo (slice t): mobile numbers for a few workers, clock-in at the Illinois
+ * client, Daniel Ruiz (who prefers Spanish) onboarded with a translated message thread, Maribel Torres
+ * part-way through onboarding, two more invited. The answers are sealed as the app seals them.
+ */
+async function seedWorkerApp(tx: Tx): Promise<void> {
+  const kek = appKey();
+  for (const [key, phone] of Object.entries(DEMO_PHONES)) await tx.update(s.workers).set({ phone, phoneIndex: phoneIndex(phone, kek) }).where(eq(s.workers.id, workerId(key)));
+  await tx.update(s.clients).set({ workerClock: "on" }).where(eq(s.clients.id, clientId("il")));
+  const at = (iso: string) => new Date(iso);
+  const daniel = workerId("daniel-ruiz");
+  const sealed = (value: string, aad: string) => seal(Buffer.from(value, "utf8"), kek, aad);
+  await tx.insert(s.workerOnboarding).values([
+    {
+      workerId: daniel,
+      agencyId,
+      invitedAt: at("2026-09-21T15:00:00Z"),
+      invitedByLabel: "Lena Ortiz (demo)",
+      personal: { legalFirstName: "Daniel", legalLastName: "Ruiz", addressLine: "418 Cass St", city: "Joliet", state: "IL", zip: "60432", email: null },
+      personalAt: at("2026-09-21T23:10:00Z"),
+      birthSealed: sealed("1991-06-14", `birth:${daniel}`),
+      w4: { filingStatus: "married_jointly", multipleJobs: false, dependentsCents: 200000, otherIncomeCents: 0, deductionsCents: 0, extraWithholdingCents: 0, exempt: false },
+      w4At: at("2026-09-21T23:14:00Z"),
+      i9Sealed: sealed(JSON.stringify({ status: "citizen" }), `i9:${daniel}`),
+      i9Status: "citizen",
+      i9At: at("2026-09-21T23:15:00Z"),
+      paymentKind: "direct_deposit",
+      depositSealed: sealed(JSON.stringify({ kind: "direct_deposit", routing: "021000021", account: "000400142", accountType: "checking" }), `deposit:${daniel}`),
+      depositLast4: "0142",
+      paymentAt: at("2026-09-21T23:18:00Z"),
+      policies: ["safety", "harassment", "timekeeping"].map((key) => ({ key, at: "2026-09-21T23:19:00.000Z" })),
+      policiesAt: at("2026-09-21T23:19:00Z"),
+      signedName: "Daniel Ruiz",
+      signedAt: at("2026-09-21T23:20:00Z"),
+    },
+    {
+      workerId: workerId("maribel-torres"),
+      agencyId,
+      invitedAt: at("2026-10-12T16:00:00Z"),
+      invitedByLabel: "Sam Whitfield (demo)",
+      personal: { legalFirstName: "Maribel", legalLastName: "Torres", addressLine: "77 Olive Ave", city: "Stockton", state: "CA", zip: "95202", email: null },
+      personalAt: at("2026-10-12T20:05:00Z"),
+      birthSealed: sealed("1998-11-03", `birth:${workerId("maribel-torres")}`),
+      w4: { filingStatus: "single", multipleJobs: false, dependentsCents: 0, otherIncomeCents: 0, deductionsCents: 0, extraWithholdingCents: 0, exempt: false },
+      w4At: at("2026-10-12T20:09:00Z"),
+    },
+    { workerId: workerId("luis-hernandez"), agencyId, invitedAt: at("2026-10-14T15:30:00Z"), invitedByLabel: "Sam Whitfield (demo)" },
+    { workerId: workerId("pedro-alcantara"), agencyId, invitedAt: at("2026-10-15T14:00:00Z"), invitedByLabel: "Lena Ortiz (demo)" },
+  ]);
+  const thread: { sender: "agency" | "worker"; body: string; bodyLocale: "en" | "es"; translation: string; at: string }[] = [
+    { sender: "agency", body: "Hi Daniel, can you work Saturday 7 AM to 3:30 PM at Prairie Line?", bodyLocale: "en", translation: "Hola Daniel, ¿puede trabajar el sábado de 7 a. m. a 3:30 p. m. en Prairie Line?", at: "2026-10-08T14:02:00Z" },
+    { sender: "worker", body: "Sí, puedo trabajar el sábado. ¿Necesito llevar botas de seguridad?", bodyLocale: "es", translation: "Yes, I can work Saturday. Do I need to bring safety boots?", at: "2026-10-08T14:20:00Z" },
+    { sender: "agency", body: "Yes, steel-toe boots please. Thank you!", bodyLocale: "en", translation: "Sí, botas con punta de acero, por favor. ¡Gracias!", at: "2026-10-08T14:31:00Z" },
+    { sender: "worker", body: "Gracias. ¿Cuándo recibo mi pago de esta semana?", bodyLocale: "es", translation: "Thank you. When do I get paid for this week?", at: "2026-10-15T22:45:00Z" },
+  ];
+  await tx.insert(s.workerMessages).values(
+    thread.map((m) => ({
+      agencyId,
+      workerId: daniel,
+      sender: m.sender,
+      authorLabel: m.sender === "agency" ? "Lena Ortiz (demo)" : "Daniel Ruiz",
+      authorUserId: m.sender === "agency" ? demoUuid("user:lena") : null,
+      body: m.body,
+      bodyLocale: m.bodyLocale,
+      translation: m.translation,
+      translationLocale: m.bodyLocale === "en" ? "es" : "en",
+      createdAt: at(m.at),
+      readByWorkerAt: m.sender === "agency" ? at(m.at) : null,
+      readByAgencyAt: m.sender === "worker" && m.at < "2026-10-10" ? at(m.at) : null,
+    })),
+  );
 }
 
 const SETUP = "Demo setup";

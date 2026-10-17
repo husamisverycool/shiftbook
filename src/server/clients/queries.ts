@@ -30,7 +30,7 @@ export async function listClients(tx: Tx, today: string): Promise<ClientRow[]> {
 
 export interface ClientDetail {
   /** With the bill-to its invoices carry (address and billing email), the record's facts line. */
-  client: { id: string; name: string; code: string; addressLines: string[]; billingEmail: string | null };
+  client: { id: string; name: string; code: string; addressLines: string[]; billingEmail: string | null; workerClock: "off" | "on" | "location" };
   current: Profile | null;
   /** Every version, newest first (Bullhorn One Invoice Term versions). */
   versions: Profile[];
@@ -40,7 +40,7 @@ export interface ClientDetail {
 }
 
 export async function clientDetail(tx: Tx, id: string, today: string): Promise<ClientDetail | null> {
-  const [client] = await tx.select({ id: s.clients.id, name: s.clients.name, code: s.clients.code, addressLines: s.clients.addressLines, billingEmail: s.clients.billingEmail }).from(s.clients).where(eq(s.clients.id, id));
+  const [client] = await tx.select({ id: s.clients.id, name: s.clients.name, code: s.clients.code, addressLines: s.clients.addressLines, billingEmail: s.clients.billingEmail, workerClock: s.clients.workerClock }).from(s.clients).where(eq(s.clients.id, id));
   if (!client) return null;
   const versions = (await tx.select().from(s.clientBillingProfiles).where(eq(s.clientBillingProfiles.clientId, id))).sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1));
   return {

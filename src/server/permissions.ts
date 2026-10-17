@@ -7,7 +7,7 @@
  *
  * Pure: no database, so screens and tests can use it.
  */
-export const ROLES = ["owner", "coordinator", "billing", "accountant"] as const;
+export const ROLES = ["owner", "coordinator", "billing", "accountant", "recruiter"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ABILITIES = {
@@ -16,7 +16,7 @@ export const ABILITIES = {
   /** Approving or reopening a weekly run, the payroll files, corrections, which clients must approve first. */
   run: ["owner"],
   /** Job orders, rate cards, placements, placement import, recruiters. */
-  placements: ["owner", "coordinator"],
+  placements: ["owner", "coordinator", "recruiter"],
   /** A client's billing details. */
   clientBilling: ["owner", "billing"],
   /** Payments, credits, write-offs, short-pays, reminders, the bank file. */
@@ -28,7 +28,9 @@ export const ABILITIES = {
   /** Invites, roles and suspensions. */
   members: ["owner"],
   /** The worker roster: a worker's details, payroll numbers, documents, an SSN entered, employment (slice k). */
-  workers: ["owner", "coordinator"],
+  workers: ["owner", "coordinator", "recruiter"],
+  /** Onboarding links and the worker app's messages with a worker (slice t; SPEC §27). */
+  workerApp: ["owner", "coordinator", "recruiter"],
   /** A whole SSN on screen, with a reason, every time recorded (SPEC §2, §17). */
   revealSsn: ["owner"],
   /** The margin pages (reading). */

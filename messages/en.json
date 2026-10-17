@@ -282,7 +282,8 @@
         "assignment_at_other_client": "The worker's assignment that day is at another client",
         "timesheet_client_unclear": "Which client this timesheet is for is unclear",
         "assignment_at_other_client_named": "The worker's assignment that day is at {client}; edit to attach these hours there if they are theirs",
-        "timesheet_client_unclear_named": "Which client this timesheet is for is unclear; the worker's assignment that day is at {client}. Edit to attach these hours there if they are theirs"
+        "timesheet_client_unclear_named": "Which client this timesheet is for is unclear; the worker's assignment that day is at {client}. Edit to attach these hours there if they are theirs",
+        "worker_app": "Clocked in the worker app"
       },
       "fields": {
         "worker": "worker",
@@ -3254,6 +3255,10 @@
     "accountant": {
       "name": "Accountant",
       "line": "Reads everything except Social Security numbers. Changes nothing."
+    },
+    "recruiter": {
+      "name": "Recruiter",
+      "line": "Job orders and placements, worker onboarding and messages with workers."
     }
   },
   "authFrame": {
@@ -5642,6 +5647,366 @@
       "wage_access": "Earned wage access partner",
       "invoice_funding": "Invoice funding partner",
       "insurance": "Workers' comp insurance broker"
+    }
+  },
+  "workerApp": {
+    "meta": "Your hours and pay",
+    "tabs": {
+      "home": "Home",
+      "time": "Time",
+      "pay": "Pay",
+      "messages": "Messages",
+      "more": "More",
+      "label": "Worker app"
+    },
+    "profile": "Your profile",
+    "signIn": {
+      "title": "Sign in to see your hours and pay",
+      "body": "We'll text a code to your mobile number.",
+      "phone": "Mobile number",
+      "send": "Text me a code",
+      "sending": "Sending…",
+      "sentTitle": "Check your texts",
+      "sentBody": "We texted a code to {phone}. It works for 10 minutes.",
+      "code": "Code",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "resend": "Send a new code",
+      "otherNumber": "Use another number",
+      "invalidPhone": "Enter a US mobile number, like (312) 555-0142.",
+      "invalid": "That code didn't work. Check it and try again.",
+      "expired": "That code expired. Send a new code.",
+      "throttled": "Too many tries. Try again in a few minutes.",
+      "chooseTitle": "Choose an agency",
+      "chooseBody": "Your number is on file at more than one agency.",
+      "demoCopy": "Demo text message",
+      "demoTitle": "Or continue as a demo worker",
+      "demoAs": "Continue as {name}",
+      "agencySignIn": "Work at an agency? Sign in here"
+    },
+    "home": {
+      "greeting": "Hi, {name}",
+      "onboardingTitle": "Finish onboarding",
+      "onboardingBody": "{done} of {total} steps done",
+      "onboardingAction": "Continue",
+      "weekTitle": "This week",
+      "weekEmpty": "No hours yet this week.",
+      "seeHours": "See hours",
+      "payTitle": "Latest pay",
+      "payEmpty": "Your pay stubs appear here after your first paid week.",
+      "seePay": "See pay",
+      "weekOf": "Week of {range}"
+    },
+    "clock": {
+      "title": "Clock in",
+      "at": "{position} at {client}",
+      "in": "Clock in",
+      "out": "Clock out",
+      "since": "Clocked in since {time}",
+      "working": "On the clock",
+      "locationNote": "This client asks for your location when you clock in and out.",
+      "errors": {
+        "not_allowed": "This assignment does not use the clock in this app.",
+        "already_in": "You are already clocked in.",
+        "not_in": "You are not clocked in.",
+        "location_required": "This client asks for your location. Allow location and try again.",
+        "too_short": "Clock out at least a minute after clocking in.",
+        "period_paid": "That week is already paid. Ask your agency to add the hours.",
+        "generic": "That didn't work. Try again."
+      },
+      "done": "Clocked out. Your agency will check the hours before payday."
+    },
+    "time": {
+      "title": "Time",
+      "empty": "No hours yet.",
+      "total": "{hours} h",
+      "note": "Hours from your timesheets and from this app go to your agency to check before payday.",
+      "fromApp": "From the app",
+      "status": {
+        "waiting": "Waiting for review",
+        "approved": "Approved",
+        "paid": "Paid",
+        "questioned": "Questioned"
+      }
+    },
+    "pay": {
+      "title": "Pay",
+      "year": "Gross pay in {year}",
+      "empty": "Your pay stubs appear here after your first paid week.",
+      "correction": "Correction",
+      "note": "Gross pay, before taxes and deductions, which your payroll provider calculates.",
+      "back": "Pay",
+      "period": "Pay period",
+      "agency": "Agency",
+      "worker": "Worker",
+      "dates": "Dates",
+      "earnings": "Earnings",
+      "description": "Description",
+      "rate": "Rate",
+      "hours": "Hours",
+      "current": "Current",
+      "ytd": "Year to date",
+      "gross": "Gross pay",
+      "download": "Download PDF"
+    },
+    "messages": {
+      "empty": "Write to your agency about shifts, hours or pay.",
+      "placeholder": "Message",
+      "send": "Send",
+      "translated": "Translated",
+      "you": "You",
+      "errors": {
+        "empty": "Write a message first.",
+        "too_long": "Keep messages under 2,000 characters.",
+        "generic": "That didn't send. Try again."
+      }
+    },
+    "more": {
+      "documents": "Documents",
+      "documentsEmpty": "Your signed forms appear here after onboarding.",
+      "onboarding": "Onboarding",
+      "onboardingDone": "Done on {date}",
+      "onboardingLeft": "{done} of {total} steps done",
+      "continue": "Continue",
+      "language": "Language",
+      "signOut": "Sign out",
+      "download": "Download",
+      "forms": {
+        "w4": "Form W-4",
+        "i9": "Form I-9, Section 1",
+        "deposit": "Direct deposit authorization"
+      }
+    },
+    "onboarding": {
+      "title": "Onboarding",
+      "steps": {
+        "personal": "Personal information",
+        "w4": "Taxes (Form W-4)",
+        "i9": "Work eligibility (Form I-9, Section 1)",
+        "payment": "Payment",
+        "policies": "Policies",
+        "sign": "Review and sign"
+      },
+      "done": "Done",
+      "todo": "To do",
+      "current": "Current",
+      "save": "Save and continue",
+      "saving": "Saving…",
+      "allSet": "You're all set",
+      "allSetBody": "Your agency has your forms. You can see them under More.",
+      "home": "Go to Home",
+      "personal": {
+        "legalFirstName": "Legal first name",
+        "legalLastName": "Legal last name",
+        "ssn": "Social Security number",
+        "ssnHint": "Nine digits. Only the last four are shown again.",
+        "birthDate": "Date of birth",
+        "addressLine": "Home address",
+        "city": "City",
+        "state": "State",
+        "zip": "ZIP code",
+        "email": "Email (optional)"
+      },
+      "w4": {
+        "intro": "These answers set how much federal income tax your payroll provider withholds. Answer as on the 2020 and later Form W-4.",
+        "filingStatus": "Filing status (Step 1c)",
+        "single": "Single or Married filing separately",
+        "married_jointly": "Married filing jointly",
+        "head_of_household": "Head of household",
+        "multipleJobs": "I have more than one job, or my spouse works (Step 2c)",
+        "dependents": "Dependents amount (Step 3)",
+        "otherIncome": "Other income (Step 4a)",
+        "deductions": "Deductions (Step 4b)",
+        "extraWithholding": "Extra withholding each pay period (Step 4c)",
+        "exempt": "I claim exemption from withholding"
+      },
+      "i9": {
+        "intro": "Form I-9, Section 1. Your agency completes Section 2 when it sees your documents in person.",
+        "status": "I attest that I am",
+        "citizen": "A citizen of the United States",
+        "noncitizen_national": "A noncitizen national of the United States",
+        "permanent_resident": "A lawful permanent resident",
+        "authorized_alien": "A noncitizen authorized to work",
+        "uscisNumber": "USCIS number or A-number",
+        "expiresOn": "Work authorization expires on (if any)",
+        "i94Number": "Form I-94 admission number",
+        "passportNumber": "Foreign passport number",
+        "passportCountry": "Country of issuance",
+        "oneOf": "Give one: the USCIS number or A-number, the I-94 number, or a foreign passport number with its country."
+      },
+      "payment": {
+        "kind": "How do you want to be paid?",
+        "direct_deposit": "Direct deposit",
+        "paper_check": "Paper check",
+        "routing": "Routing number",
+        "account": "Account number",
+        "confirm": "Account number again",
+        "accountType": "Account type",
+        "checking": "Checking",
+        "savings": "Savings"
+      },
+      "policies": {
+        "intro": "Read each policy, then confirm.",
+        "read": "I have read this",
+        "safety": "Safety at the worksite: wear the protective equipment the job requires and report any injury the same day.",
+        "harassment": "Harassment and discrimination are not allowed. Report them to your agency at any time.",
+        "timekeeping": "Record only the hours you work. Clock in and out yourself, never for someone else."
+      },
+      "sign": {
+        "intro": "Check your answers, then sign.",
+        "ssn": "SSN ending in {last4}",
+        "deposit": "Direct deposit to an account ending in {last4}",
+        "check": "Paper check",
+        "name": "Type your full legal name to sign",
+        "agree": "I agree that typing my name is my electronic signature on these forms, and that my answers are true.",
+        "submit": "Sign and finish"
+      },
+      "errors": {
+        "legalFirstName": "Enter your legal first name.",
+        "legalLastName": "Enter your legal last name.",
+        "ssn": "Enter nine digits. If it is right, your agency may already have it on another profile; call them.",
+        "birthDate": "Enter your date of birth.",
+        "addressLine": "Enter your home address.",
+        "city": "Enter your city.",
+        "state": "Choose your state.",
+        "zip": "Enter a five-digit ZIP code.",
+        "email": "Enter an email address, or leave it empty.",
+        "filingStatus": "Choose a filing status.",
+        "dependents": "Enter an amount in dollars and cents.",
+        "otherIncome": "Enter an amount in dollars and cents.",
+        "deductions": "Enter an amount in dollars and cents.",
+        "extraWithholding": "Enter an amount in dollars and cents.",
+        "status": "Choose one.",
+        "uscisNumber": "Enter the USCIS number or A-number (7 to 9 digits).",
+        "expiresOn": "Enter a date.",
+        "i94Number": "Enter the 11-character I-94 number, or a passport number.",
+        "passportNumber": "Enter the passport number.",
+        "passportCountry": "Enter the country that issued the passport.",
+        "kind": "Choose how to be paid.",
+        "routing": "Check the routing number: it has nine digits and a check digit that must match.",
+        "account": "Enter the account number (4 to 17 digits).",
+        "confirm": "The account numbers do not match.",
+        "accountType": "Choose checking or savings.",
+        "policies": "Confirm each policy.",
+        "steps": "Finish every step first.",
+        "name": "Type your full legal name exactly as in step 1.",
+        "agree": "Tick the box to sign.",
+        "signed": "These forms are signed. Ask your agency to change them.",
+        "generic": "That didn't save. Try again."
+      }
+    }
+  },
+  "workerAppAgency": {
+    "tabs": {
+      "onboarding": "Onboarding",
+      "messages": "Messages"
+    },
+    "phone": "Mobile number",
+    "phoneHint": "The worker signs in to the worker app with this number.",
+    "phoneNone": "Not set",
+    "phoneErrors": {
+      "invalid": "Enter a US mobile number, like (312) 555-0142.",
+      "taken": "Another worker has this number.",
+      "generic": "That didn't save. Try again."
+    },
+    "send": "Send onboarding link",
+    "sendHint": "Texts the worker the app's address, to sign in and complete onboarding.",
+    "sent": "Link sent by text message",
+    "sentOn": "Last sent {date} by {by}",
+    "noPhone": "Add a mobile number first.",
+    "checklist": "Checklist",
+    "doneOn": "Done {date}",
+    "todo": "To do",
+    "payment": {
+      "direct_deposit": "Direct deposit ••••{last4}",
+      "paper_check": "Paper check",
+      "none": "Not chosen"
+    },
+    "forms": "Signed forms",
+    "formsNone": "No signed forms yet.",
+    "open": "Open",
+    "openTitle": "Open {form}",
+    "openBody": "It holds bank details and work-eligibility numbers. Say why you need it; the opening is recorded.",
+    "reason": "Business reason",
+    "openOnlyOwner": "The Owner opens a worker's signed forms, with a reason.",
+    "thread": "Messages",
+    "threadEmpty": "No messages yet. Write to {name}; they read it in the worker app.",
+    "placeholder": "Message {name}",
+    "messageSend": "Send",
+    "translated": "Translated",
+    "worker": "{name}",
+    "clock": {
+      "title": "Worker app clock-in",
+      "hint": "Whether this client's workers may clock in and out from the worker app.",
+      "off": "Off",
+      "on": "On",
+      "location": "On, with location"
+    }
+  },
+  "workerAppSms": {
+    "code": "{code} is your code to sign in to your hours and pay. It expires in 10 minutes. Never share it.",
+    "invite": "{agency}: finish your onboarding and see your hours and pay at {url}"
+  },
+  "workerAppForms": {
+    "subtitle": "A record of the answers given in Granite's worker app.",
+    "worker": "Employee",
+    "ssn": "Social Security number",
+    "signedBy": "Electronic signature",
+    "signedOn": "Signed on",
+    "statement": "Signed by typing the full legal name and ticking the box agreeing that it is the electronic signature on this form.",
+    "notSigned": "Not signed yet",
+    "yes": "Yes",
+    "no": "No",
+    "w4": {
+      "title": "Form W-4 (Employee's Withholding Certificate)",
+      "filingStatus": "Step 1(c): Filing status",
+      "multipleJobs": "Step 2(c): Multiple jobs or spouse works",
+      "dependents": "Step 3: Claim dependents and other credits",
+      "otherIncome": "Step 4(a): Other income (not from jobs)",
+      "deductions": "Step 4(b): Deductions",
+      "extraWithholding": "Step 4(c): Extra withholding",
+      "exempt": "Exempt from withholding",
+      "address": "Step 1(b): Address",
+      "filing": {
+        "single": "Single or Married filing separately",
+        "married_jointly": "Married filing jointly",
+        "head_of_household": "Head of household"
+      }
+    },
+    "i9": {
+      "title": "Form I-9, Section 1 (Employee Information and Attestation)",
+      "lastName": "Last name (family name)",
+      "firstName": "First name (given name)",
+      "address": "Address",
+      "birthDate": "Date of birth",
+      "email": "Employee's email address",
+      "phone": "Employee's telephone number",
+      "attestation": "I attest, under penalty of perjury, that I am",
+      "status": {
+        "citizen": "1. A citizen of the United States",
+        "noncitizen_national": "2. A noncitizen national of the United States",
+        "permanent_resident": "3. A lawful permanent resident",
+        "authorized_alien": "4. A noncitizen (other than item 3) authorized to work"
+      },
+      "uscisNumber": "USCIS A-number",
+      "expiresOn": "Expiration date of work authorization",
+      "i94Number": "Form I-94 admission number",
+      "passport": "Foreign passport number and country of issuance"
+    },
+    "deposit": {
+      "title": "Direct deposit authorization",
+      "authorize": "I authorize my employer to deposit my pay into this account.",
+      "bank": "Routing number",
+      "account": "Account number",
+      "type": "Account type",
+      "types": {
+        "checking": "Checking",
+        "savings": "Savings"
+      }
+    },
+    "stub": {
+      "title": "Pay stub",
+      "note": "Gross pay, before taxes and deductions, which the agency's payroll provider calculates. Generated by Granite."
     }
   }
 }

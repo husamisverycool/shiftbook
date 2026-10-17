@@ -19,11 +19,13 @@ import { WorkerWageAccess, type WorkerWage } from "../money/worker-wage";
 import { DocumentsTab } from "./documents";
 import { EmploymentTab } from "./employment";
 import { PayrollSection, PersonalSection, SsnSection } from "./profile-sections";
+import { MessagesTab, OnboardingTab } from "./worker-app-tabs";
+import type { AgencyWorkerApp } from "@/server/worker-app/agency";
 
-const TABS = ["profile", "employment", "documents"] as const;
+const TABS = ["profile", "employment", "documents", "onboarding", "messages"] as const;
 type Tab = (typeof TABS)[number];
 
-export function WorkerProfileView({ profile, today, wage }: { profile: WorkerProfile; today: string; wage?: WorkerWage }) {
+export function WorkerProfileView({ profile, today, wage, app, zone }: { profile: WorkerProfile; today: string; wage?: WorkerWage; app: AgencyWorkerApp | null; zone: string }) {
   const t = useTranslations("workers");
   const router = useRouter();
   const pathname = usePathname();
@@ -33,6 +35,7 @@ export function WorkerProfileView({ profile, today, wage }: { profile: WorkerPro
   const setTab = (next: string) => router.replace(next === "profile" ? pathname : `${pathname}?tab=${next}`, { scroll: false });
   const name = `${profile.firstName} ${profile.lastName}`;
   const tc = useTranslations("common");
+  const ta = useTranslations("workerAppAgency");
   const locale = useLocale();
 
   const current = profile.placements.filter((p) => p.current);
@@ -98,8 +101,13 @@ export function WorkerProfileView({ profile, today, wage }: { profile: WorkerPro
         <TabsList variant="line" className="h-10! w-full justify-start border-b">
           {TABS.map((k) => (
             <TabsTrigger key={k} value={k} data-testid={`tab-${k}`}>
-              {t(`profile.tabs.${k}`)}
+              {k === "onboarding" || k === "messages" ? ta(`tabs.${k}`) : t(`profile.tabs.${k}`)}
               {k === "documents" && profile.documents.length > 0 && <span className="ml-1 text-muted-foreground tabular-nums">{profile.documents.length}</span>}
+              {k === "messages" && app && app.unread > 0 && (
+                <span className="ml-1 rounded-full bg-destructive px-1.5 text-[11px] leading-4 text-white tabular-nums" data-testid="worker-messages-unread">
+                  {app.unread}
+                </span>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -114,6 +122,16 @@ export function WorkerProfileView({ profile, today, wage }: { profile: WorkerPro
         <TabsContent value="documents" className="flex flex-col gap-10 pt-6">
           <DocumentsTab profile={profile} today={today} mayChange={mayChange} />
         </TabsContent>
+        {app && (
+          <>
+            <TabsContent value="onboarding" className="flex flex-col gap-10 pt-6">
+              <OnboardingTab workerId={profile.id} app={app} zone={zone} />
+            </TabsContent>
+            <TabsContent value="messages" className="flex flex-col gap-10 pt-6">
+              <MessagesTab workerId={profile.id} name={profile.firstName} app={app} zone={zone} />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
       </RecordLayout>
     </Page>

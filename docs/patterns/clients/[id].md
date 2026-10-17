@@ -60,4 +60,9 @@ Laid out as `_components/record-page.md`: "Clients" above the name and code, and
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Worker app clock-in (slice t)
+Under the invoice settings on the right, one more module: **Worker app clock-in** with a line saying
+what it means and a select — Off, On, On with location — saved when changed (Linear's settings rows,
+`_components/settings.md`). Who may change it: the Owner, coordinators and recruiters.
+
 Deviations allowed: none
