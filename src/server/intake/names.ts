@@ -119,3 +119,27 @@ export function matchWorker(written: string, roster: RosterWorker[], nicknameMap
 function rank(m: MatchMethod): number {
   return ["exact", "accents", "nickname", "partial", "initial"].indexOf(m);
 }
+
+/**
+ * When a person matches a written name to a worker, the nickname that would have matched it next time
+ * ("Mike Brown" written, Michael Brown chosen → remember "Mike" as Michael), or null when the names
+ * already match, it is an initial, the nickname is already known, or the surname does not fit.
+ */
+export function nicknameToLearn(written: string, worker: RosterWorker, nicknameMap: [string, string][]): { nickname: string; givenName: string } | null {
+  const rosterFirst = tokens(worker.firstName);
+  const rosterLast = tokens(worker.lastName);
+  if (rosterFirst.length === 0) return null;
+  const known = new Map<string, Set<string>>();
+  for (const [nick, given] of nicknameMap) known.set(foldName(nick), (known.get(foldName(nick)) ?? new Set<string>()).add(foldName(given)));
+  for (const w of splitWritten(written)) {
+    if (w.first.length === 0 || !surnameFits(w.last, rosterLast)) continue;
+    if (givenNameFit(w.first, rosterFirst, known) !== null) return null; // it matches already
+    if (w.first[0]!.length < 2) return null;
+    // The given name as the person wrote it (the first word of the given-name part), not folded.
+    const part = written.includes(",") ? (written.split(",", 2)[1] ?? "") : written;
+    const asWritten = part.trim().split(/\s+/)[0] ?? "";
+    const givenName = worker.firstName.trim().split(/\s+/)[0] ?? worker.firstName;
+    return { nickname: asWritten.replace(/[.,]$/, ""), givenName };
+  }
+  return null;
+}
