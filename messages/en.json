@@ -639,6 +639,8 @@
     "collapseGroup": "Hide {name}",
     "selectRow": "Select {name}",
     "preview": "Preview {name}",
+    "payRate": "Pay {rate}",
+    "billRate": "Bill {rate}",
     "panel": "Preview",
     "position": "{n} of {total}",
     "previous": "Previous",
@@ -1700,6 +1702,7 @@
       "back": "Invoices",
       "credited": "Credited",
       "amountDue": "Amount due",
+      "amountPaid": "Amount paid",
       "issued": "Issued",
       "due": "Due",
       "period": "Pay period",
@@ -3577,6 +3580,10 @@
       "cancel": "Cancel",
       "saved": "Saved.",
       "readOnly": "You can look at this profile; the Owner and coordinators change it.",
+      "facts": {
+        "payroll": "Payroll number {number} in {system}",
+        "hired": "Hired {date}"
+      },
       "personal": {
         "title": "Personal",
         "firstName": "First name",
@@ -3917,7 +3924,7 @@
       "receivables": "Open receivables",
       "overdue": "Overdue",
       "compliance": "Compliance",
-      "complianceValue": "{overdue} overdue · {soon} due soon",
+      "complianceValue": "{overdue, plural, one {# overdue} other {# overdue}} · {soon, plural, one {# due soon} other {# due soon}}",
       "invoices": "{count, plural, one {# invoice} other {# invoices}}",
       "view": "View"
     },

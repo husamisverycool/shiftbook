@@ -33,6 +33,32 @@ export function money(cents: number, locale: string): string {
   return new Intl.NumberFormat(numberLocale(locale), { style: "currency", currency: "USD" }).format(exact as Intl.StringNumericLiteral);
 }
 
+/**
+ * A chart's gridline money, short as Stripe's charts write it: "$50K", "$2.5K", "$1.5M", "$500".
+ * Written by hand from integer cents, the same in both languages (US money, decision 0029), so the
+ * server and the browser always agree.
+ */
+export function compactMoney(cents: number): string {
+  const sign = cents < 0 ? "-" : "";
+  const abs = Math.abs(cents);
+  const units: [number, string][] = [
+    [100_000_000_000, "B"],
+    [100_000_000, "M"],
+    [100_000, "K"],
+    [100, ""],
+  ];
+  // The largest unit the amount reaches, rounded to tenths; a rounding up to 1,000 of a unit moves to the next.
+  let at = units.findIndex(([size]) => abs >= size);
+  if (at === -1) at = units.length - 1;
+  let tenths = Math.round((abs * 10) / units[at]![0]);
+  if (tenths >= 10_000 && at > 0) {
+    at -= 1;
+    tenths = Math.round((abs * 10) / units[at]![0]);
+  }
+  const text = tenths % 10 === 0 ? String(tenths / 10) : `${Math.trunc(tenths / 10)}.${tenths % 10}`;
+  return `${tenths === 0 ? "" : sign}$${text}${units[at]![1]}`;
+}
+
 /** A difference: "+$36.50", "-$54.75", "$0.00" (slice e corrections). */
 export function signedMoney(cents: number, locale: string): string {
   const abs = Math.abs(cents);
@@ -71,6 +97,11 @@ export function shortDate(iso: string | null, locale: string): string {
 /** "2026-10-05" → "October 5, 2026". */
 export function longDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+/** A date in a list's table, short as Stripe's lists write it: "Oct 16, 2026" / "16 oct 2026". */
+export function tableDate(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 }
 
 /** A pay period: "Oct 5 – 11, 2026" / "5–11 oct 2026". */

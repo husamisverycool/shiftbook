@@ -73,8 +73,19 @@ export interface PageTab {
   testId?: string;
 }
 
-/** Underline tabs, each its own address, with an optional count (Primer UnderlineNav). */
-export function PageTabs({ tabs, current, label, className }: { tabs: PageTab[]; current: string; label: string; className?: string }) {
+/**
+ * Underline tabs, each its own address, with an optional count (Primer UnderlineNav). `end`: a filter
+ * that belongs with them, on the same line at the right (Stripe's invoices list).
+ */
+export function PageTabs({ tabs, current, label, className, end }: { tabs: PageTab[]; current: string; label: string; className?: string; end?: ReactNode }) {
+  if (end)
+    return (
+      <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-6 sm:border-b", className)}>
+        {/* Beside the filter, the tabs' underline sits on the line's hairline as it does on their own; on a phone the filter goes under them. */}
+        <PageTabs tabs={tabs} current={current} label={label} className="min-w-0 sm:-mb-px sm:border-b-0 sm:pb-px" />
+        <div className="flex shrink-0 items-center gap-2 sm:ml-auto sm:pb-2">{end}</div>
+      </div>
+    );
   return (
     <nav aria-label={label} className={cn("flex gap-6 overflow-x-auto border-b", className)}>
       {tabs.map((tab) => {
@@ -121,6 +132,9 @@ export function Crumbs({ items, label }: { items: { label: ReactNode; href: Href
     </nav>
   );
 }
+
+/** A link inside a record page's facts line and details, underlined so it reads as one (as the compliance duty's links). */
+export const RECORD_LINK = "underline underline-offset-4 hover:text-foreground";
 
 /**
  * A detail page's body (Stripe detail page: "line items on the left and a summary on the right"; "a

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clock, dateTime, hoursMinutes, money, parseClock, signedMoney } from "./format";
+import { clock, compactMoney, dateTime, hoursMinutes, money, parseClock, signedMoney, tableDate } from "./format";
 
 describe("screen formatting", () => {
   it("shows money exactly from integer cents in both languages", () => {
@@ -45,5 +45,21 @@ describe("screen formatting", () => {
     expect(dateTime("2026-10-17T03:30:00Z", "en", "America/Chicago", { date: "long", time: false })).toBe("October 16, 2026");
     // A zone name the browser does not know is read as UTC rather than failing the page (as agencyToday does).
     expect(plain(dateTime(at, "en", "Not/AZone"))).toBe("Oct 16, 2026, 10:41 PM");
+  });
+
+  it("writes a chart's gridline money short, the same way in both languages", () => {
+    expect(compactMoney(5_000_000)).toBe("$50K");
+    expect(compactMoney(2_500_000)).toBe("$25K");
+    expect(compactMoney(250_000)).toBe("$2.5K");
+    expect(compactMoney(150_000_000)).toBe("$1.5M");
+    expect(compactMoney(50_000)).toBe("$500");
+    expect(compactMoney(0)).toBe("$0");
+    expect(compactMoney(-1_000_000)).toBe("-$10K");
+    expect(compactMoney(99_995_000)).toBe("$1M");
+  });
+
+  it("writes a date in a list's table short, as Stripe's lists do", () => {
+    expect(tableDate("2026-10-16", "en")).toBe("Oct 16, 2026");
+    expect(tableDate("2026-10-16", "es")).toBe("16 oct 2026");
   });
 });

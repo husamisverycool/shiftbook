@@ -80,6 +80,10 @@ test("the list works from the keyboard: highlight, preview panel, select, displa
   await expect(page.getByTestId("record-row").first()).toBeVisible();
   // Each key is checked before the next, so a key pressed while the page is still loading is retried.
   const rows = page.getByTestId("record-row");
+  // Each rate says which it is; the client is its group's band, not repeated in the rows.
+  await expect(rows.first()).toContainText(en.list.payRate.replace("{rate}", "$"));
+  await expect(rows.first()).toContainText(en.list.billRate.replace("{rate}", "$"));
+  await expect(rows.first()).not.toContainText("(demo)");
   await expect(async () => {
     await page.keyboard.press("j");
     await expect(rows.nth(0)).toHaveAttribute("data-highlighted", "true", { timeout: 1000 });

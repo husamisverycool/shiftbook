@@ -36,6 +36,12 @@ for (const locale of ["en", "es"] as const) {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
 
+    // No invoices yet: the empty state, under the status tabs and the client filter, which stay in place.
+    await page.goto(`/${locale}/invoices`);
+    await expect(page.getByTestId("invoices-empty")).toBeVisible();
+    await expect(page.getByTestId("status-chip-all")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: m.invoices.filterClient })).toBeVisible();
+
     // Anita Patel's placement carries the client's PO-77001 (Assignments, side panel).
     await page.goto(`/${locale}/assignments`);
     const anita = page.getByTestId("record-row").filter({ hasText: "Anita Patel" });
@@ -53,6 +59,8 @@ for (const locale of ["en", "es"] as const) {
     await check(page, "clients list");
     await page.getByRole("link", { name: PRAIRIE }).click();
     await expect(page.getByRole("heading", { level: 1 })).toContainText(PRAIRIE);
+    // Its facts under the title: the bill-to its invoices carry.
+    await expect(page.getByTestId("client-facts")).toContainText("payables@prairieline.example.com");
     const settings = page.getByTestId("invoice-settings");
     await expect(settings).toContainText(m.clients.notSeparated);
     await check(page, "client page");
@@ -81,6 +89,11 @@ for (const locale of ["en", "es"] as const) {
     await expect(prairie).toHaveCount(2);
     await expect(prairie.filter({ hasText: "PLM-20261005-1" })).toHaveCount(1);
     await expect(prairie.filter({ hasText: "PLM-20261005-2" })).toHaveCount(1);
+    // The client filter sits beside the status tabs, on their line.
+    const tabs = (await page.getByRole("navigation", { name: m.invoices.filterStatus }).boundingBox())!;
+    const filter = (await page.getByRole("combobox", { name: m.invoices.filterClient }).boundingBox())!;
+    expect(filter.x).toBeGreaterThan(tabs.x + tabs.width);
+    expect(Math.abs(filter.y + filter.height - (tabs.y + tabs.height))).toBeLessThan(12);
     await check(page, "invoices list");
 
     // A statement of the two: a first page listing them, then each invoice as issued.
@@ -101,6 +114,12 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByTestId("invoice-summary")).toContainText("PO-48213");
     await expect(page.getByTestId("line-item").filter({ hasText: "Marcus Bell" })).toHaveCount(2);
     await expect(page.getByTestId("line-item").filter({ hasText: "Anita Patel" })).toHaveCount(0);
+    // Each line's detail in the reader's language (the PDF stays as issued, below); the worksite the
+    // PDF names, and the client as a link, in the details.
+    const week = m.invoice.weekOf.replace("{date}", new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date("2026-10-05T00:00:00Z")));
+    await expect(page.getByTestId("line-detail").first()).toContainText(`${m.invoice.earning.REG} · ${week}`);
+    await expect(page.getByTestId("summary-worksite")).not.toContainText("—");
+    await expect(page.getByTestId("invoice-summary").getByTestId("invoice-client")).toHaveAttribute("href", /\/clients\//);
     await expect(page.getByTestId("backup-list")).toContainText(m.invoices.detail.included);
     await expect(page.getByTestId("backup-timesheet")).toContainText("photo-sign-in-2026-10-06.jpg");
     await check(page, "invoice page");

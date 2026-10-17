@@ -49,6 +49,8 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
   const [editing, setEditing] = useState(false);
   const p = detail.current;
   const yes = (on: boolean) => (on ? t("yes") : t("no"));
+  // The record's identifying facts under its title (_components/record-page.md item 3): the bill-to its invoices carry.
+  const facts = [detail.client.addressLines.join(", "), detail.client.billingEmail ?? ""].filter(Boolean);
   const group = (title: string, rows: [string, ReactNode][]) => (
     <div className="flex flex-col gap-3">
       <h3 className="text-sm font-semibold">{title}</h3>
@@ -132,6 +134,7 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
             {detail.client.name} <span className="text-muted-foreground">· {detail.client.code}</span>
           </>
         }
+        description={facts.length > 0 ? <span data-testid="client-facts">{facts.join(" · ")}</span> : undefined}
       />
 
       <RecordLayout aside={settings}>

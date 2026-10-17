@@ -21,14 +21,16 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
   // Decision 0026: job orders are changed by the Owner and coordinators (placements).
   const mayChange = useCan()("placements");
   const [creating, setCreating] = useState(false);
+  const tl = useTranslations("list");
   const rate = (c: number | null) => (c === null ? "—" : money(c, locale));
 
   const columns: Column<JobOrderRow>[] = [
-    { key: "worksite", label: t("col.worksite"), cell: (r) => `${r.city}, ${r.state}`, className: "w-36 truncate" },
-    { key: "headcount", label: t("col.headcount"), cell: (r) => t("assignedOf", { assigned: r.assigned, wanted: r.headcount }), className: "w-24 text-right tabular-nums" },
-    { key: "pay", label: t("col.pay"), cell: (r) => rate(r.payRateCents), className: "w-20 text-right tabular-nums" },
-    { key: "bill", label: t("col.bill"), cell: (r) => rate(r.billRateCents), className: "w-20 text-right tabular-nums" },
-    { key: "shift", label: t("col.shift"), cell: (r) => r.shift ?? "—", className: "w-24 truncate" },
+    { key: "worksite", label: t("col.worksite"), cell: (r) => `${r.city}, ${r.state}`, className: "w-36 truncate text-right", chip: true },
+    { key: "headcount", label: t("col.headcount"), cell: (r) => t("assignedOf", { assigned: r.assigned, wanted: r.headcount }), className: "w-24 text-right tabular-nums", chip: true },
+    // Two amounts side by side say which is which (the pattern's "pay rate" and "bill rate").
+    { key: "pay", label: t("col.pay"), cell: (r) => tl("payRate", { rate: rate(r.payRateCents) }), className: "w-28 text-right tabular-nums", chip: true },
+    { key: "bill", label: t("col.bill"), cell: (r) => tl("billRate", { rate: rate(r.billRateCents) }), className: "w-28 text-right tabular-nums", chip: true },
+    { key: "shift", label: t("col.shift"), cell: (r) => r.shift ?? "—", className: "w-24 truncate text-right", chip: true },
     { key: "soc", label: t("col.soc"), cell: (r) => r.socCode ?? "—", className: "w-20 tabular-nums" },
     { key: "prevailing", label: t("col.prevailing"), cell: (r) => (r.prevailingWage ? <Badge variant="outline">{t("prevailing")}</Badge> : null), className: "w-28" },
   ];
@@ -40,7 +42,7 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
         title={t("title")}
         rows={rows}
         primary={(r) => (r.shift ? `${r.position} · ${r.shift}` : r.position)}
-        secondary={(r) => `${r.clientName} · ${r.worksiteName}`}
+        secondary={(r, grouping) => (grouping === "client" ? r.worksiteName : `${r.clientName} · ${r.worksiteName}`)}
         hrefFor={(r) => `/job-orders/${r.id}`}
         columns={columns}
         defaultColumns={["worksite", "headcount", "pay", "bill"]}

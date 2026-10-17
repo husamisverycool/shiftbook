@@ -67,6 +67,6 @@ it. Invoices are made only by the weekly run; this page changes nothing in them 
 Stripe's, TempWorks', SAP's or Bullhorn's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-Laid out as `_components/record-page.md`: "Invoices" above the title (keeping the list's filters); the title with its status; the amount and client as the facts line; the ⋯ menu then **Download PDF** on the right. Line items, Backup, Payments and Related documents are modules on the left; the summary row's facts (amount due, issued, due, pay period, PO, worksite, template, client) are the details column on the right.
+Laid out as `_components/record-page.md`: "Invoices" above the title (keeping the list's filters); the title with its status; the amount and client as the facts line; the ⋯ menu then **Download PDF** on the right. Line items, Backup, Payments and Related documents are modules on the left; the summary row's facts (amount due, issued, due, pay period, PO, worksite, template, client) are the details column on the right. Once money came in, the amount due gives way to the amount paid and what remains (Stripe's invoice: amount paid and amount remaining, https://docs.stripe.com/invoicing/partial-payments), said as the Payments module says it ("Balance due", or "Paid in full"). The client's name, in the facts line and the details, is an underlined link to the client page. Each line's detail is said in the reader's language from the line as issued; the PDF keeps its own words.
 
 Deviations allowed: none

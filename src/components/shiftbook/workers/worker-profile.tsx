@@ -13,7 +13,7 @@ import { useSearchParams } from "next/navigation";
 import type { WorkerProfile } from "@/server/workers/queries";
 import { useCan } from "../abilities";
 import { longDate } from "../format";
-import { Crumbs, Facts as DetailFacts, Page, PageHeader, RecordLayout, Section as RecordSection } from "../page";
+import { Crumbs, Facts as DetailFacts, Page, PageHeader, RECORD_LINK, RecordLayout, Section as RecordSection } from "../page";
 import { Status } from "../status";
 import { DocumentsTab } from "./documents";
 import { EmploymentTab } from "./employment";
@@ -45,7 +45,7 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
         ) : (
           <span className="flex flex-col gap-1">
             {current.map((p) => (
-              <Link key={p.id} href={`/job-orders/${p.jobOrderId}`} className="underline-offset-4 hover:underline">
+              <Link key={p.id} href={`/job-orders/${p.jobOrderId}`} className={RECORD_LINK} data-testid="details-assignment">
                 {t("placementAt", { position: p.position, client: p.clientName })}
               </Link>
             ))}
@@ -54,6 +54,13 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
     },
     { label: t("col.hired"), value: profile.hireDate ? longDate(profile.hireDate, locale) : "—" },
     { label: t("profile.personal.language"), value: t(`language.${profile.preferredLanguage === "es" ? "es" : "en"}`) },
+  ];
+  // The record's identifying facts under its title (_components/record-page.md item 3): the worker's
+  // number in the payroll system in use, and when they were hired.
+  const inUse = profile.system ? profile.payrollIds[profile.system] : undefined;
+  const facts = [
+    ...(profile.system && inUse ? [t("profile.facts.payroll", { system: t(`systems.${profile.system}`), number: inUse.id })] : []),
+    ...(profile.hireDate ? [t("profile.facts.hired", { date: longDate(profile.hireDate, locale) })] : []),
   ];
 
   return (
@@ -66,7 +73,14 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
             {t(`status.${profile.status}`)}
           </Status>
         }
-        description={!mayChange ? t("profile.readOnly") : undefined}
+        description={
+          facts.length > 0 || !mayChange ? (
+            <span className="flex flex-col gap-1">
+              {facts.length > 0 && <span data-testid="worker-facts">{facts.join(" · ")}</span>}
+              {!mayChange && <span>{t("profile.readOnly")}</span>}
+            </span>
+          ) : undefined
+        }
       />
 
       <RecordLayout

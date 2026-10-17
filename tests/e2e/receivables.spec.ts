@@ -64,6 +64,9 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByRole("heading", { level: 1, name: m.receivables.title })).toBeVisible();
     const aging = page.getByTestId("aging-row").filter({ hasText: PRAIRIE });
     await expect(aging).toHaveCount(1);
+    // An empty bucket reads "—" in the totals row as in the client's.
+    await expect(aging.getByTestId("amount-d1_30")).toHaveCount(0);
+    await expect(page.getByTestId("total-d1_30")).toHaveText("—");
     await aging.getByTestId("amount-current").click();
     const aged = page.getByTestId("aging-invoices");
     await expect(aged.getByRole("row").filter({ hasText: FIRST })).toHaveCount(1);
@@ -150,6 +153,10 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(SECOND);
     await expect(page.getByTestId("invoice-balance")).toHaveText(money(2500, locale));
     await expect(page.getByTestId("invoice-payment")).toHaveCount(1);
+    // The details say what was paid and what is left, not the amount first asked.
+    await expect(page.getByTestId("summary-paid")).toBeVisible();
+    await expect(page.getByTestId("summary-balance")).toContainText(money(2500, locale));
+    await expect(page.getByTestId("summary-due")).toHaveCount(0);
     await expect(page.getByTestId("short-pay")).toContainText(m.invoicePayments.shortNoReason);
     await check(page, "invoice page, paid short");
     await page.getByTestId("short-reason").click();

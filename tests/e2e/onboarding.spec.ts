@@ -23,6 +23,17 @@ async function check(page: Page, where: string) {
   expect(serious.map((v) => `${where}: ${v.id} — ${v.help} (${v.nodes.map((n) => n.target.join(" ")).join(", ")})`)).toEqual([]);
 }
 
+/** The page fits its frame: no sideways scroll, and nothing hanging below the frame's sheet. */
+async function fitsFrame(page: Page) {
+  const room = await page.evaluate(() => {
+    const sheet = document.querySelector("[data-slot=sidebar-inset]")!.getBoundingClientRect();
+    return { wider: document.documentElement.scrollWidth - window.innerWidth, below: document.documentElement.scrollHeight - (sheet.bottom + window.scrollY) };
+  });
+  expect(room.wider).toBe(0);
+  // The sheet's own margin (8px, and the part of a pixel where the sheet ends) is all there is under it.
+  expect(room.below).toBeLessThan(9);
+}
+
 for (const locale of ["en", "es"] as const) {
   test(`a stranger's way in: the demo Owner, the setup guide, the samples in one click (${locale})`, async ({ browser }) => {
     test.setTimeout(300_000);
@@ -58,6 +69,7 @@ for (const locale of ["en", "es"] as const) {
     await expect(page).toHaveURL(new RegExp(`/${locale}$`));
     await expect(page.getByTestId("setup-guide")).toBeVisible();
     await expect(page.getByTestId("setup-step-convert")).toContainText(m.home.guide.steps.convert.demo);
+    await fitsFrame(page);
     await page.getByTestId("setup-action-convert").click();
 
     // The sample timesheets in one click: every file of the sample folder arrives.

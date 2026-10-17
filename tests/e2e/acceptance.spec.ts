@@ -45,6 +45,18 @@ const SAMPLES = "demo/samples/2026-10-05";
 const SAMPLE_FILES = readdirSync(SAMPLES);
 /** Test photos with hand-written recorded readings (fixtures/make-photo-fixture.ts). */
 const PHOTOS = ["tests/e2e/fixtures/photo-sign-in-2026-10-06.jpg", "tests/e2e/fixtures/photo-sign-in-2026-10-07.jpg"];
+
+/** The page fits its frame: no sideways scroll, and nothing hanging below the frame's sheet. */
+async function fitsFrame(page: Page) {
+  const room = await page.evaluate(() => {
+    const sheet = document.querySelector("[data-slot=sidebar-inset]")!.getBoundingClientRect();
+    return { wider: document.documentElement.scrollWidth - window.innerWidth, below: document.documentElement.scrollHeight - (sheet.bottom + window.scrollY) };
+  });
+  expect(room.wider).toBe(0);
+  // The sheet's own margin (8px, and the part of a pixel where the sheet ends) is all there is under it.
+  expect(room.below).toBeLessThan(9);
+}
+
 const PRAIRIE = "Prairie Line Manufacturing (demo)";
 const PACIFIC = "Pacific Crest Distribution (demo)";
 const TIMECLOCK = "IL-prairie-line-timeclock-2026-10-05.csv";
@@ -335,6 +347,7 @@ for (const locale of ["en", "es"] as const) {
     // Home: every step of the guide is done.
     await go(m.nav.home);
     await expect(page.getByTestId("setup-progress")).toHaveText(m.home.guide.progress.replace("{done}", "7").replace("{total}", "7"));
+    await fitsFrame(page);
     expect(errors).toEqual([]);
     await context.close();
   });

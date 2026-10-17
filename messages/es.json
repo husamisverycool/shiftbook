@@ -639,6 +639,8 @@
     "collapseGroup": "Ocultar {name}",
     "selectRow": "Seleccionar {name}",
     "preview": "Vista previa de {name}",
+    "payRate": "Pago {rate}",
+    "billRate": "Cobro {rate}",
     "panel": "Vista previa",
     "position": "{n} de {total}",
     "previous": "Anterior",
@@ -1700,6 +1702,7 @@
       "back": "Facturas",
       "credited": "Acreditado",
       "amountDue": "Importe a pagar",
+      "amountPaid": "Importe pagado",
       "issued": "Emitida",
       "due": "Vence",
       "period": "Periodo de pago",
@@ -3577,6 +3580,10 @@
       "cancel": "Cancelar",
       "saved": "Guardado.",
       "readOnly": "Puede ver este perfil; el Propietario y los coordinadores lo cambian.",
+      "facts": {
+        "payroll": "Número de nómina {number} en {system}",
+        "hired": "Contratación: {date}"
+      },
       "personal": {
         "title": "Datos personales",
         "firstName": "Nombre",
@@ -3858,7 +3865,7 @@
           "demo": "En esta demostración, elija «Usar el archivo de banco de ejemplo» en la página de importación."
         },
         "ssn": {
-          "title": "Consulte el SSN de un trabajador",
+          "title": "Consulte el número de Seguro Social de un trabajador",
           "body": "Solo el Propietario puede, con un motivo. El registro de actividad guarda quién lo consultó, cuándo y por qué.",
           "action": "Abrir trabajadores"
         }
@@ -3917,7 +3924,7 @@
       "receivables": "Cuentas por cobrar abiertas",
       "overdue": "Vencido",
       "compliance": "Cumplimiento",
-      "complianceValue": "{overdue} vencidas · {soon} por vencer",
+      "complianceValue": "{overdue, plural, one {# vencida} other {# vencidas}} · {soon, plural, one {# por vencer} other {# por vencer}}",
       "invoices": "{count, plural, one {# factura} other {# facturas}}",
       "view": "Ver"
     },

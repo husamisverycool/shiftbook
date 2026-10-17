@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { PaymentClients, PaymentRow } from "@/server/receivables/queries";
 import { EmptyState } from "../empty-state";
-import { longDate, money } from "../format";
+import { longDate, money, tableDate } from "../format";
 import { Page, PageHeader, TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
@@ -61,26 +61,25 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
         }
       />
 
-      {rows.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filter")}>
-          {(["", ...FILTERS] as const).map((f) => (
-            <Button key={f || "all"} size="sm" variant={filter === f ? "secondary" : "outline"} aria-pressed={filter === f} onClick={() => setParam("filter", f)}>
-              {f === "" ? t("all") : t(`filters.${f}`)}
-              <span className="text-muted-foreground tabular-nums">{count(f)}</span>
-            </Button>
-          ))}
-          <NativeSelect aria-label={t("client")} value={client} onChange={(e) => setParam("client", e.target.value)} className="w-64">
-            <NativeSelectOption value="">
-              {t("client")}: {t("any")}
+      {/* The filters stay in place when there is nothing yet (_components/empty-state.md). */}
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filter")}>
+        {(["", ...FILTERS] as const).map((f) => (
+          <Button key={f || "all"} size="sm" variant={filter === f ? "secondary" : "outline"} aria-pressed={filter === f} onClick={() => setParam("filter", f)}>
+            {f === "" ? t("all") : t(`filters.${f}`)}
+            <span className="text-muted-foreground tabular-nums">{count(f)}</span>
+          </Button>
+        ))}
+        <NativeSelect aria-label={t("client")} value={client} onChange={(e) => setParam("client", e.target.value)} className="w-64">
+          <NativeSelectOption value="">
+            {t("client")}: {t("any")}
+          </NativeSelectOption>
+          {clients.map((c) => (
+            <NativeSelectOption key={c.id} value={c.id}>
+              {c.name}
             </NativeSelectOption>
-            {clients.map((c) => (
-              <NativeSelectOption key={c.id} value={c.id}>
-                {c.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
-      )}
+          ))}
+        </NativeSelect>
+      </div>
 
       {rows.length === 0 ? (
         <EmptyState
@@ -123,13 +122,15 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
             <TableBody>
               {shown.map((p) => (
                 <TableRow key={p.id} data-testid="payment-row" className={p.status === "voided" ? "text-muted-foreground" : undefined}>
-                  <TableCell className="whitespace-nowrap">{longDate(p.receivedOn, locale)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{tableDate(p.receivedOn, locale)}</TableCell>
                   <TableCell>{p.clientName}</TableCell>
                   <TableCell>{t(`methods.${p.method}`)}</TableCell>
-                  <TableCell className="max-w-56 truncate" title={p.reference ?? undefined}>
+                  {/* The reference takes the room the other columns leave and is cut to fit, never pushing the
+                      table past the page (Spanish labels are longer); the whole of it shows on hover. */}
+                  <TableCell className="w-full max-w-0 truncate" title={p.reference ?? undefined}>
                     {p.reference ?? "—"}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{money(p.amountCents, locale)}</TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">{money(p.amountCents, locale)}</TableCell>
                   <TableCell className="text-right tabular-nums">{money(p.appliedCents, locale)}</TableCell>
                   <TableCell className="text-right tabular-nums">{money(p.unusedCents, locale)}</TableCell>
                   <TableCell>

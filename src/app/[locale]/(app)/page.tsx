@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import { PERIOD_TONE } from "@/components/shiftbook/convert/period-tone";
-import { dateRange, hoursMinutes, money, numberLocale, shortDate } from "@/components/shiftbook/format";
+import { compactMoney, dateRange, hoursMinutes, money, shortDate } from "@/components/shiftbook/format";
 import { BarChart, LineChart } from "@/components/shiftbook/home/charts";
 import { GUIDE_COOKIE, SetupGuide, ShowGuide, type GuideStep } from "@/components/shiftbook/home/setup-guide";
 import { KeyFigure } from "@/components/shiftbook/key-figures";
@@ -70,14 +70,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const o = view.overview;
   const range = o ? dateRange(o.from, o.to, locale) : "";
-  // Gridline values short, as Stripe's charts write them ("$1.5K").
-  const compact = (cents: number) => new Intl.NumberFormat(numberLocale(locale), { style: "currency", currency: "USD", notation: "compact", minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(cents / 100);
+  // Gridline values short, as Stripe's charts write them ("$1.5K"), and hours with their unit ("0h", "200h").
+  const hoursAxis = (m: number) => `${Math.trunc(m / 60)}h`;
   type Week = NonNullable<typeof o>["weeks"][number];
   const widgets: { key: string; title: string; total: number; previous: number; of: (w: Week) => number; full: (n: number) => string; axis: (n: number) => string; unit?: number }[] = o
     ? [
-        { key: "billed", title: t("overview.billed"), total: o.weeks.reduce((n, w) => n + w.billedCents, 0), previous: o.previous.billedCents, of: (w) => w.billedCents, full: (n) => money(n, locale), axis: compact },
-        { key: "margin", title: t("overview.margin"), total: o.weeks.reduce((n, w) => n + w.marginCents, 0), previous: o.previous.marginCents, of: (w) => w.marginCents, full: (n) => money(n, locale), axis: compact },
-        { key: "hours", title: t("overview.hours"), total: o.weeks.reduce((n, w) => n + w.minutesPaid, 0), previous: o.previous.minutesPaid, of: (w) => w.minutesPaid, full: hoursMinutes, axis: (m) => `${Math.trunc(m / 60)}h`, unit: 60 },
+        { key: "billed", title: t("overview.billed"), total: o.weeks.reduce((n, w) => n + w.billedCents, 0), previous: o.previous.billedCents, of: (w) => w.billedCents, full: (n) => money(n, locale), axis: compactMoney },
+        { key: "margin", title: t("overview.margin"), total: o.weeks.reduce((n, w) => n + w.marginCents, 0), previous: o.previous.marginCents, of: (w) => w.marginCents, full: (n) => money(n, locale), axis: compactMoney },
+        { key: "hours", title: t("overview.hours"), total: o.weeks.reduce((n, w) => n + w.minutesPaid, 0), previous: o.previous.minutesPaid, of: (w) => w.minutesPaid, full: hoursMinutes, axis: hoursAxis, unit: 60 },
       ]
     : [];
 
@@ -112,7 +112,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {view.today.days.length > 0 && (
                   <BarChart
                     points={view.today.days.map((d) => ({ label: new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d.date}T00:00:00Z`)), value: d.minutes }))}
-                    format={(m) => (m === 0 ? "0" : `${Math.trunc(m / 60)}h`)}
+                    format={hoursAxis}
                     unit={60}
                     caption={t("todayChart", { period: dateRange(period.startsOn, period.endsOn, locale) })}
                   />
@@ -181,7 +181,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <span className="text-[13px] text-muted-foreground">{t("overview.previous", { value: w.full(w.previous) })}</span>
                 </div>
                 <LineChart points={o.weeks.map((x) => ({ label: shortDate(x.week, locale), value: w.of(x) }))} format={w.axis} unit={w.unit} caption={t("overview.chart", { title: w.title, range })} />
-                <div className="flex justify-end border-t pt-3">
+                {/* The card's foot with no rule above it, as Stripe's overview cards end. */}
+                <div className="mt-auto flex justify-end">
                   <Link href="/margin" className="text-[13px] font-medium underline-offset-4 hover:underline">
                     {t("overview.viewMore")}
                   </Link>

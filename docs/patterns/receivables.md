@@ -44,6 +44,6 @@ Who owes the agency what, and how late (SPEC §14, decision H1), and which invoi
 FreshBooks', Intuit's or TempWorks' wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-The summary is set as Mercury's Transactions page sets its figures (https://mercury.com/blog/updated-transactions-page): the amount owed large with its date under it, then overdue and unapplied credit as plain type; Aging and Short pays as underline tabs; the aging table full width as Stripe's lists.
+The summary is set as Mercury's Transactions page sets its figures (https://mercury.com/blog/updated-transactions-page, its first screenshot: the headline figure, then "Money in" and "Money out" as rows under it): the amount owed large with its date under it, then overdue and unapplied credit as rows under it in the same narrow column, each label on the left and its amount on the right, with no line under them (what each means is on its label); Aging and Short pays as underline tabs; the aging table full width as Stripe's lists, an empty amount "—" in the totals row as in the clients' rows.
 
 Deviations allowed: none

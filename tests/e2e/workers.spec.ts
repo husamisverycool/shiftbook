@@ -121,6 +121,8 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.getByTestId("payroll-value-gusto")).toContainText(`gusto-${locale}-77`);
     await expect(page.getByTestId("payroll-value-gusto")).toContainText(w.profile.payroll.inUse);
     await expect(page.getByTestId("payroll-value-spreadsheet")).toContainText(`SB-${locale}-77`);
+    // The facts line under the name gives the number in the system in use.
+    await expect(page.getByTestId("worker-facts")).toContainText(w.profile.facts.payroll.replace("{number}", `gusto-${locale}-77`).replace("{system}", w.systems.gusto));
 
     // Employment: ended (hidden from the list, found by search), then hired again.
     await page.getByTestId("tab-employment").click();

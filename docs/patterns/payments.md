@@ -48,6 +48,6 @@ Every payment received from a client, and recording one by hand (decision H2).
 Intuit's, Zoho's, TempWorks' or Stripe's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-Stripe's list: title with Record payment on the right, the filter buttons, the table full width with the status as a tinted badge (https://docs.stripe.com/invoicing/dashboard).
+Stripe's list: title with Record payment on the right, the filter buttons, the table full width with the amount bold, the status as a tinted badge and dates short ("Oct 16, 2026") (https://docs.stripe.com/invoicing/dashboard). A long reference is cut to the room the other columns leave, the whole of it on hover. With no payments yet, the filters stay in place over the empty state (`_components/empty-state.md`).
 
 Deviations allowed: none
