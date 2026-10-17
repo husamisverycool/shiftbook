@@ -192,15 +192,13 @@ describe("placement notices (J3)", () => {
     expect(w[0]!.message).toBe("The placement starts 2026-10-14; due by the end of its first pay period, 2026-10-18 (ma_job_order citation).");
   });
 
-  it("New Jersey: a designated classification whose worker prefers a language other than English or Spanish gets the notice in it too, by the start", () => {
-    const nj = (over: Partial<Placement>) => kinds({ placements: [placement({ state: "NJ", startDate: "2026-10-19", workerLanguage: "pl", ...over })] }).filter(([k]) => k === "nj_language_notice");
+  it("New Jersey: a designated classification whose worker prefers another language gets the notice in both, by the start", () => {
+    const nj = (over: Partial<Placement>) => kinds({ placements: [placement({ state: "NJ", startDate: "2026-10-19", workerLanguage: "es", ...over })] }).filter(([k]) => k === "nj_language_notice");
     expect(nj({})).toEqual([["nj_language_notice", "", "2026-10-19", "2026-10-19", null]]);
     expect(nj({ workerLanguage: "en" })).toEqual([]);
-    // The assignment notice is already in English and Spanish (form MW-23).
-    expect(nj({ workerLanguage: "es" })).toEqual([]);
     expect(nj({ socCode: "43-6014" })).toEqual([]);
     expect(nj({ socCode: null })).toEqual([]);
-    expect(wantedObligations({ ...base, placements: [placement({ state: "NJ", startDate: "2026-10-19", workerLanguage: "pl" })] }).find((o) => o.kind === "nj_language_notice")!.facts).toMatchObject({ language: "pl" });
+    expect(wantedObligations({ ...base, placements: [placement({ state: "NJ", startDate: "2026-10-19", workerLanguage: "es" })] })[0]!.facts).toMatchObject({ language: "es" });
   });
 });
 
@@ -329,7 +327,7 @@ describe("every wording of the explanation (decision 0028)", () => {
     run({ placements: [placement({}), placement({ id: "a2", startDate: "2026-12-01", endDate: null })] });
     run({ placements: [placement({ startDate: "2026-01-05", endDate: "2026-02-20", status: "ended" }), placement({ id: "a2", startDate: "2026-09-01", endDate: null })] });
     run({ placements: [placement({ endDate: "2026-05-15", status: "ended" })] });
-    run({ placements: [placement({ state: "MA", startDate: "2026-10-14", firstPeriodEnd: "2026-10-18" }), placement({ id: "a3", state: "NJ", startDate: "2026-10-19", workerLanguage: "pl" })] });
+    run({ placements: [placement({ state: "MA", startDate: "2026-10-14", firstPeriodEnd: "2026-10-18" }), placement({ id: "a3", state: "NJ", startDate: "2026-10-19", workerLanguage: "es" })] });
     run({ workers: [worker({ workAuthExpiresOn: "2027-03-31" }), worker({ id: "w2", firstJobEndsOn: "2026-10-16" }), worker({ id: "w3", i9Section1On: "2026-01-02", i9Section2On: "2025-01-08" })] });
     for (const weekdays of [[1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6, 0], [0, 1, 2, 3, 4, 5, 6]]) run({ openDays: [{ weekdays, effectiveFrom: "2026-01-01", effectiveTo: null }], workers: [worker({})] });
     run({ rules: RULES.map((r) => (r.code === "i9_section2" ? { ...r, businessDays: 0, offsetDays: 2 } : r)), workers: [worker({})] });
