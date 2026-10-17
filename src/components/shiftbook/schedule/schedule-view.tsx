@@ -34,7 +34,6 @@ interface Row {
   draft: Partial<ShiftDraft>;
 }
 
-const weekday = (iso: string, locale: string) => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 
 export function ScheduleView({ view, today, by }: { view: WeekView; today: string; by: GroupBy }) {
   const t = useTranslations("schedule");
@@ -185,7 +184,7 @@ export function ScheduleView({ view, today, by }: { view: WeekView; today: strin
             {view.counters.map((c) => (
               <div role="columnheader" key={c.date} aria-current={c.date === today ? "date" : undefined} className="border-b border-l bg-muted/40 p-2">
                 <div className={cn("font-medium", c.date === today && "font-semibold underline decoration-2 underline-offset-4")}>
-                  {weekday(c.date, locale)} {shortDate(c.date, locale)}
+                  {shortDate(c.date, locale)}
                 </div>
                 <div className="text-xs text-muted-foreground tabular-nums">{t("dayCounter", { shifts: c.shifts, hours: hoursMinutes(c.minutes) })}</div>
               </div>

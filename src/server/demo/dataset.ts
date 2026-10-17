@@ -67,6 +67,10 @@ export const WC_RATES: { state: string; classCode: string; description: string; 
   { state: "CA", classCode: "8292", description: "Warehouse (example rate)", ratePpm: 40_000 },
   { state: "IL", classCode: "3632", description: "Machine shop (example rate)", ratePpm: 30_000 },
   { state: "MA", classCode: "9079", description: "Restaurant and events (example rate)", ratePpm: 25_000 },
+  // The Newark packers (class 8018): New Jersey, and the states the three workers are covered in.
+  { state: "NJ", classCode: "8018", description: "Packing (example rate)", ratePpm: 35_000 },
+  { state: "IL", classCode: "8018", description: "Packing (example rate)", ratePpm: 35_000 },
+  { state: "CA", classCode: "8018", description: "Packing (example rate)", ratePpm: 35_000 },
 ];
 
 /**

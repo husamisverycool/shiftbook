@@ -135,7 +135,7 @@ function itemOf(o: typeof s.obligations.$inferSelect, rules: ComplianceRule[], n
   };
 }
 
-const byUrgency = (a: ComplianceItem, b: ComplianceItem) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || cmp(a.dueOn, b.dueOn) || cmp(a.subject, b.subject) || cmp(a.id, b.id);
+const byUrgency = (a: ComplianceItem, b: ComplianceItem) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || cmp(a.dueOn, b.dueOn) || cmp(a.subject, b.subject) || cmp(a.kind, b.kind) || cmp(a.id, b.id);
 
 /** Every duty, worked out again first, with the filters' counts. */
 export async function complianceItems(tx: Tx, actor: Actor, today: string): Promise<{ items: ComplianceItem[]; users: { id: string; name: string; role: string }[] }> {
