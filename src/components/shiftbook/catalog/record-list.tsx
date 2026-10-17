@@ -432,7 +432,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                       </button>
                       {grouping.icon && g.rows[0] && <StatusIcon status={grouping.icon(g.rows[0])} decorative />}
                       {g.label}
-                      <span className="font-normal text-muted-foreground tabular-nums">{g.rows.length}</span>
+                      <span className="font-normal text-foreground/70 tabular-nums">{g.rows.length}</span>
                     </span>
                   </div>
                 )}

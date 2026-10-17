@@ -99,7 +99,7 @@ export function PillChoices({ heading, value, options, onChoose }: { heading: st
       <DropdownMenuLabel>{heading}</DropdownMenuLabel>
       <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChoose(String(v))}>
         {options.map((o) => (
-          <DropdownMenuRadioItem key={o.value} value={o.value} data-testid={o.testId}>
+          <DropdownMenuRadioItem key={o.value} value={o.value} closeOnClick data-testid={o.testId}>
             {o.label}
           </DropdownMenuRadioItem>
         ))}
@@ -156,7 +156,7 @@ export function ListAmount({ text, className }: { text: string; className?: stri
   return (
     <span className={cn("inline-flex items-baseline gap-1.5 whitespace-nowrap", className)}>
       <span className="font-semibold tabular-nums">{text}</span>
-      <span className="text-muted-foreground">USD</span>
+      <span className="text-foreground/70">USD</span>
     </span>
   );
 }

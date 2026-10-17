@@ -30,7 +30,10 @@ Screens: `l01-home-fresh.png`, `l04-upload-demo.png`, `l13-home.png`, `l40-home-
 - Fixed since the first pass: the page no longer runs below the frame; the Spanish page no longer
   scrolls sideways; "1 vencida"; "número de Seguro Social"; chart money written the same way in both
   languages ("$50K"); Today's zero reads "0h".
-- Still different from Stripe: Stripe's figures are lighter and its charts carry more gridlines.
+- Since, from Stripe's own Home: the figures in Stripe's lighter weight with the previous pay period
+  beside them in grey; Today's hours as a running line over the week; the overview cards' axes with
+  more gridlines, the previous period dashed, "Updated" and "View more" at the foot; the setup guide's
+  open step on Polaris's grey panel.
 
 ### Empty lists — `invoices.md`, `margin.md` with `_components/empty-state.md` (Linear and Stripe)
 Screens: `l02-invoices-empty.png`, `l03-margin-empty.png`.
@@ -92,6 +95,9 @@ Screens: `l14-approvals.png`, `l15-approval.png`.
 Screens: `l16-invoices.png`, `l17-invoice.png`, `l41-invoice-es.png`.
 - ✓ Amount first and bold, status badge, number, client, period, short dates; the invoice page with
   its line items and the Summary column.
+- Since, from Stripe's current lists: status tiles with counts above the table, filter pills ("+
+  Client") that open a choice, column headers in plain case, 36px rows, amounts with their currency
+  and a results count under the table; the same on Client approvals, Payments, Clients and Workers.
 - Fixed since the first pass: the client filter beside the tabs; Worksite in the Summary; a paid
   invoice says "Amount paid" and "Balance due"; the client is a link; each line's detail in the
   reader's language (the PDF stays in the client's language).
@@ -113,7 +119,8 @@ Screens: `l23-job-orders.png`, `l24-job-order.png`, `l25-assignments.png`.
 - ✓ Linear's grouped list; the job order's record page with Details at the right.
 - Fixed since the first pass: rates as labelled chips ("Pay $17.00", "Bill $25.00"); the client not
   repeated under its group; an equal pay range shows one figure.
-- Still different from Linear: Linear's property chips carry icons and its rows a status icon.
+- Since, from Linear's list: a status icon at each row's left; property chips with small icons
+  (place, filled of wanted, pay, bill); Filter and Display at the top right; group rows with counts.
 
 ### Workers and a worker — `workers*.md` (Toast Team; Stripe detail page)
 Screens: `l26-workers.png`, `l27-worker.png`.
