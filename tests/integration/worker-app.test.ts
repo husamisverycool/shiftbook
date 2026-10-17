@@ -184,6 +184,9 @@ describe("onboarding", () => {
     // Marcus, fenced to his own rows, types Daniel's number: the check still sees it (yes or no only).
     const marcus = { ...daniel, workerId: MARCUS, label: "Marcus (worker app)" };
     expect(await withWorker(app.db, marcus, (tx) => saveStep(tx, marcus, "personal", { ...personal, legalFirstName: "Marcus", legalLastName: "Bell" }, ctx))).toEqual({ ok: false, field: "ssn" });
+    // Five refusals an hour, then even a number no one has is refused (no probing for colleagues' numbers).
+    for (let i = 0; i < 4; i++) await withWorker(app.db, marcus, (tx) => saveStep(tx, marcus, "personal", { ...personal, legalFirstName: "Marcus", legalLastName: "Bell" }, ctx));
+    expect(await withWorker(app.db, marcus, (tx) => saveStep(tx, marcus, "personal", { ...personal, ssn: "900-66-7777", legalFirstName: "Marcus", legalLastName: "Bell" }, ctx))).toEqual({ ok: false, field: "ssn" });
   });
 
   it("signs only after every step, with the legal name typed, and dates the roster's I-9 Section 1", async () => {

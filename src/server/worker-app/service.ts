@@ -78,6 +78,7 @@ async function onboardingRow(tx: Tx, who: Who) {
 }
 
 export type StepResult = { ok: true } | { ok: false; field: string };
+export const SSN_REFUSALS_PER_HOUR = 5;
 type Answers = Record<string, string | undefined>;
 export interface StepContext {
   today: string;
@@ -107,6 +108,13 @@ export async function saveStep(tx: Tx, who: Who, step: Step, a: Answers, ctx: St
       await log({ ssn: "unchanged", last4: onFile?.ssnLast4 ?? null });
       return { ok: true };
     }
+    // The "already on another worker" answer could probe for colleagues' numbers: five refusals an
+    // hour, then none (as the roster limits the people who enter SSNs).
+    const [refused] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(s.auditEvents)
+      .where(and(eq(s.auditEvents.entityId, who.workerId), eq(s.auditEvents.entityType, "worker"), sql`${s.auditEvents.after}->>'ssn' = 'duplicate_refused'`, sql`${s.auditEvents.occurredAt} > now() - interval '1 hour'`));
+    if ((refused?.n ?? 0) >= SSN_REFUSALS_PER_HOUR) return { ok: false, field: "ssn" };
     const index = ssnIndex(p.ssn, kek, who.agencyId);
     // The one look at the agency's other workers: is the number already on one? Yes or no only.
     const taken = await outsideWorkerFence(tx, who.workerId, async () => {

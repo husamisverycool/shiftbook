@@ -6,6 +6,7 @@
  * signed-in worker (src/server/worker-app/fence.ts).
  */
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
@@ -19,7 +20,7 @@ import { auditBy } from "@/server/audit";
 import * as s from "@/server/db/schema";
 import { chooseWorkerAgency, demoCodeText, demoWorkerSignIn, endWorkerSession, requestWorkerCode, verifyWorkerCode, WORKER_SESSION_MS } from "@/server/worker-app/auth";
 import { STEPS, type Step } from "@/server/worker-app/forms";
-import { clockIn, clockOut, markReadByWorker, postMessage, saveStep, type ClockError } from "@/server/worker-app/service";
+import { clockIn, clockOut, postMessage, saveStep, type ClockError } from "@/server/worker-app/service";
 import { asWorker, currentWorker, WORKER_COOKIE, workerDeps } from "@/server/worker-app/session";
 import { translator } from "@/server/worker-app/translate";
 import { eq } from "drizzle-orm";
@@ -40,7 +41,7 @@ async function openApp(workerId: string, agencyId: string): Promise<never> {
 export async function requestCodeAction(locale: string, phone: string): Promise<{ ok: true; demoCopy: string | null } | { ok: false; error: "invalid" | "throttled" }> {
   const tSms = await getTranslations({ locale: localeOf(locale), namespace: "workerAppSms" });
   const { ipAddress } = await requestSender();
-  const r = await requestWorkerCode(workerDeps(), typeof phone === "string" ? phone.slice(0, 40) : "", (code) => tSms("code", { code }), ipAddress);
+  const r = await requestWorkerCode(workerDeps(), typeof phone === "string" ? phone.slice(0, 40) : "", (code) => tSms("code", { code }), ipAddress, isDemo() ? {} : { later: (job) => after(job) });
   if (!r.ok) return r;
   return { ok: true, demoCopy: isDemo() ? await demoCodeText({ db }, DEMO_AGENCY.id, r.phone) : null };
 }
@@ -120,11 +121,6 @@ export async function sendWorkerMessageAction(locale: string, body: string): Pro
   const r = await asWorker(w, (tx) => postMessage(tx, { agencyId: w.agencyId, workerId: w.workerId, sender: "worker", authorLabel: `${w.firstName} ${w.lastName}`, authorUserId: null, body: String(body ?? "").slice(0, 4000), bodyLocale: lang, otherLocale: "en" }, translator()));
   refresh();
   return r.ok ? { ok: true } : r;
-}
-
-export async function markMessagesReadAction(locale: string): Promise<void> {
-  const w = await currentWorker(localeOf(locale));
-  await asWorker(w, (tx) => markReadByWorker(tx, w.workerId, new Date()));
 }
 
 /** The worker's language: the app and the agency's translations both follow it. */

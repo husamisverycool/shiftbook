@@ -120,6 +120,11 @@ export async function clearDemoAgency(tx: Tx): Promise<void> {
   for (const table of CLEAR_ORDER) {
     await tx.execute(sql.raw(`delete from ${table} where agency_id = '${agencyId}'`));
   }
+  // The demo numbers' text-message codes have no agency (sign-in mode only): a reset spends them too.
+  const indexes = Object.values(DEMO_PHONES).map((p) => phoneIndex(p, appKey()));
+  await tx.execute(sql`select set_config('app.auth', 'on', true)`);
+  await tx.delete(s.workerSignInCodes).where(inArray(s.workerSignInCodes.phoneIndex, indexes));
+  await tx.execute(sql`select set_config('app.auth', '', true)`);
 }
 
 export const clientId = (k: ClientKey) => demoUuid(`client:${k}`);

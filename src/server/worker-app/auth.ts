@@ -75,17 +75,40 @@ export type CodeText = (code: string) => string;
  * way ("invalid" only for what is not a US mobile number; "throttled" for too many requests from one
  * place).
  */
-export async function requestWorkerCode(deps: WorkerAuthDeps, phoneText: string, text: CodeText, address: string | null): Promise<{ ok: true; phone: string } | { ok: false; error: "invalid" | "throttled" }> {
+export async function requestWorkerCode(
+  deps: WorkerAuthDeps,
+  phoneText: string,
+  text: CodeText,
+  address: string | null,
+  opts: { later?: (job: () => Promise<unknown>) => void } = {},
+): Promise<{ ok: true; phone: string } | { ok: false; error: "invalid" | "throttled" }> {
   const phone = readPhone(phoneText);
   if (!phone) return { ok: false, error: "invalid" };
   const now = nowOf(deps);
   const index = phoneIndex(phone, appKey());
-  const pending = await withAuth(authOf(deps.db), async (tx): Promise<{ agencyId: string; sms: OutgoingSms } | "throttled" | null> => {
-    if (address) {
-      const k = key("request-address", address);
-      if ((await countSince(tx, k, HOUR, now)) >= REQUESTS_PER_ADDRESS_HOUR) return "throttled";
+  // The per-address limit answers at once; it counts every number alike, so it tells nothing.
+  if (address) {
+    const k = key("request-address", address);
+    const over = await withAuth(authOf(deps.db), async (tx) => {
+      if ((await countSince(tx, k, HOUR, now)) >= REQUESTS_PER_ADDRESS_HOUR) return true;
       await note(tx, k, now);
-    }
+      return false;
+    });
+    if (over) return { ok: false, error: "throttled" };
+  }
+  // With `later` (live mode) the lookup and the text run after the response, so a number on file
+  // answers no slower than one that is not (as decision 0033's emailed codes do).
+  const job = async () => {
+    const pending = await issueAndRecord(deps, index, phone, text, now);
+    if (pending) await deliverSms(deps.db, deps.sms, pending.agencyId, pending.sms);
+  };
+  if (opts.later) opts.later(job);
+  else await job();
+  return { ok: true, phone };
+}
+
+async function issueAndRecord(deps: WorkerAuthDeps, index: string, phone: string, text: CodeText, now: Date): Promise<{ agencyId: string; sms: OutgoingSms } | null> {
+  return withAuth(authOf(deps.db), async (tx): Promise<{ agencyId: string; sms: OutgoingSms } | null> => {
     // At most one code a minute and five an hour per number, sent or not (nothing to learn from timing).
     const [recent] = await tx
       .select({
@@ -109,9 +132,6 @@ export async function requestWorkerCode(deps: WorkerAuthDeps, phoneText: string,
     const sms = await recordSms(tx, { agencyId: first.agencyId, kind: "sign_in_code", to: phone, workerId: first.workerId, text: body, kept: body.split(code).join("[code hidden]") });
     return { agencyId: first.agencyId, sms };
   });
-  if (pending === "throttled") return { ok: false, error: "throttled" };
-  if (pending) await deliverSms(deps.db, deps.sms, pending.agencyId, pending.sms);
-  return { ok: true, phone };
 }
 
 export type VerifyResult =
