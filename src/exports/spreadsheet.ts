@@ -53,7 +53,7 @@ function writtenRate(row: Pick<Row, "rate" | "factor">): bigint | null {
   // A declared multiple: written exactly or not at all (the receiver multiplies it back).
   const num = BigInt(row.rate.num) * 100n * BigInt(row.factor.den);
   const den = BigInt(row.rate.den) * BigInt(row.factor.num);
-  return num % den === 0n ? num / den : null;
+  return num % den === 0n ? BigInt(roundHalfUpBig(num, den)) : null;
 }
 
 export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
