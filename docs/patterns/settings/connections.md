@@ -48,6 +48,10 @@ each is used for, when it was last used, whether it is ready, and where to set o
   the placements ability's; the payroll system is changed on Payroll settings by those who may.
 - Tabs keep their place in the address (`?tab=available`).
 
+- **Partner packages** (Available › Partners; slice w, integration): each row says when a package was
+  last recorded and how many, or that nothing is recorded yet; **Open** goes to its Money page
+  (Payroll, Wage access, Funding, Insurance). Nothing moves in Granite.
+
 ## States
 - Loading: the settings outline (`_components/loading.md`); failure: `_components/error.md`.
 - A partner row says partner handoffs arrive with the partner-ready money flows (SPEC §27 item 9).

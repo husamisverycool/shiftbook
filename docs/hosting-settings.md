@@ -38,7 +38,8 @@ be on the volume. The app itself is started without `DATABASE_OWNER_URL` or `DAT
 | `SHIFTBOOK_APP_URL` | The address people open, e.g. `https://app.example.com` (links in emails are built from it). |
 | `SHIFTBOOK_ENCRYPTION_KEY` | 32 random bytes written in base64. It protects authenticator secrets and, from slice (k) step 2, Social Security numbers. Keep a copy with the database backups' secrets: losing it loses those. Never put it in the database. |
 | `RESEND_API_KEY`, `MAIL_FROM` | Sending email (client approvals, invites, password resets). |
-| `CRON_SECRET` | The scheduled approval-reminder call answers only to this. |
+| `CRON_SECRET` | The scheduled calls — client approval reminders, notifications and collection reminders (`/api/notifications/sweep`) — answer only to this. |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Text messages to workers (slices t and u): the sign-in code for the worker app, the onboarding link, a changed phone number, a published schedule. From a Twilio account: its Account SID and Auth Token (Twilio console, Account info), and the Twilio phone number texts come from, written like `+13125550100`. Without them, workers cannot sign in to the worker app by text. The demo never texts. |
 | `SHIFTBOOK_TRUSTED_PROXY_HOPS` | How many proxies in front of the app add to `X-Forwarded-For` (usually 1; set `0` when nothing stands in front of the app, or visitors could make up their own address). Used to know each visitor's address (sign-in throttling, approval evidence). |
 | `ANTHROPIC_API_KEY` | Reading photographed timesheets (optional; files and spreadsheets work without it). |
 | `SHIFTBOOK_STORAGE_DIR` | Where uploaded files are kept, if not the default. |

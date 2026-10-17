@@ -275,6 +275,18 @@ Each slice is usable end to end before the next starts.
 | j | Compliance calendar and counters |
 | k | Worker roster with encrypted SSNs, audit log, Spanish/English |
 | l | Polish every screen against its pattern file; full end-to-end acceptance test |
+| m | Agencies sign themselves up and pay monthly through Stripe (decision 0036) — done |
+| n | Motion, hover, press and focus from Primer's tokens (decision 0037) — done |
+| o | Every state handled: page outlines while loading, errors with Try again, not found, buttons that spin — done |
+| p | ⌘K command menu (decision 0038) — done |
+| q | Free public Illinois 720-hour checker — done |
+| r | Notifications, invoice email, credit notes, promises to pay, collection reminders — done |
+| s | Connections; Paychex Flex, Paylocity and factor schedule of accounts (decision 0040) — done |
+| t | Recruiter role, worker onboarding and the worker app — done |
+| u | Scheduling and shift fill (decision 0041) — done |
+| v | Client portal — done |
+| w | Partner-ready money flows: compute everything, move nothing — done |
+| x | New Jersey rules and duties; the slices joined; the acceptance test grown (§27 item 11) — done |
 
 ## 26. Design contract
 

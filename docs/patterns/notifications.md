@@ -25,6 +25,11 @@ Researched: 2026-10-17 (`docs/research/notifications-slice-r.md`). Confidence: h
   `Backspace` deletes the selected row; `Shift`+`Backspace` deletes all read (Linear's keys).
 - `G` then `N` goes to Notifications from anywhere (Linear: `G` then `I` — `I` is taken by Invoices).
 
+- Three more kinds (integration, SPEC §27): a worker confirmed a shift in the worker app; a client asked
+  for workers in its portal; a worker wrote in the worker app. Each goes to the roles that act on it
+  (placements; the worker app's messages) and opens the schedule's week, Job orders, or the worker's
+  Messages tab.
+
 ## States
 - Loading and errors: `_components/loading.md`, `_components/error.md` (list shape).
 

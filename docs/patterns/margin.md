@@ -47,6 +47,12 @@ amount traceable to its lines and their explain strings. For the Owner and the a
   (Stripe: summary table or data results).
 - Keyboard: G then M opens the page.
 
+- **Credit notes issued by hand** (slice r; integration, SPEC §27): each is its own row under its
+  client and the week of the invoice it credits, its number in place of a worker's name, billed below
+  zero, with one line explaining it (number, date issued, amount, client, week). Grouped by worker,
+  recruiter or branch it is "None": a credit belongs to the client. Correction runs' credit notes are
+  already in their run's lines and are not added again.
+
 ## States
 - **Nothing in the period:** no week with files made — an empty state with a link to Convert
   timesheets.

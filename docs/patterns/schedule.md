@@ -56,6 +56,11 @@ that job order; hours still come only from timesheets (SPEC §6) — a schedule 
 - Confirming places the worker on the job order (an assignment from that date, at the job order's
   rates) when they are not already placed.
 
+- **Publish tells the workers** (integration, SPEC §27): unless "Don't notify" is chosen, each worker on
+  a published shift or offered one gets a message in the worker app's thread in their own language
+  (with the scheduler's note, when written) and, when live, a text message with a link to Shifts.
+- ⌘K's "Publish the schedule" opens this page with the publish dialog already open.
+
 ## States
 - **No job orders:** the empty state (`_components/empty-state.md`) points to Job orders.
 - **No shifts this week:** the grid stays, with its Open row and "+" in each cell.

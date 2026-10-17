@@ -83,9 +83,17 @@ Keep the demo as it is. Make a second, separate copy for real customers:
 6. **Reading photos of timesheets** (optional; spreadsheets and time-clock files work without it).
    Sign up at **console.anthropic.com**, open **API Keys**, create one, and add it in Railway as
    `ANTHROPIC_API_KEY`.
-7. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
+7. **Text messages to workers** (needed for the worker app: workers sign in with a code texted to
+   them, and hear when their schedule is published). Sign up at **twilio.com**, buy one phone number
+   there, and on the Twilio console's first page copy the **Account SID** and **Auth Token**. In
+   Railway, add three variables: `TWILIO_ACCOUNT_SID` (the Account SID), `TWILIO_AUTH_TOKEN` (the Auth
+   Token) and `TWILIO_FROM` (the number you bought, written like `+13125550100`). Click **Deploy**.
+8. **Reminders on a schedule** (client approvals, notifications and collection reminders): nothing to
+   do. Granite sends them by itself every 15 minutes. (`CRON_SECRET` exists only for a developer who
+   wants an outside scheduler to trigger them instead; see `docs/hosting-settings.md`.)
+9. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
    about an hour; `docs/hosting-settings.md` lists exactly what they set.
-8. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
+10. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
    Then do the same in the live **shiftbook** box's **Backups** tab: its disk holds the uploaded files
    and the key that locks Social Security numbers. Never delete that disk. If it is ever lost, Granite
    will refuse to start (it never quietly makes a new key) until the disk is restored from a backup.

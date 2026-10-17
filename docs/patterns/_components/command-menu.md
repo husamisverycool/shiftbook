@@ -43,6 +43,9 @@ Researched: 2026-10-17 (`docs/research/command-menu-slice-p.md`). Confidence: hi
   switch language, keyboard shortcuts, sign out.
 - Opens and closes with the dialog's motion (`_components/motion.md`).
 
+- Pages also include Money's tabs (for the Owner), Collections, Connections, Notifications and Money
+  settings; actions include "Publish the schedule…" for those who change placements (integration).
+
 ## States
 - Signed-in app only. Nothing is ever searched by SSN or date of birth.
 - Paused changes (decision 0036): actions that change records are hidden, as the screens hide them.
