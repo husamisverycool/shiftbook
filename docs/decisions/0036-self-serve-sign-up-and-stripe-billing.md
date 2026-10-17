@@ -1,4 +1,4 @@
-# 0035 — Agencies sign themselves up and pay monthly through Stripe (plain fetch, no Stripe package)
+# 0036 — Agencies sign themselves up and pay monthly through Stripe (plain fetch, no Stripe package)
 
 Status: accepted
 Date: 2026-10-17

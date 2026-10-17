@@ -1,7 +1,7 @@
 # Pattern: Sign in (`/sign-in`)
 
 Status: adopted — slice (k); revised by decision 0031 (2026-10-16); the passkey tile by decision 0032;
-the sign-up line by decision 0035 (2026-10-17)
+the sign-up line by decision 0036 (2026-10-17)
 Reference product and screen: GitHub — sign-in (email and password, then a separate two-factor step;
 "Forgot password?" leads to the password reset page); Linear — login page (each way to sign in is a
 full-width "Continue with …" button, one under another)
@@ -52,7 +52,7 @@ opens with no password (decision K3).
    two-column grid of tiles, each the way's mark over its name: **Google** and **Microsoft** (each
    provider's own mark, as its branding rules require; shown once its keys are set, always in the
    demo through the demo's stand-in), **Passkey** (decision 0032), **SSO** (to `/sign-in/sso`).
-7. **New to Granite? Create an agency** (decision 0035): one muted line, centred, "Create an agency" a
+7. **New to Granite? Create an agency** (decision 0036): one muted line, centred, "Create an agency" a
    link to `/sign-up` (`sign-up.md`) — the mirror of the foot line Stripe's register page and Linear's
    signup page end with, which links back to signing in (screenshots, 2026-10-17).
 

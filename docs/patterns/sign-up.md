@@ -1,6 +1,6 @@
 # Pattern: Create your agency (`/sign-up`)
 
-Status: adopted — decision 0035 (2026-10-17)
+Status: adopted — decision 0036 (2026-10-17)
 Reference product and screen: Stripe — "Create your Stripe account" (dashboard.stripe.com/register: the
 heading at the top left of one card, then labelled fields one under another — Email, Full name, …— the
 primary "Create account" button full width, and "Already have an account? Sign in" centred at the foot);
@@ -19,7 +19,7 @@ order, the full-width button and the "already have an account" line; the email s
 not copied.
 
 ## Purpose in Granite
-An agency's first person (who becomes its Owner) creates the agency themselves (decision 0035). Live
+An agency's first person (who becomes its Owner) creates the agency themselves (decision 0036). Live
 mode only: the demo uses its own made-up agency.
 
 ## Hierarchy

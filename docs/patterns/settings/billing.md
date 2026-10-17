@@ -1,6 +1,6 @@
 # Pattern: Billing (`/settings/billing`)
 
-Status: adopted — decision 0035 (2026-10-17)
+Status: adopted — decision 0036 (2026-10-17)
 Reference product and screen: Linear — Settings › Administration › Billing (workspace admins see the
 plan information and change it, update the payment information, see past invoices, and are shown when a
 charge failed or is past due; canceling takes effect at the end of the period and "nothing will be
@@ -21,7 +21,7 @@ Linear's own settings screenshots (`_components/settings.md`). Confidence: high 
 and does; the exact arrangement follows Granite's Linear settings panels.
 
 ## Purpose in Granite
-The agency's subscription to Granite (decision 0035): where the Owner sees whether the agency is in its
+The agency's subscription to Granite (decision 0036): where the Owner sees whether the agency is in its
 free days, subscribed, behind on a payment or canceled, when the next charge comes, and goes to Stripe
 to start, pay, change or cancel. Granite never shows a card form.
 

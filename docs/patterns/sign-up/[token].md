@@ -1,6 +1,6 @@
 # Pattern: Set your password (`/sign-up/[token]`)
 
-Status: adopted — decision 0035 (2026-10-17)
+Status: adopted — decision 0036 (2026-10-17)
 Reference product and screen: Stripe — the account's email is verified from the link Stripe sends, then
 the account is used; GitHub — an invitation page (the new password twice, then two-factor before access
 when it is required) as Granite's invite page already reproduces it (`invite/[token].md`); GitHub —

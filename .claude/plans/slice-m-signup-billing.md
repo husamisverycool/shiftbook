@@ -1,4 +1,4 @@
-# Slice (m) — agencies sign themselves up and pay monthly (decision 0035)
+# Slice (m) — agencies sign themselves up and pay monthly (decision 0036)
 
 Status: in progress (2026-10-17)
 
@@ -21,10 +21,10 @@ Today every agency is made by a command and nobody pays. After this slice:
   Billing. The demo never talks to Stripe: its billing page shows "Active (demo)".
 
 ## Steps (tests first in each)
-1. Record and plan: `docs/decisions/0035-self-serve-sign-up-and-stripe-billing.md` (plain fetch, no
+1. Record and plan: `docs/decisions/0036-self-serve-sign-up-and-stripe-billing.md` (plain fetch, no
    Stripe package; the API version pinned), pattern files for the new pages (references captured as
    screenshots outside the repo).
-2. Storage: `drizzle/0041_signup_and_billing.sql` — `signup_requests` (sign-in mode only),
+2. Storage: `drizzle/0043_signup_and_billing.sql` — `signup_requests` (sign-in mode only),
    `agency_subscriptions` (per agency, row-level security like the other tenant tables, in
    `TENANT_TABLES`), `billing_events` (Stripe event ids already handled), and two narrow
    SECURITY DEFINER functions: a verified sign-up link creates its agency; a Stripe customer id finds
