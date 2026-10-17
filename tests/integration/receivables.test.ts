@@ -19,6 +19,7 @@ import { createRunFiles } from "../../src/server/files/service";
 import { invoiceBalances } from "../../src/server/receivables/balances";
 import { bankRows, guessMapping } from "../../src/server/receivables/bank-csv";
 import { bankView, clientReceivables, invoiceReceivables, paymentsList, receivablesView } from "../../src/server/receivables/queries";
+import { agencyToday } from "../../src/server/settings";
 import { applyCredit, applyInvoiceCredit, excludeLine, importBankFile, includeLine, recordPayment, recordReminder, setShortPay, undoLine, voidPayment, writeOff } from "../../src/server/receivables/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -133,8 +134,10 @@ describe("short pays and write-offs (H4)", () => {
     expect(await inAgency((tx) => writeOff(tx, coordinator, invoice.id, { amountCents: 2500, reason: "small_balance" }))).toEqual({ ok: false, error: "not_allowed" });
     expect(await inAgency((tx) => writeOff(tx, theOwner, invoice.id, { amountCents: 2500, reason: "small_balance", note: "Not worth chasing" }))).toEqual({ ok: true });
     expect(await balanceOf()).toMatchObject({ balanceCents: 0, writtenOffCents: 2500, paidOffOn: null, shortPaid: false });
-    expect((await inAgency((tx) => receivablesView(tx, "2026-10-16"))).shortPaid).toEqual([]);
-    expect((await inAgency((tx) => clientReceivables(tx, PLM, "2026-10-16"))).daysToPay.invoices).toBe(0);
+    // The write-off is dated the agency's today, so the books are read as of then.
+    const today = await inAgency((tx) => agencyToday(tx));
+    expect((await inAgency((tx) => receivablesView(tx, today))).shortPaid).toEqual([]);
+    expect((await inAgency((tx) => clientReceivables(tx, PLM, today))).daysToPay.invoices).toBe(0);
   });
 
   it("a write-off is kept: a real agency cannot remove it, nor a payment", async () => {
