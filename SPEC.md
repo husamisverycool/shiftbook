@@ -139,7 +139,9 @@ disputes become adjustment proposals.
 - **Blocking checks:** unmatched entries; entries outside assignment dates; missing rate; unknown
   jurisdiction; negative or zero pay; missing payroll file number for the target system; pay below
   the applicable minimum wage; client approval missing where required; any mismatch between
-  pay-line and bill-line minutes.
+  pay-line and bill-line minutes. A rate card below the minimum wage never pays below it: the engine
+  tops every such hour up to that day's minimum on its own line and warns to fix the rate card (the
+  approved golden "below-minimum-wage-topped-up"), which satisfies this check.
 - **Warnings:** overtime spike versus prior week; worker approaching 720 hours.
 - Approval snapshots inputs, rules version and outputs; corrections create a new run version.
 

@@ -28,6 +28,17 @@ const RateSchema = z
     otMultiplier: fraction,
     dtMultiplier: fraction,
     wcClassCode: z.string().max(12).nullable(),
+    terms: z
+      .object({
+        differential: z
+          .object({ name: z.string().max(60), payCents: whole, billCents: whole, startMinute: whole.nullable(), endMinute: whole.nullable(), days: z.array(whole).max(7) })
+          .strict()
+          .nullable(),
+        contractMinimumMinutes: whole.nullable(),
+        billsContractMinimum: z.boolean(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 const JobOrderSchema = z

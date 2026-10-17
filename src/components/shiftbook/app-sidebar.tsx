@@ -178,6 +178,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <HandCoinsIcon />
                 {t("collections")}
               </DropdownMenuItem>
+              {/* Slice G2: the agency's and each client's holiday policies (Gusto's holiday pay policy). */}
+              <DropdownMenuItem render={<Link href="/settings/holidays" />} data-testid="menu-holidays">
+                <CalendarDaysIcon />
+                {t("holidays")}
+              </DropdownMenuItem>
               {/* Decision 0040: every system Granite exchanges files with (Zapier's App Connections). */}
               <DropdownMenuItem render={<Link href="/settings/connections" />} data-testid="menu-connections">
                 <PlugIcon />

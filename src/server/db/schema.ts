@@ -427,6 +427,18 @@ export const rateCards = pgTable(
     dtMultiplierNum: integer("dt_multiplier_num").notNull(),
     dtMultiplierDen: integer("dt_multiplier_den").notNull(),
     wcClassCode: text("wc_class_code"),
+    /** A shift differential (drizzle/0062): its name, cents per hour paid and billed. */
+    diffName: text("diff_name"),
+    diffPayCents: integer("diff_pay_cents"),
+    diffBillCents: integer("diff_bill_cents"),
+    /** The window a shift's start must fall in (minutes after midnight; start > end wraps midnight); null: any time. */
+    diffStartMinute: integer("diff_start_minute"),
+    diffEndMinute: integer("diff_end_minute"),
+    /** Days of the week it applies (0 = Sunday); empty: every day. */
+    diffDays: integer("diff_days").array().notNull().default(sql`'{}'::integer[]`),
+    /** A contractual minimum day at the assignment, in minutes; billed when billsContractMinimum. */
+    contractMinimumMinutes: integer("contract_minimum_minutes"),
+    billsContractMinimum: boolean("bills_contract_minimum").notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [

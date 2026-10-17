@@ -23,7 +23,9 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import type { Say } from "@shiftbook/rules";
 import type { Spoken } from "@/lib/engine-say";
+import type { PayEventsView } from "@/server/run/pay-events";
 import { useEngineSay } from "../engine-say";
+import { PayEvents } from "./pay-events";
 import { hoursMinutes, money, signedHours, signedMoney } from "../format";
 import { useDateTime } from "../agency-zone";
 
@@ -49,6 +51,10 @@ export interface TotalsData {
   canApprove: boolean;
   /** A correction: its differences against the paid version it corrects (slice e). */
   correction: CorrectionData | null;
+  /** Missed meals and rests, short days, holidays not worked and bonuses entered for the period. */
+  payEvents?: PayEventsView;
+  /** The reader may enter pay events (the hours ability). */
+  canEnterPay?: boolean;
 }
 
 export interface CorrectionData {
@@ -224,6 +230,8 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
           </Tabs>
         </>
       )}
+
+      {data.payEvents && <PayEvents periodId={periodId} data={data.payEvents} canEdit={!locked && data.canEnterPay === true} />}
 
       <Dialog open={unapproving} onOpenChange={setUnapproving}>
         <DialogContent>

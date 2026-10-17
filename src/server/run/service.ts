@@ -16,7 +16,7 @@ import { equalPayExplain, sayInEnglish } from "../compliance/explain-keys";
 import type { Explain } from "../../lib/explain";
 import { createHash } from "node:crypto";
 import { hoursMinutes } from "../../components/shiftbook/format";
-import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Say, type Shift, type Weekday } from "@shiftbook/rules";
+import { addDays, addMonths, computePay, coveredByEqualPay, latestRequest, rateInForce, formatCents, NO_PLACE, RULES_VERSION, WORKED_TIME, workweekStart, type Bonus, type Confirmation, type Differential, type HolidayPolicy, type HoursWorked, type Issue, type JurisdictionRule, type MinimumWageRule, type ObligationKind, type OvertimeRule, type PayInput, type Say, type Shift, type Weekday } from "@shiftbook/rules";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, or } from "drizzle-orm";
 import { ExportError } from "../../exports/errors";
 import { fieldglassUpload } from "../../exports/invoice-files";
@@ -28,6 +28,7 @@ import { equalPayRatesOnFile } from "../compliance/equal-pay-rates";
 import { coveredHours, openingBalances } from "../compliance/hours";
 import { SYSTEM } from "../compliance/sync";
 import * as s from "../db/schema";
+import { contractTermsOf, differentialFor } from "./rate-terms";
 import type { ExportPayLine } from "../../exports/registry";
 import { makesVms, planEntries, vmsInput } from "../files/invoice-documents";
 import { billDifferences, fileTextInputs, planCorrectionInvoices, planInvoices } from "../files/invoice-plan";
@@ -229,6 +230,8 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
   };
 }
 
+const withDifferential = (d: Differential | undefined): { differential?: Differential } => (d ? { differential: d } : {});
+
 /** A bill rate the rate card worked out from a markup carries its working onto the bill line (with its keys: decision 0030). */
 function billRateExplain(card: typeof s.rateCards.$inferSelect): { billRateExplain?: string; billRateSay?: Say } {
   if (card.markupBp === null) return {};
@@ -321,6 +324,9 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       billsPremiums: profile[0]!.billPremiums,
       billsGuarantees: profile[0]!.billGuarantees,
       dayAndTemporaryLabor: a.jobOrder.dayAndTemporaryLabor,
+      // The rate card's dated terms (drizzle/0062): a differential on shifts it covers, a minimum day.
+      ...withDifferential(differentialFor(card, date, base.startMinute)),
+      ...contractTermsOf(card),
     };
   };
 

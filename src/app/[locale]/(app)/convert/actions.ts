@@ -14,6 +14,7 @@ import { receiveUploads, type UploadResult } from "@/server/intake/upload";
 import { addEntry, approveEntries, confirmDistinctDay, editEntry, rejectEntry, restoreEntry, type EditError, type EntryChange } from "@/server/review/service";
 import { approveRun, unapproveRun } from "@/server/run/approval";
 import { discardCorrection, recordCorrectionDecision, removeCorrectionDecision, startCorrection, type CorrectionError } from "@/server/run/corrections";
+import { BONUS_KINDS, EVENT_KINDS, MAX_BONUS_CENTS, PayEventRefusedError, recordBonus, recordConfirmation, removePayEvent } from "@/server/run/pay-events";
 import { computeRun, setSkipped, SkipRefusedError } from "@/server/run/service";
 import { processQueuedDocuments } from "@/server/services";
 import { actorAllowedTo, currentActor } from "@/server/session";
@@ -324,3 +325,64 @@ export async function entryHistory(entryId: string): Promise<HistoryEvent[]> {
     .sort((a, b) => a.id - b.id)
     .map((r) => ({ at: r.occurredAt.toISOString(), actor: r.actorLabel, action: r.action, before: r.before, after: r.after, reason: r.reason }));
 }
+
+// ---------- pay events: missed meals and rests, short days, holidays not worked, bonuses (SPEC §9) ----------
+
+const EventSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("confirmation"),
+      workerId: id,
+      assignmentId: id,
+      workDate: isoDate,
+      kind: z.enum(EVENT_KINDS),
+      scheduledMinutes: z.number().int().min(1).max(1440).nullable(),
+      reassigned: z.boolean(),
+      reason: text,
+    })
+    .strict(),
+  z.object({ type: z.literal("bonus"), workerId: id, assignmentId: id, workweekStart: isoDate, amountCents: z.number().int().min(1).max(MAX_BONUS_CENTS), kind: z.enum(BONUS_KINDS), reason: text }).strict(),
+]);
+export type PayEventInput = z.infer<typeof EventSchema>;
+export type PayEventError = ActionError | PayEventRefusedError["code"];
+
+/** A person enters a pay event with a reason (audited); the totals are computed again. */
+export async function addPayEventAction(payPeriodId: string, input: PayEventInput): Promise<{ ok: true } | { error: PayEventError }> {
+  const actor = await actorAllowedTo("hours");
+  const parsed = EventSchema.safeParse(input);
+  if (!ok(id, payPeriodId) || !parsed.success) return { error: "stale" };
+  try {
+    return await guarded(async () => {
+      await withAgency(actor.agencyId, async (tx) => {
+        const e = parsed.data;
+        if (e.type === "confirmation") await recordConfirmation(tx, actor, payPeriodId, e);
+        else await recordBonus(tx, actor, payPeriodId, e);
+        await computeRun(tx, actor, payPeriodId);
+      });
+      refresh();
+      return { ok: true as const };
+    });
+  } catch (error) {
+    if (error instanceof PayEventRefusedError) return { error: error.code };
+    throw error;
+  }
+}
+
+export async function removePayEventAction(payPeriodId: string, event: { kind: "confirmation" | "bonus"; id: string }, reason: string): Promise<{ ok: true } | { error: PayEventError }> {
+  const actor = await actorAllowedTo("hours");
+  if (!ok(id, payPeriodId) || !ok(z.object({ kind: z.enum(["confirmation", "bonus"]), id }).strict(), event) || !ok(text, reason)) return { error: "stale" };
+  try {
+    return await guarded(async () => {
+      await withAgency(actor.agencyId, async (tx) => {
+        await removePayEvent(tx, actor, payPeriodId, event, reason);
+        await computeRun(tx, actor, payPeriodId);
+      });
+      refresh();
+      return { ok: true as const };
+    });
+  } catch (error) {
+    if (error instanceof PayEventRefusedError) return { error: error.code };
+    throw error;
+  }
+}
+

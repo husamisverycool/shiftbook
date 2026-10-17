@@ -178,6 +178,24 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
               <dt className="text-muted-foreground">{t("dt")}</dt>
               <dd className="tabular-nums">{multiplierText(shown.dtMultiplier)}</dd>
             </div>
+            <div>
+              <dt className="text-muted-foreground">{t("differential")}</dt>
+              <dd className="tabular-nums" data-testid="rate-differential">
+                {shown.terms.differential
+                  ? t("differentialShown", {
+                      name: shown.terms.differential.name,
+                      pay: money(shown.terms.differential.payCents, locale),
+                      bill: money(shown.terms.differential.billCents, locale),
+                      window: shown.terms.differential.startMinute === null ? t("anyTime") : `${minuteToTime(shown.terms.differential.startMinute)}–${minuteToTime(shown.terms.differential.endMinute)}`,
+                      days: shown.terms.differential.days.length === 0 ? t("everyDay") : shown.terms.differential.days.map((d) => t(`weekdays.${d}` as "weekdays.0")).join(", "),
+                    })
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t("contractMinimum")}</dt>
+              <dd className="tabular-nums">{shown.terms.contractMinimumMinutes ? t(shown.terms.billsContractMinimum ? "contractMinimumBilled" : "contractMinimumShown", { hours: String(shown.terms.contractMinimumMinutes / 60) }) : "—"}</dd>
+            </div>
           </dl>
           {shown.frozen && paidThrough && <p className="mt-3 text-xs text-muted-foreground">{t("frozenWhy", { date: longDate(paidThrough, locale) })}</p>}
         </div>
@@ -286,6 +304,16 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
   const [ot, setOt] = useState(base ? multiplierToInput(base.otMultiplier) : "1.5");
   const [dt, setDt] = useState(base ? multiplierToInput(base.dtMultiplier) : "2");
   const [wc, setWc] = useState(base?.wcClassCode ?? "");
+  const baseDiff = base?.terms.differential ?? null;
+  const [diffOn, setDiffOn] = useState(baseDiff !== null);
+  const [diffName, setDiffName] = useState(baseDiff?.name ?? "");
+  const [diffPay, setDiffPay] = useState(centsToInput(baseDiff?.payCents ?? null));
+  const [diffBill, setDiffBill] = useState(centsToInput(baseDiff?.billCents ?? null));
+  const [diffFrom, setDiffFrom] = useState(minuteToTime(baseDiff?.startMinute ?? null));
+  const [diffTo, setDiffTo] = useState(minuteToTime(baseDiff?.endMinute ?? null));
+  const [diffDays, setDiffDays] = useState<number[]>(baseDiff?.days ?? []);
+  const [minimum, setMinimum] = useState(base?.terms.contractMinimumMinutes ? String(base.terms.contractMinimumMinutes / 60) : "");
+  const [billsMinimum, setBillsMinimum] = useState(base?.terms.billsContractMinimum ?? false);
   const [reasons, setReasons] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -306,6 +334,13 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
     const dtM = parseMultiplier(dt);
     if (!otM) local.ot_multiplier = t("errors.ot_multiplier");
     if (!dtM) local.dt_multiplier = t("errors.dt_multiplier");
+    const diffPayCents = parseDollars(diffPay);
+    const diffBillCents = diffBill.trim() === "" ? 0 : parseDollars(diffBill);
+    const fromMinute = timeToMinute(diffFrom);
+    const toMinute = timeToMinute(diffTo);
+    if (diffOn && (diffName.trim() === "" || diffPayCents === null || diffBillCents === null || fromMinute === undefined || toMinute === undefined || (fromMinute === null) !== (toMinute === null))) local.differential = t("errors.differential");
+    const minimumMinutes = minimum.trim() === "" ? null : Math.round(Number(minimum) * 60);
+    if (minimumMinutes !== null && (!Number.isFinite(minimumMinutes) || minimumMinutes < 1 || minimumMinutes > 720 || Number(minimum) * 60 !== minimumMinutes)) local.contract_minimum = t("errors.contract_minimum");
     if (mode === "edit" && reasons.length === 0) local.reason = t("errors.reason_required");
     if (mode === "edit" && reasons.includes("other") && note.trim() === "") local.reason = t("errors.note_required");
     setErrors(local);
@@ -317,6 +352,11 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
       otMultiplier: otM!,
       dtMultiplier: dtM!,
       wcClassCode: wc.trim() || null,
+      terms: {
+        differential: diffOn ? { name: diffName.trim(), payCents: diffPayCents!, billCents: diffBillCents!, startMinute: fromMinute ?? null, endMinute: toMinute ?? null, days: diffDays } : null,
+        contractMinimumMinutes: minimumMinutes,
+        billsContractMinimum: minimumMinutes !== null && billsMinimum,
+      },
     };
     run(async () => {
       const r = mode === "edit" && base ? await editRateAction(base.id, input, reasons, note) : await addRateAction(cardRef, input);
@@ -396,6 +436,59 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
             <Input id="rate-wc" value={wc} onChange={(e) => setWc(e.target.value)} {...aria("wc_class_code")} />
             {err("wc_class_code")}
           </div>
+          <fieldset className="flex flex-col gap-3 sm:col-span-2">
+            <legend className="mb-1 text-sm font-medium">{t("differential")}</legend>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={diffOn} onCheckedChange={(on) => setDiffOn(on === true)} data-testid="rate-diff-on" />
+              {t("differentialOn")}
+            </label>
+            {diffOn && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <Label htmlFor="rate-diff-name">{t("differentialName")}</Label>
+                  <Input id="rate-diff-name" placeholder={t("differentialNameHint")} value={diffName} onChange={(e) => setDiffName(e.target.value)} {...aria("differential")} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="rate-diff-pay">{t("differentialPay")}</Label>
+                  <Input id="rate-diff-pay" inputMode="decimal" value={diffPay} onChange={(e) => setDiffPay(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="rate-diff-bill">{t("differentialBill")}</Label>
+                  <Input id="rate-diff-bill" inputMode="decimal" placeholder="0.00" value={diffBill} onChange={(e) => setDiffBill(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="rate-diff-from">{t("differentialFrom")}</Label>
+                  <Input id="rate-diff-from" type="time" value={diffFrom} onChange={(e) => setDiffFrom(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="rate-diff-to">{t("differentialTo")}</Label>
+                  <Input id="rate-diff-to" type="time" value={diffTo} onChange={(e) => setDiffTo(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="text-sm font-medium">{t("differentialDays")}</span>
+                  <div className="flex flex-wrap gap-3">
+                    {[0, 1, 2, 3, 4, 5, 6].map((d) => (
+                      <label key={d} className="flex items-center gap-1.5 text-sm">
+                        <Checkbox checked={diffDays.includes(d)} onCheckedChange={(on) => setDiffDays((cur) => (on ? [...cur, d] : cur.filter((x) => x !== d)))} />
+                        {t(`weekdays.${d}` as "weekdays.0")}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("differentialHelp")}</p>
+                </div>
+              </div>
+            )}
+            {err("differential")}
+          </fieldset>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rate-minimum">{t("contractMinimum")}</Label>
+            <Input id="rate-minimum" inputMode="decimal" placeholder="4" value={minimum} onChange={(e) => setMinimum(e.target.value)} {...aria("contract_minimum")} data-testid="rate-minimum" />
+            {err("contract_minimum") ?? <p className="text-xs text-muted-foreground">{t("contractMinimumHelp")}</p>}
+          </div>
+          <label className="flex items-center gap-2 self-center text-sm">
+            <Checkbox checked={billsMinimum} disabled={minimum.trim() === ""} onCheckedChange={(on) => setBillsMinimum(on === true)} />
+            {t("billsContractMinimum")}
+          </label>
           {mode === "edit" && (
             <fieldset className="flex flex-col gap-2 sm:col-span-2">
               <legend className="mb-1 text-sm font-medium">{t("reasonLabel")}</legend>
@@ -421,4 +514,17 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
       </DialogContent>
     </Dialog>
   );
+}
+
+/** 540 → "09:00"; null → "". */
+function minuteToTime(m: number | null): string {
+  return m === null ? "" : `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+/** "09:00" → 540; "" → null; anything else → undefined. */
+function timeToMinute(text: string): number | null | undefined {
+  if (text.trim() === "") return null;
+  const m = /^(\d{2}):(\d{2})$/.exec(text.trim());
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return undefined;
+  return Number(m[1]) * 60 + Number(m[2]);
 }

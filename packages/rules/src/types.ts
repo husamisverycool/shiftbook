@@ -92,6 +92,20 @@ export interface Shift {
   billsPremiums?: boolean;
   /** The client's billing profile bills minimum pay for a short day (at the bill rate). Default no. */
   billsGuarantees?: boolean;
+  /** A shift differential the rate card pays on this shift (night, weekend…); in the regular rate. */
+  differential?: Differential;
+  /** The rate card's contractual minimum day at this assignment, in minutes (e.g. 240). */
+  contractMinimumMinutes?: number;
+  /** The rate card bills the contractual minimum to the client (at the bill rate). Default no. */
+  billsContractMinimum?: boolean;
+}
+
+/** A shift differential from the rate card: cents per hour paid, and billed (0: not billed). */
+export interface Differential {
+  /** The rate card's name for it ("Night", "Weekend"). */
+  name: string;
+  payCentsPerHour: number;
+  billCentsPerHour: number;
 }
 
 export interface OvertimeRule {

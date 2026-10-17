@@ -6,7 +6,7 @@ import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { cardPaidThrough } from "./rate-cards";
-import { inForce, isFrozen } from "./versions";
+import { inForce, isFrozen, type RateTerms } from "./versions";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const fullName = (w: { firstName: string; lastName: string }) => `${w.firstName} ${w.lastName}`;
@@ -32,6 +32,8 @@ export interface RateVersionView {
   otMultiplier: { num: number; den: number };
   dtMultiplier: { num: number; den: number };
   wcClassCode: string | null;
+  /** The differential and minimum day (drizzle/0062). */
+  terms: RateTerms;
   /** Used by a paid week: never edited or deleted, only followed by a new version. */
   frozen: boolean;
 }
@@ -46,6 +48,14 @@ const versionView = (v: typeof s.rateCards.$inferSelect, paid: string | null): R
   otMultiplier: { num: v.otMultiplierNum, den: v.otMultiplierDen },
   dtMultiplier: { num: v.dtMultiplierNum, den: v.dtMultiplierDen },
   wcClassCode: v.wcClassCode,
+  terms: {
+    differential:
+      v.diffName !== null && v.diffPayCents !== null
+        ? { name: v.diffName, payCents: v.diffPayCents, billCents: v.diffBillCents ?? 0, startMinute: v.diffStartMinute, endMinute: v.diffEndMinute, days: v.diffDays }
+        : null,
+    contractMinimumMinutes: v.contractMinimumMinutes,
+    billsContractMinimum: v.billsContractMinimum,
+  },
   frozen: isFrozen(v, paid),
 });
 

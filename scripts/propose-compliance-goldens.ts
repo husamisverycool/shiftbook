@@ -95,6 +95,8 @@ export function proposeCompliance(out: string, writes: (name: string) => boolean
     [
       ["ma_job_order", "", "2026-10-11", "2026-10-11", false, false],
       ["nj_language_notice", "", "2026-10-12", "2026-10-12", false, false],
+      // New Jersey day-one equal pay (N.J.S.A. 34:8D-7(b)): confirmed by the start, reminded a week before.
+      ["nj_equal_pay_check", "", "2026-10-12", "2026-10-05", false, false],
     ],
   );
 

@@ -35,10 +35,12 @@ import { MA_REPORTING_PAY, maReportingPay } from "./rules/ma-reporting-pay";
 import { guaranteeRuleFor, PREMIUM_OF, premiumRuleFor } from "./rules/meal-rest-premium";
 import { HOLIDAY_NOT_WORKED, HOLIDAY_NOT_WORKED_CITATION, HOLIDAY_WORKED, HOLIDAY_WORKED_CITATION, holidayTermsFor, premiumCountsInRegularRate, premiumExclusionOn, type HolidayTerms } from "./rules/holiday-pay";
 import { addWorth, alvaradoWorth, BONUS, BONUS_CITATION, CA_FLAT_SUM_BONUS, CA_FLAT_SUM_CITATION } from "./rules/bonus";
+import { CONTRACT_MINIMUM, CONTRACT_MINIMUM_CITATION, contractShortfall, MAX_CONTRACT_MINIMUM_MINUTES } from "./rules/contract-minimum";
+import { differentialEarned, differentialKey, differentialValid, SHIFT_DIFFERENTIAL, SHIFT_DIFFERENTIAL_CITATION } from "./rules/shift-differential";
 import { coveredByEqualPay, equalPayCounter } from "./rules/il-equal-pay";
 import { applyEqualPayRates, duplicateEqualPayRates, equalPayRateProblemSay } from "./rules/il-equal-pay-rate";
 import { andList, commaList, dateValue, english, nested, part as phrase, plusList, semicolonList, type EngineKey, type Say, type SayPart, type SayValue } from "./say";
-import type { Bonus, Confirmation, ConfirmationKind, EarningType, Fraction, HolidayPolicy, Issue, JurisdictionRule, Line, PayInput, PayResult, PremiumRule, Shift } from "./types";
+import type { Bonus, Confirmation, ConfirmationKind, Differential, EarningType, Fraction, HolidayPolicy, Issue, JurisdictionRule, Line, PayInput, PayResult, PremiumRule, Shift } from "./types";
 
 export const RULES_VERSION = "2026.10-c8";
 
@@ -133,6 +135,8 @@ function validShift(s: Shift): SayPart | null {
     }
   }
   if (!BILLING_RULES.has(s.otBillingRule)) return phrase("problemBillingRule", { rule: String(s.otBillingRule) });
+  if (s.differential !== undefined && (s.differential === null || typeof s.differential !== "object" || !differentialValid(s.differential))) return phrase("problemDifferential");
+  if (s.contractMinimumMinutes !== undefined && (!Number.isSafeInteger(s.contractMinimumMinutes) || s.contractMinimumMinutes < 0 || s.contractMinimumMinutes > MAX_CONTRACT_MINIMUM_MINUTES)) return phrase("problemContractMinimum");
   return null;
 }
 
@@ -195,6 +199,8 @@ interface Bucket {
   holidayBill: { key: string; policy: HolidayPolicy; multiplier: Fraction; minutes: number; entries: string[] }[];
   /** How the bill rate came about on the regular and the overtime line: each distinct working (never splits a line). */
   billRate: { regular: BillRateWorking; overtime: BillRateWorking };
+  /** Minutes worked with a shift differential, by differential. */
+  diffs: { key: string; d: Differential; minutes: number; entries: string[]; dates: string[] }[];
 }
 
 /** A sentence given with a shift (a working, a reason), and its keys when they say exactly it. */
@@ -650,10 +656,12 @@ export function computePay(input: PayInput): PayResult {
       .filter(([s, t]) => t.pay !== null && premiumCountsInRegularRate(t.workedMultiplier, cutOffOf.get(s)!))
       .map(([s, t]) => ({ num: mul(s.minutes, effective(s), t.workedMultiplier.num - t.workedMultiplier.den), den: mul(60, t.workedMultiplier.den) }));
     const asCents = (bs: Bonus[]) => bs.map((b) => ({ num: b.amountCents, den: 1 }));
+    // Shift differentials are pay for the hours worked: in the regular rate (29 C.F.R. § 778.207(b)).
+    const differentials = shifts.filter((s) => s.differential && s.minutes > 0).map((s) => differentialEarned(s.minutes, s.differential!));
     // A week of reported days without work has no hours to average: its rate is the day's own.
     const rateWith = (extra: Fraction[]) => (hasHours ? regularRateWith(worked, extra) : { num: Math.max(...shifts.map(effective)), den: 1 });
-    const rrHourly = rateWith([...asCents(nondiscretionary), ...smallHolidayPremiums]);
-    const rrAll = rateWith([...asCents(nondiscretionary), ...smallHolidayPremiums, ...asCents(flat)]);
+    const rrHourly = rateWith([...differentials, ...asCents(nondiscretionary), ...smallHolidayPremiums]);
+    const rrAll = rateWith([...differentials, ...asCents(nondiscretionary), ...smallHolidayPremiums, ...asCents(flat)]);
     const nonOvertime = caSplits ? caSplits.reduce((sum, x) => sum + x.regular, 0) : 0;
     if (!rrHourly || !rrAll) {
       blockers.push({ code: "invalid_input", ...who, ...message([phrase("regularRateTooLarge", weekOf)]) });
@@ -664,7 +672,7 @@ export function computePay(input: PayInput): PayResult {
       continue;
     }
     let regularRate = caSplits ? rrHourly : rrAll;
-    const singleRate = new Set(worked.map((w) => w.payRateCents)).size === 1 && shifts.every((s) => s.payRateCents >= floorOf.get(s)!) && weekBonuses.length === 0 && smallHolidayPremiums.length === 0;
+    const singleRate = new Set(worked.map((w) => w.payRateCents)).size === 1 && shifts.every((s) => s.payRateCents >= floorOf.get(s)!) && weekBonuses.length === 0 && smallHolidayPremiums.length === 0 && differentials.length === 0;
 
     // California pays at least what the federal weekly rule would: both apply, so when the weekly
     // rule's premiums are worth more (a minimum wage rising mid-week, or a flat-sum bonus, can do it)
@@ -731,7 +739,7 @@ export function computePay(input: PayInput): PayResult {
       const { shift, regular } = split;
       const premium = premiumOf(split);
       const k = lineKey(shift);
-      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], overtimeParts: [], trueUps: [], holiday: [], holidayBill: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } }, payWhy: [] };
+      const b = buckets.get(k) ?? { key: k, assignmentId: shift.assignmentId, clientId: shift.clientId, firstIndex: index, sample: shift, regular: 0, overtime: 0, regularEntries: [], overtimeEntries: [], overtimeParts: [], trueUps: [], holiday: [], holidayBill: [], billRate: { regular: { explains: [], typed: false }, overtime: { explains: [], typed: false } }, payWhy: [], diffs: [] };
       if (shift.payRateExplain && !b.payWhy.some((x) => x.explain === shift.payRateExplain)) b.payWhy.push(worded(shift.payRateExplain, shift.payRateSay));
       if (regular > 0) noteWorking(b.billRate.regular, shift);
       if (premium > 0) noteWorking(b.billRate.overtime, shift);
@@ -767,6 +775,14 @@ export function computePay(input: PayInput): PayResult {
         h.entries.push(...shift.entryIds);
         if (!h.dates.includes(shift.date)) h.dates.push(shift.date);
       }
+      const d = shift.differential;
+      if (d && shift.minutes > 0) {
+        const dKey = differentialKey(d);
+        const x = b.diffs.find((y) => y.key === dKey) ?? b.diffs[b.diffs.push({ key: dKey, d, minutes: 0, entries: [], dates: [] }) - 1]!;
+        x.minutes += shift.minutes;
+        x.entries.push(...shift.entryIds);
+        if (!x.dates.includes(shift.date)) x.dates.push(shift.date);
+      }
       const bm = terms?.bill?.billWorkedMultiplier;
       if (terms?.bill && bm && bm.num > bm.den) {
         const bKey = JSON.stringify([terms.bill.clientId, terms.bill.name, bm]);
@@ -784,12 +800,18 @@ export function computePay(input: PayInput): PayResult {
     // What the regular rate is made of, for the explain strings.
     const straightEarned = reduce({ num: worked.reduce((sum, w) => sum + mul(w.minutes, w.payRateCents), 0), den: 60 });
     const smallHolidayTotal = smallHolidayPremiums.reduce((sum, f) => addWorth(sum, { num: BigInt(f.num), den: BigInt(f.den) }), { num: 0n, den: 1n });
+    const diffTotals = new Map<string, { num: bigint; den: bigint }>();
+    for (const s of shifts.filter((x) => x.differential && x.minutes > 0)) {
+      const e = differentialEarned(s.minutes, s.differential!);
+      diffTotals.set(s.differential!.name, addWorth(diffTotals.get(s.differential!.name) ?? { num: 0n, den: 1n }, { num: BigInt(e.num), den: BigInt(e.den) }));
+    }
     const inRate = [
+      ...[...diffTotals].sort((a, b) => cmp(a[0], b[0])).map(([name, w]) => nested(phrase("extraDifferential", { amount: formatMoney(reduceFractionBig(w.num, w.den)!), name }))),
       ...nondiscretionary.map((b) => nested(phrase("extraNondiscretionaryBonus", { amount: formatCents(b.amountCents) }))),
       ...(flatInRate ? flat.map((b) => nested(phrase("extraFlatSumBonus", { amount: formatCents(b.amountCents) }))) : []),
       ...(smallHolidayPremiums.length > 0 ? [nested(phrase("extraHolidayPremium", { amount: formatMoney(reduceFractionBig(smallHolidayTotal.num, smallHolidayTotal.den)!) }))] : []),
     ];
-    const inRateCitations = [...(nondiscretionary.length > 0 || flatInRate ? [BONUS_CITATION] : []), ...(smallHolidayPremiums.length > 0 ? ["29 C.F.R. § 778.203"] : [])];
+    const inRateCitations = [...(differentials.length > 0 ? [SHIFT_DIFFERENTIAL_CITATION] : []), ...(nondiscretionary.length > 0 || flatInRate ? [BONUS_CITATION] : []), ...(smallHolidayPremiums.length > 0 ? ["29 C.F.R. § 778.203"] : [])];
     for (const b of [...buckets.values()].sort((x, y) => x.firstIndex - y.firstIndex)) {
       const base = { workerId: first.workerId, assignmentId: b.assignmentId, clientId: b.clientId, workweekStart: week };
       const payRate: Fraction = { num: b.sample.payRateCents, den: 1 };
@@ -923,6 +945,18 @@ export function computePay(input: PayInput): PayResult {
         const why = phrase("billHolidayPremium", { multiplier: formatMultiplier(h.multiplier), policy: h.policy.name });
         if (bill.amountCents > 0) weekBill.push({ ...base, type: "HOL", minutes: h.minutes, rate, amountCents: bill.amountCents, ruleId: "bill_holiday_premium", ...explained([bill.part, why]), entryIds: uniqueSorted(h.entries) });
       }
+      // 6. shift differentials: on top of straight time and overtime, at the rate card's cents per hour.
+      for (const x of b.diffs) {
+        const rate: Fraction = { num: x.d.payCentsPerHour, den: 1 };
+        const pay = arithmetic([phrase("labelDifferential", { name: x.d.name })], x.minutes, rate);
+        const why = phrase("whyDifferential", { rule: SHIFT_DIFFERENTIAL, name: x.d.name, rate: formatRate(rate), dates: listDates(x.dates), citation: SHIFT_DIFFERENTIAL_CITATION });
+        if (pay.amountCents > 0) weekPay.push({ ...base, type: "DIFF", minutes: x.minutes, rate, amountCents: pay.amountCents, ruleId: SHIFT_DIFFERENTIAL, ...explained([pay.part, why]), entryIds: uniqueSorted(x.entries) });
+        if (x.d.billCentsPerHour > 0) {
+          const billDiff: Fraction = { num: x.d.billCentsPerHour, den: 1 };
+          const bill = arithmetic([phrase("labelBilledDifferential", { name: x.d.name })], x.minutes, billDiff);
+          if (bill.amountCents > 0) weekBill.push({ ...base, type: "DIFF", minutes: x.minutes, rate: billDiff, amountCents: bill.amountCents, ruleId: "bill_shift_differential", ...explained([bill.part, phrase("billDifferential", { name: x.d.name, rate: formatRate(billDiff) })]), entryIds: uniqueSorted(x.entries) });
+        }
+      }
     }
 
     // 6. confirmed premiums: an hour at the week's regular rate per confirmed missed period, capped per workday.
@@ -971,6 +1005,8 @@ export function computePay(input: PayInput): PayResult {
     // the Illinois day-labor minimum, New Jersey's sent-and-not-used minimum. Not hours worked; never
     // counted toward overtime.
     const shortDays = new Set<string>();
+    /** Minutes of minimum pay required by law already paid, per assignment and day (a contractual minimum counts them). */
+    const statutoryPaid = new Map<string, number>();
     for (const c of confirmed.filter((x) => x.kind === "reported_short")) {
       if (shortDays.has(`${c.assignmentId}|${c.date}`)) continue;
       shortDays.add(`${c.assignmentId}|${c.date}`);
@@ -1027,6 +1063,7 @@ export function computePay(input: PayInput): PayResult {
       const basisNote = rule.basis === "regular_rate" ? weekRegularRate : [phrase(sample.payRateCents < effective(sample) ? "noteMinimumWageThatDay" : sample.payRateExplain ? "noteEqualPayRate" : "noteAgreedPayRate")];
       const guaranteeWhy: Say = sample.payRateExplain ? [phrase("gap"), ...worded(sample.payRateExplain, sample.payRateSay).say] : [];
       const pay = arithmetic([phrase(dayLabor ? "labelDayLaborMinimum" : "labelReportingTimePay")], shortfall, rate, basisNote);
+      statutoryPaid.set(`${c.assignmentId}|${c.date}`, (statutoryPaid.get(`${c.assignmentId}|${c.date}`) ?? 0) + shortfall);
       weekPay.push({ workerId: first.workerId, assignmentId: c.assignmentId, clientId: sample.clientId, workweekStart: week, type, minutes: shortfall, rate, amountCents: pay.amountCents, ruleId: rule.ruleCode, ...explained([pay.part, story, ...guaranteeWhy]), entryIds: uniqueSorted(day.flatMap((s) => s.entryIds)) });
       if (sample.billsGuarantees === true) {
         const billRate: Fraction = { num: sample.billRateCents, den: 1 };
@@ -1035,6 +1072,40 @@ export function computePay(input: PayInput): PayResult {
       }
     }
     if (blockers.some((b) => b.workerId === first.workerId && b.workweekStart === week)) continue;
+
+    // 6. a contractual minimum day from the rate card: the shortfall at the pay rate, after any minimum
+    // pay the law requires for the same day. Not hours worked; never counted toward overtime.
+    const contractDays = new Map<string, Shift[]>();
+    for (const s of shifts.filter((x) => (x.contractMinimumMinutes ?? 0) > 0)) {
+      const k = `${s.assignmentId}|${s.date}`;
+      contractDays.set(k, [...(contractDays.get(k) ?? []), s]);
+    }
+    for (const [k, day] of [...contractDays].sort((a, b) => cmp(a[0], b[0]))) {
+      const sample = day[0]!;
+      const due = Math.max(...day.map((s) => s.contractMinimumMinutes ?? 0));
+      const worked = shifts.filter((s) => `${s.assignmentId}|${s.date}` === k).reduce((sum, s) => sum + s.minutes, 0);
+      const statutory = statutoryPaid.get(k) ?? 0;
+      const shortfall = contractShortfall(due, worked, statutory);
+      if (shortfall <= 0) continue;
+      const rate: Fraction = { num: effective(sample), den: 1 };
+      const pay = arithmetic([phrase("labelContractMinimum")], shortfall, rate, [phrase(sample.payRateCents < effective(sample) ? "noteMinimumWageThatDay" : sample.payRateExplain ? "noteEqualPayRate" : "noteAgreedPayRate")]);
+      const story = phrase("whyContractMinimum", {
+        rule: CONTRACT_MINIMUM,
+        due: time(due),
+        date: dated(sample.date),
+        worked: time(worked),
+        statutory: statutory > 0 ? nested(phrase("contractCountsStatutory", { paid: time(statutory) })) : "",
+        more: time(shortfall),
+        citation: CONTRACT_MINIMUM_CITATION,
+      });
+      const entryIds = uniqueSorted(day.flatMap((s) => s.entryIds));
+      weekPay.push({ workerId: first.workerId, assignmentId: sample.assignmentId, clientId: sample.clientId, workweekStart: week, type: "MIN_GUARANTEE", minutes: shortfall, rate, amountCents: pay.amountCents, ruleId: CONTRACT_MINIMUM, ...explained([pay.part, story]), entryIds });
+      if (sample.billsContractMinimum === true) {
+        const billRate: Fraction = { num: sample.billRateCents, den: 1 };
+        const bill = arithmetic([phrase("labelBilledContractMinimum")], shortfall, billRate);
+        weekBill.push({ workerId: first.workerId, assignmentId: sample.assignmentId, clientId: sample.clientId, workweekStart: week, type: "MIN_GUARANTEE", minutes: shortfall, rate: billRate, amountCents: bill.amountCents, ruleId: "bill_contract_minimum", ...explained([bill.part, phrase("billContractMinimum")]), entryIds });
+      }
+    }
 
     // 6. pay for a holiday not worked, confirmed by a person: pay, not hours worked.
     for (const { c, sample, terms } of holidaysNotWorked) {

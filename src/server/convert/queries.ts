@@ -3,6 +3,7 @@
  * totals step recomputes the run when hours changed since it was last computed.
  */
 import { desc, eq, inArray, and } from "drizzle-orm";
+import { payEventsView } from "../run/pay-events";
 import { WORKED_TIME } from "@shiftbook/rules";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
@@ -245,6 +246,8 @@ export async function totalsStep(tx: Tx, actor: Actor, payPeriodId: string) {
     blockers: groupIssues(run.blockers as RunIssue[]),
     warnings: groupIssues(run.warnings as RunIssue[]),
     skipped: run.skipped.map((x) => ({ ...x, name: nameOf.get(x.workerId) ?? x.workerId })).sort((a, b) => cmp(a.reason, b.reason) || cmp(a.name, b.name)),
+    payEvents: await payEventsView(tx, payPeriodId),
+    canEnterPay: can(actor, "hours"),
   };
 }
 

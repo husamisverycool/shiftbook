@@ -400,6 +400,13 @@
       "when": 1792180800000,
       "tag": "0058_integration",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1792181200000,
+      "tag": "0062_pay_events",
+      "breakpoints": true
     }
   ]
 }
