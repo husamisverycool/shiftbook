@@ -76,6 +76,8 @@ passkeys and the outside accounts they sign in with.
   it's you" when due; the row goes and a toast says so. A removed passkey never signs in again, and
   every other place the person is signed in is signed out (as a new password does).
 - Update password → saved; the other places they were signed in are signed out; a toast says so.
+  Setting a first password (a person who joined with Google or Microsoft) confirms it's them first,
+  as any new way in does (decision 0033, review L3).
 - Connect → back from the provider with a toast: connected; or already connected to another
   Shiftbook person; or the provider did not sign them in.
 

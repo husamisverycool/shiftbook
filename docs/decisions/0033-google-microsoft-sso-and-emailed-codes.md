@@ -56,10 +56,13 @@ What the references do (read 2026-10-16; wording never copied):
    `SHIFTBOOK_MICROSOFT_CLIENT_SECRET` (`docs/hosting-settings.md`). The redirect address to register
    with each is `<SHIFTBOOK_APP_URL>/api/auth/oidc/<google|microsoft|sso>/callback`. Scopes `openid
    email profile`.
-4. **The demo identity service** (demo mode only; every route answers 404 otherwise): under
-   `/api/demo/idp/<google|microsoft|sso>/…` a discovery document, an authorize step, a token endpoint
-   and published keys, with the same client code calling them over HTTP at the app's own address
-   (the request's, as the demo's email links are). Its page (`/sign-in/demo-provider/<provider>`)
+4. **The demo identity service** (demo mode only): a discovery document, an authorize step, a token
+   endpoint and published keys at the fixed address `https://identity.demo.shiftbook.invalid`
+   (RFC 6761: `.invalid` never resolves), which the same client code reaches IN-PROCESS through a
+   fetch that answers only that address (`demoFetch`) — never over the network, never at an address
+   taken from a request (revised after the security review, H1). Only the browser's step is a route
+   on the app, `/api/demo/idp/<google|microsoft|sso>/authorize` (404 outside demo mode). Its page
+   (`/sign-in/demo-provider/<provider>`)
    is Shiftbook's own plain page, saying it stands in for that provider in the demo, listing the demo
    people's addresses and one address that belongs to no member. It signs ID tokens (ES256) with a key
    made at run time (on first use, kept in memory, never written); client secrets are derived at run
@@ -74,7 +77,9 @@ What the references do (read 2026-10-16; wording never copied):
      a verified email equal to the invited email; (c) at sign-in, only if the provider asserts a
      **verified** email equal to an active member's: Google `email_verified` true; Microsoft only
      with `xms_edov` true (otherwise: "connect it from Your account first"); an agency's provider
-     `email_verified` true.
+     `email_verified` (or, on Entra ID, `xms_edov`) true. The first such link also needs a code sent to
+     that mailbox now, unless the provider hosts the mailbox itself; a person who already has another
+     identity from that provider is refused; every link is announced by email (security review H2).
    - An unverified email is refused as such before any lookup, so a provider that lets anyone type
      an email learns nothing about who has an account.
    - No sign-in ever creates a member or an agency. Suspended members are refused (their sessions
@@ -95,23 +100,93 @@ What the references do (read 2026-10-16; wording never copied):
    provider and the identity must be linked to a member of that agency, or carry a verified email
    equal to the member's; for every other email the page says SSO is not set up for it (the same
    answer whether the email exists or not). In demo mode the demo agency's SSO is on and points at
-   the demo stand-in ("sso"); other issuers cannot be saved in the demo.
+   the demo stand-in ("sso"); other issuers cannot be saved in the demo. (Tightened by the security
+   review: M2, L1, L5, L6.)
 8. **Emailed sign-in codes** (Linear's and Vercel's): type the email; an active member gets a
    six-digit code by the app's mail transport (the demo mailbox in demo mode, whose copy the page
    shows, as the reset page does). The code is stored only as an HMAC-SHA256 under a key derived
    from the app key and bound to the code's row; it lasts 10 minutes, works once, five wrong tries
-   end it, a newer code replaces it, and one is sent at most once a minute. The page answers the same
-   whether or not the email exists. A right code is a first factor; `nextStep` follows. The copy of
-   the email Shiftbook keeps hides the code.
+   end it, a newer code replaces it, and one is sent at most once a minute (and, after the security
+   review, at most five an hour and ten a day, M1). The page answers the same whether or not the
+   email exists. A right code is a first factor; `nextStep` follows. The copy of the email Shiftbook
+   keeps hides the code.
 9. **Wrong tries** count as wrong passwords do (decision 0025): the throttle per email and address
-   and per address covers wrong codes and refused provider sign-ins; a wrong code also counts toward
-   the person's day lock, and a locked person cannot use a code either.
+   and per address covers wrong codes and refused provider sign-ins. (Revised by the security review:
+   a wrong emailed code counts as a wrong authenticator code, M1; a provider's refusals are keyed by
+   the identity, L2.)
 10. **Audit**: `sign_in` with method `google`, `microsoft`, `sso` or `email_code`; refusals as
     `sign_in_failed` when a person is known; connecting and disconnecting as the activity log's
     "identity connected" / "identity disconnected" (an `update` of the person, as an SSN change is).
 11. **Storage** (`drizzle/0039_identities.sql`): `user_identities`, `email_sign_in_codes` (both read
     before the agency is known, so their row policy also admits sign-in mode, as `user_logins` does)
-    and `agency_sso` (fenced to the agency); `sessions.first_factor`.
+    and `agency_sso` (fenced to the agency); `sessions.first_factor`. `drizzle/0040_identity_hardening.sql`
+    gives each emailed code its purpose (`sign_in`, `link`, `confirm`) and moves the demo agency's SSO
+    issuer to the stand-in's fixed address.
+
+## Second opinion (security review of d45d9a2, 2026-10-17), fixed
+Each item has a test; file references are under `src/server/auth/` unless named.
+- **H1 — the demo trusted a provider at a caller-chosen address.** The demo's stand-in was called over
+  HTTP at the request's own Host. Now it is reached in-process (`demoFetch`, item 4): no server-side
+  address is ever built from a request. `originFrom` (src/server/request-info.ts) also takes the
+  scheme from X-Forwarded-Proto only when it says http or https, and a Host that is not a host name
+  (or a bracketed IPv6 address) with a port is no address. Tests: a flow started with a spoofed Host
+  completes with `fetch` stubbed to fail and never called; the in-process transport refuses every other
+  address; `originFrom` with odd schemes and Hosts.
+- **H2a — silent linking by email at sign-in.** The first link of a provider's identity at sign-in
+  now needs a six-digit code sent to the member's address (`/sign-in/link`: GitHub's device
+  verification by email; Slack binds existing members to SSO by email), unless the provider hosts that
+  mailbox: Google for `@gmail.com`, or its Workspace domain when `hd` equals the address's domain;
+  Microsoft with `xms_edov` true — the domain is verified in the user's own tenant, so that tenant hosts
+  it, and the authenticator code (or its setup) still follows for the Owner and Coordinators. An
+  agency's own provider never counts: its Owner controls what it asserts, so it could otherwise sign
+  in as any member; the first SSO sign-in of each member needs the code. An invite already proves the
+  mailbox (its link came there). The waiting link is sealed in a 10-minute httpOnly cookie
+  (`sb_link`) naming the code's row; the code works only for that link.
+- **H2b — a second account from the same provider.** A person who already has an identity from that
+  provider is refused ("other_identity": sign in with that one, or disconnect it first).
+- **H2c — every link is announced** by email to the person (`docs/patterns/_emails/identity-linked.md`,
+  GitHub's "added to your account" notice): from Your account, when joining, at sign-in.
+- **M1 — emailed codes.** A wrong code counts as a wrong authenticator code (10 in 15 minutes lock
+  codes for 15 minutes, 100 in a row for a day; recovery codes still open an authenticator), never the
+  password's count. Codes are capped per person (five an hour, ten a day, every purpose together) and
+  requests per address (30 an hour). Only a code actually sent replaces the pending one, so requests
+  beyond the caps void nothing: a stranger can at most use up a day's codes, never shut the owner out
+  of the code they hold. One pending code per purpose (not several at once): several would multiply a
+  guesser's chances.
+- **M2 — SSRF through an Owner's issuer.** Every call to a provider goes through `safeFetch`: https on
+  port 443 to a name (never an IP address, never credentials in the address), every address the name
+  resolves to must be public (RFC 6890's special-purpose ranges and IPv6 forms carrying IPv4 refused),
+  checked in the connection's own lookup so a name that later resolves inward (DNS rebinding) is
+  refused at that connection; answers at most 512 KiB and 10 seconds; no redirects. The endpoints a
+  discovery document names must be on the issuer's own host, except Google's and Microsoft's
+  documented hosts (`endpointHostsFor`, oidc-flow.ts). An issuer that is an IP address or resolves to
+  a private address is refused when saved ("issuer_private").
+- **L1** — the SSO lookup is capped at 20 per address in 15 minutes; in live mode a code request does
+  all its work after the response (the lookup included), so members and others answer alike; nothing
+  is recorded for an unknown address.
+- **L2** — a provider's refusals are counted by its identity (issuer and subject), not by the email it
+  shows.
+- **L3** — "confirm it's you" no longer skips a person with neither a password nor an authenticator:
+  they confirm with a code sent to their email (GitHub's emailed verification), before connecting or
+  disconnecting accounts, setting a first password, or any other sensitive change. It also closed a
+  hole: the password check used to accept anything from such a person. (Re-authenticating at the
+  provider with `prompt=login`, `max_age=0` and an `auth_time` check was considered: it depends on each
+  provider honouring it, and one emailed code covers everyone.)
+- **L4** — the code is never in the subject (inbox previews and notifications show subjects), and the
+  email says never to share it. The code is not bound to the browser that asked for it: it is a first
+  factor only (the authenticator still follows for the Owner and Coordinators), lasts 10 minutes, works
+  once and is limited as above; binding would not stop someone who tricks a person into reading it
+  out (their browser asked for it), so it would add a cookie without a defence.
+- **L5** — the SSO page is the Owner's: everyone else gets the same "not for your role" state as the
+  other Owner settings, and the agency menu lists it only for the Owner. A client secret has at least 16
+  characters.
+- **L6** — recorded limits and fixes: turning SSO on adds a way in and does not remove the others (a
+  "require SSO" switch, as Linear, Notion and Stripe offer, is a follow-up). Entra ID as an agency's
+  provider sends no `email_verified`: its app registration needs the optional `email` and `xms_edov`
+  claims, or members' first SSO sign-in is refused as unverified. An identity linked to a different
+  member of the same agency no longer signs in when another member typed their email. Both caches
+  (discovery documents and key sets) hold at most 64 entries, oldest out first, and a saved or switched
+  SSO configuration is read afresh.
 
 ## New dependency
 `jose` 6.2.12 (MIT, no dependencies; already in the lockfile under shadcn's MCP SDK): JWS
@@ -135,10 +210,10 @@ is where ID-token bugs come from (algorithm confusion, key selection).
   the four keys; nothing else changes. An agency's Owner registers
   `<SHIFTBOOK_APP_URL>/api/auth/oidc/sso/callback` with their provider.
 - The demo stand-in's signing key is new at each start: an ID token issued before a restart no
-  longer verifies (a person simply tries again).
+  longer verifies (a person simply tries again). Its issuers no longer depend on the app's address,
+  so an identity connected in the demo survives a change of port.
 - A provider compromise is the agency's risk for its own SSO (Stripe says so); Shiftbook still asks
   the authenticator code after it for the Owner and Coordinators.
-- Known limits, left as they are: a person who joined with Google or Microsoft has no password or
-  authenticator to "confirm it's you" with, so (as for anyone with neither, decision 0025) they are
-  not asked; the log line of an authenticator set up right after such a sign-in still reads
-  "password and a new authenticator" (the session's first factor is named only at the code step).
+- Known limit, left as it is: the log line of an authenticator set up right after a provider's
+  sign-in still reads "password and a new authenticator" (the session's first factor is named only at
+  the code step).

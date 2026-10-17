@@ -1,42 +1,52 @@
 "use client";
 
 // Pattern: docs/patterns/_components/confirm-access.md — GitHub's sudo mode: before a change to how one
-// signs in or to the agency's people, the password (or a code) again; then the change goes ahead.
+// signs in or to the agency's people, the password (or a code) again; then the change goes ahead. A
+// person with neither confirms with a code sent to their email (GitHub's emailed verification code;
+// decision 0033, review L3).
 import { useTranslations } from "next-intl";
-import { createContext, useCallback, useContext, useId, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { confirmAccessAction } from "@/app/[locale]/(auth)/actions";
+import { confirmByEmailCodeAction, sendConfirmCodeAction } from "@/app/[locale]/(auth)/identity-actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 /** What checks the password or code: "confirm it's you" itself, or a change that takes it along (decision 0032). */
-type Submit = (secret: string) => Promise<{ ok: true } | { ok: false; error: "invalid" | "locked" | "busy" }>;
+type Submit = (secret: string) => Promise<{ ok: true } | { ok: false; error: "invalid" | "locked" | "busy" | "too_many" }>;
 type Ask = (submit?: Submit) => Promise<boolean>;
 const Confirm = createContext<Ask | null>(null);
 
-export function ConfirmAccessProvider({ method, children }: { method: "code" | "password"; children: ReactNode }) {
+export function ConfirmAccessProvider({ method, children }: { method: "code" | "password" | "email"; children: ReactNode }) {
   const t = useTranslations("confirmAccess");
   const id = useId();
   const [open, setOpen] = useState(false);
   const [secret, setSecret] = useState("");
-  const [error, setError] = useState<"invalid" | "locked" | "busy" | null>(null);
+  const [error, setError] = useState<"invalid" | "locked" | "busy" | "too_many" | null>(null);
   // Plain state, not a transition: the change that asked is itself waiting in a transition, and React
   // would keep this one pending with it — after a wrong try, Confirm could never be pressed again.
   const [pending, setPending] = useState(false);
+  const [sending, startSend] = useTransition();
+  const [sent, setSent] = useState(false);
+  const [demoCopy, setDemoCopy] = useState<string | null>(null);
   const settle = useRef<((yes: boolean) => void) | null>(null);
-  const submitWith = useRef<Submit>(confirmAccessAction);
+  // A person with neither a password nor an authenticator confirms with the emailed code.
+  const byDefault: Submit = method === "email" ? confirmByEmailCodeAction : confirmAccessAction;
+  const submitWith = useRef<Submit>(byDefault);
 
   const ask = useCallback<Ask>(
     (submit) =>
       new Promise<boolean>((resolve) => {
-        submitWith.current = submit ?? confirmAccessAction;
+        submitWith.current = submit ?? byDefault;
         settle.current = resolve;
         setSecret("");
         setError(null);
+        setSent(false);
+        setDemoCopy(null);
         setOpen(true);
       }),
-    [],
+    [byDefault],
   );
   const finish = (yes: boolean) => {
     setOpen(false);
@@ -51,8 +61,41 @@ export function ConfirmAccessProvider({ method, children }: { method: "code" | "
         <DialogContent data-testid="confirm-access">
           <DialogHeader>
             <DialogTitle>{t("title")}</DialogTitle>
-            <DialogDescription>{t(method === "code" ? "bodyCode" : "bodyPassword")}</DialogDescription>
+            <DialogDescription>{t(method === "code" ? "bodyCode" : method === "email" ? "bodyEmail" : "bodyPassword")}</DialogDescription>
           </DialogHeader>
+          {method === "email" && (
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-fit"
+                disabled={sending}
+                onClick={() =>
+                  startSend(async () => {
+                    const r = await sendConfirmCodeAction();
+                    if (r.ok) {
+                      setSent(true);
+                      setError(null);
+                      setDemoCopy(r.demoCopy);
+                    } else setError("too_many");
+                  })
+                }
+                data-testid="confirm-send-code"
+              >
+                {sending ? t("sending") : sent ? t("sendAgain") : t("sendCode")}
+              </Button>
+              {sent && (
+                <p role="status" className="text-sm text-muted-foreground">
+                  {t("sent")}
+                </p>
+              )}
+              {demoCopy && (
+                <div tabIndex={0} aria-label={t("demoCopy")} className="max-h-40 overflow-auto rounded-md border p-2 text-xs whitespace-pre-wrap outline-none focus-visible:ring-2 focus-visible:ring-ring" data-testid="confirm-demo-copy">
+                  {demoCopy}
+                </div>
+              )}
+            </div>
+          )}
           <form
             className="flex flex-col gap-4"
             noValidate
@@ -76,12 +119,12 @@ export function ConfirmAccessProvider({ method, children }: { method: "code" | "
             }}
           >
             <div className="flex flex-col gap-2">
-              <Label htmlFor={`${id}-secret`}>{t(method === "code" ? "code" : "password")}</Label>
+              <Label htmlFor={`${id}-secret`}>{t(method === "code" ? "code" : method === "email" ? "emailCode" : "password")}</Label>
               <Input
                 id={`${id}-secret`}
                 type={method === "password" ? "password" : "text"}
                 autoComplete={method === "password" ? "current-password" : "one-time-code"}
-                inputMode={method === "code" ? "text" : undefined}
+                inputMode={method === "code" ? "text" : method === "email" ? "numeric" : undefined}
                 value={secret}
                 onChange={(e) => setSecret(e.target.value)}
                 aria-invalid={error ? true : undefined}

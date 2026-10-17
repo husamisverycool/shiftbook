@@ -2,7 +2,9 @@
  * The demo's stand-in identity providers (decision 0033): Google, Microsoft and the demo agency's
  * single sign-on, played by the app itself so the demo makes no outside call while the sign-in code
  * runs exactly as it would against the real ones (discovery, authorize, token, published keys, a
- * signed ID token). Demo mode only; the routes answer 404 otherwise.
+ * signed ID token). The server reaches discovery, token and keys IN-PROCESS through demoFetch — never
+ * over the network, never at an address taken from a request (review H1); only the browser's step,
+ * choosing an account, is a route on the app (demo mode only; 404 otherwise).
  *
  * Its signing key is made when the server starts (ES256) and kept in memory; the codes it hands out
  * are sealed under the app key, last two minutes and work once.
@@ -11,7 +13,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { exportJWK, generateKeyPair, SignJWT, type JWK } from "jose";
 import { DEMO_OWNER, RECRUITERS, STAFF } from "../demo/dataset";
 import { appKey, sameText, seal, unseal, type Sealed } from "./crypto";
-import { DEMO_IDP_PATH, DEMO_TENANT_ID, demoClientId, demoClientSecret, demoIssuer } from "./demo-idp-config";
+import { DEMO_IDP_ORIGIN, DEMO_TENANT_ID, demoClientId, demoClientSecret, demoIssuer } from "./demo-idp-config";
 import { pkceChallenge, TENANT_PLACEHOLDER, type ProviderId } from "./oidc";
 
 /** The accounts the stand-in offers: the demo people, and one address that belongs to no member. */
@@ -48,10 +50,10 @@ export async function demoJwks(): Promise<{ keys: JWK[] }> {
 
 // ---------- discovery ----------
 
-export function demoDiscovery(base: string, provider: ProviderId): Record<string, unknown> {
-  const root = `${base}${DEMO_IDP_PATH}/${provider}`;
+export function demoDiscovery(provider: ProviderId): Record<string, unknown> {
+  const root = `${DEMO_IDP_ORIGIN}/${provider}`;
   return {
-    issuer: provider === "microsoft" ? `${base}${DEMO_IDP_PATH}/microsoft/${TENANT_PLACEHOLDER}/v2.0` : demoIssuer(base, provider),
+    issuer: provider === "microsoft" ? `${DEMO_IDP_ORIGIN}/microsoft/${TENANT_PLACEHOLDER}/v2.0` : demoIssuer(provider),
     authorization_endpoint: `${root}/authorize`,
     token_endpoint: `${root}/token`,
     jwks_uri: `${root}/jwks`,
@@ -61,9 +63,12 @@ export function demoDiscovery(base: string, provider: ProviderId): Record<string
     code_challenge_methods_supported: ["S256"],
     token_endpoint_auth_methods_supported: ["client_secret_post"],
     scopes_supported: ["openid", "email", "profile"],
-    claims_supported: ["iss", "sub", "aud", "exp", "iat", "nonce", "email", "email_verified", "name", ...(provider === "microsoft" ? ["tid", "oid", "xms_edov"] : [])],
+    claims_supported: ["iss", "sub", "aud", "exp", "iat", "nonce", "email", "email_verified", "name", ...(provider === "microsoft" ? ["tid", "oid", "xms_edov"] : provider === "google" ? ["hd"] : [])],
   };
 }
+
+/** The demo agency's addresses are "hosted" by the stand-in Google (a Workspace domain, hd). */
+const DEMO_HOSTED_DOMAIN = DEMO_OWNER.email.slice(DEMO_OWNER.email.indexOf("@") + 1);
 
 // ---------- authorize ----------
 
@@ -145,7 +150,7 @@ function firstUse(jti: string, now: Date): boolean {
 }
 
 /** The token endpoint: the client's credentials, the code (once), PKCE, then a signed ID token. */
-export async function demoToken(form: URLSearchParams, base: string, provider: ProviderId, now: Date): Promise<{ status: number; body: Record<string, unknown> }> {
+export async function demoToken(form: URLSearchParams, provider: ProviderId, now: Date): Promise<{ status: number; body: Record<string, unknown> }> {
   const refuse = (error: string) => ({ status: 400, body: { error } });
   if (form.get("grant_type") !== "authorization_code") return refuse("unsupported_grant_type");
   if (form.get("client_id") !== demoClientId(provider) || !sameText(form.get("client_secret") ?? "", demoClientSecret(provider))) return { status: 401, body: { error: "invalid_client" } };
@@ -158,10 +163,13 @@ export async function demoToken(form: URLSearchParams, base: string, provider: P
   const account = DEMO_IDP_ACCOUNTS.find((a) => a.email === grant.email)!;
   const claims: Record<string, unknown> = { nonce: grant.nonce, email: account.email, ...(account.name ? { name: account.name } : {}) };
   if (provider === "microsoft") Object.assign(claims, { tid: DEMO_TENANT_ID, oid: demoSubject("microsoft-oid", account.email), preferred_username: account.email, xms_edov: true });
-  else claims.email_verified = true;
+  else {
+    claims.email_verified = true;
+    if (provider === "google" && account.email.endsWith(`@${DEMO_HOSTED_DOMAIN}`)) claims.hd = DEMO_HOSTED_DOMAIN;
+  }
   const idToken = await new SignJWT(claims)
     .setProtectedHeader({ alg: "ES256", kid: key.kid, typ: "JWT" })
-    .setIssuer(demoIssuer(base, provider))
+    .setIssuer(demoIssuer(provider))
     .setAudience(grant.clientId)
     .setSubject(demoSubject(provider, account.email))
     .setIssuedAt(Math.floor(now.getTime() / 1000))
@@ -169,3 +177,28 @@ export async function demoToken(form: URLSearchParams, base: string, provider: P
     .sign(key.privateKey);
   return { status: 200, body: { access_token: randomBytes(24).toString("base64url"), token_type: "Bearer", expires_in: 300, id_token: idToken } };
 }
+
+// ---------- the server's way to the stand-in: in-process, nowhere else ----------
+
+const bodyText = (body: RequestInit["body"]) => (typeof body === "string" ? body : body instanceof URLSearchParams ? body.toString() : "");
+
+/**
+ * A fetch that reaches only the stand-in, in this process: discovery, the published keys and the
+ * token endpoint at DEMO_IDP_ORIGIN. Any other address is refused — the demo makes no outside call.
+ */
+export const demoFetch = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  if (url.origin !== DEMO_IDP_ORIGIN) throw new TypeError("The demo makes no outside call: only the stand-in identity provider is reachable.");
+  const [provider = "", ...rest] = url.pathname.slice(1).split("/");
+  const path = rest.join("/");
+  if (!isDemoProvider(provider)) return new Response("Not found", { status: 404 });
+  const method = (init?.method ?? "GET").toUpperCase();
+  const discovery = provider === "microsoft" ? "common/v2.0/.well-known/openid-configuration" : ".well-known/openid-configuration";
+  if (method === "GET" && path === discovery) return Response.json(demoDiscovery(provider));
+  if (method === "GET" && path === "jwks") return Response.json(await demoJwks());
+  if (method === "POST" && path === "token") {
+    const answer = await demoToken(new URLSearchParams(bodyText(init?.body)), provider, new Date());
+    return Response.json(answer.body, { status: answer.status });
+  }
+  return new Response("Not found", { status: 404 });
+}) as typeof fetch;

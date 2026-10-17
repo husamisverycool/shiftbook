@@ -36,8 +36,9 @@ password, perform two-factor authentication (2FA), or verify a new device"
      (wrong tries counted). A recent sign-in — which also sets the session's confirmation time — or a
      confirmation given for something else is not enough. The challenge issued is that
      confirmation's only use (once, five minutes, for that person). So a session held for a moment by
-     someone else cannot leave a passkey behind. Not asked in the demo's shared "Continue as" sessions
-     nor of someone with neither a password nor an authenticator (only the demo people), as before.
+     someone else cannot leave a passkey behind. Not asked in the demo's shared "Continue as" sessions.
+     Someone with neither a password nor an authenticator (who joined with Google or Microsoft,
+     decision 0033) gives a code emailed to them for that passkey, as for "confirm it's you".
    - **The person is emailed** each time a passkey is added (`docs/patterns/_emails/passkey-added.md`,
      GitHub's security notice): which passkey, when, and what to do if it was not them; through the
      agency's mail transport (the demo mailbox in demo mode), kept with the agency's other emails.

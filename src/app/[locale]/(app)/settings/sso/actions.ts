@@ -5,9 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { authDeps } from "@/server/auth/deps";
 import { saveSsoSettings, setSsoEnabled, type SsoError } from "@/server/auth/identities";
-import { issuerAnswers } from "@/server/auth/oidc-flow";
-import { requestOrigin } from "@/server/request-info";
-import { linkBaseUrl } from "@/server/services";
+import { checkIssuer } from "@/server/auth/oidc-flow";
 import { actorAllowedTo, isDemo, mustConfirmNow } from "@/server/session";
 
 export type SsoResult = { ok: true } | { ok: false; error: SsoError | "confirm" | "generic" };
@@ -20,7 +18,8 @@ export async function saveSsoAction(input: unknown): Promise<SsoResult> {
   if (await mustConfirmNow()) return { ok: false, error: "confirm" };
   const parsed = SaveSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "generic" };
-  const r = await saveSsoSettings(authDeps(), actor, parsed.data, { demoMode: isDemo(), baseUrl: linkBaseUrl(await requestOrigin()), check: issuerAnswers });
+  const demoMode = isDemo();
+  const r = await saveSsoSettings(authDeps(), actor, parsed.data, { demoMode, check: (issuer) => checkIssuer(issuer, { demoMode }) });
   refresh();
   return r;
 }

@@ -15,7 +15,7 @@ export function SsoSignInView({ email: initialEmail, next }: { email: string; ne
   const t = useTranslations("sso.signIn");
   const id = useId();
   const [email, setEmail] = useState(initialEmail);
-  const [error, setError] = useState<"not_set_up" | "failed" | null>(null);
+  const [error, setError] = useState<"not_set_up" | "failed" | "too_many" | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [pending, start] = useTransition();
   const busy = pending || leaving;
@@ -63,7 +63,7 @@ export function SsoSignInView({ email: initialEmail, next }: { email: string; ne
         </div>
         {error && (
           <div id={`${id}-error`} role="alert" className="flex flex-col gap-1 text-sm" data-testid="sso-error">
-            <p className="text-destructive">{t(error === "failed" ? "failed" : "notSetUp")}</p>
+            <p className="text-destructive">{t(error === "failed" ? "failed" : error === "too_many" ? "tooMany" : "notSetUp")}</p>
             <p className="flex flex-wrap gap-x-4">
               <Link href={{ pathname: "/sign-in", query: { ...(next ? { next } : {}), email: email.trim() } }} className="text-primary underline underline-offset-4">
                 {t("otherWay")}

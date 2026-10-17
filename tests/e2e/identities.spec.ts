@@ -62,7 +62,9 @@ for (const lang of LANGS) {
     await expect(page.getByTestId("sign-in-notice")).toHaveText(m.signIn.notice.provider_failed);
   });
 
-  test(`[${lang}] SSO: an email with none set up is told so; the demo agency's member goes through its provider and in`, async ({ browser }) => {
+  test(`[${lang}] SSO: an email with none set up is told so; the demo agency's member goes through its provider, proves the mailbox once, and is in`, async ({ browser }) => {
+    // A different person in each language: the first SSO sign-in of each needs the emailed code.
+    const who = lang === "en" ? { email: "owner@cedarrow.example.com", label: `Demo Owner (demo) · ${m.roles.owner.name}` } : { email: "accountant@cedarrow.example.com", label: `Morgan Ellis (demo) · ${m.roles.accountant.name}` };
     const page = await signedOut(browser);
     await page.goto(`/${lang}/sign-in`);
     await page.getByTestId("sign-in-sso").click();
@@ -73,14 +75,23 @@ for (const lang of LANGS) {
     await page.getByTestId("sso-continue").click();
     await expect(page.getByTestId("sso-error")).toContainText(m.sso.signIn.notSetUp);
     await check(page, `${lang} sso not set up`);
-    await page.getByTestId("sso-email").fill("owner@cedarrow.example.com");
+    await page.getByTestId("sso-email").fill(who.email);
     await page.getByTestId("sso-continue").click();
     await expect(page).toHaveURL(new RegExp(`/${lang}/sign-in/demo-provider/sso\\?request=`));
     await expect(page.getByRole("heading", { level: 1, name: fill(m.identities.demo.title, { provider: m.identities.demo.providerNames.sso }) })).toBeVisible();
-    await page.getByTestId("demo-account-owner@cedarrow.example.com").click();
+    await page.getByTestId(`demo-account-${who.email}`).click();
+    // The agency's provider does not host the mailbox: the code sent to it connects the account first.
+    await expect(page).toHaveURL(new RegExp(`/${lang}/sign-in/link$`));
+    await expect(page.getByRole("heading", { level: 1, name: m.linkProof.title })).toBeVisible();
+    await check(page, `${lang} link proof`);
+    const copy = (await page.getByTestId("demo-link-text").textContent()) ?? "";
+    const code = /\b(\d{6})\b/.exec(copy)![1]!;
+    await page.getByTestId("link-code").fill(code === "000000" ? "111111" : "000000");
+    await expect(page.getByTestId("link-code-error")).toHaveText(m.linkProof.errors.invalid);
+    await page.getByTestId("link-code").fill(code);
     await expect(page).toHaveURL(new RegExp(`/${lang}$`));
     await page.getByTestId("agency-menu").click();
-    await expect(page.getByTestId("menu-person")).toHaveText(`Demo Owner (demo) · ${m.roles.owner.name}`);
+    await expect(page.getByTestId("menu-person")).toHaveText(who.label);
   });
 
   test(`[${lang}] an emailed sign-in code, read from the demo mailbox, signs in (a wrong one first)`, async ({ browser }) => {
@@ -138,6 +149,20 @@ for (const lang of LANGS) {
     await expect(page.getByTestId("sso-status")).toHaveText(m.sso.settings.on);
   });
 }
+
+test("Settings › Single sign-on is the Owner's: anyone else gets the not-for-your-role state, and no menu item", async ({ browser }) => {
+  const m = MESSAGES.en;
+  const page = await signedOut(browser);
+  await page.goto("/en/sign-in");
+  await page.getByTestId("continue-accountant").click();
+  await expect(page).toHaveURL(/\/en$/);
+  await page.goto("/en/settings/sso");
+  await expect(page.getByTestId("sso-not-allowed")).toContainText(m.sso.settings.ownerOnly);
+  await check(page, "sso settings, not for the role");
+  await page.getByTestId("agency-menu").click();
+  await expect(page.getByTestId("menu-members")).toBeVisible();
+  await expect(page.getByTestId("menu-sso")).toHaveCount(0);
+});
 
 test("an invite accepted with a provider account: only the invited email joins", async ({ page, browser }) => {
   const m = MESSAGES.en;

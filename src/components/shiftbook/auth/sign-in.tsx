@@ -20,7 +20,7 @@ import { initialsOf, withoutNote } from "../person";
 import { PasskeySignIn } from "./passkey";
 import { GoogleMark, MicrosoftMark } from "./provider-marks";
 
-export type SignInNotice = "signed_out" | "expired" | "password_changed" | "link_expired" | "provider_failed" | "no_account" | "not_verified" | "suspended" | "too_many";
+export type SignInNotice = "signed_out" | "expired" | "password_changed" | "link_expired" | "provider_failed" | "no_account" | "not_verified" | "suspended" | "too_many" | "other_identity";
 
 /** Notion's sign-in tiles: the mark over the name, in a two-column grid. */
 const TILE = "flex h-16 flex-col items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50";

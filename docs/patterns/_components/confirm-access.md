@@ -6,7 +6,8 @@ signed in, GitHub asks to authenticate again: the password, or a 2FA code then "
 such actions need no prompt for a while, and each one resets the timer; recovery codes and
 organization invitations are among the protected actions)
 Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/sudo-mode
-Researched: 2026-10-16. Confidence: high for when it asks and what it accepts; the dialog's layout is
+Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/verifying-new-devices-when-signing-in
+Researched: 2026-10-16; the emailed code 2026-10-17 (decision 0033, review L3). Confidence: high for when it asks and what it accepts; the dialog's layout is
 shown in screenshots, not described.
 
 ## Purpose in Shiftbook
@@ -20,7 +21,10 @@ passkey's request (decision 0032).
 1. **Title** "Confirm it's you".
 2. One line: the change needs the password (or, for a person with an authenticator, a code from it or
    a recovery code), given within the last 15 minutes.
-3. **Field**: Password, or Code (six digits, or a recovery code).
+3. **Field**: Password, or Code (six digits, or a recovery code). For a person with neither a
+   password nor an authenticator (who joined with Google or Microsoft): **Send a code to <their
+   email>** first (GitHub sends its device-verification code by email), then the six-digit field; in
+   the demo, the demo mailbox's copy under it.
 4. **Confirm** (primary) and **Cancel**.
 5. A refusal in place: wrong, or too many tries (locked for a while).
 

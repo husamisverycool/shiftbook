@@ -28,7 +28,8 @@ opens with no password (decision K3).
    elsewhere); the password was changed; the link used has expired; another way in was refused
    (decision 0033): the provider did not sign them in; no member uses that account; the provider did
    not confirm the email (connect it from Your account first); the member is suspended; too many
-   tries.
+   tries; the person already connected another account from that provider (sign in with that one, or
+   disconnect it first).
 3. **Form** (GitHub sign-in):
    1. **Email** field (email keyboard, autocomplete "username").
    2. **Password** field (autocomplete "current-password"), with **Forgot password?** beside its
@@ -59,7 +60,9 @@ opens with no password (decision K3).
 - Forgot password? → the reset page, with the email already typed carried over.
 - Google or Microsoft → the provider (in the demo, the demo's stand-in,
   `sign-in/demo-provider/[provider].md`) → back here signed in, then the code or the authenticator
-  setup exactly as after a password; or back on this page with a notice saying why not.
+  setup exactly as after a password; or back on this page with a notice saying why not. The first
+  time an account signs someone in by their email, unless the provider hosts that mailbox, the code
+  sent to it comes first (`sign-in/link.md`).
 - SSO → `/sign-in/sso`; Email me a sign-in code → `/sign-in/email`; both carry the page they were
   going to.
 - **Passkey** tile (GitHub's "Sign in with a passkey": the browser or the device then asks for a

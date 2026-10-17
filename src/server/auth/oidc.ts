@@ -8,8 +8,10 @@
  * No database here; nothing logged. A refusal is an OidcError whose `reason` names the check.
  */
 import { createHash, randomBytes } from "node:crypto";
+import { isIP } from "node:net";
 import { createRemoteJWKSet, customFetch, errors, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import { sameText, seal, unseal, type Sealed } from "./crypto";
+import { safeFetch } from "./safe-fetch";
 
 export type ProviderId = "google" | "microsoft" | "sso";
 export const PROVIDERS: readonly ProviderId[] = ["google", "microsoft", "sso"];
@@ -30,8 +32,14 @@ export interface OidcClient {
   issuer: IssuerRule;
   clientId: string;
   clientSecret: string;
-  /** Endpoints over plain http allowed: only the demo's stand-in, on the app's own address. */
+  /** Endpoints over plain http allowed (tests only; the demo's stand-in is reached in-process). */
   allowHttp: boolean;
+  /** The hosts the provider's endpoints may be on: its own, or a documented list (review M2). */
+  endpointHosts: string[];
+  /** How the server reaches the provider: safeFetch by default; the demo's stand-in in-process. */
+  fetch?: typeof fetch;
+  /** Where the browser goes to sign in, when not the discovery document's address (the demo's stand-in page). */
+  authorizeAt?: string;
 }
 
 export interface Discovery {
@@ -61,7 +69,7 @@ const random = () => randomBytes(32).toString("base64url");
 
 // ---------- discovery ----------
 
-function endpoint(value: unknown, allowHttp: boolean): string {
+function endpoint(value: unknown, opts: { allowHttp: boolean; hosts?: string[] }): string {
   if (typeof value !== "string" || value.length > 2000) throw new OidcError("discovery", "an endpoint is missing");
   let url: URL;
   try {
@@ -69,27 +77,43 @@ function endpoint(value: unknown, allowHttp: boolean): string {
   } catch {
     throw new OidcError("discovery", "an endpoint is not an address");
   }
-  if (url.protocol !== "https:" && !(allowHttp && url.protocol === "http:")) throw new OidcError("discovery", "an endpoint is not https");
+  if (url.protocol !== "https:" && !(opts.allowHttp && url.protocol === "http:")) throw new OidcError("discovery", "an endpoint is not https");
+  if (!opts.allowHttp) {
+    // Never an address the server could be pointed at inside a network (review M2).
+    if (isIP(url.hostname.replace(/^\[|\]$/g, "")) !== 0) throw new OidcError("discovery", "an endpoint is an IP address");
+    if (url.port !== "" && url.port !== "443") throw new OidcError("discovery", "an endpoint is on another port");
+    if (url.username || url.password) throw new OidcError("discovery", "an endpoint carries credentials");
+  }
+  if (opts.hosts && !opts.hosts.includes(url.hostname.toLowerCase())) throw new OidcError("discovery", "an endpoint is on another host");
   return url.toString();
 }
 
 /** The parts of an OpenID Provider's configuration the code flow needs (OpenID Connect Discovery §3, §4.3). */
-export function parseDiscovery(json: unknown, opts: { allowHttp: boolean; expectedIssuer?: string }): Discovery {
+export function parseDiscovery(json: unknown, opts: { allowHttp: boolean; expectedIssuer?: string; hosts?: string[] }): Discovery {
   if (!json || typeof json !== "object" || Array.isArray(json)) throw new OidcError("discovery", "not a JSON object");
   const d = json as Record<string, unknown>;
   if (typeof d.issuer !== "string" || d.issuer.length === 0) throw new OidcError("discovery", "no issuer");
   if (opts.expectedIssuer !== undefined && d.issuer !== opts.expectedIssuer) throw new OidcError("discovery", "the issuer is another one");
-  return { issuer: d.issuer, authorizationEndpoint: endpoint(d.authorization_endpoint, opts.allowHttp), tokenEndpoint: endpoint(d.token_endpoint, opts.allowHttp), jwksUri: endpoint(d.jwks_uri, opts.allowHttp) };
+  return { issuer: d.issuer, authorizationEndpoint: endpoint(d.authorization_endpoint, opts), tokenEndpoint: endpoint(d.token_endpoint, opts), jwksUri: endpoint(d.jwks_uri, opts) };
 }
 
 const DISCOVERY_TTL_MS = 60 * 60 * 1000;
+/** Both caches are bounded (review L6): the oldest entry goes first once full. */
+const CACHE_MAX = 64;
 const discoveryCache = new Map<string, { at: number; value: Discovery }>();
+const keep = <V>(cache: Map<string, V>, key: string, value: V) => {
+  cache.delete(key);
+  cache.set(key, value);
+  while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value!);
+};
+export const discoveryCacheSize = () => discoveryCache.size;
 
 /** The provider's discovery document, kept for an hour. */
-export async function discover(client: OidcClient, fetchFn: typeof fetch = fetch, now = new Date()): Promise<Discovery> {
-  const key = `${client.discoveryUrl}|${client.discoveryIssuer}`;
+export async function discover(client: OidcClient, now = new Date()): Promise<Discovery> {
+  const key = `${client.discoveryUrl}|${client.discoveryIssuer}|${client.endpointHosts.join(",")}`;
   const hit = discoveryCache.get(key);
   if (hit && now.getTime() - hit.at < DISCOVERY_TTL_MS) return hit.value;
+  const fetchFn = client.fetch ?? safeFetch;
   let json: unknown;
   try {
     const response = await fetchFn(client.discoveryUrl, { headers: { Accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(10_000) });
@@ -99,13 +123,16 @@ export async function discover(client: OidcClient, fetchFn: typeof fetch = fetch
     if (error instanceof OidcError) throw error;
     throw new OidcError("discovery", "could not be read");
   }
-  const value = parseDiscovery(json, { allowHttp: client.allowHttp, expectedIssuer: client.discoveryIssuer });
-  discoveryCache.set(key, { at: now.getTime(), value });
+  const value = parseDiscovery(json, { allowHttp: client.allowHttp, expectedIssuer: client.discoveryIssuer, hosts: client.endpointHosts });
+  keep(discoveryCache, key, { at: now.getTime(), value });
   return value;
 }
 
-/** Forgets every discovery document (a changed SSO configuration is read afresh). */
-export const forgetDiscovery = () => discoveryCache.clear();
+/** Forgets a provider's discovery document and keys (an SSO configuration changed), or every one. */
+export function forgetDiscovery(discoveryUrl?: string): void {
+  for (const key of [...discoveryCache.keys()]) if (!discoveryUrl || key.startsWith(`${discoveryUrl}|`)) discoveryCache.delete(key);
+  if (!discoveryUrl) remoteSets.clear();
+}
 
 // ---------- the request ----------
 
@@ -116,7 +143,7 @@ export const pkceChallenge = (verifier: string) => createHash("sha256").update(v
 export const newAuthRequest = () => ({ state: random(), nonce: random(), verifier: random() });
 
 export function authorizationUrl(d: Discovery, client: OidcClient, r: { redirectUri: string; state: string; nonce: string; verifier: string; locale?: string; loginHint?: string }): string {
-  const url = new URL(d.authorizationEndpoint);
+  const url = new URL(client.authorizeAt ?? d.authorizationEndpoint);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", client.clientId);
   url.searchParams.set("redirect_uri", r.redirectUri);
@@ -131,7 +158,8 @@ export function authorizationUrl(d: Discovery, client: OidcClient, r: { redirect
 }
 
 /** The code exchanged at the token endpoint (client secret in the form, as Google and Microsoft accept); the ID token. */
-export async function exchangeCode(d: Discovery, client: OidcClient, r: { code: string; redirectUri: string; verifier: string }, fetchFn: typeof fetch = fetch): Promise<string> {
+export async function exchangeCode(d: Discovery, client: OidcClient, r: { code: string; redirectUri: string; verifier: string }): Promise<string> {
+  const fetchFn = client.fetch ?? safeFetch;
   const body = new URLSearchParams({ grant_type: "authorization_code", code: r.code, redirect_uri: r.redirectUri, client_id: client.clientId, client_secret: client.clientSecret, code_verifier: r.verifier });
   let answer: Record<string, unknown>;
   try {
@@ -149,12 +177,12 @@ export async function exchangeCode(d: Discovery, client: OidcClient, r: { code: 
 // ---------- the ID token ----------
 
 const remoteSets = new Map<string, JWTVerifyGetKey>();
-/** The issuer's published keys (jose caches them and fetches again for an unknown key id). */
-export function remoteKeys(jwksUri: string, fetchFn?: typeof fetch): JWTVerifyGetKey {
+/** The issuer's published keys, through the client's own transport (jose caches them and fetches again for an unknown key id). */
+export function remoteKeys(jwksUri: string, fetchFn: typeof fetch = safeFetch): JWTVerifyGetKey {
   let set = remoteSets.get(jwksUri);
   if (!set) {
-    set = createRemoteJWKSet(new URL(jwksUri), { timeoutDuration: 10_000, ...(fetchFn ? { [customFetch]: fetchFn } : {}) });
-    remoteSets.set(jwksUri, set);
+    set = createRemoteJWKSet(new URL(jwksUri), { timeoutDuration: 10_000, [customFetch]: fetchFn });
+    keep(remoteSets, jwksUri, set);
   }
   return set;
 }
@@ -206,6 +234,11 @@ export interface VerifiedIdentity {
   email: string | null;
   /** Whether the provider vouches for the email (decision 0033): Google email_verified, Microsoft xms_edov. */
   emailVerified: boolean;
+  /**
+   * Whether the provider also hosts that mailbox, so its word is proof of it now (review H2): Google
+   * for gmail.com or its Workspace domain (hd); Microsoft with xms_edov. Never an agency's provider.
+   */
+  mailboxProven: boolean;
   name: string | null;
 }
 
@@ -216,9 +249,14 @@ export interface VerifiedIdentity {
  */
 export function identityOf(provider: ProviderId, claims: IdClaims): VerifiedIdentity {
   const email = typeof claims.email === "string" && /^[^\s@]+@[^\s@]+$/.test(claims.email.trim()) && claims.email.length <= 254 ? claims.email.trim().toLowerCase() : null;
-  const vouched = provider === "microsoft" ? claims.xms_edov === true : claims.email_verified === true;
+  // An agency's provider on Entra ID vouches with xms_edov, as Microsoft does (it sends no email_verified).
+  const vouched = provider === "microsoft" ? claims.xms_edov === true : provider === "sso" ? claims.email_verified === true || claims.xms_edov === true : claims.email_verified === true;
   const name = typeof claims.name === "string" && claims.name.trim() ? claims.name.trim().slice(0, 120) : null;
-  return { issuer: String(claims.iss), subject: String(claims.sub), email, emailVerified: Boolean(email) && vouched, name };
+  const emailVerified = Boolean(email) && vouched;
+  const domain = email ? email.slice(email.lastIndexOf("@") + 1) : "";
+  const hostedBy = typeof claims.hd === "string" ? claims.hd.trim().toLowerCase() : null;
+  const mailboxProven = emailVerified && (provider === "google" ? domain === "gmail.com" || (hostedBy !== null && hostedBy === domain) : provider === "microsoft");
+  return { issuer: String(claims.iss), subject: String(claims.sub), email, emailVerified, mailboxProven, name };
 }
 
 // ---------- the request, kept in the browser (sealed) ----------

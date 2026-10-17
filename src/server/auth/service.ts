@@ -194,7 +194,7 @@ export async function countPasswordFailure(tx: Tx, login: Login, now: Date): Pro
 }
 
 /** A wrong code (the login row locked): 10 in 15 minutes lock the code for 15 minutes; 100 in a row, for a day. */
-async function countCodeFailure(tx: Tx, login: Login, now: Date): Promise<boolean> {
+export async function countCodeFailure(tx: Tx, login: Login, now: Date): Promise<boolean> {
   const fresh = !login.codeFailedSince || now.getTime() - login.codeFailedSince.getTime() > CODE_WINDOW_MS;
   const count = fresh ? 1 : login.codeFailedCount + 1;
   const inRow = login.codeFailuresInRow + 1;
@@ -212,7 +212,7 @@ async function countCodeFailure(tx: Tx, login: Login, now: Date): Promise<boolea
   return lockFor > 0;
 }
 
-const codeLocked = (login: Login, now: Date) => Boolean(login.codeLockedUntil && login.codeLockedUntil > now);
+export const codeLocked = (login: Login, now: Date) => Boolean(login.codeLockedUntil && login.codeLockedUntil > now);
 
 /**
  * The six-digit code (a step later than the last one used) or a recovery code (once), checked
@@ -340,12 +340,20 @@ export async function mustConfirm(deps: AuthDeps, session: SessionInfo): Promise
   const now = nowOf(deps);
   if (session.demo || !session.secondStepAt) return false;
   if (session.confirmedAt && now.getTime() - session.confirmedAt.getTime() <= CONFIRM_MS) return false;
-  const [login] = await withAuth(deps, (tx) => tx.select({ passwordHash: s.userLogins.passwordHash, totpEnabledAt: s.userLogins.totpEnabledAt }).from(s.userLogins).where(eq(s.userLogins.userId, session.userId)));
-  return Boolean(login?.passwordHash || login?.totpEnabledAt);
+  // Everyone else is asked too: a person with neither a password nor an authenticator (who joined with
+  // Google or Microsoft) confirms with a code sent to their email (decision 0033, review L3).
+  return true;
 }
 
 /** What the person confirms with: a code when they have an authenticator, else their password. */
 export const confirmMethod = (session: SessionInfo): "code" | "password" => (session.hasAuthenticator ? "code" : "password");
+
+/** The same, knowing whether they have a password: with neither, a code sent to their email (decision 0033). */
+export async function confirmMethodOf(deps: AuthDeps, session: SessionInfo): Promise<"code" | "password" | "email"> {
+  if (session.hasAuthenticator) return "code";
+  const [login] = await withAuth(deps, (tx) => tx.select({ passwordHash: s.userLogins.passwordHash }).from(s.userLogins).where(eq(s.userLogins.userId, session.userId)));
+  return login?.passwordHash ? "password" : "email";
+}
 
 /** The password or a code, given again; the session is confirmed for CONFIRM_MS. Wrong ones count as at sign-in. */
 export async function confirmAccess(deps: AuthDeps, session: SessionInfo, secret: string): Promise<{ ok: true } | { ok: false; error: "invalid" | "locked" | "busy" }> {
@@ -375,6 +383,9 @@ export async function confirmAccess(deps: AuthDeps, session: SessionInfo, secret
         await log(tx, user, [{ action: "sign_in_failed", entityType: "user", entityId: user.id, after: { step: "confirm", locked } }], session.demo);
         return { ok: false, error: locked ? "locked" : "invalid" };
       }
+    } else {
+      // Neither a password nor an authenticator: nothing here can confirm it; an emailed code does (decision 0033).
+      return { ok: false, error: "invalid" };
     }
     await tx.update(s.sessions).set({ confirmedAt: now }).where(eq(s.sessions.id, session.sessionId));
     return { ok: true };
@@ -476,7 +487,7 @@ export async function recoveryCodesLeft(deps: AuthDeps, userId: string): Promise
   });
 }
 
-export type PasswordError = "wrong_password" | "too_short" | "too_long" | "is_email" | "one_character" | "locked" | "busy";
+export type PasswordError = "wrong_password" | "too_short" | "too_long" | "is_email" | "one_character" | "locked" | "busy" | "confirm";
 
 /** A new password, given the current one (a wrong one counts as at sign-in); the person's other sessions end. */
 export async function changePassword(deps: AuthDeps, session: SessionInfo, current: string, next: string): Promise<{ ok: true } | { ok: false; error: PasswordError }> {
@@ -484,6 +495,8 @@ export async function changePassword(deps: AuthDeps, session: SessionInfo, curre
   if (problem) return { ok: false, error: problem };
   const now = nowOf(deps);
   const [first] = await withAuth(deps, (tx) => tx.select({ passwordHash: s.userLogins.passwordHash }).from(s.userLogins).where(eq(s.userLogins.userId, session.userId)));
+  // A first password is a new way in: without a current one to give, confirm it's them first (decision 0033, review L3).
+  if (!first?.passwordHash && (await mustConfirm(deps, session))) return { ok: false, error: "confirm" };
   let hash: string;
   let currentGood = true;
   try {

@@ -366,11 +366,12 @@ describe("tenants", () => {
   it("a passkey signs in only its own person in its own agency, even with the same email in two agencies", async () => {
     const pat = await invited("billing");
     const live = await withPasskey(pat.token, { secret: PASSWORD });
-    // The same email, a person of the demo agency (no login of their own), with a session made here.
+    // The same email, a person of the demo agency (no login of their own), with a demo session made
+    // here (anyone else with neither a password nor an authenticator gives an emailed code to add one).
     const twinId = "7c3e2f60-ad4b-4e5c-9f80-91a2b3c4d5e6";
     await owner.db.insert(s.users).values({ id: twinId, agencyId: DEMO_AGENCY.id, name: "Pat Lee (demo)", email: "pat@agency.example", role: "billing" });
     const token = randomToken();
-    await owner.db.insert(s.sessions).values({ agencyId: DEMO_AGENCY.id, userId: twinId, tokenHash: digest(token), secondStepAt: clock, confirmedAt: clock, createdAt: clock, lastSeenAt: clock, expiresAt: new Date(clock.getTime() + 3_600_000) });
+    await owner.db.insert(s.sessions).values({ agencyId: DEMO_AGENCY.id, userId: twinId, tokenHash: digest(token), demo: true, secondStepAt: clock, confirmedAt: clock, createdAt: clock, lastSeenAt: clock, expiresAt: new Date(clock.getTime() + 3_600_000) });
     const twin = await withPasskey(token);
 
     const a = (await passkeyIn(live.device)).result;

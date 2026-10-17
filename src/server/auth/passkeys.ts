@@ -32,6 +32,7 @@ import type { UserStatus } from "../db/schema";
 import type { OutgoingMail } from "../mail/transport";
 import { settingOn } from "../settings";
 import { digest } from "./crypto";
+import { confirmByEmailCode } from "./identities";
 import { renderPasskeyAddedEmail } from "./passkey-emails";
 import { confirmAccess, deliver, enterAgency, log, mustConfirm, noteThrottle, startSession, throttled, withAuth, type AuthDeps, type SessionInfo } from "./service";
 
@@ -308,18 +309,18 @@ export type RegistrationOptionsError = "confirm" | "expired" | "too_many" | "inv
  * or a code when they have an authenticator, comes with this very request, every time: a recent
  * sign-in or a confirmation given for something else is not enough, so a stolen session cannot leave
  * a passkey behind (GitHub asks before "Add a passkey"). The challenge issued is the one use of that
- * confirmation (five minutes, once). Never asked in the demo's shared sessions, nor of someone with
- * neither a password nor an authenticator (decision 0025). A newer challenge replaces their open one.
+ * confirmation (five minutes, once). Someone with neither a password nor an authenticator (who joined
+ * with Google or Microsoft) gives a code emailed to them for it (decision 0033, review L3). Never asked
+ * in the demo's shared sessions. A newer challenge replaces their open one.
  */
 export async function passkeyRegistrationOptions(deps: AuthDeps, session: SessionInfo, rp: RelyingParty, secret: string | null): Promise<{ ok: true; options: PublicKeyCredentialCreationOptionsJSON } | { ok: false; error: RegistrationOptionsError }> {
   if (!session.secondStepAt) return { ok: false, error: "expired" };
   const [login] = await withAuth(deps, (tx) => tx.select({ passwordHash: s.userLogins.passwordHash, totpEnabledAt: s.userLogins.totpEnabledAt }).from(s.userLogins).where(eq(s.userLogins.userId, session.userId)));
-  const asks = !session.demo && Boolean(login?.passwordHash || login?.totpEnabledAt);
   const existing = await withAuth(deps, (tx) => livePasskeys(tx, session.userId));
   if (existing >= MAX_PASSKEYS) return { ok: false, error: "too_many" };
-  if (asks) {
+  if (!session.demo) {
     if (secret === null) return { ok: false, error: "confirm" };
-    const confirmed = await confirmAccess(deps, session, secret);
+    const confirmed = login?.passwordHash || login?.totpEnabledAt ? await confirmAccess(deps, session, secret) : await confirmByEmailCode(deps, session, secret);
     if (!confirmed.ok) return confirmed;
   }
   const now = nowOf(deps);
