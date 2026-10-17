@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { unzipSync } from "fflate";
-import { isNoRecording } from "@/lib/no-recording";
+import { readError } from "@/lib/read-errors";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { MAX_TIMESHEET_BYTES } from "@/lib/limits";
@@ -40,6 +40,12 @@ const MEDIA_TYPES: Record<string, string> = { csv: "text/csv", jpg: "image/jpeg"
 
 export function UploadStep({ periodId, documents, demo = false }: { periodId: string; documents: UploadDoc[]; demo?: boolean }) {
   const t = useTranslations("convert.upload");
+  // Why a timesheet could not be read, in the reader's language (the stored reason is Shiftbook's English).
+  const said = (error: string | null) => {
+    const why = readError(error);
+    if (!why) return error;
+    return why.key === "noRecording" ? t("noRecording") : t(`readErrors.${why.key}`, why.values ?? {});
+  };
   const tcommon = useTranslations("common");
   const tc = useTranslations("convert.errors");
   const router = useRouter();
@@ -229,7 +235,7 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
                           <Status tone="critical" data-testid="document-status">
                             {t("status.failed")}
                           </Status>
-                          {(d.stuck || d.error) && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.stuck ? t("stuck") : isNoRecording(d.error) ? t("noRecording") : d.error}</span>}
+                          {(d.stuck || d.error) && <span className="max-w-80 text-xs whitespace-normal text-muted-foreground">{d.stuck ? t("stuck") : said(d.error)}</span>}
                           {mayChange && (
                             <div className="flex gap-3">
                               <Button variant="link" size="sm" className="h-auto justify-start px-0" onClick={() => run(() => retryAction(d.id))}>

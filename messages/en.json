@@ -200,7 +200,15 @@
       "useSamples": "Use the sample timesheets",
       "archiveUnreadable": "{count, plural, one {Archive the timesheet that could not be read} other {Archive the # that could not be read}}",
       "archiveAllTitle": "{count, plural, one {Archive this timesheet?} other {Archive these # timesheets?}}",
-      "noRecording": "This demo has no saved reading of this file yet, so it cannot be read here. Archive it to go on."
+      "noRecording": "This demo has no saved reading of this file yet, so it cannot be read here. Archive it to go on.",
+      "readErrors": {
+        "readFailed": "Something went wrong while reading this timesheet. Read it again; if it keeps failing, archive it with a reason.",
+        "periodLocked": "This pay period's files were already created, so its hours and totals can no longer change.",
+        "periodBusy": "Someone else is changing this pay period right now, so nothing was done. Try again in a moment.",
+        "unsupported": "{file}: only JPG, PNG, HEIC, PDF, CSV and XLSX files are accepted.",
+        "unmapped": "{file}: the columns do not match any saved mapping profile.",
+        "refused": "The reading service declined to read this document. Enter its hours by hand."
+      }
     },
     "hours": {
       "sectionTitle": "Hours",

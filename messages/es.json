@@ -200,7 +200,15 @@
       "useSamples": "Usar las hojas de horas de ejemplo",
       "archiveUnreadable": "{count, plural, one {Archivar la hoja de horas que no se pudo leer} other {Archivar las # que no se pudieron leer}}",
       "archiveAllTitle": "{count, plural, one {¿Archivar esta hoja de horas?} other {¿Archivar estas # hojas de horas?}}",
-      "noRecording": "Esta demostración aún no tiene una lectura guardada de este archivo, así que aquí no se puede leer. Archívelo para continuar."
+      "noRecording": "Esta demostración aún no tiene una lectura guardada de este archivo, así que aquí no se puede leer. Archívelo para continuar.",
+      "readErrors": {
+        "readFailed": "Algo salió mal al leer esta hoja de horas. Vuelva a leerla; si sigue fallando, archívela con un motivo.",
+        "periodLocked": "Los archivos de este periodo de pago ya se crearon, así que sus horas y totales ya no pueden cambiar.",
+        "periodBusy": "Otra persona está cambiando este periodo de pago ahora mismo, así que no se hizo nada. Inténtelo de nuevo en un momento.",
+        "unsupported": "{file}: solo se aceptan archivos JPG, PNG, HEIC, PDF, CSV y XLSX.",
+        "unmapped": "{file}: las columnas no coinciden con ningún perfil de columnas guardado.",
+        "refused": "El servicio de lectura no quiso leer este documento. Ingrese sus horas a mano."
+      }
     },
     "hours": {
       "sectionTitle": "Horas",
