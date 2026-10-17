@@ -15,7 +15,8 @@ const style = (l: Locator, prop: string) => l.evaluate((el, p) => getComputedSty
 
 test("hover, press and focus: one 100ms transition that reverses, no press movement", async ({ page }) => {
   await page.goto("/en");
-  const button = page.locator('[data-slot="button"]').first();
+  // Buttons and links drawn as buttons share buttonVariants' "group/button" class.
+  const button = page.locator('[class*="group/button"]:visible').first();
   await expect(button).toBeVisible();
   expect(await style(button, "transition-duration")).toBe("0.1s");
   expect(await style(button, "transition-timing-function")).toBe(HOVER);
