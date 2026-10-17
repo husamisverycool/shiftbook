@@ -2,26 +2,28 @@
 
 // Pattern: docs/patterns/settings/margin.md — Bullhorn workers' compensation codes (state, code, name,
 // rate, start, end; end-dated, never deleted), TempWorks worker comp codes per state and Initial
-// Burden, Gusto pay schedule (the pay date after the period ends).
+// Burden, Gusto pay schedule (the pay date after the period ends). Laid out as Linear's settings
+// (docs/patterns/_components/settings.md): each rate a row in a panel — the state over its dates, the
+// rate at the right — "Add rate" at the section heading's right; each choice a row, Save in the foot.
 import { PlusIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { addTaxRateAction, addWcRateAction, setOtPremiumAction, setPayDayAction, type MarginActionResult } from "@/app/[locale]/(app)/settings/margin/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { useRouter } from "@/i18n/navigation";
 import { parseFourPlaces } from "@/lib/amounts";
 import { percentOf, perHundred } from "@/server/margin/burden";
 import type { MarginSettings as View } from "@/server/margin/queries";
 import { longDate } from "../format";
 import { useDateTime } from "../agency-zone";
+import { SettingsEmpty, SettingsFooter, SettingsRow, SettingsRows, SettingsSection, SettingsPage } from "../settings-panel";
 
 type Problem = { field: string; rule: string };
 
@@ -47,141 +49,109 @@ export function MarginSettingsView({ view, today, states, canChange }: { view: V
   const locale = useLocale();
   const when = useDateTime();
   const [adding, setAdding] = useState<"tax" | "wc" | null>(null);
-  const date = (d: string | null) => (d ? longDate(d, locale) : "—");
-  const changed = (c: { at: Date | string; by: string } | null) =>
-    c ? <p className="text-xs text-muted-foreground">{t("changed", { date: when(c.at, { time: false }), by: c.by })}</p> : null;
-  const section = (id: string, title: string, intro: string, action: ReactNode, body: ReactNode, foot: ReactNode) => (
-    <section className="flex flex-col gap-3" aria-labelledby={id}>
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 id={id} className="mr-auto text-lg font-semibold">
-          {title}
-        </h2>
-        {action}
-      </div>
-      <p className="text-sm text-muted-foreground">{intro}</p>
-      {body}
-      {foot}
-    </section>
-  );
+  const changed = (c: { at: Date | string; by: string } | null) => (c ? <SettingsFooter note={t("changed", { date: when(c.at, { time: false }), by: c.by })} /> : undefined);
+  /** "From October 5, 2026" or "October 5, 2026 to December 31, 2026". */
+  const period = (from: string, to: string | null) => (to ? t("between", { from: longDate(from, locale), to: longDate(to, locale) }) : t("since", { date: longDate(from, locale) }));
+  const past = (to: string | null) => to !== null && to < today;
+  const inForce = <Badge variant="secondary">{t("inForce")}</Badge>;
+  const add = (kind: "tax" | "wc", testId: string) =>
+    canChange && (
+      <Button size="sm" variant="outline" onClick={() => setAdding(kind)} data-testid={testId}>
+        <PlusIcon />
+        {t("addRate")}
+      </Button>
+    );
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-8 px-4 py-6 md:px-8 md:py-8">
-      <header className="flex flex-col gap-1">
-        <p className="text-sm text-muted-foreground">{t("above")}</p>
-        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-        {!canChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
-      </header>
-
-      {section(
-        "taxes-title",
-        t("taxes.title"),
-        t("taxes.intro"),
-        canChange && (
-          <Button size="sm" variant="outline" onClick={() => setAdding("tax")} data-testid="add-tax-rate">
-            <PlusIcon />
-            {t("addRate")}
-          </Button>
-        ),
-        view.taxRates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("taxes.none")}</p>
-        ) : (
-          <div className="min-w-0">
-            <Table aria-labelledby="taxes-title" data-testid="tax-rates">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("state")}</TableHead>
-                  <TableHead className="text-right">{t("taxes.rate")}</TableHead>
-                  <TableHead>{t("from")}</TableHead>
-                  <TableHead>{t("to")}</TableHead>
-                  <TableHead>{t("taxes.includes")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {view.taxRates.map((r) => (
-                  <TableRow key={r.id} className={r.effectiveTo !== null && r.effectiveTo < today ? "text-muted-foreground" : undefined} data-testid="tax-rate">
-                    <TableCell>
-                      <span className="flex items-center gap-2">
-                        {r.state ?? t("anyOtherState")}
-                        {r.inForce && <Badge variant="secondary">{t("inForce")}</Badge>}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{percentOf(r.ratePpm)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{date(r.effectiveFrom)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{date(r.effectiveTo)}</TableCell>
-                    <TableCell className="text-muted-foreground">{r.includes ?? ""}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ),
-        changed(view.changed.taxes),
-      )}
-
-      {section(
-        "wc-title",
-        t("wc.title"),
-        t("wc.intro"),
-        canChange && (
-          <Button size="sm" variant="outline" onClick={() => setAdding("wc")} data-testid="add-wc-rate">
-            <PlusIcon />
-            {t("addRate")}
-          </Button>
-        ),
+    <SettingsPage
+      context={t("above")}
+      title={t("title")}
+      description={
         <>
-          {view.missing.length > 0 && (
-            <p className="text-sm text-destructive" data-testid="wc-missing">
-              {t("wc.missing", { codes: view.missing.join(", ") })}
-            </p>
-          )}
-          {view.wcRates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("wc.none")}</p>
-          ) : (
-            <div className="min-w-0">
-              <Table aria-labelledby="wc-title" data-testid="wc-rates">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("state")}</TableHead>
-                    <TableHead>{t("wc.classCode")}</TableHead>
-                    <TableHead>{t("wc.description")}</TableHead>
-                    <TableHead className="text-right">{t("wc.rate")}</TableHead>
-                    <TableHead>{t("from")}</TableHead>
-                    <TableHead>{t("to")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {view.wcRates.map((r) => (
-                    <TableRow key={r.id} className={r.effectiveTo !== null && r.effectiveTo < today ? "text-muted-foreground" : undefined} data-testid="wc-rate">
-                      <TableCell>
-                        <span className="flex items-center gap-2">
-                          {r.state}
-                          {r.inForce && <Badge variant="secondary">{t("inForce")}</Badge>}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-medium">{r.classCode}</TableCell>
-                      <TableCell className="text-muted-foreground">{r.description ?? ""}</TableCell>
-                      <TableCell className="text-right tabular-nums">{perHundred(r.ratePpm)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{date(r.effectiveFrom)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{date(r.effectiveTo)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-          <OtPremium view={view} today={today} canChange={canChange} />
-        </>,
-        changed(view.changed.wc),
-      )}
+          <p>{t("description")}</p>
+          {!canChange && <p>{t("readOnly")}</p>}
+        </>
+      }
+    >
+      <SettingsSection id="taxes-title" title={t("taxes.title")} description={t("taxes.intro")} action={add("tax", "add-tax-rate")}>
+        {view.taxRates.length === 0 ? (
+          <SettingsRows footer={changed(view.changed.taxes)}>
+            <SettingsEmpty>{t("taxes.none")}</SettingsEmpty>
+          </SettingsRows>
+        ) : (
+          <SettingsRows as="ul" aria-labelledby="taxes-title" testId="tax-rates" footer={changed(view.changed.taxes)}>
+            {view.taxRates.map((r) => (
+              <SettingsRow
+                key={r.id}
+                as="li"
+                testId="tax-rate"
+                className={past(r.effectiveTo) ? "text-muted-foreground" : undefined}
+                label={
+                  <span className="flex flex-wrap items-center gap-2">
+                    {r.state ?? t("anyOtherState")}
+                    {r.inForce && inForce}
+                  </span>
+                }
+                description={[period(r.effectiveFrom, r.effectiveTo), r.includes].filter(Boolean).join(" · ")}
+                control={<span className="text-sm font-medium tabular-nums">{percentOf(r.ratePpm)}</span>}
+              />
+            ))}
+          </SettingsRows>
+        )}
+      </SettingsSection>
 
-      {section("payday-title", t("payDay.title"), t("payDay.intro"), null, <PayDay view={view} today={today} canChange={canChange} />, changed(view.changed.settings))}
+      <SettingsSection
+        id="wc-title"
+        title={t("wc.title")}
+        description={
+          <>
+            <p>{t("wc.intro")}</p>
+            {view.missing.length > 0 && (
+              <p className="text-destructive" data-testid="wc-missing">
+                {t("wc.missing", { codes: view.missing.join(", ") })}
+              </p>
+            )}
+          </>
+        }
+        action={add("wc", "add-wc-rate")}
+      >
+        {view.wcRates.length === 0 ? (
+          <SettingsRows footer={changed(view.changed.wc)}>
+            <SettingsEmpty>{t("wc.none")}</SettingsEmpty>
+          </SettingsRows>
+        ) : (
+          <SettingsRows as="ul" aria-labelledby="wc-title" testId="wc-rates" footer={changed(view.changed.wc)}>
+            {view.wcRates.map((r) => (
+              <SettingsRow
+                key={r.id}
+                as="li"
+                testId="wc-rate"
+                className={past(r.effectiveTo) ? "text-muted-foreground" : undefined}
+                label={
+                  <span className="flex flex-wrap items-center gap-2">
+                    {r.state} · {r.classCode}
+                    {r.inForce && inForce}
+                  </span>
+                }
+                description={[r.description, period(r.effectiveFrom, r.effectiveTo)].filter(Boolean).join(" · ")}
+                control={<span className="text-sm font-medium tabular-nums">{t("wc.ratePer", { rate: perHundred(r.ratePpm) })}</span>}
+              />
+            ))}
+          </SettingsRows>
+        )}
+        <OtPremium view={view} today={today} canChange={canChange} />
+      </SettingsSection>
+
+      <SettingsSection id="payday-title" title={t("payDay.title")} description={t("payDay.intro")}>
+        <PayDay view={view} today={today} canChange={canChange} changedNote={view.changed.settings ? t("changed", { date: when(view.changed.settings.at, { time: false }), by: view.changed.settings.by }) : undefined} />
+      </SettingsSection>
 
       {adding === "tax" && <TaxDialog states={states} today={today} onClose={() => setAdding(null)} />}
       {adding === "wc" && <WcDialog states={states} today={today} onClose={() => setAdding(null)} />}
-    </div>
+    </SettingsPage>
   );
 }
 
+/** Leaving the overtime premium out: a switch in its row, the date it applies from in the next, Save in the foot. */
 function OtPremium({ view, today, canChange }: { view: View; today: string; canChange: boolean }) {
   const t = useTranslations("marginSettings");
   const locale = useLocale();
@@ -190,31 +160,43 @@ function OtPremium({ view, today, canChange }: { view: View; today: string; canC
   const [problems, setProblems] = useState<Problem[]>([]);
   const { pending, save } = useSave();
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" data-testid="ot-premium">
-      <div className="flex items-center gap-2">
-        <Checkbox id="ot-premium" checked={exclude} disabled={!canChange} onCheckedChange={(on) => setExclude(on === true)} />
-        <Label htmlFor="ot-premium">{t("wc.otPremium")}</Label>
-      </div>
-      <p className="text-xs text-muted-foreground">{t("wc.otPremiumHint")}</p>
-      {view.otPremium.next && <p className="text-xs">{t(view.otPremium.next.exclude ? "wc.otNextOn" : "wc.otNextOff", { date: longDate(view.otPremium.next.from, locale) })}</p>}
+    <SettingsRows
+      testId="ot-premium"
+      footer={
+        canChange && (
+          <SettingsFooter>
+            <Button disabled={pending || (exclude === view.otPremium.exclude && from === today)} onClick={() => save(() => setOtPremiumAction(exclude, from), () => setProblems([]), setProblems)} data-testid="save-ot-premium">
+              {t("save")}
+            </Button>
+          </SettingsFooter>
+        )
+      }
+    >
+      <SettingsRow
+        label={t("wc.otPremium")}
+        htmlFor="ot-premium"
+        description={
+          <>
+            <span className="block">{t("wc.otPremiumHint")}</span>
+            {view.otPremium.next && <span className="block text-foreground">{t(view.otPremium.next.exclude ? "wc.otNextOn" : "wc.otNextOff", { date: longDate(view.otPremium.next.from, locale) })}</span>}
+          </>
+        }
+        control={<Switch id="ot-premium" checked={exclude} disabled={!canChange} onCheckedChange={(on) => setExclude(on)} />}
+      />
       {canChange && (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="ot-from" className="text-xs text-muted-foreground">
-              {t("from")}
-            </Label>
-            <Input id="ot-from" type="date" className="w-44" value={from} onChange={(e) => setFrom(e.target.value)} aria-invalid={problems.length > 0 ? true : undefined} />
-          </div>
-          <Button size="sm" disabled={pending || (exclude === view.otPremium.exclude && from === today)} onClick={() => save(() => setOtPremiumAction(exclude, from), () => setProblems([]), setProblems)} data-testid="save-ot-premium">
-            {t("save")}
-          </Button>
-        </div>
+        <SettingsRow
+          label={t("from")}
+          htmlFor="ot-from"
+          description={problems.length > 0 ? <span className="text-destructive">{t("rules.date")}</span> : undefined}
+          control={<Input id="ot-from" type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} aria-invalid={problems.length > 0 ? true : undefined} />}
+        />
       )}
-    </div>
+    </SettingsRows>
   );
 }
 
-function PayDay({ view, today, canChange }: { view: View; today: string; canChange: boolean }) {
+/** The pay day (Gusto pay schedule): the days in one row, the date it applies from in the next, Save in the foot. */
+function PayDay({ view, today, canChange, changedNote }: { view: View; today: string; canChange: boolean; changedNote?: string }) {
   const t = useTranslations("marginSettings");
   const locale = useLocale();
   const [days, setDays] = useState(view.payDay.days === null ? "" : String(view.payDay.days));
@@ -223,32 +205,46 @@ function PayDay({ view, today, canChange }: { view: View; today: string; canChan
   const { pending, save } = useSave();
   const problem = (field: string) => problems.find((p) => p.field === field);
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" data-testid="pay-day">
-      <p className="text-sm">{view.payDay.days === null ? t("payDay.notSet") : t("payDay.current", { days: view.payDay.days, date: view.payDay.from ? longDate(view.payDay.from, locale) : "" })}</p>
-      {view.payDay.next && <p className="text-xs">{t("payDay.next", { days: view.payDay.next.days, date: longDate(view.payDay.next.from, locale) })}</p>}
+    <SettingsRows
+      testId="pay-day"
+      footer={
+        (canChange || changedNote) && (
+          <SettingsFooter note={changedNote}>
+            {canChange && (
+              <Button disabled={pending} onClick={() => save(() => setPayDayAction(/^\d+$/.test(days.trim()) ? Number(days.trim()) : -1, from), () => setProblems([]), setProblems)} data-testid="save-pay-day">
+                {t("save")}
+              </Button>
+            )}
+          </SettingsFooter>
+        )
+      }
+    >
+      <SettingsRow
+        label={t("payDay.days")}
+        htmlFor={canChange ? "pay-days" : undefined}
+        description={
+          <>
+            <span className="block">{view.payDay.days === null ? t("payDay.notSet") : t("payDay.current", { days: view.payDay.days, date: view.payDay.from ? longDate(view.payDay.from, locale) : "" })}</span>
+            {view.payDay.next && <span className="block text-foreground">{t("payDay.next", { days: view.payDay.next.days, date: longDate(view.payDay.next.from, locale) })}</span>}
+            {problem("days") && <span className="block text-destructive">{t("rules.days")}</span>}
+          </>
+        }
+        control={canChange && <Input id="pay-days" inputMode="numeric" className="w-20" value={days} onChange={(e) => setDays(e.target.value)} aria-invalid={problem("days") ? true : undefined} data-testid="pay-days" />}
+      />
       {canChange && (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="pay-days" className="text-xs text-muted-foreground">
-              {t("payDay.days")}
-            </Label>
-            <Input id="pay-days" inputMode="numeric" className="w-24" value={days} onChange={(e) => setDays(e.target.value)} aria-invalid={problem("days") ? true : undefined} data-testid="pay-days" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="pay-from" className="text-xs text-muted-foreground">
-              {t("from")}
-            </Label>
-            <Input id="pay-from" type="date" className="w-44" value={from} onChange={(e) => setFrom(e.target.value)} aria-invalid={problem("effectiveFrom") ? true : undefined} />
-          </div>
-          <Button size="sm" disabled={pending} onClick={() => save(() => setPayDayAction(/^\d+$/.test(days.trim()) ? Number(days.trim()) : -1, from), () => setProblems([]), setProblems)} data-testid="save-pay-day">
-            {t("save")}
-          </Button>
-        </div>
+        <SettingsRow
+          label={t("from")}
+          htmlFor="pay-from"
+          description={
+            <>
+              <span className="block">{t("payDay.fromHint")}</span>
+              {problem("effectiveFrom") && <span className="block text-destructive">{t("rules.date")}</span>}
+            </>
+          }
+          control={<Input id="pay-from" type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} aria-invalid={problem("effectiveFrom") ? true : undefined} />}
+        />
       )}
-      {canChange && <p className="text-xs text-muted-foreground">{t("payDay.fromHint")}</p>}
-      {problem("days") && <p className="text-sm text-destructive">{t("rules.days")}</p>}
-      {problem("effectiveFrom") && <p className="text-sm text-destructive">{t("rules.date")}</p>}
-    </div>
+    </SettingsRows>
   );
 }
 

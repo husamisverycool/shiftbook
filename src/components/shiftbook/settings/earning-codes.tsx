@@ -2,7 +2,9 @@
 
 // Pattern: docs/patterns/settings/payroll.md — Earning codes tab (7shifts custom export codes: one
 // field per category, the fallback when blank stated per field; QuickBooks Time: one target item per
-// hour type; the multiple declared where the agency sets it).
+// hour type; the multiple declared where the agency sets it). Laid out as Linear's rows in a panel
+// (docs/patterns/_components/settings.md): each kind of pay a row, what happens when blank under its
+// name, its fields at the right under a caption row; Save in the panel's foot.
 import type { EarningType } from "@shiftbook/rules";
 import { exactDecimal } from "@shiftbook/rules";
 import { useTranslations } from "next-intl";
@@ -11,11 +13,11 @@ import { saveCodesAction } from "@/app/[locale]/(app)/settings/payroll/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "@/i18n/navigation";
 import { EARNING_TYPES, KIND_RULES, type CarriedAs, type CodeMap, type ExportFormat, type KindRule, type SettingProblem } from "@/exports/targets";
 import { FieldProblem, useRefusal } from "./payroll-settings";
 import { parseFactor, problemFor } from "./problems";
+import { SettingsFooter, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
 
 interface Row {
   code: string;
@@ -76,57 +78,65 @@ export function EarningCodes({ format, codes, problems: stored, id, canEdit }: {
     });
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="codes-title">
-      <div className="flex flex-col gap-1">
-        <h2 id="codes-title" className="text-lg font-semibold">
-          {t("tabs.codes")}
-        </h2>
-        <p className="text-sm text-muted-foreground">{t("codes.hint", { system })}</p>
-      </div>
-      <div className="min-w-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("codes.colKind")}</TableHead>
-              <TableHead>{t("codes.colCode")}</TableHead>
-              <TableHead>{t("codes.colAs")}</TableHead>
-              <TableHead>{t("codes.colFactor")}</TableHead>
-              <TableHead>{t("codes.colBlank")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {EARNING_TYPES.map((kind) => {
-              const rule = rules[kind];
-              const name = t(`codes.kinds.${kind}`);
-              if (!rule) {
-                return (
-                  <TableRow key={kind} data-testid={`code-row-${kind}`}>
-                    <TableCell className="font-medium">{name}</TableCell>
-                    <TableCell colSpan={3} className="whitespace-normal text-muted-foreground">
-                      {t("codes.notCarried")}
-                    </TableCell>
-                    <TableCell className="min-w-64 whitespace-normal text-muted-foreground">{t("codes.blank.not_carried")}</TableCell>
-                  </TableRow>
-                );
-              }
-              const row = rows[kind]!;
-              const way = row.as === "hours" ? rule.hours : rule.dollars;
-              const optional = optionalColumn(rule);
-              const codeProblem = problemFor(problems, `codes.${kind}`);
-              const factorProblem = problemFor(problems, `codes.${kind}.factor`);
-              return (
-                <TableRow key={kind} data-testid={`code-row-${kind}`}>
-                  <TableCell className="align-top font-medium">{name}</TableCell>
-                  <TableCell className="align-top">
+    <SettingsSection id="codes-title" titleHidden title={t("tabs.codes")} description={t("codes.hint", { system })}>
+      <SettingsRows
+        footer={
+          canEdit && (
+            <SettingsFooter>
+              <span aria-live="polite" className="text-sm text-muted-foreground" data-testid="codes-saved">
+                {saved ? t("saved") : ""}
+              </span>
+              <Button onClick={save} disabled={pending} data-testid="save-codes">
+                {pending ? t("saving") : t("save")}
+              </Button>
+            </SettingsFooter>
+          )
+        }
+      >
+        {/* The fields' captions, once, over the rows (each field also names itself to a screen reader). */}
+        <div className="hidden min-h-10 items-center gap-4 py-2 text-xs font-medium text-muted-foreground sm:flex" aria-hidden>
+          <span className="flex-1">{t("codes.colKind")}</span>
+          <span className="w-48">{t("codes.colCode")}</span>
+          <span className="w-24">{t("codes.colAs")}</span>
+          <span className="w-16">{t("codes.colFactor")}</span>
+        </div>
+        {EARNING_TYPES.map((kind) => {
+          const rule = rules[kind];
+          const name = t(`codes.kinds.${kind}`);
+          if (!rule) {
+            return (
+              <SettingsRow
+                key={kind}
+                testId={`code-row-${kind}`}
+                label={name}
+                description={t("codes.blank.not_carried")}
+                control={<span className="w-96 text-[13px] text-muted-foreground">{t("codes.notCarried")}</span>}
+              />
+            );
+          }
+          const row = rows[kind]!;
+          const way = row.as === "hours" ? rule.hours : rule.dollars;
+          const optional = optionalColumn(rule);
+          const codeProblem = problemFor(problems, `codes.${kind}`);
+          const factorProblem = problemFor(problems, `codes.${kind}.factor`);
+          return (
+            <SettingsRow
+              key={kind}
+              testId={`code-row-${kind}`}
+              label={name}
+              description={t(`codes.blank.${rule.blank}`, { code: kind })}
+              control={
+                <div className="flex items-start gap-4">
+                  <div className="flex w-48 flex-col gap-1">
                     {rule.blank === "fixed" && way?.column ? (
-                      <span>{t("codes.fixedColumn", { column: way.column })}</span>
+                      <span className="py-1.5 text-[13px] leading-5 break-words">{t("codes.fixedColumn", { column: way.column })}</span>
                     ) : optional ? (
                       <NativeSelect aria-label={t("codes.codeLabel", { kind: name })} value={row.code} disabled={!canEdit} onChange={(e) => update(kind, { code: e.target.value })} className="w-48">
                         <NativeSelectOption value="">—</NativeSelectOption>
                         <NativeSelectOption value={optional}>{t("codes.fixedColumn", { column: optional })}</NativeSelectOption>
                       </NativeSelect>
                     ) : (
-                      <div className="flex flex-col gap-1">
+                      <>
                         <Input
                           aria-label={t("codes.codeLabel", { kind: name })}
                           value={row.code}
@@ -135,28 +145,27 @@ export function EarningCodes({ format, codes, problems: stored, id, canEdit }: {
                           aria-invalid={codeProblem ? true : undefined}
                           aria-describedby={codeProblem ? `code-${kind}-problem` : undefined}
                           onChange={(e) => update(kind, { code: e.target.value })}
-                          className="w-48"
                           data-testid={`code-${kind}`}
                         />
                         <FieldProblem problem={codeProblem} id={`code-${kind}-problem`} />
-                      </div>
+                      </>
                     )}
-                  </TableCell>
-                  <TableCell className="align-top">
+                  </div>
+                  <div className="w-24">
                     {rule.hours && rule.dollars && !(optional || rule.blank === "fixed") ? (
-                      <NativeSelect aria-label={t("codes.asLabel", { kind: name })} value={row.as} disabled={!canEdit} onChange={(e) => update(kind, { as: e.target.value as CarriedAs })} className="w-32">
+                      <NativeSelect aria-label={t("codes.asLabel", { kind: name })} value={row.as} disabled={!canEdit} onChange={(e) => update(kind, { as: e.target.value as CarriedAs })} className="w-24">
                         <NativeSelectOption value="hours">{t("codes.hours")}</NativeSelectOption>
                         <NativeSelectOption value="dollars">{t("codes.dollars")}</NativeSelectOption>
                       </NativeSelect>
                     ) : (
-                      <span>{t(row.as === "hours" ? "codes.hours" : "codes.dollars")}</span>
+                      <span className="block py-1.5 text-[13px] leading-5">{t(row.as === "hours" ? "codes.hours" : "codes.dollars")}</span>
                     )}
-                  </TableCell>
-                  <TableCell className="align-top">
+                  </div>
+                  <div className="flex w-16 flex-col gap-1">
                     {row.as !== "hours" || format === "spreadsheet_csv" ? (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="py-1.5 text-[13px] leading-5 text-muted-foreground">—</span>
                     ) : rule.hours?.declared ? (
-                      <div className="flex flex-col gap-1">
+                      <>
                         <Input
                           aria-label={t("codes.factorLabel", { kind: name })}
                           value={row.factor}
@@ -165,32 +174,20 @@ export function EarningCodes({ format, codes, problems: stored, id, canEdit }: {
                           aria-invalid={factorProblem ? true : undefined}
                           aria-describedby={factorProblem ? `factor-${kind}-problem` : undefined}
                           onChange={(e) => update(kind, { factor: e.target.value })}
-                          className="w-24"
                           data-testid={`factor-${kind}`}
                         />
                         <FieldProblem problem={factorProblem} id={`factor-${kind}-problem`} />
-                      </div>
+                      </>
                     ) : (
-                      <span>{t("codes.factorFixed", { factor: factorText(rule.hours!.factor) })}</span>
+                      <span className="py-1.5 text-[13px] leading-5">{t("codes.factorFixed", { factor: factorText(rule.hours!.factor) })}</span>
                     )}
-                  </TableCell>
-                  <TableCell className="min-w-64 align-top whitespace-normal text-muted-foreground">{t(`codes.blank.${rule.blank}`, { code: kind })}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-      {canEdit && (
-        <div className="flex items-center gap-3">
-          <Button onClick={save} disabled={pending} data-testid="save-codes">
-            {pending ? t("saving") : t("save")}
-          </Button>
-          <span aria-live="polite" className="text-sm text-muted-foreground" data-testid="codes-saved">
-            {saved ? t("saved") : ""}
-          </span>
-        </div>
-      )}
-    </section>
+                  </div>
+                </div>
+              }
+            />
+          );
+        })}
+      </SettingsRows>
+    </SettingsSection>
   );
 }

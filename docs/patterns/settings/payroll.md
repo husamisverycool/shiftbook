@@ -23,9 +23,12 @@ Source URL: https://quickbooks.intuit.com/learn-support/en-us/help-articles/map-
 Source URL: https://support.clicktime.com/hc/en-us/articles/41018977335565-Export-Payroll-Data-to-ADP
 Source URL: https://help.workyard.com/en/articles/15467712-how-to-map-pay-types-for-quickbooks-online-payroll-exports
 Source URL: https://linear.app/docs/workspaces
+Source URL: https://linear.app/docs/account-preferences
+Source URL: https://linear.app/docs/scim
 Researched: 2026-10-16 (`docs/research/payroll-formats-slice-f.md` §7). Confidence: high for the
 7shifts tabs and mapping page and for Deputy's template builder (help articles with screenshots);
-medium for Deputy's destination step (beta article); no reference documents keyboard shortcuts.
+medium for Deputy's destination step (beta article); no reference documents keyboard shortcuts. Laid
+out on 2026-10-17 as Linear's settings from Linear's own screenshots (`_components/settings.md`).
 
 ## Purpose in Shiftbook
 Where the Owner chooses the payroll system the weekly payroll file is made for (SPEC §13), enters
@@ -34,36 +37,45 @@ spreadsheet's layout), the system's code for each kind of pay, and each worker's
 The run checks against these settings and names whatever is missing (ClickTime, Workyard).
 
 ## Hierarchy
-1. **Page header:** "Settings" above, H1 "Payroll file" (Linear settings page title).
-2. **Payroll system** section (7shifts: the target chosen once; Deputy: the format list):
-   1. A choice of the systems, one option each, with a one-line hint of what its file carries
-      (Deputy's format list; §7.7 capability hint): Gusto, QuickBooks Desktop, QuickBooks Online,
-      ADP Workforce Now, RUN Powered by ADP, Spreadsheet. The system in use is marked.
-   2. Under the choice, only the chosen system's own fields (Deputy: fields appear once a format is
-      chosen; 7shifts: the company code): ADP Workforce Now and RUN — company code; QuickBooks
-      Desktop — version (2022 and later, or 2021 and earlier with the company name and company file
-      number from a Timer Lists export); QuickBooks Online — the customer every row is recorded
-      against. Each field with its rule as help text.
-   3. The file name the system expects, read only (7shifts states the file name per format; Deputy
-      shows the file name).
-   4. **Save** (7shifts saves explicitly), with when it was last changed and by whom.
+Laid out as Linear's settings (`_components/settings.md`): the shared header, the sections in the
+centred column, each section's rows in a rounded bordered panel, a form's Save in the panel's foot.
+1. **Page header:** "Settings" above, H1 "Payroll file" (Linear settings page title); for anyone but the
+   Owner, the muted line under the title says only the Owner changes payroll settings.
+2. **Payroll system** section (7shifts: the target chosen once; Deputy: the format list), its muted line
+   saying one system at a time:
+   1. Nothing chosen yet: the warning that no system is chosen, above the panel.
+   2. A panel of rows, one per system (Linear's rows; Deputy's format list; §7.7 capability hint): the
+      system's name (with "In use" beside the one in use) over a one-line hint of what its file carries,
+      the radio at the row's right; the whole row chooses it. Gusto, QuickBooks Desktop, QuickBooks
+      Online, ADP Workforce Now, RUN Powered by ADP, Spreadsheet.
+   3. Under it, once a system is chosen, a panel with only that system's own fields (Deputy: fields
+      appear once a format is chosen; 7shifts: the company code), label over field with its rule as
+      the hint (Linear's SAML setup): ADP Workforce Now and RUN — company code; QuickBooks Desktop —
+      version (2022 and later, or 2021 and earlier with the company name and company file number from a
+      Timer Lists export); QuickBooks Online — the customer every row is recorded against. Then the
+      file name the system expects, read only (7shifts; Deputy).
+   4. That panel's foot: when it was last changed and by whom at the left; "Saved" and **Save** (7shifts
+      saves explicitly) at the right.
 3. **Tabs** (7shifts Settings tabs) for the system in use: **Earning codes** · **Worker ids** ·
-   **Spreadsheet columns** (only when the system is Spreadsheet).
-4. **Earning codes** tab (7shifts custom export codes; QuickBooks Time one item per hour type):
-   a table, one row per kind of pay Shiftbook can produce: the kind of pay; the code in the system
-   (a text field, or the system's fixed column shown as text where the file has one); hours or
-   dollars where the system lets the agency choose; the multiple the system applies to hours, where
-   the agency declares it (ADP Workforce Now); and **what happens when it is blank**, stated per row
-   (7shifts). Kinds of pay the system cannot carry say so in that row. **Save**.
-5. **Worker ids** tab (7shifts mapping page): filter chips **All · Missing · Set** with counts, a
-   search box, a progress bar "N of M workers have an id", then one row per worker: name, the id
-   field (and Gusto's job title), and a status badge (Set / Missing). An id saves on its own when
-   the field is left or Enter is pressed (QuickBooks Time saves on change).
-6. **Spreadsheet columns** tab (Deputy custom payroll export): the file's options (file name,
-   delimiter, column headers on or off, date format), then the **included columns** in file order,
-   each with its header text (rename), move up and move down (Deputy reorders by dragging) and
-   Remove; below, **Add a column** with a searchable list of the fields (Deputy field picker),
-   including fixed text (Deputy's static value). **Save**.
+   **Spreadsheet columns** (only when the system is Spreadsheet). Under each tab, its muted line, then
+   its panel (the tab names the section; its heading is for screen readers).
+4. **Earning codes** tab (7shifts custom export codes; QuickBooks Time one item per hour type): a panel
+   of rows under a caption row (Kind of pay · Code · Sent as · Multiple), one row per kind of pay
+   Shiftbook can produce: the kind of pay over **what happens when it is blank** (7shifts), then at the
+   right the code in the system (a field, or the system's fixed column as text), hours or dollars where
+   the system lets the agency choose, and the multiple the system applies to hours where the agency
+   declares it (ADP Workforce Now). Kinds of pay the system cannot carry say so at the right. **Save** in
+   the panel's foot.
+5. **Worker ids** tab (7shifts mapping page): a progress bar "N of M workers have an id", filter chips
+   **All · Missing · Set** with counts and a search box, then a panel of rows under a caption row: the
+   worker's name, at the right the id field (and Gusto's job title) and a status badge (Set / Missing).
+   An id saves on its own when the field is left or Enter is pressed (QuickBooks Time saves on change).
+6. **Spreadsheet columns** tab (Deputy custom payroll export), one panel in parts between hairlines
+   (Linear's SAML panel): the file's options (file name, delimiter, date format, column headers on or
+   off); the **included columns** in file order as a list nested in the panel, each with its header text
+   (rename), move up and move down (Deputy reorders by dragging) and Remove; **Add a column** with a
+   searchable list of the fields (Deputy field picker), including fixed text (Deputy's static value).
+   **Save** in the panel's foot.
 
 ## Interactions
 - Choosing another system shows its fields at once; nothing changes until Save (7shifts setup is
@@ -91,8 +103,14 @@ The run checks against these settings and names whatever is missing (ClickTime, 
 - **Refused:** a field that breaks its rule (a company code that is not 2 or 3 letters and digits,
   an ADP file number outside 51–999999, a QuickBooks name with characters the file cannot carry)
   shows the rule under the field; nothing is saved.
-- **Read only:** for anyone but the Owner, every field is shown disabled with a line saying only
-  the Owner changes payroll settings.
+- **Read only:** for anyone but the Owner, every field is shown disabled and the header's muted line
+  says only the Owner changes payroll settings.
+
+## Look (checked against Linear's screenshots, 2026-10-17)
+As `_components/settings.md`. Remaining differences: Linear has no radio rows (its choices are selects);
+the systems keep a row each because each carries its own hint (Deputy). Linear's rows have one control
+each; the earning codes and worker ids have several, so a caption row names them, as 7shifts' mapping
+table and Deputy's template head their columns.
 
 ## Never copy
 7shifts', Deputy's, Intuit's, ClickTime's, Workyard's or Linear's wording, icons, colors or logos.

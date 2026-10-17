@@ -1,18 +1,20 @@
 "use client";
 
 // Pattern: docs/patterns/settings/payroll.md — Worker ids tab (7shifts mapping page: Matched /
-// Unmatched filter, search, a progress bar, a status per row; QuickBooks Time saves on change).
+// Unmatched filter, search, a progress bar, a status per row; QuickBooks Time saves on change). The rows
+// sit in a Linear settings panel (docs/patterns/_components/settings.md): the worker's name, the id at
+// the right, its status last.
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { saveWorkerIdAction } from "@/app/[locale]/(app)/settings/payroll/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "@/i18n/navigation";
 import type { PayrollSystem, SettingProblem } from "@/exports/targets";
 import type { PayrollSettingsView } from "@/server/payroll/queries";
 import { FieldProblem, useRefusal, type WorkerFilter } from "./payroll-settings";
+import { SettingsEmpty, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
 
 type Worker = PayrollSettingsView["workers"][number];
 const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -73,13 +75,7 @@ export function WorkerIds({ system, workers, filter, onFilter, canEdit }: { syst
   const count = (f: WorkerFilter) => (f === "all" ? workers.length : f === "set" ? setCount : workers.length - setCount);
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="workers-title">
-      <div className="flex flex-col gap-1">
-        <h2 id="workers-title" className="text-lg font-semibold">
-          {t("tabs.workers")}
-        </h2>
-        <p className="text-sm text-muted-foreground">{t("workers.hint", { idName, system: t(`systems.${systemFormat(system)}.name`) })}</p>
-      </div>
+    <SettingsSection id="workers-title" titleHidden title={t("tabs.workers")} description={t("workers.hint", { idName, system: t(`systems.${systemFormat(system)}.name`) })}>
       <div className="flex flex-col gap-2">
         <div
           role="progressbar"
@@ -101,87 +97,78 @@ export function WorkerIds({ system, workers, filter, onFilter, canEdit }: { syst
             {t(`workers.${f}`)} · {count(f)}
           </Button>
         ))}
-        <Input type="search" aria-label={t("workers.search")} placeholder={t("workers.search")} value={query} onChange={(e) => setQuery(e.target.value)} className="ml-auto w-64" />
+        <Input type="search" aria-label={t("workers.search")} placeholder={t("workers.search")} value={query} onChange={(e) => setQuery(e.target.value)} className="w-full sm:ml-auto sm:w-64" />
       </div>
-      <div className="min-w-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("workers.colWorker")}</TableHead>
-              <TableHead>{t("workers.colId")}</TableHead>
-              {gusto && <TableHead>{t("workers.colTitle")}</TableHead>}
-              <TableHead>{t("workers.colStatus")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {shown.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={gusto ? 4 : 3} className="py-8 text-center text-muted-foreground">
-                  {t("workers.none")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              shown.map((w) => {
-                const name = `${w.firstName} ${w.lastName}`;
-                const problem = problems.get(w.id);
-                const value = typed.get(w.id)!;
-                return (
-                  <TableRow key={w.id} data-testid="id-row">
-                    <TableCell className="align-top font-medium">{name}</TableCell>
-                    <TableCell className="align-top">
-                      <div className="flex flex-col gap-1">
+      <SettingsRows>
+        {/* The fields' captions, once, over the rows. */}
+        <div className="hidden min-h-10 items-center gap-4 py-2 text-xs font-medium text-muted-foreground sm:flex" aria-hidden>
+          <span className="flex-1">{t("workers.colWorker")}</span>
+          <span className="w-44">{t("workers.colId")}</span>
+          {gusto && <span className="w-40">{t("workers.colTitle")}</span>}
+          <span className="w-20">{t("workers.colStatus")}</span>
+        </div>
+        {shown.length === 0 ? (
+          <SettingsEmpty>{t("workers.none")}</SettingsEmpty>
+        ) : (
+          shown.map((w) => {
+            const name = `${w.firstName} ${w.lastName}`;
+            const problem = problems.get(w.id);
+            const value = typed.get(w.id)!;
+            return (
+              <SettingsRow
+                key={w.id}
+                testId="id-row"
+                label={name}
+                control={
+                  <div className="flex items-start gap-4">
+                    <div className="flex w-44 flex-col gap-1">
+                      <Input
+                        aria-label={t("workers.idLabel", { idName, name })}
+                        value={value.id}
+                        disabled={!canEdit || saving === w.id}
+                        aria-invalid={problem?.field === "id" ? true : undefined}
+                        aria-describedby={problem?.field === "id" ? `id-${w.id}-problem` : undefined}
+                        onChange={(e) => setTyped((m) => new Map(m).set(w.id, { ...value, id: e.target.value }))}
+                        onBlur={() => void save(w)}
+                        onKeyDown={onKey(w)}
+                        data-testid="worker-id"
+                      />
+                      {problem?.field === "id" &&
+                        ("by" in problem ? (
+                          <p id={`id-${w.id}-problem`} className="text-sm text-destructive" data-testid="field-problem">
+                            {t("workers.taken", { name: problem.by })}
+                          </p>
+                        ) : (
+                          <FieldProblem problem={problem} id={`id-${w.id}-problem`} />
+                        ))}
+                    </div>
+                    {gusto && (
+                      <div className="flex w-40 flex-col gap-1">
                         <Input
-                          aria-label={t("workers.idLabel", { idName, name })}
-                          value={value.id}
+                          aria-label={t("workers.titleLabel", { name })}
+                          value={value.title}
                           disabled={!canEdit || saving === w.id}
-                          aria-invalid={problem?.field === "id" ? true : undefined}
-                          aria-describedby={problem?.field === "id" ? `id-${w.id}-problem` : undefined}
-                          onChange={(e) => setTyped((m) => new Map(m).set(w.id, { ...value, id: e.target.value }))}
+                          aria-invalid={problem?.field === "title" ? true : undefined}
+                          onChange={(e) => setTyped((m) => new Map(m).set(w.id, { ...value, title: e.target.value }))}
                           onBlur={() => void save(w)}
                           onKeyDown={onKey(w)}
-                          className="w-64"
-                          data-testid="worker-id"
                         />
-                        {problem?.field === "id" &&
-                          ("by" in problem ? (
-                            <p id={`id-${w.id}-problem`} className="text-sm text-destructive" data-testid="field-problem">
-                              {t("workers.taken", { name: problem.by })}
-                            </p>
-                          ) : (
-                            <FieldProblem problem={problem} id={`id-${w.id}-problem`} />
-                          ))}
+                        {problem?.field === "title" && !("by" in problem) && <FieldProblem problem={problem} id={`title-${w.id}-problem`} />}
                       </div>
-                    </TableCell>
-                    {gusto && (
-                      <TableCell className="align-top">
-                        <div className="flex flex-col gap-1">
-                          <Input
-                            aria-label={t("workers.titleLabel", { name })}
-                            value={value.title}
-                            disabled={!canEdit || saving === w.id}
-                            aria-invalid={problem?.field === "title" ? true : undefined}
-                            onChange={(e) => setTyped((m) => new Map(m).set(w.id, { ...value, title: e.target.value }))}
-                            onBlur={() => void save(w)}
-                            onKeyDown={onKey(w)}
-                            className="w-64"
-                          />
-                          {problem?.field === "title" && !("by" in problem) && <FieldProblem problem={problem} id={`title-${w.id}-problem`} />}
-                        </div>
-                      </TableCell>
                     )}
-                    <TableCell className="align-top">
+                    <div className="flex h-8 w-20 items-center">
                       <Badge variant={isSet(w.id) ? "secondary" : "outline"} data-testid="id-status">
                         {t(isSet(w.id) ? "workers.set" : "workers.missing")}
                       </Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </section>
+                    </div>
+                  </div>
+                }
+              />
+            );
+          })
+        )}
+      </SettingsRows>
+    </SettingsSection>
   );
 }
 

@@ -2,6 +2,9 @@
 
 // Pattern: docs/patterns/settings/compliance.md — Vanta document renewal settings (renewal from the
 // file's effective date; Due soon, then Overdue) and documents (a new version; the old one in History).
+// Laid out as Linear's settings (docs/patterns/_components/settings.md): each registration and policy a
+// row in a panel — its number over its dates, its duty at the right — "Add" at the section heading's
+// right; the forms in panels with Save in the foot.
 import { PlusIcon, UploadIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
@@ -10,17 +13,17 @@ import { addPolicyAction, addRegistrationAction, setAcaSettingsAction, setMaCont
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { ComplianceSettings as View } from "@/server/compliance/queries";
 import { longDate } from "../format";
 import { StatusBadge } from "./status-badge";
 import { useDateTime } from "../agency-zone";
+import { SettingsEmpty, SettingsField, SettingsFooter, SettingsPage, SettingsPanel, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
 
 function useSave() {
   const t = useTranslations("complianceSettings");
@@ -51,156 +54,136 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
   const when = useDateTime();
   const [adding, setAdding] = useState<"registration" | "policy" | null>(null);
   const date = (d: string | null) => (d ? longDate(d, locale) : "—");
-  const changed = (c: { at: Date | string; by: string } | null) =>
-    c ? <p className="text-xs text-muted-foreground">{t("changed", { date: when(c.at, { time: false }), by: c.by })}</p> : null;
-  const duty = (r: { id: string; status: Parameters<typeof StatusBadge>[0]["status"]; dueOn: string } | null) =>
-    r ? (
-      <Link href={`/compliance/${r.id}`} className="flex w-fit flex-col items-start gap-0.5 underline-offset-4 hover:underline">
-        <StatusBadge status={r.status} />
-        <span className="text-xs whitespace-nowrap">{date(r.dueOn)}</span>
-      </Link>
-    ) : (
-      t("noRenewal")
-    );
+  const changedNote = (c: { at: Date | string; by: string } | null) => (c ? t("changed", { date: when(c.at, { time: false }), by: c.by }) : undefined);
+  const changed = (c: { at: Date | string; by: string } | null) => (c ? <SettingsFooter note={changedNote(c)} /> : undefined);
+  /** A duty at the row's right: what it is, then its status and date, a link to it. */
+  const duty = (caption: string, r: { id: string; status: Parameters<typeof StatusBadge>[0]["status"]; dueOn: string } | null) => (
+    <div className="flex w-36 flex-col items-start gap-1">
+      <span className="text-xs text-muted-foreground">{caption}</span>
+      {r ? (
+        <Link href={`/compliance/${r.id}`} className="flex w-fit flex-col items-start gap-0.5 underline-offset-4 hover:underline">
+          <StatusBadge status={r.status} />
+          <span className="text-xs whitespace-nowrap">{date(r.dueOn)}</span>
+        </Link>
+      ) : (
+        <span className="text-sm">{t("noRenewal")}</span>
+      )}
+    </div>
+  );
   const file = (id: string | null, name: string | null) =>
     id && name ? (
-      <a href={`/api/files/compliance/${id}`} download className="underline underline-offset-4">
+      <a href={`/api/files/compliance/${id}`} download className="underline underline-offset-4 hover:text-foreground">
         {name}
       </a>
-    ) : (
-      "—"
+    ) : null;
+  const add = (label: string, kind: "registration" | "policy", testId: string) =>
+    canChange && (
+      <Button size="sm" variant="outline" onClick={() => setAdding(kind)} data-testid={testId}>
+        <PlusIcon />
+        {label}
+      </Button>
     );
-  const section = (id: string, title: string, intro: string, action: ReactNode, body: ReactNode, foot: ReactNode) => (
-    <section className="flex flex-col gap-3" aria-labelledby={id}>
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 id={id} className="mr-auto text-lg font-semibold">
-          {title}
-        </h2>
-        {action}
-      </div>
-      <p className="text-sm text-muted-foreground">{intro}</p>
-      {body}
-      {foot}
-    </section>
-  );
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-8 px-4 py-6 md:px-8 md:py-8">
-      <header className="flex flex-col gap-1">
-        <p className="text-sm text-muted-foreground">{t("settings")}</p>
-        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("description")}</p>
-        {!canChange && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
-      </header>
-
-      {section(
-        "registrations-title",
-        t("registrations.title"),
-        t("registrations.intro"),
-        canChange && (
-          <Button size="sm" variant="outline" onClick={() => setAdding("registration")} data-testid="add-registration">
-            <PlusIcon />
-            {t("registrations.add")}
-          </Button>
-        ),
-        view.registrations.length === 0 ? (
-          <p className="rounded-xl border border-dashed py-8 text-center text-sm text-muted-foreground">{t("registrations.none")}</p>
+    <SettingsPage
+      context={t("settings")}
+      title={t("title")}
+      description={
+        <>
+          <p>{t("description")}</p>
+          {!canChange && <p>{t("readOnly")}</p>}
+        </>
+      }
+    >
+      <SettingsSection id="registrations-title" title={t("registrations.title")} description={t("registrations.intro")} action={add(t("registrations.add"), "registration", "add-registration")}>
+        {view.registrations.length === 0 ? (
+          <SettingsRows footer={changed(view.changed.registrations)}>
+            <SettingsEmpty>{t("registrations.none")}</SettingsEmpty>
+          </SettingsRows>
         ) : (
-          <div className="min-w-0">
-            <Table aria-labelledby="registrations-title">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("registrations.cols.state")}</TableHead>
-                  <TableHead>{t("registrations.cols.for")}</TableHead>
-                  <TableHead>{t("registrations.cols.number")}</TableHead>
-                  <TableHead>{t("registrations.cols.issued")}</TableHead>
-                  <TableHead>{t("registrations.cols.expires")}</TableHead>
-                  <TableHead>{t("registrations.cols.certificate")}</TableHead>
-                  <TableHead>{t("registrations.cols.renewal")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {view.registrations.map((r) => (
-                  <TableRow key={r.id} data-testid="registration-row" className={r.replaced ? "text-muted-foreground" : undefined}>
-                    <TableCell>{r.jurisdiction}</TableCell>
-                    <TableCell>{r.branchName ?? t("registrations.agency")}</TableCell>
-                    <TableCell className="font-medium">
-                      {r.number} {r.replaced && <Badge variant="outline">{t("registrations.replaced")}</Badge>}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{date(r.issuedOn)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{date(r.expiresOn)}</TableCell>
-                    <TableCell>{file(r.documentId, r.documentName)}</TableCell>
-                    <TableCell>{duty(r.renewal)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ),
-        changed(view.changed.registrations),
-      )}
+          <SettingsRows as="ul" aria-labelledby="registrations-title" footer={changed(view.changed.registrations)}>
+            {view.registrations.map((r) => {
+              const certificate = file(r.documentId, r.documentName);
+              return (
+                <SettingsRow
+                  key={r.id}
+                  as="li"
+                  testId="registration-row"
+                  className={r.replaced ? "text-muted-foreground" : undefined}
+                  label={
+                    <span className="flex flex-wrap items-center gap-2">
+                      {r.number}
+                      {r.replaced && <Badge variant="outline">{t("registrations.replaced")}</Badge>}
+                    </span>
+                  }
+                  description={
+                    <>
+                      <span className="block">{[r.jurisdiction, r.branchName ?? t("registrations.agency"), r.issuedOn && t("registrations.issued", { date: date(r.issuedOn) }), t("registrations.expires", { date: date(r.expiresOn) })].filter(Boolean).join(" · ")}</span>
+                      {certificate && <span className="block">{certificate}</span>}
+                    </>
+                  }
+                  control={duty(t("registrations.cols.renewal"), r.renewal)}
+                />
+              );
+            })}
+          </SettingsRows>
+        )}
+      </SettingsSection>
 
-      {section(
-        "policy-title",
-        t("policy.title"),
-        t("policy.intro"),
-        canChange && (
-          <Button size="sm" variant="outline" onClick={() => setAdding("policy")} data-testid="add-policy">
-            <PlusIcon />
-            {t("policy.add")}
-          </Button>
-        ),
-        view.policies.length === 0 ? (
-          <p className="rounded-xl border border-dashed py-8 text-center text-sm text-muted-foreground">{t("policy.none")}</p>
+      <SettingsSection id="policy-title" title={t("policy.title")} description={t("policy.intro")} action={add(t("policy.add"), "policy", "add-policy")}>
+        {view.policies.length === 0 ? (
+          <SettingsRows footer={changed(view.changed.policies)}>
+            <SettingsEmpty>{t("policy.none")}</SettingsEmpty>
+          </SettingsRows>
         ) : (
-          <div className="min-w-0">
-            <Table aria-labelledby="policy-title">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("policy.cols.carrier")}</TableHead>
-                  <TableHead>{t("policy.cols.number")}</TableHead>
-                  <TableHead>{t("policy.cols.states")}</TableHead>
-                  <TableHead>{t("policy.cols.starts")}</TableHead>
-                  <TableHead>{t("policy.cols.ends")}</TableHead>
-                  <TableHead>{t("policy.cols.file")}</TableHead>
-                  <TableHead>{t("policy.cols.renewal")}</TableHead>
-                  <TableHead>{t("policy.cols.audit")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {view.policies.map((p) => (
-                  <TableRow key={p.id} data-testid="policy-row">
-                    <TableCell className="whitespace-normal">
-                      <span className="font-medium">{p.carrier}</span>
-                      {p.carrierContact && <span className="block text-xs whitespace-pre-line text-muted-foreground">{p.carrierContact}</span>}
-                    </TableCell>
-                    <TableCell>{p.policyNumber}</TableCell>
-                    <TableCell>{p.states.join(", ")}</TableCell>
-                    <TableCell className="whitespace-nowrap">{date(p.startsOn)}</TableCell>
-                    <TableCell className="whitespace-nowrap">{date(p.endsOn)}</TableCell>
-                    <TableCell>{file(p.documentId, p.documentName)}</TableCell>
-                    <TableCell>{duty(p.renewal)}</TableCell>
-                    <TableCell>{duty(p.audit)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ),
-        changed(view.changed.policies),
-      )}
+          <SettingsRows as="ul" aria-labelledby="policy-title" footer={changed(view.changed.policies)}>
+            {view.policies.map((p) => {
+              const policyFile = file(p.documentId, p.documentName);
+              return (
+                <SettingsRow
+                  key={p.id}
+                  as="li"
+                  testId="policy-row"
+                  className="py-3"
+                  label={p.carrier}
+                  description={
+                    <>
+                      {p.carrierContact && <span className="block whitespace-pre-line">{p.carrierContact}</span>}
+                      <span className="block">{[t("policy.number", { number: p.policyNumber }), p.states.join(", "), t("policy.period", { starts: date(p.startsOn), ends: date(p.endsOn) })].join(" · ")}</span>
+                      {policyFile && <span className="block">{policyFile}</span>}
+                    </>
+                  }
+                  control={
+                    <div className="flex gap-4">
+                      {duty(t("policy.cols.renewal"), p.renewal)}
+                      {duty(t("policy.cols.audit"), p.audit)}
+                    </div>
+                  }
+                />
+              );
+            })}
+          </SettingsRows>
+        )}
+      </SettingsSection>
 
-      {section("statement-title", t("statement.title"), t("statement.intro"), null, <Statement view={view} canChange={canChange} />, null)}
+      <SettingsSection id="statement-title" title={t("statement.title")} description={t("statement.intro")} testId="ma-statement">
+        <Statement view={view} canChange={canChange} />
+      </SettingsSection>
 
-      {section("open-days-title", t("openDays.title"), t("openDays.intro"), null, <OpenDays view={view} canChange={canChange} />, changed(view.changed.openDays))}
+      <SettingsSection id="open-days-title" title={t("openDays.title")} description={t("openDays.intro")}>
+        <OpenDays view={view} canChange={canChange} note={changedNote(view.changed.openDays)} />
+      </SettingsSection>
 
-      {section("aca-title", t("aca.title"), t("aca.intro"), null, <AcaSettings view={view} canChange={canChange} />, changed(view.changed.aca))}
+      <SettingsSection id="aca-title" title={t("aca.title")} description={t("aca.intro")}>
+        <AcaSettings view={view} canChange={canChange} note={changedNote(view.changed.aca)} />
+      </SettingsSection>
 
       {adding === "registration" && <RegistrationDialog view={view} today={today} onClose={() => setAdding(null)} />}
       {adding === "policy" && <PolicyDialog today={today} onClose={() => setAdding(null)} />}
-    </div>
+    </SettingsPage>
   );
 }
 
+/** The Department's contact details (a form in a panel) and its statement (a row: the file, the upload at the right). */
 function Statement({ view, canChange }: { view: View; canChange: boolean }) {
   const t = useTranslations("complianceSettings.statement");
   const when = useDateTime();
@@ -209,68 +192,78 @@ function Statement({ view, canChange }: { view: View; canChange: boolean }) {
   const [contact, setContact] = useState(view.contact ?? "");
   const { pending, save } = useSave();
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4" data-testid="ma-statement">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="ma-contact">{t("contact")}</Label>
+    <>
+      <SettingsPanel
+        footer={
+          canChange && (
+            <SettingsFooter>
+              <Button disabled={pending || contact.trim() === "" || contact === (view.contact ?? "")} onClick={() => save(() => setMaContactAction(contact), () => undefined)} data-testid="save-ma-contact">
+                {t("saveContact")}
+              </Button>
+            </SettingsFooter>
+          )
+        }
+      >
         {canChange ? (
-          <>
+          <SettingsField id="ma-contact" label={t("contact")} hint={t("contactHint")}>
             <Textarea id="ma-contact" value={contact} maxLength={500} rows={3} onChange={(e) => setContact(e.target.value)} data-testid="ma-contact" />
-            <p className="text-xs text-muted-foreground">{t("contactHint")}</p>
-            <Button size="sm" variant="outline" className="w-fit" disabled={pending || contact.trim() === "" || contact === (view.contact ?? "")} onClick={() => save(() => setMaContactAction(contact), () => undefined)} data-testid="save-ma-contact">
-              {t("saveContact")}
-            </Button>
-          </>
+          </SettingsField>
         ) : (
-          <p className="text-sm whitespace-pre-line">{view.contact ?? t("noContact")}</p>
-        )}
-      </div>
-      <p className="text-sm">
-        {view.statement ? (
-          t.rich("current", {
-            name: view.statement.filename,
-            file: (chunks) => (
-              <a href={`/api/files/compliance/${view.statement!.id}`} download className="underline underline-offset-4">
-                {chunks}
-              </a>
-            ),
-            date: when(view.statement.at, { time: false }),
-            by: view.statement.by,
-          })
-        ) : (
-          <span className="text-muted-foreground">{t("none")}</span>
-        )}
-      </p>
-      {canChange && (
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!file) return;
-            const form = new FormData();
-            form.set("data", "{}");
-            form.set("file", file);
-            save(
-              () => setMaStatementAction(form),
-              () => {
-                setFile(null);
-                setKey((k) => k + 1);
-              },
-            );
-          }}
-        >
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="statement-file" className="text-xs text-muted-foreground">
-              {t("file")}
-            </Label>
-            <Input key={key} id="statement-file" type="file" accept=".pdf" className="w-72" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium">{t("contact")}</p>
+            <p className="text-sm whitespace-pre-line">{view.contact ?? t("noContact")}</p>
           </div>
-          <Button type="submit" size="sm" variant="outline" disabled={pending || !file} data-testid="upload-statement">
-            <UploadIcon />
-            {t("upload")}
-          </Button>
-        </form>
-      )}
-    </div>
+        )}
+      </SettingsPanel>
+      {/* The statement: the file in a row, the upload in the panel's foot. */}
+      <SettingsRows
+        footer={
+          canChange && (
+            <form
+              className="flex flex-wrap items-center justify-end gap-2 border-t px-4 py-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!file) return;
+                const form = new FormData();
+                form.set("data", "{}");
+                form.set("file", file);
+                save(
+                  () => setMaStatementAction(form),
+                  () => {
+                    setFile(null);
+                    setKey((k) => k + 1);
+                  },
+                );
+              }}
+            >
+              <Input key={key} id="statement-file" type="file" accept=".pdf" aria-label={t("file")} className="w-64" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <Button type="submit" disabled={pending || !file} data-testid="upload-statement">
+                <UploadIcon />
+                {t("upload")}
+              </Button>
+            </form>
+          )
+        }
+      >
+        <SettingsRow
+          label={t("file")}
+          description={
+            view.statement
+              ? t.rich("current", {
+                  name: view.statement.filename,
+                  file: (chunks) => (
+                    <a href={`/api/files/compliance/${view.statement!.id}`} download className="underline underline-offset-4 hover:text-foreground">
+                      {chunks}
+                    </a>
+                  ),
+                  date: when(view.statement.at, { time: false }),
+                  by: view.statement.by,
+                })
+              : t("none")
+          }
+        />
+      </SettingsRows>
+    </>
   );
 }
 
@@ -422,7 +415,7 @@ function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }
 }
 
 /** The days the agency is open (Jira's standard working days): the weekend ones count as I-9 business days. */
-function OpenDays({ view, canChange }: { view: View; canChange: boolean }) {
+function OpenDays({ view, canChange, note }: { view: View; canChange: boolean; note?: string }) {
   const t = useTranslations("complianceSettings.openDays");
   const [days, setDays] = useState<number[]>(view.openDays.filter((d) => d === 0 || d === 6));
   const { pending, save } = useSave();
@@ -430,9 +423,22 @@ function OpenDays({ view, canChange }: { view: View; canChange: boolean }) {
   // Monday first, Sunday last, as a US work week reads.
   const order = [1, 2, 3, 4, 5, 6, 0];
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4" data-testid="open-days">
+    <SettingsPanel
+      testId="open-days"
+      footer={
+        (canChange || note) && (
+          <SettingsFooter note={note}>
+            {canChange && (
+              <Button disabled={pending || same} onClick={() => save(() => setOpenDaysAction(days), () => undefined)} data-testid="save-open-days">
+                {t("save")}
+              </Button>
+            )}
+          </SettingsFooter>
+        )
+      }
+    >
       <fieldset className="flex flex-wrap gap-x-5 gap-y-2">
-        <legend className="mb-2 text-sm font-medium">{t("legend")}</legend>
+        <legend className="mb-3 text-sm font-medium">{t("legend")}</legend>
         {order.map((d) => {
           const weekend = d === 0 || d === 6;
           return (
@@ -449,25 +455,25 @@ function OpenDays({ view, canChange }: { view: View; canChange: boolean }) {
           );
         })}
       </fieldset>
-      <p className="text-xs text-muted-foreground">{t("hint")}</p>
-      {canChange && (
-        <Button size="sm" variant="outline" className="w-fit" disabled={pending || same} onClick={() => save(() => setOpenDaysAction(days), () => undefined)} data-testid="save-open-days">
-          {t("save")}
-        </Button>
-      )}
-    </div>
+      <p className="text-[13px] leading-[18px] text-muted-foreground">{t("hint")}</p>
+    </SettingsPanel>
   );
 }
 
 /** The ACA look-back's periods (26 C.F.R. § 54.4980H-3(d)), checked against the dated limits; from today. */
-function AcaSettings({ view, canChange }: { view: View; canChange: boolean }) {
+function AcaSettings({ view, canChange, note }: { view: View; canChange: boolean; note?: string }) {
   const t = useTranslations("complianceSettings.aca");
   const locale = useLocale();
   const { pending, save, field } = useSave();
   const current = view.aca.settings;
   const limits = view.aca.limits;
   const [v, setV] = useState({ measurementMonths: String(current?.measurementMonths ?? 12), firstMonth: String(current?.firstMonth ?? 1), adminDays: String(current?.adminDays ?? 0), stabilityMonths: String(current?.stabilityMonths ?? 12) });
-  if (!limits) return <p className="text-sm text-muted-foreground">{t("noRule")}</p>;
+  if (!limits)
+    return (
+      <SettingsRows>
+        <SettingsEmpty>{t("noRule")}</SettingsEmpty>
+      </SettingsRows>
+    );
   const n = (x: string) => (/^\d{1,3}$/.test(x.trim()) ? Number(x.trim()) : NaN);
   const value = { measurementMonths: n(v.measurementMonths), firstMonth: n(v.firstMonth), adminDays: n(v.adminDays), stabilityMonths: n(v.stabilityMonths) };
   const same = current !== null && (Object.keys(value) as (keyof typeof value)[]).every((k) => value[k] === current[k]);
@@ -475,9 +481,27 @@ function AcaSettings({ view, canChange }: { view: View; canChange: boolean }) {
   const month = (m: number) => new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2000, m - 1, 1)));
   const months = Array.from({ length: limits.maxMeasurementMonths - limits.minMeasurementMonths + 1 }, (_, i) => limits.minMeasurementMonths + i);
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4" data-testid="aca-settings-form">
-      {!current && <p className="text-sm text-muted-foreground" data-testid="aca-settings-none">{t("none")}</p>}
-      <div className="grid gap-3 sm:grid-cols-4">
+    <SettingsPanel
+      testId="aca-settings-form"
+      footer={
+        <SettingsFooter note={note}>
+          <Link href="/compliance/aca" className={buttonVariants({ variant: "ghost" })}>
+            {t("open")}
+          </Link>
+          {canChange && (
+            <Button disabled={pending || !ready || same} onClick={() => save(() => setAcaSettingsAction(value), () => undefined)} data-testid="save-aca">
+              {t("save")}
+            </Button>
+          )}
+        </SettingsFooter>
+      }
+    >
+      {!current && (
+        <p className="text-sm text-muted-foreground" data-testid="aca-settings-none">
+          {t("none")}
+        </p>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field id="aca-months" label={t("measurementMonths")} invalid={field === "measurementMonths"}>
           <NativeSelect id="aca-months" className="w-full" disabled={!canChange} value={v.measurementMonths} onChange={(e) => setV({ ...v, measurementMonths: e.target.value })} data-testid="aca-months">
             {months.map((m) => (
@@ -503,19 +527,11 @@ function AcaSettings({ view, canChange }: { view: View; canChange: boolean }) {
           <Input id="aca-stability" inputMode="numeric" disabled={!canChange} value={v.stabilityMonths} aria-invalid={field === "stabilityMonths" ? true : undefined} onChange={(e) => setV({ ...v, stabilityMonths: e.target.value })} data-testid="aca-stability" />
         </Field>
       </div>
-      <p className="text-xs text-muted-foreground">{t("limits", { minMonths: limits.minMeasurementMonths, maxMonths: limits.maxMeasurementMonths, admin: limits.maxAdminDays, stability: limits.minStabilityMonths, weeks: limits.breakWeeks })}</p>
-      <p className="text-xs text-muted-foreground">{t("newWorkers")}</p>
-      {current && view.aca.from && <p className="text-xs text-muted-foreground">{t("inForce", { date: longDate(view.aca.from, locale) })}</p>}
-      <div className="flex flex-wrap items-center gap-3">
-        {canChange && (
-          <Button size="sm" variant="outline" className="w-fit" disabled={pending || !ready || same} onClick={() => save(() => setAcaSettingsAction(value), () => undefined)} data-testid="save-aca">
-            {t("save")}
-          </Button>
-        )}
-        <Link href="/compliance/aca" className="text-sm underline underline-offset-4">
-          {t("open")}
-        </Link>
+      <div className="flex flex-col gap-1 text-[13px] leading-[18px] text-muted-foreground">
+        <p>{t("limits", { minMonths: limits.minMeasurementMonths, maxMonths: limits.maxMeasurementMonths, admin: limits.maxAdminDays, stability: limits.minStabilityMonths, weeks: limits.breakWeeks })}</p>
+        <p>{t("newWorkers")}</p>
+        {current && view.aca.from && <p className="text-foreground">{t("inForce", { date: longDate(view.aca.from, locale) })}</p>}
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

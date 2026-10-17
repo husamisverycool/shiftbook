@@ -2,8 +2,10 @@
 
 // Pattern: docs/patterns/settings/payroll.md — 7shifts payroll integration settings: the system
 // chosen once with its own fields (Deputy shows a format's fields once chosen), an explicit Save,
-// then tabs for the export codes, the employee ids and (Deputy's custom template) the spreadsheet.
-import { CircleAlertIcon, InfoIcon } from "lucide-react";
+// then tabs for the export codes, the employee ids and (Deputy's custom template) the spreadsheet. Laid
+// out as Linear's settings (docs/patterns/_components/settings.md): the systems as rows in a panel, the
+// chosen one's fields in a panel whose foot holds Save.
+import { CircleAlertIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -12,7 +14,6 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "@/i18n/navigation";
 import { adpWfnFileName, DEFAULT_LAYOUT, EXPORT_FORMATS, SYSTEM_OF, type ExportFormat, type PayrollTarget, type SettingProblem } from "@/exports/targets";
@@ -22,6 +23,7 @@ import { problemFor } from "./problems";
 import { SpreadsheetColumns } from "./spreadsheet-columns";
 import { WorkerIds } from "./worker-ids";
 import { useDateTime } from "../agency-zone";
+import { SettingsField, SettingsFooter, SettingsPage, SettingsPanel, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
 
 export type PayrollTab = "codes" | "workers" | "columns";
 export type WorkerFilter = "all" | "missing" | "set";
@@ -162,8 +164,7 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
   const field = (key: keyof Fields, label: string, help: string, problemKey: string, opts: { uppercase?: boolean } = {}) => {
     const problem = problemFor(problems, problemKey);
     return (
-      <div className="flex max-w-md flex-col gap-1.5">
-        <Label htmlFor={`f-${key}`}>{label}</Label>
+      <SettingsField id={`f-${key}`} label={label} hint={help} hintId={`f-${key}-help`} problem={<FieldProblem problem={problem} id={`f-${key}-problem`} />} className="max-w-md">
         <Input
           id={`f-${key}`}
           value={fields[key]}
@@ -173,134 +174,118 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
           onChange={(e) => set(key, opts.uppercase ? e.target.value.toUpperCase() : e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && save()}
         />
-        <p id={`f-${key}-help`} className="text-sm text-muted-foreground">
-          {help}
-        </p>
-        <FieldProblem problem={problem} id={`f-${key}-problem`} />
-      </div>
+      </SettingsField>
     );
   };
   const fileName = format ? fileNameOf(format, fields) : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
-      <header className="flex flex-col gap-1">
-        <p className="text-sm text-muted-foreground">{t("title")}</p>
-        <h1 className="text-[28px] leading-9 font-bold tracking-tight">{tp("title")}</h1>
-      </header>
-
-      {!view.canEdit && (
-        <Alert>
-          <InfoIcon />
-          <AlertTitle>{tp("readOnly")}</AlertTitle>
-        </Alert>
-      )}
-      {!inUse && (
-        <Alert variant="destructive" data-testid="none-chosen">
-          <CircleAlertIcon />
-          <AlertTitle>{tp("noneChosen")}</AlertTitle>
-        </Alert>
-      )}
-
-      {/* A section as a heading with one muted line under it, no box (decision 0029 rule 11). */}
-      <section className="flex flex-col gap-4" aria-labelledby="system-title">
-        <div className="flex flex-col gap-1">
-          <h2 id="system-title" className="text-lg font-semibold">
-            {tp("systemTitle")}
-          </h2>
-          <p className="text-sm text-muted-foreground">{tp("systemHint")}</p>
-        </div>
-        <fieldset className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-labelledby="system-title">
+    <SettingsPage context={t("title")} title={tp("title")} description={view.canEdit ? undefined : tp("readOnly")}>
+      {/* Linear's rows: each system a row, its hint under its name, the choice at the right (Deputy's format list). */}
+      <SettingsSection id="system-title" title={tp("systemTitle")} description={tp("systemHint")}>
+        {!inUse && (
+          <Alert variant="destructive" data-testid="none-chosen">
+            <CircleAlertIcon />
+            <AlertTitle>{tp("noneChosen")}</AlertTitle>
+          </Alert>
+        )}
+        <SettingsRows role="radiogroup" aria-labelledby="system-title">
           {EXPORT_FORMATS.map((f) => (
-            <label
+            <SettingsRow
               key={f}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border bg-card p-3 text-sm has-checked:border-primary has-checked:bg-muted/50 has-disabled:cursor-not-allowed has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
-              data-testid={`system-${f}`}
-            >
-              <input
-                type="radio"
-                name="system"
-                value={f}
-                className="mt-0.5 size-4 accent-primary"
-                checked={format === f}
-                disabled={!view.canEdit}
-                onChange={() => {
-                  setFormat(f);
-                  setProblems([]);
-                  setSaved(false);
-                }}
-              />
-              <span className="flex min-w-0 flex-col gap-1">
-                <span className="flex flex-wrap items-center gap-2 font-medium">
+              as="label"
+              className="cursor-pointer has-disabled:cursor-default"
+              testId={`system-${f}`}
+              label={
+                <span className="flex flex-wrap items-center gap-2">
                   {tp(`systems.${f}.name`)}
                   {inUse === f && <Badge variant="secondary">{tp("inUse")}</Badge>}
                 </span>
-                <span className="text-muted-foreground">{tp(`systems.${f}.carries`)}</span>
-              </span>
-            </label>
+              }
+              description={tp(`systems.${f}.carries`)}
+              control={
+                <input
+                  type="radio"
+                  name="system"
+                  value={f}
+                  className="size-4 accent-primary"
+                  checked={format === f}
+                  disabled={!view.canEdit}
+                  onChange={() => {
+                    setFormat(f);
+                    setProblems([]);
+                    setSaved(false);
+                  }}
+                />
+              }
+            />
           ))}
-        </fieldset>
+        </SettingsRows>
         <FieldProblem problem={problemFor(problems, "format")} id="f-format-problem" />
 
-        {format === "adp_wfn_paydata" && field("adpCompanyCode", tp("fields.companyCode"), tp("help.adpCompanyCode"), "companyCode", { uppercase: true })}
-        {format === "adp_run_csv" && field("runCompanyCode", tp("fields.companyCode"), tp("help.runCompanyCode"), "companyCode")}
-        {format === "qbo_time_csv" && field("customer", tp("fields.customer"), tp("help.customer"), "customer")}
-        {format === "qbd_iif" && (
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium">{tp("fields.version")}</legend>
-            {(["2022_or_later", "2021_or_earlier"] as const).map((v) => (
-              <label key={v} className="flex items-center gap-2 text-sm">
-                <input type="radio" name="qbd-version" value={v} className="size-4 accent-primary" checked={fields.version === v} disabled={!view.canEdit} onChange={() => set("version", v)} />
-                {tp(v === "2022_or_later" ? "fields.version2022" : "fields.version2021")}
-              </label>
-            ))}
-          </fieldset>
-        )}
-        {format === "qbd_iif" && fields.version === "2021_or_earlier" && (
-          <div className="flex flex-col gap-4">
-            {field("companyName", tp("fields.companyName"), tp("help.companyName"), "companyName")}
-            {field("companyCreateTime", tp("fields.companyCreateTime"), tp("help.companyCreateTime"), "companyCreateTime")}
-          </div>
-        )}
+        {/* The chosen system's own fields (Deputy), then Save in the panel's foot (7shifts saves explicitly). */}
         {format && (
-          <p className="text-sm text-muted-foreground" data-testid="file-name">
-            {fileName ? tp("fields.fileName", { name: fileName }) : tp("help.spreadsheetFileName")}
-          </p>
+          <SettingsPanel
+            footer={
+              <SettingsFooter note={view.changed ? tp("lastChanged", { date: changedOn!, who: view.changed.by }) : inUse ? tp("neverChanged") : undefined}>
+                <span aria-live="polite" className="text-sm text-muted-foreground" data-testid="system-saved">
+                  {saved ? tp("saved") : ""}
+                </span>
+                {view.canEdit && (
+                  <Button onClick={save} disabled={pending || !format} data-testid="save-system">
+                    {pending ? tp("saving") : tp("save")}
+                  </Button>
+                )}
+              </SettingsFooter>
+            }
+          >
+            {format === "adp_wfn_paydata" && field("adpCompanyCode", tp("fields.companyCode"), tp("help.adpCompanyCode"), "companyCode", { uppercase: true })}
+            {format === "adp_run_csv" && field("runCompanyCode", tp("fields.companyCode"), tp("help.runCompanyCode"), "companyCode")}
+            {format === "qbo_time_csv" && field("customer", tp("fields.customer"), tp("help.customer"), "customer")}
+            {format === "qbd_iif" && (
+              <fieldset className="flex flex-col gap-2">
+                <legend className="mb-2 text-sm font-medium">{tp("fields.version")}</legend>
+                {(["2022_or_later", "2021_or_earlier"] as const).map((v) => (
+                  <label key={v} className="flex items-center gap-2 text-sm">
+                    <input type="radio" name="qbd-version" value={v} className="size-4 accent-primary" checked={fields.version === v} disabled={!view.canEdit} onChange={() => set("version", v)} />
+                    {tp(v === "2022_or_later" ? "fields.version2022" : "fields.version2021")}
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            {format === "qbd_iif" && fields.version === "2021_or_earlier" && (
+              <>
+                {field("companyName", tp("fields.companyName"), tp("help.companyName"), "companyName")}
+                {field("companyCreateTime", tp("fields.companyCreateTime"), tp("help.companyCreateTime"), "companyCreateTime")}
+              </>
+            )}
+            <p className="text-sm text-muted-foreground" data-testid="file-name">
+              {fileName ? tp("fields.fileName", { name: fileName }) : tp("help.spreadsheetFileName")}
+            </p>
+          </SettingsPanel>
         )}
-
-        <div className="flex flex-wrap items-center gap-3">
-          {view.canEdit && (
-            <Button onClick={save} disabled={pending || !format} data-testid="save-system">
-              {pending ? tp("saving") : tp("save")}
-            </Button>
-          )}
-          <span aria-live="polite" className="text-sm text-muted-foreground" data-testid="system-saved">
-            {saved ? tp("saved") : ""}
-          </span>
-          <span className="text-sm text-muted-foreground">{view.changed ? tp("lastChanged", { date: changedOn!, who: view.changed.by }) : inUse ? tp("neverChanged") : ""}</span>
-        </div>
-      </section>
+      </SettingsSection>
 
       {inUse && view.codes && view.system && (
-        <Tabs value={tab} onValueChange={(v) => setTab(v as PayrollTab)}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as PayrollTab)} className="gap-6">
           <TabsList variant="line" className="h-10! w-full justify-start border-b">
             <TabsTrigger value="codes">{tp("tabs.codes")}</TabsTrigger>
             <TabsTrigger value="workers">{tp("tabs.workers")}</TabsTrigger>
             {inUse === "spreadsheet_csv" && <TabsTrigger value="columns">{tp("tabs.columns")}</TabsTrigger>}
           </TabsList>
-          <TabsContent value="codes" className="pt-2">
+          <TabsContent value="codes">
             <EarningCodes key={view.codes.format} format={view.codes.format} codes={view.codes.codes} problems={view.codes.problems} id={view.codes.id} canEdit={view.canEdit} />
           </TabsContent>
-          <TabsContent value="workers" className="pt-2">
+          <TabsContent value="workers">
             <WorkerIds key={inUse} system={SYSTEM_OF[inUse]} workers={view.workers} filter={filter} onFilter={setFilter} canEdit={view.canEdit} />
           </TabsContent>
           {view.target?.format === "spreadsheet_csv" && (
-            <TabsContent value="columns" className="pt-2">
+            <TabsContent value="columns">
               <SpreadsheetColumns layout={view.target.layout} targetId={view.targetId} canEdit={view.canEdit} />
             </TabsContent>
           )}
         </Tabs>
       )}
-    </div>
+    </SettingsPage>
   );
 }
