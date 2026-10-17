@@ -4125,6 +4125,7 @@
     "holidayNotCounted": " Una prima de feriado de {cutOff}× o más no se cuenta en la tarifa regular ({citation}).",
     "holidayNotPlaced": "{name} el {date}: se confirmó un feriado no trabajado en una asignación que el trabajador no tenía ese día, así que no se puede pagar; corrija la confirmación.",
     "holidayPolicyConflict": "{name} el {date}: dos políticas de feriados de este cliente indican el {date}, así que no se puede saber cuál paga; corrija las políticas de feriados.",
+    "holidayAndShortDay": "{name} el {date}: el mismo día en una asignación se confirmó como feriado no trabajado y como día corto; solo uno puede pagarse, así que quite una de las confirmaciones.",
     "holidayTwoAssignments": "{name} el {date}: se confirmó un feriado no trabajado en dos asignaciones el mismo día; el feriado se paga una sola vez por día, así que quite una de las confirmaciones.",
     "holidayWorkedThatDay": "{name} el {date}: se confirmó un feriado no trabajado, pero ese día se trabajaron {duration}; las horas trabajadas en un feriado se pagan como trabajadas, así que corrija la confirmación.",
     "hoursWhole": "{n} horas",
@@ -6623,7 +6624,8 @@
       "skip_refused": "No se pudo guardar.",
       "generic": "No se pudo guardar.",
       "duplicate_bonus": "Este mismo bono ya está registrado para esa semana. Marque la casilla si es un segundo bono.",
-      "not_allowed": "Su rol no cambia el pago."
+      "not_allowed": "Su rol no cambia el pago.",
+      "holiday_and_short_day": "Este día ya está confirmado como feriado no trabajado o como día corto en esta asignación; solo uno puede pagarse. Quite el otro primero."
     },
     "confirmDuplicate": "Agregarlo otra vez: es un segundo bono"
   },

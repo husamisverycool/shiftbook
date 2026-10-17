@@ -4125,6 +4125,7 @@
     "holidayNotCounted": " A holiday premium of {cutOff}× or more is not counted in the regular rate ({citation}).",
     "holidayNotPlaced": "{name} on {date}: a confirmed holiday not worked is for an assignment the worker was not placed on that day, so it cannot be paid; correct the confirmation.",
     "holidayPolicyConflict": "{name} on {date}: two holiday policies for this client list {date}, so which one pays would be a guess; fix the holiday policies.",
+    "holidayAndShortDay": "{name} on {date}: the same day on one assignment is confirmed both as a holiday not worked and as a short day; only one can be paid, so remove one of the confirmations.",
     "holidayTwoAssignments": "{name} on {date}: a holiday not worked is confirmed on two assignments for the same day; holiday pay is paid once a day, so remove one of the confirmations.",
     "holidayWorkedThatDay": "{name} on {date}: a holiday not worked was confirmed, but {duration} were worked that day; hours worked on a holiday are paid as worked, so correct the confirmation.",
     "hoursWhole": "{n} hours",
@@ -6623,7 +6624,8 @@
       "skip_refused": "That could not be saved.",
       "generic": "That could not be saved.",
       "duplicate_bonus": "This exact bonus is already on file for that week. Tick the box if it is a second one.",
-      "not_allowed": "Your role does not change pay."
+      "not_allowed": "Your role does not change pay.",
+      "holiday_and_short_day": "This day is already confirmed as a holiday not worked or a short day on this assignment; only one can be paid. Remove the other first."
     },
     "confirmDuplicate": "Add it again: this is a second bonus"
   },

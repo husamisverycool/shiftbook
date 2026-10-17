@@ -166,6 +166,20 @@ ruleCase(
 );
 
 ruleCase(
+  "holiday-and-short-day-same-day-held",
+  "Illinois worker at $18.25/h whose rate card promises a 4-hour day. The agency's holiday policy pays 8 hours for a holiday not worked. Wednesday October 7 is confirmed both as a holiday not worked and as a short day on the same assignment. Holiday pay and a short day's minimums would both pay the same day, so Granite holds the week for a person to remove one of the confirmations: no lines, one blocker.",
+  {
+    ...input([shift(WEEK[2]!, 0, { entryIds: [], reportedOnly: true, startMinute: null, contractMinimumMinutes: 240 })]),
+    holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false }],
+    confirmations: [
+      { id: "confirmation-1", kind: "holiday_not_worked", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[2]! },
+      { id: "confirmation-2", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[2]! },
+    ],
+  },
+  { pay: [], bill: [], blockers: ["invalid_input"] },
+);
+
+ruleCase(
   "contract-minimum-not-on-holiday-off",
   "Illinois worker at $18.25/h, billed at $26.50/h, whose rate card promises a 4-hour day. The agency's holiday policy pays 8 hours for a holiday not worked (not billed). The worker works 8 hours Monday and has Wednesday October 7 off as a holiday, which a person confirms. The holiday is paid by its policy, 8 h × $18.25 = $146.00, and nothing more: a contractual minimum day pays only on a day a person confirmed was short, never on a holiday off. Pay: Monday 8 h × $18.25 = $146.00 plus the holiday $146.00. Billed Monday 8 h × $26.50 = $212.00.",
   {

@@ -6,7 +6,7 @@
     "shifts": [
       {
         "entryIds": [
-          "entry-039"
+          "entry-040"
         ],
         "workerId": "worker-1",
         "workerName": "Worker One",
@@ -1039,7 +1039,7 @@
         "ruleId": "straight_time",
         "explain": "Regular: 1h 00m (60 min) × $17.00/h = 1700¢ exactly → $17.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-10-05.",
         "entryIds": [
-          "entry-039"
+          "entry-040"
         ]
       },
       {
@@ -1057,7 +1057,7 @@
         "ruleId": "il_day_labor_minimum",
         "explain": "Day-labor minimum: 3h 00m (180 min) × $17.00/h (the agreed pay rate) = 5100¢ exactly → $51.00. Rule il_day_labor_minimum: on 2026-10-05 the worker was sent to the client and not used for 4h 00m; 1h 00m were worked there, so 3h 00m more are paid at the agreed rate, not as hours worked (Day and Temporary Labor Services Act, 820 ILCS 175/30(g); 56 Ill. Adm. Code 260.450(b) — sent and not utilized: at least 4 hours at the agreed rate; placed elsewhere the same shift: at least 2 hours).",
         "entryIds": [
-          "entry-039"
+          "entry-040"
         ]
       },
       {
@@ -1075,7 +1075,7 @@
         "ruleId": "contract_minimum_hours",
         "explain": "Contractual minimum day: 2h 00m (120 min) × $17.00/h (the agreed pay rate) = 3400¢ exactly → $34.00. Rule contract_minimum_hours: the rate card promises at least 6h 00m on each day at this assignment; on 2026-10-05 1h 00m were worked and 3h 00m of minimum pay the law requires were already paid, so 2h 00m more are paid, not as hours worked (29 U.S.C. § 207(e)(2); 29 C.F.R. § 778.220).",
         "entryIds": [
-          "entry-039"
+          "entry-040"
         ]
       }
     ],
@@ -1095,7 +1095,7 @@
         "ruleId": "bill_regular",
         "explain": "Billed regular: 1h 00m (60 min) × $25.00/h = 2500¢ exactly → $25.00. Bill rate from the rate card.",
         "entryIds": [
-          "entry-039"
+          "entry-040"
         ]
       }
     ],

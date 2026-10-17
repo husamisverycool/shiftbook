@@ -34,11 +34,20 @@ Laid out as Linear's settings (`_components/settings.md`):
 ## Interactions
 - Save checks the dates, the multiples and that no other policy for the same client (or the agency)
   already holds one of the dates — the engine would not know which to use.
-- Delete asks for confirmation; runs computed later no longer pay it. Both are audited.
+- Editing a saved policy asks for a "Reason for the change" (a text box at the foot of the dialog;
+  Save refuses without one). Delete asks for confirmation with the same reason box; runs computed
+  later no longer pay it. Adding, editing and deleting are audited with the policy's full before
+  and after, and the reason.
+- A change that would alter what a date pays (adding, removing, or changing the terms of a date)
+  is refused when that date is in a pay period whose files exist: the dialog stays open with the
+  message that the date is in a paid period and a correction starts there first. Dates outside paid
+  periods can still be added.
 - People other than the Owner see the policies, without the controls.
 
 ## States
 - Loading: the page's outline in the settings shape (`_components/loading.md`).
 - A failure: the frame stays; "Try again" (`_components/error.md`).
+- A refused save or delete: the dialog stays open with the reason under the field it concerns (or,
+  for a locked date, above the actions).
 
 Deviations allowed: none

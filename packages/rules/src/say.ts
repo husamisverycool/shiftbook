@@ -174,6 +174,7 @@ export const ENGINE_EN = {
   holidayPolicyConflict: "{name} on {date}: two holiday policies for this client list {date}, so which one pays would be a guess; fix the holiday policies.",
   holidayNotPlaced: "{name} on {date}: a confirmed holiday not worked is for an assignment the worker was not placed on that day, so it cannot be paid; correct the confirmation.",
   holidayWorkedThatDay: "{name} on {date}: a holiday not worked was confirmed, but {duration} were worked that day; hours worked on a holiday are paid as worked, so correct the confirmation.",
+  holidayAndShortDay: "{name} on {date}: the same day on one assignment is confirmed both as a holiday not worked and as a short day; only one can be paid, so remove one of the confirmations.",
   holidayTwoAssignments: "{name} on {date}: a holiday not worked is confirmed on two assignments for the same day; holiday pay is paid once a day, so remove one of the confirmations.",
   holidayNoPolicy: "{name} on {date}: a holiday not worked was confirmed, but no holiday policy for this client pays {date} as a holiday not worked, so it cannot be paid; correct the confirmation or the holiday policy.",
   mealConfirmedNoHours: "{name} on {date}: a confirmed a meal period was not provided is for an assignment with no hours that day, so it cannot be paid; correct the confirmation.",

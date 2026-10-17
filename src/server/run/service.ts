@@ -296,6 +296,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   /** The shift for an assignment on a date with that day's rate card, billing profile and worksite; or why there is none. */
   /** Shifts a windowed differential could not be judged on (no start time): warned, never guessed. */
   const startUnknown: RunIssue[] = [];
+  const startUnknownSeen = new Set<string>();
   const shiftOn = (
     a: (typeof assignmentRows)[number],
     date: string,
@@ -330,15 +331,16 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       dayAndTemporaryLabor: a.jobOrder.dayAndTemporaryLabor,
       // The rate card's dated terms (drizzle/0062): a differential on shifts it covers, a minimum day.
       ...withDifferential(differentialFor(card, date, base.startMinute, () => {
-        if (base.minutes > 0)
-          startUnknown.push({
-            code: "differential_start_unknown",
-            workerId: base.workerId,
-            workerName: base.workerName,
-            date,
-            entryIds: base.entryIds,
-            ...said([say("differentialStartUnknown", { ...on, differential: card.diffName ?? "", from: clock(card.diffStartMinute), to: clock(card.diffEndMinute) })]),
-          });
+        if (base.minutes <= 0 || startUnknownSeen.has(`${base.workerId}|${date}`)) return;
+        startUnknownSeen.add(`${base.workerId}|${date}`);
+        startUnknown.push({
+          code: "differential_start_unknown",
+          workerId: base.workerId,
+          workerName: base.workerName,
+          date,
+          entryIds: base.entryIds,
+          ...said([say("differentialStartUnknown", { ...on, differential: card.diffName ?? "", from: clock(card.diffStartMinute), to: clock(card.diffEndMinute) })]),
+        });
       })),
       ...contractTermsOf(card),
     };

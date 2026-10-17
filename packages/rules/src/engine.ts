@@ -577,7 +577,10 @@ export function computePay(input: PayInput): PayResult {
       if (c.kind === "holiday_not_worked") {
         const workedThatDay = shifts.filter((s) => s.date === c.date).reduce((sum, s) => sum + s.minutes, 0);
         const found = onDay.length > 0 ? holidayTermsFor(rules.holidayPolicies, onDay[0]!.clientId, c.date) : null;
-        if (!found) {
+        if (confirmed.some((x) => x.kind === "reported_short" && x.assignmentId === c.assignmentId && x.date === c.date)) {
+          // Both would pay the same day (holiday pay and a short day's minimums): a person picks one.
+          weekBlockers.push({ code: "invalid_input", ...who, date: c.date, ...message([phrase("holidayAndShortDay", about(c.date))]) });
+        } else if (!found) {
           weekBlockers.push({ code: "invalid_input", ...who, date: c.date, ...message([phrase("holidayNotPlaced", about(c.date))]) });
         } else if (workedThatDay > 0) {
           weekBlockers.push({ code: "invalid_input", ...who, date: c.date, ...message([phrase("holidayWorkedThatDay", { ...about(c.date), duration: time(workedThatDay) })]) });

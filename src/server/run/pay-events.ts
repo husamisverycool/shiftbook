@@ -20,7 +20,7 @@ export const BONUS_KINDS = ["nondiscretionary", "flat_sum"] as const;
 export const MAX_BONUS_CENTS = 10_000_000;
 
 export class PayEventRefusedError extends Error {
-  constructor(readonly code: "reason_required" | "outside_period" | "not_on_assignment" | "already_recorded" | "duplicate_bonus" | "bad_amount" | "bad_schedule" | "not_found" | "not_allowed") {
+  constructor(readonly code: "reason_required" | "outside_period" | "not_on_assignment" | "already_recorded" | "holiday_and_short_day" | "duplicate_bonus" | "bad_amount" | "bad_schedule" | "not_found" | "not_allowed") {
     super(code);
     this.name = "PayEventRefusedError";
   }
@@ -86,6 +86,15 @@ export async function recordConfirmation(tx: Tx, actor: Actor, payPeriodId: stri
     .from(s.premiumConfirmations)
     .where(and(eq(s.premiumConfirmations.workerId, input.workerId), eq(s.premiumConfirmations.assignmentId, input.assignmentId), eq(s.premiumConfirmations.workDate, input.workDate), eq(s.premiumConfirmations.kind, input.kind)));
   if (same) throw new PayEventRefusedError("already_recorded");
+  // A holiday not worked and a short day on the same assignment and day would both pay: one or the other.
+  const other = input.kind === "holiday_not_worked" ? "reported_short" : input.kind === "reported_short" ? "holiday_not_worked" : null;
+  if (other) {
+    const [clash] = await tx
+      .select({ id: s.premiumConfirmations.id })
+      .from(s.premiumConfirmations)
+      .where(and(eq(s.premiumConfirmations.workerId, input.workerId), eq(s.premiumConfirmations.assignmentId, input.assignmentId), eq(s.premiumConfirmations.workDate, input.workDate), eq(s.premiumConfirmations.kind, other)));
+    if (clash) throw new PayEventRefusedError("holiday_and_short_day");
+  }
   const [row] = await tx
     .insert(s.premiumConfirmations)
     .values({

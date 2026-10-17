@@ -123,6 +123,8 @@ describe("a rate card's further terms", () => {
     expect((await luisLines(unconfirmed.runId)).some(([t]) => t === "MIN_GUARANTEE")).toBe(false);
     // Scheduled 8 hours and worked them all, so California reporting time pay owes nothing extra.
     await inAgency((tx) => recordConfirmation(tx, actor, period, { workerId: luis, assignmentId, workDate: "2026-10-08", kind: "reported_short", scheduledMinutes: 480, reassigned: false, reason: "Sent home before the 10-hour day" }));
+    // The same day cannot also be a holiday not worked: only one of the two pays.
+    expect(await refusal(inAgency((tx) => recordConfirmation(tx, actor, period, { workerId: luis, assignmentId, workDate: "2026-10-08", kind: "holiday_not_worked", scheduledMinutes: null, reassigned: false, reason: "Holiday" })))).toBe("holiday_and_short_day");
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     // 8 h × $1.00 = $8.00 differential; the 2 hours short of 10 at $19.50 = $39.00.
     expect(await luisLines(run.runId)).toEqual(expect.arrayContaining([["DIFF", 480, 800], ["MIN_GUARANTEE", 120, 3_900]]));

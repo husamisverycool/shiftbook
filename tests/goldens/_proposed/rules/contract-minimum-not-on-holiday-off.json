@@ -6,7 +6,7 @@
     "shifts": [
       {
         "entryIds": [
-          "entry-037"
+          "entry-038"
         ],
         "workerId": "worker-1",
         "workerName": "Worker One",
@@ -1081,7 +1081,7 @@
         "ruleId": "straight_time",
         "explain": "Regular: 8h 00m (480 min) × $18.25/h = 14600¢ exactly → $146.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-10-05.",
         "entryIds": [
-          "entry-037"
+          "entry-038"
         ]
       },
       {
@@ -1117,7 +1117,7 @@
         "ruleId": "bill_regular",
         "explain": "Billed regular: 8h 00m (480 min) × $26.50/h = 21200¢ exactly → $212.00. Bill rate from the rate card.",
         "entryIds": [
-          "entry-037"
+          "entry-038"
         ]
       }
     ],
