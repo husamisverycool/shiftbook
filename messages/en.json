@@ -910,6 +910,7 @@
     "showDisputed": "Show disputed",
     "filterStatus": "Status",
     "filterClient": "Client",
+    "all": "All",
     "any": "Any",
     "clearFilters": "Clear filters",
     "colClient": "Client",

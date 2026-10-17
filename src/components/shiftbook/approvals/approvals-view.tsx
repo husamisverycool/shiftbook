@@ -119,17 +119,16 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
         </Alert>
       )}
 
+      {/* Filter chips (approvals.md: Harvest's status filter, in the address), drawn as Payments draws them. */}
       <div className="flex flex-wrap items-center gap-2">
-        <NativeSelect aria-label={t("filterStatus")} value={status} onChange={(e) => setParam("status", e.target.value)} className="w-48">
-          <NativeSelectOption value="">
-            {t("filterStatus")}: {t("any")}
-          </NativeSelectOption>
-          {STATE_ORDER.map((s) => (
-            <NativeSelectOption key={s} value={s}>
-              {t(`state.${s}`)}
-            </NativeSelectOption>
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("filterStatus")}>
+          {(["", ...STATE_ORDER] as const).map((s) => (
+            <Button key={s || "all"} size="sm" variant={status === s ? "secondary" : "outline"} aria-pressed={status === s} onClick={() => setParam("status", s)} data-testid={`status-chip-${s || "all"}`}>
+              {s === "" ? t("all") : t(`state.${s}`)}
+              <span className="text-muted-foreground tabular-nums">{props.rows.filter((r) => (s === "" || r.state === s) && (client === "" || r.clientId === client)).length}</span>
+            </Button>
           ))}
-        </NativeSelect>
+        </div>
         <NativeSelect aria-label={t("filterClient")} value={client} onChange={(e) => setParam("client", e.target.value)} className="w-64">
           <NativeSelectOption value="">
             {t("filterClient")}: {t("any")}
