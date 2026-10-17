@@ -65,6 +65,6 @@ documents, and their employment (hire date, I-9 dates, assignments, end of emplo
 Toast's or Square's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-Laid out as `_components/record-page.md`: "Workers" above the name with its status; the tabs and their sections on the left, each section a module with its own Edit; Details on the right (status, assignment linking to its job order, hired, preferred language).
+Laid out as `_components/record-page.md`: "Workers" above the name with its status, and under them one muted line: the worker's number in the payroll system in use and when they were hired (Stripe's detail page description, "Pro plan customer since March 2022.", https://docs.stripe.com/stripe-apps/components/detailpage); the tabs and their sections on the left, each section a module with its own Edit; Details on the right (status, assignment linking to its job order — underlined, as the record pages' links are — hired, preferred language).
 
 Deviations allowed: none

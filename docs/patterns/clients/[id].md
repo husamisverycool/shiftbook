@@ -52,6 +52,6 @@ and the client's invoices.
 Stripe's, Bullhorn's or Avionté's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-Laid out as `_components/record-page.md`: "Clients" above the name and code. What the client owes (plain figures) and the client's invoices are modules on the left; the invoice settings, with Edit, are the details column on the right (Stripe customer details: "Details" with Edit), each group's fields as label over value, then the versions.
+Laid out as `_components/record-page.md`: "Clients" above the name and code, and under them one muted line of the bill-to its invoices carry (address · billing email), as Stripe's detail page puts a one-line description under a customer's name ("Pro plan customer since March 2022.", https://docs.stripe.com/stripe-apps/components/detailpage). What the client owes (plain figures) and the client's invoices are modules on the left; the invoice settings, with Edit, are the details column on the right (Stripe customer details: "Details" with Edit), each group's fields as label over value, then the versions.
 
 Deviations allowed: none
