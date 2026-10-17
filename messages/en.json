@@ -2059,7 +2059,8 @@
     "emptyTitle": "No bank file yet",
     "emptyBody": "Import your bank's activity as a CSV to match its deposits to invoices.",
     "tabsLabel": "Bank lines",
-    "reviewEmptyTitle": "All caught up"
+    "reviewEmptyTitle": "All caught up",
+    "description": "Description"
   },
   "bankImport": {
     "bank": "Bank",

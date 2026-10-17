@@ -1,0 +1,190 @@
+{
+  "hash": "cf733b54822c382b12f58a011f7fdda99d43632bd4aed35fac9b62bc0b4bfdf5",
+  "pass": "B",
+  "model": "claude-opus-5-5",
+  "promptVersion": "b1",
+  "output": {
+    "documentType": "daily_sign_in_sheet",
+    "clientName": "Prairie Line Manufacturing",
+    "shiftLabel": "2nd",
+    "sheetDate": "2026-10-07",
+    "rows": [
+      {
+        "workerName": {
+          "text": "Robert Jones",
+          "box": {
+            "x": 7,
+            "y": 311,
+            "w": 362,
+            "h": 65
+          }
+        },
+        "date": {
+          "text": null,
+          "iso": null,
+          "box": null
+        },
+        "timeIn": {
+          "text": "3:00 PM",
+          "minutes": 900,
+          "box": {
+            "x": 423,
+            "y": 311,
+            "w": 136,
+            "h": 65
+          }
+        },
+        "timeOut": {
+          "text": "11:30 PM",
+          "minutes": 1410,
+          "box": {
+            "x": 586,
+            "y": 311,
+            "w": 154,
+            "h": 65
+          }
+        },
+        "breakMinutes": {
+          "text": "30",
+          "minutes": 30,
+          "box": {
+            "x": 749,
+            "y": 311,
+            "w": 54,
+            "h": 65
+          }
+        },
+        "totalHours": {
+          "text": "8",
+          "minutes": 480,
+          "box": {
+            "x": 876,
+            "y": 311,
+            "w": 63,
+            "h": 65
+          }
+        },
+        "handwritten": false,
+        "crossedOut": []
+      },
+      {
+        "workerName": {
+          "text": "Kateryna Bondarenko",
+          "box": {
+            "x": 7,
+            "y": 435,
+            "w": 362,
+            "h": 65
+          }
+        },
+        "date": {
+          "text": null,
+          "iso": null,
+          "box": null
+        },
+        "timeIn": {
+          "text": "3:00 PM",
+          "minutes": 900,
+          "box": {
+            "x": 423,
+            "y": 435,
+            "w": 136,
+            "h": 65
+          }
+        },
+        "timeOut": {
+          "text": "11:00 PM",
+          "minutes": 1380,
+          "box": {
+            "x": 586,
+            "y": 435,
+            "w": 154,
+            "h": 65
+          }
+        },
+        "breakMinutes": {
+          "text": "30",
+          "minutes": 30,
+          "box": {
+            "x": 749,
+            "y": 435,
+            "w": 54,
+            "h": 65
+          }
+        },
+        "totalHours": {
+          "text": "8",
+          "minutes": 480,
+          "box": {
+            "x": 876,
+            "y": 435,
+            "w": 63,
+            "h": 65
+          }
+        },
+        "handwritten": false,
+        "crossedOut": []
+      },
+      {
+        "workerName": {
+          "text": "Dale Whitcomb",
+          "box": {
+            "x": 7,
+            "y": 559,
+            "w": 362,
+            "h": 65
+          }
+        },
+        "date": {
+          "text": null,
+          "iso": null,
+          "box": null
+        },
+        "timeIn": {
+          "text": "3:00 PM",
+          "minutes": 900,
+          "box": {
+            "x": 423,
+            "y": 559,
+            "w": 136,
+            "h": 65
+          }
+        },
+        "timeOut": {
+          "text": "7:00 PM",
+          "minutes": 1140,
+          "box": {
+            "x": 586,
+            "y": 559,
+            "w": 154,
+            "h": 65
+          }
+        },
+        "breakMinutes": {
+          "text": "0",
+          "minutes": 0,
+          "box": {
+            "x": 749,
+            "y": 559,
+            "w": 54,
+            "h": 65
+          }
+        },
+        "totalHours": {
+          "text": "4",
+          "minutes": 240,
+          "box": {
+            "x": 876,
+            "y": 559,
+            "w": 63,
+            "h": 65
+          }
+        },
+        "handwritten": false,
+        "crossedOut": []
+      }
+    ],
+    "workerTotals": [],
+    "grandTotalMinutes": null
+  }
+}

@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import sharp from "sharp";
 import type { Box } from "../db/schema";
+import { packageDir } from "../package-dir";
 
 export interface PageImage {
   pageNumber: number;
@@ -36,7 +37,7 @@ async function heicToJpeg(bytes: Uint8Array): Promise<Buffer> {
 async function renderPdf(bytes: Uint8Array): Promise<Buffer[]> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const { createCanvas } = await import("@napi-rs/canvas");
-  const pdfRoot = dirname(createRequire(import.meta.url).resolve("pdfjs-dist/package.json"));
+  const pdfRoot = packageDir("pdfjs-dist", "standard_fonts", [() => dirname(createRequire(import.meta.url).resolve("pdfjs-dist/package.json"))]);
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(bytes),
     useSystemFonts: false,

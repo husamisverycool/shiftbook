@@ -2059,7 +2059,8 @@
     "emptyTitle": "Aún no hay archivo del banco",
     "emptyBody": "Importe la actividad de su banco como CSV para emparejar sus depósitos con facturas.",
     "tabsLabel": "Líneas del banco",
-    "reviewEmptyTitle": "Todo al día"
+    "reviewEmptyTitle": "Todo al día",
+    "description": "Descripción"
   },
   "bankImport": {
     "bank": "Banco",
