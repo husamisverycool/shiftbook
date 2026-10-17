@@ -5,7 +5,7 @@
  * with a box around each value (Rossum: read but not reviewed · checked · stops confirmation; hover
  * names the field; zoom controls), and the entry's audit log in time order (Restaurant365).
  */
-import { MinusIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, MinusIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { entryHistory, type HistoryEvent } from "@/app/[locale]/(app)/convert/actions";
@@ -20,7 +20,15 @@ const FIELDS = ["worker", "date", "in", "out", "break", "total"] as const;
 
 const REASON_CODES = ["misread_corrected", "confirmed_client", "confirmed_worker", "matched_worker", "other"];
 
-export function SourcePanel({ row, field, roster, onClose }: { row: GridRow | null; field: string | null; roster: { id: string; name: string }[]; onClose: () => void }) {
+/** The panel's place in the grid's rows: previous and next as Airtable's expanded record (Cmd+Shift+< / >). */
+export interface PanelNav {
+  position: number;
+  total: number;
+  onPrevious?: () => void;
+  onNext?: () => void;
+}
+
+export function SourcePanel({ row, field, roster, onClose, nav }: { row: GridRow | null; field: string | null; roster: { id: string; name: string }[]; onClose: () => void; nav?: PanelNav }) {
   const t = useTranslations("convert.hours");
   const locale = useLocale();
   const when = useDateTime();
@@ -51,9 +59,31 @@ export function SourcePanel({ row, field, roster, onClose }: { row: GridRow | nu
 
   return (
     <Sheet open={row !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full gap-0 overflow-y-auto sm:max-w-xl" data-testid="source-panel">
+      <SheetContent
+        side="right"
+        className="w-full gap-0 overflow-y-auto sm:max-w-xl"
+        data-testid="source-panel"
+        onKeyDown={(e) => {
+          if (!nav || !(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
+          if (e.key === "<" || e.key === ",") nav.onPrevious?.();
+          else if (e.key === ">" || e.key === ".") nav.onNext?.();
+          else return;
+          e.preventDefault();
+        }}
+      >
         {row && (
           <>
+            {nav && (
+              <div className="flex items-center gap-1 px-4 pt-4 pr-12 text-xs text-muted-foreground" data-testid="panel-nav">
+                <Button size="icon-sm" variant="ghost" aria-label={t("grid.previousEntry")} disabled={!nav.onPrevious} onClick={nav.onPrevious}>
+                  <ChevronUpIcon />
+                </Button>
+                <Button size="icon-sm" variant="ghost" aria-label={t("grid.nextEntry")} disabled={!nav.onNext} onClick={nav.onNext}>
+                  <ChevronDownIcon />
+                </Button>
+                <span className="tabular-nums">{t("grid.entryOf", { n: nav.position, total: nav.total })}</span>
+              </div>
+            )}
             <SheetHeader>
               <SheetTitle>{row.workerName}</SheetTitle>
               <SheetDescription>
