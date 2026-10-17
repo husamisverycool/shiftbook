@@ -99,7 +99,7 @@ export function MarginCash({ view }: { view: CashView }) {
                     <TableCell className="text-right tabular-nums">{money(c.paidCents, locale)}</TableCell>
                     <TableCell className="text-right tabular-nums">{money(c.collectedCents, locale)}</TableCell>
                     <TableCell className="text-right font-medium tabular-nums">{money(c.floatingCents, locale)}</TableCell>
-                    <Tip label={c.daysToPay ? say(c.daysToPay) : undefined}>
+                    <Tip label={c.daysToPay ? say(c.daysToPay) : undefined} describes focusable>
                       <TableCell className="text-right tabular-nums">
                         {c.daysToPay?.averageDays == null ? "—" : t("days", { days: c.daysToPay.averageDays, count: c.daysToPay.invoices })}
                       </TableCell>

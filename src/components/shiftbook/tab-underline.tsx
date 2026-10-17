@@ -42,7 +42,12 @@ export function TabUnderline({ id }: { id: string }) {
     nav.dataset.underline = "ready";
     const moved = new MutationObserver(() => place(true));
     moved.observe(nav, { subtree: true, attributeFilter: ["aria-current"] });
-    const resized = new ResizeObserver(() => place(false));
+    // A ResizeObserver reports once on observing; that first report would cancel the slide just begun.
+    let first = true;
+    const resized = new ResizeObserver(() => {
+      if (first) first = false;
+      else place(false);
+    });
     resized.observe(nav);
     return () => {
       moved.disconnect();

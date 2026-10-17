@@ -174,7 +174,7 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
                             <span className="flex flex-wrap items-center gap-2">
                               {t("placementAt", { position: r.placements[0]!.position, client: r.placements[0]!.clientName })}
                               {r.placements.length > 1 && (
-                                <Tip label={<span className="whitespace-pre-line">{r.placements.slice(1).map((p) => t("placementAt", { position: p.position, client: p.clientName })).join("\n")}</span>}>
+                                <Tip describes focusable label={<span className="whitespace-pre-line">{r.placements.slice(1).map((p) => t("placementAt", { position: p.position, client: p.clientName })).join("\n")}</span>}>
                                   <Badge variant="outline">{t("more", { count: r.placements.length - 1 })}</Badge>
                                 </Tip>
                               )}

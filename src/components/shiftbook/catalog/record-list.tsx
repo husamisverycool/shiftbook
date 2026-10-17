@@ -188,6 +188,18 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
   const [shownRow, setShownRow] = useState<R | null>(panelRow);
   if (panelRow && panelRow !== shownRow) setShownRow(panelRow);
   const leaving = !panelRow && shownRow !== null;
+  const asideRef = useRef<HTMLElement>(null);
+  // Gone once its exit has run — or at once when nothing runs (hidden on a narrow screen, or closed
+  // before it was drawn), so it can never stay as an empty column.
+  useEffect(() => {
+    if (!leaving) return;
+    let live = true;
+    const runs = asideRef.current?.getAnimations() ?? [];
+    void Promise.allSettled(runs.map((a) => a.finished)).then(() => live && setShownRow(null));
+    return () => {
+      live = false;
+    };
+  }, [leaving]);
 
   const move = useCallback(
     (delta: number, extend: boolean) => {
@@ -523,7 +535,7 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
           data-testid={leaving ? undefined : "side-panel"}
           data-leaving={leaving || undefined}
           inert={leaving}
-          onTransitionEnd={(e) => leaving && e.target === e.currentTarget && setShownRow(null)}
+          ref={asideRef}
           className="sticky top-0 hidden h-svh w-96 shrink-0 overflow-y-auto border-l bg-background transition-[opacity,translate] motion-enter starting:opacity-0 motion-safe:starting:translate-x-4 data-leaving:opacity-0 data-leaving:motion-exit motion-safe:data-leaving:translate-x-4 lg:block"
         >
           <div className="flex items-center gap-1 border-b px-3 py-2 text-sm">

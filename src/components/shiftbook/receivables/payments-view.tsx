@@ -132,7 +132,7 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
                       <ListAmount text={money(p.amountCents, locale)} />
                     </TableCell>
                     <TableCell className="w-0">
-                      <Tip label={p.voidReason ?? undefined}>
+                      <Tip label={p.voidReason ?? undefined} describes focusable>
                         <Status tone={PAYMENT_TONE[p.status]}>{t(`statuses.${p.status}`)}</Status>
                       </Tip>
                     </TableCell>
@@ -146,7 +146,7 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
                     </Tip>
                     <TableCell className="text-right tabular-nums">{money(p.appliedCents, locale)}</TableCell>
                     <TableCell className="text-right tabular-nums">{money(p.unusedCents, locale)}</TableCell>
-                    <Tip label={p.fromBank ?? undefined}>
+                    <Tip label={p.fromBank ?? undefined} describes focusable>
                       <TableCell className="whitespace-nowrap">{p.fromBank ? t("fromBank") : t("fromTyped")}</TableCell>
                     </Tip>
                     <TableCell className="text-right">

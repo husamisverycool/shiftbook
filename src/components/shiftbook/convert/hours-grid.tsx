@@ -228,10 +228,11 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
     const reason = t(`reasons.${known.includes(base!) ? base : "other"}`);
     return field && ["worker", "date", "in", "out", "break", "total"].includes(field) ? t("reasonWithField", { reason, field: t(`fields.${field}`) }) : reason;
   };
-  const Marked = ({ r, field, children }: { r: GridRow; field: string; children: React.ReactNode }) => {
+  // Called as a function, not a component: a component declared here would remount, closing its tooltip, on every render.
+  const marked = (r: GridRow, field: string, children: React.ReactNode) => {
     const f = fieldFlag(r, field);
     return (
-      <Tip label={f.checks.map((c) => reasonText(c)).join(" · ") || undefined}>
+      <Tip describes label={f.checks.map((c) => reasonText(c)).join(" · ") || undefined}>
         <span className={`inline-flex items-center gap-1 ${f.flagged ? "text-destructive" : ""}`}>
           {children}
           {f.edited && (
@@ -366,9 +367,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                         </NativeSelect>
                       ) : (
                         <div className="flex min-w-40 flex-col gap-0.5">
-                          <Marked r={r} field="worker">
+                          {marked(r, "worker", <>
                             <span className="font-medium">{r.workerName}</span>
-                          </Marked>
+                          </>)}
                           {r.workerId === null && <Badge variant="outline">{t("unmatched")}</Badge>}
                           {r.reviewReasons.some((c) => c !== "worker_not_on_roster") && r.status === "needs_review" && (
                             <span className="max-w-52 text-xs whitespace-normal text-muted-foreground">
@@ -384,9 +385,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                       isEditing && d ? (
                         <Input type="date" aria-label={t("colDate")} value={d.workDate} min={props.period.startsOn} max={props.period.endsOn} onChange={(e) => set({ workDate: e.target.value })} className="w-34" />
                       ) : (
-                        <Marked r={r} field="date">
+                        marked(r, "date", <>
                           {shortDate(r.workDate, locale)}
-                        </Marked>
+                        </>)
                       ),
                       "whitespace-nowrap",
                     )}
@@ -395,9 +396,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                       isEditing && d && (timed || d.inText) ? (
                         <Input aria-label={t("colIn")} value={d.inText} onChange={(e) => set({ inText: e.target.value })} className="w-16 text-right" placeholder="7:00" />
                       ) : (
-                        <Marked r={r} field="in">
+                        marked(r, "in", <>
                           {clock(r.inMinute, locale)}
-                        </Marked>
+                        </>)
                       ),
                       "text-right tabular-nums whitespace-nowrap",
                     )}
@@ -406,9 +407,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                       isEditing && d && (timed || d.outText) ? (
                         <Input aria-label={t("colOut")} value={d.outText} onChange={(e) => set({ outText: e.target.value })} className="w-16 text-right" placeholder="15:30" />
                       ) : (
-                        <Marked r={r} field="out">
+                        marked(r, "out", <>
                           {clock(r.outMinute, locale)}
-                        </Marked>
+                        </>)
                       ),
                       "text-right tabular-nums whitespace-nowrap",
                     )}
@@ -417,9 +418,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                       isEditing && d && timed ? (
                         <Input aria-label={t("colBreak")} inputMode="numeric" value={d.breakText} onChange={(e) => set({ breakText: e.target.value })} className="w-14 text-right" />
                       ) : (
-                        <Marked r={r} field="break">
+                        marked(r, "break", <>
                           {r.breakMinutes === null ? "—" : hoursMinutes(r.breakMinutes)}
-                        </Marked>
+                        </>)
                       ),
                       "text-right tabular-nums",
                     )}
@@ -428,9 +429,9 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                       isEditing && d && !timed ? (
                         <Input aria-label={t("colHours")} value={d.hoursText} onChange={(e) => set({ hoursText: e.target.value })} className="w-20 text-right" placeholder="8:00" />
                       ) : (
-                        <Marked r={r} field="total">
+                        marked(r, "total", <>
                           <span className="font-medium">{hoursMinutes(r.minutes)}</span>
-                        </Marked>
+                        </>)
                       ),
                       "text-right tabular-nums",
                     )}
