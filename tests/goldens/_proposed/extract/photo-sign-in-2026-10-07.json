@@ -1,0 +1,41 @@
+{
+  "name": "photo-sign-in-2026-10-07",
+  "summary": "A printed sign-in sheet (test fixture) read by the two passes from its recorded readings. Kateryna's written total (8 hours) does not match her times (7 h 30 min) and a visitor not on the roster signed in: both are read as written and flagged, never silently accepted.",
+  "document": "tests/e2e/fixtures/photo-sign-in-2026-10-07.jpg",
+  "mediaType": "image/jpeg",
+  "recordings": "tests/e2e/fixtures/recordings",
+  "period": {
+    "startsOn": "2026-10-05",
+    "endsOn": "2026-10-11"
+  },
+  "minAccuracy": 1,
+  "expected": [
+    {
+      "workerKey": "robert-jones",
+      "written": "Robert Jones",
+      "date": "2026-10-07",
+      "inMinute": 900,
+      "outMinute": 1410,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "kateryna-bondarenko",
+      "written": "Kateryna Bondarenko",
+      "date": "2026-10-07",
+      "inMinute": 900,
+      "outMinute": 1380,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": null,
+      "written": "Dale Whitcomb",
+      "date": "2026-10-07",
+      "inMinute": 900,
+      "outMinute": 1140,
+      "breakMinutes": 0,
+      "minutes": 240
+    }
+  ]
+}

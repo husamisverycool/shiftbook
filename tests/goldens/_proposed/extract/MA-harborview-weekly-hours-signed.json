@@ -1,0 +1,314 @@
+{
+  "name": "MA-harborview-weekly-hours-signed",
+  "summary": "The signed weekly hours PDF read by the two passes from recorded readings: each line's worker, date and hours as written (demo/truth). Runs once its recorded readings exist; until then it is reported as waiting.",
+  "document": "demo/samples/2026-10-05/MA-harborview-weekly-hours-signed.pdf",
+  "mediaType": "application/pdf",
+  "recordings": "demo/recordings",
+  "period": {
+    "startsOn": "2026-10-05",
+    "endsOn": "2026-10-11"
+  },
+  "minAccuracy": 0.95,
+  "expected": [
+    {
+      "workerKey": "elizabeth-sullivan",
+      "date": "2026-10-08",
+      "written": "Sullivan, Elizabeth",
+      "minutes": 360
+    },
+    {
+      "workerKey": "elizabeth-sullivan",
+      "date": "2026-10-09",
+      "written": "Sullivan, Elizabeth",
+      "minutes": 480
+    },
+    {
+      "workerKey": "elizabeth-sullivan",
+      "date": "2026-10-10",
+      "written": "Sullivan, Elizabeth",
+      "minutes": 600
+    },
+    {
+      "workerKey": "elizabeth-sullivan",
+      "date": "2026-10-11",
+      "written": "Sullivan, Elizabeth",
+      "minutes": 540
+    },
+    {
+      "workerKey": "conor-byrne",
+      "date": "2026-10-07",
+      "written": "Byrne, Conor",
+      "minutes": 360
+    },
+    {
+      "workerKey": "conor-byrne",
+      "date": "2026-10-08",
+      "written": "Byrne, Conor",
+      "minutes": 360
+    },
+    {
+      "workerKey": "conor-byrne",
+      "date": "2026-10-09",
+      "written": "Byrne, Conor",
+      "minutes": 480
+    },
+    {
+      "workerKey": "conor-byrne",
+      "date": "2026-10-10",
+      "written": "Byrne, Conor",
+      "minutes": 510
+    },
+    {
+      "workerKey": "conor-byrne",
+      "date": "2026-10-11",
+      "written": "Byrne, Conor",
+      "minutes": 540
+    },
+    {
+      "workerKey": "isabela-souza",
+      "date": "2026-10-08",
+      "written": "Souza, Isabela",
+      "minutes": 360
+    },
+    {
+      "workerKey": "isabela-souza",
+      "date": "2026-10-09",
+      "written": "Souza, Isabela",
+      "minutes": 420
+    },
+    {
+      "workerKey": "isabela-souza",
+      "date": "2026-10-10",
+      "written": "Souza, Isabela",
+      "minutes": 600
+    },
+    {
+      "workerKey": "mohammed-al-amin",
+      "date": "2026-10-05",
+      "written": "Al-Amin, Mohammed",
+      "minutes": 480
+    },
+    {
+      "workerKey": "mohammed-al-amin",
+      "date": "2026-10-06",
+      "written": "Al-Amin, Mohammed",
+      "minutes": 480
+    },
+    {
+      "workerKey": "mohammed-al-amin",
+      "date": "2026-10-08",
+      "written": "Al-Amin, Mohammed",
+      "minutes": 360
+    },
+    {
+      "workerKey": "mohammed-al-amin",
+      "date": "2026-10-09",
+      "written": "Al-Amin, Mohammed",
+      "minutes": 480
+    },
+    {
+      "workerKey": "mohammed-al-amin",
+      "date": "2026-10-10",
+      "written": "Al-Amin, Mohammed",
+      "minutes": 600
+    },
+    {
+      "workerKey": "mohammed-al-amin",
+      "date": "2026-10-11",
+      "written": "Al-Amin, Mohammed",
+      "minutes": 540
+    },
+    {
+      "workerKey": "patrick-oneil",
+      "date": "2026-10-08",
+      "written": "O'Neil, Patrick",
+      "minutes": 360
+    },
+    {
+      "workerKey": "patrick-oneil",
+      "date": "2026-10-09",
+      "written": "O'Neil, Patrick",
+      "minutes": 480
+    },
+    {
+      "workerKey": "patrick-oneil",
+      "date": "2026-10-10",
+      "written": "O'Neil, Patrick",
+      "minutes": 600
+    },
+    {
+      "workerKey": "patrick-oneil",
+      "date": "2026-10-11",
+      "written": "O'Neil, Patrick",
+      "minutes": 540
+    },
+    {
+      "workerKey": "rosa-de-la-cruz",
+      "date": "2026-10-09",
+      "written": "de la Cruz, Rosa",
+      "minutes": 480
+    },
+    {
+      "workerKey": "rosa-de-la-cruz",
+      "date": "2026-10-10",
+      "written": "de la Cruz, Rosa",
+      "minutes": 600
+    },
+    {
+      "workerKey": "rosa-de-la-cruz",
+      "date": "2026-10-11",
+      "written": "de la Cruz, Rosa",
+      "minutes": 540
+    },
+    {
+      "workerKey": "jean-baptiste-pierre",
+      "date": "2026-10-07",
+      "written": "Pierre, Jean-Baptiste",
+      "minutes": 360
+    },
+    {
+      "workerKey": "jean-baptiste-pierre",
+      "date": "2026-10-08",
+      "written": "Pierre, Jean-Baptiste",
+      "minutes": 360
+    },
+    {
+      "workerKey": "jean-baptiste-pierre",
+      "date": "2026-10-09",
+      "written": "Pierre, Jean-Baptiste",
+      "minutes": 480
+    },
+    {
+      "workerKey": "jean-baptiste-pierre",
+      "date": "2026-10-10",
+      "written": "Pierre, Jean-Baptiste",
+      "minutes": 600
+    },
+    {
+      "workerKey": "hannah-goldberg",
+      "date": "2026-10-08",
+      "written": "Goldberg, Hannah",
+      "minutes": 360
+    },
+    {
+      "workerKey": "hannah-goldberg",
+      "date": "2026-10-09",
+      "written": "Goldberg, Hannah",
+      "minutes": 360
+    },
+    {
+      "workerKey": "hannah-goldberg",
+      "date": "2026-10-10",
+      "written": "Goldberg, Hannah",
+      "minutes": 360
+    },
+    {
+      "workerKey": "hannah-goldberg",
+      "date": "2026-10-11",
+      "written": "Goldberg, Hannah",
+      "minutes": 360
+    },
+    {
+      "workerKey": "victor-santos",
+      "date": "2026-10-08",
+      "written": "Santos, Victor",
+      "minutes": 360
+    },
+    {
+      "workerKey": "victor-santos",
+      "date": "2026-10-09",
+      "written": "Santos, Victor",
+      "minutes": 480
+    },
+    {
+      "workerKey": "victor-santos",
+      "date": "2026-10-10",
+      "written": "Santos, Victor",
+      "minutes": 600
+    },
+    {
+      "workerKey": "victor-santos",
+      "date": "2026-10-11",
+      "written": "Santos, Victor",
+      "minutes": 540
+    },
+    {
+      "workerKey": "mei-lin-zhou",
+      "date": "2026-10-09",
+      "written": "Zhou, Mei Lin",
+      "minutes": 360
+    },
+    {
+      "workerKey": "mei-lin-zhou",
+      "date": "2026-10-10",
+      "written": "Zhou, Mei Lin",
+      "minutes": 600
+    },
+    {
+      "workerKey": "mei-lin-zhou",
+      "date": "2026-10-11",
+      "written": "Zhou, Mei Lin",
+      "minutes": 540
+    },
+    {
+      "workerKey": "kwame-boateng",
+      "date": "2026-10-05",
+      "written": "Boateng, Kwame",
+      "minutes": 480
+    },
+    {
+      "workerKey": "kwame-boateng",
+      "date": "2026-10-06",
+      "written": "Boateng, Kwame",
+      "minutes": 480
+    },
+    {
+      "workerKey": "kwame-boateng",
+      "date": "2026-10-07",
+      "written": "Boateng, Kwame",
+      "minutes": 480
+    },
+    {
+      "workerKey": "kwame-boateng",
+      "date": "2026-10-08",
+      "written": "Boateng, Kwame",
+      "minutes": 360
+    },
+    {
+      "workerKey": "kwame-boateng",
+      "date": "2026-10-09",
+      "written": "Boateng, Kwame",
+      "minutes": 480
+    },
+    {
+      "workerKey": "kwame-boateng",
+      "date": "2026-10-10",
+      "written": "Boateng, Kwame",
+      "minutes": 600
+    },
+    {
+      "workerKey": "ashley-nguyen",
+      "date": "2026-10-08",
+      "written": "Nguyen, Ashley",
+      "minutes": 360
+    },
+    {
+      "workerKey": "ashley-nguyen",
+      "date": "2026-10-09",
+      "written": "Nguyen, Ashley",
+      "minutes": 360
+    },
+    {
+      "workerKey": "ashley-nguyen",
+      "date": "2026-10-10",
+      "written": "Nguyen, Ashley",
+      "minutes": 600
+    },
+    {
+      "workerKey": "ashley-nguyen",
+      "date": "2026-10-11",
+      "written": "Nguyen, Ashley",
+      "minutes": 540
+    }
+  ]
+}

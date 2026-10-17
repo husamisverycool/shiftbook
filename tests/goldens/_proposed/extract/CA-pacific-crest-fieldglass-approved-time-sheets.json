@@ -1,0 +1,304 @@
+{
+  "name": "CA-pacific-crest-fieldglass-approved-time-sheets",
+  "summary": "The Fieldglass export read through its saved profile: every line, worker, date and hours exactly as the file states them (demo/truth).",
+  "document": "demo/samples/2026-10-05/CA-pacific-crest-fieldglass-approved-time-sheets.csv",
+  "mediaType": "text/csv",
+  "recordings": null,
+  "period": {
+    "startsOn": "2026-10-05",
+    "endsOn": "2026-10-11"
+  },
+  "minAccuracy": 1,
+  "expected": [
+    {
+      "workerKey": "luis-hernandez",
+      "date": "2026-10-05",
+      "minutes": 540
+    },
+    {
+      "workerKey": "luis-hernandez",
+      "date": "2026-10-06",
+      "minutes": 540
+    },
+    {
+      "workerKey": "luis-hernandez",
+      "date": "2026-10-07",
+      "minutes": 540
+    },
+    {
+      "workerKey": "luis-hernandez",
+      "date": "2026-10-08",
+      "minutes": 540
+    },
+    {
+      "workerKey": "luis-hernandez",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "maribel-torres",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "maribel-torres",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "maribel-torres",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "maribel-torres",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "maribel-torres",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "kevin-tran",
+      "date": "2026-10-05",
+      "minutes": 600
+    },
+    {
+      "workerKey": "kevin-tran",
+      "date": "2026-10-06",
+      "minutes": 600
+    },
+    {
+      "workerKey": "kevin-tran",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "kevin-tran",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "jasmine-carter",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "jasmine-carter",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "jasmine-carter",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "jasmine-carter",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "jasmine-carter",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "jasmine-carter",
+      "date": "2026-10-10",
+      "minutes": 240
+    },
+    {
+      "workerKey": "rafael-gutierrez",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "rafael-gutierrez",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "rafael-gutierrez",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "rafael-gutierrez",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "rafael-gutierrez",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "ngoc-anh-pham",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "ngoc-anh-pham",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "ngoc-anh-pham",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "ngoc-anh-pham",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "brianna-lewis",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "brianna-lewis",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "brianna-lewis",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "brianna-lewis",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "brianna-lewis",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "oscar-medina",
+      "date": "2026-10-05",
+      "minutes": 660
+    },
+    {
+      "workerKey": "oscar-medina",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "oscar-medina",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "oscar-medina",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "oscar-medina",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "samuel-okafor",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "samuel-okafor",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "samuel-okafor",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "samuel-okafor",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "samuel-okafor",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "leticia-ramos-vega",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "leticia-ramos-vega",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "leticia-ramos-vega",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "leticia-ramos-vega",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "tyler-brooks",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "tyler-brooks",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "tyler-brooks",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "tyler-brooks",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "tyler-brooks",
+      "date": "2026-10-09",
+      "minutes": 480
+    },
+    {
+      "workerKey": "hui-min-chen",
+      "date": "2026-10-05",
+      "minutes": 480
+    },
+    {
+      "workerKey": "hui-min-chen",
+      "date": "2026-10-06",
+      "minutes": 480
+    },
+    {
+      "workerKey": "hui-min-chen",
+      "date": "2026-10-07",
+      "minutes": 480
+    },
+    {
+      "workerKey": "hui-min-chen",
+      "date": "2026-10-08",
+      "minutes": 480
+    },
+    {
+      "workerKey": "hui-min-chen",
+      "date": "2026-10-09",
+      "minutes": 480
+    }
+  ]
+}
