@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, PlugIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -120,6 +120,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
               <DropdownMenuItem render={<Link href="/settings/compliance" />} data-testid="menu-compliance-settings">
                 <ShieldCheckIcon />
                 {t("complianceSettings")}
+              </DropdownMenuItem>
+              {/* Decision 0040: every system Granite exchanges files with (Zapier's App Connections). */}
+              <DropdownMenuItem render={<Link href="/settings/connections" />} data-testid="menu-connections">
+                <PlugIcon />
+                {t("connections")}
               </DropdownMenuItem>
               <DropdownMenuItem render={<Link href="/settings/members" />} data-testid="menu-members">
                 <UserCogIcon />

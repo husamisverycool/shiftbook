@@ -636,7 +636,8 @@
       "oversight": "Oversight"
     },
     "sso": "Single sign-on",
-    "billing": "Billing"
+    "billing": "Billing",
+    "connections": "Connections"
   },
   "list": {
     "filter": "Filter",
@@ -4822,5 +4823,110 @@
     "hint": "For your factor: the schedule to sign, as PDF and CSV, with each invoice and its timesheets, in one file.",
     "onlyOpen": "Only open invoices can go on a schedule: {number} is not.",
     "refused": "That schedule could not be made: {message}"
+  },
+  "connections": {
+    "title": "Connections",
+    "tabs": {
+      "connected": "Connected",
+      "available": "Available"
+    },
+    "empty": "Nothing is connected yet. See what Granite works with under",
+    "kinds": {
+      "payroll": "Payroll system",
+      "recruiting": "Recruiting system",
+      "time_file": "Time file",
+      "invoice_upload": "Invoice upload",
+      "partner": "Partner"
+    },
+    "lastUsed": "last used {date} ({count, plural, one {# time} other {# times}})",
+    "notUsed": "not used yet",
+    "status": {
+      "ready": "Ready",
+      "attention": "Needs attention"
+    },
+    "attention": {
+      "noPayroll": "No payroll system is chosen.",
+      "payrollSettings": "The payroll system's settings are not complete.",
+      "payrollCodes": "Some kinds of pay have no code yet.",
+      "payrollIds": "{count, plural, one {# active worker has} other {# active workers have}} no id in this system.",
+      "noMapping": "No saved column mapping yet.",
+      "mappingIncomplete": "The saved mapping is missing a required field."
+    },
+    "menu": "Actions for {name}",
+    "testing": "Testing",
+    "testReady": "{name} is ready.",
+    "actions": {
+      "test": "Test",
+      "open": "Open",
+      "template": "Download template",
+      "forget": "Forget saved mapping"
+    },
+    "forgetTitle": "Forget the saved mapping for {name}?",
+    "forgetBody": "The next import from this system maps its columns again. Imports already made are kept.",
+    "forgotten": "The saved mapping for {name} is forgotten.",
+    "cancel": "Cancel",
+    "stale": "That could not be done. Reload the page and try again.",
+    "forClient": "{name} for {client}",
+    "setUp": "Set up",
+    "inUse": "In use",
+    "notYet": "Not available yet",
+    "groups": {
+      "payroll": "Payroll systems",
+      "recruiting": "Recruiting systems",
+      "time": "Time clocks and VMS",
+      "partners": "Partners"
+    },
+    "groupHints": {
+      "payroll": "Granite makes the hours file each system imports; one system at a time.",
+      "recruiting": "Bring placements in from a recruiting system's export file.",
+      "time": "Time files Granite reads on Convert timesheets.",
+      "partners": "Packages for licensed partners. No money moves through Granite."
+    },
+    "systems": {
+      "gusto_hours_csv": "Gusto",
+      "qbd_iif": "QuickBooks Desktop",
+      "qbo_time_csv": "QuickBooks Online",
+      "adp_wfn_paydata": "ADP Workforce Now",
+      "adp_run_csv": "RUN Powered by ADP",
+      "paychex_flex_csv": "Paychex Flex",
+      "paylocity_time_csv": "Paylocity",
+      "spreadsheet_csv": "Spreadsheet in your own layout",
+      "bullhorn": "Bullhorn",
+      "jobadder": "JobAdder",
+      "spott": "Spott",
+      "avionte": "Avionté",
+      "other": "Other spreadsheet",
+      "fieldglass-approved-time-sheet": "SAP Fieldglass time sheets",
+      "timeclock-punch-export": "Time clock punch export",
+      "fieldglass_time_sheet_invoice": "SAP Fieldglass invoice upload",
+      "beeline": "Beeline",
+      "coupa": "Coupa",
+      "magnit": "Magnit"
+    },
+    "about": {
+      "gusto_hours_csv": "Hours by kind of pay in Gusto's hours import.",
+      "qbd_iif": "Time data for QuickBooks Desktop payroll as an IIF file.",
+      "qbo_time_csv": "Regular hours in QuickBooks Online's time import.",
+      "adp_wfn_paydata": "ADP's Paydata batch, named PRcccEPI.csv.",
+      "adp_run_csv": "RUN's time sheet import.",
+      "paychex_flex_csv": "Paychex Flex's standard payroll import, hours with their rate or dollars.",
+      "paylocity_time_csv": "Paylocity's time import batch, by earning code.",
+      "spreadsheet_csv": "Any PEO's or factor's template: you choose the columns.",
+      "bullhorn": "Placements from a Bullhorn placement list export.",
+      "jobadder": "Placements from a JobAdder placements export.",
+      "spott": "Placements from a Spott placements export.",
+      "avionte": "Placements from an Avionté placement report.",
+      "other": "Any CSV or Excel file with one placement per row.",
+      "fieldglass-approved-time-sheet": "Approved time sheets downloaded from SAP Fieldglass.",
+      "timeclock-punch-export": "Punches exported from a time clock, read as hours.",
+      "vmsNotYet": "Granite cannot read this system's export yet.",
+      "partner": "Arrives with the partner packages: Granite prepares, a licensed partner acts."
+    },
+    "partners": {
+      "embedded_payroll": "Payroll partner",
+      "wage_access": "Earned wage access partner",
+      "invoice_funding": "Invoice funding partner",
+      "insurance": "Workers' comp insurance broker"
+    }
   }
 }

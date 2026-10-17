@@ -636,7 +636,8 @@
       "oversight": "Supervisión"
     },
     "sso": "Inicio de sesión único",
-    "billing": "Suscripción"
+    "billing": "Suscripción",
+    "connections": "Conexiones"
   },
   "list": {
     "filter": "Filtrar",
@@ -4822,5 +4823,110 @@
     "hint": "Para su factor: la relación para firmar, en PDF y CSV, con cada factura y sus hojas de horas, en un solo archivo.",
     "onlyOpen": "Solo las facturas abiertas pueden ir en una relación: {number} no lo está.",
     "refused": "No se pudo hacer esa relación: {message}"
+  },
+  "connections": {
+    "title": "Conexiones",
+    "tabs": {
+      "connected": "Conectadas",
+      "available": "Disponibles"
+    },
+    "empty": "Todavía no hay nada conectado. Vea con qué trabaja Granite en",
+    "kinds": {
+      "payroll": "Sistema de nómina",
+      "recruiting": "Sistema de reclutamiento",
+      "time_file": "Archivo de horas",
+      "invoice_upload": "Carga de facturas",
+      "partner": "Socio"
+    },
+    "lastUsed": "usada por última vez el {date} ({count, plural, one {# vez} other {# veces}})",
+    "notUsed": "todavía sin usar",
+    "status": {
+      "ready": "Lista",
+      "attention": "Requiere atención"
+    },
+    "attention": {
+      "noPayroll": "No hay un sistema de nómina elegido.",
+      "payrollSettings": "La configuración del sistema de nómina no está completa.",
+      "payrollCodes": "Algunos tipos de pago todavía no tienen código.",
+      "payrollIds": "{count, plural, one {# trabajador activo no tiene} other {# trabajadores activos no tienen}} ID en este sistema.",
+      "noMapping": "Todavía no hay una asignación de columnas guardada.",
+      "mappingIncomplete": "A la asignación guardada le falta un campo obligatorio."
+    },
+    "menu": "Acciones para {name}",
+    "testing": "Probando",
+    "testReady": "{name} está lista.",
+    "actions": {
+      "test": "Probar",
+      "open": "Abrir",
+      "template": "Descargar plantilla",
+      "forget": "Olvidar la asignación guardada"
+    },
+    "forgetTitle": "¿Olvidar la asignación guardada de {name}?",
+    "forgetBody": "La próxima importación de este sistema volverá a asignar sus columnas. Las importaciones ya hechas se conservan.",
+    "forgotten": "Se olvidó la asignación guardada de {name}.",
+    "cancel": "Cancelar",
+    "stale": "No se pudo hacer. Vuelva a cargar la página e inténtelo de nuevo.",
+    "forClient": "{name} para {client}",
+    "setUp": "Configurar",
+    "inUse": "En uso",
+    "notYet": "Todavía no disponible",
+    "groups": {
+      "payroll": "Sistemas de nómina",
+      "recruiting": "Sistemas de reclutamiento",
+      "time": "Relojes de control y VMS",
+      "partners": "Socios"
+    },
+    "groupHints": {
+      "payroll": "Granite prepara el archivo de horas que importa cada sistema; un sistema a la vez.",
+      "recruiting": "Traiga las colocaciones desde el archivo de exportación de un sistema de reclutamiento.",
+      "time": "Archivos de horas que Granite lee en Convertir hojas de horas.",
+      "partners": "Paquetes para socios con licencia. No se mueve dinero a través de Granite."
+    },
+    "systems": {
+      "gusto_hours_csv": "Gusto",
+      "qbd_iif": "QuickBooks Desktop",
+      "qbo_time_csv": "QuickBooks Online",
+      "adp_wfn_paydata": "ADP Workforce Now",
+      "adp_run_csv": "RUN Powered by ADP",
+      "paychex_flex_csv": "Paychex Flex",
+      "paylocity_time_csv": "Paylocity",
+      "spreadsheet_csv": "Hoja de cálculo con su propio formato",
+      "bullhorn": "Bullhorn",
+      "jobadder": "JobAdder",
+      "spott": "Spott",
+      "avionte": "Avionté",
+      "other": "Otra hoja de cálculo",
+      "fieldglass-approved-time-sheet": "Hojas de horas de SAP Fieldglass",
+      "timeclock-punch-export": "Exportación de marcaciones del reloj",
+      "fieldglass_time_sheet_invoice": "Carga de facturas en SAP Fieldglass",
+      "beeline": "Beeline",
+      "coupa": "Coupa",
+      "magnit": "Magnit"
+    },
+    "about": {
+      "gusto_hours_csv": "Horas por tipo de pago en la importación de horas de Gusto.",
+      "qbd_iif": "Datos de horas para la nómina de QuickBooks Desktop en un archivo IIF.",
+      "qbo_time_csv": "Horas regulares en la importación de horas de QuickBooks Online.",
+      "adp_wfn_paydata": "El lote Paydata de ADP, con el nombre PRcccEPI.csv.",
+      "adp_run_csv": "La importación de hojas de horas de RUN.",
+      "paychex_flex_csv": "La importación estándar de nómina de Paychex Flex, horas con su tarifa o dólares.",
+      "paylocity_time_csv": "El lote de importación de horas de Paylocity, por código de ingreso.",
+      "spreadsheet_csv": "La plantilla de cualquier PEO o factor: usted elige las columnas.",
+      "bullhorn": "Colocaciones desde una lista de colocaciones exportada de Bullhorn.",
+      "jobadder": "Colocaciones desde una exportación de colocaciones de JobAdder.",
+      "spott": "Colocaciones desde una exportación de colocaciones de Spott.",
+      "avionte": "Colocaciones desde un informe de colocaciones de Avionté.",
+      "other": "Cualquier archivo CSV o Excel con una colocación por fila.",
+      "fieldglass-approved-time-sheet": "Hojas de horas aprobadas descargadas de SAP Fieldglass.",
+      "timeclock-punch-export": "Marcaciones exportadas de un reloj de control, leídas como horas.",
+      "vmsNotYet": "Granite todavía no puede leer la exportación de este sistema.",
+      "partner": "Llega con los paquetes para socios: Granite prepara, un socio con licencia actúa."
+    },
+    "partners": {
+      "embedded_payroll": "Socio de nómina",
+      "wage_access": "Socio de acceso anticipado al salario",
+      "invoice_funding": "Socio de financiamiento de facturas",
+      "insurance": "Corredor de seguro de compensación laboral"
+    }
   }
 }

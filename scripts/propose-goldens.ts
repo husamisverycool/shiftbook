@@ -480,6 +480,62 @@ function exportCaseWithText(name: string, summary: string, fixture: ExportFixtur
   exportCase(name, summary, fixture, handTotals);
 }
 
+// Decision 0040: Paychex Flex and Paylocity, the same week by hand — Álvarez 40 h at $18.25 ($730.00),
+// 37 overtime minutes at $27.375 ($16.88, written 0.62 h, which the system pays as $16.97), a $150.00
+// bonus; Okafor 38 h at $18.25 ($693.50). Granite gross $1,590.38; the system's $1,590.47 (+$0.09).
+const WEEK_0040: ExportFixture["payLines"] = [
+  { workerId: "w2", type: "REG", minutes: 2280, amountCents: 69_350, rate: { num: 1825, den: 1 }, workweekStart: "2026-10-05" },
+  { workerId: "w1", type: "REG", minutes: 2400, amountCents: 73_000, rate: { num: 1825, den: 1 }, workweekStart: "2026-10-05" },
+  { workerId: "w1", type: "OT", minutes: 37, amountCents: 1688, rate: { num: 5475, den: 2 }, workweekStart: "2026-10-05" },
+  { workerId: "w1", type: "BONUS", minutes: 0, amountCents: 15_000, rate: { num: 15_000, den: 1 }, workweekStart: "2026-10-05" },
+];
+const TOTALS_0040 = { workers: 2, minutesByType: { REG: 4680, OT: 37 }, amountsByType: { BONUS: 15_000 }, grossCents: 159_038, payrollSystemGrossCents: 159_047, payrollSystemDifferenceCents: 9 };
+exportCaseWithText(
+  "paychex-flex-spi-basic",
+  "Paychex Flex Standard Payroll Import, sixteen columns: hours rows carry their rate and no amount; the bonus carries its amount and no hours or rate (Paychex: \"Amount must be empty if Hours is nonzero\"). Paychex pays 40.00 × 18.2500 = $730.00, 0.62 × 27.3750 = $16.97 (Granite $16.88, +$0.09), $150.00 and 38.00 × 18.2500 = $693.50: $1,590.47 against Granite's $1,590.38.",
+  {
+    format: "paychex_flex_csv",
+    mappingVersion: "paychex-flex-spi-v1",
+    period: { startsOn: "2026-10-05", endsOn: "2026-10-11" },
+    earningCodeMap: {},
+    target: { format: "paychex_flex_csv", clientId: "ABC12345" },
+    codes: { REG: { code: "Hourly", as: "hours" }, OT: { code: "Overtime", as: "hours" }, BONUS: { code: "Bonus", as: "dollars" } },
+    workers: [
+      { workerId: "w1", firstName: "Ana", lastName: "Álvarez", payrollIds: { paychex: { id: "A123" } } },
+      { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: { paychex: { id: "B456" } } },
+    ],
+    payLines: WEEK_0040,
+  },
+  TOTALS_0040,
+  [
+    "Client ID,Worker ID,Org,Job Number,Pay Component,Rate,Rate Number,Hours,Units,Line Date,Amount,Check Seq Number,Override State,Override Local,Override Local Jurisdiction,Labor Assignment",
+    "ABC12345,A123,,,Hourly,18.2500,,40.00,,10/11/2026,,,,,,",
+    "ABC12345,A123,,,Overtime,27.3750,,0.62,,10/11/2026,,,,,,",
+    "ABC12345,A123,,,Bonus,,,,,10/11/2026,150.00,,,,,",
+    "ABC12345,B456,,,Hourly,18.2500,,38.00,,10/11/2026,,,,,,",
+    "",
+  ].join("\r\n"),
+);
+exportCaseWithText(
+  "paylocity-time-import-basic",
+  "Paylocity time import batch: Id, Det (E), detCode, Hours, Amount, Rate, rateCode. Hours rows with their rate and no amount, the bonus as an amount. Same week and totals as paychex-flex-spi-basic: Paylocity pays $1,590.47 against Granite's $1,590.38 (+$0.09 on the 37 overtime minutes written as 0.62 h).",
+  {
+    format: "paylocity_time_csv",
+    mappingVersion: "paylocity-timeimprt-v1",
+    period: { startsOn: "2026-10-05", endsOn: "2026-10-11" },
+    earningCodeMap: {},
+    target: { format: "paylocity_time_csv" },
+    codes: { REG: { code: "REG", as: "hours" }, OT: { code: "OT", as: "hours" }, BONUS: { code: "BON", as: "dollars" } },
+    workers: [
+      { workerId: "w1", firstName: "Ana", lastName: "Álvarez", payrollIds: { paylocity: { id: "A123" } } },
+      { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: { paylocity: { id: "B456" } } },
+    ],
+    payLines: WEEK_0040,
+  },
+  TOTALS_0040,
+  ["Id,Det,detCode,Hours,Amount,Rate,rateCode", "A123,E,REG,40.00,,18.2500,", "A123,E,OT,0.62,,27.3750,", "A123,E,BON,,150.00,,", "B456,E,REG,38.00,,18.2500,", ""].join("\r\n"),
+);
+
 const R1825 = { num: 1825, den: 1 };
 const OT1825 = { num: 5475, den: 2 };
 const THREE = (system: "qbd" | "qbo" | "adp_wfn" | "adp_run" | "spreadsheet", ids: [string, string, string]): ExportFixture["workers"] => [
