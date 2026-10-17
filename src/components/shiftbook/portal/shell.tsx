@@ -9,6 +9,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { Avatar } from "../avatar";
 import { dateTime } from "../format";
 
 export interface ShellAgency {
@@ -95,13 +96,17 @@ export function PortalShell({
   return (
     <div className="flex min-h-svh flex-1 flex-col md:flex-row">
       <aside className="flex flex-col gap-4 border-b bg-muted/50 px-4 py-4 md:sticky md:top-0 md:h-svh md:w-64 md:shrink-0 md:border-r md:border-b-0 md:py-6">
-        <div className="flex min-w-0 flex-col">
-          <p className="truncate font-semibold" data-testid="portal-agency">
-            {agency.name}
-          </p>
-          <p className="truncate text-sm text-muted-foreground" data-testid="portal-client">
-            {t("for", { client: clientName })}
-          </p>
+        {/* The agency's square before its name, as the app's sidebar shows it (decision 0046). */}
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar name={agency.name} kind="organization" size={32} />
+          <div className="flex min-w-0 flex-col">
+            <p className="truncate font-semibold" data-testid="portal-agency">
+              {agency.name}
+            </p>
+            <p className="truncate text-sm text-muted-foreground" data-testid="portal-client">
+              {t("for", { client: clientName })}
+            </p>
+          </div>
         </div>
         <nav aria-label={t("navLabel")} className="-mx-1 overflow-x-auto md:overflow-visible">
           <ul className="flex gap-1 px-1 md:flex-col">{items}</ul>

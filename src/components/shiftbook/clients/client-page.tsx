@@ -22,6 +22,7 @@ import type { ClientReceivables, PaymentClients } from "@/server/receivables/que
 import { INVOICE_TEMPLATES, OT_BILLING_RULES, SEPARATE_BY, VMS_FORMATS } from "@/lib/invoice-options";
 import { longDate } from "../format";
 import { InvoicesTable } from "../invoices/invoices-table";
+import { Avatar } from "../avatar";
 import { Crumbs, Page, PageHeader, RecordLayout, Section } from "../page";
 import { ClientClockSetting } from "../worker-app/client-clock";
 import { ClientOwes } from "../receivables/client-owes";
@@ -158,6 +159,7 @@ export function ClientPage({
     <Page>
       <PageHeader
         context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("title"), href: "/clients" }]} />}
+        leading={<Avatar name={detail.client.name} id={detail.client.id} kind="organization" size={40} />}
         title={
           <>
             {detail.client.name} <span className="text-muted-foreground">· {detail.client.code}</span>

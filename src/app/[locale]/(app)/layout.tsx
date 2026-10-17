@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/shiftbook/app-sidebar";
 import { AbilitiesProvider } from "@/components/shiftbook/abilities";
 import { AgencyZoneProvider } from "@/components/shiftbook/agency-zone";
 import { PageFade } from "@/components/shiftbook/page-fade";
+import { ApplyAppearance } from "@/components/shiftbook/theme";
 import { ConfirmAccessProvider } from "@/components/shiftbook/auth/confirm-access";
 import { SignInNotice } from "@/components/shiftbook/auth/sign-in-notice";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -17,7 +18,7 @@ import { mayViewMargin } from "@/server/margin/service";
 import { refreshNotifications } from "@/server/notifications/refresh";
 import { requestOrigin } from "@/server/request-info";
 import { abilitiesOf } from "@/server/permissions";
-import { changesPaused, confirmWith, currentActor } from "@/server/session";
+import { changesPaused, confirmWith, currentActor, currentSession } from "@/server/session";
 import { agencyToday, agencyZone } from "@/server/settings";
 
 export default async function AppLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
@@ -41,6 +42,8 @@ export default async function AppLayout({ children, params }: { children: ReactN
             <AppSidebar agencyName={agency?.name ?? ""} person={{ name: actor.label, role: actor.role }} showMargin={mayViewMargin(actor)} complianceCount={urgent} unreadCount={unread} />
             <SidebarInset className="min-w-0">
               <PageFade />
+              {/* The person's saved appearance (decision 0046). */}
+              <ApplyAppearance appearance={(await currentSession())?.appearance ?? "system"} />
               <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden">
                 <SidebarTrigger />
                 <span className="truncate text-sm font-medium">{agency?.name}</span>

@@ -158,7 +158,7 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
                         <TableCell>
                           {/* Initials beside the name (decision 0029; Geist entity). */}
                           <div className="flex items-center gap-3">
-                            <PersonAvatar name={`${r.firstName} ${r.lastName}`} size="default" />
+                            <PersonAvatar name={`${r.firstName} ${r.lastName}`} id={r.id} size="default" />
                             <div className="min-w-0">
                               <Link href={`/workers/${r.id}`} className="font-medium text-foreground underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                                 {r.lastName}, {r.firstName}

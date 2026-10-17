@@ -50,4 +50,8 @@ Researched: 2026-10-17 (`docs/research/command-menu-slice-p.md`). Confidence: hi
 - Signed-in app only. Nothing is ever searched by SSN or date of birth.
 - Paused changes (decision 0036): actions that change records are hidden, as the screens hide them.
 
+## Colour (decision 0046)
+
+Worker and client results show their avatar (20px; circle or square) in place of the record icon (`_components/avatar.md`).
+
 Deviations allowed: none

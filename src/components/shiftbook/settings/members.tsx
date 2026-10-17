@@ -194,7 +194,7 @@ export function MembersView({ members, me, canManage, now, paused = false }: { m
               const needed = NEEDS_APP.includes(m.role) && !m.hasAuthenticator;
               return (
                 <li key={m.id} className="flex min-h-15 items-center gap-3 py-2.5" data-testid="member" data-email={m.email}>
-                  <PersonAvatar name={m.name} size="default" />
+                  <PersonAvatar name={m.name} id={m.id} size="default" />
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="truncate text-sm leading-5 font-medium">
                       {m.name}

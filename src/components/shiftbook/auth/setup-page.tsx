@@ -30,7 +30,7 @@ export function SetupView({ email, next }: { email: string; next: string }) {
         }
       />
       <p className="border-t pt-4 text-center text-sm">
-        <button type="button" className="text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="setup-sign-out">
+        <button type="button" className="text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="setup-sign-out">
           {t("signOut")}
         </button>
       </p>

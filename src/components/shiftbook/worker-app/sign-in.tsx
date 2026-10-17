@@ -126,7 +126,7 @@ export function WorkerSignIn({ demoWorkers }: { demoWorkers: { id: string; name:
           </Button>
         </form>
         {demo}
-        <Link href="/sign-in" className="self-center rounded-sm text-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50">
+        <Link href="/sign-in" className="self-center rounded-sm text-sm text-accent-text underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50">
           {t("agencySignIn")}
         </Link>
       </>
@@ -177,12 +177,12 @@ export function WorkerSignIn({ demoWorkers }: { demoWorkers: { id: string; name:
         </Button>
       </form>
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
-        <button type="button" className="rounded-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50" disabled={sending} onClick={() => send(sent.phone)}>
+        <button type="button" className="rounded-sm text-accent-text underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50" disabled={sending} onClick={() => send(sent.phone)}>
           {t("resend")}
         </button>
         <button
           type="button"
-          className="rounded-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="rounded-sm text-accent-text underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => {
             setSent(null);
             setError(null);

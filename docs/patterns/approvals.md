@@ -61,4 +61,8 @@ Stripe's list: the title with the pay period on the right, the filters, then the
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Colour (decision 0046)
+
+Each client row leads with the client's square avatar (`_components/avatar.md`).
+
 Deviations allowed: none

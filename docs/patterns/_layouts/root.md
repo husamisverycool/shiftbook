@@ -23,6 +23,9 @@ banner on every page (SPEC §18) with the one-click reset.
 3. Navigation frame (sidebar): none in slice (a), which has one screen. From slice (b), app pages sit
    in the Linear-style sidebar frame (`_layouts/app.md`, decision B4).
 
+4. **Theme** (decision 0046, `_components/color.md`): the accent from `GRANITE_ACCENT` as
+   `data-accent` on `<html>`; light or dark from the person's Appearance (System by default).
+
 ## Interactions
 - Reset demo → confirms in a dialog (shadcn alert dialog: title, one line, cancel and confirm), then
   restores the seeded demo agency (SPEC §18) and returns to Home (decision 0029).

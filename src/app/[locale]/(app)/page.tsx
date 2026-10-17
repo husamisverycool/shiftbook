@@ -129,15 +129,15 @@ export default async function HomePage({ params, searchParams }: { params: Promi
             {period ? (
               <>
                 <div className="flex flex-wrap gap-x-10 gap-y-4">
-                  <KeyFigure size="sm" className="min-w-32" label={t("todayHours")} value={hoursMinutes(view.today.minutes)} note={dateRange(period.startsOn, period.endsOn, locale, today)} testId="today-hours" />
+                  <KeyFigure size="strong" className="min-w-32" label={t("todayHours")} value={hoursMinutes(view.today.minutes)} note={dateRange(period.startsOn, period.endsOn, locale, today)} testId="today-hours" />
                   {previous && (
                     // The comparison in the secondary colour, as Stripe's "Yesterday" figure.
-                    <KeyFigure size="sm" className="min-w-32" label={t("todayPrevious")} value={<span className="text-foreground/60">{hoursMinutes(previous.minutes)}</span>} note={dateRange(previous.startsOn, previous.endsOn, locale, today)} testId="today-previous" />
+                    <KeyFigure size="strong" className="min-w-32" label={t("todayPrevious")} value={<span className="text-foreground/60">{hoursMinutes(previous.minutes)}</span>} note={dateRange(previous.startsOn, previous.endsOn, locale, today)} testId="today-previous" />
                   )}
-                  <KeyFigure size="sm" className="min-w-32" label={t("todayWorkers")} value={String(view.today.workers)} testId="today-workers" />
+                  <KeyFigure size="strong" className="min-w-32" label={t("todayWorkers")} value={String(view.today.workers)} testId="today-workers" />
                   <div className="flex min-w-32 flex-col">
                     <span className="text-sm text-foreground/70">{t("todayStatus")}</span>
-                    <span className="mt-1 flex h-7 items-center">
+                    <span className="mt-1 flex h-8 items-center">
                       <Status tone={PERIOD_TONE[period.state] ?? "neutral"} size="lg" data-testid="today-status">
                         {tl(`runStatus.${period.state}`)}
                       </Status>
@@ -162,13 +162,13 @@ export default async function HomePage({ params, searchParams }: { params: Promi
           </div>
           <div className="flex flex-col divide-y">
             <div className="pb-8 lg:pl-5">
-              <KeyFigure size="sm" label={t("side.receivables")} value={money(view.receivables.openCents, locale)} note={t("side.invoices", { count: view.receivables.openInvoices })} action={{ label: t("side.view"), href: "/receivables" }} testId="figure-open" />
+              <KeyFigure size="strong" label={t("side.receivables")} value={money(view.receivables.openCents, locale)} note={t("side.invoices", { count: view.receivables.openInvoices })} action={{ label: t("side.view"), href: "/receivables" }} testId="figure-open" />
             </div>
             <div className="py-6 pb-8 lg:pl-5">
-              <KeyFigure size="sm" label={t("side.overdue")} value={money(view.receivables.overdueCents, locale)} note={t("side.invoices", { count: view.receivables.overdueInvoices })} action={{ label: t("side.view"), href: "/receivables" }} testId="figure-overdue" />
+              <KeyFigure size="strong" label={t("side.overdue")} value={money(view.receivables.overdueCents, locale)} note={t("side.invoices", { count: view.receivables.overdueInvoices })} action={{ label: t("side.view"), href: "/receivables" }} testId="figure-overdue" />
             </div>
             <div className="pt-6 lg:pl-5">
-              <KeyFigure size="sm" label={t("side.compliance")} value={t("side.complianceValue", { overdue: view.compliance.overdue, soon: view.compliance.dueSoon })} action={{ label: t("side.view"), href: "/compliance" }} testId="figure-compliance" />
+              <KeyFigure size="strong" label={t("side.compliance")} value={t("side.complianceValue", { overdue: view.compliance.overdue, soon: view.compliance.dueSoon })} action={{ label: t("side.view"), href: "/compliance" }} testId="figure-compliance" />
             </div>
           </div>
         </div>
@@ -217,10 +217,10 @@ export default async function HomePage({ params, searchParams }: { params: Promi
             {widgets.map((w) => (
               <article key={w.key} className="flex flex-col rounded-lg bg-card p-5 shadow-xs" data-testid={`overview-${w.key}`}>
                 <h3 className="text-sm font-semibold">{w.title}</h3>
-                <span className="mt-1 text-xl leading-7 font-bold tabular-nums">{w.full(o.weeks.reduce((n, x) => n + w.of(x), 0))}</span>
+                <span className="mt-1 text-2xl leading-8 font-semibold tracking-tight tabular-nums">{w.full(o.weeks.reduce((n, x) => n + w.of(x), 0))}</span>
                 <span className="text-sm text-foreground/70">{t("overview.previous", { value: w.full(o.previous[w.key === "billed" ? "billedCents" : w.key === "margin" ? "marginCents" : "minutesPaid"]) })}</span>
                 <div className="mt-7">
-                  <LineChart points={o.weeks.map((x) => ({ label: listDate(x.week, locale, today), value: w.of(x) }))} previous={o.previousWeeks.map(w.of)} axis={w.axis} format={w.full} unit={w.unit} caption={t("overview.chart", { title: w.title, range })} />
+                  <LineChart points={o.weeks.map((x) => ({ label: listDate(x.week, locale, today), value: w.of(x) }))} previous={o.previousWeeks.map(w.of)} axis={w.axis} format={w.full} describePrevious={(value) => t("overview.previous", { value })} unit={w.unit} caption={t("overview.chart", { title: w.title, range })} />
                 </div>
                 {/* The card's foot with no rule above it, as Stripe's overview cards end. */}
                 <div className="mt-6 flex items-center justify-between gap-3 text-sm">

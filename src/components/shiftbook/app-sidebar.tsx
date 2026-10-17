@@ -12,7 +12,8 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { can, type Role } from "@/server/permissions";
 import { useCan } from "./abilities";
 import { CommandMenu, type CommandPage } from "./command-menu";
-import { initialsOf, withoutNote } from "./person";
+import { Avatar } from "./avatar";
+import { withoutNote } from "./person";
 import { Tip } from "./tip";
 
 // Home first, then the areas in groups under short labels (decision 0029: Stripe's sidebar sections,
@@ -151,10 +152,8 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 />
               }
             >
-              {/* The workspace's initials in a small square before its name (Linear's workspace menu; shadcn's team switcher). */}
-              <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">
-                {initialsOf(agencyName)}
-              </span>
+              {/* The workspace's initials in a small square before its name (Linear's workspace menu; Primer's square for an organisation, decision 0046). */}
+              <Avatar name={agencyName} kind="organization" size={24} />
               {/* The demo banner says it is a demo; the name stays readable beside its mark. */}
               <Tip label={agencyName} side="right">
                 <span className="truncate">{withoutNote(agencyName)}</span>
@@ -285,11 +284,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                         const active = a.href === "/" ? pathname === "/" : pathname === a.href || pathname.startsWith(`${a.href}/`);
                         return (
                           <SidebarMenuItem key={a.key}>
-                            {/* Linear's refresh: inactive items muted, the current one full strength. */}
+                            {/* Linear's refresh: inactive items muted, the current one full strength; its icon in the accent (decision 0046). */}
                             <SidebarMenuButton
                               isActive={active}
                               render={<Link href={a.href} />}
-                              className="text-sidebar-foreground/80 data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground data-active:[&>svg]:text-sidebar-accent-foreground"
+                              className="text-sidebar-foreground/80 data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground data-active:[&>svg]:text-sidebar-primary"
                             >
                               <a.icon />
                               <span>{t(a.key)}</span>

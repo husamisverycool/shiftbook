@@ -4,9 +4,11 @@
 // settings.md: Preferences' rows in a panel); the content from Slack "Language & region" and GitHub
 // "Password and authentication" (change password; two-factor setup; recovery codes, a new set ends the old).
 import { useLocale, useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
 import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { changePasswordAction, newRecoveryCodesAction, setLanguageAction, signOutAction } from "@/app/[locale]/(auth)/actions";
+import { changePasswordAction, newRecoveryCodesAction, setAppearanceAction, setLanguageAction, signOutAction } from "@/app/[locale]/(auth)/actions";
+import type { Appearance } from "../theme";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -34,6 +36,7 @@ export interface AccountProps {
   /** Decision 0032. */
   passkeys: PasskeyItem[];
   recoveryCodesLeft: number | null;
+  appearance: Appearance;
 }
 
 export function AccountView(props: AccountProps) {
@@ -46,6 +49,9 @@ export function AccountView(props: AccountProps) {
   const pathname = usePathname();
   const id = useId();
   const [savingLanguage, startLanguage] = useTransition();
+  const [appearance, setAppearanceState] = useState<Appearance>(props.appearance);
+  const [savingAppearance, startAppearance] = useTransition();
+  const { setTheme } = useTheme();
   const [savingPassword, startPassword] = useTransition();
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordKey, setPasswordKey] = useState(0);
@@ -72,6 +78,36 @@ export function AccountView(props: AccountProps) {
       {/* Linear's Preferences: a section of rows, the select at the row's right. */}
       <SettingsSection title={t("preferencesTitle")}>
         <SettingsRows>
+          {/* Geist, GitHub and Linear: System, Light, Dark — applied at once, kept for the person (decision 0046). */}
+          <SettingsRow
+            label={t("appearance")}
+            htmlFor={`${id}-appearance-select`}
+            description={t("appearanceHint")}
+            descriptionId={`${id}-appearance-hint`}
+            control={
+              <NativeSelect
+                id={`${id}-appearance-select`}
+                value={appearance}
+                disabled={savingAppearance}
+                aria-describedby={`${id}-appearance-hint`}
+                onChange={(e) => {
+                  const next = e.target.value as Appearance;
+                  setAppearanceState(next);
+                  setTheme(next);
+                  startAppearance(async () => {
+                    const r = await setAppearanceAction(next);
+                    if (r.ok) toast.success(t("appearanceSaved"));
+                  });
+                }}
+                className="w-40"
+                data-testid="appearance"
+              >
+                <NativeSelectOption value="system">{t("appearanceSystem")}</NativeSelectOption>
+                <NativeSelectOption value="light">{t("appearanceLight")}</NativeSelectOption>
+                <NativeSelectOption value="dark">{t("appearanceDark")}</NativeSelectOption>
+              </NativeSelect>
+            }
+          />
           <SettingsRow
             label={t("language")}
             htmlFor={`${id}-language-select`}

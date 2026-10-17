@@ -20,4 +20,8 @@ Researched: 2026-10-16 from the screenshots themselves (part C). Confidence: hig
 ## Never
 A grid of bordered boxes each with a caption, a number and a sentence.
 
+## Colour (decision 0046)
+
+A "strong" size, 24px semibold, for the headline figures of Home, Margin and Receivables (decision 0046).
+
 Deviations allowed: none

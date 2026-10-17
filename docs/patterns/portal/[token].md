@@ -29,4 +29,8 @@ Researched: 2026-10-17 (`docs/research/client-portal-slice-v.md` §1.2, §4). Co
 - Loading: the dashboard outline (`_components/loading.md`).
 - A failure: the frame stays, "Try again" (`_components/error.md`).
 
+## Colour (decision 0046)
+
+The agency's square avatar before its name at the top of the side column (`_components/avatar.md`).
+
 Deviations allowed: none

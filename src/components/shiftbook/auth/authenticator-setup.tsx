@@ -71,7 +71,7 @@ export function AuthenticatorSetup({ email, onFinished, onCancel }: { email: str
           <Skeleton className="size-44" aria-label={t("loading")} />
         )}
         <div className="flex flex-col gap-1 text-sm">
-          <button type="button" className="w-fit text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-expanded={showKey} onClick={() => setShowKey((s) => !s)} data-testid="show-setup-key">
+          <button type="button" className="w-fit text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-expanded={showKey} onClick={() => setShowKey((s) => !s)} data-testid="show-setup-key">
             {t("showKey")}
           </button>
           {showKey && setup && (
@@ -120,7 +120,7 @@ export function AuthenticatorSetup({ email, onFinished, onCancel }: { email: str
             <p id={`${id}-error`} role="alert" className="text-sm text-destructive" data-testid="setup-error">
               {t(error)}{" "}
               {error === "expired" && (
-                <button type="button" className="text-primary underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={begin}>
+                <button type="button" className="text-accent-text underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={begin}>
                   {t("startAgain")}
                 </button>
               )}

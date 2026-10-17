@@ -14,7 +14,8 @@ export function KeyFigures({ className, ...props }: ComponentProps<"div">) {
 
 /**
  * `size`: "default" — Stripe's summary figure (20px semibold); "sm" — Stripe Home's Today and balance
- * figures (20px regular); "lg" — Mercury's headline (32px light).
+ * figures (20px regular); "strong" — the headline figures of Home, Margin and Receivables (24px
+ * semibold, decision 0046); "lg" — Mercury's headline (32px light).
  */
 export function KeyFigure({
   label,
@@ -30,7 +31,7 @@ export function KeyFigure({
   note?: ReactNode;
   /** A "View" link at the label's right (Stripe Home's right column), the label then in medium weight. */
   action?: { label: string; href: ComponentProps<typeof Link>["href"] };
-  size?: "sm" | "default" | "lg";
+  size?: "sm" | "default" | "strong" | "lg";
   className?: string;
   testId?: string;
 }) {
@@ -45,7 +46,7 @@ export function KeyFigure({
         )}
       </div>
       <span
-        className={cn("mt-1 tabular-nums", size === "lg" ? "text-[32px] leading-10 font-light tracking-tight" : size === "sm" ? "text-xl leading-7 font-normal" : "text-xl leading-7 font-semibold")}
+        className={cn("mt-1 tabular-nums", size === "lg" ? "text-[32px] leading-10 font-light tracking-tight" : size === "strong" ? "text-2xl leading-8 font-semibold tracking-tight" : size === "sm" ? "text-xl leading-7 font-normal" : "text-xl leading-7 font-semibold")}
         data-testid={testId ? `${testId}-value` : undefined}
       >
         {value}

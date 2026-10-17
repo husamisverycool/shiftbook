@@ -99,4 +99,8 @@ same way in both languages.
 - Not found (a record that does not exist, an address that matches no page): the frame stays,
   "Page not found" and a button to Home (`_components/error.md`).
 
+## Colour (decision 0046)
+
+Today's and the side column's figures 24px semibold (`_components/key-figures.md`, "strong"); the overview cards' figures the same size. Charts per `_components/color.md`: the current period's line in the accent, the period before dashed in neutral, and on hover a crosshair, a point and a tooltip with both periods; Today's line in the accent with a faint area under it and its end dot.
+
 Deviations allowed: none

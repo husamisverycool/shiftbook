@@ -61,4 +61,8 @@ The title, then the statuses (All, Issued, Paid, Void) as underline tabs with th
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Colour (decision 0046)
+
+The client column shows the client's colour dot before its name (`_components/avatar.md`).
+
 Deviations allowed: none

@@ -42,4 +42,8 @@ The title and the table as Stripe's lists show them: full width, small-capital h
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Colour (decision 0046)
+
+Each client's square avatar before its name (`_components/avatar.md`).
+
 Deviations allowed: none

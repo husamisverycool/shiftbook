@@ -14,6 +14,7 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { GridShift, WeekView } from "@/server/schedule/queries";
 import { ReadOnlyNote, useCan } from "../abilities";
+import { Avatar, ColorDot } from "../avatar";
 import { EmptyState } from "../empty-state";
 import { clock, hoursMinutes, shortDate } from "../format";
 import { Page, PageHeader } from "../page";
@@ -29,6 +30,9 @@ interface Row {
   key: string;
   label: string;
   sub?: string;
+  /** A worker row's avatar, or the client whose colour dot leads the line under the label (decision 0046). */
+  workerId?: string;
+  clientId?: string;
   shifts: GridShift[];
   /** What a "+" in this row fills in. */
   draft: Partial<ShiftDraft>;
@@ -66,14 +70,14 @@ export function ScheduleView({ view, today, by }: { view: WeekView; today: strin
     if (by === "worker") {
       const ids = [...new Set(assigned.map((s) => s.workerId!))];
       return ids
-        .map((workerId) => ({ key: workerId, label: assigned.find((s) => s.workerId === workerId)!.workerName ?? "—", shifts: assigned.filter((s) => s.workerId === workerId), draft: { workerId } }))
+        .map((workerId) => ({ key: workerId, label: assigned.find((s) => s.workerId === workerId)!.workerName ?? "—", workerId, shifts: assigned.filter((s) => s.workerId === workerId), draft: { workerId } }))
         .sort((a, b) => a.label.localeCompare(b.label));
     }
     if (by === "jobOrder")
-      return view.jobOrders.map((j) => ({ key: j.id, label: j.position, sub: `${j.clientName} · ${j.worksiteName}`, shifts: view.shifts.filter((s) => s.jobOrderId === j.id), draft: { jobOrderId: j.id } }));
+      return view.jobOrders.map((j) => ({ key: j.id, label: j.position, sub: `${j.clientName} · ${j.worksiteName}`, clientId: j.clientId, shifts: view.shifts.filter((s) => s.jobOrderId === j.id), draft: { jobOrderId: j.id } }));
     const sites = [...new Map(view.shifts.map((s) => [s.worksiteId, s])).values()];
     return sites
-      .map((s) => ({ key: s.worksiteId, label: s.worksiteName, sub: s.clientName, shifts: view.shifts.filter((x) => x.worksiteId === s.worksiteId), draft: { jobOrderId: view.jobOrders.find((j) => j.worksiteName === s.worksiteName && j.clientName === s.clientName)?.id } }))
+      .map((s) => ({ key: s.worksiteId, label: s.worksiteName, sub: s.clientName, clientId: s.clientId, shifts: view.shifts.filter((x) => x.worksiteId === s.worksiteId), draft: { jobOrderId: view.jobOrders.find((j) => j.worksiteName === s.worksiteName && j.clientName === s.clientName)?.id } }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [by, view.shifts, view.jobOrders]);
 
@@ -201,8 +205,19 @@ export function ScheduleView({ view, today, by }: { view: WeekView; today: strin
           {rows.map((row) => (
             <div role="row" className="contents" key={row.key} data-testid={`schedule-row-${row.key}`}>
               <div role="rowheader" className="min-w-0 border-b p-2">
-                <div className="truncate font-medium">{row.label}</div>
-                <div className="truncate text-xs text-muted-foreground">{row.sub ? `${row.sub} · ` : ""}{t("rowCount", { count: row.shifts.length })}</div>
+                <div className="flex min-w-0 items-center gap-2">
+                  {row.workerId && <Avatar name={row.label} id={row.workerId} />}
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{row.label}</div>
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      {row.clientId && <ColorDot id={row.clientId} />}
+                      <span className="truncate">
+                        {row.sub ? `${row.sub} · ` : ""}
+                        {t("rowCount", { count: row.shifts.length })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               {view.days.map((d) => cell(row, d, row.shifts.filter((s) => s.workDate === d && (by !== "worker" || s.state !== "open"))))}
             </div>
@@ -255,7 +270,8 @@ function Chip({ shift: s, by, inOpenRow, onOpen }: { shift: GridShift; by: Group
         warn && "border-destructive/60",
       )}
     >
-      <span className="font-medium tabular-nums">
+      <span className="flex items-center gap-1.5 font-medium tabular-nums">
+        <ColorDot id={s.clientId} />
         {clock(s.startMinute, locale)}–{clock(s.endMinute % 1440, locale)}
       </span>
       <span className="truncate text-muted-foreground">{who}</span>

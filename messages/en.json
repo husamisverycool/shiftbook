@@ -3631,7 +3631,13 @@
     "setUpAgainHint": "For a new phone. The old app keeps working until the new one is verified.",
     "signOut": "Sign out",
     "signOutLine": "Sign out of Granite in this browser",
-    "demoNote": "Demo: nothing here leaves the demo; try the password and the authenticator freely."
+    "demoNote": "Demo: nothing here leaves the demo; try the password and the authenticator freely.",
+    "appearance": "Appearance",
+    "appearanceHint": "System follows your device's light or dark setting.",
+    "appearanceSystem": "System",
+    "appearanceLight": "Light",
+    "appearanceDark": "Dark",
+    "appearanceSaved": "Appearance saved"
   },
   "members": {
     "eyebrow": "Settings",

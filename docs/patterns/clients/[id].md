@@ -92,4 +92,8 @@ Under the invoice settings on the right, one more module: **Worker app clock-in*
 what it means and a select — Off, On, On with location — saved when changed (Linear's settings rows,
 `_components/settings.md`). Who may change it: the Owner, coordinators and recruiters.
 
+## Colour (decision 0046)
+
+The client's 40px square avatar before the title (`_components/avatar.md`).
+
 Deviations allowed: none

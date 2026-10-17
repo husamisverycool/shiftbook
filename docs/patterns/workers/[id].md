@@ -96,4 +96,8 @@ the thread (https://faq.whatsapp.com/).
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Colour (decision 0046)
+
+The worker's 40px avatar before the title (`_components/avatar.md`).
+
 Deviations allowed: none

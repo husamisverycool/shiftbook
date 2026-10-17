@@ -98,6 +98,7 @@ export async function receivablesView(tx: Tx, asOf: string) {
     .map((b) => ({
       invoiceId: b.invoice.id,
       number: b.invoice.number,
+      clientId: b.invoice.clientId,
       clientName: b.clientName,
       dueOn: b.invoice.dueOn,
       paidCents: b.paidCents,

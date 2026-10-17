@@ -20,6 +20,7 @@ import type { MarginView } from "@/server/margin/queries";
 import { EmptyState } from "../empty-state";
 import { useEngineSay } from "../engine-say";
 import { hoursMinutes, longDate, money } from "../format";
+import { Sparkline } from "../sparkline";
 import { WeeklyChart } from "./weekly-chart";
 
 type Metric = "billed" | "pay" | "burden" | "margin" | "percent";
@@ -49,11 +50,11 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
   const T = view.totals;
   const pct = (p: number | null) => (p === null ? "—" : formatPermille(p));
   const name = (n: string | null) => (n === null ? t("none") : groupBy === "week" ? t("weekOf", { date: longDate(n, locale) }) : n);
-  const cards: { key: string; label: string; value: string; metric?: Metric; href?: string }[] = [
-    { key: "billed", label: t("cards.billed"), value: money(T.billedCents, locale), metric: "billed" },
+  const cards: { key: string; label: string; value: string; metric?: Metric; href?: string; spark?: number[] }[] = [
+    { key: "billed", label: t("cards.billed"), value: money(T.billedCents, locale), metric: "billed", spark: view.weeks.map((w) => w.totals.billedCents) },
     { key: "pay", label: t("cards.pay"), value: money(T.payCents, locale), metric: "pay" },
     { key: "burden", label: t("cards.burden"), value: money(T.burdenCents, locale), metric: "burden" },
-    { key: "margin", label: t("cards.margin"), value: money(T.marginCents, locale), metric: "margin" },
+    { key: "margin", label: t("cards.margin"), value: money(T.marginCents, locale), metric: "margin", spark: view.weeks.map((w) => w.totals.marginCents) },
     { key: "percent", label: t("cards.percent"), value: pct(T.marginPermille), metric: "percent" },
     { key: "overtime", label: t("cards.overtime"), value: money(view.overtimePremiumNotBilledCents, locale), href: `/margin/overtime${keep}` },
     { key: "cash", label: t("cards.cash"), value: money(floatingCents, locale), href: `/margin/cash${keep}` },
@@ -121,13 +122,14 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
   return (
     <>
       {/* Figures as plain type in a row, as Stripe's "Program summary" sets them: the label in the secondary
-          colour, the figure 20px semibold (https://docs.stripe.com/stripe-apps/patterns/chart-layout). */}
+          colour, the figure (24px semibold, decision 0046), billed and margin with their weekly sparkline
+          (https://docs.stripe.com/stripe-apps/patterns/chart-layout). */}
       <div className="flex flex-wrap gap-x-12 gap-y-5 border-b pb-6" data-testid="margin-cards">
         {cards.map((c) =>
           c.href ? (
             <Link key={c.key} href={c.href} className="group flex flex-col text-left outline-none" data-testid={`card-${c.key}`}>
               <span className="text-sm text-foreground/70 group-hover:underline group-focus-visible:underline">{c.label}</span>
-              <span className="mt-1 text-xl leading-7 font-semibold tabular-nums">{c.value}</span>
+              <span className="mt-1 text-2xl leading-8 font-semibold tracking-tight tabular-nums">{c.value}</span>
             </Link>
           ) : (
             <button
@@ -138,7 +140,8 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
               data-testid={`card-${c.key}`}
             >
               <span className="text-sm text-foreground/70 group-hover:underline group-focus-visible:underline">{c.label}</span>
-              <span className="mt-1 text-xl leading-7 font-semibold tabular-nums">{c.value}</span>
+              <span className="mt-1 text-2xl leading-8 font-semibold tracking-tight tabular-nums">{c.value}</span>
+              {c.spark && <Sparkline values={c.spark} className="mt-2" />}
             </button>
           ),
         )}

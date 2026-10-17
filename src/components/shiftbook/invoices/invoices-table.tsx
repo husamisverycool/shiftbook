@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { InvoiceRow } from "@/server/invoices/queries";
+import { ColorDot } from "../avatar";
 import { dateRange, listDate, money, tableDate } from "../format";
 import { ListAmount } from "../list-controls";
 import { TableFrame } from "../page";
@@ -107,7 +108,14 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
                   {r.kind !== "invoice" && <Badge variant="outline">{t(`kind.${r.kind}`)}</Badge>}
                 </span>
               </TableCell>
-              {props.showClient !== false && <TableCell>{r.clientName}</TableCell>}
+              {props.showClient !== false && (
+                <TableCell>
+                  <span className="inline-flex items-center gap-2">
+                    <ColorDot id={r.clientId} />
+                    {r.clientName}
+                  </span>
+                </TableCell>
+              )}
               <TableCell className="whitespace-nowrap">{dateRange(r.period.startsOn, r.period.endsOn, locale, props.today)}</TableCell>
               <TableCell className="whitespace-nowrap">{date(r.issuedOn)}</TableCell>
               <TableCell className="whitespace-nowrap">{r.kind === "credit_note" ? "—" : date(r.dueOn)}</TableCell>
