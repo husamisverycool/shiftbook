@@ -2177,7 +2177,7 @@ export const smsMessages = pgTable("sms_messages", {
   sentAt: timestamp("sent_at", { withTimezone: true }),
 });
 
-// ---------- scheduling and shift fill (slice u, decision 0041; drizzle/0049) ----------
+// ---------- scheduling and shift fill (slice u, decision 0039; drizzle/0049) ----------
 
 export const SHIFT_STATES = ["open", "assigned", "awaiting", "confirmed", "cancelled"] as const;
 export type ShiftState = (typeof SHIFT_STATES)[number];

@@ -1,6 +1,6 @@
 # Pattern: Exports (`/exports`)
 
-Status: researched — ready for owner review
+Status: adopted — built as the converter's last step, "Export and invoices" (`/convert`, `convert/files-step.tsx`; Gusto runs payroll and its files in one flow, decision D2): the period, each payroll file with its control totals and Download and the invoices. There is no separate `/exports` page; the export dialog's time zone and custom columns are not offered (one agency time zone; each format's columns are fixed by its payroll system).
 Reference product and screen: Stripe Dashboard — reports and list-page CSV exports
 Source URL: https://docs.stripe.com/reports/options
 Source URL: https://docs.stripe.com/reports/payout-reconciliation

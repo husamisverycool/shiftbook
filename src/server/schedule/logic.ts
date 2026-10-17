@@ -1,5 +1,5 @@
 /**
- * Scheduling, pure (slice u, decision 0041; docs/patterns/schedule.md, margin/attendance.md). No
+ * Scheduling, pure (slice u, decision 0039; docs/patterns/schedule.md, margin/attendance.md). No
  * database: the grid's counters, the status bar's counts (Deputy), overlaps (When I Work's scheduling
  * concerns) and the attendance figures (Deputy's report; Instawork's fill rate). Minutes are integers;
  * rates are whole basis points.

@@ -1,4 +1,4 @@
-# Slice (u) — scheduling and shift fill (decision 0041)
+# Slice (u) — scheduling and shift fill (decision 0039)
 
 Status: built (2026-10-17)
 
