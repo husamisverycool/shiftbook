@@ -290,8 +290,8 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
           )}
         </div>
       ) : (
-        // Full width with no box around it (_components/table.md).
-        <div className="min-w-0" data-testid="hours-grid-frame">
+        // Full width with no box around it (_components/table.md); its own width, so a wide row scrolls inside the grid, never the page.
+        <div className="@container min-w-0" data-testid="hours-grid-frame">
           <Table ref={tableRef} onKeyDown={onKeyDown} aria-label={t("sectionTitle")} className="text-sm" data-testid="hours-grid">
             <TableHeader>
               <TableRow>
