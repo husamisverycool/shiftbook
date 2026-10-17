@@ -55,14 +55,27 @@ One look, three products, each where SPEC §26 points to it.
     right; the record's content on the left and its details as label-over-value on the right; each
     module a heading over a hairline, never a card. Invoice, client, job order, worker, compliance
     duty and client approval pages all use it, so every record behaves the same.
-11. **Settings — Linear settings** (Linear's own Preferences screenshot): one centred column at the
-    same width on every settings page, the title in the same place, sections as headings with one
-    muted line under them.
+11. **Settings — Linear settings** (`_components/settings.md`; Linear's own screenshots of
+    Preferences, Notifications, Team permissions and access, the SAML domains and API keys lists, and
+    the SAML setup, published at linear.app/docs/account-preferences, /notifications, /members-roles,
+    /saml-and-access-control, /api-and-webhooks, /invite-members and /scim): one centred column, 688px
+    on every settings page (Linear's 640px at its 13px type, scaled to our 14px), the title in the same
+    place (rule 2); each section a heading (16px, medium) with one muted line under it and, at the
+    heading's right, its add action; under it the section's rows **inside a rounded bordered panel**
+    (`rounded-lg border bg-card`, 16px padding) — each row at least 60px tall, the label (14px, medium)
+    over a muted 13px line on the left, the control (select, switch, input, figure or text action) on
+    the right, vertically centred, a hairline between rows stopping at the panel's padding; a list's
+    rows lead with a 32px tile or initials; an empty panel is one muted row; a form sits in a padded
+    panel whose foot (a hairline, the note at the left, the actions at the right) holds its Save.
+    Sections are 48px apart; panels within a section 12px. Members follows Linear's Members list: the
+    search and Filter at the left and Invite at the right on one line, then the people as rows with
+    hairlines between them. Activity, a log, keeps its Stripe Workbench panes (`settings/activity.md`).
 12. **Wizards — Attio import and QuickBooks Online upload**: ancestors and title as rule 10, then the
     numbered steps (done ones ticked, the current one bold), one step at a time; the bank import and
     the placement import share it.
-13. **Type**: Geist (already the app's font). Title 28px bold; section headings 18–20px semibold;
-    body 14px; labels 13px muted; figures 24–28px semibold with tabular digits (Stripe; Mercury).
+13. **Type**: Geist (already the app's font). Title 28px bold; section headings 18–20px semibold
+    (settings: 16px medium, rule 11); body 14px; labels 13px muted; figures 24–28px semibold with
+    tabular digits (Stripe; Mercury).
 
 ## Alternatives considered
 - The first pass's composite rules (boxed figure grids, dotted pills, tinted headers, dashed empty
