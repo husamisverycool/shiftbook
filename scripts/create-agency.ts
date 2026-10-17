@@ -6,11 +6,13 @@
  *   pnpm tsx scripts/create-agency.ts --name "Agency name" --owner-name "Owner name" --owner-email owner@agency.example [--language es] [--phone "…"] [--email "…"]
  *
  * Needs SHIFTBOOK_MODE=live, DATABASE_URL, DATABASE_OWNER_URL, SHIFTBOOK_ENCRYPTION_KEY and
- * SHIFTBOOK_APP_URL (the address people open).
+ * SHIFTBOOK_APP_URL (the address people open). The agency gets STRIPE_TRIAL_DAYS free days, as a
+ * signed-up agency does (decision 0036); after them its Owner starts the subscription in Settings › Billing.
  */
 import { parseArgs } from "node:util";
 import { eq } from "drizzle-orm";
 import { firstOwnerInvite } from "../src/server/auth/service";
+import { billingConfig } from "../src/server/billing/config";
 import { createDatabase } from "../src/server/db/client";
 import { agencies } from "../src/server/db/schema";
 import { env } from "../src/server/env";
@@ -36,7 +38,9 @@ async function main() {
   const app = createDatabase(env.databaseUrl, { max: 1 });
   try {
     const [agency] = await owner.db.insert(agencies).values({ name, phone: values.phone ?? null, email: values.email ?? null, isDemo: false }).returning();
-    const r = await firstOwnerInvite({ db: app.db, mailTransport: () => ({ send: async () => ({ providerId: null }) }) }, agency!.id, { name: values["owner-name"], email: values["owner-email"], locale: values.language ?? "en" }, env.appUrl);
+    const { trialDays } = billingConfig();
+    const trialEndsAt = trialDays > 0 ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000) : null;
+    const r = await firstOwnerInvite({ db: app.db, mailTransport: () => ({ send: async () => ({ providerId: null }) }) }, agency!.id, { name: values["owner-name"], email: values["owner-email"], locale: values.language ?? "en" }, env.appUrl, { trialEndsAt });
     if (!r.ok) {
       await owner.db.delete(agencies).where(eq(agencies.id, agency!.id));
       throw new Error(`The Owner could not be invited: ${r.error}.`);

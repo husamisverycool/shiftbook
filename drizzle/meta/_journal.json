@@ -288,6 +288,13 @@
       "when": 1792093100000,
       "tag": "0040_identity_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792179600000,
+      "tag": "0043_signup_and_billing",
+      "breakpoints": true
     }
   ]
 }
