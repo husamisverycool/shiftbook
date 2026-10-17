@@ -84,4 +84,9 @@ Dispute dialog content (Upwork's form, top to bottom; Bullhorn's required commen
 ## Never copy
 Bullhorn's, Upwork's, TempWorks', Stripe's wording, icons, colors or logos.
 
+## Look (checked against the reference's own screenshots, 2026-10-17)
+Bullhorn's approval table (https://kb.bullhorn.com/bte/Content/BHTE/Topics/approvingTime.htm) marks
+nothing on a row still waiting — only its actions; so rows already approved carry a tinted Approved
+badge and a disputed shift its mark, and waiting rows carry no badge (`_components/status.md` tones).
+
 Deviations allowed: none
