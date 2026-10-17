@@ -181,7 +181,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <span className="text-[13px] text-muted-foreground">{t("overview.previous", { value: w.full(w.previous) })}</span>
                 </div>
                 <LineChart points={o.weeks.map((x) => ({ label: shortDate(x.week, locale), value: w.of(x) }))} format={w.axis} unit={w.unit} caption={t("overview.chart", { title: w.title, range })} />
-                <div className="flex justify-end border-t pt-3">
+                {/* The card's foot with no rule above it, as Stripe's overview cards end. */}
+                <div className="mt-auto flex justify-end">
                   <Link href="/margin" className="text-[13px] font-medium underline-offset-4 hover:underline">
                     {t("overview.viewMore")}
                   </Link>

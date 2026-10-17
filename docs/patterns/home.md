@@ -60,4 +60,12 @@ quarter at a glance.
 ## Never
 Stripe's or Shopify's wording, icons, illustrations or colors; boxed figure cards.
 
+## Look (Stripe's own Home screenshot, https://support.stripe.com/questions/dashboard-home-page-charts-for-business-insights)
+"Today" over a hairline; the figures and the chart on the left, the right column of figures with "View"
+beside each label, hairlines between them. "Your overview" bold, the date range pill, then white cards on
+a light grey band: the title, the figure, the previous period muted, the chart with its gridline values on
+the right and the first and last dates under it, and "View more" at the right of the card's foot with no
+rule above it. Gridline values carry their unit ("$25K", "500h", and "0h" or "$0" at zero), written the
+same way in both languages.
+
 Deviations allowed: none
