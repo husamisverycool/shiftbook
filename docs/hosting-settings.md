@@ -2,12 +2,29 @@
 
 These go in the hosting service's environment settings — never in the code, never in chat.
 
+## The one-step start (decision 0035)
+
+The `Dockerfile` runs `scripts/hosted-start.ts` (also `pnpm start:hosted`), which makes the database accounts, applies migrations,
+loads the demo when needed, keeps uploads and the encryption key on the volume, sends approval
+reminders and starts the app on the host's `PORT`. Step-by-step for Railway: `docs/launch-guide.md`.
+
+| Setting | What it is |
+|---|---|
+| `DATABASE_ADMIN_URL` | A Postgres superuser's connection (on Railway: `${{Postgres.DATABASE_URL}}`). Used at start only, to make `shiftbook_owner`, `shiftbook_app` and the `granite` database; the app never sees it. Not needed when `DATABASE_URL` and `DATABASE_OWNER_URL` are both set. |
+| `PORT` | The port the app listens on (the host sets it; 3000 otherwise). |
+| `RAILWAY_VOLUME_MOUNT_PATH` | Set by Railway when a volume is attached: uploads go to `<volume>/storage` and a made key to `<volume>/keys`. Live mode will not start without a volume or `SHIFTBOOK_STORAGE_DIR`. |
+| `RAILWAY_PUBLIC_DOMAIN` | Set by Railway once a domain is generated: the app's address when `SHIFTBOOK_APP_URL` is not set. |
+
+With the one-step start, `SHIFTBOOK_ENCRYPTION_KEY` and `CRON_SECRET` below are optional: when unset,
+the key is made once and kept on the volume (back the volume up, or copy the key into this setting
+and keep a copy elsewhere), and reminders run inside the app every 15 minutes.
+
 ## Always
 
 | Setting | What it is |
 |---|---|
-| `DATABASE_URL` | The app's database connection (the limited `shiftbook_app` user). |
-| `DATABASE_OWNER_URL` | The database owner's connection, used only to set up tables (`pnpm db:migrate`). |
+| `DATABASE_URL` | The app's database connection (the limited `shiftbook_app` user). Made by the one-step start from `DATABASE_ADMIN_URL`. |
+| `DATABASE_OWNER_URL` | The database owner's connection, used only to set up tables (`pnpm db:migrate`). Made by the one-step start from `DATABASE_ADMIN_URL`. |
 | `SHIFTBOOK_MODE` | `demo` for the public demo (fictional agency, "Continue as" buttons, no emails sent), `live` for real agencies. A built app is a demo **only** when this says `demo`. |
 
 ## Live mode (real agencies)

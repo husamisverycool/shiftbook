@@ -1,0 +1,17 @@
+# What the host's build never needs (and must never see).
+.git
+node_modules
+packages/*/node_modules
+.next
+.pgdata
+.storage
+.env
+.env.*
+.claude/state
+.claude/settings.local.json
+playwright-report
+test-results
+blob-report
+coverage
+tests/e2e/.auth
+*.tsbuildinfo
