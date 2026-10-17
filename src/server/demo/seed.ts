@@ -57,8 +57,6 @@ const CLEAR_ORDER = [
   "partner_handoffs",
   "jobs",
   "staff_requests",
-  "portal_links",
-  "portal_contacts",
   "burden_tax_rates",
   "wc_rates",
   "notifications",
@@ -78,6 +76,9 @@ const CLEAR_ORDER = [
   "approval_decisions",
   "approval_links",
   "approval_requests",
+  // After approval_links: a link made from the portal names its portal contact (drizzle/0057).
+  "portal_links",
+  "portal_contacts",
   "placement_imports",
   "premium_confirmations",
   "bonuses",

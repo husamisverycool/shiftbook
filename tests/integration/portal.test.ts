@@ -4,10 +4,10 @@
  */
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import type { ApprovalDeps } from "../../src/server/approvals/service";
+import { loadPortal, type ApprovalDeps } from "../../src/server/approvals/service";
 import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
-import { clearDemoAgency, clientId, seedDemoAgency, worksiteId } from "../../src/server/demo/seed";
+import { clearDemoAgency, clientId, periodId, seedDemoAgency, worksiteId } from "../../src/server/demo/seed";
 import { DemoMailboxTransport, type MailTransport } from "../../src/server/mail/transport";
 import {
   acceptStaffRequest,
@@ -177,6 +177,51 @@ describe("what a contact sees", () => {
   it("hours: only the approver the request was sent to may open it from the portal", async () => {
     const token = await giveAccess();
     expect(await reviewHoursLink(deps, token, "00000000-0000-4000-8000-000000000000")).toEqual({ ok: false, error: "not_found" });
+  });
+
+  // Security review M1: an approval link made from the portal lasts an hour, one at a time, and ends
+  // with the portal access that made it.
+  async function openRequest(email = "pat.lee@prairie.example.com"): Promise<string> {
+    const [r] = await owner.db
+      .insert(s.approvalRequests)
+      .values({ agencyId: DEMO_AGENCY.id, clientId: IL, payPeriodId: periodId("w2"), approverName: "Pat Lee", approverEmail: email, locale: "en", agencyLocale: "en", cycleStartedAt: clock, createdByLabel: "Test" })
+      .returning({ id: s.approvalRequests.id });
+    return r!.id;
+  }
+  const approvalState = async (approvalToken: string) => (await loadPortal(deps, approvalToken)).state;
+
+  it("hours: removing portal access ends the approval link the portal made; it lasts an hour and replaces the one before", async () => {
+    const token = await giveAccess();
+    const requestId = await openRequest();
+    const first = await reviewHoursLink(deps, token, requestId);
+    expect(first.ok).toBe(true);
+    const firstToken = first.ok ? first.approvalToken : "";
+    expect(await approvalState(firstToken)).not.toBe("replaced");
+    const [link] = await inAgency((tx) => tx.select().from(s.approvalLinks).where(eq(s.approvalLinks.requestId, requestId)));
+    expect(link!.expiresAt.getTime() - clock.getTime()).toBe(3_600_000);
+    const second = await reviewHoursLink(deps, token, requestId);
+    const secondToken = second.ok ? second.approvalToken : "";
+    expect(await approvalState(firstToken)).toBe("replaced");
+    expect(await approvalState(secondToken)).not.toBe("replaced");
+    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts));
+    expect(await revokePortalContact(deps, billing, contact!.id)).toEqual({ ok: true });
+    expect(await approvalState(secondToken)).toBe("replaced");
+  });
+
+  it("hours: a new portal link ends the approval links the old one made, and a contact makes at most ten an hour", async () => {
+    const token = await giveAccess();
+    const requestId = await openRequest();
+    const made = await reviewHoursLink(deps, token, requestId);
+    const approvalToken = made.ok ? made.approvalToken : "";
+    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts));
+    clock = new Date(clock.getTime() + 61_000);
+    expect(await sendPortalLink(deps, billing, contact!.id)).toEqual({ ok: true });
+    expect(await approvalState(approvalToken)).toBe("replaced");
+    const fresh = await lastToken();
+    for (let i = 1; i < 10; i++) expect((await reviewHoursLink(deps, fresh, requestId)).ok).toBe(true);
+    expect(await reviewHoursLink(deps, fresh, requestId)).toEqual({ ok: false, error: "review_limit" });
+    clock = new Date(clock.getTime() + 3_601_000);
+    expect((await reviewHoursLink(deps, fresh, requestId)).ok).toBe(true);
   });
 });
 
