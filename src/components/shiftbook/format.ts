@@ -82,6 +82,11 @@ export function longDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 }
 
+/** A date in a list's table, short as Stripe's lists write it: "Oct 16, 2026" / "16 oct 2026". */
+export function tableDate(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+}
+
 /** A pay period: "Oct 5 – 11, 2026" / "5–11 oct 2026". */
 export function dateRange(start: string, end: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).formatRange(new Date(`${start}T00:00:00Z`), new Date(`${end}T00:00:00Z`));

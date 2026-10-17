@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clock, compactMoney, hoursMinutes, money, parseClock, signedMoney } from "./format";
+import { clock, compactMoney, hoursMinutes, money, parseClock, signedMoney, tableDate } from "./format";
 
 describe("screen formatting", () => {
   it("shows money exactly from integer cents in both languages", () => {
@@ -37,5 +37,10 @@ describe("screen formatting", () => {
     expect(compactMoney(0)).toBe("$0");
     expect(compactMoney(-1_000_000)).toBe("-$10K");
     expect(compactMoney(99_995_000)).toBe("$1M");
+  });
+
+  it("writes a date in a list's table short, as Stripe's lists do", () => {
+    expect(tableDate("2026-10-16", "en")).toBe("Oct 16, 2026");
+    expect(tableDate("2026-10-16", "es")).toBe("16 oct 2026");
   });
 });

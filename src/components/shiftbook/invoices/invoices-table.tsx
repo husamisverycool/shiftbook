@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { InvoiceRow } from "@/server/invoices/queries";
-import { dateRange, longDate, money } from "../format";
+import { dateRange, money, tableDate } from "../format";
 import { TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 
@@ -100,8 +100,8 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
               </TableCell>
               {props.showClient !== false && <TableCell>{r.clientName}</TableCell>}
               <TableCell className="whitespace-nowrap">{dateRange(r.period.startsOn, r.period.endsOn, locale)}</TableCell>
-              <TableCell className="whitespace-nowrap">{longDate(r.issuedOn, locale)}</TableCell>
-              <TableCell className="whitespace-nowrap">{r.kind === "credit_note" ? "—" : longDate(r.dueOn, locale)}</TableCell>
+              <TableCell className="whitespace-nowrap">{tableDate(r.issuedOn, locale)}</TableCell>
+              <TableCell className="whitespace-nowrap">{r.kind === "credit_note" ? "—" : tableDate(r.dueOn, locale)}</TableCell>
               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 <InvoiceMenu row={r} />
               </TableCell>

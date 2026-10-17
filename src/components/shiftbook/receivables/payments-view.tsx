@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { PaymentClients, PaymentRow } from "@/server/receivables/queries";
 import { EmptyState } from "../empty-state";
-import { longDate, money } from "../format";
+import { longDate, money, tableDate } from "../format";
 import { Page, PageHeader, TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
@@ -122,7 +122,7 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
             <TableBody>
               {shown.map((p) => (
                 <TableRow key={p.id} data-testid="payment-row" className={p.status === "voided" ? "text-muted-foreground" : undefined}>
-                  <TableCell className="whitespace-nowrap">{longDate(p.receivedOn, locale)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{tableDate(p.receivedOn, locale)}</TableCell>
                   <TableCell>{p.clientName}</TableCell>
                   <TableCell>{t(`methods.${p.method}`)}</TableCell>
                   {/* The reference takes the room the other columns leave and is cut to fit, never pushing the

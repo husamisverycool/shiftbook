@@ -15,8 +15,8 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ReceivablesView as View } from "@/server/receivables/queries";
 import { EmptyState } from "../empty-state";
 import { useEngineSay } from "../engine-say";
-import { longDate, money } from "../format";
-import { KeyFigure, KeyFigures } from "../key-figures";
+import { longDate, money, tableDate } from "../format";
+import { KeyFigure } from "../key-figures";
 import { Page, PageHeader, PageTabs, TableFrame } from "../page";
 
 const BUCKETS = ["current", "d1_30", "d31_60", "d61_90", "d91_plus"] as const;
@@ -84,12 +84,29 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
           />
         }
       />
-      {/* Figures as Mercury's Transactions page sets them: the headline owed, then what is overdue and the credit not yet applied (decision 0029). */}
-      <KeyFigures>
+      {/* Figures as Mercury's Transactions page sets them (https://mercury.com/blog/updated-transactions-page):
+          the headline owed with its date, then what is overdue and the credit not yet applied as rows under
+          it, each label on the left and its amount on the right. What each means is on its label. */}
+      <div className="flex w-full max-w-xs flex-col gap-4" data-testid="figures">
         <KeyFigure size="lg" label={t("figures.owed")} value={money(view.totalCents, locale)} note={t("figures.owedNote", { date: longDate(view.asOf, locale) })} testId="figure-owed" />
-        <KeyFigure label={t("figures.overdue")} value={money(view.overdueCents, locale)} note={t("figures.overdueNote")} testId="figure-overdue" />
-        <KeyFigure label={t("figures.credit")} value={money(view.creditCents, locale)} note={t("figures.creditNote")} testId="figure-credit" />
-      </KeyFigures>
+        <dl className="flex flex-col gap-2 text-sm">
+          {(
+            [
+              ["overdue", t("figures.overdue"), t("figures.overdueNote"), view.overdueCents],
+              ["credit", t("figures.credit"), t("figures.creditNote"), view.creditCents],
+            ] as const
+          ).map(([key, label, means, cents]) => (
+            <div key={key} className="flex items-baseline justify-between gap-6" data-testid={`figure-${key}`}>
+              <dt className="text-muted-foreground" title={means}>
+                {label}
+              </dt>
+              <dd className="font-medium tabular-nums" data-testid={`figure-${key}-value`}>
+                {money(cents, locale)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
 
       {tab === "aging" ? (
         view.clients.length === 0 ? (
@@ -168,8 +185,8 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                                               {i.number}
                                             </Link>
                                           </TableCell>
-                                          <TableCell>{longDate(i.issuedOn, locale)}</TableCell>
-                                          <TableCell>{longDate(i.dueOn, locale)}</TableCell>
+                                          <TableCell>{tableDate(i.issuedOn, locale)}</TableCell>
+                                          <TableCell>{tableDate(i.dueOn, locale)}</TableCell>
                                           <TableCell className="text-right tabular-nums">{i.daysLate}</TableCell>
                                           <TableCell className="text-right tabular-nums">{money(i.totalCents, locale)}</TableCell>
                                           <TableCell className="text-right font-semibold tabular-nums">{money(i.balanceCents, locale)}</TableCell>

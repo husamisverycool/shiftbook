@@ -45,6 +45,6 @@ documents; and the way to put several of one client's invoices into one statemen
 Stripe's, Bullhorn's or Avionté's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-The title, then the statuses (All, Issued, Paid, Void) as underline tabs with their counts, as Stripe's invoices list shows them (https://docs.stripe.com/invoicing/dashboard); the client filter beside them; the table full width with small-capital headers and the status as a tinted badge.
+The title, then the statuses (All, Issued, Paid, Void) as underline tabs with their counts, as Stripe's invoices list shows them (https://docs.stripe.com/invoicing/dashboard); the client filter beside them, on the tabs' hairline; the table full width with small-capital headers, the amount bold, the status as a tinted badge beside it, and dates short ("Oct 16, 2026"), as that screenshot writes them. With no invoices yet, the tabs and the filter stay in place over the empty state (`_components/empty-state.md`).
 
 Deviations allowed: none
