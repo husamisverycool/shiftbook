@@ -49,6 +49,9 @@ const CLEAR_ORDER = [
   "jobs",
   "burden_tax_rates",
   "wc_rates",
+  "notifications",
+  "notification_settings",
+  "promises_to_pay",
   "credit_applications",
   "reminders",
   "short_pays",
@@ -245,6 +248,9 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
   await tx.insert(s.wcPolicies).values({ id: demoUuid("policy:2026"), agencyId, ...WC_POLICY, createdByLabel: SETUP });
   await tx.update(s.jobOrders).set({ noticeDetails: MA_NOTICE_DETAILS }).where(eq(s.jobOrders.id, jobOrderId("ma-server")));
   await tx.insert(s.agencySettings).values({ agencyId, key: "compliance.ma_department_contact", value: MA_DEPARTMENT_CONTACT, effectiveFrom: SINCE });
+  // Slice r: the demo agency emails reminders 3 days before the due date, 7 days after and a final
+  // notice at 30 (Stripe's automatic reminders); its notices arrive from its own duties and invoices.
+  await tx.insert(s.agencySettings).values({ agencyId, key: "collection_reminders", value: { enabled: true, beforeDueDays: 3, overdueDays: 7, finalDays: 30 }, effectiveFrom: SINCE });
   await tx.insert(s.hoursOpeningBalances).values(OPENING_BALANCES.map((b) => ({ agencyId, workerId: workerId(b.worker), clientId: clientId(b.client), minutes: b.minutes, throughOn: b.throughOn, note: b.note, createdByLabel: SETUP })));
   await syncObligations(tx, agencyId, await agencyToday(tx));
   const done = { status: "done" as const, doneAt: new Date(), doneByLabel: SETUP };

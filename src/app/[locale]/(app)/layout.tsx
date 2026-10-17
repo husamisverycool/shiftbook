@@ -14,6 +14,8 @@ import { withAgency } from "@/server/db";
 import { agencies } from "@/server/db/schema";
 import { urgentCount } from "@/server/compliance/queries";
 import { mayViewMargin } from "@/server/margin/service";
+import { refreshNotifications } from "@/server/notifications/refresh";
+import { requestOrigin } from "@/server/request-info";
 import { abilitiesOf } from "@/server/permissions";
 import { changesPaused, confirmWith, currentActor } from "@/server/session";
 import { agencyToday, agencyZone } from "@/server/settings";
@@ -29,12 +31,14 @@ export default async function AppLayout({ children, params }: { children: ReactN
   const confirmMethod = await confirmWith();
   // While the subscription is not active, the screens hide every change, as for the accountant (decision 0036).
   const paused = await changesPaused(actor);
+  // Slice r: the agency's notices brought up to date (at most once a minute), and this person's unread count.
+  const unread = await refreshNotifications(actor, await requestOrigin());
   return (
     <AbilitiesProvider abilities={abilitiesOf(actor, { changesPaused: paused })} paused={paused}>
       <AgencyZoneProvider zone={zone}>
         <ConfirmAccessProvider method={confirmMethod}>
           <SidebarProvider className="min-h-0">
-            <AppSidebar agencyName={agency?.name ?? ""} person={{ name: actor.label, role: actor.role }} showMargin={mayViewMargin(actor)} complianceCount={urgent} />
+            <AppSidebar agencyName={agency?.name ?? ""} person={{ name: actor.label, role: actor.role }} showMargin={mayViewMargin(actor)} complianceCount={urgent} unreadCount={unread} />
             <SidebarInset className="min-w-0">
               <PageFade />
               <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden">

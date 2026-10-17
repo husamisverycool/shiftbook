@@ -34,11 +34,13 @@ root frame (demo banner above it).
       workspace's security and members settings, for owners and admins);
       Activity (slice k, the agency's log) after it, for the Owner and the accountant;
       Billing (decision 0036; Linear's Administration › Billing, Vercel's Settings › Billing) after it,
-      for the Owner only.
+      for the Owner only. Collections (slice r; Stripe's reminder settings) after Compliance settings,
+      for everyone (only the Owner changes them).
       Below a separator, the person's own items (slice k): their name and role (not a link),
-      **Your account**, and **Sign out**. Linear's docs do not say where its log-out item sits —
+      **Your account**, **Notifications** (slice r; Linear: Account › Notifications), and **Sign out**. Linear's docs do not say where its log-out item sits —
       listed as a difference.
-   2. **Home** first, alone (Stripe: the sidebar's first section starts with Home).
+   2. **Home** first, then **Notifications** with its unread count as the item's badge (slice r;
+      Linear: the Inbox at the top of its sidebar with a badge count; `G` then `N`).
    3. The areas in groups, each under a short muted label, two levels at most (Stripe's sidebar
       sections; Apple "succinct, descriptive labels to title each group", "No more than two levels";
       Linear's sections):

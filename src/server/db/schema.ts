@@ -286,6 +286,8 @@ export const clientBillingProfiles = pgTable(
     backupImages: boolean("backup_images").notNull().default(false),
     /** The VMS invoice-upload file made with each invoice (decision G9). */
     vmsFormat: text("vms_format").$type<VmsFormat>(),
+    /** No automatic collection reminders for this client (slice r; drizzle/0045). */
+    remindersOff: boolean("reminders_off").notNull().default(false),
     effectiveFrom: isoDate("effective_from").notNull(),
     effectiveTo: isoDate("effective_to"),
     createdAt: createdAt(),
@@ -720,6 +722,9 @@ export const invoices = pgTable(
     document: jsonb("document").$type<IssuedInvoice>(),
     csvStorageKey: text("csv_storage_key"),
     vmsStorageKey: text("vms_storage_key"),
+    /** A credit note issued by hand (slice r; Stripe: a reason and a memo). */
+    creditReason: text("credit_reason").$type<CreditNoteReason>(),
+    memo: text("memo"),
     createdAt: createdAt(),
   },
   // An invoice number is issued once per agency; a run makes one invoice per client and part.
@@ -748,6 +753,8 @@ export interface IssuedLine {
 }
 
 export type InvoiceKind = "invoice" | "supplemental" | "credit_note";
+export const CREDIT_NOTE_REASONS = ["billing_error", "rate_difference", "disputed_hours", "discount", "duplicate", "other"] as const;
+export type CreditNoteReason = (typeof CREDIT_NOTE_REASONS)[number];
 
 export type ControlTotals = {
   workers: number;
@@ -1358,7 +1365,27 @@ export const clientDisputes = pgTable(
   ],
 );
 
-export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset" | "sign_in_code" | "passkey_added" | "identity_linked";
+export type EmailKind =
+  | "approval_request"
+  | "approval_reminder"
+  | "approval_renewal"
+  | "approval_confirmation"
+  | "approval_notice"
+  | "invite"
+  | "password_reset"
+  | "sign_in_code"
+  | "passkey_added"
+  | "identity_linked"
+  // Slice r (drizzle/0045): an invoice or credit note sent to the client, a scheduled reminder, a notice to a person.
+  | "invoice"
+  | "invoice_reminder"
+  | "notification";
+
+/** A file an email carried, kept by name (the bytes are the stored document). */
+export interface EmailAttachmentName {
+  filename: string;
+  bytes: number;
+}
 
 /** Every email sent, with any approval link hidden (Stripe keeps a log of customer emails). */
 export const emailMessages = pgTable(
@@ -1377,8 +1404,11 @@ export const emailMessages = pgTable(
     error: text("error"),
     createdAt: createdAt(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    /** The invoice or credit note the email is about (slice r). */
+    invoiceId: uuid("invoice_id").references(() => invoices.id),
+    attachments: jsonb("attachments").$type<EmailAttachmentName[]>().notNull().default(sql`'[]'::jsonb`),
   },
-  (t) => [index("email_messages_request").on(t.agencyId, t.requestId, t.createdAt)],
+  (t) => [index("email_messages_request").on(t.agencyId, t.requestId, t.createdAt), index("email_messages_invoice").on(t.agencyId, t.invoiceId, t.createdAt)],
 );
 
 /** Demo mode's stand-in inbox: the delivered copy, with its working link (decision 0012). */
@@ -1393,6 +1423,7 @@ export const demoMailbox = pgTable("demo_mailbox", {
   subject: text("subject").notNull(),
   textBody: text("text_body").notNull(),
   htmlBody: text("html_body").notNull(),
+  attachments: jsonb("attachments").$type<EmailAttachmentName[]>().notNull().default(sql`'[]'::jsonb`),
   createdAt: createdAt(),
 });
 
@@ -1576,12 +1607,73 @@ export const reminders = pgTable(
     invoiceId: uuid("invoice_id").notNull().references(() => invoices.id),
     stage: text("stage").$type<ReminderStage>().notNull(),
     locale: text("locale").$type<"en" | "es">().notNull(),
-    how: text("how").$type<"copied" | "email_app">().notNull(),
+    /** "emailed": sent by Granite on the agency's schedule (slice r), naming its email. */
+    how: text("how").$type<"copied" | "email_app" | "emailed">().notNull(),
+    emailMessageId: uuid("email_message_id").references(() => emailMessages.id),
     createdAt: createdAt(),
     createdBy: uuid("created_by"),
     createdByLabel: text("created_by_label").notNull(),
   },
-  (t) => [index("reminders_invoice").on(t.agencyId, t.invoiceId)],
+  (t) => [index("reminders_invoice").on(t.agencyId, t.invoiceId), uniqueIndex("reminders_emailed_once").on(t.agencyId, t.invoiceId, t.stage).where(sql`how = 'emailed'`)],
+);
+
+/** What a client said it would pay and when (slice r; drizzle/0045). Broken once the date passes with money owed. */
+export const promisesToPay = pgTable(
+  "promises_to_pay",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    invoiceId: uuid("invoice_id").notNull().references(() => invoices.id),
+    promisedOn: isoDate("promised_on").notNull(),
+    amountCents: integer("amount_cents"),
+    note: text("note"),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [index("promises_to_pay_invoice").on(t.agencyId, t.invoiceId, t.createdAt)],
+);
+
+// ---------- notifications (slice r; drizzle/0045; Linear's Inbox) ----------
+export const NOTIFICATION_KINDS = ["approval_returned", "approval_disputed", "run_blocked", "obligation_due_soon", "obligation_overdue", "invoice_overdue", "promise_broken", "shift_confirmed"] as const;
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    kind: text("kind").$type<NotificationKind>().notNull(),
+    /** The event, so a second sweep never makes a second notice for the same person. */
+    dedupeKey: text("dedupe_key").notNull(),
+    href: text("href").notNull(),
+    params: jsonb("params").$type<Record<string, string | number>>().notNull().default(sql`'{}'::jsonb`),
+    createdAt: createdAt(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("notifications_once").on(t.agencyId, t.userId, t.dedupeKey), index("notifications_inbox").on(t.agencyId, t.userId, t.createdAt)],
+);
+
+export type NotificationRow = typeof notifications.$inferSelect;
+export type AgencyRow = typeof agencies.$inferSelect;
+export type ClientRow = typeof clients.$inferSelect;
+export type InvoiceRow = typeof invoices.$inferSelect;
+export type PromiseToPayRow = typeof promisesToPay.$inferSelect;
+
+export const notificationSettings = pgTable(
+  "notification_settings",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    kind: text("kind").$type<NotificationKind>().notNull(),
+    email: boolean("email").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("notification_settings_one").on(t.agencyId, t.userId, t.kind)],
 );
 
 export const TENANT_TABLES = [
@@ -1649,6 +1741,9 @@ export const TENANT_TABLES = [
   "email_sign_in_codes",
   "agency_sso",
   "agency_subscriptions",
+  "notifications",
+  "notification_settings",
+  "promises_to_pay",
 ] as const;
 
 // ---------- other ways in: Google, Microsoft, an agency's single sign-on, emailed codes (decision 0033; drizzle/0039) ----------

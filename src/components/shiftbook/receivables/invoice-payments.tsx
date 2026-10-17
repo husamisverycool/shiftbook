@@ -23,6 +23,7 @@ import { longDate, money } from "../format";
 import { PaymentDialog } from "./payment-dialog";
 import { useDateTime } from "../agency-zone";
 import { ReadOnlyNote } from "../abilities";
+import { Status } from "../status";
 
 const WRITE_OFF_REASONS = ["small_balance", "disputed_hours", "rate_difference", "bank_fee", "bad_debt", "other"] as const;
 const SHORT_PAY_REASONS = ["disputed_hours", "rate_difference", "bank_fee", "client_deduction", "unknown", "other"] as const;
@@ -30,7 +31,29 @@ const STAGES = ["before_due", "overdue", "final"] as const;
 type Stage = (typeof STAGES)[number];
 type Problem = { field: string; rule: string };
 
-export function InvoicePayments({ invoiceId, number, clientId, ar, clients, today, canChange }: { invoiceId: string; number: string; clientId: string; ar: InvoiceReceivables; clients: PaymentClients; today: string; canChange: boolean }) {
+export function InvoicePayments({
+  invoiceId,
+  number,
+  clientId,
+  ar,
+  clients,
+  today,
+  canChange,
+  promises = [],
+  onPromise,
+}: {
+  invoiceId: string;
+  number: string;
+  clientId: string;
+  ar: InvoiceReceivables;
+  clients: PaymentClients;
+  today: string;
+  canChange: boolean;
+  /** Slice r: the promises to pay, oldest first; the latest is broken once its date passed with money owed. */
+  promises?: { promisedOn: string; amountCents: number | null; note: string | null; by: string; at: string }[];
+  onPromise?: () => void;
+}) {
+  const tk = useTranslations("collect");
   const t = useTranslations("invoicePayments");
   const tp = useTranslations("payments");
   const locale = useLocale();
@@ -133,9 +156,34 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
             )}
           </div>
         )}
+        {promises.map((p, i) => {
+          const broken = i === promises.length - 1 && p.promisedOn < today && open;
+          return (
+            <div key={`promise-${i}`} className="flex flex-wrap items-center justify-between gap-3 py-3" data-testid="invoice-promise">
+              <span className="flex flex-col">
+                <span>{p.amountCents === null ? tk("promise.lineNoAmount", { date: longDate(p.promisedOn, locale), by: p.by }) : tk("promise.line", { amount: money(p.amountCents, locale), date: longDate(p.promisedOn, locale), by: p.by })}</span>
+                {p.note && <span className="text-xs text-muted-foreground">{p.note}</span>}
+              </span>
+              {broken && (
+                <Status tone="warning" data-testid="promise-broken">
+                  {tk("promise.broken")}
+                </Status>
+              )}
+            </div>
+          );
+        })}
+        {canChange && open && onPromise && (
+          <div className="py-3">
+            <Button size="sm" variant="ghost" onClick={onPromise} data-testid="add-promise">
+              {tk("promise.action")}
+            </Button>
+          </div>
+        )}
         {ar.reminders.map((r, i) => (
-          <div key={i} className="py-3 text-muted-foreground" data-testid="reminder-prepared">
-            {t("reminderPrepared", { date: dateTime(r.at), stage: t(`stages.${r.stage}`), language: t(`languages.${r.locale}`), by: r.by })}
+          <div key={i} className="py-3 text-muted-foreground" data-testid={r.how === "emailed" ? "reminder-emailed" : "reminder-prepared"}>
+            {r.how === "emailed"
+              ? tk("history.reminderEmailed", { date: dateTime(r.at), stage: t(`stages.${r.stage}`) })
+              : t("reminderPrepared", { date: dateTime(r.at), stage: t(`stages.${r.stage}`), language: t(`languages.${r.locale}`), by: r.by })}
           </div>
         ))}
       </div>

@@ -19,12 +19,14 @@ import { longDate, money, moneyParts, tableDate } from "../format";
 import { KeyFigure, RaisedCents } from "../key-figures";
 import { Page, PageHeader, PageTabs, TableFrame } from "../page";
 import { useDateTime } from "../agency-zone";
+import { Status } from "../status";
 
 const BUCKETS = ["current", "d1_30", "d31_60", "d61_90", "d91_plus"] as const;
 type Bucket = (typeof BUCKETS)[number];
 
 export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging" | "short"; today: string }) {
   const t = useTranslations("receivables");
+  const tk = useTranslations("collect");
   // Days to pay's working in the reader's language (decision 0030).
   const say = useEngineSay();
   const locale = useLocale();
@@ -184,9 +186,21 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                                       {shown.map((i) => (
                                         <TableRow key={i.id}>
                                           <TableCell>
-                                            <Link href={`/invoices/${i.id}`} className="font-medium underline-offset-4 hover:underline">
-                                              {i.number}
-                                            </Link>
+                                            <span className="inline-flex flex-wrap items-center gap-2">
+                                              <Link href={`/invoices/${i.id}`} className="font-medium underline-offset-4 hover:underline">
+                                                {i.number}
+                                              </Link>
+                                              {i.promise &&
+                                                (i.promise.broken ? (
+                                                  <Status tone="warning" data-testid="promise-broken">
+                                                    {tk("promise.broken")}
+                                                  </Status>
+                                                ) : (
+                                                  <span className="text-xs text-muted-foreground" data-testid="promised">
+                                                    {tk("promise.promised", { date: tableDate(i.promise.promisedOn, locale) })}
+                                                  </span>
+                                                ))}
+                                            </span>
                                           </TableCell>
                                           <TableCell>{tableDate(i.issuedOn, locale)}</TableCell>
                                           <TableCell>{tableDate(i.dueOn, locale)}</TableCell>

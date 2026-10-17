@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SearchIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BellIcon, HandCoinsIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SearchIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -19,6 +19,8 @@ import { Tip } from "./tip";
 // Apple's two levels at most). The G-then-letter keys stay as they were.
 const AREAS = [
   { href: "/", key: "home", jump: "h", icon: HouseIcon, group: null },
+  // Slice r: Linear's Inbox sits at the top of its sidebar with the unread count (G then N; I is Invoices).
+  { href: "/notifications", key: "notifications", jump: "n", icon: BellIcon, group: null },
   { href: "/convert", key: "convert", jump: "c", icon: FileSpreadsheetIcon, group: "payroll" },
   { href: "/approvals", key: "approvals", jump: "p", icon: ClipboardCheckIcon, group: "payroll" },
   { href: "/invoices", key: "invoices", jump: "i", icon: ReceiptTextIcon, group: "billing" },
@@ -43,7 +45,7 @@ export function typing(target: EventTarget | null): boolean {
   return !!el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.getAttribute("role") === "combobox");
 }
 
-export function AppSidebar({ agencyName, person, showMargin = false, complianceCount = 0 }: { agencyName: string; person: { name: string; role: Role }; showMargin?: boolean; complianceCount?: number }) {
+export function AppSidebar({ agencyName, person, showMargin = false, complianceCount = 0, unreadCount = 0 }: { agencyName: string; person: { name: string; role: Role }; showMargin?: boolean; complianceCount?: number; unreadCount?: number }) {
   const t = useTranslations("nav");
   const tr = useTranslations("roles");
   const [leaving, leave] = useTransition();
@@ -152,6 +154,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <ShieldCheckIcon />
                 {t("complianceSettings")}
               </DropdownMenuItem>
+              {/* Slice r: the reminder schedule (Stripe's collection settings), beside the other agency settings. */}
+              <DropdownMenuItem render={<Link href="/settings/collections" />} data-testid="menu-collections">
+                <HandCoinsIcon />
+                {t("collections")}
+              </DropdownMenuItem>
               <DropdownMenuItem render={<Link href="/settings/members" />} data-testid="menu-members">
                 <UserCogIcon />
                 {t("members")}
@@ -184,6 +191,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <DropdownMenuItem render={<Link href="/settings/account" />} data-testid="menu-account">
                   <UserIcon />
                   {t("account")}
+                </DropdownMenuItem>
+                {/* Slice r: the person's own notification settings (Linear: Account › Notifications). */}
+                <DropdownMenuItem render={<Link href="/settings/notifications" />} data-testid="menu-notification-settings">
+                  <BellIcon />
+                  {t("notificationSettings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="menu-sign-out">
                   <LogOutIcon />
@@ -226,6 +238,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                               <a.icon />
                               <span>{t(a.key)}</span>
                             </SidebarMenuButton>
+                            {a.key === "notifications" && unreadCount > 0 && (
+                              <SidebarMenuBadge data-testid="notifications-badge" aria-label={t("notificationsBadge", { count: unreadCount })}>
+                                {unreadCount}
+                              </SidebarMenuBadge>
+                            )}
                             {a.key === "compliance" && complianceCount > 0 && (
                               <SidebarMenuBadge data-testid="compliance-badge" aria-label={t("complianceBadge", { count: complianceCount })}>
                                 {complianceCount}

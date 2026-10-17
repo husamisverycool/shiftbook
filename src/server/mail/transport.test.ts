@@ -89,3 +89,18 @@ describe("Resend transport (decision 0012)", () => {
     expect(() => new ResendTransport({ apiKey: "k", fromAddress: "" })).toThrow(/MAIL_FROM/);
   });
 });
+
+describe("attachments (slice r: the invoice PDF, Stripe's invoice email)", () => {
+  it("sends each file to Resend as base64 with its name", async () => {
+    const f = fakeFetch({ status: 200, body: { id: "re-msg-2" } });
+    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@sender.example", fetch: f.fn });
+    await transport.send({ ...mail(), attachments: [{ filename: "invoice-ACME-1.pdf", content: new Uint8Array([37, 80, 68, 70]) }] });
+    expect(JSON.parse(String(f.calls[0]!.init.body)).attachments).toEqual([{ filename: "invoice-ACME-1.pdf", content: "JVBERg==" }]);
+  });
+
+  it("sends no attachments key when there are none", async () => {
+    const f = fakeFetch({ status: 200, body: { id: "x" } });
+    await new ResendTransport({ apiKey: "k", fromAddress: "a@sender.example", fetch: f.fn }).send(mail());
+    expect("attachments" in JSON.parse(String(f.calls[0]!.init.body))).toBe(false);
+  });
+});

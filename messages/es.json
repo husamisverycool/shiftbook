@@ -632,7 +632,11 @@
       "oversight": "Supervisión"
     },
     "sso": "Inicio de sesión único",
-    "billing": "Suscripción"
+    "billing": "Suscripción",
+    "notifications": "Notificaciones",
+    "notificationsBadge": "{count} sin leer",
+    "notificationSettings": "Notificaciones",
+    "collections": "Cobranza"
   },
   "list": {
     "filter": "Filtrar",
@@ -3842,7 +3846,8 @@
       "wc_rate": "Tarifa de compensación laboral",
       "worker": "Trabajador",
       "write_off": "Saldo dado por perdido",
-      "subscription": "Suscripción"
+      "subscription": "Suscripción",
+      "promise_to_pay": "Promesa de pago"
     },
     "allTypes": "Todos",
     "gone": "ya no está en el sistema"
@@ -4895,5 +4900,211 @@
       "body": "No hay cuenta y no se guarda nada. Su archivo se lee para contar las horas y luego se olvida; nada de lo que agrega se almacena ni se conserva."
     },
     "disclaimer": "Este verificador es una estimación a partir de las horas que usted le da. No conoce las horas trabajadas por medio de otras agencias y no es asesoría legal."
+  },
+  "notify": {
+    "title": "Notificaciones",
+    "unreadBadge": "{count} sin leer",
+    "tabsLabel": "Notificaciones mostradas",
+    "tabs": {
+      "unread": "Sin leer",
+      "all": "Todas"
+    },
+    "markAllRead": "Marcar todas como leídas",
+    "deleteRead": "Eliminar leídas",
+    "markRead": "Marcar como leída",
+    "markUnread": "Marcar como no leída",
+    "delete": "Eliminar",
+    "rowActions": "Acciones de esta notificación",
+    "unread": "Sin leer",
+    "empty": "No hay notificaciones",
+    "emptyUnread": "No hay nada sin leer",
+    "emptyBody": "Aquí aparecen las aprobaciones, las nóminas semanales detenidas, las obligaciones y los cobros.",
+    "listLabel": "Notificaciones",
+    "markedAllRead": "Todas las notificaciones se marcaron como leídas",
+    "deletedRead": "Se eliminaron las notificaciones leídas",
+    "deleted": "Notificación eliminada",
+    "keys": "J y K mueven · U leída o no leída · Retroceso elimina",
+    "kinds": {
+      "approval_returned": {
+        "title": "Horas aprobadas",
+        "line": "{client} aprobó las horas de {period}."
+      },
+      "approval_disputed": {
+        "title": "Horas disputadas",
+        "line": "{client} disputó {disputed, plural, one {# turno} other {# turnos}} de {period}."
+      },
+      "run_blocked": {
+        "title": "Nómina semanal detenida",
+        "line": "La nómina de {period} tiene {blockers, plural, one {# problema que la detiene} other {# problemas que la detienen}}."
+      },
+      "obligation_due_soon": {
+        "title": "Obligación próxima a vencer",
+        "line": "{duty} vence el {due}."
+      },
+      "obligation_overdue": {
+        "title": "Obligación vencida",
+        "line": "{duty} venció el {due}."
+      },
+      "invoice_overdue": {
+        "title": "Factura vencida",
+        "line": "{number} de {client} venció el {due}; todavía se deben {balance}."
+      },
+      "promise_broken": {
+        "title": "Promesa de pago incumplida",
+        "line": "{client} prometió pagar {number} a más tardar el {promised}; todavía se deben {balance}."
+      },
+      "shift_confirmed": {
+        "title": "Turno confirmado",
+        "line": "Un trabajador confirmó un turno."
+      }
+    },
+    "settings": {
+      "title": "Notificaciones",
+      "intro": "Los avisos siempre llegan a sus notificaciones. Elija cuáles también le llegan por correo electrónico.",
+      "email": "Correo electrónico",
+      "emailIntro": "Se envía en cuanto llega el aviso, a {email}.",
+      "saved": "Guardado",
+      "none": "Su rol no recibe avisos.",
+      "help": {
+        "approval_returned": "Cuando un cliente aprueba las horas de un periodo.",
+        "approval_disputed": "Cuando un cliente disputa turnos.",
+        "run_blocked": "Cuando las verificaciones detienen una nómina semanal.",
+        "obligation_due_soon": "Cuando una obligación llega a su día de recordatorio.",
+        "obligation_overdue": "Cuando una obligación pasa su fecha de vencimiento.",
+        "invoice_overdue": "Cuando una factura pasa su fecha de vencimiento sin pagarse.",
+        "promise_broken": "Cuando pasa la fecha de un pago prometido sin pagarse.",
+        "shift_confirmed": "Cuando un trabajador confirma un turno."
+      }
+    },
+    "email": {
+      "open": "Abrir en Granite",
+      "footer": "Recibe este correo por su configuración de notificaciones. Puede cambiarla en Configuración › Notificaciones."
+    }
+  },
+  "collect": {
+    "send": {
+      "action": "Enviar factura",
+      "resend": "Reenviar factura",
+      "creditAction": "Enviar nota de crédito",
+      "title": "Enviar {number}",
+      "to": "Para",
+      "noEmail": "Este cliente no tiene correo de facturación. Agréguelo primero en la página del cliente.",
+      "message": "Mensaje (opcional)",
+      "attachment": "Adjunto: {file}",
+      "submit": "Enviar",
+      "sent": "Enviado a {email}",
+      "failed": "No se pudo enviar el correo. Inténtelo de nuevo en un momento.",
+      "lastSent": "Enviado el {date} a {email}",
+      "never": "Aún no se ha enviado",
+      "errors": {
+        "no_email": "Este cliente no tiene correo de facturación.",
+        "no_pdf": "Este documento no tiene PDF.",
+        "not_found": "Ese documento ya no existe.",
+        "forbidden": "Su rol no puede enviar facturas.",
+        "invalid": "Revise el mensaje: como máximo 2,000 caracteres."
+      }
+    },
+    "credit": {
+      "action": "Emitir una nota de crédito",
+      "title": "Emitir una nota de crédito para {number}",
+      "reason": "Motivo",
+      "chooseReason": "Elija un motivo",
+      "reasons": {
+        "billing_error": "Error de facturación",
+        "rate_difference": "Diferencia de tarifa",
+        "disputed_hours": "Horas disputadas",
+        "discount": "Descuento",
+        "duplicate": "Duplicado",
+        "other": "Otro"
+      },
+      "amount": "Monto a acreditar",
+      "room": "Se pueden acreditar hasta {amount}.",
+      "memo": "Nota (opcional)",
+      "memoHint": "Se imprime en la nota de crédito.",
+      "after": "Después, la factura pedirá {amount}.",
+      "afterCredit": "{amount} pasan a ser crédito del cliente, para aplicarlo a otra factura.",
+      "submit": "Emitir nota de crédito",
+      "issued": "Se emitió la nota de crédito {number}",
+      "noRoom": "Las notas de crédito ya suman el total de esta factura.",
+      "lineDescription": "Crédito: {reason}",
+      "errors": {
+        "amount": "Ingrese un monto mayor que $0.00 y de no más de {amount}.",
+        "reason": "Elija un motivo.",
+        "memo": "Como máximo 500 caracteres.",
+        "not_found": "Esa factura ya no existe.",
+        "not_invoice": "Solo se puede acreditar una factura o una factura complementaria.",
+        "void": "No se puede acreditar una factura anulada.",
+        "forbidden": "Su rol no puede emitir notas de crédito.",
+        "busy": "Se están registrando pagos en este momento. Inténtelo de nuevo en un momento."
+      }
+    },
+    "promise": {
+      "action": "Registrar promesa de pago",
+      "title": "Promesa de pago de {number}",
+      "date": "Fecha prometida",
+      "amount": "Monto (opcional)",
+      "note": "Nota (opcional)",
+      "submit": "Guardar promesa",
+      "saved": "Promesa registrada",
+      "line": "Prometió {amount} a más tardar el {date} · {by}",
+      "lineNoAmount": "Prometió pagar a más tardar el {date} · {by}",
+      "broken": "Promesa incumplida",
+      "promised": "Prometido para el {date}",
+      "errors": {
+        "date": "Elija una fecha a partir de hoy.",
+        "amount": "Ingrese un monto mayor que $0.00, o déjelo vacío.",
+        "note": "Como máximo 500 caracteres.",
+        "not_found": "Esa factura ya no existe.",
+        "forbidden": "Su rol no puede registrar promesas."
+      }
+    },
+    "settings": {
+      "title": "Cobranza",
+      "remindersTitle": "Recordatorios automáticos",
+      "remindersIntro": "Granite envía un correo al contacto de facturación del cliente en estos días, con la factura adjunta, hasta que se pague.",
+      "enabled": "Recordatorios por correo de facturas sin pagar",
+      "enabledHint": "Cada recordatorio se envía una sola vez, al correo de facturación del cliente.",
+      "stages": {
+        "before_due": {
+          "label": "Antes del vencimiento",
+          "hint": "Un aviso antes de la fecha de vencimiento."
+        },
+        "overdue": {
+          "label": "Vencida",
+          "hint": "Después de la fecha de vencimiento."
+        },
+        "final": {
+          "label": "Último aviso",
+          "hint": "El último recordatorio."
+        }
+      },
+      "daysBefore": "{days, plural, one {# día antes} other {# días antes}}",
+      "daysAfter": "{days, plural, one {# día después} other {# días después}}",
+      "never": "No enviar",
+      "save": "Guardar",
+      "saved": "Se guardó el calendario de recordatorios",
+      "clientsTitle": "Clientes",
+      "clientsIntro": "Desactive los recordatorios de un cliente que no deba recibirlos.",
+      "clientOn": "Recordatorios activados",
+      "clientOff": "Recordatorios desactivados",
+      "noClients": "Aún no hay clientes.",
+      "noEmail": "Sin correo de facturación",
+      "errors": {
+        "invalid": "Elija entre los días de la lista. El último aviso va después del recordatorio de vencida.",
+        "forbidden": "Solo el Propietario cambia la configuración de cobranza."
+      }
+    },
+    "email": {
+      "invoiceSubject": "Factura {number} de {agency}",
+      "creditSubject": "Nota de crédito {number} de {agency}",
+      "greeting": "Hola:",
+      "invoiceBody": "{agency} le envió la factura {number} por {amount}, con vencimiento el {due}. La factura va adjunta.",
+      "creditBody": "{agency} emitió la nota de crédito {number} por {amount}, que acredita la factura {original}. Va adjunta.",
+      "contact": "Preguntas: {contact}"
+    },
+    "history": {
+      "emailed": "Enviado por correo a {email} · {date}",
+      "reminderEmailed": "Recordatorio enviado por correo el {date} · {stage}"
+    }
   }
 }

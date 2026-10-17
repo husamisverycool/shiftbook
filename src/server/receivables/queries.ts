@@ -30,6 +30,8 @@ export interface AgedInvoice {
   daysLate: number;
   totalCents: number;
   balanceCents: number;
+  /** Slice r: the latest promise to pay; broken once its date passed with money still owed. */
+  promise?: { promisedOn: string; broken: boolean } | null;
 }
 
 export interface ClientAging {
@@ -69,6 +71,12 @@ export async function receivablesView(tx: Tx, asOf: string) {
     asOf,
   );
   const byId = new Map(balances.map((b) => [b.invoice.id, b]));
+  // Slice r: each invoice's latest promise to pay (receivables.md, "Promises to pay").
+  const promised = new Map<string, { promisedOn: string; broken: boolean }>();
+  for (const p of await tx.select().from(s.promisesToPay).orderBy(desc(s.promisesToPay.createdAt))) {
+    if (promised.has(p.invoiceId) || p.createdAt.toISOString().slice(0, 10) > asOf) continue;
+    promised.set(p.invoiceId, { promisedOn: p.promisedOn, broken: p.promisedOn < asOf && (byId.get(p.invoiceId)?.balanceCents ?? 0) > 0 });
+  }
   const clientAging: ClientAging[] = rows
     .map((r) => ({
       clientId: r.clientId,
@@ -77,7 +85,7 @@ export async function receivablesView(tx: Tx, asOf: string) {
       totalCents: r.totalCents,
       overdueCents: r.overdueCents,
       creditCents: r.creditCents,
-      invoices: Object.fromEntries(BUCKETS.map((k) => [k, r.invoices[k].map((id) => aged(byId.get(id)!, asOf)).sort((a, b) => cmp(a.dueOn, b.dueOn) || cmp(a.number, b.number))])) as Record<Bucket, AgedInvoice[]>,
+      invoices: Object.fromEntries(BUCKETS.map((k) => [k, r.invoices[k].map((id) => ({ ...aged(byId.get(id)!, asOf), promise: promised.get(id) ?? null })).sort((a, b) => cmp(a.dueOn, b.dueOn) || cmp(a.number, b.number))])) as Record<Bucket, AgedInvoice[]>,
       daysToPay: daysToPay(paidOffIn(balances.filter((b) => b.invoice.clientId === r.clientId), asOf)),
     }))
     .sort((a, b) => cmp(a.clientName.toLowerCase(), b.clientName.toLowerCase()));
