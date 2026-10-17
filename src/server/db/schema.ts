@@ -2082,7 +2082,7 @@ export const workerClockPunches = pgTable("worker_clock_punches", {
 export const smsMessages = pgTable("sms_messages", {
   id: id(),
   agencyId: agencyId(),
-  kind: text("kind").$type<"sign_in_code" | "onboarding_invite">().notNull(),
+  kind: text("kind").$type<"sign_in_code" | "onboarding_invite" | "phone_changed">().notNull(),
   toPhone: text("to_phone").notNull(),
   workerId: uuid("worker_id").references(() => workers.id),
   body: text("body").notNull(),

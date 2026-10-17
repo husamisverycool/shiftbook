@@ -46,7 +46,7 @@ export async function requestCodeAction(locale: string, phone: string): Promise<
   return { ok: true, demoCopy: isDemo() ? await demoCodeText({ db }, DEMO_AGENCY.id, r.phone) : null };
 }
 
-export async function verifyCodeAction(input: { phone: string; code: string }): Promise<{ ok: false; error: "invalid" | "expired" | "throttled" } | { ok: true; choice: string; agencies: { workerId: string; agencyName: string }[] }> {
+export async function verifyCodeAction(input: { phone: string; code: string }): Promise<{ ok: false; error: "invalid" | "throttled" } | { ok: true; choice: string; agencies: { workerId: string; agencyName: string }[] }> {
   const { ipAddress, userAgent } = await requestSender();
   const r = await verifyWorkerCode(workerDeps(), String(input?.phone ?? "").slice(0, 40), String(input?.code ?? "").slice(0, 20), userAgent, ipAddress);
   if (!r.ok) return r;

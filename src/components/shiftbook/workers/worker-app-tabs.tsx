@@ -38,6 +38,7 @@ export function OnboardingTab({ workerId, app, zone }: { workerId: string; app: 
   const [pending, start] = useTransition();
   const [sending, startSend] = useTransition();
   const [opening, setOpening] = useState<(typeof FORMS)[number] | null>(null);
+  const confirmPhone = useConfirmed();
   useEscapeCancels(editing, () => setEditing(false));
   const when = (d: Date) => dateTime(d, locale, zone, { date: "medium", time: false });
   const o = app.onboarding;
@@ -54,11 +55,12 @@ export function OnboardingTab({ workerId, app, zone }: { workerId: string; app: 
             onSubmit={(e) => {
               e.preventDefault();
               start(async () => {
-                const r = await setWorkerPhoneAction(workerId, phone);
+                const r = await confirmPhone(() => setWorkerPhoneAction(workerId, phone));
+                if (!r) return;
                 if (r.ok) {
                   setEditing(false);
                   router.refresh();
-                } else setProblem(t(`phoneErrors.${r.error === "invalid" || r.error === "taken" ? r.error : "generic"}`));
+                } else setProblem(t(`phoneErrors.${r.error === "invalid" || r.error === "taken" || r.error === "owner_required" ? r.error : "generic"}`));
               });
             }}
           >

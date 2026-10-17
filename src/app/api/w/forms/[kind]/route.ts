@@ -4,14 +4,17 @@ import { asWorker, currentWorkerSession } from "@/server/worker-app/session";
 
 export const dynamic = "force-dynamic";
 
-/** The signed-in worker's own signed form (docs/patterns/_documents/onboarding-form.md), made on request. */
+/**
+ * The signed-in worker's own signed form (docs/patterns/_documents/onboarding-form.md), made on
+ * request, its numbers by their last four (the full form is the Owner's, with a reason).
+ */
 export async function GET(req: Request, ctx: { params: Promise<{ kind: string }> }): Promise<Response> {
   const { kind } = await ctx.params;
   const w = await currentWorkerSession();
   if (!w) return new Response("Sign in to the worker app first.", { status: 401 });
   if (!(FORM_KINDS as readonly string[]).includes(kind)) return new Response("Not found", { status: 404 });
   const locale = new URL(req.url).searchParams.get("locale") === "es" ? "es" : "en";
-  const r = await asWorker(w, (tx) => onboardingFormPdf(tx, w.workerId, kind as FormKind, locale));
+  const r = await asWorker(w, (tx) => onboardingFormPdf(tx, w.workerId, kind as FormKind, locale, "worker"));
   if (!r) return new Response("Not found", { status: 404 });
   return new Response(new Blob([r.bytes as BlobPart]), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${r.filename}"`, "Cache-Control": "private, no-store" } });
 }

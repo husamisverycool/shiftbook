@@ -225,7 +225,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
   const reasonText = (code: string, r?: GridRow) => {
     const [base, field] = code.split(":");
     if ((base === "assignment_at_other_client" || base === "timesheet_client_unclear") && r?.otherClient) return t(`reasons.${base}_named`, { client: r.otherClient.name });
-    const known = ["worker_not_on_roster", "worker_ambiguous", "no_active_assignment", "several_active_assignments", "date_outside_period", "in_after_out", "crosses_midnight", "break_longer_than_shift", "total_mismatch", "over_24_hours", "unreadable", "passes_disagree", "handwriting_not_confirmed", "seen_by_one_pass", "inconsistent_reading", "row_total_mismatch", "grand_total_mismatch", "duplicate_day_in_vms", "assignment_at_other_client", "timesheet_client_unclear", "worker_app"];
+    const known = ["worker_not_on_roster", "worker_ambiguous", "no_active_assignment", "several_active_assignments", "date_outside_period", "in_after_out", "crosses_midnight", "break_longer_than_shift", "total_mismatch", "over_24_hours", "unreadable", "passes_disagree", "handwriting_not_confirmed", "seen_by_one_pass", "inconsistent_reading", "row_total_mismatch", "grand_total_mismatch", "duplicate_day_in_vms", "assignment_at_other_client", "timesheet_client_unclear", "worker_app", "worker_app_too_long", "worker_app_not_allowed"];
     const reason = t(`reasons.${known.includes(base!) ? base : "other"}`);
     return field && ["worker", "date", "in", "out", "break", "total"].includes(field) ? t("reasonWithField", { reason, field: t(`fields.${field}`) }) : reason;
   };

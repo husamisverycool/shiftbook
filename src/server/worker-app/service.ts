@@ -368,7 +368,14 @@ export async function clockOf(tx: Tx, workerId: string, today: string): Promise<
   };
 }
 
-export type ClockError = "not_allowed" | "already_in" | "not_in" | "location_required" | "too_short" | "period_paid";
+export type ClockError = "not_allowed" | "already_in" | "not_in" | "location_required" | "too_short" | "too_long" | "period_paid";
+
+/**
+ * The longest clocked shift taken as it stands (16 hours), unless the agency's setting
+ * `worker_clock_max_minutes` says otherwise: a longer one is someone who forgot to clock out, so its
+ * end is left for a person to fill in.
+ */
+export const WORKER_CLOCK_MAX_MINUTES = 960;
 
 const readLocation = (l: unknown): s.PunchLocation | null => {
   if (!l || typeof l !== "object") return null;
@@ -420,7 +427,7 @@ export async function clockOut(tx: Tx, who: Who, location: unknown, now: Date): 
   const [punch] = await tx.select().from(s.workerClockPunches).where(and(eq(s.workerClockPunches.workerId, who.workerId), isNull(s.workerClockPunches.clockOutAt))).for("update");
   if (!punch) return { ok: false, error: "not_in" };
   const [client] = await tx
-    .select({ clock: s.clients.workerClock, clientId: s.clients.id })
+    .select({ clock: s.clients.workerClock, clientId: s.clients.id, status: s.assignments.status, startDate: s.assignments.startDate, endDate: s.assignments.endDate })
     .from(s.assignments)
     .innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId))
     .innerJoin(s.clients, eq(s.clients.id, s.jobOrders.clientId))
@@ -431,6 +438,11 @@ export async function clockOut(tx: Tx, who: Who, location: unknown, now: Date): 
   const start = localMinute(zone, punch.clockInAt);
   const worked = Math.floor((now.getTime() - punch.clockInAt.getTime()) / 60_000);
   if (worked < 1) return { ok: false, error: "too_short" };
+  const max = (await settingOn<number>(tx, "worker_clock_max_minutes", start.date)) ?? WORKER_CLOCK_MAX_MINUTES;
+  const tooLong = worked > max;
+  // Checked again on the way out: the client may have turned the clock off, or the placement ended.
+  const stillAllowed = Boolean(client && client.clock !== "off" && client.status === "active" && client.startDate <= start.date && (client.endDate === null || client.endDate >= start.date));
+  const reasons = ["worker_app", ...(tooLong ? ["worker_app_too_long"] : []), ...(stillAllowed ? [] : ["worker_app_not_allowed"])];
   const period = await periodFor(tx, who.agencyId, start.date);
   // Whether the week is still open reads every worker's hours in it (a paid week locks them all).
   if (!period || (await outsideWorkerFence(tx, who.workerId, () => periodState(tx, period.id))) !== "open") return { ok: false, error: "period_paid" };
@@ -445,17 +457,20 @@ export async function clockOut(tx: Tx, who: Who, location: unknown, now: Date): 
       assignmentId: punch.assignmentId,
       workDate: start.date,
       inMinute: start.minute,
-      outMinute: start.minute + worked,
+      // Too long a shift keeps only its start: a person fills in the end before it can be approved.
+      outMinute: tooLong ? null : start.minute + worked,
       breakMinutes: 0,
-      minutes: worked,
-      confidence: "high",
+      minutes: tooLong ? null : worked,
+      // A worker's own clock is checked by a person, one entry at a time: never in a bulk approval.
+      confidence: "low",
       status: "needs_review",
-      reviewReasons: ["worker_app"],
+      reviewReasons: reasons,
     })
     .returning({ id: s.timeEntries.id });
   await tx.update(s.workerClockPunches).set({ clockOutAt: now, outLocation: client?.clock === "location" ? loc : null, timeEntryId: entry!.id }).where(eq(s.workerClockPunches.id, punch.id));
-  await auditBy(tx, by(who), [{ action: "create", entityType: "time_entry", entityId: entry!.id, after: { source: "worker_app", workDate: start.date, inMinute: start.minute, minutes: worked } }]);
-  return { ok: true, entryId: entry!.id };
+  await auditBy(tx, by(who), [{ action: "create", entityType: "time_entry", entityId: entry!.id, after: { source: "worker_app", workDate: start.date, inMinute: start.minute, minutes: worked, reasons } }]);
+  // The clock is closed either way; a shift too long is told to the worker, whose agency fills it in.
+  return tooLong ? { ok: false, error: "too_long" } : { ok: true, entryId: entry!.id };
 }
 
 // ---------- Home ----------

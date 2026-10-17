@@ -22,12 +22,19 @@ const id = z.uuid();
 const refresh = () => revalidatePath("/[locale]/(app)/workers/[id]", "page");
 type Fail<E extends string> = { ok: false; error: E };
 
-export async function setWorkerPhoneAction(workerId: string, phone: string): Promise<{ ok: true } | Fail<"invalid" | "taken" | "generic" | "not_found" | "not_allowed">> {
+export async function setWorkerPhoneAction(workerId: string, phone: string): Promise<{ ok: true } | Fail<"invalid" | "taken" | "generic" | "not_found" | "not_allowed" | "owner_required" | "confirm">> {
   const actor = await actorAllowedTo("workerApp");
   if (!id.safeParse(workerId).success) return { ok: false, error: "not_found" };
-  const r = await withAgency(actor.agencyId, (tx) => setWorkerPhone(tx, actor, workerId, String(phone ?? "").slice(0, 40)));
+  const confirmedRecently = !(await mustConfirmNow());
+  const r = await withAgency(actor.agencyId, async (tx) => {
+    const [w] = await tx.query.workers.findMany({ where: (t, { eq }) => eq(t.id, workerId), columns: { preferredLanguage: true }, limit: 1 });
+    const t = await getTranslations({ locale: w?.preferredLanguage === "es" ? "es" : "en", namespace: "workerAppSms" });
+    return setWorkerPhone(tx, actor, workerId, String(phone ?? "").slice(0, 40), { confirmedRecently, oldNumberText: (agency) => t("phoneChanged", { agency }), now: new Date() });
+  });
   refresh();
-  return r.ok ? r : { ok: false, error: r.error === "no_phone" ? "generic" : r.error };
+  if (!r.ok) return { ok: false, error: r.error === "no_phone" ? "generic" : r.error };
+  if (r.notify) await deliverSms(db, smsTransport(), actor.agencyId, r.notify);
+  return { ok: true };
 }
 
 export async function sendOnboardingLinkAction(workerId: string): Promise<{ ok: true } | Fail<"no_phone" | "generic" | "not_found" | "not_allowed">> {
@@ -41,7 +48,7 @@ export async function sendOnboardingLinkAction(workerId: string): Promise<{ ok: 
     return { lang, result: await sendOnboardingLink(tx, actor, workerId, (agency) => t("invite", { agency, url: `${base}/${lang}/w/sign-in` }), new Date()) };
   });
   refresh();
-  if (!r.result.ok) return { ok: false, error: r.result.error === "invalid" || r.result.error === "taken" ? "generic" : r.result.error };
+  if (!r.result.ok) return { ok: false, error: r.result.error === "no_phone" || r.result.error === "not_found" || r.result.error === "not_allowed" ? r.result.error : "generic" };
   const sent = await deliverSms(db, smsTransport(), actor.agencyId, r.result.sms);
   return sent ? { ok: true } : { ok: false, error: "generic" };
 }
@@ -62,7 +69,7 @@ export async function openWorkerFormAction(workerId: string, kind: string, reaso
   if (!id.safeParse(workerId).success || !(FORM_KINDS as readonly string[]).includes(kind)) return { ok: false, error: "not_found" };
   if (await mustConfirmNow()) return { ok: false, error: "confirm" };
   const r = await withAgency(actor.agencyId, (tx) => recordFormOpened(tx, actor, workerId, kind as FormKind, String(reason ?? "")));
-  if (!r.ok) return { ok: false, error: r.error === "invalid" || r.error === "taken" || r.error === "no_phone" ? "not_found" : r.error };
+  if (!r.ok) return { ok: false, error: r.error === "reason_required" || r.error === "not_allowed" || r.error === "confirm" ? r.error : "not_found" };
   refresh();
   const grant = fileGrant(appKey(), formGrantSubject(workerId, kind as FormKind), actor.userId, Math.floor(Date.now() / 1000));
   return { ok: true, url: `/api/files/worker-form/${workerId}?kind=${kind}&locale=${await getLocale()}&expires=${grant.expires}&signature=${grant.signature}` };
