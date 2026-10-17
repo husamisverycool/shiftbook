@@ -53,7 +53,7 @@ export function Counters({ view, choices, canChange, today }: { view: CountersVi
     if (l.crossed720 !== null) {
       const text = t("crossed", { date: longDate(l.crossed720, locale) });
       return l.dutyId ? (
-        <Link href={`/compliance/${l.dutyId}`} className="text-destructive underline underline-offset-4">
+        <Link href={`/compliance/${l.dutyId}`} className="text-destructive underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
           {text}
         </Link>
       ) : (

@@ -62,7 +62,7 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
     <div className="flex w-36 flex-col items-start gap-1">
       <span className="text-xs text-muted-foreground">{caption}</span>
       {r ? (
-        <Link href={`/compliance/${r.id}`} className="flex w-fit flex-col items-start gap-0.5 underline-offset-4 hover:underline">
+        <Link href={`/compliance/${r.id}`} className="flex w-fit flex-col items-start gap-0.5 underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
           <StatusBadge status={r.status} />
           <span className="text-xs whitespace-nowrap">{date(r.dueOn)}</span>
         </Link>
@@ -73,7 +73,7 @@ export function ComplianceSettingsView({ view, today, canChange }: { view: View;
   );
   const file = (id: string | null, name: string | null) =>
     id && name ? (
-      <a href={`/api/files/compliance/${id}`} download className="underline underline-offset-4 hover:text-foreground">
+      <a href={`/api/files/compliance/${id}`} download className="underline underline-offset-4 hover:text-foreground rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
         {name}
       </a>
     ) : null;
@@ -253,7 +253,7 @@ function Statement({ view, canChange }: { view: View; canChange: boolean }) {
               ? t.rich("current", {
                   name: view.statement.filename,
                   file: (chunks) => (
-                    <a href={`/api/files/compliance/${view.statement!.id}`} download className="underline underline-offset-4 hover:text-foreground">
+                    <a href={`/api/files/compliance/${view.statement!.id}`} download className="underline underline-offset-4 hover:text-foreground rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                       {chunks}
                     </a>
                   ),

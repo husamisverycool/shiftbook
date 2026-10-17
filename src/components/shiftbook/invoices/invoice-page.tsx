@@ -191,7 +191,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
                 </span>
                 <span className="flex flex-wrap items-center gap-3">
                   {img.pages.map((p) => (
-                    <a key={p} href={`/api/documents/${img.documentId}/pages/${p}`} target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline">
+                    <a key={p} href={`/api/documents/${img.documentId}/pages/${p}`} target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                       {td("page", { page: p })}
                     </a>
                   ))}
@@ -209,7 +209,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
           {detail.original && (
             <li className="flex flex-wrap items-center justify-between gap-3 py-3">
               <span className="text-muted-foreground">{credit ? td("credits") : td("addsTo")}</span>
-              <Link href={`/invoices/${detail.original.id}`} className="font-medium underline-offset-4 hover:underline">
+              <Link href={`/invoices/${detail.original.id}`} className="font-medium underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {detail.original.number}
               </Link>
             </li>
@@ -217,7 +217,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
           {detail.corrections.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3" data-testid="related-correction">
               <span className="inline-flex items-center gap-2">
-                <Link href={`/invoices/${c.id}`} className="font-medium underline-offset-4 hover:underline">
+                <Link href={`/invoices/${c.id}`} className="font-medium underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                   {c.number}
                 </Link>
                 <Badge variant="outline">{t(`kind.${c.kind}`)}</Badge>
@@ -229,7 +229,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect }: { 
           ))}
           <li className="flex flex-wrap items-center justify-between gap-3 py-3">
             <span className="text-muted-foreground">{td("run", { version: detail.run.version })}</span>
-            <Link href={{ pathname: "/convert", query: { period: r.period.id, step: "files" } }} className="font-medium underline-offset-4 hover:underline">
+            <Link href={{ pathname: "/convert", query: { period: r.period.id, step: "files" } }} className="font-medium underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
               {td("openFiles")}
             </Link>
           </li>

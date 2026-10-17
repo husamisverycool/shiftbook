@@ -39,7 +39,7 @@ export function KeyFigure({
       <div className="flex items-baseline justify-between gap-4">
         <span className={cn("text-sm", action ? "font-medium text-foreground/80" : "whitespace-nowrap text-foreground/70")}>{label}</span>
         {action && (
-          <Link href={action.href} className="text-sm font-medium underline-offset-4 hover:underline">
+          <Link href={action.href} className="text-sm font-medium underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
             {action.label}
           </Link>
         )}

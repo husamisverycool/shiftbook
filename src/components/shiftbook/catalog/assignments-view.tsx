@@ -106,7 +106,7 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
             <dt className="text-muted-foreground">{t("col.jobOrder")}</dt>
             <dd>
-              <Link href={`/job-orders/${r.jobOrderId}`} className="underline-offset-4 hover:underline">{`${r.position}${r.shift ? ` · ${r.shift}` : ""}`}</Link>
+              <Link href={`/job-orders/${r.jobOrderId}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">{`${r.position}${r.shift ? ` · ${r.shift}` : ""}`}</Link>
             </dd>
             <dt className="text-muted-foreground">{t("col.client")}</dt>
             <dd>{r.clientName}</dd>

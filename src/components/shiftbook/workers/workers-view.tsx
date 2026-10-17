@@ -25,6 +25,7 @@ import { Page, PageHeader, TableFrame } from "../page";
 import { PersonAvatar } from "../person";
 import { Status } from "../status";
 import { AddWorkerDialog } from "./add-worker";
+import { Tip } from "../tip";
 
 /** Accents and case do not matter to the search ("Pena" finds "Peña"). */
 const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -159,7 +160,7 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
                           <div className="flex items-center gap-3">
                             <PersonAvatar name={`${r.firstName} ${r.lastName}`} size="default" />
                             <div className="min-w-0">
-                              <Link href={`/workers/${r.id}`} className="font-medium text-foreground underline-offset-4 hover:underline">
+                              <Link href={`/workers/${r.id}`} className="font-medium text-foreground underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                                 {r.lastName}, {r.firstName}
                               </Link>
                               <div className="text-xs text-muted-foreground">{t(`language.${r.preferredLanguage === "es" ? "es" : "en"}`)}</div>
@@ -173,9 +174,9 @@ export function WorkersView({ rows, system, today }: { rows: WorkerRow[]; system
                             <span className="flex flex-wrap items-center gap-2">
                               {t("placementAt", { position: r.placements[0]!.position, client: r.placements[0]!.clientName })}
                               {r.placements.length > 1 && (
-                                <Badge variant="outline" title={r.placements.slice(1).map((p) => t("placementAt", { position: p.position, client: p.clientName })).join("\n")}>
-                                  {t("more", { count: r.placements.length - 1 })}
-                                </Badge>
+                                <Tip label={<span className="whitespace-pre-line">{r.placements.slice(1).map((p) => t("placementAt", { position: p.position, client: p.clientName })).join("\n")}</span>}>
+                                  <Badge variant="outline">{t("more", { count: r.placements.length - 1 })}</Badge>
+                                </Tip>
                               )}
                             </span>
                           )}

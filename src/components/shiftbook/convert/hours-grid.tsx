@@ -29,6 +29,7 @@ import { clock, hoursMinutes, parseClock, shortDate } from "../format";
 import { SourcePanel } from "./source-panel";
 import { Status, type Tone } from "../status";
 import { needsAttention, REFUSAL_MESSAGE, type ActionRefusal, type GridRow } from "./types";
+import { Tip } from "../tip";
 
 /**
  * One status language (_components/status.md): read and not yet checked is not started (neutral), needs
@@ -230,15 +231,17 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
   const Marked = ({ r, field, children }: { r: GridRow; field: string; children: React.ReactNode }) => {
     const f = fieldFlag(r, field);
     return (
-      <span className={`inline-flex items-center gap-1 ${f.flagged ? "text-destructive" : ""}`} title={f.checks.map((c) => reasonText(c)).join(" · ") || undefined}>
-        {children}
-        {f.edited && (
-          <>
-            <CircleIcon className="size-1.5 fill-primary text-primary" aria-hidden />
-            <span className="sr-only">{t("edited")}</span>
-          </>
-        )}
-      </span>
+      <Tip label={f.checks.map((c) => reasonText(c)).join(" · ") || undefined}>
+        <span className={`inline-flex items-center gap-1 ${f.flagged ? "text-destructive" : ""}`}>
+          {children}
+          {f.edited && (
+            <>
+              <CircleIcon className="size-1.5 fill-primary text-primary" aria-hidden />
+              <span className="sr-only">{t("edited")}</span>
+            </>
+          )}
+        </span>
+      </Tip>
     );
   };
 
@@ -375,7 +378,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                         </div>
                       ),
                     )}
-                    {cell(1, <span className="block max-w-36 truncate" title={r.clientName ?? undefined}>{r.clientName ?? "—"}</span>)}
+                    {cell(1, <Tip label={r.clientName ?? undefined}><span className="block max-w-36 truncate">{r.clientName ?? "—"}</span></Tip>)}
                     {cell(
                       2,
                       isEditing && d ? (
@@ -435,9 +438,11 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                     {cell(8, <Status tone={STATUS_TONE[r.status]}>{t(`status.${r.status}`)}</Status>)}
                     {cell(
                       9,
-                      <button type="button" className="block max-w-28 truncate text-left text-muted-foreground underline-offset-4 hover:underline" title={r.document?.filename ?? t("manual")} onClick={() => setPanel({ id: r.id, field: null })}>
-                        {r.document?.filename ?? t("manual")}
-                      </button>,
+                      <Tip label={r.document?.filename ?? t("manual")}>
+                        <button type="button" className="block max-w-28 truncate rounded-sm text-left text-muted-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50" onClick={() => setPanel({ id: r.id, field: null })}>
+                          {r.document?.filename ?? t("manual")}
+                        </button>
+                      </Tip>,
                     )}
                     <TableCell className="sticky right-0 bg-background text-right whitespace-nowrap shadow-[-8px_0_8px_-8px_var(--border)]">
                       {isEditing ? null : (

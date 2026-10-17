@@ -37,6 +37,7 @@ import { useDateTime } from "../agency-zone";
 import { EmptyState } from "../empty-state";
 import { PersonAvatar } from "../person";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
+import { Tip } from "../tip";
 
 export interface MemberRow {
   id: string;
@@ -144,17 +145,21 @@ export function MembersView({ members, me, canManage, now, paused = false }: { m
           {role !== "all" && (
             <Badge variant="secondary" className="gap-1 pr-1" data-testid="chip-role">
               {t("role")}: {tr(`${role}.name`)}
-              <button type="button" className="rounded p-0.5 hover:bg-muted" aria-label={tl("removeFilter", { name: t("role") })} onClick={() => setRole("all")}>
-                <XIcon className="size-3" />
-              </button>
+              <Tip label={tl("removeFilter", { name: t("role") })}>
+                <button type="button" className="rounded p-0.5 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50" aria-label={tl("removeFilter", { name: t("role") })} onClick={() => setRole("all")}>
+                  <XIcon className="size-3" />
+                </button>
+              </Tip>
             </Badge>
           )}
           {status !== "all" && (
             <Badge variant="secondary" className="gap-1 pr-1" data-testid="chip-status">
               {t("status")}: {t(`statusLabels.${status}`)}
-              <button type="button" className="rounded p-0.5 hover:bg-muted" aria-label={tl("removeFilter", { name: t("status") })} onClick={() => setStatus("all")}>
-                <XIcon className="size-3" />
-              </button>
+              <Tip label={tl("removeFilter", { name: t("status") })}>
+                <button type="button" className="rounded p-0.5 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50" aria-label={tl("removeFilter", { name: t("status") })} onClick={() => setStatus("all")}>
+                  <XIcon className="size-3" />
+                </button>
+              </Tip>
             </Badge>
           )}
           <p className="ml-auto text-sm text-muted-foreground tabular-nums" aria-live="polite">

@@ -236,7 +236,7 @@ function AssignmentsSection({ profile, today }: { profile: WorkerProfile; today:
               {profile.placements.map((p) => (
                 <TableRow key={p.id} data-testid="worker-assignment">
                   <TableCell className="font-medium">
-                    <Link href={`/job-orders/${p.jobOrderId}?tab=assignments`} className="underline-offset-4 hover:underline">
+                    <Link href={`/job-orders/${p.jobOrderId}?tab=assignments`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                       {p.position}
                     </Link>
                   </TableCell>

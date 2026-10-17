@@ -9,6 +9,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { gridTicks } from "../chart-axis";
+import { Tip } from "../tip";
 
 interface Point {
   label: string;
@@ -161,14 +162,17 @@ export function ColumnChart({ points, axis, caption, head, rows, height = 208, u
     <figure className="flex flex-col gap-2.5" data-testid="weekly-chart">
       {title && <figcaption className="text-base font-semibold">{title}</figcaption>}
       <Gridlines ticks={ticks} labels={axis(ticks)} height={height}>
-        <div className="flex size-full" aria-hidden>
+        {/* The bar under the pointer stays, the others step back (Primer hover timing); its value in a tooltip. */}
+        <div className="group/bars flex size-full" aria-hidden>
           {points.map((p) => {
             const from = y(Math.max(p.value, 0));
             const to = y(Math.min(p.value, 0));
             return (
-              <div key={p.label} className="relative flex-1" title={p.hint}>
-                {p.value !== 0 && <div className={cn("absolute inset-x-[14%]", p.value > 0 ? "rounded-t-[2px] bg-foreground/80" : "rounded-b-[2px] bg-destructive/80")} style={{ top: `${from}%`, height: `${Math.max(to - from, 0.5)}%` }} />}
-              </div>
+              <Tip key={p.label} label={p.hint}>
+                <div className="relative flex-1 transition-opacity group-hover/bars:opacity-50 hover:opacity-100!">
+                  {p.value !== 0 && <div className={cn("absolute inset-x-[14%]", p.value > 0 ? "rounded-t-[2px] bg-foreground/80" : "rounded-b-[2px] bg-destructive/80")} style={{ top: `${from}%`, height: `${Math.max(to - from, 0.5)}%` }} />}
+                </div>
+              </Tip>
             );
           })}
         </div>

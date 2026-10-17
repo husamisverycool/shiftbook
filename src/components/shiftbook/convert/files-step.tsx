@@ -13,6 +13,7 @@ import { hoursMinutes, longDate, money } from "../format";
 import type { Said } from "@/server/said";
 import { getEngineSay } from "../engine-say-server";
 import { StartCorrectionButton } from "./correction-actions";
+import { Tip } from "../tip";
 
 export interface FilesVersion {
   id: string;
@@ -105,9 +106,11 @@ async function Version({ v }: { v: FilesVersion }) {
               {ct.payrollSystemGrossCents !== undefined && <Figure label={t("systemGross", { system: t.has(`systems.${v.payroll.format}`) ? t(`systems.${v.payroll.format}` as "systems.gusto_hours_csv") : "" })} value={money(ct.payrollSystemGrossCents, locale)} />}
               {ct.payrollSystemDifferenceCents !== undefined && <Figure label={t("difference")} value={money(ct.payrollSystemDifferenceCents, locale)} />}
             </dl>
-            <p className="truncate font-mono text-xs text-muted-foreground" title={v.payroll.sha256}>
-              {t("fingerprint")} {v.payroll.sha256}
-            </p>
+            <Tip label={v.payroll.sha256}>
+              <p className="truncate font-mono text-xs text-muted-foreground">
+                {t("fingerprint")} {v.payroll.sha256}
+              </p>
+            </Tip>
           </div>
           {v.payroll.notes.length > 0 && (
             <div className="flex flex-col gap-1 text-sm">

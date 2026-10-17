@@ -12,6 +12,7 @@ import { Link } from "@/i18n/navigation";
 import type { CashView } from "@/server/margin/queries";
 import { useEngineSay } from "../engine-say";
 import { longDate, money } from "../format";
+import { Tip } from "../tip";
 
 export function MarginCash({ view }: { view: CashView }) {
   const t = useTranslations("margin.cash");
@@ -49,7 +50,7 @@ export function MarginCash({ view }: { view: CashView }) {
           <AlertDescription>
             <span>
               {t("noPayDay")}{" "}
-              <Link href="/settings/margin" className="underline underline-offset-4">
+              <Link href="/settings/margin" className="underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {tm("settings")}
               </Link>
             </span>
@@ -90,7 +91,7 @@ export function MarginCash({ view }: { view: CashView }) {
                 <Fragment key={c.clientId}>
                   <TableRow data-testid="cash-row">
                     <TableCell className="font-medium">
-                      <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline" aria-expanded={open === c.clientId} onClick={() => setOpen(open === c.clientId ? null : c.clientId)}>
+                      <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-expanded={open === c.clientId} onClick={() => setOpen(open === c.clientId ? null : c.clientId)}>
                         {open === c.clientId ? <ChevronDownIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
                         {c.clientName ?? tm("none")}
                       </button>
@@ -98,9 +99,11 @@ export function MarginCash({ view }: { view: CashView }) {
                     <TableCell className="text-right tabular-nums">{money(c.paidCents, locale)}</TableCell>
                     <TableCell className="text-right tabular-nums">{money(c.collectedCents, locale)}</TableCell>
                     <TableCell className="text-right font-medium tabular-nums">{money(c.floatingCents, locale)}</TableCell>
-                    <TableCell className="text-right tabular-nums" title={c.daysToPay ? say(c.daysToPay) : undefined}>
-                      {c.daysToPay?.averageDays == null ? "—" : t("days", { days: c.daysToPay.averageDays, count: c.daysToPay.invoices })}
-                    </TableCell>
+                    <Tip label={c.daysToPay ? say(c.daysToPay) : undefined}>
+                      <TableCell className="text-right tabular-nums">
+                        {c.daysToPay?.averageDays == null ? "—" : t("days", { days: c.daysToPay.averageDays, count: c.daysToPay.invoices })}
+                      </TableCell>
+                    </Tip>
                   </TableRow>
                   {open === c.clientId &&
                     c.weeks.map((w) => (

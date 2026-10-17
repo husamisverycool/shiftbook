@@ -6,13 +6,15 @@
 // colour; then the steps in a bordered box with dividers — each a checkbox and its title, with its own
 // chevron button at the right; an open step shows, inset on a subdued rounded panel, its paragraph and
 // its button. One step open at a time.
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, XIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { SetupStep } from "@/server/home/queries";
+import { Collapse, TURNING } from "../collapse";
+import { Tip } from "../tip";
 
 export const GUIDE_COOKIE = "shiftbook_setup_guide";
 
@@ -42,27 +44,31 @@ export function SetupGuide({ steps, demo }: { steps: GuideStep[]; demo: boolean 
           <h2 id="setup-guide-title" className="min-w-0 flex-1 text-sm font-semibold">
             {t("title")}
           </h2>
-          <Button variant="ghost" size="icon-sm" className="text-foreground/60" onClick={hide} aria-label={t("hide")} title={t("hide")} data-testid="setup-hide">
-            <XIcon />
-          </Button>
-          <Button variant="ghost" size="icon-sm" className="text-foreground/60 aria-expanded:bg-transparent aria-expanded:text-foreground/60 hover:aria-expanded:bg-muted" onClick={() => setCollapsed((c) => !c)} aria-expanded={!collapsed} aria-controls="setup-guide-steps" aria-label={collapsed ? t("expand") : t("collapse")} title={collapsed ? t("expand") : t("collapse")}>
-            {collapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
-          </Button>
+          <Tip label={t("hide")}>
+            <Button variant="ghost" size="icon-sm" className="text-foreground/60" onClick={hide} aria-label={t("hide")} data-testid="setup-hide">
+              <XIcon />
+            </Button>
+          </Tip>
+          <Tip label={collapsed ? t("expand") : t("collapse")}>
+            <Button variant="ghost" size="icon-sm" className="text-foreground/60 aria-expanded:bg-transparent aria-expanded:text-foreground/60 hover:aria-expanded:bg-muted" onClick={() => setCollapsed((c) => !c)} aria-expanded={!collapsed} aria-controls="setup-guide-steps" aria-label={collapsed ? t("expand") : t("collapse")}>
+              <ChevronDownIcon className={cn(TURNING, !collapsed && "rotate-180")} />
+            </Button>
+          </Tip>
         </div>
         <p className="text-sm">{done === steps.length ? t("allDone") : t("intro")}</p>
         <p className="text-sm text-muted-foreground tabular-nums" data-testid="setup-progress">
           {t("progress", { done, total: steps.length })}
         </p>
       </div>
-      {!collapsed && (
-        <ol id="setup-guide-steps" className="flex flex-col divide-y rounded-lg border">
+      <Collapse open={!collapsed} id="setup-guide-steps">
+        <ol className="flex flex-col divide-y rounded-lg border">
           {steps.map((s) => {
             const expanded = open === s.key;
             return (
               <li key={s.key} data-testid={`setup-step-${s.key}`} data-done={s.done}>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 py-3 pr-3 pl-3 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                  className="flex w-full items-center gap-2 py-3 pr-3 pl-3 text-left text-sm outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
                   aria-expanded={expanded}
                   aria-controls={`setup-step-${s.key}-body`}
                   onClick={() => setOpen(expanded ? null : s.key)}
@@ -75,11 +81,11 @@ export function SetupGuide({ steps, demo }: { steps: GuideStep[]; demo: boolean 
                   <span className="sr-only">{s.done ? t("done") : t("notDone")}</span>
                   {/* The step's own chevron, at the right as Polaris's tertiary icon button. */}
                   <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/60">
-                    {expanded ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+                    <ChevronDownIcon className={cn("size-4", TURNING, expanded && "rotate-180")} />
                   </span>
                 </button>
-                {expanded && (
-                  <div id={`setup-step-${s.key}-body`} className="px-3 pb-3">
+                <Collapse open={expanded} id={`setup-step-${s.key}-body`}>
+                  <div className="px-3 pb-3">
                     {/* Inset on a subdued rounded panel, as Polaris's open step. */}
                     <div className="flex flex-col items-start gap-2 rounded-lg bg-muted/70 p-4 text-sm">
                       <p>
@@ -92,12 +98,12 @@ export function SetupGuide({ steps, demo }: { steps: GuideStep[]; demo: boolean 
                       </Link>
                     </div>
                   </div>
-                )}
+                </Collapse>
               </li>
             );
           })}
         </ol>
-      )}
+      </Collapse>
     </section>
   );
 }

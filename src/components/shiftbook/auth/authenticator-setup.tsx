@@ -4,6 +4,7 @@
 // 1. scan the QR code ("Setup key" shows the secret as text); 2. verify the code from the app;
 // 3. save the recovery codes (Download, Print, Copy), then "I have saved my recovery codes".
 import { useTranslations } from "next-intl";
+import { CheckIcon, CopyIcon } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { beginSetupAction, confirmSetupAction } from "@/app/[locale]/(auth)/actions";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirmed } from "./confirm-access";
+import { useCopied } from "../use-copied";
 
 export function AuthenticatorSetup({ email, onFinished, onCancel }: { email: string; onFinished: () => void; onCancel?: () => void }) {
   const t = useTranslations("setup");
@@ -69,7 +71,7 @@ export function AuthenticatorSetup({ email, onFinished, onCancel }: { email: str
           <Skeleton className="size-44" aria-label={t("loading")} />
         )}
         <div className="flex flex-col gap-1 text-sm">
-          <button type="button" className="w-fit text-primary underline-offset-4 hover:underline" aria-expanded={showKey} onClick={() => setShowKey((s) => !s)} data-testid="show-setup-key">
+          <button type="button" className="w-fit text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-expanded={showKey} onClick={() => setShowKey((s) => !s)} data-testid="show-setup-key">
             {t("showKey")}
           </button>
           {showKey && setup && (
@@ -118,7 +120,7 @@ export function AuthenticatorSetup({ email, onFinished, onCancel }: { email: str
             <p id={`${id}-error`} role="alert" className="text-sm text-destructive" data-testid="setup-error">
               {t(error)}{" "}
               {error === "expired" && (
-                <button type="button" className="text-primary underline underline-offset-4" onClick={begin}>
+                <button type="button" className="text-primary underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={begin}>
                   {t("startAgain")}
                 </button>
               )}
@@ -166,9 +168,11 @@ export function RecoveryCodes({ email, codes, title, onSaved, done }: { email: s
     w.print();
     w.close();
   };
+  const [copied, markCopied] = useCopied();
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
+      markCopied();
       toast.success(t("copied"));
     } catch {
       toast.error(t("copy"));
@@ -200,6 +204,7 @@ export function RecoveryCodes({ email, codes, title, onSaved, done }: { email: s
           {t("print")}
         </Button>
         <Button type="button" variant="outline" size="sm" onClick={() => void copy()}>
+          {copied ? <CheckIcon /> : <CopyIcon />}
           {t("copy")}
         </Button>
       </div>

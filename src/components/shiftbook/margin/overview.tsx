@@ -89,7 +89,7 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
     <Fragment key={l.key}>
       <TableRow className="bg-muted/30 hover:bg-muted/40">
         <TableCell>
-          <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline" aria-expanded={line === l.key} onClick={() => setLine(line === l.key ? null : l.key)} data-testid="margin-line">
+          <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-expanded={line === l.key} onClick={() => setLine(line === l.key ? null : l.key)} data-testid="margin-line">
             {line === l.key ? <ChevronDownIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
             <span>
               {l.workerName} · {l.clientName ?? t("none")} · {t("weekOf", { date: longDate(l.week, locale) })}
@@ -148,7 +148,7 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
           <AlertDescription>
             <span>
               {t("incomplete", { count: T.incomplete })}{" "}
-              <Link href="/settings/margin" className="underline underline-offset-4">
+              <Link href="/settings/margin" className="underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {t("settings")}
               </Link>
             </span>
@@ -195,7 +195,7 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
               <Fragment key={g.key}>
                 <TableRow data-testid="margin-row">
                   <TableCell className="font-medium">
-                    <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline" aria-expanded={open === g.key} onClick={() => setOpen(open === g.key ? null : g.key)}>
+                    <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-expanded={open === g.key} onClick={() => setOpen(open === g.key ? null : g.key)}>
                       {open === g.key ? <ChevronDownIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
                       {name(g.name)}
                     </button>

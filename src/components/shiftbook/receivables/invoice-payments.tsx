@@ -80,7 +80,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
         {ar.payments.map((p) => (
           <div key={p.paymentId} className={`flex items-baseline justify-between gap-6 py-3 ${p.voided ? "text-muted-foreground line-through" : ""}`} data-testid="invoice-payment">
             <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
-              <Link href={`/payments?client=${clientId}`} className="underline-offset-4 hover:underline">
+              <Link href={`/payments?client=${clientId}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {t("payment", { date: longDate(p.receivedOn, locale), method: tp(`methods.${p.method}`) })}
               </Link>
               {p.reference && <span className="text-muted-foreground">{p.reference}</span>}
@@ -91,7 +91,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
         ))}
         {ar.credits.map((c) => (
           <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-3 py-3" data-testid="invoice-credit">
-            <Link href={`/invoices/${c.id}`} className="underline-offset-4 hover:underline">
+            <Link href={`/invoices/${c.id}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
               {t("credit", { number: c.number, date: longDate(c.issuedOn, locale) })}
             </Link>
             <span className="tabular-nums">−{money(c.amountCents, locale)}</span>
@@ -100,7 +100,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
         {ar.creditApplications.map((c) => (
           <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-3 py-3" data-testid="invoice-credit-application">
             <span className="flex flex-col">
-              <Link href={`/invoices/${c.invoiceId}`} className="underline-offset-4 hover:underline">
+              <Link href={`/invoices/${c.invoiceId}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {t(c.direction === "in" ? "creditIn" : "creditOut", { number: c.number, date: longDate(c.appliedOn, locale) })}
               </Link>
               <span className="text-xs text-muted-foreground">{c.by}</span>

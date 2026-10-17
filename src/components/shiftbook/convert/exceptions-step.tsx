@@ -384,7 +384,7 @@ function Issues({ issues }: { issues: Spoken[] }) {
       ))}
       {issues.length > shown.length && (
         <li className="list-none">
-          <button type="button" className="underline underline-offset-4" onClick={() => setAll(true)}>
+          <button type="button" className="underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={() => setAll(true)}>
             +{issues.length - shown.length}
           </button>
         </li>

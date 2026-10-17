@@ -65,10 +65,10 @@ export function SsoSignInView({ email: initialEmail, next }: { email: string; ne
           <div id={`${id}-error`} role="alert" className="flex flex-col gap-1 text-sm" data-testid="sso-error">
             <p className="text-destructive">{t(error === "failed" ? "failed" : error === "too_many" ? "tooMany" : "notSetUp")}</p>
             <p className="flex flex-wrap gap-x-4">
-              <Link href={{ pathname: "/sign-in", query: { ...(next ? { next } : {}), email: email.trim() } }} className="text-primary underline underline-offset-4">
+              <Link href={{ pathname: "/sign-in", query: { ...(next ? { next } : {}), email: email.trim() } }} className="text-primary underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {t("otherWay")}
               </Link>
-              <Link href={{ pathname: "/sign-in/email", query: { ...(next ? { next } : {}), email: email.trim() } }} className="text-primary underline underline-offset-4">
+              <Link href={{ pathname: "/sign-in/email", query: { ...(next ? { next } : {}), email: email.trim() } }} className="text-primary underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {t("emailCode")}
               </Link>
             </p>
@@ -78,7 +78,7 @@ export function SsoSignInView({ email: initialEmail, next }: { email: string; ne
           {busy ? t("submitting") : t("submit")}
         </Button>
       </form>
-      <Link href={{ pathname: "/sign-in", query: next ? { next } : {} }} className="self-center text-sm text-primary underline-offset-4 hover:underline">
+      <Link href={{ pathname: "/sign-in", query: next ? { next } : {} }} className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
         {t("back")}
       </Link>
     </>

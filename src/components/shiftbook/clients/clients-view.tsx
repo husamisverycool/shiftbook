@@ -47,7 +47,7 @@ export function ClientsView({ rows }: { rows: ClientRow[] }) {
               {rows.map((c) => (
                 <TableRow key={c.id} data-testid="client-row">
                   <TableCell className="font-medium">
-                    <Link href={`/clients/${c.id}`} className="underline-offset-4 hover:underline">
+                    <Link href={`/clients/${c.id}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                       {c.name}
                     </Link>
                   </TableCell>

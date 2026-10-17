@@ -71,7 +71,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
           <span className="flex flex-col">
             <span className="font-medium">{t("results.full_time")}</span>
             {r.duty && (
-              <Link href={`/compliance/${r.duty.id}`} className="text-xs underline underline-offset-4" data-testid="aca-duty">
+              <Link href={`/compliance/${r.duty.id}`} className="text-xs underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="aca-duty">
                 {t("offerBy", { date: medium(r.stabilityStart!) })}
               </Link>
             )}
@@ -110,7 +110,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
             </p>
           )}
           {canChange && (
-            <Link href="/settings/compliance#aca-title" className="w-fit underline underline-offset-4" data-testid="aca-settings-link">
+            <Link href="/settings/compliance#aca-title" className="w-fit underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="aca-settings-link">
               {view.settings ? t("changeSettings") : t("setSettings")}
             </Link>
           )}

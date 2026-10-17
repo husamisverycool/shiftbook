@@ -3,12 +3,14 @@
 // Patterns: docs/patterns/approve/[token].md (Bullhorn: one row per worker, a day-by-day view opened
 // from the row) and docs/patterns/approvals/[id].md (the same table for the agency).
 import { addDays } from "@shiftbook/rules";
-import { ChevronDownIcon, ChevronRightIcon, CircleAlertIcon } from "lucide-react";
+import { ChevronRightIcon, CircleAlertIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Fragment, useState, type ReactNode } from "react";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import type { PortalShift } from "@/server/approvals/service";
 import { clock, hoursMinutes, shortDate } from "../format";
+import { TURNING } from "../collapse";
 import { Status, type Tone } from "../status";
 
 export type ShiftView = PortalShift;
@@ -86,7 +88,7 @@ export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: str
                         aria-label={t("showShifts", { worker: w.name })}
                         onClick={() => toggle(w.id)}
                       >
-                        {expanded ? <ChevronDownIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
+                        <ChevronRightIcon className={cn("size-4", TURNING, expanded && "rotate-90")} />
                         {w.name}
                       </button>
                       {marked(workerState(w.shifts))}
@@ -110,7 +112,7 @@ export function HoursTable(props: { shifts: ShiftView[]; period: { startsOn: str
                   <TableRow id={`shifts-${w.id}`} className="bg-muted/30 hover:bg-muted/30">
                     <TableCell colSpan={days.length + 2} className="p-0">
                       <div
-                        className="px-4 py-3"
+                        className="px-4 py-3 animate-in fade-in-0 slide-in-from-top-1 motion-state"
                         onKeyDown={(e) => {
                           if (e.key === "Escape" && !document.querySelector("[role=dialog]")) toggle(w.id);
                         }}

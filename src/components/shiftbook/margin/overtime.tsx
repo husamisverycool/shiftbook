@@ -54,7 +54,7 @@ export function MarginOvertime({ view }: { view: OvertimeView }) {
                 <Fragment key={key}>
                   <TableRow data-testid="overtime-row">
                     <TableCell>
-                      <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
+                      <button type="button" className="flex items-center gap-1 text-left underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
                         {open === key ? <ChevronDownIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
                         {r.clientName}
                       </button>

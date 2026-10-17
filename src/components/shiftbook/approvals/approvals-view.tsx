@@ -191,11 +191,11 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                           <TableCell className="font-medium">
                             <span className="inline-flex flex-wrap items-center gap-2">
                             {r.request ? (
-                              <Link href={`/approvals/${r.request.id}`} className="underline-offset-4 hover:underline">
+                              <Link href={`/approvals/${r.request.id}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                                 {r.clientName}
                               </Link>
                             ) : props.periodOpen && mayAsk ? (
-                              <button type="button" className="text-left underline-offset-4 hover:underline" onClick={() => setSending(sendTargetOf(r, props.periodId))}>
+                              <button type="button" className="text-left underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={() => setSending(sendTargetOf(r, props.periodId))}>
                                 {r.clientName}
                               </button>
                             ) : (

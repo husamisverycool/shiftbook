@@ -38,7 +38,7 @@ export function ResetRequestView({ email: initialEmail }: { email: string }) {
             </div>
           </div>
         )}
-        <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline">
+        <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
           {t("back")}
         </Link>
       </>
@@ -69,7 +69,7 @@ export function ResetRequestView({ email: initialEmail }: { email: string }) {
           {pending ? t("sending") : t("submit")}
         </Button>
       </form>
-      <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline">
+      <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
         {t("back")}
       </Link>
     </>
@@ -147,7 +147,7 @@ export function NewPasswordView({ token, email, needsCode }: { token: string; em
           }
         />
       )}
-      <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline">
+      <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
         {t("back")}
       </Link>
     </>

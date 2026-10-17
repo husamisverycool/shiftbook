@@ -96,7 +96,7 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
             <section className="flex flex-col gap-2">
               <h3 className="text-sm font-semibold">{t("recentActivity")}</h3>
               <ActivityList items={r.recent} compact />
-              <Link href={`/job-orders/${r.id}?tab=activity`} className="text-sm underline-offset-4 hover:underline">
+              <Link href={`/job-orders/${r.id}?tab=activity`} className="text-sm underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {t("viewAllActivity")}
               </Link>
             </section>

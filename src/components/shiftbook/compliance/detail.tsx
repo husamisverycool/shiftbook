@@ -157,7 +157,7 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
         {d.rule && (
           <p className="text-xs text-muted-foreground">
             {td("citation")}: {d.rule.citationCode ? cite(d.rule.citationCode, d.rule.citation) : d.rule.citation}.{" "}
-            <a href={d.rule.sourceUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-0.5 underline underline-offset-4">
+            <a href={d.rule.sourceUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-0.5 underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
               {td("source")}
               <ExternalLinkIcon className="size-3" />
             </a>
@@ -175,7 +175,7 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
             <>
               <dt className="text-muted-foreground">{td("client")}</dt>
               <dd>
-                <Link href={`/clients/${i.links.clientId}`} className="underline underline-offset-4">
+                <Link href={`/clients/${i.links.clientId}`} className="underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                   {d.names.client}
                 </Link>
               </dd>
@@ -185,7 +185,7 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
             <>
               <dt className="text-muted-foreground">{td("placement")}</dt>
               <dd>
-                <Link href={`/job-orders/${d.names.jobOrderId}`} className="underline underline-offset-4">
+                <Link href={`/job-orders/${d.names.jobOrderId}`} className="underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                   {td("openPlacement")}
                 </Link>
               </dd>
@@ -198,12 +198,12 @@ function Overview({ d, today }: { d: ObligationDetail; today: string }) {
           </dd>
         </dl>
         {i.kind === "aca_offer" && (
-          <Link href="/compliance/aca" className="w-fit text-sm underline underline-offset-4" data-testid="open-aca">
+          <Link href="/compliance/aca" className="w-fit text-sm underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="open-aca">
             {td("acaLink")}
           </Link>
         )}
         {(i.subjectKind === "registration" || i.subjectKind === "policy") && (
-          <Link href="/settings/compliance" className="w-fit text-sm underline underline-offset-4">
+          <Link href="/settings/compliance" className="w-fit text-sm underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
             {td("settingsLink")}
           </Link>
         )}
@@ -241,7 +241,7 @@ function Summary({ d }: { d: ObligationDetail }) {
           {
             label: td("cards.evidence"),
             value: (
-              <Link href={`/compliance/${i.id}?tab=evidence`} className="underline-offset-4 hover:underline">
+              <Link href={`/compliance/${i.id}?tab=evidence`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {td("files", { count: d.files.length })}
               </Link>
             ),
@@ -450,7 +450,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
               <>
                 {" "}
                 {notice && notice.details && notice.hasContact && !notice.hasStatement && <span>{td("notice.noStatement")} </span>}
-                <Link href="/settings/compliance" className="underline underline-offset-4">
+                <Link href="/settings/compliance" className="underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                   {td("settingsLink")}
                 </Link>
               </>
@@ -748,7 +748,7 @@ function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
           <ul className="flex flex-wrap gap-x-4 gap-y-1">
             {trueUps.map((w) => (
               <li key={w.periodId}>
-                <Link href={{ pathname: "/convert", query: { period: w.periodId, step: "files" } }} className="underline underline-offset-4">
+                <Link href={{ pathname: "/convert", query: { period: w.periodId, step: "files" } }} className="underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                   {te("week", { from: longDate(w.startsOn, locale), to: longDate(w.endsOn, locale) })}
                 </Link>
               </li>

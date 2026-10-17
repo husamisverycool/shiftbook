@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
+import { Tip } from "./tip";
 
 export function DemoBanner() {
   const t = useTranslations("banner");
@@ -29,9 +30,9 @@ export function DemoBanner() {
       className="border-b bg-muted text-foreground md:h-(--banner-height)"
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5 text-sm md:h-full md:flex-nowrap md:py-0">
-        <p className="mr-auto md:truncate" title={t("demo")}>
-          {t("demo")}
-        </p>
+        <Tip label={t("demo")} side="bottom">
+          <p className="mr-auto md:truncate">{t("demo")}</p>
+        </Tip>
         <div className="flex shrink-0 items-center gap-4">
           <a
             href="/api/demo/samples"

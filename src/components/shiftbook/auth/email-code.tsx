@@ -44,7 +44,7 @@ export function EmailCodeView({ email: initialEmail, next }: { email: string; ne
     });
   };
   const back = (
-    <Link href={{ pathname: "/sign-in", query: next ? { next } : {} }} className="self-center text-sm text-primary underline-offset-4 hover:underline">
+    <Link href={{ pathname: "/sign-in", query: next ? { next } : {} }} className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
       {t("back")}
     </Link>
   );
@@ -123,12 +123,12 @@ export function EmailCodeView({ email: initialEmail, next }: { email: string; ne
         </Button>
       </form>
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
-        <button type="button" className="text-primary underline-offset-4 hover:underline disabled:opacity-50" disabled={sending} onClick={() => send(sent.email, true)} data-testid="code-resend">
+        <button type="button" className="text-primary underline-offset-4 hover:underline disabled:opacity-50 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" disabled={sending} onClick={() => send(sent.email, true)} data-testid="code-resend">
           {t("resend")}
         </button>
         <button
           type="button"
-          className="text-primary underline-offset-4 hover:underline"
+          className="text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => {
             setSent(null);
             setError(null);

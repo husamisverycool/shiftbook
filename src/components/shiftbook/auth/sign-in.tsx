@@ -102,7 +102,7 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople, meth
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between gap-2">
             <Label htmlFor={`${id}-password`}>{t("password")}</Label>
-            <Link href={{ pathname: "/sign-in/reset", query: email ? { email } : {} }} className="text-sm text-primary underline-offset-4 hover:underline" data-testid="forgot">
+            <Link href={{ pathname: "/sign-in/reset", query: email ? { email } : {} }} className="text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="forgot">
               {t("forgot")}
             </Link>
           </div>
@@ -124,7 +124,7 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople, meth
           <p id={`${id}-error`} role="alert" className="text-sm text-destructive" data-testid="sign-in-error">
             {t(error)}{" "}
             {error === "locked" && (
-              <Link href={{ pathname: "/sign-in/reset", query: email ? { email } : {} }} className="text-primary underline underline-offset-4">
+              <Link href={{ pathname: "/sign-in/reset", query: email ? { email } : {} }} className="text-primary underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                 {t("resetLink")}
               </Link>
             )}
@@ -135,7 +135,7 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople, meth
         </Button>
       </form>
       {methods.emailCode && (
-        <Link href={{ pathname: "/sign-in/email", query: next ? { next } : {} }} className="-mt-2 inline-flex items-center justify-center gap-1.5 self-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline" data-testid="sign-in-email-code">
+        <Link href={{ pathname: "/sign-in/email", query: next ? { next } : {} }} className="-mt-2 inline-flex items-center justify-center gap-1.5 self-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="sign-in-email-code">
           <MailIcon className="size-4" aria-hidden />
           {t("emailCode")}
         </Link>
@@ -180,7 +180,7 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople, meth
       {/* Decision 0036: the mirror of Stripe's and Linear's "Already have an account?" foot line. */}
       <p className="text-center text-sm text-muted-foreground" data-testid="sign-in-new-here">
         {t("newHere")}{" "}
-        <Link href="/sign-up" className="text-primary underline-offset-4 hover:underline" data-testid="sign-in-create-agency">
+        <Link href="/sign-up" className="text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="sign-in-create-agency">
           {t("createAgency")}
         </Link>
       </p>

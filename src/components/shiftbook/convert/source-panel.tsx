@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { clock, hoursMinutes, shortDate } from "../format";
 import type { GridRow } from "./types";
 import { useDateTime } from "../agency-zone";
+import { Tip } from "../tip";
 
 const FIELDS = ["worker", "date", "in", "out", "break", "total"] as const;
 
@@ -106,13 +107,13 @@ export function SourcePanel({ row, field, roster, onClose }: { row: GridRow | nu
                         {boxes
                           .filter((b) => b.page === page)
                           .map((b) => (
-                            <div
-                              key={b.name}
-                              title={label(b.name)}
-                              data-state={b.state}
-                              className={`absolute rounded-sm border-2 ${b.state === "stops" ? "border-destructive bg-destructive/10" : b.state === "checked" ? "border-primary bg-primary/10" : "border-muted-foreground/70"} ${field === b.name || (field === "hours" && b.name === "total") ? "ring-2 ring-ring" : ""}`}
-                              style={{ left: `${b.box.x / 10}%`, top: `${b.box.y / 10}%`, width: `${b.box.w / 10}%`, height: `${b.box.h / 10}%` }}
-                            />
+                            <Tip key={b.name} label={label(b.name)}>
+                              <div
+                                data-state={b.state}
+                                className={`absolute rounded-sm border-2 ${b.state === "stops" ? "border-destructive bg-destructive/10" : b.state === "checked" ? "border-primary bg-primary/10" : "border-muted-foreground/70"} ${field === b.name || (field === "hours" && b.name === "total") ? "ring-2 ring-ring" : ""}`}
+                                style={{ left: `${b.box.x / 10}%`, top: `${b.box.y / 10}%`, width: `${b.box.w / 10}%`, height: `${b.box.h / 10}%` }}
+                              />
+                            </Tip>
                           ))}
                       </div>
                     ))}

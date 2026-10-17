@@ -5,7 +5,7 @@ export function LinkedText({ text }: { text: string }) {
     <>
       {parts.map((p, i) =>
         /^https?:\/\//.test(p) ? (
-          <a key={i} href={p} className="break-all text-primary underline underline-offset-4" data-testid="email-link">
+          <a key={i} href={p} className="break-all text-primary underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="email-link">
             {p}
           </a>
         ) : (

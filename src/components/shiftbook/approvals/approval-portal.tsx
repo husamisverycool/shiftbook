@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import type { PortalAgency, PortalView } from "@/server/approvals/service";
 import { clock, dateTime, hoursMinutes, longDate, shortDate } from "../format";
 import { HoursTable, type ShiftView } from "./hours-table";
@@ -31,7 +32,7 @@ function Frame({ agency, children }: { agency: PortalAgency | null; children: Re
           <p className="mr-auto truncate font-semibold">{agency?.name ?? ""}</p>
           <nav aria-label={t("language")} className="flex items-center gap-3 text-sm">
             {(["en", "es"] as const).map((l) => (
-              <Link key={l} href={pathname} locale={l} aria-current={l === locale ? "true" : undefined} className={l === locale ? "font-medium" : "text-muted-foreground underline-offset-4 hover:underline"}>
+              <Link key={l} href={pathname} locale={l} aria-current={l === locale ? "true" : undefined} className={cn("rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50", l === locale ? "font-medium" : "text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline")}>
                 {t(l === "en" ? "english" : "spanish")}
               </Link>
             ))}

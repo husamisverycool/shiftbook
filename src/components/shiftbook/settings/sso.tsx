@@ -5,7 +5,7 @@
 // Authentication methods, Stripe's configuration checks; every change confirms it's the Owner first
 // (GitHub's sudo mode). Laid out as Linear's SAML settings (docs/patterns/_components/settings.md): the
 // switch in a row, the address and the provider's details in panels, the Save in the panel's foot.
-import { LockIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, LockIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { useConfirmed } from "../auth/confirm-access";
 import { EmptyState } from "../empty-state";
 import { Page, PageHeader } from "../page";
 import { SettingsField, SettingsFooter, SettingsPage, SettingsPanel, SettingsRow, SettingsRows, SettingsSection } from "../settings-panel";
+import { useCopied } from "../use-copied";
 
 export interface SsoSettingsProps {
   canManage: boolean;
@@ -53,6 +54,7 @@ export function SsoSettingsView({ canManage, paused = false, demo, redirectUri, 
   const [clientId, setClientId] = useState(settings?.clientId ?? "");
   const [secret, setSecret] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [copied, markCopied] = useCopied();
   const [saving, startSave] = useTransition();
   const [switching, startSwitch] = useTransition();
   const failed = (r: SsoResult | null) => (r && !r.ok && r.error !== "confirm" ? r.error : null);
@@ -130,11 +132,15 @@ export function SsoSettingsView({ canManage, paused = false, demo, redirectUri, 
                     variant="outline"
                     onClick={() => {
                       void navigator.clipboard?.writeText(redirectUri).then(
-                        () => toast.success(t("copied")),
+                        () => {
+                          markCopied();
+                          toast.success(t("copied"));
+                        },
                         () => undefined,
                       );
                     }}
                   >
+                    {copied ? <CheckIcon /> : <CopyIcon />}
                     {t("copy")}
                   </Button>
                 </div>

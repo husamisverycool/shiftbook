@@ -6,6 +6,7 @@
 import { GlobeIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/i18n/navigation";
 
 export function AuthLanguage() {
@@ -24,7 +25,7 @@ export function AuthLanguage() {
           locale={l}
           lang={l}
           aria-current={l === locale ? "true" : undefined}
-          className={l === locale ? "font-medium text-foreground" : "underline-offset-4 hover:text-foreground hover:underline"}
+          className={cn("rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50", l === locale ? "font-medium text-foreground" : "underline-offset-4 transition-colors hover:text-foreground hover:underline")}
         >
           {t(l === "en" ? "english" : "spanish")}
         </Link>

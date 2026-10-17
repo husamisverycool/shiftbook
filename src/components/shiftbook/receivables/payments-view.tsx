@@ -25,6 +25,7 @@ import { Page, PageHeader, TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 import { PaymentDialog, type PaymentMode } from "./payment-dialog";
 import { ReadOnlyNote } from "../abilities";
+import { Tip } from "../tip";
 
 const FILTERS = ["credit", "voided"] as const;
 /** One status language (decision 0029). */
@@ -131,23 +132,23 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
                       <ListAmount text={money(p.amountCents, locale)} />
                     </TableCell>
                     <TableCell className="w-0">
-                      <Status tone={PAYMENT_TONE[p.status]} title={p.voidReason ?? undefined}>
-                        {t(`statuses.${p.status}`)}
-                      </Status>
+                      <Tip label={p.voidReason ?? undefined}>
+                        <Status tone={PAYMENT_TONE[p.status]}>{t(`statuses.${p.status}`)}</Status>
+                      </Tip>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{listDate(p.receivedOn, locale, today)}</TableCell>
                     <TableCell>{p.clientName}</TableCell>
                     <TableCell>{t(`methods.${p.method}`)}</TableCell>
                     {/* The reference takes the room the other columns leave and is cut to fit, never pushing the
                         table past the page (Spanish labels are longer); the whole of it shows on hover. */}
-                    <TableCell className="w-full max-w-0 truncate" title={p.reference ?? undefined}>
-                      {p.reference ?? "—"}
-                    </TableCell>
+                    <Tip label={p.reference ?? undefined}>
+                      <TableCell className="w-full max-w-0 truncate">{p.reference ?? "—"}</TableCell>
+                    </Tip>
                     <TableCell className="text-right tabular-nums">{money(p.appliedCents, locale)}</TableCell>
                     <TableCell className="text-right tabular-nums">{money(p.unusedCents, locale)}</TableCell>
-                    <TableCell className="whitespace-nowrap" title={p.fromBank ?? undefined}>
-                      {p.fromBank ? t("fromBank") : t("fromTyped")}
-                    </TableCell>
+                    <Tip label={p.fromBank ?? undefined}>
+                      <TableCell className="whitespace-nowrap">{p.fromBank ? t("fromBank") : t("fromTyped")}</TableCell>
+                    </Tip>
                     <TableCell className="text-right">
                       {canChange && p.status !== "voided" && (
                         <DropdownMenu>
