@@ -195,6 +195,7 @@ export function JobOrderPageView({ data, options, today }: { data: JobOrderPage;
 
 function AssignmentsTab({ data, today, mayChange, onAssign }: { data: JobOrderPage; today: string; mayChange: boolean; onAssign: () => void }) {
   const t = useTranslations("jobOrder");
+  const tc = useTranslations("common");
   const ta = useTranslations("assignments");
   const te = useTranslations("convert.errors");
   const locale = useLocale();
@@ -330,7 +331,7 @@ function AssignmentsTab({ data, today, mayChange, onAssign }: { data: JobOrderPa
             <Button variant="outline" onClick={() => setEnding(false)}>
               {ta("keepOpen")}
             </Button>
-            <Button disabled={pending || endDate === ""} onClick={end}>
+            <Button disabled={pending || endDate === ""} onClick={end} loading={pending} loadingLabel={tc("loading")}>
               {ta("end")}
             </Button>
           </DialogFooter>
@@ -351,7 +352,7 @@ function AssignmentsTab({ data, today, mayChange, onAssign }: { data: JobOrderPa
             <Button variant="outline" onClick={() => setCancelling(null)}>
               {ta("keepOpen")}
             </Button>
-            <Button variant="destructive" disabled={pending || reason.trim() === ""} onClick={() => cancelling && cancel(cancelling)}>
+            <Button variant="destructive" disabled={pending || reason.trim() === ""} onClick={() => cancelling && cancel(cancelling)} loading={pending} loadingLabel={tc("loading")}>
               {ta("cancel")}
             </Button>
           </DialogFooter>
@@ -375,6 +376,7 @@ function AssignmentsTab({ data, today, mayChange, onAssign }: { data: JobOrderPa
 
 function AssignForm({ jobOrderId, workers, today, onClose }: { jobOrderId: string; workers: { id: string; name: string }[]; today: string; onClose: () => void }) {
   const t = useTranslations("assignments");
+  const tc = useTranslations("common");
   const te = useTranslations("convert.errors");
   const router = useRouter();
   const [workerId, setWorkerId] = useState("");
@@ -439,7 +441,7 @@ function AssignForm({ jobOrderId, workers, today, onClose }: { jobOrderId: strin
             <Button type="button" variant="outline" onClick={onClose}>
               {t("done")}
             </Button>
-            <Button type="submit" disabled={pending || workerId === "" || start === ""}>
+            <Button type="submit" disabled={pending || workerId === "" || start === ""} loading={pending} loadingLabel={tc("loading")}>
               {t("assignSubmit")}
             </Button>
           </DialogFooter>

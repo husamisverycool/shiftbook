@@ -44,6 +44,7 @@ export function NewPasswordFields({
   frame?: (fields: ReactNode, submit: ReactNode) => ReactNode;
 }) {
   const t = useTranslations("newPassword");
+  const tc = useTranslations("common");
   const id = useId();
   const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
@@ -109,7 +110,7 @@ export function NewPasswordFields({
     </>
   );
   const button = (
-    <Button type="submit" disabled={pending} className={frame ? undefined : "w-full"} data-testid="password-submit">
+    <Button type="submit" disabled={pending} className={frame ? undefined : "w-full"} data-testid="password-submit" loading={pending} loadingLabel={tc("loading")}>
       {pending ? pendingLabel : submitLabel}
     </Button>
   );
@@ -203,8 +204,8 @@ export function CodeFields({ onSubmit, pending, error }: { onSubmit: (code: stri
             {message}
           </p>
         )}
-        <Button type="submit" disabled={pending || code.trim() === ""} className="w-full" data-testid="code-submit">
-          {pending ? t("verifying") : t("verify")}
+        <Button type="submit" disabled={pending || code.trim() === ""} className="w-full" data-testid="code-submit" loading={pending} loadingLabel={t("verifying")}>
+          {t("verify")}
         </Button>
       </form>
       <div className="flex flex-col gap-1 text-sm">

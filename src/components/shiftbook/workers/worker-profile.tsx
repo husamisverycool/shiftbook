@@ -168,9 +168,10 @@ export function useEscapeCancels(editing: boolean, cancel: () => void) {
 /** Save and Cancel under a section's fields. */
 export function EditButtons({ pending, onCancel, testId }: { pending: boolean; onCancel: () => void; testId: string }) {
   const t = useTranslations("workers.profile");
+  const tc = useTranslations("common");
   return (
     <div className="flex gap-2">
-      <Button type="submit" size="sm" disabled={pending} data-testid={`${testId}-save`}>
+      <Button type="submit" size="sm" disabled={pending} data-testid={`${testId}-save`} loading={pending} loadingLabel={tc("loading")}>
         {t("save")}
       </Button>
       <Button type="button" size="sm" variant="outline" onClick={onCancel}>

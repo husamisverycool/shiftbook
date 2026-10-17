@@ -37,6 +37,7 @@ export function EmploymentTab({ profile, today, mayChange }: { profile: WorkerPr
 
 function StatusSection({ profile, today, mayChange }: { profile: WorkerProfile; today: string; mayChange: boolean }) {
   const t = useTranslations("workers.profile.employment");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const failure = useWorkerFailure();
@@ -63,7 +64,7 @@ function StatusSection({ profile, today, mayChange }: { profile: WorkerProfile; 
               {t("end")}
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={rehire} disabled={pending} data-testid="rehire">
+            <Button size="sm" variant="outline" onClick={rehire} disabled={pending} data-testid="rehire" loading={pending} loadingLabel={tc("loading")}>
               {t("rehire")}
             </Button>
           )
@@ -80,6 +81,7 @@ function StatusSection({ profile, today, mayChange }: { profile: WorkerProfile; 
 
 function EndDialog({ profile, today, onClose }: { profile: WorkerProfile; today: string; onClose: () => void }) {
   const t = useTranslations("workers");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const id = useId();
   const router = useRouter();
@@ -130,7 +132,7 @@ function EndDialog({ profile, today, onClose }: { profile: WorkerProfile; today:
             <Button type="button" variant="outline" onClick={onClose}>
               {t("profile.cancel")}
             </Button>
-            <Button type="submit" variant="destructive" disabled={pending} data-testid="confirm-end">
+            <Button type="submit" variant="destructive" disabled={pending} data-testid="confirm-end" loading={pending} loadingLabel={tc("loading")}>
               {t("profile.employment.endConfirm")}
             </Button>
           </DialogFooter>

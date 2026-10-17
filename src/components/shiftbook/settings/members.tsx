@@ -362,8 +362,8 @@ function RoleDialog({ member, busy, paused, onClose, onSave }: { member: MemberR
           <Button variant="outline" onClick={onClose}>
             {t("keep")}
           </Button>
-          <Button disabled={busy || role === member.role} onClick={() => onSave(role)} data-testid="save-role">
-            {busy ? t("saving") : t("save")}
+          <Button disabled={busy || role === member.role} onClick={() => onSave(role)} data-testid="save-role" loading={busy} loadingLabel={t("saving")}>
+            {t("save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -437,8 +437,8 @@ function InviteDialog({ onClose, onSent }: { onClose: () => void; onSent: (email
             <Button type="button" variant="outline" onClick={onClose}>
               {t("keep")}
             </Button>
-            <Button type="submit" disabled={pending} data-testid="send-invite">
-              {pending ? t("sending") : t("send")}
+            <Button type="submit" disabled={pending} data-testid="send-invite" loading={pending} loadingLabel={t("sending")}>
+              {t("send")}
             </Button>
           </DialogFooter>
         </form>

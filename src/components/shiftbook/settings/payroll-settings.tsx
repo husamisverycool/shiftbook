@@ -233,8 +233,8 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
                   {saved ? tp("saved") : ""}
                 </span>
                 {view.canEdit && (
-                  <Button onClick={save} disabled={pending || !format} data-testid="save-system">
-                    {pending ? tp("saving") : tp("save")}
+                  <Button onClick={save} disabled={pending || !format} data-testid="save-system" loading={pending} loadingLabel={tp("saving")}>
+                    {tp("save")}
                   </Button>
                 )}
               </SettingsFooter>

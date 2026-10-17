@@ -40,6 +40,7 @@ export function NotForActivity() {
 
 export function ActivityView({ today, filters, page, selected: initial, options, record, zone }: Props) {
   const t = useTranslations("activityLog");
+  const tCommon = useTranslations("common");
   const tc = useTranslations("compliance");
   const locale = useLocale();
   const router = useRouter();
@@ -252,7 +253,7 @@ export function ActivityView({ today, filters, page, selected: initial, options,
               })}
             </ul>
             {nextAfter !== null && (
-              <Button variant="outline" onClick={more} disabled={loading} className="self-start" data-testid="activity-more">
+              <Button variant="outline" onClick={more} disabled={loading} className="self-start" data-testid="activity-more" loading={loading} loadingLabel={tCommon("loading")}>
                 {t("loadMore")}
               </Button>
             )}

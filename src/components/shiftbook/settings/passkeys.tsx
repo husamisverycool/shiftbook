@@ -100,9 +100,9 @@ export function PasskeysSection({ passkeys }: { passkeys: PasskeyItem[] }) {
       title={t("title")}
       description={t("intro")}
       action={
-        <Button variant="outline" size="sm" disabled={adding} aria-describedby={error ? `${id}-error` : undefined} onClick={add} data-testid="passkey-add">
+        <Button variant="outline" size="sm" disabled={adding} aria-describedby={error ? `${id}-error` : undefined} onClick={add} data-testid="passkey-add" loading={adding} loadingLabel={t("adding")}>
           <PlusIcon />
-          {adding ? t("adding") : t("add")}
+          {t("add")}
         </Button>
       }
     >

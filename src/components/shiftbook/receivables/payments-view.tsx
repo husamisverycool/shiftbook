@@ -178,6 +178,7 @@ export function PaymentsView({ rows, clients, today, canChange }: { rows: Paymen
 
 function VoidDialog({ payment, onClose }: { payment: PaymentRow; onClose: () => void }) {
   const t = useTranslations("payments");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -211,6 +212,8 @@ function VoidDialog({ payment, onClose }: { payment: PaymentRow; onClose: () => 
               })
             }
             data-testid="confirm-void"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {t("void")}
           </Button>

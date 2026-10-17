@@ -230,6 +230,7 @@ export function Aca({ view, canChange }: { view: AcaView; canChange: boolean }) 
 
 function ImportHours({ onClose }: { onClose: () => void }) {
   const t = useTranslations("compliance.aca.import");
+  const tc = useTranslations("common");
   const te = useTranslations("compliance.errors");
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -284,7 +285,7 @@ function ImportHours({ onClose }: { onClose: () => void }) {
           <Button variant="outline" onClick={onClose}>
             {t("cancel")}
           </Button>
-          <Button disabled={pending || file === null} onClick={submit} data-testid="aca-import-save">
+          <Button disabled={pending || file === null} onClick={submit} data-testid="aca-import-save" loading={pending} loadingLabel={tc("loading")}>
             {t("save")}
           </Button>
         </DialogFooter>

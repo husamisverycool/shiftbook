@@ -86,8 +86,8 @@ export function EarningCodes({ format, codes, problems: stored, id, canEdit }: {
               <span aria-live="polite" className="text-sm text-muted-foreground" data-testid="codes-saved">
                 {saved ? t("saved") : ""}
               </span>
-              <Button onClick={save} disabled={pending} data-testid="save-codes">
-                {pending ? t("saving") : t("save")}
+              <Button onClick={save} disabled={pending} data-testid="save-codes" loading={pending} loadingLabel={t("saving")}>
+                {t("save")}
               </Button>
             </SettingsFooter>
           )

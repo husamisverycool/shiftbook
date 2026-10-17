@@ -38,6 +38,7 @@ export interface AccountProps {
 
 export function AccountView(props: AccountProps) {
   const t = useTranslations("account");
+  const tCommon = useTranslations("common");
   const tr = useTranslations("roles");
   const tc = useTranslations("setup");
   const locale = useLocale();
@@ -221,7 +222,7 @@ export function AccountView(props: AccountProps) {
         <SettingsRow
           label={t("signOutLine")}
           control={
-            <Button variant="ghost" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="account-sign-out">
+            <Button variant="ghost" disabled={leaving} onClick={() => leave(() => signOutAction())} data-testid="account-sign-out" loading={leaving} loadingLabel={tCommon("loading")}>
               {t("signOut")}
             </Button>
           }

@@ -175,7 +175,7 @@ export function BankImport({ demo }: { demo: boolean }) {
             </p>
           )}
           <div className="flex justify-end">
-            <Button onClick={read} disabled={!file || pending} data-testid="next">
+            <Button onClick={read} disabled={!file || pending} data-testid="next" loading={pending} loadingLabel={tc("loading")}>
               {t("next")}
             </Button>
           </div>
@@ -252,7 +252,7 @@ export function BankImport({ demo }: { demo: boolean }) {
               {t("back")}
             </Button>
             {!preview.lines.every((l) => l.imported) && (
-              <Button onClick={importLines} disabled={pending || chosen.size === 0} data-testid="import-lines">
+              <Button onClick={importLines} disabled={pending || chosen.size === 0} data-testid="import-lines" loading={pending} loadingLabel={tc("loading")}>
                 {t("import", { count: chosen.size })}
               </Button>
             )}
@@ -265,6 +265,7 @@ export function BankImport({ demo }: { demo: boolean }) {
 
 function MapStep({ preview, mapping, onChange, pending, onBack, onNext }: { preview: BankPreview; mapping: BankMapping; onChange: (m: BankMapping) => void; pending: boolean; onBack: () => void; onNext: () => void }) {
   const t = useTranslations("bankImport");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const header = mapping.headerRow === null ? null : preview.head[mapping.headerRow];
   const sample = preview.head[mapping.headerRow === null ? 0 : mapping.headerRow + 1];
@@ -397,7 +398,7 @@ function MapStep({ preview, mapping, onChange, pending, onBack, onNext }: { prev
         <Button variant="outline" onClick={onBack}>
           {t("back")}
         </Button>
-        <Button onClick={onNext} disabled={pending || preview.lines.length === 0} data-testid="next">
+        <Button onClick={onNext} disabled={pending || preview.lines.length === 0} data-testid="next" loading={pending} loadingLabel={tc("loading")}>
           {t("next")}
         </Button>
       </div>

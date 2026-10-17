@@ -27,6 +27,7 @@ export interface SendTarget {
 
 export function SendDialog({ target, onClose }: { target: SendTarget; onClose: () => void }) {
   const t = useTranslations("approvals");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [name, setName] = useState(target.prefill?.name ?? "");
@@ -86,7 +87,7 @@ export function SendDialog({ target, onClose }: { target: SendTarget; onClose: (
             {t("cancel")}
           </Button>
           {!blocked && (
-            <Button onClick={send} disabled={pending || name.trim().length < 2 || !email.includes("@")} data-testid="send-request">
+            <Button onClick={send} disabled={pending || name.trim().length < 2 || !email.includes("@")} data-testid="send-request" loading={pending} loadingLabel={tc("loading")}>
               {t("send")}
             </Button>
           )}

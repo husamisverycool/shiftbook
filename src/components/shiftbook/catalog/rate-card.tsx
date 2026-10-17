@@ -270,6 +270,7 @@ export function RateCard({ cardRef, versions, paidThrough, today, title }: { car
 
 function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRef: Ref; mode: "add" | "edit"; base: RateVersionView | null; paidThrough: string | null; today: string; onClose: () => void }) {
   const t = useTranslations("rates");
+  const tc = useTranslations("common");
   const te = useTranslations("convert.errors");
   // The markup working in the reader's language (decision 0030), as the bill line will say it.
   const say = useEngineSay();
@@ -412,7 +413,7 @@ function RateForm({ cardRef, mode, base, paidThrough, today, onClose }: { cardRe
             <Button type="button" variant="outline" onClick={onClose}>
               {t("cancel")}
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending} loading={pending} loadingLabel={tc("loading")}>
               {t(mode === "edit" ? "save" : "addVersion")}
             </Button>
           </DialogFooter>

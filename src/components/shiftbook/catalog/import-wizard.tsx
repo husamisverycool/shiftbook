@@ -64,6 +64,7 @@ function useGo() {
 
 function Nav({ back, next, nextLabel, disabled, pending, onNext }: { back?: () => void; next?: () => void; nextLabel?: string; disabled?: boolean; pending?: boolean; onNext?: () => void }) {
   const t = useTranslations("import");
+  const tc = useTranslations("common");
   return (
     <div className="flex justify-between border-t pt-4">
       {back ? (
@@ -74,7 +75,7 @@ function Nav({ back, next, nextLabel, disabled, pending, onNext }: { back?: () =
         <span />
       )}
       {(next || onNext) && (
-        <Button disabled={disabled || pending} onClick={onNext ?? next} data-testid="import-next">
+        <Button disabled={disabled || pending} onClick={onNext ?? next} data-testid="import-next" loading={pending} loadingLabel={tc("loading")}>
           {nextLabel ?? t("next")}
         </Button>
       )}

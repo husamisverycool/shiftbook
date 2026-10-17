@@ -92,6 +92,7 @@ export function ApprovalPortal({ view, token }: { view: PortalView; token: strin
 
 function Expired({ token, agency, canRenew }: { token: string; agency: PortalAgency; canRenew: boolean }) {
   const t = useTranslations("portal");
+  const tc = useTranslations("common");
   const [pending, start] = useTransition();
   const [sent, setSent] = useState(false);
   return (
@@ -112,6 +113,8 @@ function Expired({ token, agency, canRenew }: { token: string; agency: PortalAge
                 else toast.error(t.has(`errors.${r.error}`) ? t(`errors.${r.error}` as "errors.generic") : t("errors.generic"));
               })
             }
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {t("expired.newLink")}
           </Button>
@@ -124,6 +127,7 @@ type ActiveView = Extract<PortalView, { state: "active" | "closed" }>;
 
 function Active({ view, token }: { view: ActiveView; token: string }) {
   const t = useTranslations("portal");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -240,6 +244,8 @@ function Active({ view, token }: { view: ActiveView; token: string }) {
                     () => toast.success(t("done")),
                   )
                 }
+                loading={pending}
+                loadingLabel={tc("loading")}
               >
                 {toApprove.length > 0 ? t("approveButton") : t("sendDisputesButton")}
               </Button>
@@ -272,6 +278,7 @@ const fromInput = (value: string, asEndAfter?: number) => {
 
 function DisputeDialog(props: { shift: ShiftView; agency: string; pending: boolean; onClose: () => void; onSave: (reason: string, proposed: { inMinute: number; outMinute: number; breakMinutes: number } | null) => void }) {
   const t = useTranslations("portal");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const x = props.shift;
   const [start, setStart] = useState(props.shift.draft?.proposed ? toInput(props.shift.draft.proposed.inMinute) : "");
@@ -335,7 +342,7 @@ function DisputeDialog(props: { shift: ShiftView; agency: string; pending: boole
           <Button variant="outline" onClick={props.onClose}>
             {t("cancel")}
           </Button>
-          <Button onClick={save} disabled={props.pending || reason.trim() === ""} data-testid="save-dispute">
+          <Button onClick={save} disabled={props.pending || reason.trim() === ""} data-testid="save-dispute" loading={props.pending} loadingLabel={tc("loading")}>
             {t("saveDispute")}
           </Button>
         </DialogFooter>

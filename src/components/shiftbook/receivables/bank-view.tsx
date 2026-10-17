@@ -215,6 +215,7 @@ export function BankView({ view, tab, clients, today, canChange }: { view: View;
 
 function ExcludeDialog({ line, onClose }: { line: ReviewLine; onClose: () => void }) {
   const t = useTranslations("bank");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const [reason, setReason] = useState<(typeof REASONS)[number]>("not_a_client_payment");
@@ -253,6 +254,8 @@ function ExcludeDialog({ line, onClose }: { line: ReviewLine; onClose: () => voi
               })
             }
             data-testid="confirm-exclude"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {t("exclude")}
           </Button>

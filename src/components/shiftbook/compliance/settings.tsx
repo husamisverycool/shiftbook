@@ -279,6 +279,7 @@ function Field({ id, label, invalid, children }: { id: string; label: string; in
 
 function RegistrationDialog({ view, today, onClose }: { view: View; today: string; onClose: () => void }) {
   const t = useTranslations("complianceSettings.registrations");
+  const tCommon = useTranslations("common");
   const tc = useTranslations("compliance");
   const [v, setV] = useState({ jurisdiction: "IL", branchId: "", number: "", issuedOn: today, expiresOn: "" });
   const [file, setFile] = useState<File | null>(null);
@@ -336,6 +337,8 @@ function RegistrationDialog({ view, today, onClose }: { view: View; today: strin
               save(() => addRegistrationAction(form), onClose);
             }}
             data-testid="save-registration"
+            loading={pending}
+            loadingLabel={tCommon("loading")}
           >
             {tc("detail.save")}
           </Button>
@@ -347,6 +350,7 @@ function RegistrationDialog({ view, today, onClose }: { view: View; today: strin
 
 function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }) {
   const t = useTranslations("complianceSettings.policy");
+  const tCommon = useTranslations("common");
   const tc = useTranslations("compliance");
   const [v, setV] = useState({ carrier: "", carrierContact: "", policyNumber: "", states: "", startsOn: today, endsOn: "", auditDueOn: "" });
   const [file, setFile] = useState<File | null>(null);
@@ -406,6 +410,8 @@ function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }
               save(() => addPolicyAction(form), onClose);
             }}
             data-testid="save-policy"
+            loading={pending}
+            loadingLabel={tCommon("loading")}
           >
             {tc("detail.save")}
           </Button>
@@ -418,6 +424,7 @@ function PolicyDialog({ today, onClose }: { today: string; onClose: () => void }
 /** The days the agency is open (Jira's standard working days): the weekend ones count as I-9 business days. */
 function OpenDays({ view, canChange, note }: { view: View; canChange: boolean; note?: string }) {
   const t = useTranslations("complianceSettings.openDays");
+  const tCommon = useTranslations("common");
   const [days, setDays] = useState<number[]>(view.openDays.filter((d) => d === 0 || d === 6));
   const { pending, save } = useSave();
   const same = [0, 6].every((d) => days.includes(d) === view.openDays.includes(d));
@@ -430,7 +437,7 @@ function OpenDays({ view, canChange, note }: { view: View; canChange: boolean; n
         (canChange || note) && (
           <SettingsFooter note={note}>
             {canChange && (
-              <Button disabled={pending || same} onClick={() => save(() => setOpenDaysAction(days), () => undefined)} data-testid="save-open-days">
+              <Button disabled={pending || same} onClick={() => save(() => setOpenDaysAction(days), () => undefined)} data-testid="save-open-days" loading={pending} loadingLabel={tCommon("loading")}>
                 {t("save")}
               </Button>
             )}
@@ -464,6 +471,7 @@ function OpenDays({ view, canChange, note }: { view: View; canChange: boolean; n
 /** The ACA look-back's periods (26 C.F.R. § 54.4980H-3(d)), checked against the dated limits; from today. */
 function AcaSettings({ view, canChange, note }: { view: View; canChange: boolean; note?: string }) {
   const t = useTranslations("complianceSettings.aca");
+  const tCommon = useTranslations("common");
   const locale = useLocale();
   const { pending, save, field } = useSave();
   const current = view.aca.settings;
@@ -490,7 +498,7 @@ function AcaSettings({ view, canChange, note }: { view: View; canChange: boolean
             {t("open")}
           </Link>
           {canChange && (
-            <Button disabled={pending || !ready || same} onClick={() => save(() => setAcaSettingsAction(value), () => undefined)} data-testid="save-aca">
+            <Button disabled={pending || !ready || same} onClick={() => save(() => setAcaSettingsAction(value), () => undefined)} data-testid="save-aca" loading={pending} loadingLabel={tCommon("loading")}>
               {t("save")}
             </Button>
           )}

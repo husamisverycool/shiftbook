@@ -155,6 +155,7 @@ export function MarginSettingsView({ view, today, states, canChange }: { view: V
 /** Leaving the overtime premium out: a switch in its row, the date it applies from in the next, Save in the foot. */
 function OtPremium({ view, today, canChange }: { view: View; today: string; canChange: boolean }) {
   const t = useTranslations("marginSettings");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const [exclude, setExclude] = useState(view.otPremium.exclude);
   const [from, setFrom] = useState(today);
@@ -166,7 +167,7 @@ function OtPremium({ view, today, canChange }: { view: View; today: string; canC
       footer={
         canChange && (
           <SettingsFooter>
-            <Button disabled={pending || (exclude === view.otPremium.exclude && from === today)} onClick={() => save(() => setOtPremiumAction(exclude, from), () => setProblems([]), setProblems)} data-testid="save-ot-premium">
+            <Button disabled={pending || (exclude === view.otPremium.exclude && from === today)} onClick={() => save(() => setOtPremiumAction(exclude, from), () => setProblems([]), setProblems)} data-testid="save-ot-premium" loading={pending} loadingLabel={tc("loading")}>
               {t("save")}
             </Button>
           </SettingsFooter>
@@ -199,6 +200,7 @@ function OtPremium({ view, today, canChange }: { view: View; today: string; canC
 /** The pay day (Gusto pay schedule): the days in one row, the date it applies from in the next, Save in the foot. */
 function PayDay({ view, today, canChange, changedNote }: { view: View; today: string; canChange: boolean; changedNote?: string }) {
   const t = useTranslations("marginSettings");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const [days, setDays] = useState(view.payDay.days === null ? "" : String(view.payDay.days));
   const [from, setFrom] = useState(today);
@@ -212,7 +214,7 @@ function PayDay({ view, today, canChange, changedNote }: { view: View; today: st
         (canChange || changedNote) && (
           <SettingsFooter note={changedNote}>
             {canChange && (
-              <Button disabled={pending} onClick={() => save(() => setPayDayAction(/^\d+$/.test(days.trim()) ? Number(days.trim()) : -1, from), () => setProblems([]), setProblems)} data-testid="save-pay-day">
+              <Button disabled={pending} onClick={() => save(() => setPayDayAction(/^\d+$/.test(days.trim()) ? Number(days.trim()) : -1, from), () => setProblems([]), setProblems)} data-testid="save-pay-day" loading={pending} loadingLabel={tc("loading")}>
                 {t("save")}
               </Button>
             )}
@@ -271,6 +273,7 @@ function RuleUnder({ problems, field }: { problems: Problem[]; field: string }) 
 
 function TaxDialog({ states, today, onClose }: { states: string[]; today: string; onClose: () => void }) {
   const t = useTranslations("marginSettings");
+  const tc = useTranslations("common");
   const [state, setState] = useState("");
   const [rate, setRate] = useState("");
   const [includes, setIncludes] = useState("");
@@ -314,6 +317,8 @@ function TaxDialog({ states, today, onClose }: { states: string[]; today: string
             disabled={pending || ppm === null}
             onClick={() => save(() => addTaxRateAction({ state: state || null, ratePpm: ppm ?? -1, includes: includes.trim() || null, effectiveFrom: from }), onClose, setProblems)}
             data-testid="save-tax-rate"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {t("save")}
           </Button>
@@ -325,6 +330,7 @@ function TaxDialog({ states, today, onClose }: { states: string[]; today: string
 
 function WcDialog({ states, today, onClose }: { states: string[]; today: string; onClose: () => void }) {
   const t = useTranslations("marginSettings");
+  const tc = useTranslations("common");
   const [state, setState] = useState("");
   const [classCode, setClassCode] = useState("");
   const [description, setDescription] = useState("");
@@ -374,6 +380,8 @@ function WcDialog({ states, today, onClose }: { states: string[]; today: string;
             disabled={pending || ppm === null}
             onClick={() => save(() => addWcRateAction({ state, classCode: classCode.trim(), description: description.trim() || null, ratePpm: ppm ?? -1, effectiveFrom: from }), onClose, setProblems)}
             data-testid="save-wc-rate"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {t("save")}
           </Button>

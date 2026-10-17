@@ -26,6 +26,7 @@ function useRefusal() {
 /** Removes a decision recorded by mistake, or an agreement that no longer fits (Owner). */
 export function RemoveDecisionButton({ periodId, decisionId, label }: { periodId: string; decisionId: string; label: string }) {
   const t = useTranslations("convert.correction");
+  const tc = useTranslations("common");
   const router = useRouter();
   const refuse = useRefusal();
   const [pending, start] = useTransition();
@@ -43,6 +44,8 @@ export function RemoveDecisionButton({ periodId, decisionId, label }: { periodId
           router.refresh();
         })
       }
+      loading={pending}
+      loadingLabel={tc("loading")}
     >
       {t("removeDecision")}
     </Button>
@@ -87,7 +90,7 @@ export function StartCorrectionButton({ periodId, nextVersion }: { periodId: str
             <Button variant="outline" onClick={() => setOpen(false)}>
               {tc("cancel")}
             </Button>
-            <Button onClick={confirm} disabled={pending || reason.trim() === ""} data-testid="confirm-start-correction">
+            <Button onClick={confirm} disabled={pending || reason.trim() === ""} data-testid="confirm-start-correction" loading={pending} loadingLabel={tc("loading")}>
               {t("startConfirm")}
             </Button>
           </DialogFooter>
@@ -130,7 +133,7 @@ export function DiscardCorrectionButton({ periodId, baseVersion }: { periodId: s
             <Button variant="outline" onClick={() => setOpen(false)}>
               {tc("cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirm} disabled={pending} data-testid="confirm-discard-correction">
+            <Button variant="destructive" onClick={confirm} disabled={pending} data-testid="confirm-discard-correction" loading={pending} loadingLabel={tc("loading")}>
               {t("discardConfirm")}
             </Button>
           </DialogFooter>
@@ -213,7 +216,7 @@ export function DecisionButton(props: { periodId: string; workerId: string; name
               {tc("cancel")}
             </Button>
             {choices.length > 0 && (
-              <Button onClick={confirm} disabled={pending || choice === "" || note.trim() === ""} data-testid="confirm-decision">
+              <Button onClick={confirm} disabled={pending || choice === "" || note.trim() === ""} data-testid="confirm-decision" loading={pending} loadingLabel={tc("loading")}>
                 {t("decideConfirm")}
               </Button>
             )}

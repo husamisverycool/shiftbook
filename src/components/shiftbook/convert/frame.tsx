@@ -99,8 +99,7 @@ export function ConvertFrame(props: {
     return working === "files" ? t("forward.totalsWorking") : t("forward.totals");
   })();
   const forwardButton = forward ? (
-    <Button onClick={runForward} disabled={forward.disabled || pending} className="max-md:w-full" data-testid="forward">
-      {pending && <Loader2Icon className="animate-spin" />}
+    <Button onClick={runForward} disabled={forward.disabled || pending} className="max-md:w-full" data-testid="forward" loading={pending} loadingLabel={forwardLabel ?? undefined}>
       {forwardLabel}
     </Button>
   ) : (

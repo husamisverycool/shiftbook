@@ -128,8 +128,8 @@ export function SignUpView({ demo, trialDays }: { demo: boolean; trialDays: numb
         {field("email", email, setEmail, { type: "email", autoComplete: "email", inputMode: "email", autoFocus: true })}
         {field("name", name, setName, { autoComplete: "name", maxLength: 120 })}
         {field("agencyName", agencyName, setAgencyName, { autoComplete: "organization", maxLength: 200 })}
-        <Button type="submit" disabled={pending} className="h-10 w-full" data-testid="sign-up-submit">
-          {pending ? t("submitting") : t("submit")}
+        <Button type="submit" disabled={pending} className="h-10 w-full" data-testid="sign-up-submit" loading={pending} loadingLabel={t("submitting")}>
+          {t("submit")}
         </Button>
         {error && (
           <p id={`${id}-error`} role="alert" className="text-sm text-destructive" data-testid="sign-up-error">

@@ -130,8 +130,8 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople, meth
             )}
           </p>
         )}
-        <Button type="submit" variant={demo ? "outline" : "default"} disabled={pending || !email || !password} className={cn("w-full", demo && "bg-background")} data-testid="sign-in">
-          {pending ? t("submitting") : t("submit")}
+        <Button type="submit" variant={demo ? "outline" : "default"} disabled={pending || !email || !password} className={cn("w-full", demo && "bg-background")} data-testid="sign-in" loading={pending} loadingLabel={t("submitting")}>
+          {t("submit")}
         </Button>
       </form>
       {methods.emailCode && (

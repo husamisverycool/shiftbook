@@ -67,8 +67,8 @@ export function SpreadsheetColumns({ layout: initial, targetId, canEdit }: { lay
               <span aria-live="polite" className="text-sm text-muted-foreground" data-testid="columns-saved">
                 {saved ? t("saved") : ""}
               </span>
-              <Button onClick={save} disabled={pending} data-testid="save-columns">
-                {pending ? t("saving") : t("save")}
+              <Button onClick={save} disabled={pending} data-testid="save-columns" loading={pending} loadingLabel={t("saving")}>
+                {t("save")}
               </Button>
             </SettingsFooter>
           )

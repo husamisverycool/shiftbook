@@ -78,8 +78,8 @@ export function LinkProofView({ provider, hint, demoCopy: initialCopy }: { provi
               {t(`errors.${error}`)}
             </p>
           )}
-          <Button type="submit" disabled={checking || code.length !== 6} className="w-full" data-testid="link-code-submit">
-            {checking ? t("confirming") : t("confirm")}
+          <Button type="submit" disabled={checking || code.length !== 6} className="w-full" data-testid="link-code-submit" loading={checking} loadingLabel={t("confirming")}>
+            {t("confirm")}
           </Button>
         </form>
       )}

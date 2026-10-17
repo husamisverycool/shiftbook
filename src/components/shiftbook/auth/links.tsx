@@ -65,8 +65,8 @@ export function ResetRequestView({ email: initialEmail }: { email: string }) {
           <Label htmlFor={`${id}-email`}>{t("email")}</Label>
           <Input id={`${id}-email`} type="email" autoComplete="username" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required data-testid="reset-email" />
         </div>
-        <Button type="submit" disabled={pending || !email.trim()} className="w-full" data-testid="reset-send">
-          {pending ? t("sending") : t("submit")}
+        <Button type="submit" disabled={pending || !email.trim()} className="w-full" data-testid="reset-send" loading={pending} loadingLabel={t("sending")}>
+          {t("submit")}
         </Button>
       </form>
       <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">

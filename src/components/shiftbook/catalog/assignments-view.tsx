@@ -25,6 +25,7 @@ import { ReadOnlyNote } from "../abilities";
 
 export function AssignmentsView({ rows, options, today, canChange = true }: { rows: AssignmentRow[]; options: CatalogOptions; today: string; canChange?: boolean }) {
   const t = useTranslations("assignments");
+  const tc = useTranslations("common");
   const te = useTranslations("convert.errors");
   const locale = useLocale();
   const router = useRouter();
@@ -198,7 +199,7 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
             <Button variant="outline" onClick={() => setEnding(null)}>
               {t("keepOpen")}
             </Button>
-            <Button disabled={pending || endDate === ""} onClick={end}>
+            <Button disabled={pending || endDate === ""} onClick={end} loading={pending} loadingLabel={tc("loading")}>
               {t("end")}
             </Button>
           </DialogFooter>
@@ -210,6 +211,7 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
 
 function CreateAssignment({ options, today, onClose }: { options: CatalogOptions; today: string; onClose: () => void }) {
   const t = useTranslations("assignments");
+  const tc = useTranslations("common");
   const te = useTranslations("convert.errors");
   const router = useRouter();
   const [workerId, setWorkerId] = useState("");
@@ -281,7 +283,7 @@ function CreateAssignment({ options, today, onClose }: { options: CatalogOptions
             <Button type="button" variant="outline" onClick={onClose}>
               {t("keepOpen")}
             </Button>
-            <Button type="submit" disabled={pending || !workerId || !jobOrderId || !start}>
+            <Button type="submit" disabled={pending || !workerId || !jobOrderId || !start} loading={pending} loadingLabel={tc("loading")}>
               {t("assignSubmit")}
             </Button>
           </DialogFooter>

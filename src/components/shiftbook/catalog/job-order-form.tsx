@@ -76,6 +76,7 @@ function writeDraft(v: Values | null) {
 /** Mounted only while open (so a draft is read on the client when the form opens). */
 export function JobOrderForm({ onClose, options, initial }: { onClose: () => void; options: CatalogOptions; initial?: JobOrderInitial }) {
   const t = useTranslations("jobOrders.form");
+  const tc = useTranslations("common");
   const te = useTranslations("convert.errors");
   const router = useRouter();
   const start: Values = initial
@@ -229,7 +230,7 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
               <Button type="button" variant="outline" onClick={close}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" disabled={pending}>
+              <Button type="submit" disabled={pending} loading={pending} loadingLabel={tc("loading")}>
                 {t(initial ? "save" : "create")}
               </Button>
             </DialogFooter>

@@ -342,6 +342,8 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
                   router.refresh();
                 })
               }
+              loading={pending}
+              loadingLabel={tc("loading")}
             >
               {t("bothRealConfirm")}
             </Button>
@@ -363,7 +365,7 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
             <Button variant="outline" onClick={() => setSkipping(null)}>
               {tc("cancel")}
             </Button>
-            <Button onClick={confirmSkip} disabled={pending || reason.trim() === ""} data-testid="confirm-skip">
+            <Button onClick={confirmSkip} disabled={pending || reason.trim() === ""} data-testid="confirm-skip" loading={pending} loadingLabel={tc("loading")}>
               {t("skipConfirm")}
             </Button>
           </DialogFooter>

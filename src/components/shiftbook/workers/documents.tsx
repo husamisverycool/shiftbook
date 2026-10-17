@@ -128,6 +128,7 @@ export function DocumentsTab({ profile, today, mayChange }: { profile: WorkerPro
 
 function AddDocumentDialog({ workerId, today, onClose }: { workerId: string; today: string; onClose: () => void }) {
   const t = useTranslations("workers.profile.documents");
+  const tc = useTranslations("common");
   const tp = useTranslations("workers.profile");
   const id = useId();
   const router = useRouter();
@@ -199,7 +200,7 @@ function AddDocumentDialog({ workerId, today, onClose }: { workerId: string; tod
             <Button type="button" variant="outline" onClick={onClose}>
               {tp("cancel")}
             </Button>
-            <Button type="submit" disabled={pending} data-testid="save-document">
+            <Button type="submit" disabled={pending} data-testid="save-document" loading={pending} loadingLabel={tc("loading")}>
               {t("add")}
             </Button>
           </DialogFooter>
@@ -212,6 +213,7 @@ function AddDocumentDialog({ workerId, today, onClose }: { workerId: string; tod
 /** Toast's Retrieve SSN steps for a file that holds it: the business reason, then the file downloads. */
 function OpenDocumentDialog({ workerId, doc, onClose }: { workerId: string; doc: Doc; onClose: () => void }) {
   const t = useTranslations("workers.profile.documents");
+  const tc = useTranslations("common");
   const tw = useTranslations("workers");
   const tr = useTranslations("workers.profile.reveal");
   const id = useId();
@@ -273,7 +275,7 @@ function OpenDocumentDialog({ workerId, doc, onClose }: { workerId: string; doc:
             <Button type="button" variant="outline" onClick={onClose}>
               {tw("profile.cancel")}
             </Button>
-            <Button type="submit" disabled={pending} data-testid="open-document-confirm">
+            <Button type="submit" disabled={pending} data-testid="open-document-confirm" loading={pending} loadingLabel={tc("loading")}>
               {t("openConfirm")}
             </Button>
           </DialogFooter>

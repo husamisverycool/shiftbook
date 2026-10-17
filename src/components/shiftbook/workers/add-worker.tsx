@@ -16,6 +16,7 @@ import { FieldError, useWorkerFailure } from "./results";
 
 export function AddWorkerDialog({ today, onClose }: { today: string; onClose: () => void }) {
   const t = useTranslations("workers");
+  const tc = useTranslations("common");
   const id = useId();
   const router = useRouter();
   const failure = useWorkerFailure();
@@ -84,7 +85,7 @@ export function AddWorkerDialog({ today, onClose }: { today: string; onClose: ()
             <Button type="button" variant="outline" onClick={onClose}>
               {t("profile.cancel")}
             </Button>
-            <Button type="submit" disabled={pending} data-testid="save-new-worker">
+            <Button type="submit" disabled={pending} data-testid="save-new-worker" loading={pending} loadingLabel={tc("loading")}>
               {t("new.save")}
             </Button>
           </DialogFooter>

@@ -74,8 +74,8 @@ export function SsoSignInView({ email: initialEmail, next }: { email: string; ne
             </p>
           </div>
         )}
-        <Button type="submit" disabled={busy || !email.trim()} className="w-full" data-testid="sso-continue">
-          {busy ? t("submitting") : t("submit")}
+        <Button type="submit" disabled={busy || !email.trim()} className="w-full" data-testid="sso-continue" loading={busy} loadingLabel={t("submitting")}>
+          {t("submit")}
         </Button>
       </form>
       <Link href={{ pathname: "/sign-in", query: next ? { next } : {} }} className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">

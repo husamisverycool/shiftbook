@@ -256,6 +256,7 @@ function Summary({ d }: { d: ObligationDetail }) {
 /** The job order's details for its Massachusetts job orders (M.G.L. c. 149 § 159C(b)); kept on the job order. */
 function NoticeForm({ d }: { d: ObligationDetail }) {
   const tn = useTranslations("compliance.detail.notice");
+  const tc = useTranslations("common");
   const n = d.notice!.details;
   const [v, setV] = useState({ employerPhone: n?.employerPhone ?? "", startTime: n?.startTime ?? "", endTime: n?.endTime ?? "", overtime: n?.overtime ?? "possible", requirements: n?.requirements ?? "", meals: n?.meals ?? "", transport: n?.transport ?? "", strike: n?.strike ?? false });
   const { pending, act } = useAct();
@@ -315,7 +316,7 @@ function NoticeForm({ d }: { d: ObligationDetail }) {
         </div>
       </div>
       {can && (
-        <Button size="sm" className="w-fit" disabled={pending} onClick={() => act(() => saveNoticeDetailsAction(d.item.id, v), () => toast.success(tn("saved")))} data-testid="save-notice">
+        <Button size="sm" className="w-fit" disabled={pending} onClick={() => act(() => saveNoticeDetailsAction(d.item.id, v), () => toast.success(tn("saved")))} data-testid="save-notice" loading={pending} loadingLabel={tc("loading")}>
           {tn("save")}
         </Button>
       )}
@@ -325,6 +326,7 @@ function NoticeForm({ d }: { d: ObligationDetail }) {
 
 function I9Form({ d, today }: { d: ObligationDetail; today: string }) {
   const td = useTranslations("compliance.detail.i9");
+  const tc = useTranslations("common");
   const i9 = d.i9!;
   const [v, setV] = useState({ hireDate: i9.hireDate ?? "", section1On: i9.section1On ?? "", section2On: i9.section2On ?? "", workAuthExpiresOn: i9.workAuthExpiresOn ?? "" });
   const { pending, act } = useAct();
@@ -352,6 +354,8 @@ function I9Form({ d, today }: { d: ObligationDetail; today: string }) {
             disabled={pending}
             onClick={() => act(() => recordI9Action(i9.workerId, { hireDate: v.hireDate || null, section1On: v.section1On || null, section2On: v.section2On || null, workAuthExpiresOn: v.workAuthExpiresOn || null }), () => toast.success(td("saved")))}
             data-testid="save-i9"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {td("save")}
           </Button>
@@ -364,6 +368,7 @@ function I9Form({ d, today }: { d: ObligationDetail; today: string }) {
 
 function ReverifyForm({ d, today }: { d: ObligationDetail; today: string }) {
   const td = useTranslations("compliance.detail.reverify");
+  const tc = useTranslations("common");
   const [on, setOn] = useState(today);
   const [next, setNext] = useState("");
   const { pending, act } = useAct();
@@ -385,7 +390,7 @@ function ReverifyForm({ d, today }: { d: ObligationDetail; today: string }) {
           </Label>
           <Input id="next-expires" type="date" className="w-44" min={on} value={next} onChange={(e) => setNext(e.target.value)} />
         </div>
-        <Button size="sm" disabled={pending || !on} onClick={() => act(() => reverifyAction(d.item.id, on, next || null))} data-testid="save-reverify">
+        <Button size="sm" disabled={pending || !on} onClick={() => act(() => reverifyAction(d.item.id, on, next || null))} data-testid="save-reverify" loading={pending} loadingLabel={tc("loading")}>
           {td("save")}
         </Button>
       </div>
@@ -395,6 +400,7 @@ function ReverifyForm({ d, today }: { d: ObligationDetail; today: string }) {
 
 function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
   const td = useTranslations("compliance.detail");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const when = useDateTime();
   const [effectiveOn, setEffectiveOn] = useState(today);
@@ -493,7 +499,7 @@ function Evidence({ d, today }: { d: ObligationDetail; today: string }) {
             </Label>
             <Input id="evidence-date" type="date" className="w-44" value={effectiveOn} onChange={(e) => setEffectiveOn(e.target.value)} />
           </div>
-          <Button type="submit" size="sm" disabled={pending || !file || !effectiveOn} data-testid="add-evidence">
+          <Button type="submit" size="sm" disabled={pending || !file || !effectiveOn} data-testid="add-evidence" loading={pending} loadingLabel={tc("loading")}>
             {td("upload")}
           </Button>
           <p className="w-full text-xs text-muted-foreground">{td("fileTypes")}</p>
@@ -551,6 +557,7 @@ function History({ d }: { d: ObligationDetail }) {
 
 function Notes({ d }: { d: ObligationDetail }) {
   const td = useTranslations("compliance.detail");
+  const tc = useTranslations("common");
   const when = useDateTime();
   const [body, setBody] = useState("");
   const { pending, act } = useAct();
@@ -569,7 +576,7 @@ function Notes({ d }: { d: ObligationDetail }) {
         >
           <Label htmlFor="note-body">{td("addNote")}</Label>
           <Textarea id="note-body" value={body} maxLength={2000} placeholder={td("notePlaceholder")} onChange={(e) => setBody(e.target.value)} data-testid="note-body" />
-          <Button type="submit" size="sm" className="w-fit" disabled={pending || body.trim() === ""} data-testid="add-note">
+          <Button type="submit" size="sm" className="w-fit" disabled={pending || body.trim() === ""} data-testid="add-note" loading={pending} loadingLabel={tc("loading")}>
             {td("saveNote")}
           </Button>
         </form>
@@ -594,6 +601,7 @@ function Notes({ d }: { d: ObligationDetail }) {
 
 function CloseDialog({ id, status, onClose }: { id: string; status: "done" | "not_applicable" | null; onClose: () => void }) {
   const td = useTranslations("compliance.detail");
+  const tc = useTranslations("common");
   const [note, setNote] = useState("");
   const { pending, act } = useAct();
   const na = status === "not_applicable";
@@ -625,6 +633,8 @@ function CloseDialog({ id, status, onClose }: { id: string; status: "done" | "no
               )
             }
             data-testid="confirm-close"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {td("save")}
           </Button>
@@ -639,6 +649,7 @@ const EQUAL_PAY_METHODS = ["comparator", "closest_seniority", "survey_median", "
 /** The Illinois equal-pay rate (820 ILCS 175/42(a), (b)): the client's figures from a date, or that the client was asked. */
 function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
   const te = useTranslations("compliance.detail.equalPay");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const when = useDateTime();
   const can = d.item.mayAct;
@@ -718,6 +729,8 @@ function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
                 )
               }
               data-testid="save-equal-pay"
+              loading={pending}
+              loadingLabel={tc("loading")}
             >
               {te("save")}
             </Button>
@@ -784,6 +797,7 @@ function EqualPayForm({ d, today }: { d: ObligationDetail; today: string }) {
 
 function RemoveRateDialog({ obligationId, rateId, onClose }: { obligationId: string; rateId: string; onClose: () => void }) {
   const te = useTranslations("compliance.detail.equalPay");
+  const tc = useTranslations("common");
   const td = useTranslations("compliance.detail");
   const [reason, setReason] = useState("");
   const { pending, act } = useAct();
@@ -815,6 +829,8 @@ function RemoveRateDialog({ obligationId, rateId, onClose }: { obligationId: str
               )
             }
             data-testid="confirm-remove-equal-pay"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {te("remove")}
           </Button>

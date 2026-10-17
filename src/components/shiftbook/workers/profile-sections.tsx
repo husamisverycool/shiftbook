@@ -205,6 +205,7 @@ export function SsnSection({ profile, mayChange }: { profile: WorkerProfile; may
  */
 function RevealDialog({ profile, onClose }: { profile: WorkerProfile; onClose: () => void }) {
   const t = useTranslations("workers.profile.reveal");
+  const tc = useTranslations("common");
   const te = useTranslations("workers");
   const when = useDateTime();
   const id = useId();
@@ -268,7 +269,7 @@ function RevealDialog({ profile, onClose }: { profile: WorkerProfile; onClose: (
               </p>
             )}
             <div>
-              <Button type="submit" disabled={pending} data-testid="reveal-show">
+              <Button type="submit" disabled={pending} data-testid="reveal-show" loading={pending} loadingLabel={tc("loading")}>
                 <EyeIcon />
                 {t("show")}
               </Button>

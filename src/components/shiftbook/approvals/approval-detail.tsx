@@ -261,7 +261,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
             <Button variant="outline" onClick={() => setWithdrawing(false)}>
               {t("cancel")}
             </Button>
-            <Button disabled={pending || text.trim() === ""} onClick={() => run(() => withdrawApprovalAction(r.id, text), t("done.withdrawn"), () => setWithdrawing(false))}>
+            <Button disabled={pending || text.trim() === ""} onClick={() => run(() => withdrawApprovalAction(r.id, text), t("done.withdrawn"), () => setWithdrawing(false))} loading={pending} loadingLabel={tc("loading")}>
               {td("withdrawConfirm")}
             </Button>
           </DialogFooter>
@@ -282,7 +282,7 @@ export function ApprovalDetailView({ detail, demo }: { detail: ApprovalDetail; d
             <Button variant="outline" onClick={() => setKeeping(null)}>
               {t("cancel")}
             </Button>
-            <Button disabled={pending || text.trim() === ""} onClick={() => keeping && run(() => settleDisputeAction(keeping.id, "keep", text), t("done.settled"), () => setKeeping(null))}>
+            <Button disabled={pending || text.trim() === ""} onClick={() => keeping && run(() => settleDisputeAction(keeping.id, "keep", text), t("done.settled"), () => setKeeping(null))} loading={pending} loadingLabel={tc("loading")}>
               {td("keepConfirm")}
             </Button>
           </DialogFooter>

@@ -153,6 +153,7 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
 
 function EditSettings({ detail, today, onClose }: { detail: ClientDetail; today: string; onClose: () => void }) {
   const t = useTranslations("clients");
+  const tc = useTranslations("common");
   const ti = useTranslations("invoices");
   const locale = useLocale();
   const router = useRouter();
@@ -320,7 +321,7 @@ function EditSettings({ detail, today, onClose }: { detail: ClientDetail; today:
             <Button type="button" variant="outline" onClick={onClose}>
               {t("cancel")}
             </Button>
-            <Button type="submit" disabled={pending} data-testid="save-settings">
+            <Button type="submit" disabled={pending} data-testid="save-settings" loading={pending} loadingLabel={tc("loading")}>
               {t("save")}
             </Button>
           </DialogFooter>

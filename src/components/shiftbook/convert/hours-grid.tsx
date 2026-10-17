@@ -65,6 +65,7 @@ type AddError = EditError | "period_busy" | "worker_required";
 
 export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { id: string; name: string }[]; period: { startsOn: string; endsOn: string }; initialQuery?: string }) {
   const t = useTranslations("convert.hours");
+  const tCommon = useTranslations("common");
   const tc = useTranslations("convert");
   const locale = useLocale();
   const router = useRouter();
@@ -583,6 +584,8 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
                 router.refresh();
               })
             }
+            loading={pending}
+            loadingLabel={tCommon("loading")}
           >
             {t("approveSelected", { count: bulkReady.length })}
           </Button>
@@ -614,6 +617,7 @@ function ReasonControls(props: {
   onCancel: () => void;
 }) {
   const t = useTranslations("convert.hours");
+  const tCommon = useTranslations("common");
   const format = useFormatter();
   const named = props.errorClients ?? [];
   return (
@@ -636,7 +640,7 @@ function ReasonControls(props: {
         </DropdownMenuContent>
       </DropdownMenu>
       <Input aria-label={t("note")} placeholder={t("notePlaceholder")} value={props.note} onChange={(e) => props.onChange({ note: e.target.value })} className="max-w-72" />
-      <Button size="sm" onClick={props.onSave} disabled={props.pending || props.reasons.length === 0} data-testid="save-edit">
+      <Button size="sm" onClick={props.onSave} disabled={props.pending || props.reasons.length === 0} data-testid="save-edit" loading={props.pending} loadingLabel={tCommon("loading")}>
         <CheckIcon />
         {t("saveEdit")}
       </Button>

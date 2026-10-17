@@ -151,6 +151,7 @@ export function InvoicePayments({ invoiceId, number, clientId, ar, clients, toda
 
 function WriteOffDialog({ invoiceId, number, balanceCents, onClose }: { invoiceId: string; number: string; balanceCents: number; onClose: () => void }) {
   const t = useTranslations("invoicePayments");
+  const tc = useTranslations("common");
   const tp = useTranslations("payments");
   const locale = useLocale();
   const router = useRouter();
@@ -208,7 +209,7 @@ function WriteOffDialog({ invoiceId, number, balanceCents, onClose }: { invoiceI
           <Button variant="outline" onClick={onClose}>
             {tp("cancel")}
           </Button>
-          <Button onClick={save} disabled={pending} data-testid="confirm-write-off">
+          <Button onClick={save} disabled={pending} data-testid="confirm-write-off" loading={pending} loadingLabel={tc("loading")}>
             {t("writeOff")}
           </Button>
         </DialogFooter>
@@ -219,6 +220,7 @@ function WriteOffDialog({ invoiceId, number, balanceCents, onClose }: { invoiceI
 
 function ShortPayDialog({ invoiceId, current, onClose }: { invoiceId: string; current: InvoiceReceivables["shortPay"]; onClose: () => void }) {
   const t = useTranslations("invoicePayments");
+  const tc = useTranslations("common");
   const tp = useTranslations("payments");
   const router = useRouter();
   const [reason, setReason] = useState<string>(current?.reason ?? "");
@@ -265,6 +267,8 @@ function ShortPayDialog({ invoiceId, current, onClose }: { invoiceId: string; cu
               })
             }
             data-testid="save-short-reason"
+            loading={pending}
+            loadingLabel={tc("loading")}
           >
             {tp("save")}
           </Button>
@@ -276,6 +280,7 @@ function ShortPayDialog({ invoiceId, current, onClose }: { invoiceId: string; cu
 
 function ReminderDialog({ invoiceId, reminder, onClose }: { invoiceId: string; reminder: InvoiceReceivables["reminder"]; onClose: () => void }) {
   const t = useTranslations("invoicePayments");
+  const tc = useTranslations("common");
   const tp = useTranslations("payments");
   const locale = useLocale();
   const router = useRouter();
@@ -359,7 +364,7 @@ function ReminderDialog({ invoiceId, reminder, onClose }: { invoiceId: string; r
             <MailIcon />
             {t("openEmail")}
           </a>
-          <Button onClick={copy} disabled={pending} data-testid="reminder-copy">
+          <Button onClick={copy} disabled={pending} data-testid="reminder-copy" loading={pending} loadingLabel={tc("loading")}>
             <CopyIcon />
             {t("copy")}
           </Button>

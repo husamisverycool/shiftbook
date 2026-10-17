@@ -81,8 +81,10 @@ export function ConfirmAccessProvider({ method, children }: { method: "code" | "
                   })
                 }
                 data-testid="confirm-send-code"
+                loading={sending}
+                loadingLabel={t("sending")}
               >
-                {sending ? t("sending") : sent ? t("sendAgain") : t("sendCode")}
+                {sent ? t("sendAgain") : t("sendCode")}
               </Button>
               {sent && (
                 <p role="status" className="text-sm text-muted-foreground">
@@ -142,8 +144,8 @@ export function ConfirmAccessProvider({ method, children }: { method: "code" | "
               <Button type="button" variant="outline" onClick={() => finish(false)}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" disabled={pending || !secret.trim()} data-testid="confirm-submit">
-                {pending ? t("confirming") : t("confirm")}
+              <Button type="submit" disabled={pending || !secret.trim()} data-testid="confirm-submit" loading={pending} loadingLabel={t("confirming")}>
+                {t("confirm")}
               </Button>
             </DialogFooter>
           </form>

@@ -19,7 +19,7 @@ export function BusyNotice() {
       <CircleAlertIcon />
       <AlertTitle>{t("convert.errors.busy")}</AlertTitle>
       <AlertDescription>
-        <Button size="sm" variant="outline" className="mt-2" disabled={pending} onClick={() => start(() => router.refresh())}>
+        <Button size="sm" variant="outline" className="mt-2" disabled={pending} onClick={() => start(() => router.refresh())} loading={pending} loadingLabel={t("common.loading")}>
           {t("common.retry")}
         </Button>
       </AlertDescription>

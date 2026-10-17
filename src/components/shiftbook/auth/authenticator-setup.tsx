@@ -127,8 +127,8 @@ export function AuthenticatorSetup({ email, onFinished, onCancel }: { email: str
             </p>
           )}
           <div className="flex gap-2">
-            <Button type="submit" disabled={pending || code.length !== 6 || !setup} data-testid="setup-verify">
-              {pending ? t("verifying") : t("verify")}
+            <Button type="submit" disabled={pending || code.length !== 6 || !setup} data-testid="setup-verify" loading={pending} loadingLabel={t("verifying")}>
+              {t("verify")}
             </Button>
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel}>

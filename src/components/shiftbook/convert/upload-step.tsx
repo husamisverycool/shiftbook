@@ -297,8 +297,7 @@ export function UploadStep({ periodId, documents, demo = false }: { periodId: st
                   }
                   return { ok: true as const };
                 });
-              }}
-            >
+              }} loading={uploading} loadingLabel={tcommon("loading")}>
               {t("archiveConfirm")}
             </Button>
           </DialogFooter>

@@ -160,8 +160,8 @@ export function SsoSettingsView({ canManage, paused = false, demo, redirectUri, 
                 footer={
                   <SettingsFooter note={settings ? t("lastChange", { name: settings.updatedByLabel, date: dateTime(settings.updatedAt, { date: "long" }) }) : undefined}>
                     {!paused && (
-                      <Button type="submit" disabled={saving} data-testid="sso-save">
-                        {saving ? t("saving") : t("save")}
+                      <Button type="submit" disabled={saving} data-testid="sso-save" loading={saving} loadingLabel={t("saving")}>
+                        {t("save")}
                       </Button>
                     )}
                   </SettingsFooter>

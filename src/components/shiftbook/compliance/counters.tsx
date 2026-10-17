@@ -235,6 +235,7 @@ function Balances({ line, canChange, onAdd }: { line: CounterLine; canChange: bo
 
 function AddBalance({ pair, choices, today, onClose }: { pair: Choice | null; choices: Choice[]; today: string; onClose: () => void }) {
   const t = useTranslations("compliance.counters");
+  const tc = useTranslations("common");
   const td = useTranslations("compliance.detail");
   const [chosen, setChosen] = useState(pair ? `${pair.workerId}|${pair.clientId}` : "");
   const [hours, setHours] = useState("");
@@ -286,7 +287,7 @@ function AddBalance({ pair, choices, today, onClose }: { pair: Choice | null; ch
           <Button variant="outline" onClick={onClose}>
             {td("cancel")}
           </Button>
-          <Button disabled={pending || !ready} onClick={() => act(() => addBalanceAction({ workerId, clientId, minutes, throughOn, note }), () => (toast.success(t("saved")), onClose()))} data-testid="save-balance">
+          <Button disabled={pending || !ready} onClick={() => act(() => addBalanceAction({ workerId, clientId, minutes, throughOn, note }), () => (toast.success(t("saved")), onClose()))} data-testid="save-balance" loading={pending} loadingLabel={tc("loading")}>
             {td("save")}
           </Button>
         </DialogFooter>
@@ -297,6 +298,7 @@ function AddBalance({ pair, choices, today, onClose }: { pair: Choice | null; ch
 
 function RemoveBalance({ id, onClose }: { id: string; onClose: () => void }) {
   const t = useTranslations("compliance.counters");
+  const tc = useTranslations("common");
   const td = useTranslations("compliance.detail");
   const [reason, setReason] = useState("");
   const { pending, act } = useAct();
@@ -315,7 +317,7 @@ function RemoveBalance({ id, onClose }: { id: string; onClose: () => void }) {
           <Button variant="outline" onClick={onClose}>
             {td("cancel")}
           </Button>
-          <Button variant="destructive" disabled={pending || reason.trim() === ""} onClick={() => act(() => removeBalanceAction(id, reason.trim()), onClose)} data-testid="confirm-remove-balance">
+          <Button variant="destructive" disabled={pending || reason.trim() === ""} onClick={() => act(() => removeBalanceAction(id, reason.trim()), onClose)} data-testid="confirm-remove-balance" loading={pending} loadingLabel={tc("loading")}>
             {t("remove")}
           </Button>
         </DialogFooter>

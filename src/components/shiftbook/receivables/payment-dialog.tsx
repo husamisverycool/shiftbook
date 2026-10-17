@@ -32,6 +32,7 @@ type Problem = { field: string; rule: string; invoiceId?: string };
 
 export function PaymentDialog({ clients, mode, today, onClose }: { clients: PaymentClients; mode: PaymentMode; today: string; onClose: () => void }) {
   const t = useTranslations("payments");
+  const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const fixedAmount = mode.kind === "record" ? null : mode.kind === "credit" ? mode.unusedCents : mode.amountCents;
@@ -247,7 +248,7 @@ export function PaymentDialog({ clients, mode, today, onClose }: { clients: Paym
             <Button type="button" variant="outline" onClick={onClose}>
               {t("cancel")}
             </Button>
-            <Button type="submit" disabled={pending || !client || received === null || (left !== null && left < 0)} data-testid="pay-save">
+            <Button type="submit" disabled={pending || !client || received === null || (left !== null && left < 0)} data-testid="pay-save" loading={pending} loadingLabel={tc("loading")}>
               {mode.kind === "bank" ? t("post") : mode.kind === "credit" ? t("applyCredit") : t("save")}
             </Button>
           </DialogFooter>

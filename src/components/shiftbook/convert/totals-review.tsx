@@ -66,6 +66,7 @@ export interface CorrectionData {
 
 export function TotalsReview({ periodId, data, locked }: { periodId: string; data: TotalsData; locked: boolean }) {
   const t = useTranslations("convert.totals");
+  const tc = useTranslations("common");
   const ta = useTranslations("convert.approval");
   const tx = useTranslations("convert");
   const locale = useLocale();
@@ -238,7 +239,7 @@ export function TotalsReview({ periodId, data, locked }: { periodId: string; dat
             <Button variant="outline" onClick={() => setUnapproving(false)}>
               {ta("cancel")}
             </Button>
-            <Button onClick={unapprove} disabled={pending || reason.trim() === ""} data-testid="confirm-unapprove">
+            <Button onClick={unapprove} disabled={pending || reason.trim() === ""} data-testid="confirm-unapprove" loading={pending} loadingLabel={tc("loading")}>
               {ta("confirm")}
             </Button>
           </DialogFooter>

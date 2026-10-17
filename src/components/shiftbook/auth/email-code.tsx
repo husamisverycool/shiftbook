@@ -68,8 +68,8 @@ export function EmailCodeView({ email: initialEmail, next }: { email: string; ne
             <Label htmlFor={`${id}-email`}>{t("email")}</Label>
             <Input id={`${id}-email`} className="bg-background" type="email" autoComplete="username" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required data-testid="code-email" />
           </div>
-          <Button type="submit" disabled={sending || !email.trim()} className="w-full" data-testid="code-send">
-            {sending ? t("sending") : t("send")}
+          <Button type="submit" disabled={sending || !email.trim()} className="w-full" data-testid="code-send" loading={sending} loadingLabel={t("sending")}>
+            {t("send")}
           </Button>
         </form>
         {back}
@@ -118,8 +118,8 @@ export function EmailCodeView({ email: initialEmail, next }: { email: string; ne
             {message}
           </p>
         )}
-        <Button type="submit" disabled={checking || code.length !== 6} className="w-full" data-testid="email-code-submit">
-          {checking ? t("submitting") : t("submit")}
+        <Button type="submit" disabled={checking || code.length !== 6} className="w-full" data-testid="email-code-submit" loading={checking} loadingLabel={t("submitting")}>
+          {t("submit")}
         </Button>
       </form>
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
