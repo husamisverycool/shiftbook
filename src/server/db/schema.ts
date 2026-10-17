@@ -1358,7 +1358,7 @@ export const clientDisputes = pgTable(
   ],
 );
 
-export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset" | "sign_in_code" | "passkey_added" | "identity_linked";
+export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset" | "sign_in_code" | "passkey_added" | "identity_linked" | "portal_link";
 
 /** Every email sent, with any approval link hidden (Stripe keeps a log of customer emails). */
 export const emailMessages = pgTable(
@@ -1380,6 +1380,70 @@ export const emailMessages = pgTable(
   },
   (t) => [index("email_messages_request").on(t.agencyId, t.requestId, t.createdAt)],
 );
+
+// ---------- the client portal (slice v; drizzle/0051) ----------
+
+/** A person at a client who may open the client portal by emailed link. */
+export const portalContacts = pgTable("portal_contacts", {
+  id: id(),
+  agencyId: agencyId(),
+  clientId: uuid("client_id").notNull().references(() => clients.id),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  locale: text("locale").$type<ApprovalLocale>().notNull(),
+  lastVisitAt: timestamp("last_visit_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedByLabel: text("revoked_by_label"),
+  createdAt: createdAt(),
+  createdBy: uuid("created_by"),
+  createdByLabel: text("created_by_label").notNull(),
+});
+
+/** A portal link: only the SHA-256 of its token is kept (decision 0013). */
+export const portalLinks = pgTable("portal_links", {
+  id: id(),
+  agencyId: agencyId(),
+  contactId: uuid("contact_id")
+    .notNull()
+    .references(() => portalContacts.id),
+  tokenHash: text("token_hash").notNull().unique("portal_links_token_hash"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  renewalRequestedAt: timestamp("renewal_requested_at", { withTimezone: true }),
+  firstOpenedAt: timestamp("first_opened_at", { withTimezone: true }),
+  createdAt: createdAt(),
+});
+
+export type StaffRequestStatus = "pending" | "accepted" | "declined";
+
+/** A client's request for workers from the portal: a draft the agency turns into a job order or declines. */
+export const staffRequests = pgTable("staff_requests", {
+  id: id(),
+  agencyId: agencyId(),
+  clientId: uuid("client_id").notNull().references(() => clients.id),
+  contactId: uuid("contact_id")
+    .notNull()
+    .references(() => portalContacts.id),
+  position: text("position").notNull(),
+  worksiteId: uuid("worksite_id").references(() => worksites.id),
+  worksiteNote: text("worksite_note"),
+  startsOn: isoDate("starts_on").notNull(),
+  endsOn: isoDate("ends_on"),
+  shiftStartMinute: integer("shift_start_minute").notNull(),
+  shiftEndMinute: integer("shift_end_minute").notNull(),
+  headcount: integer("headcount").notNull(),
+  notes: text("notes"),
+  status: text("status").$type<StaffRequestStatus>().notNull().default("pending"),
+  jobOrderId: uuid("job_order_id").references(() => jobOrders.id),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  decidedByLabel: text("decided_by_label"),
+  declineReason: text("decline_reason"),
+  createdAt: createdAt(),
+});
+
+export type PortalContactRow = typeof portalContacts.$inferSelect;
+export type PortalLinkRow = typeof portalLinks.$inferSelect;
+export type StaffRequestRow = typeof staffRequests.$inferSelect;
 
 /** Demo mode's stand-in inbox: the delivered copy, with its working link (decision 0012). */
 export const demoMailbox = pgTable("demo_mailbox", {
@@ -1649,6 +1713,9 @@ export const TENANT_TABLES = [
   "email_sign_in_codes",
   "agency_sso",
   "agency_subscriptions",
+  "portal_contacts",
+  "portal_links",
+  "staff_requests",
 ] as const;
 
 // ---------- other ways in: Google, Microsoft, an agency's single sign-on, emailed codes (decision 0033; drizzle/0039) ----------

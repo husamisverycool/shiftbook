@@ -9,7 +9,8 @@ import { withAgency } from "@/server/db";
 import { clientReceivables, openInvoicesByClient } from "@/server/receivables/queries";
 import { mayCollect } from "@/server/receivables/service";
 import { agencyToday } from "@/server/settings";
-import { currentActor } from "@/server/session";
+import { portalAccess } from "@/server/portal/service";
+import { currentActor, isDemo } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,14 @@ export default async function ClientDetailPage(props: { params: Promise<{ locale
   const view = await withAgency(actor.agencyId, async (tx) => {
     const today = await agencyToday(tx);
     const detail = await clientDetail(tx, id, today);
-    return { today, detail, owes: detail ? await clientReceivables(tx, id, today) : null, clients: detail ? await openInvoicesByClient(tx) : [] };
+    return {
+      today,
+      detail,
+      owes: detail ? await clientReceivables(tx, id, today) : null,
+      clients: detail ? await openInvoicesByClient(tx) : [],
+      portal: detail ? await portalAccess(tx, id, { demoCopies: isDemo() }) : [],
+    };
   });
   if (!view.detail || !view.owes) notFound();
-  return <ClientPage detail={view.detail} mayChange={mayChangeBilling(actor)} today={view.today} owes={view.owes} clients={view.clients} mayCollect={mayCollect(actor)} />;
+  return <ClientPage detail={view.detail} mayChange={mayChangeBilling(actor)} today={view.today} owes={view.owes} clients={view.clients} mayCollect={mayCollect(actor)} portal={{ rows: view.portal, demo: isDemo() }} />;
 }

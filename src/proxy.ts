@@ -5,8 +5,8 @@ import { SESSION_COOKIE } from "./server/auth/cookie";
 
 const intl = createMiddleware(routing);
 
-/** Pages anyone may open (decision K2): sign-in and its steps, sign-up (decision 0036), an invite, a client's approval link. */
-const OPEN = /^\/(sign-in|sign-up|invite|approve)(\/|$)/;
+/** Pages anyone may open (decision K2): sign-in and its steps, sign-up (decision 0036), an invite, a client's approval link, the client portal (slice v). */
+const OPEN = /^\/(sign-in|sign-up|invite|approve|portal)(\/|$)/;
 
 /**
  * Someone with no session cookie is sent to sign-in, with the page they wanted kept for after.

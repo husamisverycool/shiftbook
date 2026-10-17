@@ -10,6 +10,7 @@ import type { RateInput } from "@/server/catalog/versions";
 import { syncObligations } from "@/server/compliance/sync";
 import { withAgency, type Tx } from "@/server/db";
 import { setRecruiter, type MarginResult } from "@/server/margin/service";
+import { acceptStaffRequest, declineStaffRequest } from "@/server/portal/service";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { actorAllowedTo } from "@/server/session";
 import { agencyToday } from "@/server/settings";
@@ -142,6 +143,20 @@ export async function setRecruiterAction(assignmentId: string, userId: string | 
   const actor = await actorAllowedTo("placements");
   if (!id.safeParse(assignmentId).success || (userId !== null && !id.safeParse(userId).success)) return { ok: false, error: "not_found" };
   return run(() => withAgency(actor.agencyId, (tx) => setRecruiter(tx, actor, assignmentId, userId)));
+}
+
+/** A client's request for workers (slice v) becomes a job order at the chosen worksite. */
+export async function acceptStaffRequestAction(requestId: string, worksiteId: string): Promise<{ ok: true; jobOrderId: string } | { ok: false; error: string; fields?: string[] }> {
+  const actor = await actorAllowedTo("placements");
+  if (!id.safeParse(requestId).success || !id.safeParse(worksiteId).success) return { ok: false, error: "invalid" };
+  return run(() => withDuties(actor.agencyId, (tx) => acceptStaffRequest(tx, actor, requestId, worksiteId)));
+}
+
+/** Declines a client's request with the reason the client sees. */
+export async function declineStaffRequestAction(requestId: string, reason: string): Promise<{ ok: true } | { ok: false; error: string; fields?: string[] }> {
+  const actor = await actorAllowedTo("placements");
+  if (!id.safeParse(requestId).success || typeof reason !== "string" || reason.length > 4000) return { ok: false, error: "invalid" };
+  return run(() => withAgency(actor.agencyId, (tx) => declineStaffRequest(tx, actor, requestId, reason)));
 }
 
 export async function setAssignmentPoAction(assignmentId: string, poNumber: string): Promise<PoResult | { ok: false; error: "busy" }> {

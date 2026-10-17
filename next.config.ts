@@ -47,7 +47,8 @@ const nextConfig: NextConfig = {
         ],
       },
       // Invite, password reset and sign-up links carry a secret in the path too (decision K1, decision 0036).
-      ...["/:locale(en|es)/invite/:token*", "/:locale(en|es)/sign-in/reset/:token+", "/:locale(en|es)/sign-up/:token+"].map((source) => ({
+      // …and the client portal's links and its files (slice v).
+      ...["/:locale(en|es)/invite/:token*", "/:locale(en|es)/sign-in/reset/:token+", "/:locale(en|es)/sign-up/:token+", "/:locale(en|es)/portal/:path*", "/api/portal/:path*"].map((source) => ({
         source,
         headers: [
           { key: "Referrer-Policy", value: "no-referrer" },
