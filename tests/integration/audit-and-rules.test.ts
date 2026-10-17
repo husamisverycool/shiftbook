@@ -56,7 +56,7 @@ describe("reference wage-rule data", () => {
     expect(rules.length).toBeGreaterThan(0);
     for (const r of rules) expect(r.citation.length).toBeGreaterThan(10);
     const juris = await app.db.select().from(jurisdictionRules);
-    expect(new Set(juris.map((j) => j.jurisdiction))).toEqual(new Set(["US", "IL", "MA", "CA"]));
+    expect(new Set(juris.map((j) => j.jurisdiction))).toEqual(new Set(["US", "IL", "MA", "CA", "NJ"]));
   });
 
   it("cannot be changed by the app", async () => {

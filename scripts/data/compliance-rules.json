@@ -273,6 +273,34 @@
     "effectiveTo": null
   },
   {
+    "code": "nj_equal_pay_check",
+    "jurisdiction": "NJ",
+    "area": "equal_pay",
+    "subjectKind": "assignment",
+    "anchor": "start",
+    "offsetDays": 0,
+    "businessDays": 0,
+    "remindDays": 7,
+    "fixedDates": [],
+    "lookbackDays": 365,
+    "windowDays": 0,
+    "socGroups": [
+      "33",
+      "35",
+      "37",
+      "39",
+      "47",
+      "49",
+      "51",
+      "53"
+    ],
+    "roles": [],
+    "citation": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no less than the average rate of pay and average cost of benefits, or their cash equivalent, of the client's employees doing substantially similar work)",
+    "sourceUrl": "https://pub.njleg.gov/Bills/2022/PL23/10_.HTM",
+    "effectiveFrom": "2024-09-16",
+    "effectiveTo": null
+  },
+  {
     "code": "wc_audit",
     "jurisdiction": "US",
     "area": "workers_comp",

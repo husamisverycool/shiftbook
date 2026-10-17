@@ -2,7 +2,7 @@
  * The client portal (slice v; SPEC §27 item 8): giving access, the link (decision 0013's rules),
  * what a contact sees — only their own client's — requests for workers, and the agency's decisions.
  */
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { loadPortal, type ApprovalDeps } from "../../src/server/approvals/service";
 import * as s from "../../src/server/db/schema";
@@ -161,7 +161,8 @@ describe("what a contact sees", () => {
     const overview = await portalOverview(deps, token, "2026-10-12");
     expect(overview).toMatchObject({ owedCents: 0, overdueCents: 0, nextDue: null, pendingRequests: 0 });
     // A download is audited with the contact's identity.
-    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(eq(s.auditEvents.entityType, "payment")));
+    // Other tests in the same database record payments too: only this payment's events count.
+    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "payment"), eq(s.auditEvents.entityId, ilPayment[0]!.id))));
     expect(events.map((e) => e.actorLabel)).toEqual(["Pat Lee <pat.lee@prairie.example.com> (client portal)"]);
   });
 
