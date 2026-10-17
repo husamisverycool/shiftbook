@@ -41,7 +41,14 @@ create/edit with effective dating; rate changes never rewrite locked periods).
         selected by default (Bullhorn).
      2. The version's values: pay rate, bill rate (and markup if entered as markup), overtime and
         double-time bill multipliers, WC class code, effective from and to (Gusto shows "effective
-        date" as when the current rate took effect).
+        date" as when the current rate took effect). Then, when set (slice G2; SPEC §4 RateCard
+        "differentials", "minimum-hours guarantee"; Bullhorn rate cards carry shift differentials
+        and minimums as further pay rules on the same card): the shift differential — its name,
+        extra pay and bill per hour, the start-time window and days it covers — and the minimum day
+        in hours, billed or not (paid only on a day a person confirms was short, in the run's
+        pay events). In the form they sit under the multipliers: a "Pay more for some
+        shifts" checkbox revealing the differential's fields, and "Minimum day (hours)" with "Bill
+        the client for the minimum day".
      3. Above the values, when a later version is scheduled: a notice with its date, what changes,
         and a cancel control (Gusto scheduled-change notice); with two or more, one notice with
         "Review" opening the list (Gusto).

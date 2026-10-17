@@ -17,6 +17,7 @@ export const SAID_EN = {
 
   // The run's own checks (run/service.ts).
   noRateCard: "{name} on {date}: no rate card is in effect for {position}.",
+  differentialStartUnknown: "{name} on {date}: the rate card's {differential} differential covers shifts starting {from}–{to}, but this shift's start time is not on the timesheet, so no differential is paid. Enter the start time in Review hours if it should be.",
   severalRateCards: "{name} on {date}: {count} rate cards are in effect for {position}.",
   noBillingProfile: "{name} on {date}: no billing profile is in effect for the client.",
   severalBillingProfiles: "{name} on {date}: {count} billing profiles are in effect for the client.",

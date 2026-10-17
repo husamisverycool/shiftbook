@@ -541,7 +541,8 @@
         "approaching_equal_pay_hours": "Cerca de 720 horas con un cliente de Illinois",
         "equal_pay_obligation": "Ahora aplica la igualdad salarial de Illinois",
         "equal_pay_rate_missing": "Horas después de 720 con un cliente sin tarifa de igualdad salarial",
-        "equal_pay_rate_needed": "Tarifa de igualdad salarial pendiente para horas después de 720 en un cliente"
+        "equal_pay_rate_needed": "Tarifa de igualdad salarial pendiente para horas después de 720 en un cliente",
+        "differential_start_unknown": "Falta la hora de inicio de un turno para su diferencial"
       },
       "rules": {
         "ca_daily_overtime": "horas extra diarias",
@@ -755,7 +756,8 @@
     "agencySettings": "Agencia",
     "branches": "Sucursales",
     "names": "Nombres",
-    "onboardingSettings": "Incorporación"
+    "onboardingSettings": "Incorporación",
+    "holidays": "Feriados"
   },
   "list": {
     "filter": "Filtrar",
@@ -1275,7 +1277,36 @@
       "reason_required": "Elija un motivo.",
       "note_required": "Agregue una nota para Otro.",
       "not_found": "Esta versión de tarifas ya no existe.",
-      "invalid": "Algunos valores no son válidos."
+      "invalid": "Algunos valores no son válidos.",
+      "differential": "Indique el nombre del diferencial, el pago adicional por hora y ambas horas o ninguna.",
+      "contract_minimum": "Escriba la jornada mínima en horas, por ejemplo 4 o 4.5, como máximo 12."
+    },
+    "differential": "Diferencial por turno",
+    "differentialOn": "Pagar más por algunos turnos (noches, fines de semana)",
+    "differentialName": "Nombre",
+    "differentialNameHint": "Noche",
+    "differentialPay": "Pago adicional por hora",
+    "differentialBill": "Cobro adicional por hora",
+    "differentialFrom": "Turnos que empiezan desde",
+    "differentialTo": "Hasta",
+    "differentialDays": "En estos días",
+    "differentialHelp": "Deje las horas vacías para cualquier hora de inicio y los días sin marcar para todos los días. Un horario que termina antes de empezar pasa de la medianoche. Cuenta para la tarifa de horas extra.",
+    "differentialShown": "{name}: {pay}/h pagado, {bill}/h facturado · {window} · {days}",
+    "anyTime": "cualquier hora",
+    "everyDay": "todos los días",
+    "contractMinimum": "Jornada mínima (horas)",
+    "contractMinimumHelp": "Si una persona confirma que el trabajador fue enviado a casa antes ese día, el resto se paga a la tarifa de pago. Déjelo vacío si no hay.",
+    "billsContractMinimum": "Facturar al cliente la jornada mínima",
+    "contractMinimumShown": "{hours} h, no facturada",
+    "contractMinimumBilled": "{hours} h, facturada",
+    "weekdays": {
+      "0": "dom",
+      "1": "lun",
+      "2": "mar",
+      "3": "mié",
+      "4": "jue",
+      "5": "vie",
+      "6": "sáb"
     }
   },
   "import": {
@@ -4463,7 +4494,21 @@
     "workingNote": " ({workings})",
     "workingNoteSome": " (algunos turnos: {workings})",
     "workweekStartInvalid": "El día de inicio de la semana laboral debe ser de 0 (domingo) a 6 (sábado); se recibió {value}.",
-    "zeroPay": "{name}: la línea de pago {type} de la semana laboral que empieza el {week} da {amount}."
+    "zeroPay": "{name}: la línea de pago {type} de la semana laboral que empieza el {week} da {amount}.",
+    "holidayAndShortDay": "{name} el {date}: el mismo día en una asignación se confirmó como feriado no trabajado y como día corto; solo uno puede pagarse, así que quite una de las confirmaciones.",
+    "problemDifferential": "el diferencial por turno necesita un nombre y un número entero de centavos por hora, como máximo $100.00",
+    "problemContractMinimum": "la jornada mínima de la tarjeta de tarifas debe ser un número entero de minutos, como máximo 12 horas",
+    "extraDifferential": "{amount} de diferencial por turno {name}",
+    "labelDifferential": "Diferencial por turno {name}",
+    "whyDifferential": " Regla {rule}: la tarjeta de tarifas paga un diferencial {name} de {rate} por cada hora de estos turnos el {dates}; forma parte de la tarifa regular ({citation}).",
+    "labelBilledDifferential": "Diferencial por turno {name} facturado",
+    "billDifferential": " La tarjeta de tarifas factura el diferencial {name} a {rate}.",
+    "labelContractMinimum": "Jornada mínima por contrato",
+    "whyContractMinimum": " Regla {rule}: la tarjeta de tarifas promete al menos {due} cada día en esta asignación; el {date} se trabajaron {worked}{statutory}, así que se pagan {more} más, no como horas trabajadas ({citation}).",
+    "contractCountsStatutory": " y ya se pagaron {paid} de pago mínimo que exige la ley",
+    "labelBilledContractMinimum": "Jornada mínima por contrato facturada",
+    "billContractMinimum": " La tarjeta de tarifas factura su jornada mínima, a la tarifa de cobro.",
+    "holidayWithDifferential": " Se paga una prima de feriado el {date} en un turno que también tiene un diferencial por turno; si la prima queda fuera de la tarifa regular depende de la tarifa del mismo trabajo en otros días ({citation}), que Granite todavía no calcula con un diferencial. Pague esta semana a mano, o quite el diferencial o el feriado de ese día."
   },
   "said": {
     "alreadySettled": " Ya resuelto fuera de los archivos: {decisions}.",
@@ -4609,7 +4654,8 @@
     "noPayrollIdPaychex": "{name} no tiene ID de trabajador de Paychex, así que el archivo de Paychex Flex no pudo identificar a esta persona.",
     "noPayrollIdPaylocity": "{name} no tiene ID de empleado de Paylocity, así que el archivo de Paylocity no pudo identificar a esta persona.",
     "correctionCreditTooLarge": "{client}: la corrección acreditaría {amount} en la factura {number}, a la que solo le quedan {room} por acreditar después de sus notas de crédito y cancelaciones anteriores; revierta primero una nota de crédito o una cancelación.",
-    "marginCredit": "Nota de crédito {number}, emitida el {date}: {amount} menos de lo facturado a {client} por la semana del {week}."
+    "marginCredit": "Nota de crédito {number}, emitida el {date}: {amount} menos de lo facturado a {client} por la semana del {week}.",
+    "differentialStartUnknown": "{name} el {date}: el diferencial {differential} de la tarjeta de tarifas cubre los turnos que empiezan entre {from} y {to}, pero la hora de inicio de este turno no está en la hoja de horas, así que no se paga diferencial. Escriba la hora de inicio en Revisar horas si corresponde."
   },
   "identities": {
     "connectedTitle": "Cuentas conectadas",
@@ -7269,5 +7315,116 @@
       "harassment": "Acoso y discriminación",
       "timekeeping": "Registro de sus horas"
     }
+  },
+  "payEvents": {
+    "title": "Pago adicional",
+    "add": "Agregar pago",
+    "addTitle": "Agregar pago",
+    "addBody": "Granite calcula el pago según las reglas; usted confirma lo que ocurrió. Se registra con su nombre y el motivo.",
+    "worker": "Trabajador",
+    "assignment": "Asignación",
+    "what": "Qué",
+    "when": "Día o semana",
+    "day": "Día",
+    "workweek": "Semana laboral",
+    "amount": "Importe",
+    "reason": "Motivo",
+    "choose": "Elija…",
+    "scheduled": "Horas programadas ese día",
+    "reassigned": "Asignado a otro cliente en el mismo turno",
+    "bonusKind": "Tipo de bono",
+    "weekOf": "Semana del {date}",
+    "empty": "No se agregó nada para este periodo.",
+    "actions": "Acciones",
+    "remove": "Quitar",
+    "removeTitle": "Quitar este pago",
+    "removeBody": "El próximo cálculo ya no lo paga. Indique el motivo.",
+    "cancel": "Cancelar",
+    "save": "Agregar",
+    "added": "Agregado. Los totales se calcularon de nuevo.",
+    "removed": "Quitado. Los totales se calcularon de nuevo.",
+    "kinds": {
+      "meal_period_missed": "Periodo de comida no otorgado",
+      "rest_period_missed": "Periodo de descanso no otorgado",
+      "reported_short": "Enviado y no utilizado / jornada acortada",
+      "holiday_not_worked": "Feriado no trabajado",
+      "bonus": "Bono"
+    },
+    "bonusKinds": {
+      "nondiscretionary": "No discrecional (cuenta para las horas extra)",
+      "flat_sum": "Suma fija (California)"
+    },
+    "hints": {
+      "meal_period_missed": "Donde la ley lo exige (California), una hora de pago a la tarifa regular por ese día.",
+      "rest_period_missed": "Donde la ley lo exige (California), una hora de pago a la tarifa regular por ese día.",
+      "reported_short": "El trabajador se presentó o fue enviado y recibió menos horas de las programadas; se aplica el pago mínimo del estado por ese día.",
+      "holiday_not_worked": "El trabajador tiene derecho al pago de la política de feriados por un feriado que no trabajó.",
+      "bonus": "Un bono prometido por el trabajo (asistencia, producción) es no discrecional y aumenta la tarifa de horas extra de esa semana."
+    },
+    "errors": {
+      "incomplete": "Elija el trabajador y lo que ocurrió, e indique un motivo.",
+      "reason_required": "Indique un motivo.",
+      "outside_period": "Ese día o esa semana está fuera de este periodo de pago.",
+      "not_on_assignment": "Esa asignación no es de este trabajador.",
+      "already_recorded": "Esto ya está registrado para ese día.",
+      "bad_amount": "Escriba un importe en dólares y centavos, mayor que cero.",
+      "bad_schedule": "Escriba las horas programadas como un número, por ejemplo 8 o 7.5.",
+      "not_found": "Eso ya se quitó.",
+      "period_locked": "Los archivos de este periodo ya existen. Inicie una corrección para cambiar su pago.",
+      "busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtelo de nuevo en un momento.",
+      "stale": "Esto cambió en otra pestaña. La página muestra ahora lo más reciente.",
+      "skip_refused": "No se pudo guardar.",
+      "generic": "No se pudo guardar.",
+      "duplicate_bonus": "Este mismo bono ya está registrado para esa semana. Marque la casilla si es un segundo bono.",
+      "not_allowed": "Su rol no cambia el pago.",
+      "holiday_and_short_day": "Este día ya está confirmado como feriado no trabajado o como día corto en esta asignación; solo uno puede pagarse. Quite el otro primero."
+    },
+    "confirmDuplicate": "Agregarlo otra vez: es un segundo bono"
+  },
+  "holidays": {
+    "context": "Configuración",
+    "title": "Feriados",
+    "description": "Qué días son feriados y qué se paga y factura por trabajarlos o tenerlos libres.",
+    "policies": "Políticas",
+    "policiesHint": "La política de la agencia se aplica a todos los clientes; la política propia de un cliente prevalece en el trabajo de ese cliente.",
+    "add": "Agregar política",
+    "addTitle": "Agregar una política de feriados",
+    "editTitle": "Editar política de feriados",
+    "dialogHint": "Ninguna ley de los estados que cubre Granite exige pago por feriados; esta es la política propia de la agencia.",
+    "empty": "Aún no hay políticas de feriados.",
+    "agencyDefault": "Predeterminada de la agencia",
+    "rowLine": "{who} · {count, plural, one {# día} other {# días}}",
+    "rowTerms": "Trabajado {worked}× · libre {hours} h",
+    "actions": "Acciones",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "deleteTitle": "¿Eliminar {name}?",
+    "deleteHint": "Los cálculos que se hagan desde ahora ya no lo pagan ni lo facturan. Las semanas ya pagadas conservan lo que pagaron.",
+    "name": "Nombre",
+    "appliesTo": "Se aplica a",
+    "dates": "Fechas de feriado",
+    "datesHint": "Una fecha por línea, como 2026-11-26.",
+    "worked": "Las horas trabajadas pagan (× tarifa de pago)",
+    "notWorked": "Horas pagadas por un feriado libre",
+    "billPremium": "Facturar con prima las horas trabajadas",
+    "bill": "Facturar las horas trabajadas a (× tarifa de cobro)",
+    "billNotWorked": "Facturar al cliente un feriado libre",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saved": "Guardado.",
+    "deleted": "Eliminado.",
+    "errors": {
+      "name": "Indique un nombre para la política.",
+      "dates": "Escriba al menos una fecha, como 2026-11-26, cada una una sola vez.",
+      "worked_multiplier": "Escriba un múltiplo de 1 a 3, por ejemplo 1.5.",
+      "not_worked": "Escriba las horas de 0 a 12, por ejemplo 8.",
+      "bill_multiplier": "Escriba un múltiplo de 1 a 3, por ejemplo 1.5.",
+      "client": "Ese cliente ya no existe.",
+      "overlap": "Otra política del mismo cliente ya tiene una de estas fechas.",
+      "reason": "Indique un motivo para el cambio.",
+      "locked": "Una de estas fechas está en un periodo de pago cuyos archivos ya existen. Un periodo pagado nunca cambia; inicie primero una corrección allí.",
+      "not_allowed": "Solo el Propietario cambia las políticas de feriados."
+    },
+    "reason": "Motivo del cambio"
   }
 }

@@ -35,7 +35,8 @@ root frame (demo banner above it).
       Activity (slice k, the agency's log) after it, for the Owner and the accountant;
       Billing (decision 0036; Linear's Administration › Billing, Vercel's Settings › Billing) after it,
       for the Owner only. Collections (slice r; Stripe's reminder settings) after Compliance settings,
-      for everyone (only the Owner changes them); Money settings (slice w) after it, likewise.
+      for everyone (only the Owner changes them); Money settings (slice w) after it, likewise;
+      Holidays (slice G2; Gusto's holiday pay policy) after Collections, likewise.
       Agency (business details and time zone; Linear's Workspace › General, Gusto's company details)
       and Branches (Gusto's company locations) right after Settings, for everyone (only the Owner
       changes them; completeness audit G1); Names (SPEC §6 nickname map, `settings/names.md`) after

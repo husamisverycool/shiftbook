@@ -139,6 +139,94 @@ ruleCase(
 );
 
 ruleCase(
+  "night-differential-overtime-week",
+  "Illinois worker at $18.00/h, billed at $26.00/h, works 9 hours Monday to Friday (45 h). The rate card pays a Night shift differential of $1.50/h on Wednesday to Friday (27 h) and bills it at $2.00/h. A differential is in the regular rate (29 C.F.R. § 778.207(b)): straight-time earnings 45 h × $18.00 = $810.00 plus 27 h × $1.50 = $40.50 is $850.50, ÷ 45 h = a regular rate of $18.90. The last 5 hours (Friday) are overtime at $18.00 + ½ × $18.90 = $27.45/h: 5 h × $27.45 = $137.25. Pay: 40 h × $18.00 = $720.00, overtime $137.25, differential 27 h × $1.50 = $40.50; total $897.75 (= $850.50 + ½ × $18.90 × 5 h). Bill: 40 h × $26.00 = $1,040.00, overtime 5 h × $39.00 = $195.00, differential 27 h × $2.00 = $54.00.",
+  input([
+    ...WEEK.slice(0, 2).map((d) => shift(d, 540, { payRateCents: 1800, billRateCents: 2600 })),
+    ...WEEK.slice(2, 5).map((d) => shift(d, 540, { payRateCents: 1800, billRateCents: 2600, differential: { name: "Night", payCentsPerHour: 150, billCentsPerHour: 200 } })),
+  ]),
+  { pay: [["REG", 2400, 72000], ["OT", 300, 13725], ["DIFF", 1620, 4050]], bill: [["REG", 2400, 104000], ["OT", 300, 19500], ["DIFF", 1620, 5400]] },
+);
+
+ruleCase(
+  "ca-daily-overtime-with-differential",
+  "California worker at $20.00/h, billed at $28.00/h, works one 10-hour Monday that carries a Night shift differential of $2.00/h (not billed). The week's regular rate includes the differential (29 C.F.R. § 778.207(b); Cal. Lab. Code § 510): (10 h × $20.00 + 10 h × $2.00) ÷ 10 h = $22.00. Daily overtime over 8 hours: 2 h at $20.00 + ½ × $22.00 = $31.00/h = $62.00. Pay: 8 h × $20.00 = $160.00, overtime $62.00, differential 10 h × $2.00 = $20.00; total $242.00. Bill: 8 h × $28.00 = $224.00 and overtime 2 h × $42.00 = $84.00; the differential is not billed.",
+  input([shift(WEEK[0]!, 600, { ...CA, payRateCents: 2000, billRateCents: 2800, differential: { name: "Night", payCentsPerHour: 200, billCentsPerHour: 0 } })]),
+  { pay: [["REG", 480, 16000], ["OT", 120, 6200], ["DIFF", 600, 2000]], bill: [["REG", 480, 22400], ["OT", 120, 8400]] },
+);
+
+ruleCase(
+  "contract-minimum-day",
+  "Illinois clerical worker (not day and temporary labor, so the Day and Temporary Labor Services Act minimum does not apply) at $17.00/h, billed at $25.00/h; the rate card promises at least 4 hours on each day at the assignment and bills that minimum. On Monday the worker is sent home after 2 hours, and a person confirms the short day (the engine computes, a person confirms). The 2 hours worked are paid (2 h × $17.00 = $34.00) and the contractual shortfall, 4 h − 2 h = 2 h × $17.00 = $34.00, is paid on its own line, not as hours worked (29 U.S.C. § 207(e)(2); 29 C.F.R. § 778.220). Billed 2 h × $25.00 = $50.00 and the minimum 2 h × $25.00 = $50.00.",
+  {
+    ...input([shift(WEEK[0]!, 120, { payRateCents: 1700, billRateCents: 2500, contractMinimumMinutes: 240, billsContractMinimum: true, dayAndTemporaryLabor: false })]),
+    confirmations: [{ id: "confirmation-1", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[0]! }],
+  },
+  { pay: [["REG", 120, 3400], ["MIN_GUARANTEE", 120, 3400]], bill: [["REG", 120, 5000], ["MIN_GUARANTEE", 120, 5000]] },
+);
+
+ruleCase(
+  "holiday-and-short-day-same-day-held",
+  "Illinois worker at $18.25/h whose rate card promises a 4-hour day. The agency's holiday policy pays 8 hours for a holiday not worked. Wednesday October 7 is confirmed both as a holiday not worked and as a short day on the same assignment. Holiday pay and a short day's minimums would both pay the same day, so Granite holds the week for a person to remove one of the confirmations: no lines, one blocker.",
+  {
+    ...input([shift(WEEK[2]!, 0, { entryIds: [], reportedOnly: true, startMinute: null, contractMinimumMinutes: 240 })]),
+    holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false }],
+    confirmations: [
+      { id: "confirmation-1", kind: "holiday_not_worked", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[2]! },
+      { id: "confirmation-2", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[2]! },
+    ],
+  },
+  { pay: [], bill: [], blockers: ["invalid_input"] },
+);
+
+ruleCase(
+  "contract-minimum-not-on-holiday-off",
+  "Illinois worker at $18.25/h, billed at $26.50/h, whose rate card promises a 4-hour day. The agency's holiday policy pays 8 hours for a holiday not worked (not billed). The worker works 8 hours Monday and has Wednesday October 7 off as a holiday, which a person confirms. The holiday is paid by its policy, 8 h × $18.25 = $146.00, and nothing more: a contractual minimum day pays only on a day a person confirmed was short, never on a holiday off. Pay: Monday 8 h × $18.25 = $146.00 plus the holiday $146.00. Billed Monday 8 h × $26.50 = $212.00.",
+  {
+    ...input([
+      shift(WEEK[0]!, 480, { contractMinimumMinutes: 240 }),
+      shift(WEEK[2]!, 0, { entryIds: [], reportedOnly: true, startMinute: null, contractMinimumMinutes: 240 }),
+    ]),
+    holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false }],
+    confirmations: [{ id: "confirmation-1", kind: "holiday_not_worked", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[2]! }],
+  },
+  { pay: [["REG", 480, 14600], ["HOL_NOT_WORKED", 480, 14600]], bill: [["REG", 480, 21200]] },
+);
+
+ruleCase(
+  "contract-minimum-after-day-labor-minimum",
+  "Illinois day laborer at $17.00/h whose rate card promises a 6-hour day (not billed). On Monday the worker is sent, works 1 hour and is not used further; a person confirmed it. The Day and Temporary Labor Services Act owes at least 4 hours at the agreed rate (820 ILCS 175/30(g)): 4 h − 1 h = 3 h × $17.00 = $51.00. The contractual minimum counts that statutory pay: 6 h − 1 h worked − 3 h already paid = 2 h × $17.00 = $34.00 more. Pay: $17.00 + $51.00 + $34.00 = $102.00 (6 hours' pay). Billed the hour worked, 1 h × $25.00 = $25.00.",
+  {
+    ...input([shift(WEEK[0]!, 60, { payRateCents: 1700, billRateCents: 2500, contractMinimumMinutes: 360 })]),
+    confirmations: [{ id: "confirmation-1", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[0]! }],
+  },
+  { pay: [["REG", 60, 1700], ["MIN_GUARANTEE", 180, 5100], ["MIN_GUARANTEE", 120, 3400]], bill: [["REG", 60, 2500]] },
+);
+
+ruleCase(
+  "client-holiday-policy-worked",
+  "Illinois worker at $18.25/h, billed at $26.50/h, works 8 hours on Wednesday October 7, 2026, a holiday under the client's own policy (agency data: no law requires it), which pays and bills 1.5× for hours worked; the agency's default policy has no holiday that day. Straight time 8 h × $18.25 = $146.00, plus the holiday premium 8 h × ½ × $18.25 = $73.00 (a 1.5× premium stays out of the regular rate: 29 U.S.C. § 207(e)(6)). Billed 8 h × $26.50 = $212.00 plus 8 h × $13.25 = $106.00.",
+  {
+    ...input([shift(WEEK[2]!, 480, { clientId: "client-1" })]),
+    holidayPolicies: [
+      { clientId: null, name: "Agency holidays", dates: ["2026-11-26"], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 0, billWorkedMultiplier: null, billNotWorked: false },
+      { clientId: "client-1", name: "Client plant shutdown day", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 0, billWorkedMultiplier: { num: 3, den: 2 }, billNotWorked: false },
+    ],
+  },
+  { pay: [["REG", 480, 14600], ["HOL", 480, 7300]], bill: [["REG", 480, 21200], ["HOL", 480, 10600]] },
+);
+
+ruleCase(
+  "holiday-premium-with-differential-held",
+  "Illinois worker at $18.25/h works 8 hours on Wednesday October 7, 2026, a holiday under the agency's policy paying 1.5× for hours worked, on a shift that also carries a Night differential of $1.50/h. Whether a holiday premium stays out of the regular rate compares it with the rate for like work on other days (29 C.F.R. § 778.203); with a differential on the shift Granite does not work that comparison out, so the week is held for a person instead of guessed: no lines, one blocker.",
+  {
+    ...input([shift(WEEK[2]!, 480, { differential: { name: "Night", payCentsPerHour: 150, billCentsPerHour: 0 } })]),
+    holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 0, billWorkedMultiplier: null, billNotWorked: false }],
+  },
+  { pay: [], bill: [], blockers: ["rule_not_supported_yet"] },
+);
+
+ruleCase(
   "client-overtime-billing-variants",
   "Three workers each work 44 hours at $18.25/h (pay is identical: $730.00 + $109.50). Their clients bill overtime differently: client A at the 1.5x multiplier (4h × $39.75 = $159.00), client B at straight time (4h × $26.50 = $106.00), client C not at all ($0.00, the 4 hours are still listed).",
   input(

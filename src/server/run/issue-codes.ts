@@ -31,5 +31,6 @@ export const RUN_ISSUE_CODES = [
   "po_missing",
   "vms_refused",
   "vms_correction_by_hand",
+  "differential_start_unknown",
 ] as const;
 export type RunIssueCode = (typeof RUN_ISSUE_CODES)[number];

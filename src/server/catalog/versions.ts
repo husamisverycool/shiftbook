@@ -27,9 +27,18 @@ export interface RateInput {
   otMultiplier: Multiplier;
   dtMultiplier: Multiplier;
   wcClassCode: string | null;
+  /** A shift differential and a contractual minimum day (drizzle/0062); absent: none. */
+  terms?: RateTerms;
 }
 
-export type RateProblem = "effective_from" | "pay_rate" | "bill_rate" | "markup" | "ot_multiplier" | "dt_multiplier" | "wc_class_code";
+/** A rate card's further terms: the differential (its window and days) and the minimum day. */
+export interface RateTerms {
+  differential: { name: string; payCents: number; billCents: number; startMinute: number | null; endMinute: number | null; days: number[] } | null;
+  contractMinimumMinutes: number | null;
+  billsContractMinimum: boolean;
+}
+
+export type RateProblem = "effective_from" | "pay_rate" | "bill_rate" | "markup" | "ot_multiplier" | "dt_multiplier" | "wc_class_code" | "differential" | "contract_minimum";
 
 /** The highest hourly rate accepted, as in the pay engine ($100,000 an hour). */
 const MAX_RATE_CENTS = 10_000_000;
@@ -60,6 +69,16 @@ export function rateProblems(input: RateInput): RateProblem[] {
   if (!sensibleMultiplier(input.otMultiplier)) problems.push("ot_multiplier");
   if (!sensibleMultiplier(input.dtMultiplier)) problems.push("dt_multiplier");
   if (input.wcClassCode !== null && !/^[A-Za-z0-9.-]{1,12}$/.test(input.wcClassCode)) problems.push("wc_class_code");
+  const d = input.terms?.differential;
+  if (d) {
+    const minute = (m: number | null, max: number) => m === null || (Number.isSafeInteger(m) && m >= 0 && m <= max);
+    const windowOk = (d.startMinute === null) === (d.endMinute === null) && minute(d.startMinute, 1439) && minute(d.endMinute, 1440) && (d.startMinute === null || d.startMinute !== d.endMinute);
+    const daysOk = Array.isArray(d.days) && d.days.length <= 7 && new Set(d.days).size === d.days.length && d.days.every((x) => Number.isSafeInteger(x) && x >= 0 && x <= 6);
+    const centsOk = (c: number, least: number) => Number.isSafeInteger(c) && c >= least && c <= 10_000;
+    if (typeof d.name !== "string" || d.name.trim() === "" || d.name.trim().length > 60 || !centsOk(d.payCents, 1) || !centsOk(d.billCents, 0) || !windowOk || !daysOk) problems.push("differential");
+  }
+  const m = input.terms?.contractMinimumMinutes;
+  if (m !== undefined && m !== null && (!Number.isSafeInteger(m) || m < 1 || m > 720)) problems.push("contract_minimum");
   return problems;
 }
 

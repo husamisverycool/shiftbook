@@ -38,6 +38,8 @@ Source URL: https://docs.stripe.com/invoicing/dashboard/credit-notes
 Source URL: https://help.workyard.com/en/articles/15467712-how-to-map-pay-types-for-quickbooks-online-payroll-exports
 Source URL: https://support.clicktime.com/hc/en-us/articles/41018977335565-Export-Payroll-Data-to-ADP
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/settingRebillInvoiceNumber.htm
+Source URL: https://support.gusto.com/article/250220135301667/Custom-earnings-types-for-admins
+Source URL: https://support.gusto.com/article/999946501000000/Run-a-bonus-payroll
 
 ## Purpose in Granite
 The smallest end-to-end product: take last week's timesheets for one period, read them, let a
@@ -108,6 +110,16 @@ the pay week's day is set, the page says so with a link to Settings › Payroll 
      supplemental invoice (Bullhorn rebill: the original number with a suffix) or a credit note
      (Stripe: the original number with `-CN-` and a count), each naming the original.
    - A correction's Review totals shows was / now / difference per worker and per client.
+   - **Additional pay** (slice G2; Gusto's run-payroll additional earnings and its custom earnings
+     types, which classify a bonus as included in or excluded from overtime; Rippling one-time
+     payments): an H2 with **Add pay** at its right (the hours ability; hidden when the period is
+     locked), then a table of what was entered for the period — worker · what (missed meal period,
+     missed rest period, sent and not used / short day, holiday not worked, bonus) · day or
+     workweek · amount (bonuses) · reason — each row with a "…" menu to **Remove** (a reason).
+     **Add pay** opens a dialog: worker, then the assignment, then the kind, then the fields that
+     kind needs (the day; the scheduled hours and "placed elsewhere the same shift" for a short day;
+     the workweek, amount and "nondiscretionary / flat sum" for a bonus), and a required reason. The
+     engine computes the pay; the totals refresh. An empty table is one muted row.
 
 ## Interactions
 - **Timesheets by email (decision 0042; Expensify's receipts address beside its upload):** under the
