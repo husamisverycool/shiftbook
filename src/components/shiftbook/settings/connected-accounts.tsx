@@ -4,7 +4,7 @@
 // account's Authentication settings: one row per outside service, its mark and name, the account
 // connected (one per service), Connect / Disconnect; a change to how one signs in confirms it's them
 // first (GitHub's sudo mode, `_components/confirm-access.md`).
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { createContext, useContext, useEffect, useId, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { connectIdentityAction, disconnectIdentityAction } from "@/app/[locale]/
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { useDateTime } from "../agency-zone";
 import { useConfirmed } from "../auth/confirm-access";
 import { GoogleMark, MicrosoftMark } from "../auth/provider-marks";
 
@@ -34,7 +35,7 @@ const RESULTS = ["connected", "taken", "already", "failed", "confirm"] as const;
 export function ConnectedAccounts() {
   const data = useContext(Data);
   const t = useTranslations("identities");
-  const locale = useLocale();
+  const dateTime = useDateTime();
   const id = useId();
   const router = useRouter();
   const pathname = usePathname();
@@ -59,7 +60,7 @@ export function ConnectedAccounts() {
   if (!data) return null;
   const rows = (["google", "microsoft"] as const).filter((p) => data.offered[p] || data.identities.some((i) => i.provider === p));
   if (rows.length === 0) return null;
-  const when = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(iso));
+  const when = (iso: string) => dateTime(iso, { date: "long", time: false });
 
   const connect = (provider: Provider) =>
     start(async () => {

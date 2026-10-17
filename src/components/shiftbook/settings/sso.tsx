@@ -5,7 +5,7 @@
 // Authentication methods, Stripe's configuration checks; every change confirms it's the Owner first
 // (GitHub's sudo mode).
 import { LockIcon } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useId, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { saveSsoAction, setSsoEnabledAction, type SsoResult } from "@/app/[locale]/(app)/settings/sso/actions";
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "@/i18n/navigation";
+import { useDateTime } from "../agency-zone";
 import { useConfirmed } from "../auth/confirm-access";
 import { EmptyState } from "../empty-state";
 import { Page, PageHeader } from "../page";
@@ -52,7 +53,7 @@ export function SsoNotForRole() {
 
 export function SsoSettingsView({ canManage, demo, redirectUri, settings }: SsoSettingsProps) {
   const t = useTranslations("sso.settings");
-  const locale = useLocale();
+  const dateTime = useDateTime();
   const id = useId();
   const router = useRouter();
   const confirmed = useConfirmed();
@@ -226,7 +227,7 @@ export function SsoSettingsView({ canManage, demo, redirectUri, settings }: SsoS
       )}
 
       {settings && (
-        <p className="border-t pt-6 text-xs text-muted-foreground">{t("lastChange", { name: settings.updatedByLabel, date: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(settings.updatedAt)) })}</p>
+        <p className="border-t pt-6 text-xs text-muted-foreground">{t("lastChange", { name: settings.updatedByLabel, date: dateTime(settings.updatedAt, { date: "long" }) })}</p>
       )}
     </div>
   );

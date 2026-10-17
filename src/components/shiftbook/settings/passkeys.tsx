@@ -6,7 +6,7 @@
 // then the device's prompt, then a confirmation and Done).
 import { browserSupportsWebAuthn, startRegistration } from "@simplewebauthn/browser";
 import { KeyRoundIcon } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useId, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { addPasskeyAction, passkeyRegistrationOptionsAction, removePasskeyAction } from "@/app/[locale]/(auth)/passkey-actions";
@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRouter } from "@/i18n/navigation";
+import { useDateTime } from "../agency-zone";
 import { cancelledByPerson } from "../auth/passkey";
 import { useAskToConfirm, useConfirmed } from "../auth/confirm-access";
 
@@ -37,7 +38,6 @@ const alreadyThere = (error: unknown) => {
 /** The section's body, put in the account page's own section frame (`frame`) under its title. */
 export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; frame: (title: string, body: ReactNode) => ReactNode }) {
   const t = useTranslations("passkeys");
-  const locale = useLocale();
   const router = useRouter();
   const id = useId();
   const confirmed = useConfirmed();
@@ -47,7 +47,8 @@ export function PasskeysSection({ passkeys, frame }: { passkeys: PasskeyItem[]; 
   const [error, setError] = useState<Problem | null>(null);
   const [added, setAdded] = useState<string | null>(null);
   const [toRemove, setToRemove] = useState<PasskeyItem | null>(null);
-  const when = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(iso));
+  const dateTime = useDateTime();
+  const when = (iso: string) => dateTime(iso, { date: "long", time: false });
 
   const add = () =>
     startAdding(async () => {
