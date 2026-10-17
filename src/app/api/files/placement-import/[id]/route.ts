@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { writeCsv } from "@/exports/csv";
 import { withAgency } from "@/server/db";
 import { placementImports } from "@/server/db/schema";
+import { keptRowsCsv } from "@/server/placements/service";
 import { currentActor } from "@/server/session";
 import { documentStore } from "@/server/storage";
 
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * An import's files (Avionté's View Imports: "Download CSV"): `?file=rows` the rows as Granite kept them
- * (columns holding SSNs or birth dates were removed on receipt), `?file=results` each row's result and
+ * (columns holding SSNs or birth dates were removed on receipt; typed fixes applied; rows left out
+ * removed), `?file=results` each row's result and
  * reason. Row-level security limits it to the signed-in agency.
  */
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
@@ -21,7 +23,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!row) return new Response("Not found", { status: 404 });
   const base = row.filename.replace(/\.(csv|xlsx)$/i, "");
   if (file === "rows") {
-    const bytes = await documentStore.get(row.storageKey);
+    // The rows kept: the typed fixes applied, the rows left out removed, no cell opening as a formula.
+    const bytes = await withAgency(actor.agencyId, (tx) => keptRowsCsv(tx, documentStore, id));
+    if (!bytes) return new Response("Not found", { status: 404 });
     return new Response(new Blob([bytes as BlobPart]), { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${base}-rows.csv"` } });
   }
   if (!row.results) return new Response("Not found", { status: 404 });

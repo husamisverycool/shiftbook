@@ -11,7 +11,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { agencies, assignments, placementImports } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, seedDemoAgency } from "../../src/server/demo/seed";
-import { ImportFileError, importView, runImport, saveRowFix, setRowRemoved, startImport } from "../../src/server/placements/service";
+import { ImportFileError, importView, keptRowsCsv, runImport, saveRowFix, setRowRemoved, startImport } from "../../src/server/placements/service";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
 import { openAppDb, openOwnerDb } from "./helpers";
@@ -73,10 +73,35 @@ describe("fixing only the rows with errors", () => {
     expect(made.find((a) => a.externalId === "A-2")?.startDate).toBe("2026-10-20");
   });
 
-  it("refuses a fix holding an SSN, a column that is not mapped, and a row that is not in the file", async () => {
+  it("refuses a fix holding an SSN (any dashes), a column that is not mapped, and a row that is not in the file", async () => {
     const { id } = await inAgency((tx) => startImport(tx, actor, store, { source: "avionte", filename: "avionte-placements.csv", bytes: new TextEncoder().encode(csv) }, TODAY));
     await expect(inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Start Date", "912-34-5678"))).rejects.toBeInstanceOf(ImportFileError);
+    await expect(inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Start Date", "912–34–5678"))).rejects.toBeInstanceOf(ImportFileError);
     await expect(inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Nope", "x"))).rejects.toThrow();
     await expect(inAgency((tx) => setRowRemoved(tx, actor, store, id, 99, true))).rejects.toThrow();
+  });
+
+  it("only lets the offered cell of a row with an error be fixed (export review finding 8)", async () => {
+    const { id } = await inAgency((tx) => startImport(tx, actor, store, { source: "avionte", filename: "avionte-placements.csv", bytes: new TextEncoder().encode(csv) }, TODAY));
+    // Row 2 has no error; row 3's error is its start date, not its pay rate.
+    await expect(inAgency((tx) => saveRowFix(tx, actor, store, id, 2, "Reg Pay Rate", "99.00"))).rejects.toThrow();
+    await expect(inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Reg Pay Rate", "99.00"))).rejects.toThrow();
+    await inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Start Date", "10/20/2026"));
+    // A typed fix can be changed and cleared again, though the row no longer has an error.
+    await inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Start Date", "10/21/2026"));
+    await inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Start Date", ""));
+    const [record] = await inAgency((tx) => tx.select().from(placementImports).where(eq(placementImports.id, id)));
+    expect(record!.rowEdits).toEqual({});
+  });
+
+  it("downloads the rows kept: fixes applied, rows left out removed, no cell opening as a formula", async () => {
+    const withFormula = `${csv}\nA-4,=HYPERLINK("x"),Okafor,Prairie Line Manufacturing (demo),Assembler,Day,10/26/2026,,17.00,25.00`;
+    const { id } = await inAgency((tx) => startImport(tx, actor, store, { source: "avionte", filename: "avionte-placements.csv", bytes: new TextEncoder().encode(withFormula) }, TODAY));
+    await inAgency((tx) => saveRowFix(tx, actor, store, id, 3, "Start Date", "10/20/2026"));
+    await inAgency((tx) => setRowRemoved(tx, actor, store, id, 4, true));
+    const text = new TextDecoder().decode((await inAgency((tx) => keptRowsCsv(tx, store, id)))!);
+    expect(text).toContain("A-2,Marcus,Bell,Prairie Line Manufacturing (demo),Assembler,Second,10/20/2026,,18.00,26.25");
+    expect(text).not.toContain("A-3,");
+    expect(text).toContain("A-4,'=HYPERLINK(x),Okafor");
   });
 });

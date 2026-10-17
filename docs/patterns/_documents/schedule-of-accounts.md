@@ -21,8 +21,10 @@ and each invoice's PDF (with its timesheet backup) travel with it in one file.
    its address) and "Assigned to: ________" for the factor's name (the form leaves the factor's name
    to the seller).
 2. A table, oldest first: debtor (the client, with its address under the name), invoice number,
-   invoice date, due date, PO / reference, amount; the count and the total under it (the form's
-   footer total).
+   invoice date, due date, PO / reference, the amount still owed (the invoice's balance after
+   payments and credit notes: the agreement's "correct amount owed"); the count and the total under
+   it (the form's footer total). The CSV carries the invoice's total and its balance in two columns.
+   An invoice already on another schedule is refused (a receivable is assigned once).
 3. The certification and assignment paragraph in plain words: the invoices are for work performed
    and approved, the amounts are owed and not disputed or paid, and they are assigned to the factor
    under the agreement (the form's certification; the agreement's "bill of sale").

@@ -257,6 +257,18 @@ export async function saveRowFix(tx: Tx, actor: Actor, store: DocumentStore, id:
   if (at < 0 || !loaded.header.includes(column) || !Object.values(record.mapping).includes(column) || value.length > 500) throw new StaleRequestError();
   // A typed fix is kept and logged: never an SSN (SPEC §21), as the stored file never holds one.
   if (holdsSsn(value)) throw new ImportFileError("unsupported");
+  // Only the one cell the review step offers on a row with an error, or a fix already typed there
+  // (to change or clear it) — never any other cell of the file (export review finding 8).
+  const typed = record.rowEdits[String(row)]?.[column] !== undefined;
+  if (!typed) {
+    const mapping = record.mapping as Mapping;
+    if (missingFields(mapping).length > 0) throw new StaleRequestError();
+    const others = Object.fromEntries(Object.entries(record.rowEdits).filter(([n]) => n !== String(row)));
+    const rows = applyRowEdits(loaded.header, loaded.stored, loaded.opts.rowNumbers, others);
+    const planned = planRows(record.source as Source, loaded.header, rows, mapping, record.decisions as Decisions, await catalogFor(tx), loaded.opts).find((p) => p.row === row);
+    const offered = planned?.outcome === "skip" && planned.reason.code !== "already_imported" && planned.reason.code !== "removed_by_person" ? fixableField(planned.reason, loaded.header, rows[at]!, mapping) : null;
+    if (offered?.column !== column) throw new StaleRequestError();
+  }
   const original = loaded.stored[at]![loaded.header.indexOf(column)] ?? "";
   const edits = { ...record.rowEdits };
   const forRow = { ...(edits[String(row)] ?? {}) };
@@ -266,6 +278,21 @@ export async function saveRowFix(tx: Tx, actor: Actor, store: DocumentStore, id:
   else edits[String(row)] = forRow;
   await tx.update(s.placementImports).set({ rowEdits: edits, updatedAt: new Date() }).where(eq(s.placementImports.id, id));
   await audit(tx, actor, [{ action: "update", entityType: "placement_import", entityId: id, before: { row, column, value: original }, after: { row, column, value: forRow[column] ?? original } }]);
+}
+
+/**
+ * The rows the import keeps (Avionté's "Download CSV" of an import): the stored copy with the typed
+ * fixes laid over it and the rows left out removed, every cell guarded so it never opens as a formula
+ * (export review finding 8). Null when there is no such import.
+ */
+export async function keptRowsCsv(tx: Tx, store: DocumentStore, id: string): Promise<Uint8Array | null> {
+  const loaded = await load(tx, store, id);
+  if (!loaded) return null;
+  const numbers = loaded.opts.rowNumbers ?? loaded.stored.map((_, i) => i + 2);
+  const removed = new Set(loaded.record.removedRows);
+  const cell = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
+  const kept = loaded.rows.filter((_, i) => !removed.has(numbers[i]!));
+  return writeCsv([loaded.header.map(cell), ...kept.map((r) => r.map(cell))], { eol: "\r\n" });
 }
 
 /** Leaves a row out of the import, or takes it back (Avionté: "Remove"). */

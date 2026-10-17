@@ -264,12 +264,19 @@ export const KIND_RULES: Record<ExportFormat, Partial<Record<EarningType, KindRu
   },
   // Paychex Flex and Paylocity (decision 0040): every kind as hours at the written rate or as dollars,
   // always under a code the agency sets — their codes are the company's own (case-sensitive).
+  // Overtime and double time carry the multiple the company's pay component applies to the written
+  // rate, declared by the agency as for ADP (export review finding 2): an overtime component that
+  // multiplies by 1.5 is sent the rate ÷ 1.5, one that pays the rate as given is declared as 1.
   paychex_flex_csv: {
     ...Object.fromEntries(EARNING_TYPES.filter((k) => k !== "BONUS").map((k) => [k, { hours: { factor: ONE }, dollars: {}, blank: "refused" } satisfies KindRule])),
+    OT: { hours: { factor: HALF_AGAIN, declared: true }, dollars: {}, blank: "refused" },
+    DT: { hours: { factor: TWO, declared: true }, dollars: {}, blank: "refused" },
     BONUS: { dollars: {}, blank: "refused" },
   },
   paylocity_time_csv: {
     ...Object.fromEntries(EARNING_TYPES.filter((k) => k !== "BONUS").map((k) => [k, { hours: { factor: ONE }, dollars: {}, blank: "refused" } satisfies KindRule])),
+    OT: { hours: { factor: HALF_AGAIN, declared: true }, dollars: {}, blank: "refused" },
+    DT: { hours: { factor: TWO, declared: true }, dollars: {}, blank: "refused" },
     BONUS: { dollars: {}, blank: "refused" },
   },
   spreadsheet_csv: {
@@ -313,8 +320,11 @@ function codeProblem(format: ExportFormat, code: string): string | null {
     case "adp_run_csv":
       return /^[A-Za-z0-9_-]{1,10}$/.test(code) ? null : "RUN's earnings code: up to 10 letters, digits, dashes or underscores.";
     case "paychex_flex_csv":
-      // SPI's Pay Component: up to 20 characters, matched case for case.
-      return code.length <= 20 && isTrimmed(code) && !controlCharacter(code) && !code.includes(",") ? null : "The pay component exactly as Paychex shows it, up to 20 characters, no commas.";
+      // SPI's Pay Component: up to 20 characters, matched case for case; never one a spreadsheet would
+      // read as a formula (it cannot be escaped: Paychex would read the escape literally).
+      return code.length <= 20 && isTrimmed(code) && !controlCharacter(code) && !code.includes(",") && !/^[=+\-@]/.test(code)
+        ? null
+        : "The pay component exactly as Paychex shows it, up to 20 characters, no commas, not starting with = + - or @.";
     case "paylocity_time_csv":
       return /^[A-Za-z0-9_-]{1,10}$/.test(code) ? null : "Paylocity's earning code (detCode) exactly as it is set up: up to 10 letters, digits, dashes or underscores.";
     case "spreadsheet_csv":

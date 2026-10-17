@@ -1499,11 +1499,11 @@
         },
         "paychex_flex_csv": {
           "name": "Paychex Flex",
-          "carries": "Hours with their rate, or dollars, under your pay components."
+          "carries": "Hours with their rate, or dollars, under your pay components. For overtime and double time, enter the multiple your pay component applies (1.5 if Paychex multiplies the rate, 1 if it pays the rate as written): Granite writes the rate divided by it, so Paychex pays the right amount."
         },
         "paylocity_time_csv": {
           "name": "Paylocity",
-          "carries": "Hours with their rate, or dollars, under your earning codes."
+          "carries": "Hours with their rate, or dollars, under your earning codes. For overtime and double time, enter the multiple your earning code applies (1.5 if Paylocity multiplies the rate, 1 if it pays the rate as written): Granite writes the rate divided by it, so Paylocity pays the right amount."
         }
       },
       "fields": {
@@ -1684,7 +1684,7 @@
         "choose_as": "Choose hours or dollars.",
         "no_ssn": "An SSN can't be a payroll number: it would go into the payroll file.",
         "paychex_client_id": "Up to 8 letters or digits.",
-        "code_form_paychex_flex_csv": "The pay component exactly as Paychex shows it, up to 20 characters, no commas.",
+        "code_form_paychex_flex_csv": "The pay component exactly as Paychex shows it, up to 20 characters, no commas, not starting with = + - or @.",
         "code_form_paylocity_time_csv": "Up to 10 letters, digits, dashes or underscores, exactly as set up in Paylocity.",
         "paychex_worker_id": "Up to 10 letters or digits.",
         "paylocity_id": "Up to 10 letters or digits."
@@ -5539,7 +5539,7 @@
       "issued": "Invoice date",
       "due": "Due date",
       "reference": "PO / reference",
-      "amount": "Amount",
+      "amount": "Amount owed",
       "total": "Total of {count} invoices",
       "certification": "{seller} certifies that each invoice listed above is for work performed and approved, that each amount is owed by the debtor named and is not paid, disputed or subject to any credit, and assigns these invoices to the party named above under the agreement between them.",
       "signature": "Signature",
