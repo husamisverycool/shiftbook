@@ -309,8 +309,9 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
     key: "earning_code_map.paychex_flex_csv",
     value: {
       REG: { code: "Hourly", as: "hours" },
-      OT: { code: "Overtime", as: "hours" },
-      DT: { code: "Double Time", as: "hours" },
+      // The demo company's overtime components multiply the rate they are sent (export review finding 2).
+      OT: { code: "Overtime", as: "hours", factor: { num: 3, den: 2 } },
+      DT: { code: "Double Time", as: "hours", factor: { num: 2, den: 1 } },
       HOL_NOT_WORKED: { code: "Holiday", as: "hours" },
       MW_TRUEUP: { code: "Min Wage Adj", as: "dollars" },
       REPORTING_PAY: { code: "Reporting Pay", as: "dollars" },
@@ -327,8 +328,8 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
     key: "earning_code_map.paylocity_time_csv",
     value: {
       REG: { code: "REG", as: "hours" },
-      OT: { code: "OT", as: "hours" },
-      DT: { code: "DT", as: "hours" },
+      OT: { code: "OT", as: "hours", factor: { num: 3, den: 2 } },
+      DT: { code: "DT", as: "hours", factor: { num: 2, den: 1 } },
       HOL_NOT_WORKED: { code: "HOL", as: "hours" },
       MW_TRUEUP: { code: "MWADJ", as: "dollars" },
       REPORTING_PAY: { code: "RPT", as: "dollars" },

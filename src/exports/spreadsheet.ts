@@ -12,7 +12,7 @@
  * out under Granite's own code (REG, OT, …). With an amount column the receiver pays what is
  * written; without one it prices hours × the written rate, and the notes say what rounding does.
  */
-import { exactDecimal, formatCents, roundHalfUpBig, type Fraction } from "@shiftbook/rules";
+import { exactDecimal, formatCents, formatRate, roundHalfUpBig, type Fraction } from "@shiftbook/rules";
 import type { ControlTotals } from "../server/db/schema";
 import { collect, correctionNote, KIND_ORDER, KIND_TEXT, targetOf, weekEnd, who } from "./collect";
 import { readCsv, writeCsv } from "./csv";
@@ -41,8 +41,19 @@ interface Row {
   type: string;
   rank: number;
   rate: Fraction;
+  /** The multiple the receiver applies to the written rate (1, or the one the agency declared). */
+  factor: Fraction;
   minutes: number;
   amountCents: number;
+}
+
+/** The rate written for a row: the line's rate ÷ the receiver's multiple, in ten-thousandths of a dollar. */
+function writtenRate(row: Pick<Row, "rate" | "factor">): bigint | null {
+  if (row.factor.num === row.factor.den) return tenThousandths(row.rate);
+  // A declared multiple: written exactly or not at all (the receiver multiplies it back).
+  const num = BigInt(row.rate.num) * 100n * BigInt(row.factor.den);
+  const den = BigInt(row.rate.den) * BigInt(row.factor.num);
+  return num % den === 0n ? num / den : null;
 }
 
 export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
@@ -86,7 +97,7 @@ export function renderLayout(fixture: ExportFixture, format: ExportFormat, layou
   const rows = new Map<string, Row>();
   c.workers.forEach((w, workerIndex) => {
     for (const { line, bucket } of w.lines) {
-      const key = `${w.worker.workerId}|${line.workweekStart ?? ""}|${line.type}|${bucket.as}|${line.rate.num}/${line.rate.den}`;
+      const key = `${w.worker.workerId}|${line.workweekStart ?? ""}|${line.type}|${bucket.as}|${line.rate.num}/${line.rate.den}|${bucket.factor.num}/${bucket.factor.den}`;
       const row = rows.get(key) ?? {
         workerIndex,
         id: w.id,
@@ -99,6 +110,7 @@ export function renderLayout(fixture: ExportFixture, format: ExportFormat, layou
         type: line.type,
         rank: KIND_ORDER.indexOf(line.type),
         rate: line.rate,
+        factor: bucket.as === "hours" ? bucket.factor : { num: 1, den: 1 },
         minutes: 0,
         amountCents: 0,
       };
@@ -107,6 +119,15 @@ export function renderLayout(fixture: ExportFixture, format: ExportFormat, layou
       rows.set(key, row);
     }
   });
+  for (const row of rows.values()) {
+    if (row.as === "hours" && has("rate") && writtenRate(row) === null) {
+      const worker = c.workers[row.workerIndex]!.worker;
+      throw new ExportError(
+        "unsupported_earning_type",
+        `${who(worker)}: ${KIND_TEXT[row.type as keyof typeof KIND_TEXT]} is paid at ${formatRate(row.rate)}, which is not an exact rate once divided by the ${exactDecimal(row.factor.num, row.factor.den)} multiple ${opts.receiver} applies to this pay component (the week's regular rate includes a second rate, a bonus or a top-up). Carry this kind of pay as dollars in payroll settings, or skip this worker and pay them by hand.`,
+      );
+    }
+  }
   const ordered = [...rows.values()].sort((a, b) => a.workerIndex - b.workerIndex || cmp(a.weekStart, b.weekStart) || a.rank - b.rank || (BigInt(a.rate.num) * BigInt(b.rate.den) < BigInt(b.rate.num) * BigInt(a.rate.den) ? -1 : 1));
 
   const date = (iso: string) => formatDate(iso, layout.dateFormat);
@@ -131,7 +152,7 @@ export function renderLayout(fixture: ExportFixture, format: ExportFormat, layou
       case "hours":
         return row.as === "hours" ? twoDecimals(toHundredths(row.minutes)) : "";
       case "rate":
-        return row.as === "hours" ? rateText(tenThousandths(row.rate)) : "";
+        return row.as === "hours" ? rateText(writtenRate(row)!) : "";
       case "amount":
         return amountOf(row) ? twoDecimals(row.amountCents) : "";
       case "fixed":
@@ -142,25 +163,64 @@ export function renderLayout(fixture: ExportFixture, format: ExportFormat, layou
   const delimiter = DELIMITERS[layout.delimiter];
   const bytes = writeCsv(lines, { eol: "\r\n", delimiter });
 
-  // What the receiver pays: the amount when the file has one; otherwise hours × the written rate.
+  // What the receiver pays: the amount when the file has one; otherwise hours × the written rate × its multiple.
+  const pays = (hundredths: number, t4: bigint, factor: Fraction) => roundHalfUpBig(BigInt(hundredths) * t4 * BigInt(factor.num), 10_000n * BigInt(factor.den));
   const notes = correctionNote(fixture, opts.receiver);
-  let payrollSystemGrossCents = 0;
+  let expectedGrossCents = 0;
   for (const row of ordered) {
     if (amountOf(row)) {
-      payrollSystemGrossCents += row.amountCents;
+      expectedGrossCents += row.amountCents;
       continue;
     }
     const h = toHundredths(row.minutes);
-    const t4 = tenThousandths(row.rate);
-    const cents = roundHalfUpBig(BigInt(h) * t4, 10_000n);
-    payrollSystemGrossCents += cents;
+    const t4 = writtenRate(row)!;
+    const cents = pays(h, t4, row.factor);
+    expectedGrossCents += cents;
     const exactHours = h * 60 === row.minutes * 100;
     if (!exactHours || cents !== row.amountCents) {
       const written = exactHours ? `${row.minutes} min written as ${twoDecimals(h)} h (exact)` : `${row.minutes} min written as ${twoDecimals(h)} h (${exactDecimal(row.minutes, 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
+      const multiple = row.factor.num === row.factor.den ? "" : ` × ${exactDecimal(row.factor.num, row.factor.den)}`;
       const worker = c.workers[row.workerIndex]!.worker;
-      notes.push(`${who(worker)} — ${row.type}: ${written}. ${opts.amountOn === "every_row" ? "The receiver" : opts.receiver} pays ${twoDecimals(h)} h × ${rateText(t4)} = ${formatCents(cents)}; Granite computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
+      notes.push(`${who(worker)} — ${row.type}: ${written}. ${opts.amountOn === "every_row" ? "The receiver" : opts.receiver} pays ${twoDecimals(h)} h × ${rateText(t4)}${multiple} = ${formatCents(cents)}; Granite computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
     }
   }
+
+  // Read back: rows; per row the worker id, code, minutes, rate and amount, the fixed cells, and empty
+  // hours and rate on dollars rows. The receiver's gross is computed from the file as read, not from
+  // memory (export review finding 3).
+  const read = readCsv(new TextDecoder().decode(bytes), delimiter).slice(layout.header ? 1 : 0);
+  const at = (field: SpreadsheetField) => layout.columns.findIndex((col) => col.field === field);
+  const problems: string[] = read.length !== ordered.length ? [`rows ${read.length} ≠ ${ordered.length}`] : [];
+  let payrollSystemGrossCents = 0;
+  read.forEach((r, i) => {
+    const row = ordered[i]!;
+    if (r[at("worker_id")] !== row.id || r[at("earning_code")] !== row.code) problems.push(`row ${i + 1} is not ${row.id} ${row.code}`);
+    layout.columns.forEach((col, n) => {
+      if (col.field === "fixed" && (r[n] ?? "") !== (col.value ?? "")) problems.push(`row ${i + 1} ${col.header}`);
+    });
+    if (amountOf(row)) {
+      const cents = readTwoDecimals(r[at("amount")] ?? "", "amount", opts.file);
+      if (cents !== row.amountCents) problems.push(`row ${i + 1} amount`);
+      payrollSystemGrossCents += cents;
+    } else if (has("amount") && (r[at("amount")] ?? "") !== "") problems.push(`row ${i + 1} has an amount beside its hours`);
+    if (row.as === "dollars") {
+      if (has("hours") && (r[at("hours")] ?? "") !== "") problems.push(`row ${i + 1} has hours beside its amount`);
+      if (has("rate") && (r[at("rate")] ?? "") !== "") problems.push(`row ${i + 1} has a rate beside its amount`);
+      return;
+    }
+    const hundredths = has("hours") ? readTwoDecimals(r[at("hours")] ?? "", "hours", opts.file) : toHundredths(row.minutes);
+    if (has("hours") && hundredthsToMinutes(hundredths) !== row.minutes) problems.push(`row ${i + 1} minutes`);
+    if (!has("rate")) return;
+    const rate = r[at("rate")] ?? "";
+    if (!/^\d+\.\d{4}$/.test(rate) || BigInt(rate.replace(".", "")) !== writtenRate(row)) {
+      problems.push(`row ${i + 1} rate`);
+      return;
+    }
+    if (!amountOf(row)) payrollSystemGrossCents += pays(hundredths, BigInt(rate.replace(".", "")), row.factor);
+  });
+  if (problems.length === 0 && has("rate") && payrollSystemGrossCents !== expectedGrossCents) problems.push(`the receiver's gross ${formatCents(payrollSystemGrossCents)} ≠ ${formatCents(expectedGrossCents)}`);
+  if (problems.length > 0) throw new ExportError("does_not_reconcile", `The ${opts.file} does not reconcile to the run: ${problems.join("; ")}.`);
+  if (!has("rate")) payrollSystemGrossCents = expectedGrossCents;
 
   const controlTotals: ControlTotals = {
     workers: c.workers.length,
@@ -170,19 +230,6 @@ export function renderLayout(fixture: ExportFixture, format: ExportFormat, layou
     payrollSystemGrossCents,
     payrollSystemDifferenceCents: payrollSystemGrossCents - c.grossCents,
   };
-
-  // Read back: rows, and per worker id and code the minutes (hours rows) and amounts.
-  const read = readCsv(new TextDecoder().decode(bytes), delimiter).slice(layout.header ? 1 : 0);
-  const at = (field: SpreadsheetField) => layout.columns.findIndex((col) => col.field === field);
-  const problems: string[] = read.length !== ordered.length ? [`rows ${read.length} ≠ ${ordered.length}`] : [];
-  read.forEach((r, i) => {
-    const row = ordered[i]!;
-    if (r[at("worker_id")] !== row.id || r[at("earning_code")] !== row.code) problems.push(`row ${i + 1} is not ${row.id} ${row.code}`);
-    if (has("hours") && row.as === "hours" && hundredthsToMinutes(readTwoDecimals(r[at("hours")] ?? "", "hours", opts.file)) !== row.minutes) problems.push(`row ${i + 1} minutes`);
-    if (amountOf(row) && readTwoDecimals(r[at("amount")] ?? "", "amount", opts.file) !== row.amountCents) problems.push(`row ${i + 1} amount`);
-    if (!amountOf(row) && has("amount") && (r[at("amount")] ?? "") !== "") problems.push(`row ${i + 1} has an amount beside its hours`);
-  });
-  if (problems.length > 0) throw new ExportError("does_not_reconcile", `The ${opts.file} does not reconcile to the run: ${problems.join("; ")}.`);
 
   const name = layout.fileName.replaceAll("{start}", fixture.period.startsOn).replaceAll("{end}", fixture.period.endsOn);
   const dot = name.lastIndexOf(".");

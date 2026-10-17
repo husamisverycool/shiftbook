@@ -32,10 +32,17 @@ columns, Paylocity, schedule forms) and `docs/research/payroll-formats-slice-f.m
    - **Confidence.** Paychex SPI columns: high (Deltek's Paychex export spec; Paychex's own pages
      returned 404). The 16 vs 17 column count is unverified; Granite writes 16 and accepts samples
      with more. Rate semantics ("overrides the loaded rate") are documented; whether a pay component
-     multiplies a given rate is not, so overtime should be mapped to a component that pays the rate as
-     given, or sent as dollars. Paylocity: **low** — the layout comes from two third-party vendor guides
+     multiplies a given rate is not. So, as for ADP Workforce Now, overtime and double time carry a
+     **declared multiple** (export review finding 2): the agency enters the multiple its component
+     applies (1.5 when it multiplies, 1 when it pays the rate as given) and the file writes the rate ÷
+     that multiple, refused when not exact at four decimals (a blended week: carry it as dollars).
+     Paylocity: **low** — the layout comes from two third-party vendor guides
      that agree (ClickTime, Buddy Punch); Paylocity's own layout is not public. Paylocity's import
      Status Report shows anything refused before it is posted.
+   - **Read back** (export review finding 3): each row's rate, hours, amount and fixed cells are read
+     from the written file, dollars rows must have no hours or rate, and what the system pays is
+     computed from the file as read. Line Date is written on every row: every row is an earnings pay
+     component, the only kind Deltek's spec allows it on.
 3. **Schedule of accounts**: from the invoices list's selection (Owner and Billing, the cash ability),
    one .zip — the schedule as CSV (debtor and address, invoice number, invoice and due dates, terms,
    PO, week ending, amount, backup file; a total row; read back to the cent), the schedule as a PDF to

@@ -1496,11 +1496,11 @@
         },
         "paychex_flex_csv": {
           "name": "Paychex Flex",
-          "carries": "Horas con su tarifa, o dólares, con sus componentes de pago."
+          "carries": "Horas con su tarifa, o dólares, con sus componentes de pago. Para horas extra y tiempo doble, indique el múltiplo que aplica su componente de pago (1.5 si Paychex multiplica la tarifa, 1 si paga la tarifa tal como se escribe): Granite escribe la tarifa dividida entre él, para que Paychex pague el importe correcto."
         },
         "paylocity_time_csv": {
           "name": "Paylocity",
-          "carries": "Horas con su tarifa, o dólares, con sus códigos de ingreso."
+          "carries": "Horas con su tarifa, o dólares, con sus códigos de ingreso. Para horas extra y tiempo doble, indique el múltiplo que aplica su código de ingreso (1.5 si Paylocity multiplica la tarifa, 1 si paga la tarifa tal como se escribe): Granite escribe la tarifa dividida entre él, para que Paylocity pague el importe correcto."
         }
       },
       "fields": {
@@ -1681,7 +1681,7 @@
         "choose_as": "Elija horas o dólares.",
         "no_ssn": "Un número de Seguro Social no puede ser número de nómina: iría en el archivo de nómina.",
         "paychex_client_id": "Hasta 8 letras o dígitos.",
-        "code_form_paychex_flex_csv": "El componente de pago tal como lo muestra Paychex, hasta 20 caracteres, sin comas.",
+        "code_form_paychex_flex_csv": "El componente de pago tal como lo muestra Paychex, hasta 20 caracteres, sin comas, que no empiece por = + - ni @.",
         "code_form_paylocity_time_csv": "Hasta 10 letras, dígitos, guiones o guiones bajos, tal como está configurado en Paylocity.",
         "paychex_worker_id": "Hasta 10 letras o dígitos.",
         "paylocity_id": "Hasta 10 letras o dígitos."

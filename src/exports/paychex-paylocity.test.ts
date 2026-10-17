@@ -3,8 +3,11 @@
  *   Álvarez (Paychex A123): REG 2400 min at $18.25 = $730.00; OT 37 min at $27.375 = $16.88 (Granite);
  *   a $150.00 bonus. Okafor (B456): REG 2280 min at $18.25 = $693.50. Granite gross $1,590.38.
  *   Written: 40.00 h, 0.62 h (37 min = 0.6166… h, rounded up), 38.00 h; the bonus as $150.00.
- *   The system pays 0.62 × 27.3750 = 16.9725 → $16.97 for the overtime row (+$0.09), the rest exact:
- *   $730.00 + $16.97 + $150.00 + $693.50 = $1,590.47 (+$0.09).
+ *   The overtime component multiplies by 1.5, as the agency declares (export review finding 2), so its
+ *   rate is written as $27.375 ÷ 1.5 = 18.2500 and the system pays 0.62 × 18.2500 × 1.5 = 16.9725 →
+ *   $16.97 for that row (+$0.09), the rest exact: $730.00 + $16.97 + $150.00 + $693.50 = $1,590.47.
+ *   Declared as 1 (a component paying the rate as written), the rate goes out as 27.3750: 0.62 ×
+ *   27.3750 = $16.97 too.
  */
 import { describe, expect, it } from "vitest";
 import { renderPaychexFlex } from "./paychex-flex";
@@ -13,6 +16,7 @@ import { renderExport, type ExportFixture } from "./registry";
 import { codeMapProblems, targetProblems, workerIdProblem } from "./targets";
 
 const REG = { num: 1825, den: 1 };
+const HALF_AGAIN = { num: 3, den: 2 };
 const lines: ExportFixture["payLines"] = [
   { workerId: "w2", type: "REG", minutes: 2280, amountCents: 69_350, rate: REG, workweekStart: "2026-10-05" },
   { workerId: "w1", type: "REG", minutes: 2400, amountCents: 73_000, rate: REG, workweekStart: "2026-10-05" },
@@ -23,7 +27,7 @@ const workers = (system: "paychex" | "paylocity"): ExportFixture["workers"] => [
   { workerId: "w1", firstName: "Ana", lastName: "Álvarez", payrollIds: { [system]: { id: "A123" } } },
   { workerId: "w2", firstName: "Ben", lastName: "Okafor", payrollIds: { [system]: { id: "B456" } } },
 ];
-const codes = { REG: { code: "Hourly", as: "hours" as const }, OT: { code: "Overtime", as: "hours" as const }, BONUS: { code: "Bonus", as: "dollars" as const } };
+const codes = { REG: { code: "Hourly", as: "hours" as const }, OT: { code: "Overtime 1.5x", as: "hours" as const, factor: HALF_AGAIN }, BONUS: { code: "Bonus", as: "dollars" as const } };
 const paychex = (over: Partial<ExportFixture> = {}): ExportFixture => ({
   format: "paychex_flex_csv",
   mappingVersion: "paychex-flex-spi-v1",
@@ -40,7 +44,7 @@ const paylocity = (over: Partial<ExportFixture> = {}): ExportFixture => ({
   format: "paylocity_time_csv",
   mappingVersion: "paylocity-timeimprt-v1",
   target: { format: "paylocity_time_csv" },
-  codes: { REG: { code: "REG", as: "hours" }, OT: { code: "OT", as: "hours" }, BONUS: { code: "BON", as: "dollars" } },
+  codes: { REG: { code: "REG", as: "hours" }, OT: { code: "OT15", as: "hours", factor: HALF_AGAIN }, BONUS: { code: "BON", as: "dollars" } },
   workers: workers("paylocity"),
   ...over,
 });
@@ -48,14 +52,14 @@ const text = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
 const TOTALS = { workers: 2, minutesByType: { REG: 4680, OT: 37 }, amountsByType: { BONUS: 15_000 }, grossCents: 159_038, payrollSystemGrossCents: 159_047, payrollSystemDifferenceCents: 9 };
 
 describe("Paychex Flex Standard Payroll Import", () => {
-  it("writes the sixteen columns in order: hours with their rate, dollars in Amount, never both", () => {
+  it("writes the sixteen columns in order: hours with their rate (overtime's divided by its declared multiple), dollars in Amount, never both", () => {
     const r = renderPaychexFlex(paychex());
     expect(r.filename).toBe("paychex-flex-2026-10-05-to-2026-10-11.csv");
     expect(text(r.bytes)).toBe(
       [
         "Client ID,Worker ID,Org,Job Number,Pay Component,Rate,Rate Number,Hours,Units,Line Date,Amount,Check Seq Number,Override State,Override Local,Override Local Jurisdiction,Labor Assignment",
         "ABC12345,A123,,,Hourly,18.2500,,40.00,,10/11/2026,,,,,,",
-        "ABC12345,A123,,,Overtime,27.3750,,0.62,,10/11/2026,,,,,,",
+        "ABC12345,A123,,,Overtime 1.5x,18.2500,,0.62,,10/11/2026,,,,,,",
         "ABC12345,A123,,,Bonus,,,,,10/11/2026,150.00,,,,,",
         "ABC12345,B456,,,Hourly,18.2500,,38.00,,10/11/2026,,,,,,",
         "",
@@ -63,23 +67,39 @@ describe("Paychex Flex Standard Payroll Import", () => {
     );
   });
 
-  it("states what Paychex pays and reconciles to the run", () => {
+  it("states what Paychex pays, read from the file, and reconciles to the run", () => {
     const r = renderExport(paychex());
     expect(r.controlTotals).toEqual(TOTALS);
     expect(r.notes).toEqual([
-      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Paychex Flex pays 0.62 h × 27.3750 = $16.97; Granite computed $16.88 (+$0.09).",
+      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Paychex Flex pays 0.62 h × 18.2500 × 1.5 = $16.97; Granite computed $16.88 (+$0.09).",
     ]);
+  });
+
+  it("writes overtime at its own rate when the component is declared to pay the rate as written", () => {
+    const r = renderPaychexFlex(paychex({ codes: { ...codes, OT: { code: "Overtime", as: "hours", factor: { num: 1, den: 1 } } } }));
+    expect(text(r.bytes)).toContain("ABC12345,A123,,,Overtime,27.3750,,0.62,,10/11/2026,,,,,,");
+    expect(r.controlTotals).toEqual(TOTALS);
+  });
+
+  it("refuses an overtime rate that the declared multiple does not divide exactly, saying to carry it as dollars", () => {
+    // A blended week's overtime at $27.37501/h (37 min = $16.88): ÷ 1.5 = $18.2500066…, not exact at four decimals.
+    const blended = lines.map((l) => (l.type === "OT" ? { ...l, rate: { num: 2_737_501, den: 1_000 } } : l));
+    expect(() => renderPaychexFlex(paychex({ payLines: blended }))).toThrow(/Carry this kind of pay as dollars/);
   });
 
   it("refuses a kind of pay with no pay component, naming the worker", () => {
     expect(() => renderPaychexFlex(paychex({ codes: { REG: codes.REG, BONUS: codes.BONUS } }))).toThrow(/Álvarez, Ana/);
   });
 
-  it("checks the client id, the pay components and the worker ids", () => {
+  it("checks the client id, the pay components (never a formula), the overtime multiple and the worker ids", () => {
     expect(targetProblems({ format: "paychex_flex_csv", clientId: "ABC12345" })).toEqual([]);
     expect(targetProblems({ format: "paychex_flex_csv", clientId: "TOO-LONG-1" }).map((p) => p.rule)).toEqual(["paychex_client_id"]);
     expect(codeMapProblems("paychex_flex_csv", { REG: { code: "Hourly", as: "hours" } })).toEqual([]);
     expect(codeMapProblems("paychex_flex_csv", { REG: { code: "Hourly,1", as: "hours" } }).map((p) => p.rule)).toEqual(["code_form_paychex_flex_csv"]);
+    for (const code of ['=HYPERLINK("x")', "@SUM(1)", "+1", "-1"]) expect(codeMapProblems("paychex_flex_csv", { REG: { code, as: "hours" } }).map((p) => p.rule)).toEqual(["code_form_paychex_flex_csv"]);
+    expect(codeMapProblems("paychex_flex_csv", { OT: { code: "Overtime", as: "hours" } }).map((p) => p.rule)).toEqual(["factor_needed"]);
+    expect(codeMapProblems("paychex_flex_csv", { OT: { code: "Overtime", as: "hours", factor: HALF_AGAIN } })).toEqual([]);
+    expect(codeMapProblems("paychex_flex_csv", { REG: { code: "Hourly", as: "hours", factor: HALF_AGAIN } }).map((p) => p.rule)).toEqual(["factor_fixed"]);
     expect(workerIdProblem("paychex", "A123")).toBeNull();
     expect(workerIdProblem("paychex", "912-34-5678")?.rule).toBe("no_ssn");
   });
@@ -89,13 +109,13 @@ describe("Paylocity time import (TimeImprt)", () => {
   it("writes Id, Det, detCode, Hours, Amount, Rate, rateCode with Det always E", () => {
     const r = renderPaylocity(paylocity());
     expect(r.filename).toBe("paylocity-time-import-2026-10-05-to-2026-10-11.csv");
-    expect(text(r.bytes)).toBe(["Id,Det,detCode,Hours,Amount,Rate,rateCode", "A123,E,REG,40.00,,18.2500,", "A123,E,OT,0.62,,27.3750,", "A123,E,BON,,150.00,,", "B456,E,REG,38.00,,18.2500,", ""].join("\r\n"));
+    expect(text(r.bytes)).toBe(["Id,Det,detCode,Hours,Amount,Rate,rateCode", "A123,E,REG,40.00,,18.2500,", "A123,E,OT15,0.62,,18.2500,", "A123,E,BON,,150.00,,", "B456,E,REG,38.00,,18.2500,", ""].join("\r\n"));
   });
 
   it("reconciles to the run and says what Paylocity pays", () => {
     const r = renderExport(paylocity());
     expect(r.controlTotals).toEqual(TOTALS);
-    expect(r.notes[0]).toContain("Paylocity pays 0.62 h × 27.3750 = $16.97; Granite computed $16.88 (+$0.09).");
+    expect(r.notes[0]).toContain("Paylocity pays 0.62 h × 18.2500 × 1.5 = $16.97; Granite computed $16.88 (+$0.09).");
   });
 
   it("refuses a worker with no Paylocity id", () => {
