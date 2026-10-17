@@ -205,7 +205,7 @@ export interface PublishInput {
  * (due 16 hours before the start, in the agency's time zone); open shifts are offered to their eligible
  * workers without a clash (Deputy "send offers"). Notices go out with the message when asked.
  */
-export async function publishShifts(tx: Tx, actor: Actor, input: PublishInput): Promise<{ ok: true; published: number; offered: number } | { ok: false; error: ShiftError }> {
+export async function publishShifts(tx: Tx, actor: Actor, input: PublishInput): Promise<{ ok: true; published: number; offered: number; workerIds: string[] } | { ok: false; error: ShiftError }> {
   if (!isIsoDate(input.from) || !isIsoDate(input.to) || input.to < input.from) return { ok: false, error: "invalid_date" };
   const zone = await agencyZone(tx);
   const rows = await tx
@@ -218,7 +218,10 @@ export async function publishShifts(tx: Tx, actor: Actor, input: PublishInput): 
     .filter((r) => input.scope === "all" || r.shift.publishedAt === null || r.shift.changedAt > r.shift.publishedAt)
     .map((r) => r.shift);
   let offered = 0;
+  // Who hears about it (Deputy step 3): the workers on the shifts published and those offered one.
+  const told = new Set<string>();
   for (const sh of chosen) {
+    if (input.notify !== "silent" && sh.workerId) told.add(sh.workerId);
     const asks = input.notify === "confirm" && sh.requireConfirmation && sh.workerId !== null && sh.state === "assigned";
     // The answer is due 16 hours before the start; published later than that, by the start; a shift
     // that has already started is not asked about.
@@ -239,13 +242,14 @@ export async function publishShifts(tx: Tx, actor: Actor, input: PublishInput): 
           .insert(s.shiftOffers)
           .values(to.map((w) => ({ agencyId: actor.agencyId, shiftId: sh.id, workerId: w.workerId })))
           .onConflictDoNothing()
-          .returning({ id: s.shiftOffers.id });
+          .returning({ id: s.shiftOffers.id, workerId: s.shiftOffers.workerId });
         offered += made.length;
+        for (const m of made) told.add(m.workerId);
       }
     }
   }
   await audit(tx, actor, [{ action: "update", entityType: "schedule", entityId: actor.agencyId, after: { published: chosen.map((c) => c.id), offered, ...input } }]);
-  return { ok: true, published: chosen.length, offered };
+  return { ok: true, published: chosen.length, offered, workerIds: [...told] };
 }
 
 /** No answer by the deadline: the shift opens again with a warning (Deputy). Run before reading. */

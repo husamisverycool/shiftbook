@@ -76,7 +76,7 @@ export const smsTransport = (): SmsTransport =>
  * Records a text to send: `kept` is what the log keeps (the code hidden); the whole text is kept only
  * in demo mode, for the demo outbox.
  */
-export async function recordSms(tx: Tx, row: { agencyId: string; kind: "sign_in_code" | "onboarding_invite" | "phone_changed"; to: string; workerId: string | null; text: string; kept: string }): Promise<OutgoingSms> {
+export async function recordSms(tx: Tx, row: { agencyId: string; kind: "sign_in_code" | "onboarding_invite" | "phone_changed" | "schedule"; to: string; workerId: string | null; text: string; kept: string }): Promise<OutgoingSms> {
   const [r] = await tx
     .insert(s.smsMessages)
     .values({ agencyId: row.agencyId, kind: row.kind, toPhone: row.to, workerId: row.workerId, body: row.kept, demoBody: env.mode === "demo" ? row.text : null })

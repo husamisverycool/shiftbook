@@ -130,7 +130,10 @@ export function WageAccessView({ rules, rows }: { rules: WageAccessRules; rows: 
   );
 }
 
-function RequestDialog({ row, rules, onClose }: { row: WageAccessRow; rules: WageAccessRules; onClose: () => void }) {
+type Send = (cents: number, delivery: "standard" | "expedited") => Promise<{ ok: true } | { ok: false; error: string }>;
+
+/** One request, with the terms; `send` and `title` let the worker app make the worker's own request with it. */
+export function RequestDialog({ row, rules, onClose, send, title }: { row: Pick<WageAccessRow, "workerId" | "workerName" | "availability">; rules: WageAccessRules; onClose: () => void; send?: Send; title?: string }) {
   const t = useTranslations("money.wage");
   const tc = useTranslations("common");
   const locale = useLocale();
@@ -145,7 +148,7 @@ function RequestDialog({ row, rules, onClose }: { row: WageAccessRow; rules: Wag
     if (cents > available) return setProblem(t("errors.too_much"));
     setProblem(null);
     start(async () => {
-      const r = await requestWageAccessAction(row.workerId, cents, delivery);
+      const r = send ? await send(cents, delivery) : await requestWageAccessAction(row.workerId, cents, delivery);
       if (r.ok) {
         toast.success(t("done"));
         onClose();
@@ -168,7 +171,7 @@ function RequestDialog({ row, rules, onClose }: { row: WageAccessRow; rules: Wag
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("dialogTitle", { name: row.workerName })}</DialogTitle>
+          <DialogTitle>{title ?? t("dialogTitle", { name: row.workerName })}</DialogTitle>
           <DialogDescription>{t("amountHint", { amount: money(available, locale) })}</DialogDescription>
         </DialogHeader>
         <form

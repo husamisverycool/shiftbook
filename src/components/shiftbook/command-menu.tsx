@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/_components/command-menu.md (decision 0038) — GitHub's command palette:
 // the scope at the input's left, suggestions for where you are, recent items (Linear), pages and
 // verb-first actions; records searched on the server; GitHub's prefixes and keys; cmdk's list.
-import { ArrowRightIcon, BriefcaseIcon, Building2Icon, ContactRoundIcon, CornerDownLeftIcon, FileUpIcon, KeyboardIcon, LandmarkIcon, LanguagesIcon, LogOutIcon, PlusIcon, ReceiptTextIcon, UserPlusIcon, UsersIcon, XIcon, type LucideIcon } from "lucide-react";
+import { ArrowRightIcon, BriefcaseIcon, Building2Icon, CalendarDaysIcon, ContactRoundIcon, CornerDownLeftIcon, FileUpIcon, KeyboardIcon, LandmarkIcon, LanguagesIcon, LogOutIcon, PlusIcon, ReceiptTextIcon, UserPlusIcon, UsersIcon, XIcon, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -145,6 +145,7 @@ export function CommandMenu({ open, onOpenChange, pages, onShortcuts }: { open: 
       { key: "createJobOrder", icon: PlusIcon, ability: "placements", run: () => go("/job-orders?new=1", { href: "/job-orders", title: t("actions.createJobOrder"), kind: "page" }) },
       { key: "payWeek", icon: FileUpIcon, ability: "hours", run: () => go("/convert", { href: "/convert", title: t("actions.payWeek"), kind: "page" }) },
       { key: "importPlacements", icon: UsersIcon, ability: "placements", run: () => go("/assignments/import", { href: "/assignments/import", title: t("actions.importPlacements"), kind: "page" }) },
+      { key: "publishSchedule", icon: CalendarDaysIcon, ability: "placements", run: () => go("/schedule?publish=1", { href: "/schedule", title: t("actions.publishSchedule"), kind: "page" }) },
       { key: "importBank", icon: LandmarkIcon, ability: "cash", run: () => go("/bank/import", { href: "/bank/import", title: t("actions.importBank"), kind: "page" }) },
       { key: "inviteMember", icon: UserPlusIcon, ability: "members", run: () => go("/settings/members", { href: "/settings/members", title: t("actions.inviteMember"), kind: "page" }) },
       {

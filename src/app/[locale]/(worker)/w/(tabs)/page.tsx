@@ -3,8 +3,12 @@
 import { ChevronRightIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ClockCard } from "@/components/shiftbook/worker-app/clock-card";
-import { dateRange, hoursMinutes, money } from "@/components/shiftbook/format";
+import { clock, dateRange, hoursMinutes, longDate, money } from "@/components/shiftbook/format";
+import { WageCard } from "@/components/shiftbook/worker-app/wage-card";
 import { Link } from "@/i18n/navigation";
+import { wageAccessView } from "@/server/money/queries";
+import { workerShifts } from "@/server/schedule/queries";
+import { expireOverdue } from "@/server/schedule/service";
 import { agencyToday, agencyZone } from "@/server/settings";
 import { homeOf } from "@/server/worker-app/service";
 import { asWorker, currentWorker } from "@/server/worker-app/session";
@@ -31,10 +35,20 @@ export default async function WorkerHome(props: { params: Promise<{ locale: stri
   setRequestLocale(locale);
   const w = await currentWorker(locale);
   const t = await getTranslations("workerApp.home");
-  const { view, zone } = await asWorker(w, async (tx) => {
+  const { view, zone, shifts, wage } = await asWorker(w, async (tx) => {
     const today = await agencyToday(tx);
-    return { view: await homeOf(tx, w.workerId, today), zone: await agencyZone(tx) };
+    await expireOverdue(tx);
+    const { rules, rows } = await wageAccessView(tx, { workerId: w.workerId });
+    const mine = rows.find((r) => r.workerId === w.workerId);
+    return {
+      view: await homeOf(tx, w.workerId, today),
+      zone: await agencyZone(tx),
+      shifts: await workerShifts(tx, w.workerId, today),
+      wage: rules.enabled && mine ? { rules, availability: mine.availability, workerName: mine.workerName } : null,
+    };
   });
+  // Square Team's "your next shift": the next one confirmed or waiting for an answer.
+  const next = shifts.upcoming.find((x) => x.state === "confirmed" || x.state === "awaiting") ?? null;
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight" data-testid="worker-greeting">
@@ -59,6 +73,22 @@ export default async function WorkerHome(props: { params: Promise<{ locale: stri
           <p className="text-sm text-muted-foreground">{t("weekEmpty")}</p>
         )}
       </Card>
+      {(next || shifts.needsAnswer > 0) && (
+        <Card title={t("nextShiftTitle")} action={{ href: "/w/shifts", label: t("seeShifts") }} testId="worker-next-shift">
+          {next && (
+            <>
+              <p className="text-base font-medium">{`${longDate(next.workDate, locale)} · ${clock(next.startMinute, locale)}–${clock(next.endMinute, locale)}`}</p>
+              <p className="text-sm text-muted-foreground">{t("nextShiftAt", { position: next.position, client: next.clientName })}</p>
+            </>
+          )}
+          {shifts.needsAnswer > 0 && (
+            <p className="text-sm font-medium" data-testid="worker-needs-answer">
+              {t("needsAnswer", { count: shifts.needsAnswer })}
+            </p>
+          )}
+        </Card>
+      )}
+      {wage && <WageCard workerId={w.workerId} workerName={wage.workerName} availability={wage.availability} rules={wage.rules} />}
       <Card title={t("payTitle")} action={view.latestPay ? { href: `/w/pay/${view.latestPay.runId}`, label: t("seePay") } : undefined} testId="worker-latest-pay">
         {view.latestPay ? (
           <>

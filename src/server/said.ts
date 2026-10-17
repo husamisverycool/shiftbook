@@ -174,6 +174,9 @@ export const SAID_EN = {
   packetOtPremium: "overtime premium {amount}",
   packetDtPremium: "double-time premium {amount}",
   packetOtherPay: "other pay {amount}",
+
+  // A credit note issued by hand, in the margin (margin/queries.ts).
+  marginCredit: "Credit note {number}, issued {date}: {amount} off what was billed to {client} for the week of {week}.",
 } as const;
 
 export type SaidKey = keyof typeof SAID_EN;

@@ -54,7 +54,33 @@ export async function gatherFacts(tx: Tx, today: string, now: Date): Promise<Not
       const b = byInvoice.get(p.invoiceId)!;
       return { id: p.id, invoiceId: p.invoiceId, number: b.invoice.number, clientName: b.clientName, promisedOn: p.promisedOn, balanceCents: b.balanceCents };
     });
-  return { decisions: decisions.map((d) => ({ ...d, disputed: Number(d.disputed) })), blockedRuns: blockedRuns.map((r) => ({ ...r, blockers: Number(r.blockers) })), obligations, overdueInvoices, brokenPromises };
+  // A worker's yes to a shift is an "approve" on the shift by no agency user (the worker app; slice u).
+  const confirmedShifts = await tx
+    .select({ eventId: s.auditEvents.id, shiftId: s.shifts.id, workDate: s.shifts.workDate, firstName: s.workers.firstName, lastName: s.workers.lastName })
+    .from(s.auditEvents)
+    .innerJoin(s.shifts, sql`${s.shifts.id}::text = ${s.auditEvents.entityId}`)
+    .innerJoin(s.workers, eq(s.workers.id, s.shifts.workerId))
+    .where(and(eq(s.auditEvents.entityType, "shift"), eq(s.auditEvents.action, "approve"), isNull(s.auditEvents.actorUserId), gte(s.auditEvents.occurredAt, since)));
+  const staffRequests = await tx
+    .select({ id: s.staffRequests.id, clientName: s.clients.name, position: s.staffRequests.position, headcount: s.staffRequests.headcount, startsOn: s.staffRequests.startsOn })
+    .from(s.staffRequests)
+    .innerJoin(s.clients, eq(s.clients.id, s.staffRequests.clientId))
+    .where(and(eq(s.staffRequests.status, "pending"), gte(s.staffRequests.createdAt, since)));
+  const workerMessages = await tx
+    .select({ id: s.workerMessages.id, workerId: s.workerMessages.workerId, firstName: s.workers.firstName, lastName: s.workers.lastName })
+    .from(s.workerMessages)
+    .innerJoin(s.workers, eq(s.workers.id, s.workerMessages.workerId))
+    .where(and(eq(s.workerMessages.sender, "worker"), isNull(s.workerMessages.readByAgencyAt), gte(s.workerMessages.createdAt, since)));
+  return {
+    decisions: decisions.map((d) => ({ ...d, disputed: Number(d.disputed) })),
+    blockedRuns: blockedRuns.map((r) => ({ ...r, blockers: Number(r.blockers) })),
+    obligations,
+    overdueInvoices,
+    brokenPromises,
+    confirmedShifts: confirmedShifts.map((c) => ({ eventId: String(c.eventId), shiftId: c.shiftId, workDate: c.workDate, workerName: `${c.firstName} ${c.lastName}` })),
+    staffRequests,
+    workerMessages: workerMessages.map((m) => ({ id: m.id, workerId: m.workerId, workerName: `${m.firstName} ${m.lastName}` })),
+  };
 }
 
 async function peopleOf(tx: Tx): Promise<People> {
@@ -137,7 +163,9 @@ export function kindsFor(role: Role): s.NotificationKind[] {
     obligation_overdue: "compliance",
     invoice_overdue: "cash",
     promise_broken: "cash",
-    shift_confirmed: "hours",
+    shift_confirmed: "placements",
+    staff_requested: "placements",
+    worker_message: "workerApp",
   };
   return s.NOTIFICATION_KINDS.filter((k) => can({ role }, ability[k]));
 }

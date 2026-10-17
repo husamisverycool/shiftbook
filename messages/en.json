@@ -2417,7 +2417,8 @@
     "emptyTitle": "Nothing to show yet",
     "emptyBody": "No week from {from} to {to} has its files made.",
     "notForRoleTitle": "Margin is for the Owner and the accountant",
-    "range": "Date range"
+    "range": "Date range",
+    "creditLine": "Credit note:"
   },
   "marginSettings": {
     "above": "Settings",
@@ -4433,7 +4434,8 @@
     "whyOnlyClient": "; the only client with invoices adding up to it",
     "noPayrollIdPaychex": "{name} has no Paychex worker id, so the Paychex Flex file could not match them.",
     "noPayrollIdPaylocity": "{name} has no Paylocity employee id, so the Paylocity file could not match them.",
-    "correctionCreditTooLarge": "{client}: the correction would credit {amount} on invoice {number}, which has only {room} left to credit after its earlier credit notes and write-offs; reverse a credit note or a write-off first."
+    "correctionCreditTooLarge": "{client}: the correction would credit {amount} on invoice {number}, which has only {room} left to credit after its earlier credit notes and write-offs; reverse a credit note or a write-off first.",
+    "marginCredit": "Credit note {number}, issued {date}: {amount} off what was billed to {client} for the week of {week}."
   },
   "identities": {
     "connectedTitle": "Connected accounts",
@@ -4849,7 +4851,8 @@
       "inviteMember": "Invite a member…",
       "switchLanguage": "Switch to Spanish",
       "shortcuts": "Show keyboard shortcuts",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "publishSchedule": "Publish the schedule…"
     },
     "help": {
       "actions": "Actions only",
@@ -5010,7 +5013,15 @@
       },
       "shift_confirmed": {
         "title": "Shift confirmed",
-        "line": "A worker confirmed a shift."
+        "line": "{worker} confirmed the shift on {due}."
+      },
+      "staff_requested": {
+        "title": "Workers requested",
+        "line": "{client} asks for {headcount} × {position} from {due}."
+      },
+      "worker_message": {
+        "title": "Message from a worker",
+        "line": "{worker} wrote in the worker app."
       }
     },
     "settings": {
@@ -5028,7 +5039,9 @@
         "obligation_overdue": "When a compliance duty passes its due date.",
         "invoice_overdue": "When an invoice passes its due date unpaid.",
         "promise_broken": "When a promised payment date passes unpaid.",
-        "shift_confirmed": "When a worker confirms a shift."
+        "shift_confirmed": "When a worker confirms a shift.",
+        "staff_requested": "When a client asks for workers in its portal.",
+        "worker_message": "When a worker writes in the worker app."
       }
     },
     "email": {
@@ -5649,14 +5662,16 @@
       "fieldglass-approved-time-sheet": "Approved time sheets downloaded from SAP Fieldglass.",
       "timeclock-punch-export": "Punches exported from a time clock, read as hours.",
       "vmsNotYet": "Granite cannot read this system's export yet.",
-      "partner": "Arrives with the partner packages: Granite prepares, a licensed partner acts."
+      "partner": "Granite prepares the package in Money; a licensed partner would act on it. Nothing recorded yet.",
+      "partnerLast": "Last recorded {date} · {count, plural, one {# package} other {# packages}} in Money. Nothing moves in Granite."
     },
     "partners": {
       "embedded_payroll": "Payroll partner",
       "wage_access": "Earned wage access partner",
       "invoice_funding": "Invoice funding partner",
       "insurance": "Workers' comp insurance broker"
-    }
+    },
+    "openMoney": "Open"
   },
   "workerApp": {
     "meta": "Your hours and pay",
@@ -5666,7 +5681,8 @@
       "pay": "Pay",
       "messages": "Messages",
       "more": "More",
-      "label": "Worker app"
+      "label": "Worker app",
+      "shifts": "Shifts"
     },
     "profile": "Your profile",
     "signIn": {
@@ -5704,7 +5720,16 @@
       "payTitle": "Latest pay",
       "payEmpty": "Your pay stubs appear here after your first paid week.",
       "seePay": "See pay",
-      "weekOf": "Week of {range}"
+      "weekOf": "Week of {range}",
+      "nextShiftTitle": "Next shift",
+      "seeShifts": "See shifts",
+      "nextShiftAt": "{position} at {client}",
+      "needsAnswer": "{count, plural, one {# shift waits for your answer} other {# shifts wait for your answer}}",
+      "wageTitle": "Earned pay you can request",
+      "wageBody": "Available now from {earned} earned in approved hours not yet paid.",
+      "wageNote": "No money moves in Granite: your agency's partner would pay it and take it back from your next paycheck.",
+      "wageRequest": "Request",
+      "wageDialogTitle": "Request earned pay"
     },
     "clock": {
       "title": "Clock in",
@@ -6410,12 +6435,13 @@
     "noHours": {
       "title": "{count, plural, one {# confirmed shift with no hours yet} other {# confirmed shifts with no hours yet}}",
       "hint": "Scheduled and confirmed, but no timesheet for that worker, day and client so far. This never stops the run; hours come only from timesheets."
-    }
+    },
+    "workerNotice": "Your shifts from {from} to {to} are published. Open Shifts in the app to see them and answer.",
+    "workerNoticeWithNote": "Your shifts from {from} to {to} are published. Open Shifts in the app to see them and answer. A note from {agency}: {note}",
+    "workerNoticeSms": "{agency}: your shifts from {from} to {to} are published. Open the worker app to see them: {link}"
   },
   "shiftsWorker": {
     "title": "Your shifts",
-    "previewNote": "Demo: the worker app's Shifts screen, seen as one demo worker.",
-    "viewingAs": "Seen as",
     "tabs": {
       "upcoming": "Upcoming",
       "past": "Past",

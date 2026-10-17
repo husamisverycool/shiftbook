@@ -106,7 +106,7 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
               {l.details.map((d, i) => (
                 <li key={i} className="flex flex-col gap-0.5">
                   <span>
-                    <span className="font-medium">{d.kind === "pay" ? t("payLine", { type: d.type }) : t("billLine", { type: d.type })}</span> {say(d)}
+                    <span className="font-medium">{d.kind === "pay" ? t("payLine", { type: d.type }) : d.kind === "credit" ? t("creditLine") : t("billLine", { type: d.type })}</span> {say(d)}
                   </span>
                   {d.burdenExplain && <span className="text-muted-foreground">{t("burdenOf", { explain: say({ explain: d.burdenExplain, said: d.burdenSaid }) })}</span>}
                 </li>

@@ -1713,7 +1713,7 @@ export const promisesToPay = pgTable(
 );
 
 // ---------- notifications (slice r; drizzle/0045; Linear's Inbox) ----------
-export const NOTIFICATION_KINDS = ["approval_returned", "approval_disputed", "run_blocked", "obligation_due_soon", "obligation_overdue", "invoice_overdue", "promise_broken", "shift_confirmed"] as const;
+export const NOTIFICATION_KINDS = ["approval_returned", "approval_disputed", "run_blocked", "obligation_due_soon", "obligation_overdue", "invoice_overdue", "promise_broken", "shift_confirmed", "staff_requested", "worker_message"] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 export const notifications = pgTable(
@@ -2155,7 +2155,7 @@ export const workerClockPunches = pgTable("worker_clock_punches", {
 export const smsMessages = pgTable("sms_messages", {
   id: id(),
   agencyId: agencyId(),
-  kind: text("kind").$type<"sign_in_code" | "onboarding_invite" | "phone_changed">().notNull(),
+  kind: text("kind").$type<"sign_in_code" | "onboarding_invite" | "phone_changed" | "schedule">().notNull(),
   toPhone: text("to_phone").notNull(),
   workerId: uuid("worker_id").references(() => workers.id),
   body: text("body").notNull(),

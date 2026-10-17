@@ -13,8 +13,13 @@ Researched: 2026-10-17 (`docs/research/workers-app-slice-t.md` §2, §4). Confid
 3. **Clock in** card (when a current assignment's client allows clocking in): the assignment
    (position at client), **Clock in**; while clocked in, since when and **Clock out**.
 4. **This week** card: hours so far and the week's dates; **See hours**.
-5. **Next shift**: shown when a shift is scheduled (slice u); otherwise nothing.
-6. **Latest pay**: the last stub's gross and its week; **See pay**.
+5. **Next shift** (Square Team's "your next shift"): the next confirmed or awaiting shift — day and
+   date, time, position at client — and, when shifts or offers wait for an answer, how many;
+   **See shifts**. No upcoming shift and nothing waiting: nothing.
+6. **Earned pay you can request** (slice w; only when the agency offers it): the amount available
+   from approved hours not yet paid, a plain line that no money moves in Granite and the agency's
+   payroll partner would pay it, and **Request** (an amount, then a confirmation).
+7. **Latest pay**: the last stub's gross and its week; **See pay**.
 
 ## Interactions
 - Each card's action goes to its tab; Clock in/out acts in place and the card changes at once.

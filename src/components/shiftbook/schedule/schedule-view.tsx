@@ -45,7 +45,8 @@ export function ScheduleView({ view, today, by }: { view: WeekView; today: strin
   const params = useSearchParams();
   const may = useCan()("placements");
   const [editing, setEditing] = useState<{ shift: GridShift | null; draft: Partial<ShiftDraft> } | null>(null);
-  const [publishing, setPublishing] = useState(false);
+  // ⌘K's "Publish schedule" arrives with ?publish=1: the publish dialog opens at once.
+  const [publishing, setPublishing] = useState(() => params.get("publish") === "1" && view.shifts.length > 0);
   const cursor = useRef<Record<StatusKey, number>>({ open: 0, unpublished: 0, awaiting: 0, warnings: 0 });
 
   const go = (next: Record<string, string | null>) => {

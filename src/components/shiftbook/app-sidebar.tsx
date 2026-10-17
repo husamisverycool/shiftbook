@@ -62,6 +62,8 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
   // Single sign-on stays in the menu while changes are paused (turning it off still works; decision 0036).
   const mayManageMembers = can({ role: person.role }, "members");
   const mayManageBilling = useCan()("billing");
+  const mayMoney = useCan()("money");
+  const tm = useTranslations("money.tabs");
 
   // The command menu (decision 0038): every area, the settings pages this person opens, and its actions.
   const [commandOpen, setCommandOpen] = useState(false);
@@ -69,16 +71,29 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
   const commandPages = useMemo<CommandPage[]>(
     () => [
       ...areas.map((a) => ({ href: a.href, label: t(a.key), icon: a.icon, jump: a.jump })),
+      // Money's tabs, for the Owner (slice w).
+      ...(mayMoney
+        ? [
+            { href: "/money/payroll", label: `${t("money")} › ${tm("payroll")}`, icon: HandCoinsIcon },
+            { href: "/money/wage-access", label: `${t("money")} › ${tm("wageAccess")}`, icon: HandCoinsIcon },
+            { href: "/money/funding", label: `${t("money")} › ${tm("funding")}`, icon: HandCoinsIcon },
+            { href: "/money/insurance", label: `${t("money")} › ${tm("insurance")}`, icon: HandCoinsIcon },
+          ]
+        : []),
       { href: "/settings/payroll", label: t("settings"), icon: SettingsIcon },
       ...(showMargin ? [{ href: "/settings/margin", label: t("marginSettings"), icon: ChartColumnIcon }] : []),
       { href: "/settings/compliance", label: t("complianceSettings"), icon: ShieldCheckIcon },
+      { href: "/settings/collections", label: t("collections"), icon: HandCoinsIcon },
+      { href: "/settings/connections", label: t("connections"), icon: PlugIcon },
+      { href: "/settings/notifications", label: `${t("settings")} › ${t("notificationSettings")}`, icon: BellIcon },
+      { href: "/settings/money", label: t("moneySettings"), icon: CoinsIcon },
       { href: "/settings/members", label: t("members"), icon: UserCogIcon },
       ...(mayManageMembers ? [{ href: "/settings/sso", label: t("sso"), icon: Building2Icon }] : []),
       ...(mayViewActivity ? [{ href: "/settings/activity", label: t("activity"), icon: ActivityIcon }] : []),
       ...(mayManageBilling ? [{ href: "/settings/billing", label: t("billing"), icon: CreditCardIcon }] : []),
       { href: "/settings/account", label: t("account"), icon: UserIcon },
     ],
-    [areas, t, showMargin, mayManageMembers, mayViewActivity, mayManageBilling],
+    [areas, t, tm, mayMoney, showMargin, mayManageMembers, mayViewActivity, mayManageBilling],
   );
 
   // ⌘K / Ctrl+K toggles it from anywhere, fields included (GitHub: the open shortcut also closes it).

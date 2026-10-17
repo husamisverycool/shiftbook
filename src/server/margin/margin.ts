@@ -11,7 +11,7 @@ export type SortBy = "margin" | "percent";
 export const GROUP_BYS: readonly GroupBy[] = ["client", "worker", "recruiter", "branch", "week"];
 
 export interface MarginDetail {
-  kind: "pay" | "bill";
+  kind: "pay" | "bill" | "credit";
   type: string;
   minutes: number;
   amountCents: number;
@@ -22,6 +22,8 @@ export interface MarginDetail {
   burdenExplain: string | null;
   /** The burden's working as message keys (decision 0030). */
   burdenSaid: Said | null;
+  /** A credit note's explanation as message keys (decision 0030). */
+  said?: Said | null;
 }
 
 export interface MarginLine {
@@ -43,6 +45,12 @@ export interface MarginLine {
   /** Pay lines whose burden lacks a rate. */
   incomplete: number;
   details: MarginDetail[];
+  /**
+   * A credit note issued by hand (slice r): billed less for its client in its invoice's week. It
+   * belongs to no worker, recruiter or branch (grouped under "None" there). Correction runs' credit
+   * notes are not here: their run's own bill lines already carry them.
+   */
+  creditNote?: { id: string; number: string };
 }
 
 export interface MarginTotals {
@@ -75,7 +83,7 @@ export function totalsOf(lines: MarginLine[]): MarginTotals {
 
 const KEY: Record<GroupBy, (l: MarginLine) => [string | null, string | null]> = {
   client: (l) => [l.clientId, l.clientName],
-  worker: (l) => [l.workerId, l.workerName],
+  worker: (l) => (l.creditNote ? [null, null] : [l.workerId, l.workerName]),
   recruiter: (l) => [l.recruiterId, l.recruiterName],
   branch: (l) => [l.branchId, l.branchName],
   week: (l) => [l.week, l.week],

@@ -5,10 +5,11 @@
  * week's first day when the page is drawn (I2, I3), so a rate corrected back in time changes the
  * weeks it covers.
  */
-import { addDays, isEffective, isIsoDate, roundHalfUp, workweekStart, type Say, type Weekday } from "@shiftbook/rules";
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { addDays, formatCents, isEffective, isIsoDate, roundHalfUp, workweekStart, type Say, type Weekday } from "@shiftbook/rules";
+import { and, desc, eq, gte, inArray, isNotNull, lte, ne } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { dated, explained, say, type Said } from "../said";
 import { daysFrom, daysToPay } from "../receivables/aging";
 import { invoiceBalances } from "../receivables/balances";
 import { dateIn, settingOn } from "../settings";
@@ -172,7 +173,44 @@ export async function marginLines(tx: Tx, from: string, to: string): Promise<Mar
     l.billedCents += b.amountCents;
     l.details.push({ kind: "bill", type: b.type, minutes: b.minutes, amountCents: b.amountCents, burdenCents: 0, explain: b.explain, say: b.say, burdenExplain: null, burdenSaid: null } satisfies MarginDetail);
   }
-  return [...lines.values()];
+  return [...lines.values(), ...(await creditLines(tx, from, to, dir))];
+}
+
+/**
+ * Credit notes issued by hand (slice r: a reason, no run behind them) reduce what was billed, in the
+ * week of the invoice they credit; a voided one does not count. Their total is negative.
+ */
+async function creditLines(tx: Tx, from: string, to: string, dir: Awaited<ReturnType<typeof directory>>): Promise<MarginLine[]> {
+  const rows = await tx
+    .select({ id: s.invoices.id, number: s.invoices.number, clientId: s.invoices.clientId, totalCents: s.invoices.totalCents, issuedOn: s.invoices.issuedOn, week: s.payPeriods.startsOn })
+    .from(s.invoices)
+    .innerJoin(s.payRuns, eq(s.payRuns.id, s.invoices.payRunId))
+    .innerJoin(s.payPeriods, eq(s.payPeriods.id, s.payRuns.payPeriodId))
+    .where(and(eq(s.invoices.kind, "credit_note"), isNotNull(s.invoices.creditReason), ne(s.invoices.status, "void"), gte(s.payPeriods.startsOn, from), lte(s.payPeriods.startsOn, to)));
+  return rows.map((r) => {
+    const clientName = dir.clientName(r.clientId);
+    const said: Said = [say("marginCredit", { number: r.number, date: dated(r.issuedOn), amount: formatCents(-r.totalCents), client: clientName, week: dated(r.week) })];
+    return {
+      key: `credit:${r.id}`,
+      assignmentId: null,
+      workerId: "",
+      workerName: r.number,
+      clientId: r.clientId,
+      clientName,
+      week: r.week,
+      recruiterId: null,
+      recruiterName: null,
+      branchId: null,
+      branchName: null,
+      minutesPaid: 0,
+      billedCents: r.totalCents,
+      payCents: 0,
+      burdenCents: 0,
+      incomplete: 0,
+      details: [{ kind: "credit", type: "CREDIT", minutes: 0, amountCents: r.totalCents, burdenCents: 0, ...explained(said), say: null, burdenExplain: null, burdenSaid: null }],
+      creditNote: { id: r.id, number: r.number },
+    } satisfies MarginLine;
+  });
 }
 
 export async function marginView(tx: Tx, q: { from: string; to: string; groupBy: GroupBy; sort: SortBy }): Promise<MarginView> {

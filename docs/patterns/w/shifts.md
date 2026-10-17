@@ -1,7 +1,7 @@
-# Pattern: A worker's shifts (`/shifts-preview`, demo; the worker app's Shifts screen)
+# Pattern: Worker app Shifts (`/w/shifts`)
 
-Status: adopted — slice u (2026-10-17, SPEC §27 items 6–7). Mounted at `/shifts-preview` in the demo
-until the worker app (slice t) takes it as its Shifts screen.
+Status: adopted — slice u (2026-10-17, SPEC §27 items 6–7); mounted in the worker app as its Shifts
+tab (integration, 2026-10-17), for the signed-in worker only.
 Reference product and screen: Instawork — My Shifts (Upcoming / Past / Cancelled; confirm; cancel with
 a required reason); Deputy — Upcoming shifts (a count needing confirmation; confirm; offers)
 Source URL: https://help.instawork.com/en/articles/5765313-how-do-i-confirm-my-shift
@@ -10,7 +10,7 @@ Source URL: https://help.deputy.com/hc/en-au/articles/360000985936-Shift-confirm
 Researched: 2026-10-17 (`docs/research/scheduling-slice-u.md` §6). Confidence: high.
 
 ## Hierarchy
-1. A narrow mobile column. (Demo only: which demo worker is looking, as a select.)
+1. The worker app's frame (`_layouts/worker-w-tabs.md`); the title **Shifts**.
 2. Three segments: **Upcoming** (with the count needing an answer), **Past**, **Cancelled** (Instawork).
 3. **Offered to you** first: open shifts offered to this worker — day and date, time, job order,
    worksite and city — with Accept and Decline (Deputy offers).

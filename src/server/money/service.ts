@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 import { isIsoDate } from "@shiftbook/rules";
 import { and, eq, sql } from "drizzle-orm";
-import { audit } from "../audit";
+import { auditBy } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { wcPacketView } from "../compliance/documents";
@@ -28,9 +28,12 @@ const sha256 = (text: string) => createHash("sha256").update(text).digest("hex")
 /** The plain promises shown with every wage-access request (the CFPB opinion's "covered EWA" conditions). */
 export const WAGE_ACCESS_TERMS = ["only_earned", "payroll_deduction", "no_recourse", "no_collection", "no_credit_check", "free_option"] as const;
 
+/** Who records a handoff: an Owner, or (wage access only) the worker in the worker app. */
+type By = { agencyId: string; userId: string | null; label: string };
+
 async function record(
   tx: Tx,
-  actor: Actor,
+  actor: By,
   h: { kind: s.HandoffKind; subjectType: (typeof s.partnerHandoffs.$inferInsert)["subjectType"]; subjectId: string; partner: s.HandoffPartner; amountCents: number | null; summary: Record<string, unknown>; payload: unknown },
   entity: { type: string; id: string },
 ): Promise<MoneyResult> {
@@ -51,7 +54,7 @@ async function record(
     .onConflictDoNothing()
     .returning({ id: s.partnerHandoffs.id });
   if (!row) return { ok: false, error: "already" };
-  await audit(tx, actor, [{ action: "export", entityType: entity.type, entityId: entity.id, after: { handoff: row.id, kind: h.kind, partner: h.partner, amountCents: h.amountCents, sha256: digest } }]);
+  await auditBy(tx, actor, [{ action: "export", entityType: entity.type, entityId: entity.id, after: { handoff: row.id, kind: h.kind, partner: h.partner, amountCents: h.amountCents, sha256: digest } }]);
   return { ok: true, handoffId: row.id };
 }
 
@@ -86,6 +89,20 @@ export async function recordPayrollHandoff(tx: Tx, actor: Actor, runId: string, 
 /** A worker's request for part of what they have earned, recorded for a wage-access partner. */
 export async function requestWageAccess(tx: Tx, actor: Actor, workerId: string, amountCents: unknown, delivery: unknown): Promise<MoneyResult> {
   if (!can(actor, "money")) return { ok: false, error: "not_allowed" };
+  return recordWageAccess(tx, actor, workerId, amountCents, delivery);
+}
+
+/**
+ * The same request made by the worker in the worker app (SPEC §27: worker app ↔ money): only for
+ * themselves, only while the agency offers wage access, under the same lock, cap and terms.
+ */
+export async function requestWageAccessAsWorker(tx: Tx, worker: { agencyId: string; workerId: string; label: string }, amountCents: unknown, delivery: unknown): Promise<MoneyResult> {
+  const { rules } = await wageAccessView(tx, { workerId: worker.workerId });
+  if (!rules.enabled) return { ok: false, error: "not_allowed" };
+  return recordWageAccess(tx, { agencyId: worker.agencyId, userId: null, label: worker.label }, worker.workerId, amountCents, delivery);
+}
+
+async function recordWageAccess(tx: Tx, actor: By, workerId: string, amountCents: unknown, delivery: unknown): Promise<MoneyResult> {
   if (delivery !== "standard" && delivery !== "expedited") return { ok: false, error: "amount" };
   // One request per worker at a time: a second waits, then sees the first as outstanding (never over the cap).
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`wage_access:${workerId}`}, 0))`);

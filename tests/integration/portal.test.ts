@@ -98,7 +98,7 @@ describe("giving access", () => {
 
   it("a new link stops the earlier one; removing access stops every link at once", async () => {
     const first = await giveAccess();
-    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts));
+    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts).where(eq(s.portalContacts.clientId, IL)));
     expect(await sendPortalLink(deps, billing, contact!.id)).toEqual({ ok: false, error: "too_soon" });
     clock = new Date(clock.getTime() + 61_000);
     expect(await sendPortalLink(deps, billing, contact!.id)).toEqual({ ok: true });
@@ -204,7 +204,7 @@ describe("what a contact sees", () => {
     const secondToken = second.ok ? second.approvalToken : "";
     expect(await approvalState(firstToken)).toBe("replaced");
     expect(await approvalState(secondToken)).not.toBe("replaced");
-    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts));
+    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts).where(eq(s.portalContacts.clientId, IL)));
     expect(await revokePortalContact(deps, billing, contact!.id)).toEqual({ ok: true });
     expect(await approvalState(secondToken)).toBe("replaced");
   });
@@ -214,7 +214,7 @@ describe("what a contact sees", () => {
     const requestId = await openRequest();
     const made = await reviewHoursLink(deps, token, requestId);
     const approvalToken = made.ok ? made.approvalToken : "";
-    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts));
+    const [contact] = await inAgency((tx) => tx.select().from(s.portalContacts).where(eq(s.portalContacts.clientId, IL)));
     clock = new Date(clock.getTime() + 61_000);
     expect(await sendPortalLink(deps, billing, contact!.id)).toEqual({ ok: true });
     expect(await approvalState(approvalToken)).toBe("replaced");
@@ -235,7 +235,8 @@ describe("requests for workers", () => {
     expect(sent.ok).toBe(true);
     const second = await submitStaffRequest(deps, token, request({ position: "Packer", worksiteId: null, worksiteNote: "Dock 4, north gate" }));
     expect(second.ok).toBe(true);
-    const pending = await inAgency((tx) => pendingStaffRequests(tx));
+    // The demo's own pending request (Harborview's event servers) is another client's.
+    const pending = (await inAgency((tx) => pendingStaffRequests(tx))).filter((r) => r.contactName === "Pat Lee");
     expect(pending.map((r) => [r.position, r.contactName, r.headcount, r.worksiteNote])).toEqual([
       ["Forklift operator", "Pat Lee", 3, null],
       ["Packer", "Pat Lee", 3, "Dock 4, north gate"],
@@ -249,7 +250,7 @@ describe("requests for workers", () => {
     expect(await inAgency((tx) => declineStaffRequest(tx, coordinator, pending[1]!.id, "  "))).toMatchObject({ ok: false, error: "invalid" });
     expect(await inAgency((tx) => declineStaffRequest(tx, coordinator, pending[1]!.id, "No forklift-certified packers that week."))).toEqual({ ok: true });
     expect(await inAgency((tx) => declineStaffRequest(tx, coordinator, pending[1]!.id, "again"))).toEqual({ ok: false, error: "not_found" });
-    expect(await inAgency((tx) => pendingStaffRequests(tx))).toEqual([]);
+    expect((await inAgency((tx) => pendingStaffRequests(tx))).filter((r) => r.contactName === "Pat Lee")).toEqual([]);
     const received = await inAgency((tx) => tx.select().from(s.auditEvents).where(eq(s.auditEvents.entityType, "staff_request")));
     expect(received.filter((e) => e.actorLabel.endsWith("(client portal)"))).toHaveLength(2);
   });

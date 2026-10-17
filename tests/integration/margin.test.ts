@@ -13,8 +13,9 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { issueCreditNote } from "../../src/server/collections/service";
 import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, jobOrderId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
@@ -97,6 +98,26 @@ describe("margin by client, worker, recruiter, branch and week (I1–I6)", () =>
     expect((await inAgency((tx) => marginView(tx, { ...PERIOD, groupBy: "week", sort: "margin" }))).groups.map((g) => g.key)).toEqual(["2026-10-05"]);
     // Nothing outside the period.
     expect((await inAgency((tx) => marginView(tx, { from: "2026-10-12", to: "2026-10-12", groupBy: "client", sort: "margin" }))).groups).toEqual([]);
+  });
+
+  it("a credit note issued by hand bills less for its client in its invoice's week, under no worker", async () => {
+    await runWeek();
+    const [invoice] = await inAgency((tx) => tx.select().from(s.invoices).where(and(eq(s.invoices.clientId, PLM), eq(s.invoices.kind, "invoice"))));
+    const r = await inAgency((tx) => issueCreditNote(tx, store, theOwner, invoice!.id, { reason: "discount", amountCents: 12_500, memo: "Volume discount" }));
+    if (!r.ok) throw new Error(`credit note refused: ${r.error}`);
+    // By hand: billed $1,425.00 − $125.00 = $1,300.00; pay $979.50 and burden $143.98 unchanged;
+    // margin $301.52 − $125.00 = $176.52; 176.52 ÷ 1,300.00 = 13.578…% → 13.6%.
+    const v = await inAgency((tx) => marginView(tx, { ...PERIOD, groupBy: "client", sort: "margin" }));
+    expect(v.totals).toEqual({ minutesPaid: 3240, billedCents: 130_000, payCents: 97_950, burdenCents: 14_398, marginCents: 17_652, marginPermille: 136, incomplete: 0 });
+    expect(v.groups.map((g) => [g.name, g.totals.marginCents])).toEqual([["Prairie Line Manufacturing (demo)", 17_652]]);
+    const credit = v.lines.find((l) => l.creditNote)!;
+    expect(credit).toMatchObject({ week: "2026-10-05", billedCents: -12_500, payCents: 0, burdenCents: 0, clientId: PLM, workerName: r.number });
+    expect(credit.details[0]!.explain).toMatch(new RegExp(`^Credit note ${r.number}, issued \\d{4}-\\d{2}-\\d{2}: \\$125\\.00 off what was billed to Prairie Line Manufacturing \\(demo\\) for the week of 2026-10-05\\.$`));
+    expect(v.weeks.find((w) => w.week === "2026-10-05")!.totals.billedCents).toBe(130_000);
+    // By worker it is nobody's: the "None" group.
+    const byWorker = await inAgency((tx) => marginView(tx, { ...PERIOD, groupBy: "worker", sort: "margin" }));
+    expect(byWorker.groups.find((g) => g.name === null)!.totals.billedCents).toBe(-12_500);
+    expect(byWorker.groups.find((g) => g.name === "Marcus Bell")!.totals.billedCents).toBe(79_500);
   });
 
   it("a rate added from a date changes the weeks from then on; a missing rate is counted as zero and flagged", async () => {

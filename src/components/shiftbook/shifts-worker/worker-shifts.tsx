@@ -1,6 +1,6 @@
 "use client";
 
-// Pattern: docs/patterns/shifts-preview.md — Instawork My Shifts (Upcoming / Past / Cancelled; confirm;
+// Pattern: docs/patterns/w/shifts.md — Instawork My Shifts (Upcoming / Past / Cancelled; confirm;
 // can't make it with a required reason); Deputy (a count needing an answer; offers to accept).
 // The worker app's Shifts screen: its actions come in bound to the worker who is looking.
 import { useLocale, useTranslations } from "next-intl";

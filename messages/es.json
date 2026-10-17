@@ -2417,7 +2417,8 @@
     "emptyTitle": "Aún no hay nada que mostrar",
     "emptyBody": "Ninguna semana del {from} al {to} tiene sus archivos hechos.",
     "notForRoleTitle": "El margen es para el Propietario y el contador",
-    "range": "Rango de fechas"
+    "range": "Rango de fechas",
+    "creditLine": "Nota de crédito:"
   },
   "marginSettings": {
     "above": "Configuración",
@@ -4433,7 +4434,8 @@
     "whyOnlyClient": "; es el único cliente con facturas que suman eso",
     "noPayrollIdPaychex": "{name} no tiene ID de trabajador de Paychex, así que el archivo de Paychex Flex no pudo identificar a esta persona.",
     "noPayrollIdPaylocity": "{name} no tiene ID de empleado de Paylocity, así que el archivo de Paylocity no pudo identificar a esta persona.",
-    "correctionCreditTooLarge": "{client}: la corrección acreditaría {amount} en la factura {number}, a la que solo le quedan {room} por acreditar después de sus notas de crédito y cancelaciones anteriores; revierta primero una nota de crédito o una cancelación."
+    "correctionCreditTooLarge": "{client}: la corrección acreditaría {amount} en la factura {number}, a la que solo le quedan {room} por acreditar después de sus notas de crédito y cancelaciones anteriores; revierta primero una nota de crédito o una cancelación.",
+    "marginCredit": "Nota de crédito {number}, emitida el {date}: {amount} menos de lo facturado a {client} por la semana del {week}."
   },
   "identities": {
     "connectedTitle": "Cuentas conectadas",
@@ -4849,7 +4851,8 @@
       "inviteMember": "Invitar a un miembro…",
       "switchLanguage": "Cambiar a inglés",
       "shortcuts": "Mostrar los atajos de teclado",
-      "signOut": "Cerrar sesión"
+      "signOut": "Cerrar sesión",
+      "publishSchedule": "Publicar el horario…"
     },
     "help": {
       "actions": "Solo acciones",
@@ -5010,7 +5013,15 @@
       },
       "shift_confirmed": {
         "title": "Turno confirmado",
-        "line": "Un trabajador confirmó un turno."
+        "line": "{worker} confirmó el turno del {due}."
+      },
+      "staff_requested": {
+        "title": "Trabajadores solicitados",
+        "line": "{client} solicita {headcount} × {position} desde el {due}."
+      },
+      "worker_message": {
+        "title": "Mensaje de un trabajador",
+        "line": "{worker} escribió en la aplicación para trabajadores."
       }
     },
     "settings": {
@@ -5028,7 +5039,9 @@
         "obligation_overdue": "Cuando una obligación pasa su fecha de vencimiento.",
         "invoice_overdue": "Cuando una factura pasa su fecha de vencimiento sin pagarse.",
         "promise_broken": "Cuando pasa la fecha de un pago prometido sin pagarse.",
-        "shift_confirmed": "Cuando un trabajador confirma un turno."
+        "shift_confirmed": "Cuando un trabajador confirma un turno.",
+        "staff_requested": "Cuando un cliente solicita trabajadores en su portal.",
+        "worker_message": "Cuando un trabajador escribe en la aplicación para trabajadores."
       }
     },
     "email": {
@@ -5649,14 +5662,16 @@
       "fieldglass-approved-time-sheet": "Hojas de horas aprobadas descargadas de SAP Fieldglass.",
       "timeclock-punch-export": "Marcaciones exportadas de un reloj de control, leídas como horas.",
       "vmsNotYet": "Granite todavía no puede leer la exportación de este sistema.",
-      "partner": "Llega con los paquetes para socios: Granite prepara, un socio con licencia actúa."
+      "partner": "Granite prepara el paquete en Dinero; un socio con licencia actuaría con él. Aún no hay nada registrado.",
+      "partnerLast": "Último registro {date} · {count, plural, one {# paquete} other {# paquetes}} en Dinero. En Granite no se mueve dinero."
     },
     "partners": {
       "embedded_payroll": "Socio de nómina",
       "wage_access": "Socio de acceso anticipado al salario",
       "invoice_funding": "Socio de financiamiento de facturas",
       "insurance": "Corredor de seguro de compensación laboral"
-    }
+    },
+    "openMoney": "Abrir"
   },
   "workerApp": {
     "meta": "Sus horas y su pago",
@@ -5666,7 +5681,8 @@
       "pay": "Pago",
       "messages": "Mensajes",
       "more": "Más",
-      "label": "Aplicación del trabajador"
+      "label": "Aplicación del trabajador",
+      "shifts": "Turnos"
     },
     "profile": "Su perfil",
     "signIn": {
@@ -5704,7 +5720,16 @@
       "payTitle": "Último pago",
       "payEmpty": "Sus talones de pago aparecerán aquí después de su primera semana pagada.",
       "seePay": "Ver pago",
-      "weekOf": "Semana del {range}"
+      "weekOf": "Semana del {range}",
+      "nextShiftTitle": "Próximo turno",
+      "seeShifts": "Ver turnos",
+      "nextShiftAt": "{position} en {client}",
+      "needsAnswer": "{count, plural, one {# turno espera su respuesta} other {# turnos esperan su respuesta}}",
+      "wageTitle": "Pago ganado que puede solicitar",
+      "wageBody": "Disponible ahora de {earned} ganados en horas aprobadas aún no pagadas.",
+      "wageNote": "En Granite no se mueve dinero: el socio de su agencia lo pagaría y lo descontaría de su próximo cheque.",
+      "wageRequest": "Solicitar",
+      "wageDialogTitle": "Solicitar pago ganado"
     },
     "clock": {
       "title": "Marcar entrada",
@@ -6410,12 +6435,13 @@
     "noHours": {
       "title": "{count, plural, one {# turno confirmado aún sin horas} other {# turnos confirmados aún sin horas}}",
       "hint": "Programados y confirmados, pero hasta ahora sin hoja de horas para ese trabajador, día y cliente. Esto nunca detiene el proceso; las horas solo vienen de las hojas de horas."
-    }
+    },
+    "workerNotice": "Sus turnos del {from} al {to} están publicados. Abra Turnos en la aplicación para verlos y responder.",
+    "workerNoticeWithNote": "Sus turnos del {from} al {to} están publicados. Abra Turnos en la aplicación para verlos y responder. Una nota de {agency}: {note}",
+    "workerNoticeSms": "{agency}: sus turnos del {from} al {to} están publicados. Abra la aplicación para trabajadores para verlos: {link}"
   },
   "shiftsWorker": {
     "title": "Sus turnos",
-    "previewNote": "Demo: la pantalla de Turnos de la aplicación del trabajador, vista como un trabajador de la demo.",
-    "viewingAs": "Visto como",
     "tabs": {
       "upcoming": "Próximos",
       "past": "Anteriores",

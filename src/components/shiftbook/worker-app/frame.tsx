@@ -2,23 +2,24 @@
 
 // Pattern: docs/patterns/_layouts/worker-w-tabs.md — the Gusto mobile app's frame: tabs fixed at the
 // bottom (an icon over its label), a profile entry at the top right; one column a phone wide.
-import { CircleUserRoundIcon, ClockIcon, HouseIcon, MessageCircleIcon, ReceiptTextIcon, type LucideIcon } from "lucide-react";
+import { CalendarDaysIcon, ClockIcon, HouseIcon, MessageCircleIcon, ReceiptTextIcon, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
-const TABS: { key: "home" | "time" | "pay" | "messages" | "more"; href: string; icon: LucideIcon }[] = [
+// Five tabs at most (Apple HIG, tab bars); More is the initials at the top right (Gusto's Profile).
+const TABS: { key: "home" | "shifts" | "time" | "pay" | "messages"; href: string; icon: LucideIcon }[] = [
   { key: "home", href: "/w", icon: HouseIcon },
+  { key: "shifts", href: "/w/shifts", icon: CalendarDaysIcon },
   { key: "time", href: "/w/time", icon: ClockIcon },
   { key: "pay", href: "/w/pay", icon: ReceiptTextIcon },
   { key: "messages", href: "/w/messages", icon: MessageCircleIcon },
-  { key: "more", href: "/w/more", icon: CircleUserRoundIcon },
 ];
 
-const activeTab = (pathname: string) => (pathname === "/w" || pathname === "/w/onboarding" ? "home" : (TABS.find((t) => t.key !== "home" && pathname.startsWith(t.href))?.key ?? "home"));
+const activeTab = (pathname: string) => (pathname === "/w" || pathname === "/w/onboarding" ? "home" : (TABS.find((t) => t.key !== "home" && pathname.startsWith(t.href))?.key ?? null));
 
-export function WorkerFrame({ agencyName, initials, unread, children }: { agencyName: string; initials: string; unread: number; children: ReactNode }) {
+export function WorkerFrame({ agencyName, initials, unread, shiftsWaiting = 0, children }: { agencyName: string; initials: string; unread: number; shiftsWaiting?: number; children: ReactNode }) {
   const t = useTranslations("workerApp");
   const pathname = usePathname();
   const current = activeTab(pathname);
@@ -29,7 +30,7 @@ export function WorkerFrame({ agencyName, initials, unread, children }: { agency
           <span className="min-w-0 flex-1 truncate text-sm font-semibold" data-testid="worker-agency">
             {agencyName}
           </span>
-          <Link href="/w/more" aria-label={t("profile")} className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50">
+          <Link href="/w/more" aria-label={t("profile")} aria-current={current === null && pathname.startsWith("/w/more") ? "page" : undefined} data-testid="worker-tab-more" className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50">
             {initials}
           </Link>
         </div>
@@ -52,6 +53,11 @@ export function WorkerFrame({ agencyName, initials, unread, children }: { agency
                   {key === "messages" && unread > 0 && (
                     <span className="absolute top-2 left-1/2 ml-1.5 min-w-4 rounded-full bg-destructive px-1 text-center text-[10px] leading-4 text-white tabular-nums" data-testid="worker-unread">
                       {unread}
+                    </span>
+                  )}
+                  {key === "shifts" && shiftsWaiting > 0 && (
+                    <span className="absolute top-2 left-1/2 ml-1.5 min-w-4 rounded-full bg-destructive px-1 text-center text-[10px] leading-4 text-white tabular-nums" data-testid="worker-shifts-waiting">
+                      {shiftsWaiting}
                     </span>
                   )}
                 </Link>

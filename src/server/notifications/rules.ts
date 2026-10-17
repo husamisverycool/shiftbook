@@ -17,6 +17,12 @@ export interface NotificationFacts {
   overdueInvoices: { id: string; number: string; clientName: string; dueOn: string; balanceCents: number }[];
   /** A promise to pay whose date passed with money still owed. */
   brokenPromises: { id: string; invoiceId: string; number: string; clientName: string; promisedOn: string; balanceCents: number }[];
+  /** A worker's yes to a shift, from the worker app (its audit event; slice u). */
+  confirmedShifts?: { eventId: string; shiftId: string; workerName: string; workDate: string }[];
+  /** A client's request for workers waiting for the agency (slice v). */
+  staffRequests?: { id: string; clientName: string; position: string; headcount: number; startsOn: string }[];
+  /** A worker's message the agency has not read (slice t). */
+  workerMessages?: { id: string; workerId: string; workerName: string }[];
 }
 
 export interface Notice {
@@ -52,6 +58,15 @@ export function noticesFrom(f: NotificationFacts, today: string): Notice[] {
   }
   for (const p of f.brokenPromises) {
     out.push({ kind: "promise_broken", dedupeKey: `promise:${p.id}:broken`, href: `/invoices/${p.invoiceId}`, params: { number: p.number, client: p.clientName, promisedOn: p.promisedOn, balanceCents: p.balanceCents }, ability: "cash" });
+  }
+  for (const c of f.confirmedShifts ?? []) {
+    out.push({ kind: "shift_confirmed", dedupeKey: `shift:${c.eventId}:confirmed`, href: `/schedule?week=${c.workDate}`, params: { worker: c.workerName, dueOn: c.workDate }, ability: "placements" });
+  }
+  for (const r of f.staffRequests ?? []) {
+    out.push({ kind: "staff_requested", dedupeKey: `staff_request:${r.id}`, href: "/job-orders", params: { client: r.clientName, position: r.position, headcount: r.headcount, dueOn: r.startsOn }, ability: "placements" });
+  }
+  for (const m of f.workerMessages ?? []) {
+    out.push({ kind: "worker_message", dedupeKey: `worker_message:${m.id}`, href: `/workers/${m.workerId}?tab=messages`, params: { worker: m.workerName }, ability: "workerApp" });
   }
   return out;
 }

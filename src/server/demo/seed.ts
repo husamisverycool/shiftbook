@@ -282,7 +282,34 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
   const sent = WORKERS.filter((w) => JOB_ORDERS[w.job].client === "ma" && !MA_JOB_ORDER_OPEN.includes(w.key)).map((w) => assignmentId(w.key));
   await tx.update(s.obligations).set({ ...done, statusNote: "Job order sent by email the day the placement started (demo)." }).where(and(eq(s.obligations.kind, "ma_job_order"), inArray(s.obligations.assignmentId, sent)));
   await seedWorkerApp(tx);
-  await seedSchedule(tx, await agencyToday(tx));
+  const today = await agencyToday(tx);
+  await seedSchedule(tx, today);
+  await seedPortal(tx, today);
+}
+
+/**
+ * The client portal in the demo (slice v): Harborview's events contact (Massachusetts) has portal access
+ * and has asked for four event servers for a weekend next week (a pending request on Job orders). No
+ * link is kept: the agency sends one from the client's Portal access.
+ */
+async function seedPortal(tx: Tx, today: string): Promise<void> {
+  const [contact] = await tx
+    .insert(s.portalContacts)
+    .values({ agencyId, clientId: clientId("ma"), name: "Robin Okafor (demo)", email: "robin.okafor@harborview.example.com", locale: "en", createdByLabel: SETUP })
+    .returning({ id: s.portalContacts.id });
+  await tx.insert(s.staffRequests).values({
+    agencyId,
+    clientId: clientId("ma"),
+    contactId: contact!.id,
+    position: "Event server",
+    worksiteId: worksiteId("ma"),
+    startsOn: addDays(today, 7),
+    endsOn: addDays(today, 8),
+    shiftStartMinute: 960,
+    shiftEndMinute: 1380,
+    headcount: 4,
+    notes: "A conference dinner for 300; black pants and shoes (demo).",
+  });
 }
 
 /**
@@ -386,6 +413,19 @@ async function seedSchedule(tx: Tx, today: string): Promise<void> {
     state: "awaiting",
     confirmBy: sql`((${ahead}::date + make_interval(mins => 420)) AT TIME ZONE 'UTC') - interval '16 hours'`,
   });
+  // The worker app's demo people (one in English, one in Spanish) each have a shift waiting for an
+  // answer, so "Continue as" shows the Shifts tab with something to do.
+  for (const key of ["marcus-bell", "daniel-ruiz"] as const) {
+    const w = WORKERS.find((x) => x.key === key)!;
+    await tx.insert(s.shifts).values({
+      ...base,
+      jobOrderId: jobOrderId(w.job),
+      workDate: ahead,
+      workerId: workerId(w.key),
+      state: "awaiting",
+      confirmBy: sql`((${ahead}::date + make_interval(mins => 420)) AT TIME ZONE 'UTC') - interval '16 hours'`,
+    });
+  }
   const [open] = await tx.insert(s.shifts).values({ ...base, jobOrderId: jobOrderId(crew[1]!.job), workDate: day(6), workerId: null, state: "open" }).returning({ id: s.shifts.id });
   const mates = WORKERS.filter((w) => w.job === crew[1]!.job && w.key !== crew[1]!.key).slice(0, 2);
   if (mates.length > 0) await tx.insert(s.shiftOffers).values(mates.map((w) => ({ agencyId, shiftId: open!.id, workerId: workerId(w.key) })));

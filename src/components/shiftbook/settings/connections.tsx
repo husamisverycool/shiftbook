@@ -176,6 +176,7 @@ function ConnectionRow({ c, canForget }: { c: Connection; canForget: boolean }) 
 /** Stripe's catalogue: a section per category, each system's name over one sentence, Set up at the right. */
 function Available({ view }: { view: ConnectionsView }) {
   const t = useTranslations("connections");
+  const when = useDateTime();
   const setUp = (href: string, testId: string) => (
     <Link href={href} className={buttonVariants({ variant: "outline", size: "sm" })} data-testid={testId}>
       {t("setUp")}
@@ -212,7 +213,17 @@ function Available({ view }: { view: ConnectionsView }) {
       <SettingsSection title={t("groups.partners")} description={t("groupHints.partners")}>
         <SettingsRows as="ul" testId="available-partners">
           {view.partners.map((p) => (
-            <SettingsRow as="li" key={p} label={t(`partners.${p}`)} description={t("about.partner")} control={notYet} />
+            <SettingsRow
+              as="li"
+              key={p.key}
+              label={t(`partners.${p.key}`)}
+              description={p.lastUsedAt ? t("about.partnerLast", { date: when(p.lastUsedAt), count: p.uses }) : t("about.partner")}
+              control={
+                <Link href={p.href} className={buttonVariants({ variant: "outline", size: "sm" })} data-testid={`open-partner-${p.key}`}>
+                  {t("openMoney")}
+                </Link>
+              }
+            />
           ))}
         </SettingsRows>
       </SettingsSection>

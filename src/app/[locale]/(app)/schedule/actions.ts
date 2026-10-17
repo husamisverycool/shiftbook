@@ -1,9 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
-import { withAgency } from "@/server/db";
+import { db, withAgency } from "@/server/db";
+import * as s from "@/server/db/schema";
+import { requestOrigin } from "@/server/request-info";
 import { PeriodBusyError } from "@/server/run/period-lock";
+import { tellWorkersOfPublish, type Lang } from "@/server/schedule/notify";
+import { linkBaseUrl } from "@/server/services";
+import { deliverSms, smsTransport } from "@/server/worker-app/sms";
 import { createShifts, deleteShift, eligibleWorkers, markNoShow, publishShifts, updateShift, type EligibleWorker, type ShiftResult } from "@/server/schedule/service";
 import { actorAllowedTo } from "@/server/session";
 
@@ -81,7 +87,31 @@ export async function publishAction(raw: unknown): Promise<Awaited<ReturnType<ty
   const actor = await actorAllowedTo("placements");
   const input = PublishSchema.safeParse(raw);
   if (!input.success) return { ok: false, error: "invalid_date" };
-  return run(() => withAgency(actor.agencyId, (tx) => publishShifts(tx, actor, { ...input.data, message: input.data.message?.trim() || null })));
+  const note = input.data.message?.trim() || null;
+  const base = linkBaseUrl(await requestOrigin());
+  const result = await run(() =>
+    withAgency(actor.agencyId, async (tx) => {
+      const r = await publishShifts(tx, actor, { ...input.data, message: note });
+      if (!r.ok || input.data.notify === "silent") return { r, texts: [] };
+      const [agency] = await tx.select({ name: s.agencies.name }).from(s.agencies);
+      const name = agency?.name ?? "";
+      const day = (iso: string, lang: Lang) => new Intl.DateTimeFormat(lang === "es" ? "es-US" : "en-US", { month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+      const words = await Promise.all((["en", "es"] as const).map(async (lang) => [lang, await getTranslations({ locale: lang, namespace: "schedule" })] as const));
+      const t = Object.fromEntries(words) as Record<Lang, Awaited<ReturnType<typeof getTranslations<"schedule">>>>;
+      const texts = await tellWorkersOfPublish(tx, actor, r.workerIds, (lang) => {
+        const values = { from: day(input.data.from, lang), to: day(input.data.to, lang), agency: name };
+        return {
+          message: note ? t[lang]("workerNoticeWithNote", { ...values, note }) : t[lang]("workerNotice", values),
+          sms: t[lang]("workerNoticeSms", { ...values, link: `${base}/${lang}/w/shifts` }),
+        };
+      });
+      return { r, texts };
+    }),
+  );
+  if ("error" in result) return result;
+  // Texts go after the commit; a failed one is recorded on its row and never undoes the publish.
+  for (const sms of result.texts) await deliverSms(db, smsTransport(), actor.agencyId, sms);
+  return result.r;
 }
 
 /** Who may take a shift (reading; the dialog asks as the job order, date or time changes). */

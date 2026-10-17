@@ -125,6 +125,15 @@ export async function connectionsView(tx: Tx) {
     recruiting: connected.filter((c) => c.kind === "recruiting").map((c) => c.system as Source),
     time: timeProfiles.map((p) => p.source),
   };
-  return { connected, inUse, payrollFormats: [...EXPORT_FORMATS], sources: [...SOURCES], timeProfiles: BUILT_IN_PROFILES.map((p) => p.key), vmsNotYet: [...VMS_NOT_YET], partners: [...PARTNER_HANDOFFS] };
+  // The partner packages (slice w): each opens its Money page, with when one was last recorded.
+  const lastHandoff = await tx.select({ kind: s.partnerHandoffs.kind, at: max(s.partnerHandoffs.createdAt), n: sql<number>`count(*)::int` }).from(s.partnerHandoffs).groupBy(s.partnerHandoffs.kind);
+  const partners = PARTNER_HANDOFFS.map((key) => {
+    const r = lastHandoff.find((x) => x.kind === HANDOFF_OF[key]);
+    return { key, href: MONEY_PAGE[key], lastUsedAt: iso(r?.at), uses: r?.n ?? 0 };
+  });
+  return { connected, inUse, payrollFormats: [...EXPORT_FORMATS], sources: [...SOURCES], timeProfiles: BUILT_IN_PROFILES.map((p) => p.key), vmsNotYet: [...VMS_NOT_YET], partners };
 }
+
+const HANDOFF_OF: Record<PartnerHandoff, s.HandoffKind> = { embedded_payroll: "payroll", wage_access: "wage_access", invoice_funding: "funding", insurance: "insurance" };
+const MONEY_PAGE: Record<PartnerHandoff, string> = { embedded_payroll: "/money/payroll", wage_access: "/money/wage-access", invoice_funding: "/money/funding", insurance: "/money/insurance" };
 export type ConnectionsView = Awaited<ReturnType<typeof connectionsView>>;
