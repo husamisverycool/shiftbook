@@ -341,7 +341,7 @@ const EventSchema = z.discriminatedUnion("type", [
       reason: text,
     })
     .strict(),
-  z.object({ type: z.literal("bonus"), workerId: id, assignmentId: id, workweekStart: isoDate, amountCents: z.number().int().min(1).max(MAX_BONUS_CENTS), kind: z.enum(BONUS_KINDS), reason: text }).strict(),
+  z.object({ type: z.literal("bonus"), workerId: id, assignmentId: id, workweekStart: isoDate, amountCents: z.number().int().min(1).max(MAX_BONUS_CENTS), kind: z.enum(BONUS_KINDS), reason: text, confirmDuplicate: z.boolean().optional() }).strict(),
 ]);
 export type PayEventInput = z.infer<typeof EventSchema>;
 export type PayEventError = ActionError | PayEventRefusedError["code"];

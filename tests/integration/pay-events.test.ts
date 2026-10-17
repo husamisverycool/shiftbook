@@ -5,11 +5,11 @@
  */
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { agencies, auditEvents, billLines, clientBillingProfiles, payLines, rateCards, timeEntries } from "../../src/server/db/schema";
+import { agencies, auditEvents, billLines, bonuses, clientBillingProfiles, payLines, payRuns, rateCards, timeEntries } from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { addEntry } from "../../src/server/review/service";
-import { HolidayRefusedError, saveHolidayPolicy } from "../../src/server/catalog/holidays";
+import { deleteHolidayPolicy, HolidayRefusedError, saveHolidayPolicy } from "../../src/server/catalog/holidays";
 import { PayEventRefusedError, payEventsView, recordBonus, recordConfirmation, removePayEvent } from "../../src/server/run/pay-events";
 import { computeRun } from "../../src/server/run/service";
 import type { Actor } from "../../src/server/session";
@@ -81,16 +81,48 @@ describe("pay events entered by a person", () => {
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     expect(await luisLines(run.runId)).toEqual(expect.arrayContaining([["BONUS", 0, 5_000]]));
   });
+
+  it("the exact same bonus again is refused unless the person confirms it is a second one", async () => {
+    const bonus = { workerId: luis, assignmentId, workweekStart: "2026-10-05", amountCents: 5_000, kind: "nondiscretionary" as const, reason: "Perfect attendance" };
+    await inAgency((tx) => recordBonus(tx, actor, period, bonus));
+    expect(await refusal(inAgency((tx) => recordBonus(tx, actor, period, bonus)))).toBe("duplicate_bonus");
+    await inAgency((tx) => recordBonus(tx, actor, period, { ...bonus, confirmDuplicate: true }));
+    const run = await inAgency((tx) => computeRun(tx, actor, period));
+    expect((await luisLines(run.runId)).filter(([t]) => t === "BONUS")).toEqual([["BONUS", 0, 5_000], ["BONUS", 0, 5_000]]);
+  });
+
+  it("a bonus of an earlier, locked period cannot be removed through this one", async () => {
+    // The week of September 28 belongs to the demo's first period, already paid.
+    const [row] = await inAgency((tx) => tx.insert(bonuses).values({ agencyId: actor.agencyId, workerId: luis, assignmentId, workweekStart: "2026-09-28", amountCents: 2_500, kind: "nondiscretionary", note: "Earlier week" }).returning({ id: bonuses.id }));
+    const id = row!.id;
+    expect(await refusal(inAgency((tx) => removePayEvent(tx, actor, period, { kind: "bonus", id }, "Wrong period")))).toBe("not_found");
+    expect((await inAgency((tx) => payEventsView(tx, period))).events.some((e) => e.id === id)).toBe(false);
+  });
+
+  it("a role that does not change hours cannot enter or remove pay events", async () => {
+    const billing: Actor = { ...actor, role: "billing" };
+    const bonus = { workerId: luis, assignmentId, workweekStart: "2026-10-05", amountCents: 5_000, kind: "nondiscretionary" as const, reason: "Perfect attendance" };
+    expect(await refusal(inAgency((tx) => recordBonus(tx, billing, period, bonus)))).toBe("not_allowed");
+    const meal = { workerId: luis, assignmentId, workDate: "2026-10-08", kind: "meal_period_missed" as const, scheduledMinutes: null, reassigned: false, reason: "No lunch" };
+    expect(await refusal(inAgency((tx) => recordConfirmation(tx, billing, period, meal)))).toBe("not_allowed");
+    const id = await inAgency((tx) => recordBonus(tx, actor, period, bonus));
+    expect(await refusal(inAgency((tx) => removePayEvent(tx, billing, period, { kind: "bonus", id }, "No")))).toBe("not_allowed");
+  });
 });
 
 describe("a rate card's further terms", () => {
-  it("a differential pays and bills its own line, and a minimum day tops a short day up", async () => {
+  it("a differential pays and bills its own line, and a minimum day tops up only a day a person confirmed short", async () => {
     const [entry] = await inAgency((tx) => tx.select().from(timeEntries).where(and(eq(timeEntries.workerId, luis), eq(timeEntries.workDate, "2026-10-08"))));
     const cards = await inAgency((tx) => tx.select().from(rateCards));
     const card = cards.find((c) => c.assignmentId === null && c.payRateCents === 1950 && c.jobOrderId !== null);
     expect(card).toBeDefined();
     // $1.00/h paid, $1.50/h billed on every shift; a 10-hour minimum day, billed.
     await inAgency((tx) => tx.update(rateCards).set({ diffName: "Night", diffPayCents: 100, diffBillCents: 150, contractMinimumMinutes: 600, billsContractMinimum: true }).where(eq(rateCards.jobOrderId, card!.jobOrderId)));
+    // Without a confirmation the minimum day pays nothing.
+    const unconfirmed = await inAgency((tx) => computeRun(tx, actor, period));
+    expect((await luisLines(unconfirmed.runId)).some(([t]) => t === "MIN_GUARANTEE")).toBe(false);
+    // Scheduled 8 hours and worked them all, so California reporting time pay owes nothing extra.
+    await inAgency((tx) => recordConfirmation(tx, actor, period, { workerId: luis, assignmentId, workDate: "2026-10-08", kind: "reported_short", scheduledMinutes: 480, reassigned: false, reason: "Sent home before the 10-hour day" }));
     const run = await inAgency((tx) => computeRun(tx, actor, period));
     // 8 h × $1.00 = $8.00 differential; the 2 hours short of 10 at $19.50 = $39.00.
     expect(await luisLines(run.runId)).toEqual(expect.arrayContaining([["DIFF", 480, 800], ["MIN_GUARANTEE", 120, 3_900]]));
@@ -106,5 +138,31 @@ describe("holiday policies", () => {
     await inAgency((tx) => saveHolidayPolicy(tx, { ...actor, role: "owner" }, null, policy));
     expect(await refusal(inAgency((tx) => saveHolidayPolicy(tx, { ...actor, role: "owner" }, null, { ...policy, name: "Another" })))).toEqual(["overlap"]);
     expect(await refusal(inAgency((tx) => saveHolidayPolicy(tx, { ...actor, role: "owner" }, null, { ...policy, dates: ["2026-12-31"], workedMultiplier: { num: 4, den: 1 } })))).toEqual(["worked_multiplier"]);
+  });
+
+  const ownerActor: Actor = { ...actor, role: "owner" };
+  const shutdown = { clientId: clientId("ca"), name: "Plant shutdown", dates: ["2026-10-09", "2026-12-24"], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false };
+
+  it("only the Owner changes holidays; a change needs a reason and is audited before and after", async () => {
+    expect(await refusal(inAgency((tx) => saveHolidayPolicy(tx, actor, null, shutdown)))).toEqual(["not_allowed"]);
+    const id = await inAgency((tx) => saveHolidayPolicy(tx, ownerActor, null, shutdown));
+    expect(await refusal(inAgency((tx) => saveHolidayPolicy(tx, ownerActor, id, { ...shutdown, notWorkedMinutes: 240 })))).toEqual(["reason"]);
+    expect(await refusal(inAgency((tx) => deleteHolidayPolicy(tx, ownerActor, id)))).toEqual(["reason"]);
+    expect(await refusal(inAgency((tx) => deleteHolidayPolicy(tx, actor, id, "No")))).toEqual(["not_allowed"]);
+    await inAgency((tx) => saveHolidayPolicy(tx, ownerActor, id, { ...shutdown, notWorkedMinutes: 240 }, "Half day per contract"));
+    const [audited] = await inAgency((tx) => tx.select().from(auditEvents).where(and(eq(auditEvents.entityType, "holiday_policy"), eq(auditEvents.entityId, id), eq(auditEvents.action, "update"))));
+    expect(audited).toMatchObject({ reason: "Half day per contract", before: { notWorkedMinutes: 480, dates: ["2026-10-09", "2026-12-24"] }, after: { notWorkedMinutes: 240, dates: ["2026-10-09", "2026-12-24"] } });
+  });
+
+  it("refuses to add, change or delete a holiday on a date in a period whose files exist", async () => {
+    const id = await inAgency((tx) => saveHolidayPolicy(tx, ownerActor, null, shutdown));
+    await owner.db.insert(payRuns).values({ agencyId: actor.agencyId, payPeriodId: period, version: 1, status: "exported", rulesVersion: "test", skipped: [] });
+    // October 9 is in the exported week: changing what it pays, or removing it, is refused.
+    expect(await refusal(inAgency((tx) => saveHolidayPolicy(tx, ownerActor, id, { ...shutdown, notWorkedMinutes: 240 }, "Half day")))).toEqual(["locked"]);
+    expect(await refusal(inAgency((tx) => saveHolidayPolicy(tx, ownerActor, id, { ...shutdown, dates: ["2026-12-24"] }, "Drop October")))).toEqual(["locked"]);
+    expect(await refusal(inAgency((tx) => deleteHolidayPolicy(tx, ownerActor, id, "Gone")))).toEqual(["locked"]);
+    expect(await refusal(inAgency((tx) => saveHolidayPolicy(tx, ownerActor, null, { ...shutdown, clientId: null, dates: ["2026-10-07"] })))).toEqual(["locked"]);
+    // A date outside the locked week can still be added.
+    await inAgency((tx) => saveHolidayPolicy(tx, ownerActor, id, { ...shutdown, dates: ["2026-10-09", "2026-12-24", "2026-12-31"] }, "New Year's Eve too"));
   });
 });

@@ -36,9 +36,11 @@ export function HolidaySettings({ view, canChange }: { view: { policies: Holiday
   const [deleting, setDeleting] = useState<HolidayPolicyView | null>(null);
   const [form, setForm] = useState({ clientId: "", name: "", dates: "", worked: "1.5", notWorked: "0", bill: "1.5", billPremium: true, billNotWorked: false });
   const [problems, setProblems] = useState<HolidayProblem[]>([]);
+  const [reason, setReason] = useState("");
 
   const open = (p: HolidayPolicyView | "new") => {
     setProblems([]);
+    setReason("");
     setForm(
       p === "new"
         ? { clientId: "", name: "", dates: "", worked: "1.5", notWorked: "0", bill: "1.5", billPremium: true, billNotWorked: false }
@@ -75,7 +77,7 @@ export function HolidaySettings({ view, canChange }: { view: { policies: Holiday
         notWorkedMinutes: Math.round(notWorkedHours * 60),
         billWorkedMultiplier: bill,
         billNotWorked: form.billNotWorked,
-      });
+      }, reason);
       if (r.ok) {
         toast.success(t("saved"));
         setEditing(null);
@@ -87,9 +89,11 @@ export function HolidaySettings({ view, canChange }: { view: { policies: Holiday
   const remove = () =>
     start(async () => {
       if (!deleting) return;
-      await deleteHolidayPolicyAction(deleting.id);
-      toast.success(t("deleted"));
-      setDeleting(null);
+      const r = await deleteHolidayPolicyAction(deleting.id, reason);
+      if (r.ok) {
+        toast.success(t("deleted"));
+        setDeleting(null);
+      } else setProblems(r.problems);
       router.refresh();
     });
 
@@ -135,7 +139,14 @@ export function HolidaySettings({ view, canChange }: { view: { policies: Holiday
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => open(p)}>{t("edit")}</DropdownMenuItem>
-                          <DropdownMenuItem variant="destructive" onClick={() => setDeleting(p)}>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => {
+                              setProblems([]);
+                              setReason("");
+                              setDeleting(p);
+                            }}
+                          >
                             {t("delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -205,6 +216,14 @@ export function HolidaySettings({ view, canChange }: { view: { policies: Holiday
               <Checkbox checked={form.billNotWorked} onCheckedChange={(v) => setForm({ ...form, billNotWorked: v === true })} />
               {t("billNotWorked")}
             </Label>
+            {editing !== "new" && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="hol-reason">{t("reason")}</Label>
+                <Textarea id="hol-reason" value={reason} onChange={(e) => setReason(e.target.value)} data-testid="holiday-reason" />
+                {problem("reason")}
+              </div>
+            )}
+            {problem("locked")}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>
@@ -223,6 +242,11 @@ export function HolidaySettings({ view, canChange }: { view: { policies: Holiday
             <DialogTitle>{t("deleteTitle", { name: deleting?.name ?? "" })}</DialogTitle>
             <DialogDescription>{t("deleteHint")}</DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="hol-delete-reason">{t("reason")}</Label>
+            <Textarea id="hol-delete-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+            {problem("reason") ?? problem("locked")}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleting(null)}>
               {t("cancel")}

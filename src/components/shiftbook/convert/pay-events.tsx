@@ -52,6 +52,9 @@ export function PayEvents({ periodId, data, canEdit }: { periodId: string; data:
   const [amount, setAmount] = useState("");
   const [bonusKind, setBonusKind] = useState<"nondiscretionary" | "flat_sum">("nondiscretionary");
   const [reason, setReason] = useState("");
+  // The same bonus is already on file: the person ticks that they mean a second one.
+  const [duplicate, setDuplicate] = useState(false);
+  const [confirmDuplicate, setConfirmDuplicate] = useState(false);
   const worker = data.options.find((w) => w.workerId === workerId);
 
   const refusal = (e: PayEventError) => toast.error(t(`errors.${e}` as "errors.generic"));
@@ -63,6 +66,8 @@ export function PayEvents({ periodId, data, canEdit }: { periodId: string; data:
     setReassigned(false);
     setAmount("");
     setReason("");
+    setDuplicate(false);
+    setConfirmDuplicate(false);
   };
 
   const submit = () => {
@@ -71,7 +76,7 @@ export function PayEvents({ periodId, data, canEdit }: { periodId: string; data:
     if (kind === "bonus") {
       const cents = centsOf(amount);
       if (cents === null || cents <= 0) return toast.error(t("errors.bad_amount"));
-      input = { type: "bonus", workerId, assignmentId, workweekStart: week, amountCents: cents, kind: bonusKind, reason };
+      input = { type: "bonus", workerId, assignmentId, workweekStart: week, amountCents: cents, kind: bonusKind, reason, ...(confirmDuplicate ? { confirmDuplicate: true } : {}) };
     } else {
       const hours = scheduled.trim() === "" ? null : Number(scheduled);
       if (hours !== null && (!Number.isFinite(hours) || hours <= 0 || hours > 24 || Math.round(hours * 60) !== hours * 60)) return toast.error(t("errors.bad_schedule"));
@@ -79,6 +84,7 @@ export function PayEvents({ periodId, data, canEdit }: { periodId: string; data:
     }
     start(async () => {
       const r = await addPayEventAction(periodId, input);
+      if ("error" in r && r.error === "duplicate_bonus") setDuplicate(true);
       if ("error" in r) refusal(r.error);
       else {
         toast.success(t("added"));
@@ -257,6 +263,12 @@ export function PayEvents({ periodId, data, canEdit }: { periodId: string; data:
                   </>
                 )}
               </>
+            )}
+            {duplicate && kind === "bonus" && (
+              <Label className="flex items-center gap-2 font-normal">
+                <Checkbox checked={confirmDuplicate} onCheckedChange={(v) => setConfirmDuplicate(v === true)} data-testid="pay-event-confirm-duplicate" />
+                {t("confirmDuplicate")}
+              </Label>
             )}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="pe-reason">{t("reason")}</Label>

@@ -157,9 +157,26 @@ ruleCase(
 
 ruleCase(
   "contract-minimum-day",
-  "Illinois worker at $17.00/h, billed at $25.00/h; the rate card promises at least 4 hours on each day at the assignment and bills that minimum. On Monday the work ends after 2 hours. The 2 hours worked are paid (2 h × $17.00 = $34.00) and the contractual shortfall, 4 h − 2 h = 2 h × $17.00 = $34.00, is paid on its own line, not as hours worked (29 U.S.C. § 207(e)(2); 29 C.F.R. § 778.220). Billed 2 h × $25.00 = $50.00 and the minimum 2 h × $25.00 = $50.00.",
-  input([shift(WEEK[0]!, 120, { payRateCents: 1700, billRateCents: 2500, contractMinimumMinutes: 240, billsContractMinimum: true })]),
+  "Illinois clerical worker (not day and temporary labor, so the Day and Temporary Labor Services Act minimum does not apply) at $17.00/h, billed at $25.00/h; the rate card promises at least 4 hours on each day at the assignment and bills that minimum. On Monday the worker is sent home after 2 hours, and a person confirms the short day (the engine computes, a person confirms). The 2 hours worked are paid (2 h × $17.00 = $34.00) and the contractual shortfall, 4 h − 2 h = 2 h × $17.00 = $34.00, is paid on its own line, not as hours worked (29 U.S.C. § 207(e)(2); 29 C.F.R. § 778.220). Billed 2 h × $25.00 = $50.00 and the minimum 2 h × $25.00 = $50.00.",
+  {
+    ...input([shift(WEEK[0]!, 120, { payRateCents: 1700, billRateCents: 2500, contractMinimumMinutes: 240, billsContractMinimum: true, dayAndTemporaryLabor: false })]),
+    confirmations: [{ id: "confirmation-1", kind: "reported_short", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[0]! }],
+  },
   { pay: [["REG", 120, 3400], ["MIN_GUARANTEE", 120, 3400]], bill: [["REG", 120, 5000], ["MIN_GUARANTEE", 120, 5000]] },
+);
+
+ruleCase(
+  "contract-minimum-not-on-holiday-off",
+  "Illinois worker at $18.25/h, billed at $26.50/h, whose rate card promises a 4-hour day. The agency's holiday policy pays 8 hours for a holiday not worked (not billed). The worker works 8 hours Monday and has Wednesday October 7 off as a holiday, which a person confirms. The holiday is paid by its policy, 8 h × $18.25 = $146.00, and nothing more: a contractual minimum day pays only on a day a person confirmed was short, never on a holiday off. Pay: Monday 8 h × $18.25 = $146.00 plus the holiday $146.00. Billed Monday 8 h × $26.50 = $212.00.",
+  {
+    ...input([
+      shift(WEEK[0]!, 480, { contractMinimumMinutes: 240 }),
+      shift(WEEK[2]!, 0, { entryIds: [], reportedOnly: true, startMinute: null, contractMinimumMinutes: 240 }),
+    ]),
+    holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false }],
+    confirmations: [{ id: "confirmation-1", kind: "holiday_not_worked", workerId: "worker-1", assignmentId: "assignment-1", date: WEEK[2]! }],
+  },
+  { pay: [["REG", 480, 14600], ["HOL_NOT_WORKED", 480, 14600]], bill: [["REG", 480, 21200]] },
 );
 
 ruleCase(
@@ -183,6 +200,16 @@ ruleCase(
     ],
   },
   { pay: [["REG", 480, 14600], ["HOL", 480, 7300]], bill: [["REG", 480, 21200], ["HOL", 480, 10600]] },
+);
+
+ruleCase(
+  "holiday-premium-with-differential-held",
+  "Illinois worker at $18.25/h works 8 hours on Wednesday October 7, 2026, a holiday under the agency's policy paying 1.5× for hours worked, on a shift that also carries a Night differential of $1.50/h. Whether a holiday premium stays out of the regular rate compares it with the rate for like work on other days (29 C.F.R. § 778.203); with a differential on the shift Granite does not work that comparison out, so the week is held for a person instead of guessed: no lines, one blocker.",
+  {
+    ...input([shift(WEEK[2]!, 480, { differential: { name: "Night", payCentsPerHour: 150, billCentsPerHour: 0 } })]),
+    holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 0, billWorkedMultiplier: null, billNotWorked: false }],
+  },
+  { pay: [], bill: [], blockers: ["rule_not_supported_yet"] },
 );
 
 ruleCase(

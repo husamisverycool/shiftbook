@@ -2,8 +2,9 @@
  * RULE: a contractual minimum-hours guarantee.
  *
  * Some rate cards promise a minimum day ("at least 4 hours whenever the worker is sent"). That is a
- * contract term, not a statute: when the hours at the assignment that day fall short, the shortfall
- * is paid at the pay rate (never below that day's minimum wage) on its own line. It is pay for time
+ * contract term, not a statute: when a person confirms the worker was sent home short that day (a
+ * reported_short confirmation — the engine computes, a person confirms; never on a holiday off or
+ * any day nobody confirmed), the shortfall below the minimum is paid at the pay rate (never below that day's minimum wage) on its own line. It is pay for time
  * not worked because the work fell short, so it is not hours worked and stays out of the regular
  * rate and overtime (29 U.S.C. § 207(e)(2); 29 C.F.R. § 778.220, show-up pay). Statutory minimum pay
  * for the same day (California or Massachusetts reporting pay, the Illinois or New Jersey sent-and-

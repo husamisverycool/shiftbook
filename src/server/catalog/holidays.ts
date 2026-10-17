@@ -2,11 +2,13 @@
 // agency's default (client null) and a client's own, which wins on that client's work. The engine
 // reads them on every computation; two policies for the same client holding the same date would
 // leave it unable to choose, so saving refuses that.
-import { eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { isIsoDate } from "@shiftbook/rules";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
+import { can } from "../permissions";
+import { periodState } from "../run/period-lock";
 import type { Actor } from "../session";
 
 export interface HolidayPolicyInput {
@@ -21,7 +23,7 @@ export interface HolidayPolicyInput {
   billNotWorked: boolean;
 }
 
-export type HolidayProblem = "name" | "dates" | "worked_multiplier" | "not_worked" | "bill_multiplier" | "client" | "overlap";
+export type HolidayProblem = "name" | "dates" | "worked_multiplier" | "not_worked" | "bill_multiplier" | "client" | "overlap" | "reason" | "locked" | "not_allowed";
 
 export class HolidayRefusedError extends Error {
   constructor(readonly problems: HolidayProblem[]) {
@@ -75,9 +77,50 @@ export async function holidayPolicies(tx: Tx): Promise<{ policies: HolidayPolicy
   return { policies, clients };
 }
 
-/** Adds a policy, or changes one (id given). Refuses a date another policy for the same client holds. */
-export async function saveHolidayPolicy(tx: Tx, actor: Actor, id: string | null, input: HolidayPolicyInput): Promise<string> {
+type Row = typeof s.holidayPolicies.$inferSelect;
+
+/** Everything a policy says, for the audit log's before and after. */
+const snapshot = (p: Pick<Row, "clientId" | "name" | "holidayDates" | "workedMultiplierNum" | "workedMultiplierDen" | "notWorkedMinutes" | "billWorkedMultiplierNum" | "billWorkedMultiplierDen" | "billNotWorked">) => ({
+  clientId: p.clientId,
+  name: p.name,
+  dates: [...p.holidayDates].sort(),
+  workedMultiplier: `${p.workedMultiplierNum}/${p.workedMultiplierDen}`,
+  notWorkedMinutes: p.notWorkedMinutes,
+  billWorkedMultiplier: p.billWorkedMultiplierNum !== null && p.billWorkedMultiplierDen !== null ? `${p.billWorkedMultiplierNum}/${p.billWorkedMultiplierDen}` : null,
+  billNotWorked: p.billNotWorked,
+});
+
+/**
+ * Dates whose pay a change would alter that fall in a pay period whose files exist (or that was paid
+ * before Granite): a policy never rewrites a locked period (SPEC §5), as a rate change never does.
+ */
+async function lockedAmong(tx: Tx, dates: string[]): Promise<boolean> {
+  for (const date of [...new Set(dates)].sort()) {
+    const periods = await tx.select({ id: s.payPeriods.id }).from(s.payPeriods).where(and(lte(s.payPeriods.startsOn, date), gte(s.payPeriods.endsOn, date)));
+    for (const p of periods) if ((await periodState(tx, p.id)) !== "open") return true;
+  }
+  return false;
+}
+
+/** The dates a change touches: added or removed ones, and every date when what they pay changes. */
+function touched(before: ReturnType<typeof snapshot> | null, after: ReturnType<typeof snapshot> | null): string[] {
+  if (!before) return after?.dates ?? [];
+  if (!after) return before.dates;
+  const { dates: b, ...bTerms } = before;
+  const { dates: a, ...aTerms } = after;
+  const moved = [...b.filter((d) => !a.includes(d)), ...a.filter((d) => !b.includes(d))];
+  return JSON.stringify(bTerms) === JSON.stringify(aTerms) ? moved : [...new Set([...b, ...a])];
+}
+
+/**
+ * Adds a policy, or changes one (id given, with a reason). Refuses a date another policy for the same
+ * client holds, and any change to a date in a locked period. Only the Owner (the settings ability).
+ */
+export async function saveHolidayPolicy(tx: Tx, actor: Actor, id: string | null, input: HolidayPolicyInput, reasonText = ""): Promise<string> {
+  if (!can(actor, "settings")) throw new HolidayRefusedError(["not_allowed"]);
+  const reason = reasonText.trim();
   const problems = holidayProblems(input);
+  if (id && reason === "") problems.push("reason");
   if (input.clientId !== null) {
     const [client] = await tx.select({ id: s.clients.id }).from(s.clients).where(eq(s.clients.id, input.clientId));
     if (!client) problems.push("client");
@@ -99,19 +142,26 @@ export async function saveHolidayPolicy(tx: Tx, actor: Actor, id: string | null,
   if (id) {
     const [before] = await tx.select().from(s.holidayPolicies).where(eq(s.holidayPolicies.id, id));
     if (!before) throw new HolidayRefusedError(["name"]);
+    if (await lockedAmong(tx, touched(snapshot(before), snapshot(row)))) throw new HolidayRefusedError(["locked"]);
     await tx.update(s.holidayPolicies).set(row).where(eq(s.holidayPolicies.id, id));
-    await audit(tx, actor, [{ action: "update", entityType: "holiday_policy", entityId: id, before: { name: before.name, dates: before.holidayDates, clientId: before.clientId }, after: { name: row.name, dates: row.holidayDates, clientId: row.clientId } }]);
+    await audit(tx, actor, [{ action: "update", entityType: "holiday_policy", entityId: id, before: snapshot(before), after: snapshot(row), reason }]);
     return id;
   }
+  if (await lockedAmong(tx, row.holidayDates)) throw new HolidayRefusedError(["locked"]);
   const [created] = await tx.insert(s.holidayPolicies).values({ ...row, agencyId: actor.agencyId, createdBy: actor.userId }).returning({ id: s.holidayPolicies.id });
-  await audit(tx, actor, [{ action: "create", entityType: "holiday_policy", entityId: created!.id, after: { name: row.name, dates: row.holidayDates, clientId: row.clientId } }]);
+  await audit(tx, actor, [{ action: "create", entityType: "holiday_policy", entityId: created!.id, after: snapshot(row), ...(reason ? { reason } : {}) }]);
   return created!.id;
 }
 
-export async function deleteHolidayPolicy(tx: Tx, actor: Actor, id: string): Promise<boolean> {
+/** Deletes a policy, with a reason; refused when one of its dates is in a locked period. */
+export async function deleteHolidayPolicy(tx: Tx, actor: Actor, id: string, reasonText = ""): Promise<boolean> {
+  if (!can(actor, "settings")) throw new HolidayRefusedError(["not_allowed"]);
+  const reason = reasonText.trim();
+  if (reason === "") throw new HolidayRefusedError(["reason"]);
   const [before] = await tx.select().from(s.holidayPolicies).where(eq(s.holidayPolicies.id, id));
   if (!before) return false;
+  if (await lockedAmong(tx, before.holidayDates)) throw new HolidayRefusedError(["locked"]);
   await tx.delete(s.holidayPolicies).where(eq(s.holidayPolicies.id, id));
-  await audit(tx, actor, [{ action: "delete", entityType: "holiday_policy", entityId: id, before: { name: before.name, dates: before.holidayDates, clientId: before.clientId } }]);
+  await audit(tx, actor, [{ action: "delete", entityType: "holiday_policy", entityId: id, before: snapshot(before), reason }]);
   return true;
 }

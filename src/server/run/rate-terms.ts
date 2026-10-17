@@ -17,13 +17,17 @@ export interface RateCardTerms {
 /**
  * The differential on a shift that starts at `startMinute` on `date`, or undefined. A window that
  * starts after it ends wraps past midnight (22:00–06:00). A shift whose start time is unknown never
- * gets a windowed differential: the timesheet must say when it started.
+ * gets a windowed differential: the timesheet must say when it started (`onUnknownStart` lets the
+ * run warn about it).
  */
-export function differentialFor(card: RateCardTerms, date: string, startMinute: number | null): Differential | undefined {
+export function differentialFor(card: RateCardTerms, date: string, startMinute: number | null, onUnknownStart?: () => void): Differential | undefined {
   if (card.diffName === null || card.diffPayCents === null) return undefined;
   if (card.diffDays.length > 0 && !card.diffDays.includes(weekdayOf(date))) return undefined;
   if (card.diffStartMinute !== null && card.diffEndMinute !== null) {
-    if (startMinute === null) return undefined;
+    if (startMinute === null) {
+      onUnknownStart?.();
+      return undefined;
+    }
     const { diffStartMinute: from, diffEndMinute: to } = card;
     const inside = from < to ? startMinute >= from && startMinute < to : startMinute >= from || startMinute < to;
     if (!inside) return undefined;

@@ -24,12 +24,12 @@ export type HolidayPolicyForm = z.infer<typeof PolicySchema>;
 const refresh = () => revalidatePath("/[locale]/(app)/settings/holidays", "page");
 
 /** The Owner adds or changes a holiday policy (audited). */
-export async function saveHolidayPolicyAction(id: string | null, input: HolidayPolicyForm): Promise<{ ok: true } | { ok: false; problems: HolidayProblem[] }> {
+export async function saveHolidayPolicyAction(id: string | null, input: HolidayPolicyForm, reason: string): Promise<{ ok: true } | { ok: false; problems: HolidayProblem[] }> {
   const actor = await actorAllowedTo("settings");
   const parsed = PolicySchema.safeParse(input);
-  if ((id !== null && !z.uuid().safeParse(id).success) || !parsed.success) return { ok: false, problems: ["name"] };
+  if ((id !== null && !z.uuid().safeParse(id).success) || !parsed.success || typeof reason !== "string" || reason.length > 2000) return { ok: false, problems: ["name"] };
   try {
-    await withAgency(actor.agencyId, (tx) => saveHolidayPolicy(tx, actor, id, parsed.data));
+    await withAgency(actor.agencyId, (tx) => saveHolidayPolicy(tx, actor, id, parsed.data, reason));
   } catch (error) {
     if (error instanceof HolidayRefusedError) return { ok: false, problems: error.problems };
     throw error;
@@ -38,10 +38,15 @@ export async function saveHolidayPolicyAction(id: string | null, input: HolidayP
   return { ok: true };
 }
 
-export async function deleteHolidayPolicyAction(id: string): Promise<{ ok: boolean }> {
+export async function deleteHolidayPolicyAction(id: string, reason: string): Promise<{ ok: true } | { ok: false; problems: HolidayProblem[] }> {
   const actor = await actorAllowedTo("settings");
-  if (!z.uuid().safeParse(id).success) return { ok: false };
-  const ok = await withAgency(actor.agencyId, (tx) => deleteHolidayPolicy(tx, actor, id));
+  if (!z.uuid().safeParse(id).success || typeof reason !== "string" || reason.length > 2000) return { ok: false, problems: ["name"] };
+  try {
+    await withAgency(actor.agencyId, (tx) => deleteHolidayPolicy(tx, actor, id, reason));
+  } catch (error) {
+    if (error instanceof HolidayRefusedError) return { ok: false, problems: error.problems };
+    throw error;
+  }
   refresh();
-  return { ok };
+  return { ok: true };
 }

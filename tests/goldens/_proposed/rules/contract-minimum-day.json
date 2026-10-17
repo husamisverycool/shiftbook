@@ -1,6 +1,6 @@
 {
   "name": "contract-minimum-day",
-  "summary": "Illinois worker at $17.00/h, billed at $25.00/h; the rate card promises at least 4 hours on each day at the assignment and bills that minimum. On Monday the work ends after 2 hours. The 2 hours worked are paid (2 h × $17.00 = $34.00) and the contractual shortfall, 4 h − 2 h = 2 h × $17.00 = $34.00, is paid on its own line, not as hours worked (29 U.S.C. § 207(e)(2); 29 C.F.R. § 778.220). Billed 2 h × $25.00 = $50.00 and the minimum 2 h × $25.00 = $50.00.",
+  "summary": "Illinois clerical worker (not day and temporary labor, so the Day and Temporary Labor Services Act minimum does not apply) at $17.00/h, billed at $25.00/h; the rate card promises at least 4 hours on each day at the assignment and bills that minimum. On Monday the worker is sent home after 2 hours, and a person confirms the short day (the engine computes, a person confirms). The 2 hours worked are paid (2 h × $17.00 = $34.00) and the contractual shortfall, 4 h − 2 h = 2 h × $17.00 = $34.00, is paid on its own line, not as hours worked (29 U.S.C. § 207(e)(2); 29 C.F.R. § 778.220). Billed 2 h × $25.00 = $50.00 and the minimum 2 h × $25.00 = $50.00.",
   "input": {
     "workweekStartsOn": 1,
     "shifts": [
@@ -30,7 +30,8 @@
         },
         "otBillingRule": "multiplier",
         "contractMinimumMinutes": 240,
-        "billsContractMinimum": true
+        "billsContractMinimum": true,
+        "dayAndTemporaryLabor": false
       }
     ],
     "overtimeRules": [
@@ -1011,6 +1012,15 @@
         "effectiveTo": null,
         "citation": "29 U.S.C. § 207(e)(6) — a premium rate for work on holidays, Saturdays, Sundays or regular days of rest of not less than one and one-half times the rate for like work on other days stays out of the regular rate; a smaller premium counts in it (29 C.F.R. § 778.203); California follows (DLSE Enforcement Manual 49.1.2.4)"
       }
+    ],
+    "confirmations": [
+      {
+        "id": "confirmation-1",
+        "kind": "reported_short",
+        "workerId": "worker-1",
+        "assignmentId": "assignment-1",
+        "date": "2026-10-05"
+      }
     ]
   },
   "expected": {
@@ -1092,7 +1102,17 @@
       }
     ],
     "blockers": [],
-    "warnings": [],
+    "warnings": [
+      {
+        "code": "premium_not_applicable",
+        "workerId": "worker-1",
+        "workerName": "Worker One",
+        "workweekStart": "2026-10-05",
+        "jurisdiction": "IL",
+        "date": "2026-10-05",
+        "message": "Worker One on 2026-10-05: a short day was confirmed, but the Illinois day-labor minimum does not cover clerical or professional work (820 ILCS 175/5), so nothing more is paid for it."
+      }
+    ],
     "obligations": []
   }
 }

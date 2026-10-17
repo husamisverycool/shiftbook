@@ -445,6 +445,16 @@ export const rateCards = pgTable(
     index("rate_cards_job_order").on(t.agencyId, t.jobOrderId, t.effectiveFrom),
     // One version per start date in each card (the job order's, or one assignment's own).
     uniqueIndex("rate_cards_one_start").on(t.agencyId, t.jobOrderId, sql`coalesce(${t.assignmentId}, '00000000-0000-0000-0000-000000000000'::uuid)`, t.effectiveFrom),
+    check(
+      "rate_cards_differential",
+      sql`(${t.diffName} IS NULL AND ${t.diffPayCents} IS NULL AND ${t.diffBillCents} IS NULL AND ${t.diffStartMinute} IS NULL AND ${t.diffEndMinute} IS NULL)
+        OR (${t.diffName} IS NOT NULL AND length(btrim(${t.diffName})) BETWEEN 1 AND 60
+          AND ${t.diffPayCents} BETWEEN 1 AND 10000 AND ${t.diffBillCents} BETWEEN 0 AND 10000
+          AND ((${t.diffStartMinute} IS NULL AND ${t.diffEndMinute} IS NULL)
+            OR (${t.diffStartMinute} BETWEEN 0 AND 1439 AND ${t.diffEndMinute} BETWEEN 0 AND 1440 AND ${t.diffStartMinute} <> ${t.diffEndMinute})))`,
+    ),
+    check("rate_cards_diff_days", sql`${t.diffDays} <@ ARRAY[0, 1, 2, 3, 4, 5, 6]`),
+    check("rate_cards_contract_minimum", sql`${t.contractMinimumMinutes} IS NULL OR ${t.contractMinimumMinutes} BETWEEN 1 AND 720`),
   ],
 );
 
@@ -965,7 +975,11 @@ export const premiumConfirmations = pgTable(
     confirmedBy: uuid("confirmed_by"),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("premium_confirmations_day").on(t.agencyId, t.workerId, t.workDate)],
+  (t) => [
+    index("premium_confirmations_day").on(t.agencyId, t.workerId, t.workDate),
+    // One confirmation of a kind per worker, assignment and day (drizzle/0062).
+    uniqueIndex("premium_confirmations_once").on(t.agencyId, t.workerId, t.assignmentId, t.workDate, t.kind),
+  ],
 );
 
 /**

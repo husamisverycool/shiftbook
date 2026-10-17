@@ -629,6 +629,14 @@ export function computePay(input: PayInput): PayResult {
       if (!terms || (!terms.pay && !(bm && bm.num > bm.den))) continue;
       holidayOf.set(s, terms);
       if (!terms.pay) continue;
+      // Whether a holiday premium stays out of the regular rate compares it with the rate for like work
+      // on other days (29 C.F.R. § 778.203); with a differential on the shift that comparison is not
+      // modelled, so the week is held rather than guessed.
+      if (s.differential && !conflictDays.has(`diff|${s.date}`)) {
+        conflictDays.add(`diff|${s.date}`);
+        weekBlockers.push({ code: "rule_not_supported_yet", ...who, jurisdiction: s.jurisdiction, date: s.date, ...message([phrase("holidayWithDifferential", { ...about(s.date), citation: "29 C.F.R. § 778.203" })]) });
+        continue;
+      }
       const cut = premiumExclusionOn(rules.regularRateRules, s.date);
       if (cut) cutOffOf.set(s, cut.multiplier);
       else if (!conflictDays.has("cut")) {
@@ -800,13 +808,14 @@ export function computePay(input: PayInput): PayResult {
     // What the regular rate is made of, for the explain strings.
     const straightEarned = reduce({ num: worked.reduce((sum, w) => sum + mul(w.minutes, w.payRateCents), 0), den: 60 });
     const smallHolidayTotal = smallHolidayPremiums.reduce((sum, f) => addWorth(sum, { num: BigInt(f.num), den: BigInt(f.den) }), { num: 0n, den: 1n });
-    const diffTotals = new Map<string, { num: bigint; den: bigint }>();
+    const diffTotals = new Map<string, { name: string; num: bigint; den: bigint }>();
     for (const s of shifts.filter((x) => x.differential && x.minutes > 0)) {
       const e = differentialEarned(s.minutes, s.differential!);
-      diffTotals.set(s.differential!.name, addWorth(diffTotals.get(s.differential!.name) ?? { num: 0n, den: 1n }, { num: BigInt(e.num), den: BigInt(e.den) }));
+      const dk = differentialKey(s.differential!);
+      diffTotals.set(dk, { name: s.differential!.name, ...addWorth(diffTotals.get(dk) ?? { num: 0n, den: 1n }, { num: BigInt(e.num), den: BigInt(e.den) }) });
     }
     const inRate = [
-      ...[...diffTotals].sort((a, b) => cmp(a[0], b[0])).map(([name, w]) => nested(phrase("extraDifferential", { amount: formatMoney(reduceFractionBig(w.num, w.den)!), name }))),
+      ...[...diffTotals].sort((a, b) => cmp(a[0], b[0])).map(([, w]) => nested(phrase("extraDifferential", { amount: formatMoney(reduceFractionBig(w.num, w.den)!), name: w.name }))),
       ...nondiscretionary.map((b) => nested(phrase("extraNondiscretionaryBonus", { amount: formatCents(b.amountCents) }))),
       ...(flatInRate ? flat.map((b) => nested(phrase("extraFlatSumBonus", { amount: formatCents(b.amountCents) }))) : []),
       ...(smallHolidayPremiums.length > 0 ? [nested(phrase("extraHolidayPremium", { amount: formatMoney(reduceFractionBig(smallHolidayTotal.num, smallHolidayTotal.den)!) }))] : []),
@@ -1073,12 +1082,15 @@ export function computePay(input: PayInput): PayResult {
     }
     if (blockers.some((b) => b.workerId === first.workerId && b.workweekStart === week)) continue;
 
-    // 6. a contractual minimum day from the rate card: the shortfall at the pay rate, after any minimum
-    // pay the law requires for the same day. Not hours worked; never counted toward overtime.
+    // 6. a contractual minimum day from the rate card, on a day a person confirmed was short (sent and
+    // not used, or sent home early: the engine computes, a person confirms): the shortfall at the pay
+    // rate, after any minimum pay the law requires for the same day. Never on a holiday not worked, never
+    // on a short day nobody confirmed. Not hours worked; never counted toward overtime.
     const contractDays = new Map<string, Shift[]>();
-    for (const s of shifts.filter((x) => (x.contractMinimumMinutes ?? 0) > 0)) {
-      const k = `${s.assignmentId}|${s.date}`;
-      contractDays.set(k, [...(contractDays.get(k) ?? []), s]);
+    for (const c of confirmed.filter((x) => x.kind === "reported_short")) {
+      const k = `${c.assignmentId}|${c.date}`;
+      const day = shifts.filter((s) => s.assignmentId === c.assignmentId && s.date === c.date && (s.contractMinimumMinutes ?? 0) > 0);
+      if (day.length > 0 && !contractDays.has(k)) contractDays.set(k, day);
     }
     for (const [k, day] of [...contractDays].sort((a, b) => cmp(a[0], b[0]))) {
       const sample = day[0]!;

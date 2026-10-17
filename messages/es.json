@@ -437,7 +437,8 @@
         "approaching_equal_pay_hours": "Cerca de 720 horas con un cliente de Illinois",
         "equal_pay_obligation": "Ahora aplica la igualdad salarial de Illinois",
         "equal_pay_rate_missing": "Horas después de 720 con un cliente sin tarifa de igualdad salarial",
-        "equal_pay_rate_needed": "Tarifa de igualdad salarial pendiente para horas después de 720 en un cliente"
+        "equal_pay_rate_needed": "Tarifa de igualdad salarial pendiente para horas después de 720 en un cliente",
+        "differential_start_unknown": "Falta la hora de inicio de un turno para su diferencial"
       },
       "rules": {
         "ca_daily_overtime": "horas extra diarias",
@@ -1186,7 +1187,7 @@
     "anyTime": "cualquier hora",
     "everyDay": "todos los días",
     "contractMinimum": "Jornada mínima (horas)",
-    "contractMinimumHelp": "Si el trabajo de ese día es más corto, el resto se paga a la tarifa de pago. Déjelo vacío si no hay.",
+    "contractMinimumHelp": "Si una persona confirma que el trabajador fue enviado a casa antes ese día, el resto se paga a la tarifa de pago. Déjelo vacío si no hay.",
     "billsContractMinimum": "Facturar al cliente la jornada mínima",
     "contractMinimumShown": "{hours} h, no facturada",
     "contractMinimumBilled": "{hours} h, facturada",
@@ -4331,7 +4332,8 @@
     "whyContractMinimum": " Regla {rule}: la tarjeta de tarifas promete al menos {due} cada día en esta asignación; el {date} se trabajaron {worked}{statutory}, así que se pagan {more} más, no como horas trabajadas ({citation}).",
     "contractCountsStatutory": " y ya se pagaron {paid} de pago mínimo que exige la ley",
     "labelBilledContractMinimum": "Jornada mínima por contrato facturada",
-    "billContractMinimum": " La tarjeta de tarifas factura su jornada mínima, a la tarifa de cobro."
+    "billContractMinimum": " La tarjeta de tarifas factura su jornada mínima, a la tarifa de cobro.",
+    "holidayWithDifferential": " Se paga una prima de feriado el {date} en un turno que también tiene un diferencial por turno; si la prima queda fuera de la tarifa regular depende de la tarifa del mismo trabajo en otros días ({citation}), que Granite todavía no calcula con un diferencial. Pague esta semana a mano, o quite el diferencial o el feriado de ese día."
   },
   "said": {
     "alreadySettled": " Ya resuelto fuera de los archivos: {decisions}.",
@@ -4477,7 +4479,8 @@
     "noPayrollIdPaychex": "{name} no tiene ID de trabajador de Paychex, así que el archivo de Paychex Flex no pudo identificar a esta persona.",
     "noPayrollIdPaylocity": "{name} no tiene ID de empleado de Paylocity, así que el archivo de Paylocity no pudo identificar a esta persona.",
     "correctionCreditTooLarge": "{client}: la corrección acreditaría {amount} en la factura {number}, a la que solo le quedan {room} por acreditar después de sus notas de crédito y cancelaciones anteriores; revierta primero una nota de crédito o una cancelación.",
-    "marginCredit": "Nota de crédito {number}, emitida el {date}: {amount} menos de lo facturado a {client} por la semana del {week}."
+    "marginCredit": "Nota de crédito {number}, emitida el {date}: {amount} menos de lo facturado a {client} por la semana del {week}.",
+    "differentialStartUnknown": "{name} el {date}: el diferencial {differential} de la tarjeta de tarifas cubre los turnos que empiezan entre {from} y {to}, pero la hora de inicio de este turno no está en la hoja de horas, así que no se paga diferencial. Escriba la hora de inicio en Revisar horas si corresponde."
   },
   "identities": {
     "connectedTitle": "Cuentas conectadas",
@@ -6618,8 +6621,11 @@
       "busy": "Otra persona está cambiando este periodo de pago ahora mismo. Inténtelo de nuevo en un momento.",
       "stale": "Esto cambió en otra pestaña. La página muestra ahora lo más reciente.",
       "skip_refused": "No se pudo guardar.",
-      "generic": "No se pudo guardar."
-    }
+      "generic": "No se pudo guardar.",
+      "duplicate_bonus": "Este mismo bono ya está registrado para esa semana. Marque la casilla si es un segundo bono.",
+      "not_allowed": "Su rol no cambia el pago."
+    },
+    "confirmDuplicate": "Agregarlo otra vez: es un segundo bono"
   },
   "holidays": {
     "context": "Configuración",
@@ -6660,7 +6666,11 @@
       "not_worked": "Escriba las horas de 0 a 12, por ejemplo 8.",
       "bill_multiplier": "Escriba un múltiplo de 1 a 3, por ejemplo 1.5.",
       "client": "Ese cliente ya no existe.",
-      "overlap": "Otra política del mismo cliente ya tiene una de estas fechas."
-    }
+      "overlap": "Otra política del mismo cliente ya tiene una de estas fechas.",
+      "reason": "Indique un motivo para el cambio.",
+      "locked": "Una de estas fechas está en un periodo de pago cuyos archivos ya existen. Un periodo pagado nunca cambia; inicie primero una corrección allí.",
+      "not_allowed": "Solo el Propietario cambia las políticas de feriados."
+    },
+    "reason": "Motivo del cambio"
   }
 }

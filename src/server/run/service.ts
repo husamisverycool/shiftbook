@@ -230,6 +230,8 @@ async function ruleTables(tx: Tx): Promise<Pick<PayInput, "overtimeRules" | "jur
   };
 }
 
+/** 1320 → "22:00" (a differential's window, for a message). */
+const clock = (m: number | null) => (m === null ? "" : `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`);
 const withDifferential = (d: Differential | undefined): { differential?: Differential } => (d ? { differential: d } : {});
 
 /** A bill rate the rate card worked out from a markup carries its working onto the bill line (with its keys: decision 0030). */
@@ -292,6 +294,8 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     .sort((a, b) => cmp(a.id, b.id));
 
   /** The shift for an assignment on a date with that day's rate card, billing profile and worksite; or why there is none. */
+  /** Shifts a windowed differential could not be judged on (no start time): warned, never guessed. */
+  const startUnknown: RunIssue[] = [];
   const shiftOn = (
     a: (typeof assignmentRows)[number],
     date: string,
@@ -325,7 +329,17 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       billsGuarantees: profile[0]!.billGuarantees,
       dayAndTemporaryLabor: a.jobOrder.dayAndTemporaryLabor,
       // The rate card's dated terms (drizzle/0062): a differential on shifts it covers, a minimum day.
-      ...withDifferential(differentialFor(card, date, base.startMinute)),
+      ...withDifferential(differentialFor(card, date, base.startMinute, () => {
+        if (base.minutes > 0)
+          startUnknown.push({
+            code: "differential_start_unknown",
+            workerId: base.workerId,
+            workerName: base.workerName,
+            date,
+            entryIds: base.entryIds,
+            ...said([say("differentialStartUnknown", { ...on, differential: card.diffName ?? "", from: clock(card.diffStartMinute), to: clock(card.diffEndMinute) })]),
+          });
+      })),
       ...contractTermsOf(card),
     };
   };
@@ -562,7 +576,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       blockers.push({ ...who, ...said([say("equalPayRateDue4160", { name: sh.workerName, client, date: dated(tier), from: dated(inForce.effectiveFrom) })]) });
     }
   }
-  const warnings: RunIssue[] = [...result.warnings, ...(await overtimeSpikes(tx, period, result.payLines, workerNameOf))];
+  const warnings: RunIssue[] = [...result.warnings, ...startUnknown, ...(await overtimeSpikes(tx, period, result.payLines, workerNameOf))];
 
   // Pay and bill lines must carry the same worked minutes for each worker, assignment, week and type
   // (a minimum-wage top-up or a premium is pay only: it is not billed time).

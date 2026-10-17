@@ -6,7 +6,7 @@
     "shifts": [
       {
         "entryIds": [
-          "entry-038"
+          "entry-040"
         ],
         "workerId": "worker-1",
         "workerName": "Worker One",
@@ -1062,7 +1062,7 @@
         "ruleId": "straight_time",
         "explain": "Regular: 8h 00m (480 min) × $18.25/h = 14600¢ exactly → $146.00. Rule straight_time: hours up to the 40h 00m weekly threshold in the workweek starting 2026-10-05.",
         "entryIds": [
-          "entry-038"
+          "entry-040"
         ]
       },
       {
@@ -1080,7 +1080,7 @@
         "ruleId": "holiday_worked",
         "explain": "Holiday premium: 8h 00m (480 min) × $9.125/h (0.5 × $18.25) = 7300¢ exactly → $73.00. Rule holiday_worked: 2026-10-07 is a holiday under the holiday policy \"Client plant shutdown day\", which pays 1.5 × the pay rate for hours worked; straight time is on the regular and overtime lines, and this premium is paid on top of any overtime, never credited toward it. A holiday premium of 1.5× or more is not counted in the regular rate (29 U.S.C. § 207(e)(6); 29 C.F.R. §§ 778.203, 778.219).",
         "entryIds": [
-          "entry-038"
+          "entry-040"
         ]
       }
     ],
@@ -1100,7 +1100,7 @@
         "ruleId": "bill_regular",
         "explain": "Billed regular: 8h 00m (480 min) × $26.50/h = 21200¢ exactly → $212.00. Bill rate from the rate card.",
         "entryIds": [
-          "entry-038"
+          "entry-040"
         ]
       },
       {
@@ -1118,7 +1118,7 @@
         "ruleId": "bill_holiday_premium",
         "explain": "Billed holiday premium: 8h 00m (480 min) × $13.25/h (0.5 × $26.50 bill rate) = 10600¢ exactly → $106.00. Client billed 1.5 × the bill rate for hours worked on a holiday under the holiday policy \"Client plant shutdown day\"; straight time is on the regular and overtime bill lines.",
         "entryIds": [
-          "entry-038"
+          "entry-040"
         ]
       }
     ],

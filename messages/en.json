@@ -437,7 +437,8 @@
         "approaching_equal_pay_hours": "Nearing 720 hours at one Illinois client",
         "equal_pay_obligation": "Illinois equal pay now applies",
         "equal_pay_rate_missing": "Hours after 720 at one client without an equal-pay rate",
-        "equal_pay_rate_needed": "Equal-pay rate due for hours after 720 at one client"
+        "equal_pay_rate_needed": "Equal-pay rate due for hours after 720 at one client",
+        "differential_start_unknown": "A shift's start time is needed for its differential"
       },
       "rules": {
         "ca_daily_overtime": "daily overtime",
@@ -1186,7 +1187,7 @@
     "anyTime": "any time",
     "everyDay": "every day",
     "contractMinimum": "Minimum day (hours)",
-    "contractMinimumHelp": "If the work that day is shorter, the rest is paid at the pay rate. Leave empty for none.",
+    "contractMinimumHelp": "If a person confirms the worker was sent home short that day, the rest is paid at the pay rate. Leave empty for none.",
     "billsContractMinimum": "Bill the client for the minimum day",
     "contractMinimumShown": "{hours} h, not billed",
     "contractMinimumBilled": "{hours} h, billed",
@@ -4331,7 +4332,8 @@
     "whyContractMinimum": " Rule {rule}: the rate card promises at least {due} on each day at this assignment; on {date} {worked} were worked{statutory}, so {more} more are paid, not as hours worked ({citation}).",
     "contractCountsStatutory": " and {paid} of minimum pay the law requires were already paid",
     "labelBilledContractMinimum": "Contractual minimum day billed",
-    "billContractMinimum": " The rate card bills its minimum day, at the bill rate."
+    "billContractMinimum": " The rate card bills its minimum day, at the bill rate.",
+    "holidayWithDifferential": " A holiday premium is paid on {date} on a shift that also carries a shift differential; whether the premium stays out of the regular rate depends on the rate for like work on other days ({citation}), which Granite does not work out with a differential yet. Pay this week by hand, or remove the differential or the holiday from that day."
   },
   "said": {
     "alreadySettled": " Already settled outside the files: {decisions}.",
@@ -4477,7 +4479,8 @@
     "noPayrollIdPaychex": "{name} has no Paychex worker id, so the Paychex Flex file could not match them.",
     "noPayrollIdPaylocity": "{name} has no Paylocity employee id, so the Paylocity file could not match them.",
     "correctionCreditTooLarge": "{client}: the correction would credit {amount} on invoice {number}, which has only {room} left to credit after its earlier credit notes and write-offs; reverse a credit note or a write-off first.",
-    "marginCredit": "Credit note {number}, issued {date}: {amount} off what was billed to {client} for the week of {week}."
+    "marginCredit": "Credit note {number}, issued {date}: {amount} off what was billed to {client} for the week of {week}.",
+    "differentialStartUnknown": "{name} on {date}: the rate card's {differential} differential covers shifts starting {from}–{to}, but this shift's start time is not on the timesheet, so no differential is paid. Enter the start time in Review hours if it should be."
   },
   "identities": {
     "connectedTitle": "Connected accounts",
@@ -6618,8 +6621,11 @@
       "busy": "Someone else is changing this pay period right now. Try again in a moment.",
       "stale": "This changed in another tab. The page now shows the latest.",
       "skip_refused": "That could not be saved.",
-      "generic": "That could not be saved."
-    }
+      "generic": "That could not be saved.",
+      "duplicate_bonus": "This exact bonus is already on file for that week. Tick the box if it is a second one.",
+      "not_allowed": "Your role does not change pay."
+    },
+    "confirmDuplicate": "Add it again: this is a second bonus"
   },
   "holidays": {
     "context": "Settings",
@@ -6660,7 +6666,11 @@
       "not_worked": "Enter the hours from 0 to 12, such as 8.",
       "bill_multiplier": "Enter a multiple from 1 to 3, such as 1.5.",
       "client": "That client no longer exists.",
-      "overlap": "Another policy for the same client already has one of these dates."
-    }
+      "overlap": "Another policy for the same client already has one of these dates.",
+      "reason": "Give a reason for the change.",
+      "locked": "One of these dates is in a pay period whose files exist. A paid period never changes; start a correction there first.",
+      "not_allowed": "Only the Owner changes holiday policies."
+    },
+    "reason": "Reason for the change"
   }
 }
