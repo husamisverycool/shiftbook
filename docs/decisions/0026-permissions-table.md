@@ -15,7 +15,7 @@ was the demo Owner.
   `hours` (Owner, Coordinator) — timesheets, the review grid, client approval of hours, totals;
   `run` (Owner) — approving or reopening a run, the payroll files, corrections, which clients must
   approve; `placements` (Owner, Coordinator) — job orders, rates, placements, the placement import;
-  `clientBilling` (Owner, Billing); `cash` (Owner, Billing); `compliance` (Owner, Coordinator,
+  `clientBilling` (Owner, Billing); `clients` — adding and editing clients and worksites, archiving a client (Owner, Coordinator, Billing; added 2026-10-17 so an agency that signs itself up can set up its business); `cash` (Owner, Billing); `compliance` (Owner, Coordinator,
   Billing — each duty also names the roles that act on it); `settings` (Owner) — payroll, margin and
   compliance settings; `members` (Owner); `viewMargin` (Owner, accountant).
 - Every server action that changes something starts with `actorAllowedTo(ability)`; a role without

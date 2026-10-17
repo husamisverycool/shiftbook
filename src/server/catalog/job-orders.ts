@@ -33,12 +33,14 @@ const mayChange = (actor: Actor) => can(actor, "placements");
 const MAX_RATE_CENTS = 10_000_000;
 const cents = (n: number | null) => n === null || (Number.isSafeInteger(n) && n > 0 && n <= MAX_RATE_CENTS);
 
-async function problems(tx: Tx, input: JobOrderInput): Promise<JobOrderField[]> {
+/** `kept`: what the job order already names, which may stay even once archived. */
+async function problems(tx: Tx, input: JobOrderInput, kept: { clientId: string; worksiteId: string; branchId: string | null } | null = null): Promise<JobOrderField[]> {
   const fields: JobOrderField[] = [];
-  const [client] = await tx.select({ id: s.clients.id }).from(s.clients).where(eq(s.clients.id, input.clientId));
-  if (!client) fields.push("client");
-  const [site] = await tx.select({ clientId: s.worksites.clientId }).from(s.worksites).where(eq(s.worksites.id, input.worksiteId));
-  if (!site || site.clientId !== input.clientId) fields.push("worksite");
+  const [client] = await tx.select({ id: s.clients.id, archivedAt: s.clients.archivedAt }).from(s.clients).where(eq(s.clients.id, input.clientId));
+  // An archived client or worksite takes no new job orders (drizzle/0061).
+  if (!client || (client.archivedAt !== null && kept?.clientId !== input.clientId)) fields.push("client");
+  const [site] = await tx.select({ clientId: s.worksites.clientId, archivedAt: s.worksites.archivedAt }).from(s.worksites).where(eq(s.worksites.id, input.worksiteId));
+  if (!site || site.clientId !== input.clientId || (site.archivedAt !== null && kept?.worksiteId !== input.worksiteId)) fields.push("worksite");
   if (input.position.trim() === "" || input.position.length > 120) fields.push("position");
   if (input.socCode !== null && !/^\d{2}-\d{4}$/.test(input.socCode)) fields.push("soc_code");
   if (input.shift !== null && input.shift.length > 60) fields.push("shift");
@@ -47,8 +49,8 @@ async function problems(tx: Tx, input: JobOrderInput): Promise<JobOrderField[]> 
     fields.push("pay_range");
   }
   if (input.branchId) {
-    const [branch] = await tx.select({ id: s.branches.id }).from(s.branches).where(eq(s.branches.id, input.branchId));
-    if (!branch) fields.push("branch");
+    const [branch] = await tx.select({ id: s.branches.id, archivedAt: s.branches.archivedAt }).from(s.branches).where(eq(s.branches.id, input.branchId));
+    if (!branch || (branch.archivedAt !== null && kept?.branchId !== input.branchId)) fields.push("branch");
   }
   return fields;
 }
@@ -81,7 +83,7 @@ export async function updateJobOrder(tx: Tx, actor: Actor, id: string, raw: JobO
     const [assigned] = await tx.select({ id: s.assignments.id }).from(s.assignments).where(eq(s.assignments.jobOrderId, id)).limit(1);
     if (assigned) return { ok: false, error: "client_has_assignments" };
   }
-  const fields = await problems(tx, input);
+  const fields = await problems(tx, input, { clientId: current.clientId, worksiteId: current.worksiteId, branchId: current.branchId });
   if (fields.length > 0) return { ok: false, error: "invalid", fields };
   await tx.update(s.jobOrders).set(input).where(eq(s.jobOrders.id, id));
   const before = {

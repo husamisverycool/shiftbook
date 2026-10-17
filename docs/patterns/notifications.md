@@ -31,6 +31,8 @@ Researched: 2026-10-17 (`docs/research/notifications-slice-r.md`). Confidence: h
   Messages tab.
 - Timesheets by email (slice y, decision 0042): to whoever converts timesheets (hours ability); a filed
   email opens its week, a held one opens Settings › Connections at the forwarding section.
+- One more kind (completeness audit G1): a pay run is ready to look over. It goes to the roles that
+  run payroll and opens the week's Totals step.
 
 ## States
 - Loading and errors: `_components/loading.md`, `_components/error.md` (list shape).

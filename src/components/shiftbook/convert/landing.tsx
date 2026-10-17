@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Link } from "@/i18n/navigation";
 import { EmptyState } from "../empty-state";
+import { StartPeriodButton } from "./start-period";
 import { longDate } from "../format";
 import { Page, PageHeader, TableFrame } from "../page";
 import { Status } from "../status";
@@ -28,13 +29,30 @@ export interface LandingPeriod {
   started: boolean;
 }
 
-export async function Landing({ periods }: { periods: LandingPeriod[] }) {
+/**
+ * `setup`: whether the pay week's day is set (periods are made from it; completeness audit G1), whether
+ * this person may start an earlier week, and today for the date picker.
+ */
+export async function Landing({ periods, setup }: { periods: LandingPeriod[]; setup: { weekSet: boolean; canStart: boolean; today: string } }) {
   const t = await getTranslations("landing");
+  const tp = await getTranslations("periodSetup");
   const locale = await getLocale();
   return (
     <Page>
-      <PageHeader title={t("title")} />
-      {periods.length === 0 ? (
+      <PageHeader title={t("title")} actions={setup.weekSet && setup.canStart ? <StartPeriodButton today={setup.today} /> : undefined} />
+      {!setup.weekSet ? (
+        <EmptyState
+          icon={CalendarRangeIcon}
+          title={tp("noWeekTitle")}
+          description={tp("noWeekBody")}
+          action={
+            <Link href="/settings/payroll" className={buttonVariants({ size: "sm" })} data-testid="set-pay-week">
+              {tp("noWeekAction")}
+            </Link>
+          }
+          testId="no-pay-week"
+        />
+      ) : periods.length === 0 ? (
         <EmptyState
           icon={CalendarRangeIcon}
           title={t("emptyTitle")}

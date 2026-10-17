@@ -36,16 +36,22 @@ quarter at a glance.
    steps done", then the steps in a bordered box with dividers — each a checkbox (ticked by
    Granite when the step has happened, never by hand: Polaris "Mark tasks as complete when
    merchants finish them"), its title and a chevron. One step open at a time, the first not done:
-   its one-line description and its button. The steps:
-   1. Choose the payroll system → payroll file settings. Done: a payroll system is chosen.
-   2. Add clients and job orders → Job orders. Done: a worker is on an assignment.
-   3. Convert a week's timesheets → the pay period's upload. Done: a pay period not paid before
+   its one-line description and its button. The steps (the first three added by completeness audit
+   G1, so an agency that signs itself up sets up its business first; Polaris: the guide lists what a
+   new store must do first):
+   1. Add your agency's details → Settings › Agency. Done: an address, a time zone and the pay week's
+      day are set.
+   2. Add a client and its worksite → Clients. Done: a client has a worksite.
+   3. Add a branch → Settings › Branches. Done: a branch exists.
+   4. Choose the payroll system → payroll file settings. Done: a payroll system is chosen.
+   5. Add job orders and place workers → Job orders. Done: a worker is on an assignment.
+   6. Convert a week's timesheets → the pay period's upload. Done: a pay period not paid before
       Granite has a timesheet or hours. (In the demo it points at "Use the sample timesheets".)
-   4. Ask a client to approve the hours → Client approvals. Done: an approval request was sent.
-   5. Approve the week and create the files → the pay period. Done: a week has its files.
-   6. Match a bank file to the invoices → Bank. Done: a bank file was imported. (In the demo it
+   7. Ask a client to approve the hours → Client approvals. Done: an approval request was sent.
+   8. Approve the week and create the files → the pay period. Done: a week has its files.
+   9. Match a bank file to the invoices → Bank. Done: a bank file was imported. (In the demo it
       points at "Use the sample bank file".)
-   7. Look up a worker's SSN → Workers. Done: the Owner looked one up since the agency last started
+   10. Look up a worker's SSN → Workers. Done: the Owner looked one up since the agency last started
       over.
 2. **Today** (Stripe Home "Today"): the heading, large and bold, over a hairline. On the left the
    pay period's figures as plain type — hours this pay period (its dates under it), workers with

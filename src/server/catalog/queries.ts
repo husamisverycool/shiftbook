@@ -136,11 +136,14 @@ export async function listJobOrders(tx: Tx, today: string): Promise<JobOrderRow[
 
 /** Clients with their worksites, and the roster: what the forms choose from. */
 export async function catalogOptions(tx: Tx) {
-  const clients = await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients);
-  const sites = await tx.select({ id: s.worksites.id, clientId: s.worksites.clientId, name: s.worksites.name, city: s.worksites.city, state: s.worksites.state }).from(s.worksites);
+  // Archived clients, worksites and branches are kept for the job orders that already name them (drizzle/0061).
+  const clients = await tx.select({ id: s.clients.id, name: s.clients.name, archived: sql<boolean>`${s.clients.archivedAt} is not null` }).from(s.clients);
+  const sites = await tx
+    .select({ id: s.worksites.id, clientId: s.worksites.clientId, name: s.worksites.name, city: s.worksites.city, state: s.worksites.state, archived: sql<boolean>`${s.worksites.archivedAt} is not null` })
+    .from(s.worksites);
   const people = await tx.select({ id: s.workers.id, firstName: s.workers.firstName, lastName: s.workers.lastName }).from(s.workers);
   const users = await tx.select({ id: s.users.id, name: s.users.name }).from(s.users);
-  const branches = await tx.select({ id: s.branches.id, name: s.branches.name }).from(s.branches);
+  const branches = await tx.select({ id: s.branches.id, name: s.branches.name, archived: sql<boolean>`${s.branches.archivedAt} is not null` }).from(s.branches);
   const jobs = await tx
     .select({ id: s.jobOrders.id, position: s.jobOrders.position, shift: s.jobOrders.shift, clientId: s.clients.id, clientName: s.clients.name })
     .from(s.jobOrders)

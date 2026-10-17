@@ -101,7 +101,9 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
   const [pending, run] = useTransition();
   const changed = JSON.stringify(values) !== JSON.stringify(start);
   const set = <K extends keyof Values>(key: K, value: Values[K]) => setValues((v) => ({ ...v, [key]: value, ...(key === "clientId" ? { worksiteId: "" } : {}) }));
-  const sites = options.worksites.filter((w) => w.clientId === values.clientId);
+  // Archived ones are offered only to the job order that already names them (drizzle/0061).
+  const keep = (row: { id: string; archived?: boolean }, kept: string | undefined) => !row.archived || row.id === kept;
+  const sites = options.worksites.filter((w) => w.clientId === values.clientId && keep(w, start.worksiteId));
 
   const close = () => {
     if (changed && !initial) setAskDraft(true);
@@ -185,7 +187,7 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
               t("client"),
               <NativeSelect className="w-full" id="jo-clientId" value={values.clientId} onChange={(e) => set("clientId", e.target.value)} {...invalid("clientId")}>
                 <NativeSelectOption value="">{t("choose")}</NativeSelectOption>
-                {options.clients.map((c) => (
+                {options.clients.filter((c) => keep(c, start.clientId)).map((c) => (
                   <NativeSelectOption key={c.id} value={c.id}>
                     {c.name}
                   </NativeSelectOption>
@@ -215,7 +217,7 @@ export function JobOrderForm({ onClose, options, initial }: { onClose: () => voi
               t("branch"),
               <NativeSelect id="jo-branchId" className="w-full" value={values.branchId} onChange={(e) => set("branchId", e.target.value)} {...invalid("branchId")} data-testid="field-branch">
                 <NativeSelectOption value="">{t("noBranch")}</NativeSelectOption>
-                {options.branches.map((b) => (
+                {options.branches.filter((b) => keep(b, start.branchId)).map((b) => (
                   <NativeSelectOption key={b.id} value={b.id}>
                     {b.name}
                   </NativeSelectOption>

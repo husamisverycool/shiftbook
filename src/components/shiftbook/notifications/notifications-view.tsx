@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/notifications.md — Linear's Inbox: rows newest first, an unread dot, the
 // kind's icon, what happened and to what, the time; J/K move, U read or unread, Alt+U all read,
 // Backspace deletes, Shift+Backspace deletes the read ones, Enter opens.
-import { BellIcon, CalendarClockIcon, CircleAlertIcon, ClipboardCheckIcon, ClipboardXIcon, HandCoinsIcon, MailIcon, MessageCircleIcon, ReceiptTextIcon, ShieldAlertIcon, UserCheckIcon, UsersIcon, type LucideIcon } from "lucide-react";
+import { BellIcon, CalendarClockIcon, CircleAlertIcon, CircleCheckIcon, ClipboardCheckIcon, ClipboardXIcon, HandCoinsIcon, MailIcon, MessageCircleIcon, ReceiptTextIcon, ShieldAlertIcon, UserCheckIcon, UsersIcon, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ const ICONS: Record<NotificationKind, LucideIcon> = {
   staff_requested: UsersIcon,
   worker_message: MessageCircleIcon,
   email_received: MailIcon,
+  run_ready: CircleCheckIcon,
 };
 
 export function NotificationsView({ rows, show }: { rows: InboxRow[]; show: "unread" | "all" }) {
