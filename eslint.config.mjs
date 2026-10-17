@@ -87,6 +87,8 @@ const eslintConfig = defineConfig([
   },
   globalIgnores([
     ".next/**",
+    // Parallel builders' working copies (git worktrees).
+    ".claude/worktrees/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
