@@ -3,7 +3,8 @@
 // Pattern: docs/patterns/sign-in.md (decision 0031) — Linear's sign-in: the heading centred, the main way
 // in as one filled full-width button and the others outlined under it (in the demo, the demo people);
 // an "or" rule between ways in (GitHub, Stripe, Notion); then GitHub's form (email, password with
-// "Forgot password?", Sign in; the code comes on its own page).
+// "Forgot password?", Sign in; the code comes on its own page); "New to Granite? Create an agency" at the foot
+// (decision 0036).
 import { Building2Icon, KeyRoundIcon, MailIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
@@ -176,6 +177,13 @@ export function SignInView({ notice, next, email: initialEmail, demoPeople, meth
           </div>
         </section>
       )}
+      {/* Decision 0036: the mirror of Stripe's and Linear's "Already have an account?" foot line. */}
+      <p className="text-center text-sm text-muted-foreground" data-testid="sign-in-new-here">
+        {t("newHere")}{" "}
+        <Link href="/sign-up" className="text-primary underline-offset-4 hover:underline" data-testid="sign-in-create-agency">
+          {t("createAgency")}
+        </Link>
+      </p>
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -52,6 +52,7 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
   const areas = useMemo(() => AREAS.filter((a) => a.key !== "margin" || showMargin), [showMargin]);
   const mayViewActivity = useCan()("viewActivity");
   const mayManageMembers = useCan()("members");
+  const mayManageBilling = useCan()("billing");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -134,6 +135,13 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <DropdownMenuItem render={<Link href="/settings/activity" />} data-testid="menu-activity">
                   <ActivityIcon />
                   {t("activity")}
+                </DropdownMenuItem>
+              )}
+              {/* Decision 0036: the agency's subscription (Linear's Administration › Billing), for the Owner. */}
+              {mayManageBilling && (
+                <DropdownMenuItem render={<Link href="/settings/billing" />} data-testid="menu-billing">
+                  <CreditCardIcon />
+                  {t("billing")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />

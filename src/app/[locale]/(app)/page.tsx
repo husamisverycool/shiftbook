@@ -1,6 +1,7 @@
 // Pattern: docs/patterns/home.md — Stripe Dashboard Home ("Today" with its figures, the line of the
 // period so far and the right column of balances; notifications; "Your overview" with its date range
-// and its cards on a grey band) with Polaris's setup guide on top.
+// and its cards on a grey band) with Polaris's setup guide on top; Polaris's banner above everything when
+// the agency's subscription needs attention (decision 0036).
 import { ArrowRightIcon } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { cookies } from "next/headers";
@@ -9,23 +10,25 @@ import { PERIOD_TONE } from "@/components/shiftbook/convert/period-tone";
 import { axisMoney, dateRange, dateTime, hoursMinutes, listDate, money, shortDate } from "@/components/shiftbook/format";
 import { runningTotals } from "@/components/shiftbook/chart-axis";
 import { LineChart, TodayChart } from "@/components/shiftbook/home/charts";
+import { BillingBanner, type BillingBannerProps } from "@/components/shiftbook/home/billing-banner";
 import { GUIDE_COOKIE, SetupGuide, ShowGuide, type GuideStep } from "@/components/shiftbook/home/setup-guide";
 import { KeyFigure } from "@/components/shiftbook/key-figures";
 import { NavPill } from "@/components/shiftbook/list-controls";
 import { Page } from "@/components/shiftbook/page";
 import { Status, type Tone } from "@/components/shiftbook/status";
 import { Link } from "@/i18n/navigation";
+import { freeDaysEndingSoon } from "@/server/billing/access";
 import { withAgency } from "@/server/db";
 import { homeView, SETUP_STEPS, type SetupStep } from "@/server/home/queries";
 import { mayViewMargin } from "@/server/margin/service";
-import { currentActor, isDemo } from "@/server/session";
+import { agencyStandingNow, currentActor, isDemo } from "@/server/session";
 import { agencyToday, agencyZone } from "@/server/settings";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ weeks?: string }> }) {
+export default async function HomePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ weeks?: string; notice?: string }> }) {
   const { locale } = await params;
-  const { weeks } = await searchParams;
+  const { weeks, notice } = await searchParams;
   setRequestLocale(locale);
   const actor = await currentActor();
   const viewMargin = mayViewMargin(actor);
@@ -37,6 +40,14 @@ export default async function HomePage({ params, searchParams }: { params: Promi
   const tl = await getTranslations("landing");
   const tm = await getTranslations("margin");
   const guideHidden = (await cookies()).get(GUIDE_COOKIE)?.value === "hidden";
+  // The subscription (decision 0036): paused changes for everyone; the free days' last week for the Owner.
+  const billing = await agencyStandingNow(actor.agencyId);
+  const trialEnds = actor.role === "owner" ? freeDaysEndingSoon({ ...billing, now: new Date() }) : null;
+  const banner: BillingBannerProps | null = !billing.standing.changes
+    ? { kind: "paused", reason: billing.standing.reason, owner: actor.role === "owner", tried: notice === "changes_paused" }
+    : trialEnds
+      ? { kind: "trial_ending", date: dateTime(trialEnds, locale, zone, { date: "long", time: false }) }
+      : null;
   // The Owner sets up the agency and is the one person who can do every step (decision 0029).
   const showGuide = actor.role === "owner" && !guideHidden;
 
@@ -98,6 +109,7 @@ export default async function HomePage({ params, searchParams }: { params: Promi
 
   return (
     <Page className="gap-14">
+      {banner && <BillingBanner {...banner} />}
       {showGuide && <SetupGuide steps={steps} demo={isDemo()} />}
 
       {/* Today (Stripe Home): the heading over a hairline; the figures and the line of the period so far on

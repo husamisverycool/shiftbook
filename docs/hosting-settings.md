@@ -23,6 +23,10 @@ These go in the hosting service's environment settings — never in the code, ne
 | `SHIFTBOOK_STORAGE_DIR` | Where uploaded files are kept, if not the default. |
 | `SHIFTBOOK_GOOGLE_CLIENT_ID`, `SHIFTBOOK_GOOGLE_CLIENT_SECRET` | "Continue with Google" (optional; decision 0033). From a Google Cloud OAuth client of type "Web application" whose authorized redirect URI is `<SHIFTBOOK_APP_URL>/api/auth/oidc/google/callback`. The button appears once both are set. |
 | `SHIFTBOOK_MICROSOFT_CLIENT_ID`, `SHIFTBOOK_MICROSOFT_CLIENT_SECRET` | "Continue with Microsoft" (optional; decision 0033). From a Microsoft Entra app registration for "accounts in any organizational directory and personal Microsoft accounts", web redirect URI `<SHIFTBOOK_APP_URL>/api/auth/oidc/microsoft/callback`, with the optional ID-token claims `email` and `xms_edov` added (without `xms_edov`, people connect Microsoft from Your account before signing in with it). |
+| `STRIPE_SECRET_KEY` | Payments (decision 0036): Stripe's secret key, so Granite can open Stripe's own checkout and billing pages for an agency. Starts with `sk_live_` (or `sk_test_` while trying it out). Step by step below. Without it, Settings › Billing says payments are not available, and nobody is charged. |
+| `STRIPE_WEBHOOK_SECRET` | Payments: the "signing secret" of the address Stripe tells about payments (starts with `whsec_`). Granite believes Stripe's messages only when they carry this signature. Step by step below. |
+| `STRIPE_PRICE_ID` | Payments: the monthly price agencies pay (starts with `price_`). Step by step below. |
+| `STRIPE_TRIAL_DAYS` | Optional: how many days a new agency uses Granite free before it must subscribe (a whole number, for example `14`). Leave it out for no free days. Agencies that existed before payments were added got 30 free days from the day the update was installed. |
 
 An agency's own single sign-on needs no setting here: its Owner enters the provider's details in
 Settings › Single sign-on and registers `<SHIFTBOOK_APP_URL>/api/auth/oidc/sso/callback` with it (the
@@ -30,6 +34,39 @@ issuer must be a public https name whose endpoints are on the same host; an agen
 optional ID-token claims `email` and `xms_edov` to its app registration). In demo mode none of these
 are used: Google, Microsoft and SSO go through the demo's stand-in, inside the app, with no network
 call at all.
+
+## Payments with Stripe, step by step
+
+Agencies pay a monthly subscription through Stripe. Granite never sees a card: Stripe's own pages take
+the card, send the invoices and handle canceling. Do this once, signed in to your Stripe account at
+dashboard.stripe.com. (To try it first without real money, switch on **Test mode** at the top of the
+Stripe dashboard and do the same steps there; the keys then start with `sk_test_`.)
+
+1. **The price (`STRIPE_PRICE_ID`).** In Stripe, open **Product catalog** and choose **Add product**.
+   Name it (for example "Granite monthly"), choose **Recurring**, **Monthly**, and type the amount.
+   Save. Open the product: under **Pricing**, the price has an ID that starts with `price_`. Copy it
+   into the hosting settings as `STRIPE_PRICE_ID`.
+2. **The secret key (`STRIPE_SECRET_KEY`).** In Stripe, open **Developers** (bottom left), then
+   **API keys**. Next to **Secret key**, choose **Reveal** and copy it (it starts with `sk_live_`). Paste
+   it into the hosting settings as `STRIPE_SECRET_KEY`. Never paste it anywhere else — not in an email,
+   not in a chat.
+3. **The webhook (`STRIPE_WEBHOOK_SECRET`).** In Stripe, open **Developers**, then **Webhooks**, and
+   choose **Add destination** (or **Create an event destination**). Choose **Your account**, then these
+   events: `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`,
+   `customer.subscription.resumed`. Choose **Webhook endpoint** and type the address
+   `<SHIFTBOOK_APP_URL>/api/billing/webhook` (your app's address followed by `/api/billing/webhook`).
+   Save. On the destination's page, under **Signing secret**, choose **Reveal** and copy it (it starts
+   with `whsec_`) into the hosting settings as `STRIPE_WEBHOOK_SECRET`.
+4. **The billing page for customers.** In Stripe, open **Settings**, then **Billing**, then **Customer
+   portal**, and choose **Activate** (or **Save**). Allow customers to update their payment method, see
+   their invoices and cancel their subscription. This is the page "Manage billing" opens.
+5. **Free days (optional, `STRIPE_TRIAL_DAYS`).** Type the number of free days a new agency gets, for
+   example `14`.
+6. Restart the app so it reads the new settings. In Settings › Billing, an Owner now sees **Start
+   subscription**.
+
+The demo never talks to Stripe: these settings are not used there.
 
 ## The first agency and its Owner
 
@@ -42,3 +79,8 @@ pnpm tsx scripts/create-agency.ts --name "Agency name" --owner-name "Owner name"
 
 It prints the Owner's invite link once (it works for 10 days). The Owner opens it, chooses a
 password, sets up an authenticator app, and invites everyone else from Settings › Members.
+
+Agencies can also create themselves (decision 0036): on the sign-in page, **New to Granite? Create an
+agency** asks for a work email, a name and the agency's name, emails a link (it needs `RESEND_API_KEY`
+and `MAIL_FROM`), and the person sets a password and an authenticator app. Both ways give the agency
+the same free days (`STRIPE_TRIAL_DAYS`).
