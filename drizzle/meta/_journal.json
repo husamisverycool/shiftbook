@@ -288,6 +288,13 @@
       "when": 1792093100000,
       "tag": "0040_identity_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792179500000,
+      "tag": "0041_host_key_check",
+      "breakpoints": true
     }
   ]
 }

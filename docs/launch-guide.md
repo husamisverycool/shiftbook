@@ -11,13 +11,16 @@ buttons sometimes move, so if one is named slightly differently, pick the closes
 2. When Railway asks for a plan, choose **Hobby**.
 3. Click **New Project**, then **Deploy from GitHub repo**. If it asks, click **Configure GitHub App**
    and allow the `shiftbook` repository. Then pick **shiftbook**. A box called **shiftbook** appears.
-   If it starts building, let it: it cannot finish until steps 4 to 6 are done, and that is expected.
+   If it starts building, let it: it cannot finish until steps 4 to 7 are done, and that is expected.
 4. Add the database: click **+ Create** at the top right (it may say **+ New**), then **Database**,
    then **PostgreSQL**. A second box called **Postgres** appears.
 5. Add the disk for uploaded files: right-click an empty spot of the page (or press **Ctrl+K**, or
    **⌘K** on a Mac, and type `volume`), choose **Volume**, pick the **shiftbook** box, and type
    `/data` as the mount path.
-6. Add the settings: click the **shiftbook** box, open its **Variables** tab, click **Raw Editor**,
+6. Give it a web address: click the **shiftbook** box, open **Settings**, find **Networking**, and
+   click **Generate Domain**. If it asks for a port, type `3000`. (Do this before step 7: the app
+   reads its address when it starts.)
+7. Add the settings: still in the **shiftbook** box, open its **Variables** tab, click **Raw Editor**,
    and paste these three lines exactly as written:
 
    ```
@@ -27,9 +30,7 @@ buttons sometimes move, so if one is named slightly differently, pick the closes
    ```
 
    Click **Update Variables**, then the **Deploy** button at the top of the page.
-7. Give it a web address: still in the **shiftbook** box, open **Settings**, find **Networking**, and
-   click **Generate Domain**. If it asks for a port, type `3000`.
-8. Wait about 10 minutes, until the box shows a green tick. Open the address from step 7. You will
+8. Wait about 10 minutes, until the box shows a green tick. Open the address from step 6. You will
    see **Sign in to Granite** with the demo people. Click **Continue as Demo Owner**. That is your
    demo, ready to show anyone.
 
@@ -37,7 +38,8 @@ buttons sometimes move, so if one is named slightly differently, pick the closes
 
 Keep the demo as it is. Make a second, separate copy for real customers:
 
-1. Do Part 1 again in a **new project**, but in step 6 write `SHIFTBOOK_MODE=live` instead of `demo`.
+1. Do Part 1 again in a **new project**, but in step 7 write `SHIFTBOOK_MODE=live` instead of `demo`
+   (exactly `live`, in small letters: anything else stops the start, on purpose).
 2. **Email** (needed: invites, client approvals and password resets are emails).
    1. Buy your own web address (a "domain") from a company such as Cloudflare or Namecheap.
    2. Sign up at **resend.com**. Open **Domains**, click **Add Domain**, type your domain, and copy
@@ -58,8 +60,9 @@ Keep the demo as it is. Make a second, separate copy for real customers:
 5. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
    about an hour; `docs/hosting-settings.md` lists exactly what they set.
 6. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
-   Never delete the live **shiftbook** box's volume: besides the uploaded files, it holds the key
-   that locks Social Security numbers. Losing it means those can never be read again.
+   Then do the same in the live **shiftbook** box's **Backups** tab: its disk holds the uploaded files
+   and the key that locks Social Security numbers. Never delete that disk. If it is ever lost, Granite
+   will refuse to start (it never quietly makes a new key) until the disk is restored from a backup.
 
 ## Part 3 — Before the first real payroll
 

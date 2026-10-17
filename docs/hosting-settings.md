@@ -15,17 +15,21 @@ reminders and starts the app on the host's `PORT`. Step-by-step for Railway: `do
 | `RAILWAY_VOLUME_MOUNT_PATH` | Set by Railway when a volume is attached: uploads go to `<volume>/storage` and a made key to `<volume>/keys`. Live mode will not start without a volume or `SHIFTBOOK_STORAGE_DIR`. |
 | `RAILWAY_PUBLIC_DOMAIN` | Set by Railway once a domain is generated: the app's address when `SHIFTBOOK_APP_URL` is not set. |
 
-With the one-step start, `SHIFTBOOK_ENCRYPTION_KEY` and `CRON_SECRET` below are optional: when unset,
-the key is made once and kept on the volume (back the volume up, or copy the key into this setting
-and keep a copy elsewhere), and reminders run inside the app every 15 minutes.
+With the one-step start, `SHIFTBOOK_ENCRYPTION_KEY` and `CRON_SECRET` below are optional. When the key
+is unset, it is made on the very first live start and kept on the volume; the database keeps a check
+of it (an HMAC, table `host_key_check`), and every later start refuses to run if the key it finds does
+not match, if the setting and the volume's key differ, or if the key is gone. Back the volume up, or
+copy the key into this setting and keep a copy elsewhere. When `CRON_SECRET` is unset, reminders run
+inside the app every 15 minutes. If `SHIFTBOOK_STORAGE_DIR` is set while a volume is attached, it must
+be on the volume. The app itself is started without `DATABASE_OWNER_URL` or `DATABASE_ADMIN_URL`.
 
 ## Always
 
 | Setting | What it is |
 |---|---|
-| `DATABASE_URL` | The app's database connection (the limited `shiftbook_app` user). Made by the one-step start from `DATABASE_ADMIN_URL`. |
+| `DATABASE_URL` | The app's database connection (the limited `shiftbook_app` user — never an administrator: the one-step start refuses an account that is a superuser or bypasses row-level security). Made by the one-step start from `DATABASE_ADMIN_URL`. |
 | `DATABASE_OWNER_URL` | The database owner's connection, used only to set up tables (`pnpm db:migrate`). Made by the one-step start from `DATABASE_ADMIN_URL`. |
-| `SHIFTBOOK_MODE` | `demo` for the public demo (fictional agency, "Continue as" buttons, no emails sent), `live` for real agencies. A built app is a demo **only** when this says `demo`. |
+| `SHIFTBOOK_MODE` | Exactly `demo` or `live` (the one-step start refuses anything else, and refuses `demo` on a database that holds a real agency). `demo` for the public demo (fictional agency, "Continue as" buttons, no emails sent), `live` for real agencies. A built app is a demo **only** when this says `demo`. |
 
 ## Live mode (real agencies)
 
