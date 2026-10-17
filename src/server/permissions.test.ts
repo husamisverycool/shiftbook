@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ABILITIES, abilitiesOf, can, pausedWhenUnpaid, readsOnly, ROLES, type Ability } from "./permissions";
+import { ABILITIES, abilitiesOf, allowedWhilePaused, can, fewerRights, pausedWhenUnpaid, readsOnly, ROLES, type Ability } from "./permissions";
 
 describe("what each role may change (SPEC §2)", () => {
   it("the Owner does everything", () => {
@@ -43,6 +43,37 @@ describe("changes paused while the agency's subscription is not active (decision
 
   it("not paused: the same table as before", () => {
     for (const role of ROLES) expect(abilitiesOf({ role }, { changesPaused: false })).toEqual(abilitiesOf({ role }));
+  });
+});
+
+describe("while changes are paused, taking access away still works (decision 0036, security review)", () => {
+  it("a role with fewer rights: everything the new role may do, the old one may already", () => {
+    for (const to of ["coordinator", "billing", "accountant"] as const) expect(fewerRights("owner", to)).toBe(true);
+    expect(fewerRights("coordinator", "owner")).toBe(false);
+    // The accountant reads the margin and the whole log, which a coordinator does not: not fewer rights.
+    expect(fewerRights("coordinator", "accountant")).toBe(false);
+    expect(fewerRights("billing", "accountant")).toBe(false);
+    expect(fewerRights("coordinator", "billing")).toBe(false);
+    expect(fewerRights("billing", "billing")).toBe(false);
+  });
+
+  it("allowed while paused: suspend, cancel an invite, a role with fewer rights, single sign-on off", () => {
+    expect(allowedWhilePaused({ kind: "suspend" })).toBe(true);
+    expect(allowedWhilePaused({ kind: "cancel_invite" })).toBe(true);
+    expect(allowedWhilePaused({ kind: "role", from: "owner", to: "accountant" })).toBe(true);
+    expect(allowedWhilePaused({ kind: "sso", enabled: false })).toBe(true);
+    // The role action passes the gate only because the service then refuses anything but fewer rights.
+    expect(allowedWhilePaused({ kind: "role_lowered_only" })).toBe(true);
+  });
+
+  it("still paused: an invite or its resending, restoring someone, a role with more rights, single sign-on on or its set-up", () => {
+    expect(allowedWhilePaused({ kind: "invite" })).toBe(false);
+    expect(allowedWhilePaused({ kind: "resend_invite" })).toBe(false);
+    expect(allowedWhilePaused({ kind: "restore" })).toBe(false);
+    expect(allowedWhilePaused({ kind: "role", from: "accountant", to: "owner" })).toBe(false);
+    expect(allowedWhilePaused({ kind: "role", from: "coordinator", to: "accountant" })).toBe(false);
+    expect(allowedWhilePaused({ kind: "sso", enabled: true })).toBe(false);
+    expect(allowedWhilePaused({ kind: "sso_settings" })).toBe(false);
   });
 });
 

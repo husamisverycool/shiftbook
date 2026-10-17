@@ -14,7 +14,7 @@ import { db } from "./db";
 import { confirmMethodOf, mustConfirm, nextStep, readSession, SESSION_COOKIE, type SessionInfo } from "./auth/service";
 import { env } from "./env";
 import { NotAllowedError } from "./errors";
-import { can, pausedWhenUnpaid, type Ability, type Role } from "./permissions";
+import { allowedWhilePaused, can, pausedWhenUnpaid, type Ability, type MemberChange, type Role } from "./permissions";
 
 export interface Actor {
   agencyId: string;
@@ -78,12 +78,14 @@ export async function changesPaused(actor: Pick<Actor, "agencyId">): Promise<boo
  * The signed-in person, when their role may do this (decision K4); every server action that changes
  * something asks first. While the agency's subscription is not active (decision 0036), a change is
  * not made: the person is sent to Home, whose banner says why and points the Owner to Billing (the
- * screens hide such changes already; this meets a page left open, or a hand-made request).
+ * screens hide such changes already; this meets a page left open, or a hand-made request). A change to
+ * the agency's people that only takes access away (`whilePaused`; security review) still goes through.
  */
-export async function actorAllowedTo(ability: Ability): Promise<Actor> {
+export async function actorAllowedTo(ability: Ability, opts: { whilePaused?: MemberChange } = {}): Promise<Actor> {
   const actor = await currentActor();
   if (!can(actor, ability)) throw new NotAllowedError();
-  if (pausedWhenUnpaid(ability) && (await changesPaused(actor))) redirect(`/${await localeOr("en")}?notice=changes_paused`);
+  const exempt = opts.whilePaused !== undefined && allowedWhilePaused(opts.whilePaused);
+  if (pausedWhenUnpaid(ability) && !exempt && (await changesPaused(actor))) redirect(`/${await localeOr("en")}?notice=changes_paused`);
   return actor;
 }
 

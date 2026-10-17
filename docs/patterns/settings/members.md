@@ -59,6 +59,9 @@ on one line, then one row per person with hairlines between them, no box.
   **Open the invite email**.
 
 ## States
+- Changes paused (decision 0036, security review): the muted line under the title says so and what still
+  works; Invite, Resend and Restore are not offered; Suspend and Cancel invite are; Change role offers
+  only roles with fewer rights (the others greyed, a muted line saying why).
 - No one matches the filters: a line saying so with **Clear filters**.
 - The email already belongs to someone: a message under the Email field.
 - Not the Owner: no Invite button and no row menus; a line says only the Owner manages members.

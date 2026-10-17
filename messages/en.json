@@ -3457,8 +3457,11 @@
       "last_owner": "The agency needs at least one active Owner.",
       "self": "You can't suspend yourself.",
       "generic": "That didn't work. Try again.",
-      "confirm": "Confirm it's you first."
-    }
+      "confirm": "Confirm it's you first.",
+      "paused": "Changes are paused: while the subscription is not active, a role can only be lowered."
+    },
+    "pausedNote": "Changes are paused while the subscription is not active. You can still suspend people, cancel invites and give a role with fewer rights.",
+    "pausedRoles": "While changes are paused, only a role with fewer rights can be chosen."
   },
   "authEmail": {
     "greeting": "Hello {name},",
@@ -4527,7 +4530,8 @@
         "issuer_private": "That address is an IP address or points inside a private network. Use the provider's public https address.",
         "secret_too_short": "That secret is too short: providers issue secrets of at least 16 characters."
       },
-      "notForRoleTitle": "Single sign-on is for the Owner"
+      "notForRoleTitle": "Single sign-on is for the Owner",
+      "pausedNote": "Changes are paused while the subscription is not active. Single sign-on can still be turned off."
     }
   },
   "linkProof": {
@@ -4657,7 +4661,8 @@
       "unpaid": "Unpaid",
       "paused": "Paused",
       "incomplete": "Incomplete",
-      "canceled": "Canceled"
+      "canceled": "Canceled",
+      "other_plan": "Other plan"
     },
     "line": {
       "demo": "The demo agency is always active.",
@@ -4670,7 +4675,8 @@
       "unpaid": "Payments failed and Stripe stopped trying. Update the card in Manage billing.",
       "paused": "The trial ended without a card. Add one in Manage billing.",
       "incomplete": "The first payment was not completed. Start the subscription again.",
-      "canceled": "Canceled. Start the subscription again to make changes."
+      "canceled": "Canceled. Start the subscription again to make changes.",
+      "other_plan": "This subscription is not to Granite's plan, so it does not keep changes going. Change it in Manage billing, or start the subscription."
     },
     "nextCharge": "Next charge",
     "nextChargeAmount": "{amount} on {date}",
@@ -4684,7 +4690,8 @@
       "past_due": "Stripe tries the failed payment again.",
       "unpaid": "None until the card is updated.",
       "paused": "None until a card is added.",
-      "incomplete": "None. The first payment was not completed."
+      "incomplete": "None. The first payment was not completed.",
+      "other_plan": "None for Granite's plan."
     },
     "footNote": "Card details, invoices and canceling are on Stripe's pages.",
     "start": "Start subscription",
@@ -4720,7 +4727,8 @@
       "paused": "This agency's trial ended without a card.",
       "incomplete": "The first payment for this agency's subscription was not completed.",
       "incomplete_expired": "The first payment for this agency's subscription was not completed.",
-      "canceled": "This agency's subscription was canceled."
+      "canceled": "This agency's subscription was canceled.",
+      "other_plan": "This agency's subscription is not to Granite's plan."
     },
     "kept": "Everything can still be read and downloaded, and nothing is deleted.",
     "owner": "Go to Billing",

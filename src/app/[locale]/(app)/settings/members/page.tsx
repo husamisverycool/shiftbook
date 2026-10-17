@@ -5,7 +5,7 @@ import { MembersView } from "@/components/shiftbook/settings/members";
 import { authDeps } from "@/server/auth/deps";
 import { demoMailCopies, listMembers } from "@/server/auth/service";
 import { can } from "@/server/permissions";
-import { currentActor, isDemo } from "@/server/session";
+import { changesPaused, currentActor, isDemo } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export default async function MembersPage(props: { params: Promise<{ locale: str
     <MembersView
       me={actor.userId}
       canManage={canManage}
+      paused={canManage && (await changesPaused(actor))}
       now={new Date().toISOString()}
       members={members.map((m) => ({
         id: m.id,

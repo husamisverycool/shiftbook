@@ -9,7 +9,7 @@ import { redirectUri } from "@/server/auth/oidc-flow";
 import { can } from "@/server/permissions";
 import { requestOrigin } from "@/server/request-info";
 import { linkBaseUrl } from "@/server/services";
-import { currentActor, isDemo } from "@/server/session";
+import { changesPaused, currentActor, isDemo } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,7 @@ export default async function SsoSettingsPage(props: { params: Promise<{ locale:
   return (
     <SsoSettingsView
       canManage
+      paused={await changesPaused(actor)}
       demo={isDemo()}
       redirectUri={redirectUri(base, "sso")}
       settings={

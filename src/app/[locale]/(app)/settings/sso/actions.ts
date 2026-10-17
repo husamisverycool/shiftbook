@@ -25,7 +25,8 @@ export async function saveSsoAction(input: unknown): Promise<SsoResult> {
 }
 
 export async function setSsoEnabledAction(enabled: boolean): Promise<SsoResult> {
-  const actor = await actorAllowedTo("members");
+  // Turning single sign-on off takes a way in away and works even while changes are paused (decision 0036).
+  const actor = await actorAllowedTo("members", { whilePaused: { kind: "sso", enabled: enabled !== false } });
   if (await mustConfirmNow()) return { ok: false, error: "confirm" };
   if (typeof enabled !== "boolean") return { ok: false, error: "generic" };
   const r = await setSsoEnabled(authDeps(), actor, enabled);
