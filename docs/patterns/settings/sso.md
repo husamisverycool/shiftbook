@@ -69,4 +69,10 @@ section heading; Granite puts it in a row of its own, as Linear's "Enable member
 ## Never copy
 Notion's, Linear's or Stripe's wording, icons, colors or logos.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the settings shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

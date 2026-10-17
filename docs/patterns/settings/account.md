@@ -116,4 +116,10 @@ type is 14px where Linear's is 13px (lengths scaled to match).
 GitHub's, Slack's, Square's, passkeys.dev's or Linear's wording, icons, colors or logos (the key is
 lucide's icon).
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the settings shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

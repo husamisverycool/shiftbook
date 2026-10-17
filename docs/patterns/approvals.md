@@ -55,4 +55,10 @@ Harvest's, Stripe's, Instawork's or Linear's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 Stripe's list: the title with the pay period on the right, the filters, then the table full width; each client's state as a tinted badge.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the list shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

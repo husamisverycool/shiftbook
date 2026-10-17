@@ -82,4 +82,10 @@ Drata's or Vanta's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 Laid out as `_components/record-page.md`: "Compliance" above the duty's name with its status; the tabs on the left; the summary (due, owner, evidence, status — Drata's summary cards) as the details column on the right. Evidence, history and notes are lists between hairlines, never boxes.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the record shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

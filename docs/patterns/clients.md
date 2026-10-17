@@ -30,4 +30,10 @@ Stripe's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 The title and the table as Stripe's lists show them: full width, small-capital headers, hairline rows, no box (https://docs.stripe.com/invoicing/dashboard).
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the list shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

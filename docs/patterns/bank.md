@@ -50,4 +50,10 @@ Intuit's, Stripe's, Microsoft's or Zoho's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 For review, Posted and Excluded as underline tabs with counts under the title (Stripe's invoices list tabs); the suggestion's confidence as a tinted badge.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the list shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

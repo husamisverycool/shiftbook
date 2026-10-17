@@ -46,4 +46,10 @@ FreshBooks', Intuit's or TempWorks' wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 The summary is set as Mercury's Transactions page sets its figures (https://mercury.com/blog/updated-transactions-page, its first screenshot: the headline figure, then "Money in" and "Money out" as rows under it): the amount owed large with its date under it, then overdue and unapplied credit as rows under it in the same narrow column, each label on the left and its amount on the right, with no line under them (what each means is on its label); Aging and Short pays as underline tabs; the aging table full width as Stripe's lists, an empty amount "—" in the totals row as in the clients' rows.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the dashboard shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

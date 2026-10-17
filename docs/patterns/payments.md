@@ -50,4 +50,10 @@ Intuit's, Zoho's, TempWorks' or Stripe's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 Stripe's list: title with Record payment on the right, the filter buttons, the table full width with the amount bold, the status as a tinted badge and dates short ("Oct 16, 2026") (https://docs.stripe.com/invoicing/dashboard). A long reference is cut to the room the other columns leave, the whole of it on hover. With no payments yet, the filters stay in place over the empty state (`_components/empty-state.md`).
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the list shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

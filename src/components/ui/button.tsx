@@ -1,5 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2Icon } from "lucide-react"
+import { Children, isValidElement, type ReactNode } from "react"
 import { cn } from "cn"
 
 // Rest, hover and pressed backgrounds, one step apart (Primer button: rest, hover, active); no press movement.
@@ -49,18 +51,54 @@ function buttonVariants(props?: Parameters<typeof buttonStyles>[0]) {
   return cn(buttonStyles(props))
 }
 
+/**
+ * `loading` (Primer Button): a spinner takes the leading icon's place — or the label's, keeping the
+ * width — and the button stays focusable but ignores presses (`aria-disabled`); `loadingLabel` is
+ * announced to screen readers.
+ */
 function Button({
   className,
   variant = "default",
   size = "default",
+  loading = false,
+  loadingLabel,
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonStyles>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonStyles> & { loading?: boolean; loadingLabel?: string }) {
+  let content = children
+  if (loading) {
+    const parts = Children.toArray(children as ReactNode)
+    const leadingIcon = parts.length > 1 && isValidElement(parts[0])
+    content = leadingIcon ? (
+      <>
+        <Loader2Icon className="animate-spin" aria-hidden />
+        {parts.slice(1)}
+      </>
+    ) : (
+      <span className="relative inline-flex items-center justify-center">
+        <span className="invisible inline-flex items-center gap-1.5">{children as ReactNode}</span>
+        <Loader2Icon className="absolute animate-spin" aria-hidden />
+      </span>
+    )
+  }
   return (
     <ButtonPrimitive
       data-slot="button"
+      data-loading={loading || undefined}
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={disabled || loading}
+      focusableWhenDisabled={loading || props.focusableWhenDisabled}
       {...props}
-    />
+    >
+      {content as ButtonPrimitive.Props["children"]}
+      {loading && loadingLabel && (
+        <span role="status" className="sr-only">
+          {loadingLabel}
+        </span>
+      )}
+    </ButtonPrimitive>
   )
 }
 

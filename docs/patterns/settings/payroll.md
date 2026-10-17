@@ -115,4 +115,10 @@ table and Deputy's template head their columns.
 ## Never copy
 7shifts', Deputy's, Intuit's, ClickTime's, Workyard's or Linear's wording, icons, colors or logos.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the settings shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

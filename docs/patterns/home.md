@@ -85,4 +85,12 @@ the right and the first and last dates under it, and "View more" at the right of
 rule above it. Gridline values carry their unit ("$25K", "500h", and "0h" or "$0" at zero), written the
 same way in both languages.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the dashboard shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+- Not found (a record that does not exist, an address that matches no page): the frame stays,
+  "Page not found" and a button to Home (`_components/error.md`).
+
 Deviations allowed: none

@@ -63,4 +63,10 @@ Stripe Workbench's inspector (https://docs.stripe.com/workbench/overview) shows 
 their recorded names with their raw values; so Changes lists each field as recorded with its value
 before and after, and Event data is the event as recorded — not relabelled or reformatted.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the settings shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

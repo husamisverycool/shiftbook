@@ -61,4 +61,10 @@ As `_components/settings.md`. The rate tables became rows in a panel, as Linear 
 ## Never copy
 Bullhorn's, TempWorks', Gusto's or Linear's wording, icons, colors or logos.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the settings shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

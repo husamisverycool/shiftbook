@@ -47,4 +47,10 @@ Toast's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 Stripe's table (https://docs.stripe.com/invoicing/dashboard): full width, small-capital headers, hairline rows; each name with the person's initials in a circle (Linear's lists show people with their avatar, https://linear.app/docs/custom-views); the status as a tinted badge.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the list shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

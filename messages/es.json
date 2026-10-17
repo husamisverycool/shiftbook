@@ -4737,5 +4737,13 @@
     "trialBody": "Inicie la suscripción para seguir haciendo cambios después.",
     "trialAction": "Iniciar la suscripción",
     "pausedNote": "Los cambios están en pausa: la suscripción de esta agencia no está activa. El Propietario puede reanudarla en Configuración › Suscripción."
+  },
+  "states": {
+    "errorTitle": "Esta página no se cargó",
+    "errorBody": "Revise su conexión e inténtelo de nuevo.",
+    "notFoundTitle": "Página no encontrada",
+    "notFoundBody": "Es posible que la dirección esté mal escrita o que el registro ya no exista.",
+    "goHome": "Ir a Inicio",
+    "loadingPage": "Cargando la página"
   }
 }

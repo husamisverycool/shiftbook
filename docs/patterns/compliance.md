@@ -50,4 +50,10 @@ Vanta's or Linear's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 The list grouped as Linear's list view shows groups (https://linear.app/docs/filters): full-width tinted bands with the group's name and count, rows edge to edge under them with hairline dividers, no box; the views (List, Calendar, Counters, Workers' comp, ACA) as underline tabs under the title; each status a tinted badge.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the list shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

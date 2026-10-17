@@ -4737,5 +4737,13 @@
     "trialBody": "Start the subscription to keep making changes after that.",
     "trialAction": "Start subscription",
     "pausedNote": "Changes are paused: this agency's subscription is not active. The Owner can restart it in Settings › Billing."
+  },
+  "states": {
+    "errorTitle": "This page didn't load",
+    "errorBody": "Check your connection, then try again.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The address may be mistyped, or the record no longer exists.",
+    "goHome": "Go to Home",
+    "loadingPage": "Loading the page"
   }
 }

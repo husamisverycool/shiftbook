@@ -60,4 +60,10 @@ Stripe's, Brex's, Mercury's, TempWorks' or Bullhorn's wording, icons, colors or 
 ## Look (decision 0029, from the products' own screenshots)
 The figures as plain type in a row over a hairline, as Stripe's app overview and Mercury's Insights set them (https://docs.stripe.com/stripe-apps/patterns/chart-layout, https://mercury.com/blog/introducing-insights); Overview, Overtime not billed and Cash floating as underline tabs.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the dashboard shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none

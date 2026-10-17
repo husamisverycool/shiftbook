@@ -75,4 +75,10 @@ row's right as small rounded chips (Linear's label and project chips), each sayi
 value alone does not ("Pay $17.00", "Bill $25.00"); dates as plain muted text, short ("Aug 3, 2026"). A
 property the group's band already names is not repeated in its rows.
 
+## Loading and errors (slice o)
+- Loading: the page's outline in the list shape (`_components/loading.md`); buttons that start
+  work show a spinner in place of their icon (Primer Button `loading`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
+
 Deviations allowed: none
