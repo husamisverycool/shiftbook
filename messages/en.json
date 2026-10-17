@@ -647,7 +647,8 @@
     "money": "Money",
     "moneySettings": "Money settings",
     "connections": "Connections",
-    "schedule": "Schedule"
+    "schedule": "Schedule",
+    "names": "Names"
   },
   "list": {
     "filter": "Filter",
@@ -6517,5 +6518,191 @@
       "open": "Still open"
     },
     "nothing": "No shifts in these four weeks."
+  },
+  "inbox": {
+    "tabs": {
+      "inbox": "Inbox",
+      "processing": "Processing",
+      "archive": "Archive"
+    },
+    "search": "Search by file or client",
+    "filters": "Filters",
+    "filtersCount": "Filters ({count})",
+    "filterStatus": "Status",
+    "filterKind": "Kind",
+    "clearFilters": "Clear filters",
+    "statusFilter": {
+      "read": "Read",
+      "review": "Needs review",
+      "failed": "Could not be read"
+    },
+    "kindFilter": {
+      "image": "Photo or scan",
+      "pdf": "PDF",
+      "timeclock": "Time clock",
+      "vms": "VMS export"
+    },
+    "display": "Display",
+    "density": "Density",
+    "comfortable": "Comfortable",
+    "compact": "Compact",
+    "actions": "Actions ({count})",
+    "exportSelected": "Export selected",
+    "readAgain": "Read again",
+    "archiveSelected": "Archive…",
+    "export": "Export",
+    "cols": {
+      "file": "File",
+      "status": "Status",
+      "via": "Received via",
+      "received": "Received",
+      "client": "Client",
+      "kind": "Kind",
+      "entries": "Entries",
+      "review": "Needs review",
+      "hours": "Hours"
+    },
+    "via": {
+      "upload": "Upload",
+      "email": "Email",
+      "manual": "Entered by hand"
+    },
+    "selectAll": "Select all timesheets shown",
+    "selectRow": "Select {file}",
+    "totals": "{docs, plural, one {# timesheet} other {# timesheets}} · {entries, plural, one {# entry} other {# entries}}",
+    "totalHours": "{hours} read",
+    "noMatch": "No timesheets match the search and filters.",
+    "emptyProcessing": "Nothing is being read right now.",
+    "emptyArchive": "No archived timesheets.",
+    "mapThisFile": "Map this file"
+  },
+  "timeMapping": {
+    "title": "Map {file}",
+    "step": {
+      "header": "Choose the line that holds the column names.",
+      "columns": "Say which column holds each value. Columns left unmapped are not read.",
+      "preview": "The first rows as they will be read. Name this layout to save it."
+    },
+    "headerLegend": "The line with the column names",
+    "fields": {
+      "name": "Worker name",
+      "date": "Date",
+      "in": "Time in",
+      "out": "Time out",
+      "breakMinutes": "Break (minutes)",
+      "totalHours": "Hours",
+      "clientName": "Client or site",
+      "externalId": "Worker ID"
+    },
+    "unmapped": "Don't read",
+    "blankColumn": "Column {n} (no name)",
+    "hoursOrPunches": "Map Time in and Time out, or Hours, or both.",
+    "dateFormat": "Dates are written",
+    "formats": {
+      "us": "Month first (10/05/2026)",
+      "iso": "Year first (2026-10-05)"
+    },
+    "previewLabel": "Rows as they will be read",
+    "hours": "Hours",
+    "unreadable": "Not readable",
+    "name": "Name this layout",
+    "namePlaceholder": "For example: Northside time clock",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save and read",
+    "saved": "Layout saved. The file is being read again.",
+    "stale": "This file changed. Close and try again.",
+    "busy": "Someone else is changing this pay period right now. Try again in a moment.",
+    "locked": "This period's files were already created; its hours can no longer change.",
+    "problems": {
+      "name": "Choose the column with the worker's name.",
+      "date": "Choose the column with the date.",
+      "hours_or_punches": "Choose Time in and Time out, or Hours.",
+      "used_twice": "Each column can be used once.",
+      "not_in_header": "A chosen column is not on the line with the column names."
+    }
+  },
+  "documentReview": {
+    "inbox": "Timesheets for {start} – {end}",
+    "toReview": "Needs review",
+    "noClient": "No client yet",
+    "received": "{via}, {at}",
+    "via": {
+      "upload": "uploaded",
+      "email": "emailed",
+      "manual": "entered by hand"
+    },
+    "lines": "{count, plural, one {# line} other {# lines}}",
+    "previous": "Previous timesheet (Ctrl+J)",
+    "next": "Next timesheet (Ctrl+K)",
+    "failedTitle": "This timesheet could not be read",
+    "valuesToReview": "{count, plural, one {# line needs review} other {# lines need review}} before this timesheet can be confirmed.",
+    "issues": "{count, plural, one {# issue to resolve} other {# issues to resolve}}",
+    "documentPane": "The timesheet",
+    "dataPane": "Values read",
+    "fileRows": "The file's rows",
+    "details": "Details",
+    "history": "History",
+    "client": "Client",
+    "period": "Pay period",
+    "kind": "Kind",
+    "totalHours": "Hours",
+    "noLines": "No lines were read from this timesheet.",
+    "checkedValue": "Checked",
+    "passA": "First reading",
+    "passB": "Second reading",
+    "source": "Where",
+    "confidence": "Confidence",
+    "checks": "Checks",
+    "correct": "Correct this value",
+    "inMinutes": "In minutes.",
+    "saved": "Value saved.",
+    "rememberNickname": "Remember “{nickname}” as {given}?",
+    "remember": "Remember",
+    "notNow": "Not now",
+    "nicknameLearned": "“{nickname}” will be read as {given} from now on.",
+    "confirm": "Confirm",
+    "allConfirmed": "Confirmed",
+    "reject": "Reject",
+    "confirmed": "Timesheet confirmed.",
+    "rejected": "Its hours were rejected.",
+    "refused": "That didn't work. Try again.",
+    "stillToReview": "{count, plural, one {# line still needs a value corrected first.} other {# lines still need a value corrected first.}}",
+    "rejectTitle": "Reject this timesheet's hours?",
+    "rejectBody": "{count, plural, one {Its line is not paid or billed.} other {Its # lines are not paid or billed.}} They can be restored from Review hours.",
+    "nextValue": "Next value to review (Enter)",
+    "historyAction": {
+      "create": "added",
+      "update": "changed",
+      "delete": "removed",
+      "other": "recorded"
+    },
+    "theDocument": "the timesheet",
+    "aLine": "a line",
+    "shortcuts": "Enter: next value to review · Ctrl+J / Ctrl+K: previous / next timesheet",
+    "openHours": "Open Review hours"
+  },
+  "names": {
+    "title": "Names",
+    "description": "Nicknames written on timesheets, and the given names they stand for, used when names are matched to the roster.",
+    "readOnly": "Only the Owner and coordinators change the nickname map.",
+    "section": "Nicknames",
+    "sectionBody": "A timesheet that says “Mike Brown” is matched to Michael Brown when “Mike” stands for Michael.",
+    "add": "Add nickname",
+    "nickname": "Nickname",
+    "standsFor": "Stands for",
+    "nicknamePlaceholder": "Mike",
+    "givenPlaceholder": "Michael",
+    "standsForValue": "Stands for {given}",
+    "empty": "No nicknames yet.",
+    "added": "Nickname added.",
+    "removed": "“{nickname}” removed.",
+    "remove": "Remove {nickname}",
+    "problems": {
+      "blank": "Fill in both names.",
+      "same": "A nickname must differ from the name it stands for.",
+      "too_long": "Use 40 characters or fewer.",
+      "exists": "That nickname is already there."
+    }
   }
 }
