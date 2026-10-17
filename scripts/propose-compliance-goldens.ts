@@ -11,7 +11,7 @@ import { addDays } from "@shiftbook/rules";
 import { acaRows, type AcaLimits, type AcaSettings, type ServiceDay } from "../src/server/compliance/aca";
 import { wantedObligations, type AcaOffer, type ComplianceRule, type GenerateInput, type Placement, type Policy, type Registration, type WorkerI9 } from "../src/server/compliance/generate";
 import { packet, type PacketLine } from "../src/server/compliance/wc-packet";
-import type { ComplianceCase } from "../tests/golden-runners/compliance";
+import { computeCompliance, type ComplianceCase } from "../tests/golden-runners/compliance";
 
 const RULES = JSON.parse(readFileSync("scripts/data/compliance-rules.json", "utf8")) as ComplianceRule[];
 const TODAY = "2026-10-16";
@@ -31,7 +31,8 @@ export function proposeCompliance(out: string, writes: (name: string) => boolean
   const duties = (name: string, summary: string, input: GenerateInput, hand: [string, string, string, string, boolean, boolean][]) => {
     const expected = wantedObligations(input);
     same(name, expected.map((w) => [w.kind, w.occurrence, w.dueOn, w.remindOn, w.done !== null, w.tooOld]), hand);
-    write({ name, summary, kind: "duties", input, expected: JSON.parse(JSON.stringify(expected)) });
+    // Stored as the runner compares it (computeCompliance: the English record, without its message keys).
+    write({ name, summary, kind: "duties", input, expected: JSON.parse(JSON.stringify(computeCompliance({ name, summary, kind: "duties", input, expected: null } as ComplianceCase))) });
   };
 
   const reg = (over: Partial<Registration>): Registration => ({ id: "reg-il-2026", jurisdiction: "IL", branchId: null, number: "IL-0000", issuedOn: "2026-01-01", expiresOn: "2026-12-31", ...over });
@@ -83,19 +84,25 @@ export function proposeCompliance(out: string, writes: (name: string) => boolean
 
   duties(
     "duties-placement-notices",
-    "A Massachusetts placement starting 2026-10-07 whose first pay period ends 2026-10-11: the job order is due by then (M.G.L. c. 149 § 159C(b)). A New Jersey production placement (SOC 51) starting 2026-10-12 for a Spanish speaker: the notice in English and Spanish is due when it starts (N.J.S.A. 34:8D-3(a)). A New Jersey office placement (SOC 43, not a designated classification): no notice.",
+    "A Massachusetts placement starting 2026-10-07 whose first pay period ends 2026-10-11: the job order is due by then (M.G.L. c. 149 § 159C(b)). A New Jersey production placement (SOC 51) starting 2026-10-12 for a Spanish speaker: the assignment notice (form MW-23, in English and Spanish) is due when it starts (N.J.S.A. 34:8D-3(a)), so no separate notice in the worker's language. The same placement for a Polish speaker: the notice in the worker's language is due too. A New Jersey office placement (SOC 43, not a designated classification): no notice.",
     {
       ...base,
       placements: [
         placement({ id: "asg-ma", clientId: "client-ma", state: "MA", dayAndTemporaryLabor: false, socCode: "53-7062", startDate: "2026-10-07", firstPeriodEnd: "2026-10-11" }),
         placement({ id: "asg-nj", clientId: "client-nj", state: "NJ", dayAndTemporaryLabor: false, socCode: "51-2092", startDate: "2026-10-12", firstPeriodEnd: "2026-10-18", workerLanguage: "es" }),
+        placement({ id: "asg-nj-pl", clientId: "client-nj", state: "NJ", dayAndTemporaryLabor: false, socCode: "51-2092", startDate: "2026-10-12", firstPeriodEnd: "2026-10-18", workerLanguage: "pl" }),
         placement({ id: "asg-nj-office", clientId: "client-nj", state: "NJ", dayAndTemporaryLabor: false, socCode: "43-9061", startDate: "2026-10-12", firstPeriodEnd: "2026-10-18" }),
       ],
     },
     [
       ["ma_job_order", "", "2026-10-11", "2026-10-11", false, false],
+      // The Spanish speaker: the assignment notice (English and Spanish) and day-one equal pay
+      // (N.J.S.A. 34:8D-7(b)), confirmed by the start and reminded a week before.
+      ["nj_assignment_notice", "", "2026-10-12", "2026-10-12", false, false],
+      ["nj_equal_pay_check", "", "2026-10-12", "2026-10-05", false, false],
+      // The Polish speaker: the same, plus the notice in the worker's own language.
+      ["nj_assignment_notice", "", "2026-10-12", "2026-10-12", false, false],
       ["nj_language_notice", "", "2026-10-12", "2026-10-12", false, false],
-      // New Jersey day-one equal pay (N.J.S.A. 34:8D-7(b)): confirmed by the start, reminded a week before.
       ["nj_equal_pay_check", "", "2026-10-12", "2026-10-05", false, false],
     ],
   );
