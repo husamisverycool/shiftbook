@@ -385,6 +385,16 @@ export interface NoticeDetails {
   meals: string;
   transport: string;
   strike: boolean;
+  /** New Jersey's form MW-23 asks more (N.J.S.A. 34:8D-3): "" answers No. */
+  nj?: NjNoticeDetails;
+}
+export interface NjNoticeDetails {
+  description: string;
+  training: string;
+  equipment: string;
+  clothing: string;
+  protective: string;
+  licenses: string;
 }
 
 export const jobOrders = pgTable("job_orders", {

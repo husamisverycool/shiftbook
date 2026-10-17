@@ -2677,7 +2677,8 @@
       "wc_policy_renewal": "Workers' comp policy renewal",
       "wc_audit": "Workers' comp premium audit",
       "aca_offer": "ACA: offer coverage",
-      "nj_equal_pay_check": "New Jersey equal pay check"
+      "nj_equal_pay_check": "New Jersey equal pay check",
+      "nj_assignment_notice": "New Jersey assignment notice"
     },
     "asks": {
       "il_registration_renewal": "Apply to renew the agency's Illinois day and temporary labor registration at least {days} days before it expires. The agency and each branch office register; a lapse in workers' comp suspends the registration.",
@@ -2695,7 +2696,8 @@
       "wc_policy_renewal": "Keep workers' comp in force: the next policy starts by the day this one ends.",
       "wc_audit": "Give the insurer's premium auditor the payroll by class, with the overtime premium shown apart by worker and by class.",
       "aca_offer": "Offer health coverage to each worker measured full-time (at least 30 hours of service a week on average in a measurement period) by the end of the administrative period, so it is in place from the first day of the stability period.",
-      "nj_equal_pay_check": "Confirm the pay rate is at least the average the client pays its own employees for substantially similar work, plus the average cost of their benefits or its cash equivalent, before the placement starts."
+      "nj_equal_pay_check": "Confirm the pay rate is at least the average the client pays its own employees for substantially similar work, plus the average cost of their benefits or its cash equivalent, before the placement starts.",
+      "nj_assignment_notice": "Give the worker the Temporary Laborer Assignment Notification (form MW-23) when they are sent to the assignment. Granite fills in the form from the job order's details."
     },
     "emptyOpen": "No compliance duty is open.",
     "nextUpcoming": "The next one is due {date}.",
@@ -2797,7 +2799,8 @@
         "ma_job_order": "Make the job order",
         "wc_audit": "Make the packet",
         "made": "Made and added to the evidence.",
-        "hint": "Granite makes the document from what it knows and keeps it here."
+        "hint": "Granite makes the document from what it knows and keeps it here.",
+        "nj_assignment_notice": "Make the assignment notice"
       },
       "notice": {
         "title": "Job order details",
@@ -2820,7 +2823,16 @@
         "department": "Add the Department's contact details in Compliance settings first.",
         "noStatement": "No multilingual statement on file: the job order will say it must be given. Add it in Compliance settings.",
         "employerPhone": "Worksite employer's phone ({client})",
-        "agencyPhone": "The agency has no phone number on file, and the job order must give it."
+        "agencyPhone": "The agency has no phone number on file, and the job order must give it.",
+        "njTitle": "Details for the New Jersey assignment notice",
+        "njIntro": "Form MW-23 asks for these. Leave a question empty to answer No; otherwise say what is required, who provides it, and any cost to the worker. Kept on the job order for every placement on it.",
+        "description": "Description of the position",
+        "training": "Training required",
+        "equipment": "Equipment provided",
+        "clothing": "Special clothing required",
+        "protective": "Protective equipment required",
+        "licenses": "Licenses required",
+        "emptyMeansNo": "Empty means No"
       },
       "missingRegistration": "No Illinois registration in force: add it in Compliance settings first.",
       "noI9Files": "Form I-9 copies are not kept in Granite (they hold Social Security numbers and birth dates): record the dates on Overview, and keep the form where the law asks.",
@@ -3138,7 +3150,8 @@
       "notePolicyRenewed": "Renewed: {number}, from {from} to {to}.",
       "noteCompleted": "{part, select, section1 {Section 1} other {Section 2}} completed on {date}.",
       "noteRateEntered": "Equal-pay rate entered from {date}.",
-      "njEqualPay": "The placement (SOC {socCode}, a designated classification) starts {startDate}; its pay is confirmed against the client's comparable employees by then"
+      "njEqualPay": "The placement (SOC {socCode}, a designated classification) starts {startDate}; its pay is confirmed against the client's comparable employees by then",
+      "njAssignmentNotice": "The placement (SOC {socCode}, a designated classification) starts {startDate}; the notice is given when the worker is sent, by then"
     },
     "explainUnits": {
       "hours": "{count, plural, one {{n} hour} other {{n} hours}}"
@@ -3159,7 +3172,8 @@
       "nj_language_notice": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the assignment notice in English and the worker's primary language)",
       "wc_audit": "The policy's premium audit: premium on payroll by class; the overtime premium left out only when shown apart by employee and by class (NCRB Basic Manual Rule 2-C-2-a)",
       "wc_policy_renewal": "Workers' compensation must not lapse: 820 ILCS 175/45 (a lapse suspends an Illinois registration); N.J.S.A. 34:8D-8",
-      "nj_equal_pay_check": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no less than the average rate of pay and average cost of benefits, or their cash equivalent, of the client's employees doing substantially similar work)"
+      "nj_equal_pay_check": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no less than the average rate of pay and average cost of benefits, or their cash equivalent, of the client's employees doing substantially similar work)",
+      "nj_assignment_notice": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the Temporary Laborer Assignment Notification, form MW-23, when the laborer is sent to the assignment)"
     }
   },
   "complianceSettings": {
@@ -3345,6 +3359,38 @@
       "tieOutDifferent": "Payroll files with these pay dates: {files}, gross {gross}. Settled outside the files by corrections: {settled}. This packet, with the pay listed apart: {packet}. Not explained: {difference}.",
       "description": "Description",
       "tieOutSettled": "Payroll files with these pay dates: {files}, gross {gross}. Settled outside the files by corrections: {settled}. This packet, with the pay listed apart: {packet}. They agree."
+    },
+    "njNotice": {
+      "title": "Temporary Laborer Assignment Notification",
+      "law": "under N.J.S.A. 34:8D-3 (form MW-23)",
+      "intro": "The Temporary Help Service Firm must give this completed form to each Temporary Laborer upon assignment to a temporary position. All parties should keep a copy of this form for their records.",
+      "laborer": "Full Name of Temporary Laborer",
+      "firm": "Temporary Help Service Firm",
+      "client": "Worksite Employer or Third-Party Client",
+      "carrier": "Workers' Compensation Carrier of Temporary Help Service Firm",
+      "worksite": "Assigned Worksite (if different from above)",
+      "sameWorksite": "Same as above",
+      "work": "Name and nature of work to be performed",
+      "description": "Description of the position",
+      "wages": "Wages",
+      "schedule": "Schedule and duration (if known) of the Temporary Laborer's assignment",
+      "training": "Is training required for the Temporary Laborer?",
+      "meals": "Will meal(s) be provided to the Temporary Laborer by the Temporary Help Service Firm or the Third-Party Client?",
+      "equipment": "Will equipment be provided to the Temporary Laborer by the Temporary Help Service Firm or the Third-Party Client?",
+      "clothing": "Is special clothing required for the Temporary Laborer?",
+      "protective": "Is protective equipment required for the Temporary Laborer?",
+      "licenses": "Are any license(s) required for the Temporary Laborer? (for example, driver, occupational, etc.)",
+      "transport": "Is transportation offered to the Temporary Laborer?",
+      "no": "No",
+      "yes": "Yes",
+      "sickLeave": "Earned Sick Leave is the law in New Jersey. As an employee of this Temporary Help Service Firm, you have the right to Earned Sick Leave, which you can use to care for yourself or a loved one, including for physical/mental illness or wellness care, to cope with domestic or sexual violence, or attend a required or requested meeting or event at your child's school. For more details, visit mysickdays.nj.gov. The Temporary Help Service Firm, not the Third-Party Client, pays you earned sick leave at your normal rate of pay. The Temporary Help Service Firm must attach a copy of the New Jersey Earned Sick Leave Notice of Employee Rights to this form. You can also find it online at nj.gov/labor/EarnedSick. For more information on New Jersey's worker benefits and protections, see myworkrights.nj.gov.",
+      "made": "Made on",
+      "wagesText": "{rate} an hour; overtime, when worked, {overtime} an hour",
+      "scheduleText": "{times}; {duration}",
+      "noEnd": "end date not known",
+      "until": "until {date}",
+      "noPolicy": "No workers' compensation policy covering New Jersey is on file for {date}.",
+      "policyLine": "Policy {number}"
     }
   },
   "roles": {
@@ -3775,7 +3821,10 @@
         "title": "Personal",
         "firstName": "First name",
         "lastName": "Last name",
-        "language": "Preferred language"
+        "language": "Preferred language",
+        "payStatement": "Pay statements",
+        "payStatementSpanish": "In Spanish too (New Jersey: the worker's primary language)",
+        "payStatementOther": "Also needed in \"{language}\" (New Jersey): give the Department's translated form with each pay statement"
       },
       "ssn": {
         "title": "Social Security number",

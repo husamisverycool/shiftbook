@@ -74,7 +74,36 @@ export const REGISTRATIONS: { key: string; jurisdiction: "IL" | "MA"; number: st
   { key: "il", jurisdiction: "IL", number: "IL-DTLSA-0000-DEMO", issuedOn: "2026-01-01", expiresOn: "2026-12-31" },
   { key: "ma", jurisdiction: "MA", number: "MA-PA-0000-DEMO", issuedOn: "2025-11-21", expiresOn: "2026-11-20" },
 ];
-export const WC_POLICY = { carrier: "Example Mutual Insurance (demo)", carrierContact: "100 Example Plaza, Springfield, IL 62701\n(217) 555-0188", policyNumber: "WC-0000-DEMO", states: ["CA", "IL", "MA"], startsOn: "2026-01-01", endsOn: "2026-12-31", auditDueOn: "2027-02-15" };
+export const WC_POLICY = { carrier: "Example Mutual Insurance (demo)", carrierContact: "100 Example Plaza, Springfield, IL 62701\n(217) 555-0188", policyNumber: "WC-0000-DEMO", states: ["CA", "IL", "MA", "NJ"], startsOn: "2026-01-01", endsOn: "2026-12-31", auditDueOn: "2027-02-15" };
+
+/**
+ * New Jersey (SPEC §27.10): Prairie Line's Newark packing site and three upcoming placements there,
+ * so the Temporary Workers' Bill of Rights duties show in the demo. They start after the demo's pay
+ * weeks (no hours), so the demo's runs, files and answer keys are unchanged.
+ */
+export const NJ_SITE = { name: "Newark Packing Center", addressLine: "410 Example Port Street", city: "Newark", county: "Essex", state: "NJ", postalCode: "07105", countyFips: "34013", placeFips: "3451000" };
+export const NJ_JOB = { position: "Packer", socCode: "53-7064", shift: "Day", headcount: 3, payRateCents: 1700, billRateCents: 2500, wcClassCode: "8018" };
+/** Days after the demo's today that the New Jersey placements start. */
+export const NJ_STARTS_IN_DAYS = 21;
+export const NJ_PLACED = ["grace-mensah", "andre-lewis", "leticia-ramos-vega"];
+export const NJ_NOTICE_DETAILS = {
+  employerPhone: "(973) 555-0140",
+  startTime: "07:00",
+  endTime: "15:30",
+  overtime: "possible" as const,
+  requirements: "",
+  meals: "No",
+  transport: "No",
+  strike: false,
+  nj: {
+    description: "Pack finished parts into cartons, label them and stack them on pallets; standing work, lifting up to 35 lb.",
+    training: "A one-hour safety orientation on the first day, given by the client at no cost to the worker",
+    equipment: "",
+    clothing: "",
+    protective: "Safety glasses and cut-resistant gloves, provided by the client at no cost",
+    licenses: "",
+  },
+};
 /** Everyone was hired when their placement started, and their I-9 was done on time (dates only). */
 export const I9_DATES = { hireDate: "2026-08-03", section1On: "2026-08-03", section2On: "2026-08-05" };
 /** One worker's work authorization ends within 90 days: reverification is due soon. */

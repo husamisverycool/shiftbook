@@ -2677,7 +2677,8 @@
       "wc_policy_renewal": "Renovación de la póliza de compensación laboral",
       "wc_audit": "Auditoría de prima de compensación laboral",
       "aca_offer": "ACA: ofrecer cobertura",
-      "nj_equal_pay_check": "Verificación de igualdad salarial de Nueva Jersey"
+      "nj_equal_pay_check": "Verificación de igualdad salarial de Nueva Jersey",
+      "nj_assignment_notice": "Aviso de asignación de Nueva Jersey"
     },
     "asks": {
       "il_registration_renewal": "Solicite la renovación del registro de mano de obra temporal de Illinois al menos {days} días antes de que venza. Se registran la agencia y cada sucursal; si la compensación laboral se interrumpe, el registro se suspende.",
@@ -2695,7 +2696,8 @@
       "wc_policy_renewal": "Mantenga vigente la compensación laboral: la siguiente póliza empieza a más tardar el día en que termina esta.",
       "wc_audit": "Entregue al auditor de primas de la aseguradora la nómina por clase, con la prima de horas extra aparte por trabajador y por clase.",
       "aca_offer": "Ofrezca cobertura médica a cada trabajador medido como de tiempo completo (en promedio al menos 30 horas de servicio por semana en un periodo de medición) antes de que termine el periodo administrativo, para que rija desde el primer día del periodo de estabilidad.",
-      "nj_equal_pay_check": "Confirme que la tarifa de pago es al menos el promedio que el cliente paga a sus propios empleados por un trabajo sustancialmente similar, más el costo promedio de sus beneficios o su equivalente en efectivo, antes de que empiece la asignación."
+      "nj_equal_pay_check": "Confirme que la tarifa de pago es al menos el promedio que el cliente paga a sus propios empleados por un trabajo sustancialmente similar, más el costo promedio de sus beneficios o su equivalente en efectivo, antes de que empiece la asignación.",
+      "nj_assignment_notice": "Entregue al trabajador la Notificación de Asignación de Trabajadores Temporales (formulario MW-23) cuando lo envíe a la asignación. Granite llena el formulario con los datos de la orden de trabajo."
     },
     "emptyOpen": "No hay ninguna obligación de cumplimiento abierta.",
     "nextUpcoming": "La siguiente vence el {date}.",
@@ -2797,7 +2799,8 @@
         "ma_job_order": "Hacer la orden de trabajo",
         "wc_audit": "Hacer el paquete",
         "made": "Hecho y agregado a la evidencia.",
-        "hint": "Granite hace el documento con lo que sabe y lo guarda aquí."
+        "hint": "Granite hace el documento con lo que sabe y lo guarda aquí.",
+        "nj_assignment_notice": "Preparar el aviso de asignación"
       },
       "notice": {
         "title": "Datos de la orden de trabajo",
@@ -2820,7 +2823,16 @@
         "department": "Primero agregue los datos de contacto del Departamento en Configuración de cumplimiento.",
         "noStatement": "No hay declaración multilingüe: la orden de trabajo dirá que debe entregarse. Agréguela en Configuración de cumplimiento.",
         "employerPhone": "Teléfono del empleador del lugar de trabajo ({client})",
-        "agencyPhone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo."
+        "agencyPhone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo.",
+        "njTitle": "Datos para el aviso de asignación de Nueva Jersey",
+        "njIntro": "El formulario MW-23 los pide. Deje una pregunta vacía para responder No; si no, indique qué se requiere, quién lo proporciona y cualquier costo para el trabajador. Se guardan en la orden de trabajo para todas sus asignaciones.",
+        "description": "Descripción del puesto",
+        "training": "Capacitación requerida",
+        "equipment": "Equipo proporcionado",
+        "clothing": "Ropa especial requerida",
+        "protective": "Equipo de protección requerido",
+        "licenses": "Licencias requeridas",
+        "emptyMeansNo": "Vacío significa No"
       },
       "missingRegistration": "No hay registro de Illinois vigente: primero agréguelo en Configuración de cumplimiento.",
       "noI9Files": "Las copias del Formulario I-9 no se guardan en Granite (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
@@ -3138,7 +3150,8 @@
       "notePolicyRenewed": "Renovada: {number}, del {from} al {to}.",
       "noteCompleted": "{part, select, section1 {Sección 1} other {Sección 2}} completada el {date}.",
       "noteRateEntered": "Se ingresó la tarifa de igualdad salarial vigente desde el {date}.",
-      "njEqualPay": "La asignación (SOC {socCode}, una clasificación designada) empieza el {startDate}; su pago se confirma frente a los empleados comparables del cliente para entonces"
+      "njEqualPay": "La asignación (SOC {socCode}, una clasificación designada) empieza el {startDate}; su pago se confirma frente a los empleados comparables del cliente para entonces",
+      "njAssignmentNotice": "La asignación (SOC {socCode}, una clasificación designada) empieza el {startDate}; el aviso se entrega cuando se envía al trabajador, a más tardar ese día"
     },
     "explainUnits": {
       "hours": "{count, plural, one {{n} hora} other {{n} horas}}"
@@ -3159,7 +3172,8 @@
       "nj_language_notice": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (el aviso de asignación en inglés y en el idioma principal del trabajador)",
       "wc_audit": "La auditoría de prima de la póliza: la prima se calcula sobre la nómina por clase; la prima de horas extra se excluye solo cuando se muestra por separado por empleado y por clase (NCRB Basic Manual Rule 2-C-2-a)",
       "wc_policy_renewal": "La compensación laboral no debe interrumpirse: 820 ILCS 175/45 (una interrupción suspende el registro en Illinois); N.J.S.A. 34:8D-8",
-      "nj_equal_pay_check": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no menos que la tarifa de pago promedio y el costo promedio de los beneficios, o su equivalente en efectivo, de los empleados del cliente que hacen un trabajo sustancialmente similar)"
+      "nj_equal_pay_check": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no menos que la tarifa de pago promedio y el costo promedio de los beneficios, o su equivalente en efectivo, de los empleados del cliente que hacen un trabajo sustancialmente similar)",
+      "nj_assignment_notice": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (la Notificación de Asignación de Trabajadores Temporales, formulario MW-23, cuando se envía al trabajador a la asignación)"
     }
   },
   "complianceSettings": {
@@ -3345,6 +3359,38 @@
       "tieOutDifferent": "Archivos de nómina con estas fechas de pago: {files}, bruto {gross}. Liquidado fuera de los archivos por correcciones: {settled}. Este paquete, con el pago detallado: {packet}. Sin explicar: {difference}.",
       "description": "Description",
       "tieOutSettled": "Archivos de nómina con estas fechas de pago: {files}, bruto {gross}. Liquidado fuera de los archivos por correcciones: {settled}. Este paquete, con el pago detallado: {packet}. Coinciden."
+    },
+    "njNotice": {
+      "title": "Notificación de Asignación de Trabajadores Temporales",
+      "law": "bajo N.J.S.A. 34:8D-3 (formulario MW-23)",
+      "intro": "La Empresa de Servicios de Trabajadores Temporales debe entregar este formulario completo a cada trabajador(a) temporal en asignarse a un puesto temporal. Todas las partes deben mantener una copia de este formulario en sus archivos.",
+      "laborer": "Nombre completo del trabajador(a) temporal",
+      "firm": "Empresa de Servicios de Trabajadores Temporales",
+      "client": "El proveedor de trabajo externo",
+      "carrier": "Compañía de Seguro de Compensación para Trabajadores de la empresa",
+      "worksite": "Lugar del Trabajo Designado (si es diferente al de arriba)",
+      "sameWorksite": "El mismo de arriba",
+      "work": "Nombre y naturaleza del trabajo",
+      "description": "Descripción del puesto",
+      "wages": "Salarios",
+      "schedule": "Horario y duración (si se conoce) de la asignación",
+      "training": "¿Se requiere capacitación para el trabajador temporal?",
+      "meals": "¿La empresa de servicios de trabajadores temporales o el proveedor de trabajo externo le proporcionarán comida para el trabajador(a) temporal?",
+      "equipment": "¿La empresa de servicios de trabajadores temporales o el proveedor de trabajo externo le proporcionarán el equipo al trabajador(a) temporal?",
+      "clothing": "¿Se requiere ropa especial para el trabajador(a) temporal?",
+      "protective": "¿Se requiere equipo de protección para el trabajador(a) temporal?",
+      "licenses": "¿Se requiere alguna licencia para el trabajador(a) temporal? (por ejemplo, conductor, ocupacional)",
+      "transport": "¿Se ofrece transporte al Trabajador(a) Temporal?",
+      "no": "No",
+      "yes": "Sí",
+      "sickLeave": "Licencia Pagada Por Enfermedad es la ley en New Jersey. Como empleado/empleada de esta Empresa de Servicios de Trabajadores Temporales, usted tiene el derecho a la Licencia Pagada Por Enfermedad, la cual, usted puede utilizar para cuidarse de usted mismo o de un ser querido, incluyendo por enfermedad física o mental o cuidado del bienestar, para hacer frente a la violencia doméstica o sexual, o para asistir a una reunión o evento requerido o solicitado en la escuela de su hijo o hija. Para más detalles, visite mysickdays.nj.gov. La Empresa de Servicios de Trabajadores Temporales, no el Proveedor de Trabajo Externo, le paga por la licencia pagado por enfermedad a su tarifa normal de pago. La Empresa de Servicios de Trabajadores Temporales debe adjuntar a este formulario una copia del Aviso de Derechos de los Empleados a la Licencia de Enfermedad Pagada de New Jersey (New Jersey Earned Sick Leave Notice of Employee Rights). Lo podrá encontrar también por internet en nj.gov/labor/licencia/enfermedad. Para más información sobre los beneficios y las protecciones para trabajadores en New Jersey, véase myworkrights.nj.gov.",
+      "made": "Preparado el",
+      "wagesText": "{rate} por hora; horas extra, cuando se trabajen, {overtime} por hora",
+      "scheduleText": "{times}; {duration}",
+      "noEnd": "fecha de terminación no conocida",
+      "until": "hasta el {date}",
+      "noPolicy": "No hay en archivo una póliza de compensación para trabajadores que cubra Nueva Jersey el {date}.",
+      "policyLine": "Póliza {number}"
     }
   },
   "roles": {
@@ -3775,7 +3821,10 @@
         "title": "Datos personales",
         "firstName": "Nombre",
         "lastName": "Apellido",
-        "language": "Idioma preferido"
+        "language": "Idioma preferido",
+        "payStatement": "Recibos de pago",
+        "payStatementSpanish": "También en español (Nueva Jersey: el idioma principal del trabajador)",
+        "payStatementOther": "También se necesitan en «{language}» (Nueva Jersey): entregue el formulario traducido del Departamento con cada recibo de pago"
       },
       "ssn": {
         "title": "Número de Seguro Social",

@@ -11,7 +11,9 @@ import { eq, inArray } from "drizzle-orm";
 import { createElement, type ReactElement } from "react";
 import en from "../../../messages/en.json";
 import { IlProofDocument, type IlProofData } from "../../pdf/il-registration-proof";
+import es from "../../../messages/es.json";
 import { MaJobOrderDocument, type MaJobOrderData } from "../../pdf/ma-job-order";
+import { NjAssignmentNoticeDocument, type NjNoticeData } from "../../pdf/nj-assignment-notice";
 import { WcPacketDocument, type WcPacketData } from "../../pdf/wc-audit-packet";
 import { audit } from "../audit";
 import type { Tx } from "../db/client";
@@ -25,6 +27,9 @@ import { packet, type PacketLine, type PacketOrder } from "./wc-packet";
 
 
 const d = en.complianceDocuments;
+// New Jersey's form is printed in English and Spanish (form MW-23).
+const dn = en.complianceDocuments.njNotice;
+const dnEs = es.complianceDocuments.njNotice;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const pdf = async (element: unknown) => new Uint8Array(await renderToBuffer(element as ReactElement<DocumentProps>));
@@ -101,25 +106,66 @@ export interface NoticeDetailsInput {
   meals: unknown;
   transport: unknown;
   strike: unknown;
+  /** New Jersey's form MW-23 questions (the New Jersey duty only). */
+  nj?: unknown;
 }
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const short = (v: unknown, max: number) => typeof v === "string" && v.trim().length > 0 && v.trim().length <= max;
+/** An answer that may be empty ("No" on form MW-23). */
+const optional = (v: unknown, max: number) => typeof v === "string" && v.trim().length <= max;
+const NJ_QUESTIONS = ["training", "equipment", "clothing", "protective", "licenses"] as const;
 
-/** The job order's details for its Massachusetts job orders, kept on the job order and audited. */
+/**
+ * The job order's details for its placements' notices — the Massachusetts job order and New Jersey's
+ * form MW-23 — kept on the job order and audited. Each duty asks for what its notice needs.
+ */
 export async function saveNoticeDetails(tx: Tx, actor: Actor, obligationId: string, input: NoticeDetailsInput): Promise<ComplianceResult> {
-  const r = await duty(tx, actor, obligationId, ["ma_job_order"]);
+  const r = await duty(tx, actor, obligationId, ["ma_job_order", "nj_assignment_notice"]);
   if ("error" in r) return { ok: false, error: r.error! };
+  const nj = r.o.kind === "nj_assignment_notice";
   if (!short(input.employerPhone, 40)) return { ok: false, error: "invalid", field: "employerPhone" };
   if (typeof input.startTime !== "string" || !TIME.test(input.startTime)) return { ok: false, error: "invalid", field: "startTime" };
   if (typeof input.endTime !== "string" || !TIME.test(input.endTime)) return { ok: false, error: "invalid", field: "endTime" };
-  if (input.overtime !== "yes" && input.overtime !== "no" && input.overtime !== "possible") return { ok: false, error: "invalid", field: "overtime" };
-  for (const field of ["requirements", "meals", "transport"] as const) if (!short(input[field], 300)) return { ok: false, error: "invalid", field };
-  if (typeof input.strike !== "boolean") return { ok: false, error: "invalid", field: "strike" };
+  for (const field of ["meals", "transport"] as const) if (!short(input[field], 300)) return { ok: false, error: "invalid", field };
   const [a] = await tx.select({ jobOrderId: s.assignments.jobOrderId }).from(s.assignments).where(eq(s.assignments.id, r.o.assignmentId!));
   if (!a) return { ok: false, error: "not_found" };
   const [job] = await tx.select().from(s.jobOrders).where(eq(s.jobOrders.id, a.jobOrderId));
-  const noticeDetails: s.NoticeDetails = { employerPhone: (input.employerPhone as string).trim(), startTime: input.startTime, endTime: input.endTime, overtime: input.overtime, requirements: (input.requirements as string).trim(), meals: (input.meals as string).trim(), transport: (input.transport as string).trim(), strike: input.strike };
+  const before = job?.noticeDetails ?? null;
+  let noticeDetails: s.NoticeDetails;
+  if (nj) {
+    const q = (input.nj && typeof input.nj === "object" ? input.nj : {}) as Record<string, unknown>;
+    if (!short(q.description, 300)) return { ok: false, error: "invalid", field: "description" };
+    for (const field of NJ_QUESTIONS) if (!optional(q[field], 300)) return { ok: false, error: "invalid", field };
+    const answers = Object.fromEntries(NJ_QUESTIONS.map((f) => [f, (q[f] as string).trim()])) as Omit<s.NjNoticeDetails, "description">;
+    // The Massachusetts answers the New Jersey form does not ask stay as they were.
+    noticeDetails = {
+      employerPhone: (input.employerPhone as string).trim(),
+      startTime: input.startTime,
+      endTime: input.endTime,
+      overtime: before?.overtime ?? "possible",
+      requirements: before?.requirements ?? "",
+      meals: (input.meals as string).trim(),
+      transport: (input.transport as string).trim(),
+      strike: before?.strike ?? false,
+      nj: { description: (q.description as string).trim(), ...answers },
+    };
+  } else {
+    if (input.overtime !== "yes" && input.overtime !== "no" && input.overtime !== "possible") return { ok: false, error: "invalid", field: "overtime" };
+    if (!short(input.requirements, 300)) return { ok: false, error: "invalid", field: "requirements" };
+    if (typeof input.strike !== "boolean") return { ok: false, error: "invalid", field: "strike" };
+    noticeDetails = {
+      employerPhone: (input.employerPhone as string).trim(),
+      startTime: input.startTime,
+      endTime: input.endTime,
+      overtime: input.overtime,
+      requirements: (input.requirements as string).trim(),
+      meals: (input.meals as string).trim(),
+      transport: (input.transport as string).trim(),
+      strike: input.strike,
+      ...(before?.nj ? { nj: before.nj } : {}),
+    };
+  }
   await tx.update(s.jobOrders).set({ noticeDetails }).where(eq(s.jobOrders.id, a.jobOrderId));
   await audit(tx, actor, [{ action: "update", entityType: "job_order", entityId: a.jobOrderId, before: { noticeDetails: job?.noticeDetails ?? null }, after: { noticeDetails } }]);
   return { ok: true };
@@ -195,6 +241,84 @@ export async function createJobOrderNotice(tx: Tx, actor: Actor, store: Document
   // The Department's statement goes with it (kept as the same duty's evidence).
   if (result.ok && statementId) await linkDocument(tx, actor, obligationId, statementId);
   return result;
+}
+
+/**
+ * New Jersey's Temporary Laborer Assignment Notification for a placement: the fields of form MW-23,
+ * in English and Spanish as the form prints them (N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1).
+ */
+export async function createNjAssignmentNotice(tx: Tx, actor: Actor, store: DocumentStore, obligationId: string, today: string): Promise<ComplianceResult> {
+  const r = await duty(tx, actor, obligationId, ["nj_assignment_notice"]);
+  if ("error" in r) return { ok: false, error: r.error! };
+  const [a] = await tx.select().from(s.assignments).where(eq(s.assignments.id, r.o.assignmentId!));
+  if (!a) return { ok: false, error: "not_found" };
+  const [job] = await tx.select().from(s.jobOrders).where(eq(s.jobOrders.id, a.jobOrderId));
+  const n = job?.noticeDetails;
+  if (!job || !n?.employerPhone || !n.nj) return { ok: false, error: "invalid", field: "details" };
+  const [client] = await tx.select().from(s.clients).where(eq(s.clients.id, job.clientId));
+  const [site] = await tx.select().from(s.worksites).where(eq(s.worksites.id, job.worksiteId));
+  const [worker] = await tx.select().from(s.workers).where(eq(s.workers.id, a.workerId));
+  const agency = await agencyBlock(tx);
+  if (!agency.phone) return { ok: false, error: "invalid", field: "agency_phone" };
+  const card = (await rateCards(tx))(a.id, job.id, a.startDate, a.startDate);
+  const ot = (await multipliers(tx))("weekly_overtime", "NJ", a.startDate);
+  const policy = await policyOn(tx, a.startDate, "NJ");
+  const both = <K extends keyof typeof dn>(k: K) => ({ en: dn[k], es: dnEs[k] });
+  const siteLines = site ? [site.name, site.addressLine, `${site.city}, ${site.state} ${site.postalCode}`] : [];
+  const clientLines = [client?.name ?? "", ...(client?.addressLines ?? []), n.employerPhone].filter(Boolean);
+  // The worksite block says "same as above" only when the client's address is the worksite's.
+  const sameSite = site !== undefined && (client?.addressLines ?? []).some((line) => line.includes(site.addressLine));
+  const rate = card ? formatCents(card.payRateCents) : "—";
+  const overtimeRate = card && ot ? formatCents(roundHalfUp(card.payRateCents * ot.num, ot.den)) : "—";
+  const data: NjNoticeData = {
+    labels: {
+      title: both("title"),
+      law: both("law"),
+      intro: both("intro"),
+      laborer: both("laborer"),
+      firm: both("firm"),
+      client: both("client"),
+      carrier: both("carrier"),
+      worksite: both("worksite"),
+      sameWorksite: both("sameWorksite"),
+      work: both("work"),
+      description: both("description"),
+      wages: both("wages"),
+      schedule: both("schedule"),
+      training: both("training"),
+      meals: both("meals"),
+      equipment: both("equipment"),
+      clothing: both("clothing"),
+      protective: both("protective"),
+      licenses: both("licenses"),
+      transport: both("transport"),
+      no: both("no"),
+      yes: both("yes"),
+      sickLeave: both("sickLeave"),
+      made: both("made"),
+      page: page(d.page),
+    },
+    laborer: worker ? `${worker.firstName} ${worker.lastName}` : "",
+    firm: [agency.name, ...agency.lines],
+    client: clientLines,
+    carrier: policy ? [policy.carrier, ...lines(policy.carrierContact), fill(dn.policyLine, { number: policy.policyNumber })] : [fill(dn.noPolicy, { date: longDate(a.startDate) })],
+    worksite: sameSite ? null : siteLines,
+    work: job.socCode ? `${job.position} (SOC ${job.socCode})` : job.position,
+    description: n.nj.description,
+    wages: fill(dn.wagesText, { rate, overtime: overtimeRate }),
+    schedule: fill(dn.scheduleText, { times: `${clock(n.startTime)} – ${clock(n.endTime)}`, duration: a.endDate ? fill(dn.until, { date: longDate(a.endDate) }) : dn.noEnd }),
+    training: n.nj.training,
+    meals: /^(no|none|n\/a)\.?$/i.test(n.meals) ? "" : n.meals,
+    equipment: n.nj.equipment,
+    clothing: n.nj.clothing,
+    protective: n.nj.protective,
+    licenses: n.nj.licenses,
+    transport: /^(no|none|n\/a)\.?$/i.test(n.transport) ? "" : n.transport,
+    made: longDate(today),
+  };
+  const bytes = await pdf(createElement(NjAssignmentNoticeDocument, { data }));
+  const name = worker ? `${worker.lastName}-${worker.firstName}`.toLowerCase().replace(/[^a-z0-9]+/g, "-") : a.id;
+  return keep(tx, actor, store, obligationId, `nj-assignment-notice-${name}-${a.startDate}.pdf`, bytes, today);
 }
 
 /** What was paid by state, class and worker for pay dates in a range, with the premiums apart (decision J7). */

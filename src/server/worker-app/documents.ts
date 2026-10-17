@@ -16,13 +16,19 @@ import * as s from "../db/schema";
 import type { FormKind } from "./agency";
 import { maskPhone } from "./phone";
 import { formAnswers, payStubOf } from "./service";
+import { payStatementLanguage, payStubLocale, placedStates } from "../workers/pay-statement";
 
 const pdf = async (element: unknown) => new Uint8Array(await renderToBuffer(element as ReactElement<DocumentProps>));
 const fileSafe = (text: string) => text.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-export async function payStubPdf(tx: Tx, workerId: string, runId: string, locale: string): Promise<{ bytes: Uint8Array; filename: string } | null> {
+export async function payStubPdf(tx: Tx, workerId: string, runId: string, requested: string): Promise<{ bytes: Uint8Array; filename: string } | null> {
   const stub = await payStubOf(tx, workerId, runId);
   if (!stub) return null;
+  // New Jersey: a worker whose primary language is Spanish gets the stub in Spanish whatever the
+  // screen's language (SPEC §16; N.J.S.A. 34:8D-3).
+  const [w] = await tx.select({ preferredLanguage: s.workers.preferredLanguage }).from(s.workers).where(eq(s.workers.id, workerId));
+  const flag = w ? payStatementLanguage(await placedStates(tx, workerId), w.preferredLanguage) : null;
+  const locale = payStubLocale(flag, requested === "es" ? "es" : "en");
   const t = await getTranslations({ locale, namespace: "workerApp.pay" });
   const tf = await getTranslations({ locale, namespace: "workerAppForms" });
   const te = await getTranslations({ locale, namespace: "invoice.earning" });

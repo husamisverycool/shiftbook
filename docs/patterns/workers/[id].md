@@ -22,7 +22,10 @@ documents, and their employment (hire date, I-9 dates, assignments, end of emplo
 1. **"Workers" above** the title; **H1** the worker's name with a status badge (Active / Ended).
 2. **Tabs** (Toast): **Profile** · **Employment** · **Documents**.
 3. **Profile** tab — sections in order, each with its heading and its own **Edit** on the right:
-   1. **Personal** — first name, last name, preferred language (English, Spanish).
+   1. **Personal** — first name, last name, preferred language (English, Spanish). A worker placed in
+      New Jersey whose language is not English shows **Pay statements**: in Spanish too (the worker
+      app's pay stubs are then in Spanish), or the other language the Department's translated form is
+      needed in (SPEC §16; N.J.S.A. 34:8D-3).
    2. **Social Security number** — "•••-••-1234" (or "Not on file"); **Edit** to enter or replace it
       (nine digits; refused when already on another worker, and the refused try is listed on that
       worker); **Retrieve SSN** (the Owner only): a dialog asks the business reason (required, with
