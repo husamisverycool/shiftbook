@@ -18,6 +18,8 @@ export interface OutgoingMail {
   subject: string;
   text: string;
   html: string;
+  /** Files carried with the email (slice r: an invoice's PDF, as Stripe's invoice emails carry it). */
+  attachments?: { filename: string; content: Uint8Array }[];
 }
 
 export interface MailTransport {
@@ -57,6 +59,7 @@ export class ResendTransport implements MailTransport {
       subject: mail.subject,
       text: mail.text,
       html: mail.html,
+      ...(mail.attachments?.length ? { attachments: mail.attachments.map((a) => ({ filename: a.filename, content: Buffer.from(a.content).toString("base64") })) } : {}),
     };
     let response: Response;
     try {
@@ -82,7 +85,15 @@ export class DemoMailboxTransport implements MailTransport {
 
   async send(mail: OutgoingMail): Promise<{ providerId: string | null }> {
     await this.withAgency(this.agencyId, (tx) =>
-      tx.insert(s.demoMailbox).values({ agencyId: this.agencyId, emailMessageId: mail.id, toEmail: mail.to.email, subject: mail.subject, textBody: mail.text, htmlBody: mail.html }),
+      tx.insert(s.demoMailbox).values({
+        agencyId: this.agencyId,
+        emailMessageId: mail.id,
+        toEmail: mail.to.email,
+        subject: mail.subject,
+        textBody: mail.text,
+        htmlBody: mail.html,
+        attachments: (mail.attachments ?? []).map((a) => ({ filename: a.filename, bytes: a.content.byteLength })),
+      }),
     );
     return { providerId: null };
   }

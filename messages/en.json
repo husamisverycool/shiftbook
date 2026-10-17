@@ -4745,5 +4745,216 @@
     "notFoundBody": "The address may be mistyped, or the record no longer exists.",
     "goHome": "Go to Home",
     "loadingPage": "Loading the page"
+  },
+  "notify": {
+    "title": "Notifications",
+    "unreadBadge": "{count} unread",
+    "tabsLabel": "Notifications shown",
+    "tabs": {
+      "unread": "Unread",
+      "all": "All"
+    },
+    "markAllRead": "Mark all read",
+    "deleteRead": "Delete read",
+    "markRead": "Mark read",
+    "markUnread": "Mark unread",
+    "delete": "Delete",
+    "rowActions": "Actions for this notification",
+    "unread": "Unread",
+    "empty": "No notifications",
+    "emptyUnread": "Nothing unread",
+    "emptyBody": "Approvals, blocked runs, compliance duties and collections appear here.",
+    "listLabel": "Notifications",
+    "markedAllRead": "All notifications marked read",
+    "deletedRead": "Read notifications deleted",
+    "deleted": "Notification deleted",
+    "keys": "J and K move · U read or unread · Backspace deletes",
+    "kinds": {
+      "approval_returned": {
+        "title": "Hours approved",
+        "line": "{client} approved the hours for {period}."
+      },
+      "approval_disputed": {
+        "title": "Hours disputed",
+        "line": "{client} disputed {disputed, plural, one {# shift} other {# shifts}} for {period}."
+      },
+      "run_blocked": {
+        "title": "Weekly run blocked",
+        "line": "The run for {period} has {blockers, plural, one {# blocking problem} other {# blocking problems}}."
+      },
+      "obligation_due_soon": {
+        "title": "Compliance duty due soon",
+        "line": "{duty} is due {due}."
+      },
+      "obligation_overdue": {
+        "title": "Compliance duty overdue",
+        "line": "{duty} was due {due}."
+      },
+      "invoice_overdue": {
+        "title": "Invoice overdue",
+        "line": "{number} for {client} was due {due}; {balance} is still owed."
+      },
+      "promise_broken": {
+        "title": "Promise to pay broken",
+        "line": "{client} promised to pay {number} by {promised}; {balance} is still owed."
+      },
+      "shift_confirmed": {
+        "title": "Shift confirmed",
+        "line": "A worker confirmed a shift."
+      }
+    },
+    "settings": {
+      "title": "Notifications",
+      "intro": "Notices always reach your notifications. Choose which also come by email.",
+      "email": "Email",
+      "emailIntro": "Sent as soon as the notice arrives, to {email}.",
+      "saved": "Saved",
+      "none": "Your role receives no notices.",
+      "help": {
+        "approval_returned": "When a client approves a period's hours.",
+        "approval_disputed": "When a client disputes shifts.",
+        "run_blocked": "When a weekly run is stopped by its checks.",
+        "obligation_due_soon": "When a compliance duty reaches its reminder day.",
+        "obligation_overdue": "When a compliance duty passes its due date.",
+        "invoice_overdue": "When an invoice passes its due date unpaid.",
+        "promise_broken": "When a promised payment date passes unpaid.",
+        "shift_confirmed": "When a worker confirms a shift."
+      }
+    },
+    "email": {
+      "open": "Open in Granite",
+      "footer": "You get this email because of your notification settings. Change them in Settings › Notifications."
+    }
+  },
+  "collect": {
+    "send": {
+      "action": "Send invoice",
+      "resend": "Resend invoice",
+      "creditAction": "Send credit note",
+      "title": "Send {number}",
+      "to": "To",
+      "noEmail": "This client has no billing email. Add one on the client's page first.",
+      "message": "Message (optional)",
+      "attachment": "Attached: {file}",
+      "submit": "Send",
+      "sent": "Sent to {email}",
+      "failed": "The email could not be sent. Try again in a moment.",
+      "lastSent": "Sent {date} to {email}",
+      "never": "Not sent yet",
+      "errors": {
+        "no_email": "This client has no billing email.",
+        "no_pdf": "This document has no PDF.",
+        "not_found": "That document no longer exists.",
+        "forbidden": "Your role cannot send invoices.",
+        "invalid": "Check the message: at most 2,000 characters."
+      }
+    },
+    "credit": {
+      "action": "Issue a credit note",
+      "title": "Issue a credit note for {number}",
+      "reason": "Reason",
+      "chooseReason": "Choose a reason",
+      "reasons": {
+        "billing_error": "Billing error",
+        "rate_difference": "Rate difference",
+        "disputed_hours": "Disputed hours",
+        "discount": "Discount",
+        "duplicate": "Duplicate",
+        "other": "Other"
+      },
+      "amount": "Amount to credit",
+      "room": "Up to {amount} can be credited.",
+      "memo": "Memo (optional)",
+      "memoHint": "Printed on the credit note.",
+      "after": "The invoice will then ask for {amount}.",
+      "afterCredit": "{amount} becomes the client's credit, to apply to another invoice.",
+      "submit": "Issue credit note",
+      "issued": "Credit note {number} issued",
+      "noRoom": "Credit notes already equal this invoice's total.",
+      "lineDescription": "Credit: {reason}",
+      "errors": {
+        "amount": "Enter an amount above $0.00 and no more than {amount}.",
+        "reason": "Choose a reason.",
+        "memo": "At most 500 characters.",
+        "not_found": "That invoice no longer exists.",
+        "not_invoice": "Only an invoice or a supplemental invoice can be credited.",
+        "void": "A void invoice cannot be credited.",
+        "forbidden": "Your role cannot issue credit notes.",
+        "busy": "Payments are being recorded right now. Try again in a moment."
+      }
+    },
+    "promise": {
+      "action": "Record promise to pay",
+      "title": "Promise to pay {number}",
+      "date": "Promised date",
+      "amount": "Amount (optional)",
+      "note": "Note (optional)",
+      "submit": "Save promise",
+      "saved": "Promise recorded",
+      "line": "Promised {amount} by {date} · {by}",
+      "lineNoAmount": "Promised by {date} · {by}",
+      "broken": "Promise broken",
+      "promised": "Promised {date}",
+      "errors": {
+        "date": "Choose a date from today on.",
+        "amount": "Enter an amount above $0.00, or leave it empty.",
+        "note": "At most 500 characters.",
+        "not_found": "That invoice no longer exists.",
+        "forbidden": "Your role cannot record promises."
+      }
+    },
+    "settings": {
+      "title": "Collections",
+      "remindersTitle": "Automatic reminders",
+      "remindersIntro": "Granite emails the client's billing contact on these days, with the invoice attached, until it is paid.",
+      "enabled": "Email reminders for unpaid invoices",
+      "enabledHint": "Each reminder is sent once, to the client's billing email.",
+      "stages": {
+        "before_due": {
+          "label": "Before due",
+          "hint": "A note before the due date."
+        },
+        "overdue": {
+          "label": "Overdue",
+          "hint": "After the due date has passed."
+        },
+        "final": {
+          "label": "Final notice",
+          "hint": "The last reminder."
+        }
+      },
+      "daysBefore": "{days, plural, one {# day before} other {# days before}}",
+      "daysAfter": "{days, plural, one {# day after} other {# days after}}",
+      "never": "Don't send",
+      "save": "Save",
+      "saved": "Reminder schedule saved",
+      "clientsTitle": "Clients",
+      "clientsIntro": "Turn reminders off for a client that should not get them.",
+      "clientOn": "Reminders on",
+      "clientOff": "Reminders off",
+      "noClients": "No clients yet.",
+      "noEmail": "No billing email",
+      "errors": {
+        "invalid": "Choose from the listed days. The final notice comes after the overdue reminder.",
+        "forbidden": "Only the Owner changes collections settings."
+      }
+    },
+    "email": {
+      "invoiceSubject": "Invoice {number} from {agency}",
+      "creditSubject": "Credit note {number} from {agency}",
+      "greeting": "Hello,",
+      "invoiceBody": "{agency} sent you invoice {number} for {amount}, due {due}. The invoice is attached.",
+      "creditBody": "{agency} issued credit note {number} for {amount}, crediting invoice {original}. It is attached.",
+      "contact": "Questions: {contact}"
+    },
+    "history": {
+      "emailed": "Emailed to {email} · {date}",
+      "reminderEmailed": "Reminder emailed on {date} · {stage}"
+    }
+  },
+  "navR": {
+    "notifications": "Notifications",
+    "notificationSettings": "Notifications",
+    "collections": "Collections"
   }
 }

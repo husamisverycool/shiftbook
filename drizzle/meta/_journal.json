@@ -316,6 +316,13 @@
       "when": 1792179800000,
       "tag": "0044_signup_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1792179900000,
+      "tag": "0045_notifications_and_collections",
+      "breakpoints": true
     }
   ]
 }

@@ -75,4 +75,15 @@ Laid out as `_components/record-page.md`: "Invoices" above the title (keeping th
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Send, credit notes, promises (slice r)
+- **Send invoice** (Stripe: invoice › "Send invoice"; the PDF attached): a dialog with To (the client's
+  billing email), an optional message, the attachment named; Send. After sending, the header's facts
+  line says when it was last sent and to whom; the action reads "Resend".
+- **Issue a credit note** (Stripe: More actions › "Issue a credit note"): a dialog — reason (select),
+  amount (at most what the invoice still allows: its total less earlier credit notes), memo; a preview
+  line of what the invoice will then ask for (or the client's credit when it is paid); Issue. The
+  credit note is numbered `{invoice}-CN-{nn}`, gets its PDF, and is listed under the invoice.
+- **Promise to pay** (slice h collections): date, amount (optional), note; listed in the payments
+  panel and in receivables; "broken" when the date passes with money still owed.
+
 Deviations allowed: none

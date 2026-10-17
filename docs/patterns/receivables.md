@@ -52,4 +52,8 @@ The summary is set as Mercury's Transactions page sets its figures (https://merc
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Promises to pay (slice r)
+- An invoice with a promise shows it beside its status: "Promised {date}" (muted), or "Promise broken"
+  (warning tone) once the date has passed with money still owed.
+
 Deviations allowed: none
