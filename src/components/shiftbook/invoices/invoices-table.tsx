@@ -1,7 +1,8 @@
 "use client";
 
-// Pattern: docs/patterns/invoices.md — Stripe invoices list (amount, status badge, number, customer,
-// dates, a ⋯ menu with Download PDF; the row opens the invoice); Bullhorn "# Selected" actions.
+// Pattern: docs/patterns/invoices.md — Stripe invoices list (the amount first with its currency, the
+// status badge beside it, number, customer, short dates, a ⋯ menu with Download PDF; the row opens the
+// invoice); Bullhorn "# Selected" actions.
 import { EllipsisIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { InvoiceRow } from "@/server/invoices/queries";
-import { dateRange, money, tableDate } from "../format";
+import { dateRange, listDate, money, tableDate } from "../format";
+import { ListAmount } from "../list-controls";
 import { TableFrame } from "../page";
 import { Status, type Tone } from "../status";
 
@@ -36,8 +38,8 @@ export function InvoiceMenu({ row }: { row: InvoiceRow }) {
   const t = useTranslations("invoices");
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" aria-label={t("rowMenu", { number: row.number })} data-testid="invoice-menu" onClick={(e) => e.stopPropagation()} />}>
-        <EllipsisIcon />
+      <DropdownMenuTrigger render={<Button size="icon-xs" variant="ghost" aria-label={t("rowMenu", { number: row.number })} data-testid="invoice-menu" onClick={(e) => e.stopPropagation()} />}>
+        <EllipsisIcon className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem render={<a href={downloadHref(row.id, "pdf")} download />}>{t("downloadPdf")}</DropdownMenuItem>
@@ -48,13 +50,15 @@ export function InvoiceMenu({ row }: { row: InvoiceRow }) {
   );
 }
 
-export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string>; onSelect?: (ids: string[], on: boolean) => void; back?: string; showClient?: boolean }) {
+/** `today`: the agency's today, so dates in this year are written without it (Stripe's lists). */
+export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string>; onSelect?: (ids: string[], on: boolean) => void; back?: string; showClient?: boolean; today?: string }) {
   const t = useTranslations("invoices");
   const locale = useLocale();
   const router = useRouter();
   const selectable = props.selected !== undefined && props.onSelect !== undefined;
   const all = selectable && props.rows.length > 0 && props.rows.every((r) => props.selected!.has(r.id));
   const some = selectable && props.rows.some((r) => props.selected!.has(r.id));
+  const date = (iso: string) => (props.today ? listDate(iso, locale, props.today) : tableDate(iso, locale));
   const href = (r: InvoiceRow) => (props.back ? `/invoices/${r.id}?back=${encodeURIComponent(props.back)}` : `/invoices/${r.id}`);
   return (
     <TableFrame>
@@ -66,8 +70,11 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
                 <Checkbox checked={all} indeterminate={some && !all} onCheckedChange={(on) => props.onSelect!(props.rows.map((r) => r.id), on === true)} aria-label={t("selectAll")} />
               </TableHead>
             )}
+            {/* The amount over the figure and its currency; the badge beside them has no heading of its own (Stripe). */}
             <TableHead className="text-right">{t("col.amount")}</TableHead>
-            <TableHead>{t("col.status")}</TableHead>
+            <TableHead>
+              <span className="sr-only">{t("col.status")}</span>
+            </TableHead>
             <TableHead>{t("col.number")}</TableHead>
             {props.showClient !== false && <TableHead>{t("col.client")}</TableHead>}
             <TableHead>{t("col.period")}</TableHead>
@@ -86,7 +93,9 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
                   <Checkbox checked={props.selected!.has(r.id)} onCheckedChange={(on) => props.onSelect!([r.id], on === true)} aria-label={t("select", { number: r.number })} data-testid="invoice-select" />
                 </TableCell>
               )}
-              <TableCell className="text-right font-semibold tabular-nums">{money(r.totalCents, locale)}</TableCell>
+              <TableCell className="w-0 text-right">
+                <ListAmount text={money(r.totalCents, locale)} />
+              </TableCell>
               <TableCell>
                 <InvoiceStatusBadge status={r.status} />
               </TableCell>
@@ -99,9 +108,9 @@ export function InvoicesTable(props: { rows: InvoiceRow[]; selected?: Set<string
                 </span>
               </TableCell>
               {props.showClient !== false && <TableCell>{r.clientName}</TableCell>}
-              <TableCell className="whitespace-nowrap">{dateRange(r.period.startsOn, r.period.endsOn, locale)}</TableCell>
-              <TableCell className="whitespace-nowrap">{tableDate(r.issuedOn, locale)}</TableCell>
-              <TableCell className="whitespace-nowrap">{r.kind === "credit_note" ? "—" : tableDate(r.dueOn, locale)}</TableCell>
+              <TableCell className="whitespace-nowrap">{dateRange(r.period.startsOn, r.period.endsOn, locale, props.today)}</TableCell>
+              <TableCell className="whitespace-nowrap">{date(r.issuedOn)}</TableCell>
+              <TableCell className="whitespace-nowrap">{r.kind === "credit_note" ? "—" : date(r.dueOn)}</TableCell>
               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 <InvoiceMenu row={r} />
               </TableCell>

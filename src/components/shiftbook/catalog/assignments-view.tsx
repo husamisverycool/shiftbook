@@ -1,8 +1,10 @@
 "use client";
 
 // Pattern: docs/patterns/assignments.md — Linear issue list grouped by status; rows show fields of
-// the linked job order (Attio); Attio preview as the side panel; bulk bar ends assignments.
-import { UploadIcon, UsersIcon } from "lucide-react";
+// the linked job order (Attio); Attio preview as the side panel; bulk bar ends assignments. Each
+// row's and status band's icon is the assignment's status as Linear's circles show an issue's: a dot
+// for active, a check for ended, a cross for cancelled (lucide's icons, in the status tones).
+import { BriefcaseIcon, Building2Icon, CircleCheckIcon, CircleDotIcon, CircleXIcon, ContactRoundIcon, ReceiptTextIcon, TagIcon, UploadIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -16,9 +18,9 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Link, useRouter } from "@/i18n/navigation";
 import type { AssignmentRow } from "@/server/catalog/queries";
 import { EmptyState } from "../empty-state";
-import { longDate, money, tableDate } from "../format";
+import { listDate, longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
-import { RecordList, type Column } from "./record-list";
+import { RecordList, type Column, type RowIcon } from "./record-list";
 
 export function AssignmentsView({ rows, options, today, canChange = true }: { rows: AssignmentRow[]; options: CatalogOptions; today: string; canChange?: boolean }) {
   const t = useTranslations("assignments");
@@ -35,14 +37,21 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
 
   const columns: Column<AssignmentRow>[] = [
     // Dates short and plain at the row's right, as Linear's rows write them.
-    { key: "start", label: t("col.start"), cell: (r) => tableDate(r.startDate, locale), className: "w-28 text-right tabular-nums" },
-    { key: "end", label: t("col.end"), cell: (r) => (r.endDate ? tableDate(r.endDate, locale) : "—"), className: "w-28 text-right tabular-nums" },
+    { key: "start", label: t("col.start"), cell: (r) => listDate(r.startDate, locale, today), className: "w-28 text-right tabular-nums" },
+    { key: "end", label: t("col.end"), cell: (r) => (r.endDate ? listDate(r.endDate, locale, today) : "—"), className: "w-28 text-right tabular-nums" },
     // Two amounts side by side say which is which (the pattern's rates: pay and bill).
-    { key: "pay", label: t("col.pay"), cell: (r) => tl("payRate", { rate: rate(r.payRateCents) }), className: "w-28 text-right tabular-nums", chip: true },
-    { key: "bill", label: t("col.bill"), cell: (r) => tl("billRate", { rate: rate(r.billRateCents) }), className: "w-28 text-right tabular-nums", chip: true },
+    { key: "pay", label: t("col.pay"), cell: (r) => tl("payRate", { rate: rate(r.payRateCents) }), className: "w-32 text-right tabular-nums", chip: true, icon: WalletIcon },
+    { key: "bill", label: t("col.bill"), cell: (r) => tl("billRate", { rate: rate(r.billRateCents) }), className: "w-32 text-right tabular-nums", chip: true, icon: ReceiptTextIcon },
     { key: "rates", label: t("col.rates"), cell: (r) => (r.ownRates ? <Badge variant="outline">{t("ownRates")}</Badge> : null), className: "w-24" },
     { key: "source", label: t("col.source"), cell: (r) => r.source ?? "—", className: "w-24" },
   ];
+
+  const STATUS_ICON: Record<AssignmentRow["status"], Omit<RowIcon, "label">> = {
+    active: { icon: CircleDotIcon, tone: "success" },
+    ended: { icon: CircleCheckIcon, tone: "neutral" },
+    cancelled: { icon: CircleXIcon, tone: "neutral" },
+  };
+  const statusIcon = (status: AssignmentRow["status"]): RowIcon => ({ ...STATUS_ICON[status], label: t(`status.${status}`) });
 
   const end = () =>
     run(async () => {
@@ -72,10 +81,11 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
         hrefFor={(r) => `/job-orders/${r.jobOrderId}?tab=assignments`}
         columns={columns}
         defaultColumns={["start", "end", "pay", "bill", "rates"]}
+        status={(r) => statusIcon(r.status)}
         groupings={[
-          { key: "status", label: t("group.status"), value: (r) => t(`status.${r.status}`) },
-          { key: "client", label: t("group.client"), value: (r) => r.clientName },
-          { key: "jobOrder", label: t("group.jobOrder"), value: (r) => `${r.position}${r.shift ? ` · ${r.shift}` : ""} — ${r.clientName}` },
+          { key: "status", label: t("group.status"), value: (r) => t(`status.${r.status}`), icon: (r) => statusIcon(r.status) },
+          { key: "client", label: t("group.client"), value: (r) => r.clientName, icon: () => ({ icon: Building2Icon, tone: "neutral", label: t("group.client") }) },
+          { key: "jobOrder", label: t("group.jobOrder"), value: (r) => `${r.position}${r.shift ? ` · ${r.shift}` : ""} — ${r.clientName}`, icon: () => ({ icon: BriefcaseIcon, tone: "neutral", label: t("group.jobOrder") }) },
           { key: "none", label: t("group.none"), value: null },
         ]}
         defaultGrouping="status"
@@ -86,10 +96,10 @@ export function AssignmentsView({ rows, options, today, canChange = true }: { ro
         ]}
         defaultOrdering="worker"
         filters={[
-          { key: "client", label: t("filter.client"), options: options.clients.map((c) => ({ value: c.name, label: c.name })), test: (r, v) => r.clientName === v },
-          { key: "worker", label: t("filter.worker"), options: options.workers.map((w) => ({ value: w.id, label: w.name })), test: (r, v) => r.workerId === v },
-          { key: "status", label: t("filter.status"), options: (["active", "ended", "cancelled"] as const).map((s) => ({ value: s, label: t(`status.${s}`) })), test: (r, v) => r.status === v },
-          { key: "rates", label: t("filter.rates"), options: [{ value: "own", label: t("ratesKind.own") }, { value: "job", label: t("ratesKind.job") }], test: (r, v) => r.ownRates === (v === "own") },
+          { key: "client", label: t("filter.client"), icon: Building2Icon, options: options.clients.map((c) => ({ value: c.name, label: c.name })), test: (r, v) => r.clientName === v },
+          { key: "worker", label: t("filter.worker"), icon: ContactRoundIcon, options: options.workers.map((w) => ({ value: w.id, label: w.name })), test: (r, v) => r.workerId === v },
+          { key: "status", label: t("filter.status"), icon: CircleDotIcon, options: (["active", "ended", "cancelled"] as const).map((s) => ({ value: s, label: t(`status.${s}`) })), test: (r, v) => r.status === v },
+          { key: "rates", label: t("filter.rates"), icon: TagIcon, options: [{ value: "own", label: t("ratesKind.own") }, { value: "job", label: t("ratesKind.job") }], test: (r, v) => r.ownRates === (v === "own") },
         ]}
         panel={(r) => (
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">

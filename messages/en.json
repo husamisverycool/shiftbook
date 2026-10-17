@@ -657,7 +657,12 @@
     "close": "Close",
     "bulk": "Selected rows",
     "selected": "{count, plural, one {# selected} other {# selected}}",
-    "clearSelection": "Clear selection"
+    "clearSelection": "Clear selection",
+    "filters": "Filters",
+    "results": "{count, plural, one {<b>#</b> result} other {<b>#</b> results}}",
+    "resultsOf": "<b>{shown}</b> of {total, plural, one {# result} other {# results}}",
+    "is": "is",
+    "isAnyOf": "is any of"
   },
   "activity": {
     "none": "No changes yet.",
@@ -773,7 +778,12 @@
       "noBranch": "No branch"
     },
     "readOnly": "Only the Owner and coordinators change job orders.",
-    "emptyBody": "Each job order sets the pay and bill rates its workers are paid and billed at."
+    "emptyBody": "Each job order sets the pay and bill rates its workers are paid and billed at.",
+    "fill": {
+      "none": "No one placed yet",
+      "partly": "Places still open",
+      "full": "Filled"
+    }
   },
   "jobOrder": {
     "breadcrumb": "Job orders",
@@ -922,7 +932,6 @@
     "filterStatus": "Status",
     "filterClient": "Client",
     "all": "All",
-    "any": "Any",
     "clearFilters": "Clear filters",
     "colClient": "Client",
     "colApprover": "Approver",
@@ -1657,7 +1666,6 @@
   "invoices": {
     "title": "Invoices",
     "all": "All",
-    "any": "Any",
     "status": {
       "draft": "Draft",
       "issued": "Issued",
@@ -1871,7 +1879,6 @@
       "credit": "With unused credit",
       "voided": "Voided"
     },
-    "any": "Any",
     "importBank": "Import bank file",
     "date": "Date received",
     "client": "Client",
@@ -2233,7 +2240,6 @@
   },
   "margin": {
     "title": "Margin",
-    "period": "Period",
     "presets": {
       "4": "Last 4 weeks",
       "13": "Last 13 weeks",
@@ -2360,7 +2366,8 @@
     "csvIncomplete": "Pay lines with a rate missing",
     "emptyTitle": "Nothing to show yet",
     "emptyBody": "No week from {from} to {to} has its files made.",
-    "notForRoleTitle": "Margin is for the Owner and the accountant"
+    "notForRoleTitle": "Margin is for the Owner and the accountant",
+    "range": "Date range"
   },
   "marginSettings": {
     "above": "Settings",
@@ -3508,8 +3515,6 @@
     "search": "Search by name or payroll number",
     "searchLabel": "Search workers",
     "includeEnded": "Include ended",
-    "count": "{count, plural, one {# worker} other {# workers}}",
-    "countOf": "{shown} of {total} workers",
     "readOnly": "Only the Owner and coordinators add or change workers.",
     "col": {
       "name": "Name",
@@ -3721,7 +3726,8 @@
       "details": "Details"
     },
     "emptyTitle": "No workers yet",
-    "emptyBody": "Add each worker once; assignments, pay and documents follow them."
+    "emptyBody": "Add each worker once; assignments, pay and documents follow them.",
+    "statusAll": "Active and ended"
   },
   "activityLog": {
     "eyebrow": "Settings",
@@ -3926,7 +3932,7 @@
     "todayHours": "Hours this pay period",
     "todayWorkers": "Workers with hours",
     "todayStatus": "Pay period",
-    "todayChart": "Hours by day, {period}",
+    "todayChart": "Hours this pay period, day by day, {period}",
     "todayNoPeriod": "No pay period yet.",
     "side": {
       "receivables": "Open receivables",
@@ -3939,14 +3945,19 @@
     "overview": {
       "title": "Your overview",
       "range": "Date range",
-      "rangeValue": "Last 13 weeks",
       "billed": "Billed",
       "margin": "Gross margin",
       "hours": "Hours paid",
-      "previous": "{value} previous 13 weeks",
+      "previous": "{value} previous period",
       "viewMore": "View more",
-      "chart": "{title}, week by week, {range}"
-    }
+      "chart": "{title}, week by week, {range}",
+      "updated": "Updated {time}"
+    },
+    "todayPrevious": "Previous pay period",
+    "todayNote": "Rejected hours are not counted",
+    "todayDay": "Day",
+    "todayDayHours": "Hours that day",
+    "todaySoFar": "So far"
   },
   "engine": {
     "allocationOrderAssumed": "{name} on {date}: shifts paid or billed differently have no start time, so the order used to decide which one carries the overtime was assumed.",

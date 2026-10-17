@@ -22,8 +22,9 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      // Column headers stay on the page's own background, even under the pointer (_components/table.md).
-      className={cn("[&_tr]:border-b [&_tr]:hover:bg-transparent", className)}
+      // Column headers stay on the page's own background, even under the pointer, over the darker
+      // hairline (Stripe's current lists; _components/table.md).
+      className={cn("[&_tr]:border-b [&_tr]:border-border [&_tr]:hover:bg-transparent", className)}
       {...props}
     />
   )
@@ -57,7 +58,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
+        "border-b border-border/70 transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
         className
       )}
       {...props}
@@ -70,7 +71,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-9 px-2 text-left align-middle text-xs font-semibold tracking-wide whitespace-nowrap text-foreground/80 uppercase [&:has([role=checkbox])]:pr-0",
+        "h-9 px-2 text-left align-middle text-xs font-semibold whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
@@ -83,7 +84,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "px-2 py-2.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        "h-9 px-2 py-1.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}

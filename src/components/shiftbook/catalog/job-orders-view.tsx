@@ -1,7 +1,9 @@
 "use client";
 
-// Pattern: docs/patterns/job-orders.md — Linear issue list grouped by client, Attio preview panel.
-import { BriefcaseIcon, PlusIcon } from "lucide-react";
+// Pattern: docs/patterns/job-orders.md — Linear issue list grouped by client, Attio preview panel. Each
+// row's status icon says how filled the order is, as Linear's circle says how far an issue is: empty
+// (no one placed), half (some places open), checked (filled). Lucide's icons, not Linear's.
+import { BriefcaseIcon, Building2Icon, CircleCheckIcon, CircleIcon, ClockIcon, ContrastIcon, LandmarkIcon, MapPinIcon, PlusIcon, ReceiptTextIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +15,7 @@ import { EmptyState } from "../empty-state";
 import { money } from "../format";
 import { ActivityList } from "./activity";
 import { JobOrderForm, type CatalogOptions } from "./job-order-form";
-import { RecordList, type Column } from "./record-list";
+import { RecordList, type Column, type RowIcon } from "./record-list";
 
 export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options: CatalogOptions }) {
   const t = useTranslations("jobOrders");
@@ -24,13 +26,15 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
   const tl = useTranslations("list");
   const rate = (c: number | null) => (c === null ? "—" : money(c, locale));
 
+  const fill = (r: JobOrderRow): RowIcon =>
+    r.assigned >= r.headcount ? { icon: CircleCheckIcon, tone: "success", label: t("fill.full") } : r.assigned > 0 ? { icon: ContrastIcon, tone: "warning", label: t("fill.partly") } : { icon: CircleIcon, tone: "neutral", label: t("fill.none") };
   const columns: Column<JobOrderRow>[] = [
-    { key: "worksite", label: t("col.worksite"), cell: (r) => `${r.city}, ${r.state}`, className: "w-36 truncate text-right", chip: true },
-    { key: "headcount", label: t("col.headcount"), cell: (r) => t("assignedOf", { assigned: r.assigned, wanted: r.headcount }), className: "w-24 text-right tabular-nums", chip: true },
+    { key: "worksite", label: t("col.worksite"), cell: (r) => `${r.city}, ${r.state}`, className: "w-36 truncate text-right", chip: true, icon: MapPinIcon },
+    { key: "headcount", label: t("col.headcount"), cell: (r) => t("assignedOf", { assigned: r.assigned, wanted: r.headcount }), className: "w-24 text-right tabular-nums", chip: true, icon: UsersIcon },
     // Two amounts side by side say which is which (the pattern's "pay rate" and "bill rate").
-    { key: "pay", label: t("col.pay"), cell: (r) => tl("payRate", { rate: rate(r.payRateCents) }), className: "w-28 text-right tabular-nums", chip: true },
-    { key: "bill", label: t("col.bill"), cell: (r) => tl("billRate", { rate: rate(r.billRateCents) }), className: "w-28 text-right tabular-nums", chip: true },
-    { key: "shift", label: t("col.shift"), cell: (r) => r.shift ?? "—", className: "w-24 truncate text-right", chip: true },
+    { key: "pay", label: t("col.pay"), cell: (r) => tl("payRate", { rate: rate(r.payRateCents) }), className: "w-32 text-right tabular-nums", chip: true, icon: WalletIcon },
+    { key: "bill", label: t("col.bill"), cell: (r) => tl("billRate", { rate: rate(r.billRateCents) }), className: "w-32 text-right tabular-nums", chip: true, icon: ReceiptTextIcon },
+    { key: "shift", label: t("col.shift"), cell: (r) => r.shift ?? "—", className: "w-28 truncate text-right", chip: true, icon: ClockIcon },
     { key: "soc", label: t("col.soc"), cell: (r) => r.socCode ?? "—", className: "w-20 tabular-nums" },
     { key: "prevailing", label: t("col.prevailing"), cell: (r) => (r.prevailingWage ? <Badge variant="outline">{t("prevailing")}</Badge> : null), className: "w-28" },
   ];
@@ -46,9 +50,10 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
         hrefFor={(r) => `/job-orders/${r.id}`}
         columns={columns}
         defaultColumns={["worksite", "headcount", "pay", "bill"]}
+        status={fill}
         groupings={[
-          { key: "client", label: t("group.client"), value: (r) => r.clientName },
-          { key: "state", label: t("group.state"), value: (r) => r.state },
+          { key: "client", label: t("group.client"), value: (r) => r.clientName, icon: () => ({ icon: Building2Icon, tone: "neutral", label: t("group.client") }) },
+          { key: "state", label: t("group.state"), value: (r) => r.state, icon: () => ({ icon: MapPinIcon, tone: "neutral", label: t("group.state") }) },
           { key: "none", label: t("group.none"), value: null },
         ]}
         defaultGrouping="client"
@@ -59,15 +64,16 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
         ]}
         defaultOrdering="position"
         filters={[
-          { key: "client", label: t("filter.client"), options: options.clients.map((c) => ({ value: c.id, label: c.name })), test: (r, v) => r.clientId === v },
+          { key: "client", label: t("filter.client"), icon: Building2Icon, options: options.clients.map((c) => ({ value: c.id, label: c.name })), test: (r, v) => r.clientId === v },
           {
             key: "state",
             label: t("filter.state"),
+            icon: MapPinIcon,
             options: [...new Set(rows.map((r) => r.state))].sort().map((s) => ({ value: s, label: s })),
             test: (r, v) => r.state === v,
           },
-          { key: "prevailing", label: t("filter.prevailing"), options: [{ value: "yes", label: t("yes") }, { value: "no", label: t("no") }], test: (r, v) => r.prevailingWage === (v === "yes") },
-          { key: "open", label: t("filter.open"), options: [{ value: "yes", label: t("yes") }, { value: "no", label: t("no") }], test: (r, v) => r.assigned < r.headcount === (v === "yes") },
+          { key: "prevailing", label: t("filter.prevailing"), icon: LandmarkIcon, options: [{ value: "yes", label: t("yes") }, { value: "no", label: t("no") }], test: (r, v) => r.prevailingWage === (v === "yes") },
+          { key: "open", label: t("filter.open"), icon: UsersIcon, options: [{ value: "yes", label: t("yes") }, { value: "no", label: t("no") }], test: (r, v) => r.assigned < r.headcount === (v === "yes") },
         ]}
         panel={(r) => (
           <>

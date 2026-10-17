@@ -59,6 +59,27 @@ export function compactMoney(cents: number): string {
   return `${tenths === 0 ? "" : sign}$${text}${units[at]![1]}`;
 }
 
+/**
+ * A chart's gridline values (Stripe Home: "$1.5K", "$1.0K", "$500", "$0"): short as compactMoney, and
+ * when one value in thousands or millions needs a decimal every value in them shows one, as Stripe's
+ * axis writes "$1.0K" under "$1.5K".
+ */
+export function axisMoney(ticks: number[]): string[] {
+  const short = ticks.map(compactMoney);
+  if (!short.some((s) => /\.\d[KMB]$/.test(s))) return short;
+  return short.map((s) => s.replace(/^(-?\$\d+)([KMB])$/, "$1.0$2"));
+}
+
+/**
+ * A headline amount in two parts, the cents to be set small and raised as Mercury sets them
+ * ("$1,051,312" and ".80"); both parts from the exact amount, never from a float.
+ */
+export function moneyParts(cents: number, locale: string): { whole: string; cents: string } {
+  const text = money(cents, locale);
+  const at = text.lastIndexOf(".");
+  return { whole: text.slice(0, at), cents: text.slice(at) };
+}
+
 /** A difference: "+$36.50", "-$54.75", "$0.00" (slice e corrections). */
 export function signedMoney(cents: number, locale: string): string {
   const abs = Math.abs(cents);
@@ -73,12 +94,12 @@ export function signedHours(minutes: number): string {
 
 /**
  * A moment in the agency's own time zone ("Oct 16, 2026, 5:41 PM"; long: "October 16, 2026 at 5:41 PM";
- * `time: false`: its day there, "Oct 16, 2026"), so the server, the browser and the activity log all
+ * `time: false`: its day there, "Oct 16, 2026"; `date: false`: its time there, "5:41 PM"), so the server, the browser and the activity log all
  * show the same time. A zone name Intl does not know is read as UTC rather than failing the page (as
  * agencyToday does).
  */
-export function dateTime(at: string | Date, locale: string, zone: string, opts: { date?: "medium" | "long"; time?: boolean; seconds?: boolean } = {}): string {
-  const style: Intl.DateTimeFormatOptions = { dateStyle: opts.date ?? "medium", ...(opts.time === false ? {} : { timeStyle: opts.seconds ? "medium" : "short" }) };
+export function dateTime(at: string | Date, locale: string, zone: string, opts: { date?: "medium" | "long" | false; time?: boolean; seconds?: boolean } = {}): string {
+  const style: Intl.DateTimeFormatOptions = { ...(opts.date === false ? {} : { dateStyle: opts.date ?? "medium" }), ...(opts.time === false ? {} : { timeStyle: opts.seconds ? "medium" : "short" }) };
   let format: Intl.DateTimeFormat;
   try {
     format = new Intl.DateTimeFormat(locale, { ...style, timeZone: zone });
@@ -104,9 +125,22 @@ export function tableDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 }
 
-/** A pay period: "Oct 5 – 11, 2026" / "5–11 oct 2026". */
-export function dateRange(start: string, end: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).formatRange(new Date(`${start}T00:00:00Z`), new Date(`${end}T00:00:00Z`));
+/**
+ * A date in a list, as Stripe's lists write it: "Oct 16" in the current year, "Nov 30, 2025" in any
+ * other (`today`: the agency's today).
+ */
+export function listDate(iso: string, locale: string, today: string): string {
+  if (iso.slice(0, 4) !== today.slice(0, 4)) return tableDate(iso, locale);
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+/**
+ * A pay period: "Oct 5 – 11, 2026" / "5–11 oct 2026". Given the agency's `today`, a period wholly in
+ * the current year is written without it ("Oct 5 – 11"), as Stripe's lists write dates.
+ */
+export function dateRange(start: string, end: string, locale: string, today?: string): string {
+  const thisYear = today !== undefined && start.slice(0, 4) === today.slice(0, 4) && end.slice(0, 4) === today.slice(0, 4);
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", ...(thisYear ? {} : { year: "numeric" as const }), timeZone: "UTC" }).formatRange(new Date(`${start}T00:00:00Z`), new Date(`${end}T00:00:00Z`));
 }
 
 /** "7:30", "07:30", "7:30 PM", "19:30" → minutes after midnight; null when not a time. */

@@ -47,7 +47,20 @@ export async function setupSteps(tx: Tx, periodsStarted: boolean): Promise<Recor
 
 export type PeriodState = "none" | "draft" | "validating" | "blocked" | "ready" | "approved" | "exported" | "closed" | "correcting";
 
-export async function homeView(tx: Tx, agencyId: string, today: string, may: { viewMargin: boolean }) {
+/** The hours on file for a pay period: rejected entries and those of archived timesheets are never paid, so never counted. */
+async function periodEntries(tx: Tx, payPeriodId: string) {
+  return tx
+    .select({ date: s.timeEntries.workDate, minutes: s.timeEntries.minutes, workerId: s.timeEntries.workerId })
+    .from(s.timeEntries)
+    .leftJoin(s.sourceDocuments, eq(s.sourceDocuments.id, s.timeEntries.sourceDocumentId))
+    .where(and(eq(s.timeEntries.payPeriodId, payPeriodId), ne(s.timeEntries.status, "rejected"), or(isNull(s.timeEntries.sourceDocumentId), ne(s.sourceDocuments.status, "archived"))));
+}
+
+/**
+ * `weeks`: Your overview's date range, as Margin's presets ("4", "13" — the default — or "52"),
+ * read from the address.
+ */
+export async function homeView(tx: Tx, agencyId: string, today: string, may: { viewMargin: boolean; weeks?: string }) {
   const periods = await listPeriods(tx);
   // The period people work on: the newest with hours (Client approvals picks it the same way).
   const current = periods.find((p) => p.started) ?? periods[0] ?? null;
@@ -75,31 +88,36 @@ export async function homeView(tx: Tx, agencyId: string, today: string, may: { v
   const [bankToMatch] = await tx.select({ n: count() }).from(s.bankLines).where(eq(s.bankLines.status, "review"));
   const [placed] = await tx.select({ n: sql<number>`count(distinct ${s.assignments.workerId})::int` }).from(s.assignments).where(eq(s.assignments.status, "active"));
 
-  // Today (Stripe Home): the pay period's hours by day and who worked them, from the entries on file
-  // (rejected ones and those of archived timesheets are never paid, so never counted).
+  // Today (Stripe Home): the pay period's hours by day and who worked them, from the entries on file;
+  // and the period just before it to compare, as Stripe's Today compares with yesterday.
   let days: { date: string; minutes: number }[] = [];
   let workers = 0;
+  let previous: { startsOn: string; endsOn: string; minutes: number } | null = null;
   if (current) {
-    const entries = await tx
-      .select({ date: s.timeEntries.workDate, minutes: s.timeEntries.minutes, workerId: s.timeEntries.workerId })
-      .from(s.timeEntries)
-      .leftJoin(s.sourceDocuments, eq(s.sourceDocuments.id, s.timeEntries.sourceDocumentId))
-      .where(and(eq(s.timeEntries.payPeriodId, current.id), ne(s.timeEntries.status, "rejected"), or(isNull(s.timeEntries.sourceDocumentId), ne(s.sourceDocuments.status, "archived"))));
+    const entries = await periodEntries(tx, current.id);
     for (let d = current.startsOn; d <= current.endsOn; d = addDays(d, 1)) days.push({ date: d, minutes: entries.filter((e) => e.date === d).reduce((n, e) => n + (e.minutes ?? 0), 0) });
     workers = new Set(entries.filter((e) => e.workerId !== null && (e.minutes ?? 0) > 0).map((e) => e.workerId)).size;
     if (days.length > 31) days = [];
+    // Any period before it, a week paid before Shiftbook included: its hours were worked all the same.
+    const [before] = await tx.select().from(s.payPeriods).where(lt(s.payPeriods.startsOn, current.startsOn)).orderBy(sql`${s.payPeriods.startsOn} desc`).limit(1);
+    if (before) previous = { startsOn: before.startsOn, endsOn: before.endsOn, minutes: (await periodEntries(tx, before.id)).reduce((n, e) => n + (e.minutes ?? 0), 0) };
   }
 
-  // Your overview (Stripe Home): the past 13 weeks week by week, and the 13 before them to compare.
-  let overview: { from: string; to: string; weeks: { week: string; billedCents: number; marginCents: number; minutesPaid: number }[]; previous: { billedCents: number; marginCents: number; minutesPaid: number } } | null = null;
+  // Your overview (Stripe Home): the weeks of the date range week by week, and as many before them to compare.
+  type Week = { week: string; billedCents: number; marginCents: number; minutesPaid: number };
+  let overview: { from: string; to: string; preset: number; weeks: Week[]; previousWeeks: Week[]; previous: { billedCents: number; marginCents: number; minutesPaid: number } } | null = null;
   if (may.viewMargin) {
-    const range = await marginPeriod(tx, today, { weeks: "13" });
+    const range = await marginPeriod(tx, today, { weeks: may.weeks ?? "13" });
+    const count = range.preset === "custom" ? 13 : range.preset;
     const view = await marginView(tx, { from: range.from, to: range.to, groupBy: "client", sort: "margin" });
-    const before = await marginView(tx, { from: addDays(range.from, -7 * 13), to: addDays(range.from, -7), groupBy: "client", sort: "margin" });
+    const before = await marginView(tx, { from: addDays(range.from, -7 * count), to: addDays(range.from, -7), groupBy: "client", sort: "margin" });
+    const weekly = (v: typeof view): Week[] => v.weeks.map((w) => ({ week: w.week, billedCents: w.totals.billedCents, marginCents: w.totals.marginCents, minutesPaid: w.totals.minutesPaid }));
     overview = {
       from: range.from,
       to: addDays(range.to, 6),
-      weeks: view.weeks.map((w) => ({ week: w.week, billedCents: w.totals.billedCents, marginCents: w.totals.marginCents, minutesPaid: w.totals.minutesPaid })),
+      preset: count,
+      weeks: weekly(view),
+      previousWeeks: weekly(before),
       previous: { billedCents: before.totals.billedCents, marginCents: before.totals.marginCents, minutesPaid: before.totals.minutesPaid },
     };
   }
@@ -117,7 +135,7 @@ export async function homeView(tx: Tx, agencyId: string, today: string, may: { v
     compliance: { overdue: overdue?.n ?? 0, dueSoon: Math.max(0, urgent - (overdue?.n ?? 0)) },
     bankToMatch: bankToMatch?.n ?? 0,
     workersPlaced: placed?.n ?? 0,
-    today: { days, workers, minutes: days.reduce((n, d) => n + d.minutes, 0) },
+    today: { days, workers, minutes: days.reduce((n, d) => n + d.minutes, 0), previous },
     overview,
   };
 }

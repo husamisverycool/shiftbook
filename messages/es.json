@@ -657,7 +657,12 @@
     "close": "Cerrar",
     "bulk": "Filas seleccionadas",
     "selected": "{count, plural, one {# seleccionada} other {# seleccionadas}}",
-    "clearSelection": "Quitar selección"
+    "clearSelection": "Quitar selección",
+    "filters": "Filtros",
+    "results": "{count, plural, one {<b>#</b> resultado} other {<b>#</b> resultados}}",
+    "resultsOf": "<b>{shown}</b> de {total, plural, one {# resultado} other {# resultados}}",
+    "is": "es",
+    "isAnyOf": "es cualquiera de"
   },
   "activity": {
     "none": "Aún no hay cambios.",
@@ -773,7 +778,12 @@
       "noBranch": "Sin oficina"
     },
     "readOnly": "Solo el Propietario y los coordinadores cambian las órdenes de trabajo.",
-    "emptyBody": "Cada orden de trabajo fija las tarifas de pago y de cobro de sus trabajadores."
+    "emptyBody": "Cada orden de trabajo fija las tarifas de pago y de cobro de sus trabajadores.",
+    "fill": {
+      "none": "Aún sin nadie asignado",
+      "partly": "Aún con puestos libres",
+      "full": "Cubierta"
+    }
   },
   "jobOrder": {
     "breadcrumb": "Órdenes de trabajo",
@@ -922,7 +932,6 @@
     "filterStatus": "Estado",
     "filterClient": "Cliente",
     "all": "Todos",
-    "any": "Cualquiera",
     "clearFilters": "Quitar filtros",
     "colClient": "Cliente",
     "colApprover": "Aprobador",
@@ -1657,7 +1666,6 @@
   "invoices": {
     "title": "Facturas",
     "all": "Todas",
-    "any": "Cualquiera",
     "status": {
       "draft": "Borrador",
       "issued": "Emitida",
@@ -1871,7 +1879,6 @@
       "credit": "Con crédito sin usar",
       "voided": "Anulados"
     },
-    "any": "Cualquiera",
     "importBank": "Importar archivo del banco",
     "date": "Fecha de recibo",
     "client": "Cliente",
@@ -2233,7 +2240,6 @@
   },
   "margin": {
     "title": "Margen",
-    "period": "Periodo",
     "presets": {
       "4": "Últimas 4 semanas",
       "13": "Últimas 13 semanas",
@@ -2360,7 +2366,8 @@
     "csvIncomplete": "Líneas de pago sin tarifa",
     "emptyTitle": "Aún no hay nada que mostrar",
     "emptyBody": "Ninguna semana del {from} al {to} tiene sus archivos hechos.",
-    "notForRoleTitle": "El margen es para el Propietario y el contador"
+    "notForRoleTitle": "El margen es para el Propietario y el contador",
+    "range": "Rango de fechas"
   },
   "marginSettings": {
     "above": "Configuración",
@@ -3508,8 +3515,6 @@
     "search": "Buscar por nombre o número de nómina",
     "searchLabel": "Buscar trabajadores",
     "includeEnded": "Incluir dados de baja",
-    "count": "{count, plural, one {# trabajador} other {# trabajadores}}",
-    "countOf": "{shown} de {total} trabajadores",
     "readOnly": "Solo el Propietario y los coordinadores agregan o cambian trabajadores.",
     "col": {
       "name": "Nombre",
@@ -3721,7 +3726,8 @@
       "details": "Detalles"
     },
     "emptyTitle": "Aún no hay trabajadores",
-    "emptyBody": "Agregue a cada trabajador una vez; sus asignaciones, pagos y documentos lo siguen."
+    "emptyBody": "Agregue a cada trabajador una vez; sus asignaciones, pagos y documentos lo siguen.",
+    "statusAll": "Activos y dados de baja"
   },
   "activityLog": {
     "eyebrow": "Configuración",
@@ -3926,7 +3932,7 @@
     "todayHours": "Horas de este periodo de pago",
     "todayWorkers": "Trabajadores con horas",
     "todayStatus": "Periodo de pago",
-    "todayChart": "Horas por día, {period}",
+    "todayChart": "Horas de este periodo de pago, día por día, {period}",
     "todayNoPeriod": "Aún no hay periodo de pago.",
     "side": {
       "receivables": "Cuentas por cobrar abiertas",
@@ -3939,14 +3945,19 @@
     "overview": {
       "title": "Su resumen",
       "range": "Rango de fechas",
-      "rangeValue": "Últimas 13 semanas",
       "billed": "Facturado",
       "margin": "Margen bruto",
       "hours": "Horas pagadas",
-      "previous": "{value} las 13 semanas anteriores",
+      "previous": "{value} periodo anterior",
       "viewMore": "Ver más",
-      "chart": "{title}, semana por semana, {range}"
-    }
+      "chart": "{title}, semana por semana, {range}",
+      "updated": "Actualizado: {time}"
+    },
+    "todayPrevious": "Periodo de pago anterior",
+    "todayNote": "No se cuentan las horas rechazadas",
+    "todayDay": "Día",
+    "todayDayHours": "Horas ese día",
+    "todaySoFar": "Hasta ese día"
   },
   "engine": {
     "allocationOrderAssumed": "{name} el {date}: los turnos que se pagan o facturan de forma distinta no tienen hora de inicio, así que se supuso el orden usado para decidir cuál lleva las horas extra.",

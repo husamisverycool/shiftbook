@@ -120,24 +120,25 @@ export function MarginOverview({ view, groupBy, sort, floatingCents }: { view: M
 
   return (
     <>
-      {/* Figures as plain type in a row (Stripe's "Program summary", Mercury's headline figures). */}
+      {/* Figures as plain type in a row, as Stripe's "Program summary" sets them: the label in the secondary
+          colour, the figure 20px semibold (https://docs.stripe.com/stripe-apps/patterns/chart-layout). */}
       <div className="flex flex-wrap gap-x-12 gap-y-5 border-b pb-6" data-testid="margin-cards">
         {cards.map((c) =>
           c.href ? (
-            <Link key={c.key} href={c.href} className="group flex flex-col gap-1 text-left outline-none" data-testid={`card-${c.key}`}>
-              <span className="text-[13px] text-muted-foreground group-hover:underline group-focus-visible:underline">{c.label}</span>
-              <span className="text-2xl font-semibold tracking-tight tabular-nums">{c.value}</span>
+            <Link key={c.key} href={c.href} className="group flex flex-col text-left outline-none" data-testid={`card-${c.key}`}>
+              <span className="text-sm text-foreground/70 group-hover:underline group-focus-visible:underline">{c.label}</span>
+              <span className="mt-1 text-xl leading-7 font-semibold tabular-nums">{c.value}</span>
             </Link>
           ) : (
             <button
               key={c.key}
               type="button"
               onClick={() => setMetric(c.metric!)}
-              className="group flex flex-col gap-1 text-left outline-none"
+              className="group flex flex-col text-left outline-none"
               data-testid={`card-${c.key}`}
             >
-              <span className="text-[13px] text-muted-foreground group-hover:underline group-focus-visible:underline">{c.label}</span>
-              <span className="text-2xl font-semibold tracking-tight tabular-nums">{c.value}</span>
+              <span className="text-sm text-foreground/70 group-hover:underline group-focus-visible:underline">{c.label}</span>
+              <span className="mt-1 text-xl leading-7 font-semibold tabular-nums">{c.value}</span>
             </button>
           ),
         )}

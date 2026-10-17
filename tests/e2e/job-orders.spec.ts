@@ -101,14 +101,16 @@ test("the list works from the keyboard: highlight, preview panel, select, displa
   await page.keyboard.press("x");
   await expect(page.getByRole("toolbar", { name: en.list.bulk })).toContainText("1 selected");
   await page.keyboard.press("Escape");
+  // Display options (Linear's panel): grouping by state puts the rows under a band per state.
   await page.keyboard.press("Shift+V");
-  await page.getByRole("menuitemradio", { name: en.jobOrders.group.state }).click();
+  await page.getByTestId("display-grouping").selectOption({ label: en.jobOrders.group.state });
   await expect(page.getByRole("row").filter({ hasText: /^IL\s*\d/ }).first()).toBeVisible();
   // Filters go in the URL.
   await page.keyboard.press("Escape");
   await page.goto("/en/job-orders?state=MA");
   await expect(page.getByTestId("record-row")).toHaveCount(1);
-  await expect(page.getByTestId("filter-chips")).toContainText("MA");
+  // Linear's segmented filter chip: the field, the operator, the value.
+  await expect(page.getByTestId("filter-chips")).toContainText(`${en.jobOrders.filter.state}${en.list.is}MA`);
 });
 
 test("import placements from the Bullhorn sample, deciding what the file could not say", async ({ page }) => {

@@ -15,13 +15,16 @@ export default async function CompliancePage(props: { params: Promise<{ locale: 
   setRequestLocale(locale);
   const actor = await currentActor();
   const ask = complianceAsk(await props.searchParams);
-  const { items, users } = await withAgency(actor.agencyId, async (tx) => complianceItems(tx, actor, await agencyToday(tx)));
+  const { items, users, today } = await withAgency(actor.agencyId, async (tx) => {
+    const today = await agencyToday(tx);
+    return { ...(await complianceItems(tx, actor, today)), today };
+  });
   const shown = filterItems(items, ask, actor);
   const nextUpcoming = items.filter((i) => i.status === "upcoming").map((i) => i.dueOn).sort()[0] ?? null;
   const filtered = ask.area !== null || ask.jurisdiction !== null || ask.owner !== null || ask.q !== "" || ask.statuses.length > 0;
   return (
     <ComplianceFrame tab="list" counts={areaCounts(items)}>
-      <ComplianceList items={shown} users={users} nextUpcoming={nextUpcoming} filtered={filtered} />
+      <ComplianceList items={shown} users={users} nextUpcoming={nextUpcoming} filtered={filtered} today={today} />
     </ComplianceFrame>
   );
 }

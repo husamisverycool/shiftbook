@@ -141,7 +141,7 @@ export function ClientPage({ detail, mayChange, today, owes, clients, mayCollect
         <ClientOwes clientId={detail.client.id} owes={owes} clients={clients} today={today} canChange={mayCollect} />
 
         <Section id="client-invoices-title" title={ti("title")} accessory={detail.invoices.length > 0 ? detail.invoices.length : undefined}>
-          {detail.invoices.length === 0 ? <p className="text-sm text-muted-foreground">{t("noInvoices")}</p> : <InvoicesTable rows={detail.invoices} showClient={false} />}
+          {detail.invoices.length === 0 ? <p className="text-sm text-muted-foreground">{t("noInvoices")}</p> : <InvoicesTable rows={detail.invoices} showClient={false} today={today} />}
         </Section>
       </RecordLayout>
 

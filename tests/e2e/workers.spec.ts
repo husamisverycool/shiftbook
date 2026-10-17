@@ -43,7 +43,7 @@ for (const locale of ["en", "es"] as const) {
     await page.goto(`/${locale}/workers`);
     await expect(page.getByRole("heading", { level: 1, name: w.title })).toBeVisible();
     await expect(page.getByTestId("worker-row")).toHaveCount(40);
-    await expect(page.getByTestId("worker-count")).toHaveText(locale === "en" ? "40 workers" : "40 trabajadores");
+    await expect(page.getByTestId("worker-count")).toHaveText(locale === "en" ? "40 results" : "40 resultados");
     await check(page, `workers (${locale})`);
 
     // "/" goes to the search; accents do not matter; a payroll number finds its worker.
@@ -140,7 +140,12 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("worker-search").fill(`SB-${locale}-77`);
     await expect(page.getByTestId("worker-row")).toHaveCount(1);
     await page.getByTestId("worker-search").fill("");
+    // The Status pill's menu holds the checkbox for ended workers (Toast's Status filter, as Stripe's pill).
+    await expect(page.getByTestId("status-filter")).toContainText(w.status.active);
+    await page.getByTestId("status-filter").click();
     await page.getByTestId("include-ended").click();
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("status-filter")).toContainText(w.statusAll);
     await expect(page.getByTestId("worker-row")).toHaveCount(41);
     await page.getByRole("link", { name: `${last}-Park, ${first}` }).click();
     await page.getByTestId("tab-employment").click();
