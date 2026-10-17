@@ -174,7 +174,7 @@ export function InviteView({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   if (gone) return <LinkGone kind="invite" />;
-  const needsApp = invite.role === "owner" || invite.role === "coordinator";
+  const needsApp = invite.role === "owner" || invite.role === "coordinator" || invite.role === "recruiter";
   return (
     <>
       <div className="flex flex-col gap-2 text-center">

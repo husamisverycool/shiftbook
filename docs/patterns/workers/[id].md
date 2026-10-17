@@ -67,6 +67,24 @@ Toast's or Square's wording, icons, colors or logos.
 ## Look (decision 0029, from the products' own screenshots)
 Laid out as `_components/record-page.md`: "Workers" above the name with its status, and under them one muted line: the worker's number in the payroll system in use and when they were hired (Stripe's detail page description, "Pro plan customer since March 2022.", https://docs.stripe.com/stripe-apps/components/detailpage); the tabs and their sections on the left, each section a module with its own Edit; Details on the right (status, assignment linking to its job order — underlined, as the record pages' links are — hired, preferred language).
 
+## Onboarding and messages (slice t)
+References: Gusto's admin onboarding (People › Onboarding › the person › Tasks; **Send and
+continue** emails the person a link to enter their own details,
+https://support.gusto.com/article/210728164125837/add-new-employees-to-gusto); WhatsApp's chat for
+the thread (https://faq.whatsapp.com/).
+- Two more tabs: **Onboarding** · **Messages** (after Documents).
+- **Onboarding**: the mobile number (Edit, US numbers; the worker signs in to the worker app with
+  it); **Send onboarding link** (a text message with the app's address; demo: kept in the demo
+  outbox); the checklist — Personal information, Taxes (Form W-4), Work eligibility (Form I-9
+  Section 1), Payment, Policies, Signed — each Done with its date or To do; the signed forms each
+  open like a worker's file (the Owner, with a reason: they hold the SSN's last four and bank
+  details' last four only, yet the rule is the same); the payment method as "Direct deposit ••••1234"
+  or "Paper check". Who may send: the Owner, coordinators and recruiters.
+- **Messages**: the thread with the worker (their messages on the left, the agency's on the right
+  with who wrote them), a translation under each message in the other language, a field and **Send**
+  at the bottom.
+- Clients' **Worker app clock-in** setting (client page): Off, On, On with location.
+
 ## Loading and errors (slice o)
 - Loading: the page's outline in the record shape (`_components/loading.md`); buttons that start
   work show a spinner in place of their icon (Primer Button `loading`).

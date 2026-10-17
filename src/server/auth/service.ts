@@ -58,8 +58,8 @@ const LINK_TOKEN = /sbau_[A-Za-z0-9_-]{20,}/g;
 export const HIDDEN_AUTH_LINK = "[sign-in link hidden]";
 const ISSUER = "Granite";
 
-/** The roles that need the second step (SPEC §2: MFA for Owner and Coordinator). */
-export const requiresSecondStep = (role: Role) => role === "owner" || role === "coordinator";
+/** The roles that need the second step (SPEC §2: MFA for Owner and Coordinator; the Recruiter handles workers' SSNs too). */
+export const requiresSecondStep = (role: Role) => role === "owner" || role === "coordinator" || role === "recruiter";
 
 export interface AuthDeps {
   db: Db;

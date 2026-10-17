@@ -316,6 +316,13 @@
       "when": 1792179800000,
       "tag": "0044_signup_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1792181800000,
+      "tag": "0046_worker_app",
+      "breakpoints": true
     }
   ]
 }

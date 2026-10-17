@@ -39,7 +39,7 @@ const placeCodeChecks = (name: string, t: { countyFips: unknown; placeFips: unkn
 ];
 
 // ---------- enums ----------
-export const userRole = pgEnum("user_role", ["owner", "coordinator", "billing", "accountant"]);
+export const userRole = pgEnum("user_role", ["owner", "coordinator", "billing", "accountant", "recruiter"]);
 export const otBillingRule = pgEnum("ot_billing_rule", ["multiplier", "straight_time", "not_billable", "own_sites_only"]);
 export const assignmentStatus = pgEnum("assignment_status", ["active", "ended", "cancelled"]);
 export const documentKind = pgEnum("document_kind", [
@@ -227,8 +227,11 @@ export const clients = pgTable("clients", {
   billingEmail: text("billing_email"),
   /** The client must approve its shifts before the run can be approved (slice e; drizzle/0023). */
   approvalRequired: boolean("approval_required").notNull().default(false),
+  /** Whether workers may clock in from the worker app at this client, and with their location (slice t; drizzle/0046). */
+  workerClock: text("worker_clock").$type<WorkerClock>().notNull().default("off"),
   createdAt: createdAt(),
 });
+export type WorkerClock = "off" | "on" | "location";
 
 export const worksites = pgTable(
   "worksites",
@@ -318,6 +321,9 @@ export const workers = pgTable("workers", {
   /** A keyed digest that finds the same SSN on another worker in the agency, revealing nothing. */
   ssnIndex: text("ssn_index"),
   ssnChangedAt: timestamp("ssn_changed_at", { withTimezone: true }),
+  /** The mobile number for the worker app (E.164) and its keyed digest for sign-in (slice t; drizzle/0046). */
+  phone: text("phone"),
+  phoneIndex: text("phone_index"),
   createdAt: createdAt(),
 });
 
@@ -1649,6 +1655,11 @@ export const TENANT_TABLES = [
   "email_sign_in_codes",
   "agency_sso",
   "agency_subscriptions",
+  "worker_onboarding",
+  "worker_sessions",
+  "worker_messages",
+  "worker_clock_punches",
+  "sms_messages",
 ] as const;
 
 // ---------- other ways in: Google, Microsoft, an agency's single sign-on, emailed codes (decision 0033; drizzle/0039) ----------
@@ -1801,4 +1812,156 @@ export const billingEvents = pgTable("billing_events", {
   eventId: text("event_id").primaryKey(),
   type: text("type").notNull(),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ---------- the worker app (slice t; SPEC §27 items 5–6; drizzle/0046) ----------
+
+/** A worker's onboarding (Gusto's self-onboarding steps); the I-9 answers and bank details sealed. */
+export const workerOnboarding = pgTable(
+  "worker_onboarding",
+  {
+    workerId: uuid("worker_id")
+      .primaryKey()
+      .references(() => workers.id),
+    agencyId: agencyId(),
+    invitedAt: timestamp("invited_at", { withTimezone: true }),
+    invitedByLabel: text("invited_by_label"),
+    personal: jsonb("personal").$type<OnboardingPersonal>(),
+    personalAt: timestamp("personal_at", { withTimezone: true }),
+    birthSealed: jsonb("birth_sealed").$type<Sealed>(),
+    w4: jsonb("w4").$type<OnboardingW4>(),
+    w4At: timestamp("w4_at", { withTimezone: true }),
+    i9Sealed: jsonb("i9_sealed").$type<Sealed>(),
+    i9Status: text("i9_status").$type<I9Status>(),
+    i9At: timestamp("i9_at", { withTimezone: true }),
+    paymentKind: text("payment_kind").$type<"direct_deposit" | "paper_check">(),
+    depositSealed: jsonb("deposit_sealed").$type<Sealed>(),
+    depositLast4: text("deposit_last4"),
+    paymentAt: timestamp("payment_at", { withTimezone: true }),
+    policies: jsonb("policies").$type<{ key: string; at: string }[]>().notNull().default(sql`'[]'::jsonb`),
+    policiesAt: timestamp("policies_at", { withTimezone: true }),
+    signedName: text("signed_name"),
+    signedAt: timestamp("signed_at", { withTimezone: true }),
+    signedAddressHash: text("signed_address_hash"),
+    signedUserAgent: text("signed_user_agent"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("worker_onboarding_agency").on(t.agencyId)],
+);
+export interface Sealed {
+  v: number;
+  iv: string;
+  tag: string;
+  data: string;
+}
+export type I9Status = "citizen" | "noncitizen_national" | "permanent_resident" | "authorized_alien";
+export interface OnboardingPersonal {
+  legalFirstName: string;
+  legalLastName: string;
+  addressLine: string;
+  city: string;
+  state: string;
+  zip: string;
+  email: string | null;
+}
+/** Form W-4 (2020 and later): amounts in integer cents. */
+export interface OnboardingW4 {
+  filingStatus: "single" | "married_jointly" | "head_of_household";
+  multipleJobs: boolean;
+  dependentsCents: number;
+  otherIncomeCents: number;
+  deductionsCents: number;
+  extraWithholdingCents: number;
+  exempt: boolean;
+}
+
+/** A text-message sign-in code: no agency yet, visible only in sign-in mode. */
+export const workerSignInCodes = pgTable("worker_sign_in_codes", {
+  id: uuid("id").primaryKey(),
+  phoneIndex: text("phone_index").notNull(),
+  codeHash: text("code_hash").notNull(),
+  createdAt: createdAt(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  failures: integer("failures").notNull().default(0),
+  choiceHash: text("choice_hash"),
+  choiceExpiresAt: timestamp("choice_expires_at", { withTimezone: true }),
+});
+
+/** A worker's signed-in phone or browser (only the token's SHA-256). */
+export const workerSessions = pgTable("worker_sessions", {
+  id: id(),
+  agencyId: agencyId(),
+  workerId: uuid("worker_id")
+    .notNull()
+    .references(() => workers.id),
+  tokenHash: text("token_hash").notNull(),
+  demo: boolean("demo").notNull().default(false),
+  createdAt: createdAt(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  userAgent: text("user_agent"),
+});
+
+/** The thread between a worker and their agency. */
+export const workerMessages = pgTable(
+  "worker_messages",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    workerId: uuid("worker_id")
+      .notNull()
+      .references(() => workers.id),
+    sender: text("sender").$type<"worker" | "agency">().notNull(),
+    authorLabel: text("author_label").notNull(),
+    authorUserId: uuid("author_user_id"),
+    body: text("body").notNull(),
+    bodyLocale: text("body_locale").notNull(),
+    translation: text("translation"),
+    translationLocale: text("translation_locale"),
+    createdAt: createdAt(),
+    readByWorkerAt: timestamp("read_by_worker_at", { withTimezone: true }),
+    readByAgencyAt: timestamp("read_by_agency_at", { withTimezone: true }),
+  },
+  (t) => [index("worker_messages_thread").on(t.agencyId, t.workerId, t.createdAt)],
+);
+
+export interface PunchLocation {
+  lat: number;
+  lng: number;
+  accuracyM: number;
+}
+/** A clock-in from the worker app; its clock-out makes a time entry waiting for review. */
+export const workerClockPunches = pgTable("worker_clock_punches", {
+  id: id(),
+  agencyId: agencyId(),
+  workerId: uuid("worker_id")
+    .notNull()
+    .references(() => workers.id),
+  assignmentId: uuid("assignment_id")
+    .notNull()
+    .references(() => assignments.id),
+  clockInAt: timestamp("clock_in_at", { withTimezone: true }).notNull(),
+  clockOutAt: timestamp("clock_out_at", { withTimezone: true }),
+  inLocation: jsonb("in_location").$type<PunchLocation>(),
+  outLocation: jsonb("out_location").$type<PunchLocation>(),
+  timeEntryId: uuid("time_entry_id").references(() => timeEntries.id),
+  createdAt: createdAt(),
+});
+
+/** Text messages sent; the code in a sign-in text is never kept (the demo keeps the whole text). */
+export const smsMessages = pgTable("sms_messages", {
+  id: id(),
+  agencyId: agencyId(),
+  kind: text("kind").$type<"sign_in_code" | "onboarding_invite">().notNull(),
+  toPhone: text("to_phone").notNull(),
+  workerId: uuid("worker_id").references(() => workers.id),
+  body: text("body").notNull(),
+  demoBody: text("demo_body"),
+  status: text("status").$type<"sending" | "sent" | "failed">().notNull().default("sending"),
+  providerId: text("provider_id"),
+  error: text("error"),
+  createdAt: createdAt(),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
 });

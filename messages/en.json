@@ -3205,6 +3205,10 @@
     "accountant": {
       "name": "Accountant",
       "line": "Reads everything except Social Security numbers. Changes nothing."
+    },
+    "recruiter": {
+      "name": "Recruiter",
+      "line": "Job orders and placements, worker onboarding and messages with workers."
     }
   },
   "authFrame": {

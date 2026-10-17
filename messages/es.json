@@ -3205,6 +3205,10 @@
     "accountant": {
       "name": "Contador",
       "line": "Ve todo excepto los números de Seguro Social. No cambia nada."
+    },
+    "recruiter": {
+      "name": "Reclutador",
+      "line": "Órdenes de trabajo y asignaciones, la incorporación de trabajadores y los mensajes con ellos."
     }
   },
   "authFrame": {

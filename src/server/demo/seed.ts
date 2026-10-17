@@ -46,6 +46,12 @@ const SINCE = "2026-01-01";
 
 /** Tenant tables in delete-safe order. audit_events is append-only and is never cleared. */
 const CLEAR_ORDER = [
+  // The worker app (slice t): a reset signs demo workers out of it (their sessions name the worker rows).
+  "worker_clock_punches",
+  "worker_messages",
+  "worker_sessions",
+  "worker_onboarding",
+  "sms_messages",
   "jobs",
   "burden_tax_rates",
   "wc_rates",
