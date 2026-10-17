@@ -79,6 +79,9 @@ period is the first row.
      `clients/[id].md`), back to Upload).
    - H2 "Warnings", the same rows without blocking (they never stop the run; Rise: "warnings do not
      block approval").
+   - Under it, "Scheduled, no hours yet" (slice u; Deputy's attendance: a scheduled shift with no
+     time in): each confirmed shift in the period with no hours for that worker, day and client — a
+     list, never blocking; the schedule never makes hours (SPEC §6).
    - Forward action "Review totals", disabled while any blocking row remains (Gusto: calculate is
      disabled while blockers exist; TempWorks: all errors resolved to continue). Coming back here
      checks again (TempWorks "Refresh").

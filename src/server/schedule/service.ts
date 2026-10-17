@@ -220,14 +220,16 @@ export async function publishShifts(tx: Tx, actor: Actor, input: PublishInput): 
   let offered = 0;
   for (const sh of chosen) {
     const asks = input.notify === "confirm" && sh.requireConfirmation && sh.workerId !== null && sh.state === "assigned";
+    // The answer is due 16 hours before the start; published later than that, by the start; a shift
+    // that has already started is not asked about.
+    const start = sql`((${sh.workDate}::date + make_interval(mins => ${sh.startMinute})) AT TIME ZONE ${zone})`;
+    const due = sql`${start} - make_interval(mins => ${CONFIRM_DEADLINE_MINUTES})`;
     await tx
       .update(s.shifts)
       .set({
         publishedAt: sql`clock_timestamp()`,
-        state: asks ? "awaiting" : sh.state,
-        confirmBy: asks
-          ? sql`((${sh.workDate}::date + make_interval(mins => ${sh.startMinute})) AT TIME ZONE ${zone}) - make_interval(mins => ${CONFIRM_DEADLINE_MINUTES})`
-          : sh.confirmBy,
+        state: asks ? sql`CASE WHEN ${start} > now() THEN 'awaiting' ELSE ${sh.state} END` : sh.state,
+        confirmBy: asks ? sql`CASE WHEN ${start} <= now() THEN NULL WHEN ${due} > now() THEN ${due} ELSE ${start} END` : sh.confirmBy,
       })
       .where(eq(s.shifts.id, sh.id));
     if (sh.state === "open" && input.notify !== "silent") {

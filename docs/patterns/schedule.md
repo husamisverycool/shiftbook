@@ -51,7 +51,8 @@ that job order; hours still come only from timesheets (SPEC §6) — a schedule 
 - Tab through chips; Enter opens a chip; "G then S" opens the page (`_layouts/app.md`).
 - A worker's answer: accepting an offer takes the shift (first accepted wins; the other offers are
   withdrawn); declining an assigned shift empties it with a warning (Deputy); no answer by the deadline
-  (16 hours before the start, Instawork's confirm window) returns it to open (Deputy expiry).
+  (16 hours before the start, Instawork's confirm window; published later than that, by the start) returns
+  it to open (Deputy expiry). A shift that has already started is published without asking.
 - Confirming places the worker on the job order (an assignment from that date, at the job order's
   rates) when they are not already placed.
 

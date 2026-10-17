@@ -3,6 +3,7 @@
  * security keeps every write inside the demo agency — the same code path as any real agency.
  */
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
+import { addDays, workweekStart } from "@shiftbook/rules";
 import type { Tx } from "../db/client";
 import * as s from "../db/schema";
 import { syncObligations } from "../compliance/sync";
@@ -46,6 +47,8 @@ const SINCE = "2026-01-01";
 
 /** Tenant tables in delete-safe order. audit_events is append-only and is never cleared. */
 const CLEAR_ORDER = [
+  "shift_offers",
+  "shifts",
   "jobs",
   "burden_tax_rates",
   "wc_rates",
@@ -254,6 +257,52 @@ export async function seedDemoAgency(tx: Tx): Promise<void> {
     .where(and(eq(s.obligations.clientId, clientId("il")), inArray(s.obligations.kind, ["il_client_proof_contract", "il_client_proof"]), lte(s.obligations.dueOn, "2026-09-01")));
   const sent = WORKERS.filter((w) => JOB_ORDERS[w.job].client === "ma" && !MA_JOB_ORDER_OPEN.includes(w.key)).map((w) => assignmentId(w.key));
   await tx.update(s.obligations).set({ ...done, statusNote: "Job order sent by email the day the placement started (demo)." }).where(and(eq(s.obligations.kind, "ma_job_order"), inArray(s.obligations.assignmentId, sent)));
+  await seedSchedule(tx, await agencyToday(tx));
+}
+
+/**
+ * This week's schedule (slice u): the first workers confirmed Monday to Friday; on the weekend an open
+ * shift offered to two workers on its order, a declined shift and a draft (so they are always in this
+ * week's view); one shift two days ahead awaiting an answer; a no-show on a day that has passed.
+ */
+async function seedSchedule(tx: Tx, today: string): Promise<void> {
+  const monday = workweekStart(today, 1);
+  const day = (n: number) => addDays(monday, n);
+  const published = sql`now()`;
+  const base = { agencyId, startMinute: 420, endMinute: 930, breakMinutes: 30, publishedAt: published, changedAt: sql`now() - interval '1 minute'` };
+  const crew = WORKERS.slice(0, 6);
+  for (const w of crew)
+    await tx.insert(s.shifts).values(
+      [0, 1, 2, 3, 4].map((n) => ({ ...base, jobOrderId: jobOrderId(w.job), workDate: day(n), workerId: workerId(w.key), assignmentId: assignmentId(w.key), state: "confirmed" as const })),
+    );
+  // A no-show on the first of those days that has passed.
+  const past = [0, 1, 2, 3, 4].map(day).find((d) => d < today);
+  if (past) await tx.update(s.shifts).set({ noShow: true }).where(and(eq(s.shifts.workerId, workerId(crew[0]!.key)), eq(s.shifts.workDate, past)));
+  const [asker, decliner, drafted] = [WORKERS[6]!, WORKERS[7]!, WORKERS[8]!];
+  const ahead = addDays(today, 2);
+  await tx.insert(s.shifts).values({
+    ...base,
+    jobOrderId: jobOrderId(asker.job),
+    workDate: ahead,
+    workerId: workerId(asker.key),
+    state: "awaiting",
+    confirmBy: sql`((${ahead}::date + make_interval(mins => 420)) AT TIME ZONE 'UTC') - interval '16 hours'`,
+  });
+  const [open] = await tx.insert(s.shifts).values({ ...base, jobOrderId: jobOrderId(crew[1]!.job), workDate: day(6), workerId: null, state: "open" }).returning({ id: s.shifts.id });
+  const mates = WORKERS.filter((w) => w.job === crew[1]!.job && w.key !== crew[1]!.key).slice(0, 2);
+  if (mates.length > 0) await tx.insert(s.shiftOffers).values(mates.map((w) => ({ agencyId, shiftId: open!.id, workerId: workerId(w.key) })));
+  await tx.insert(s.shifts).values({
+    ...base,
+    jobOrderId: jobOrderId(decliner.job),
+    workDate: day(6),
+    workerId: null,
+    state: "open",
+    warning: "declined",
+    warningWorkerId: workerId(decliner.key),
+    warningReason: "A medical appointment that morning (demo).",
+    changedAt: sql`now() + interval '1 second'`,
+  });
+  await tx.insert(s.shifts).values({ agencyId, jobOrderId: jobOrderId(drafted.job), workDate: day(5), startMinute: 840, endMinute: 1350, breakMinutes: 30, workerId: workerId(drafted.key), state: "assigned" });
 }
 
 const SETUP = "Demo setup";

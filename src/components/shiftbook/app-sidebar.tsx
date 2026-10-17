@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SearchIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, CalendarDaysIcon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SearchIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -27,6 +27,8 @@ const AREAS = [
   { href: "/bank", key: "bank", jump: "b", icon: LandmarkIcon, group: "billing" },
   { href: "/job-orders", key: "jobOrders", jump: "j", icon: BriefcaseIcon, group: "staffing" },
   { href: "/assignments", key: "assignments", jump: "a", icon: UsersIcon, group: "staffing" },
+  // Slice u: the week's shifts (When I Work; Deputy).
+  { href: "/schedule", key: "schedule", jump: "s", icon: CalendarDaysIcon, group: "staffing" },
   // Slice k: the roster, read by everyone; the Owner and coordinators change it.
   { href: "/workers", key: "workers", jump: "w", icon: ContactRoundIcon, group: "staffing" },
   { href: "/clients", key: "clients", jump: "l", icon: Building2Icon, group: "staffing" },

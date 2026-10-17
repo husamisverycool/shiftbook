@@ -28,7 +28,7 @@ amount traceable to its lines and their explain strings. For the Owner and the a
 1. **View header:** H1 "Margin"; at the right the **period** (Last 4 weeks · Last 13 weeks (default) ·
    Last 52 weeks · Custom from–to), **Export** (Summary CSV · Lines CSV), and **Margin settings**
    (Stripe Configure).
-2. **Tabs** (Mercury Insights): Overview · Overtime not billed · Cash floating (`margin/overtime.md`,
+2. **Tabs** (Mercury Insights): Overview · Overtime not billed · Cash floating · Attendance (`margin/overtime.md`, `margin/attendance.md`,
    `margin/cash.md`), in the address.
 3. **Metric cards** (Stripe overview; Brex Home): Billed, Pay, Estimated burden, Gross margin, Margin %,
    Overtime premium not billed, Cash floating. The first five open how they are worked out (the

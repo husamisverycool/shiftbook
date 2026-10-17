@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useCan } from "../abilities";
 import { useEngineSay } from "../engine-say";
-import { money } from "../format";
+import { longDate, money } from "../format";
 import { DecisionButton, DiscardCorrectionButton, RemoveDecisionButton } from "./correction-actions";
 import type { TotalsData } from "./totals-review";
 import { REFUSAL_MESSAGE } from "./types";
@@ -37,12 +37,24 @@ type Group = TotalsData["blockers"][number];
 const CLIENT_SETTINGS = new Set(["po_missing", "vms_refused", "invoice_problem"]);
 const clientsOf = (g: Group) => [...new Map(g.issues.filter((i) => i.clientId && i.clientName).map((i) => [i.clientId!, { id: i.clientId!, name: i.clientName! }])).values()];
 
-export function ExceptionsStep({ periodId, data, locked }: { periodId: string; data: Pick<TotalsData, "blockers" | "warnings" | "skipped" | "correction" | "canApprove">; locked: boolean }) {
+export function ExceptionsStep({
+  periodId,
+  data,
+  locked,
+  scheduledNoHours = [],
+}: {
+  periodId: string;
+  data: Pick<TotalsData, "blockers" | "warnings" | "skipped" | "correction" | "canApprove">;
+  locked: boolean;
+  /** Confirmed shifts with no hours for that worker, day and client yet (slice u): listed, never blocking. */
+  scheduledNoHours?: { shiftId: string; workDate: string; workerName: string; clientName: string; position: string }[];
+}) {
   const t = useTranslations("convert.totals");
   const tr = useTranslations("convert.correction");
   const te = useTranslations("convert.exceptions");
   const tc = useTranslations("common");
   const tx = useTranslations("convert");
+  const ts = useTranslations("schedule.noHours");
   const locale = useLocale();
   const router = useRouter();
   // The engine's messages in the reader's language (decision 0030); the English is the record.
@@ -238,6 +250,23 @@ export function ExceptionsStep({ periodId, data, locked }: { periodId: string; d
         </div>
         {data.warnings.length > 0 ? rows(data.warnings, "warning") : <p className="text-sm text-muted-foreground">{te("noWarnings")}</p>}
       </section>
+
+      {scheduledNoHours.length > 0 && (
+        <section className="flex flex-col gap-2" aria-labelledby="scheduled-title" data-testid="scheduled-no-hours">
+          <h3 id="scheduled-title" className="text-sm font-medium">
+            {ts("title", { count: scheduledNoHours.length })}
+          </h3>
+          <p className="text-sm text-muted-foreground">{ts("hint")}</p>
+          <ul className="divide-y rounded-md border text-sm">
+            {scheduledNoHours.map((x) => (
+              <li key={x.shiftId} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2">
+                <span className="font-medium">{x.workerName}</span>
+                <span className="text-muted-foreground">{`${longDate(x.workDate, locale)} · ${x.position} · ${x.clientName}`}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {correction && correction.decisions.length > 0 && (
         <Alert data-testid="decisions">

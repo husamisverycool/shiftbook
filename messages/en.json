@@ -632,7 +632,8 @@
       "oversight": "Oversight"
     },
     "sso": "Single sign-on",
-    "billing": "Billing"
+    "billing": "Billing",
+    "schedule": "Schedule"
   },
   "list": {
     "filter": "Filter",
@@ -2258,7 +2259,8 @@
     "tabs": {
       "overview": "Overview",
       "overtime": "Overtime not billed",
-      "cash": "Cash floating"
+      "cash": "Cash floating",
+      "attendance": "Attendance"
     },
     "notForRole": "Margin is for the Owner and the accountant.",
     "chartTitle": "Gross margin by week",
@@ -4895,5 +4897,202 @@
       "body": "There is no account and nothing is saved. Your file is read to count the hours and then forgotten; nothing you add is stored or kept."
     },
     "disclaimer": "This checker is an estimate from the hours you give it. It does not know hours worked through other agencies, and it is not legal advice."
+  },
+  "schedule": {
+    "title": "Schedule",
+    "client": "Client",
+    "allClients": "All clients",
+    "week": "Week",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "thisWeek": "This week",
+    "groupBy": "Group by",
+    "groups": {
+      "worker": "Worker",
+      "jobOrder": "Job order",
+      "worksite": "Worksite"
+    },
+    "publish": "Publish",
+    "publishCount": "Publish ({count})",
+    "openShifts": "Open shifts",
+    "rowCount": "{count, plural, one {# shift} other {# shifts}}",
+    "dayCounter": "{shifts, plural, one {# shift} other {# shifts}} · {hours} h",
+    "addShift": "Add a shift on {date}",
+    "noJobOrders": "No job orders yet",
+    "noJobOrdersHint": "Shifts belong to a job order. Create one first.",
+    "goToJobOrders": "Go to Job orders",
+    "states": {
+      "open": "Open",
+      "assigned": "Assigned",
+      "awaiting": "Awaiting confirmation",
+      "confirmed": "Confirmed",
+      "unpublished": "Unpublished",
+      "declined": "Declined by {name}",
+      "expired": "No answer from {name}",
+      "noShow": "No-show",
+      "overlap": "Overlaps another shift"
+    },
+    "status": {
+      "label": "Shifts needing a look",
+      "open": "{count} open",
+      "unpublished": "{count} unpublished",
+      "awaiting": "{count} awaiting confirmation",
+      "warnings": "{count, plural, one {# warning} other {# warnings}}"
+    },
+    "dialog": {
+      "createTitle": "New shift",
+      "editTitle": "Shift",
+      "jobOrder": "Job order",
+      "choose": "Choose…",
+      "date": "Date",
+      "start": "Start",
+      "end": "End",
+      "endHint": "An end before the start finishes the next day.",
+      "break": "Unpaid break (minutes)",
+      "assignTo": "Assign to",
+      "open": "Open (offer to eligible workers)",
+      "eligible": "Placed on this job order",
+      "samePosition": "Placed in the same position",
+      "others": "Everyone else",
+      "conflict": "{name} already has a shift that overlaps this one.",
+      "copies": "How many",
+      "requireConfirmation": "Ask the worker to confirm",
+      "offers": "Offers",
+      "noOffers": "Not offered yet: it is offered when published.",
+      "offerStatus": {
+        "offered": "Offered",
+        "accepted": "Accepted",
+        "declined": "Declined",
+        "withdrawn": "Withdrawn"
+      },
+      "warningDeclined": "{name} said they can't make it: “{reason}”",
+      "warningExpired": "{name} did not answer by the deadline.",
+      "save": "Save",
+      "create": "Add shift",
+      "delete": "Delete",
+      "deleteTitle": "Delete this shift?",
+      "deletePublished": "The worker has seen it, so it shows as cancelled in their list.",
+      "deleteDraft": "It has not been published, so nobody has seen it.",
+      "noShow": "Mark no-show",
+      "noShowTitle": "Mark this a no-show?",
+      "noShowBody": "The shift counts as a no-show in Attendance.",
+      "noShowReplace": "Offer the rest of the shift to other eligible workers",
+      "cancel": "Cancel",
+      "readOnly": "Only an Owner or a Coordinator changes the schedule."
+    },
+    "publishDialog": {
+      "title": "Publish shifts",
+      "stepOf": "Step {step} of 3",
+      "what": "What to publish",
+      "changes": "Only the changes ({count})",
+      "all": "Every shift in view ({count})",
+      "which": "Which clients",
+      "notify": "How to tell workers",
+      "notifyConfirm": "Notify and ask them to confirm",
+      "notifyOnly": "Notify only",
+      "silent": "Mark published without notifying",
+      "message": "Message (optional)",
+      "next": "Next",
+      "back": "Back",
+      "publish": "Publish",
+      "done": "{published, plural, one {# shift published} other {# shifts published}}; {offered, plural, one {# offer sent} other {# offers sent}}.",
+      "nothing": "Nothing to publish in view."
+    },
+    "errors": {
+      "not_found": "That shift no longer exists.",
+      "job_order_not_found": "Choose a job order.",
+      "worker_not_found": "That worker is no longer on the roster.",
+      "invalid_date": "Enter a date.",
+      "invalid_time": "Enter a start and an end, with a break shorter than the shift.",
+      "invalid_copies": "Choose between 1 and 50 copies of an open shift.",
+      "not_started": "The shift has not started yet.",
+      "busy": "Someone else is changing placements right now. Try again in a moment.",
+      "generic": "That could not be saved. Try again."
+    },
+    "saved": "Saved",
+    "noHours": {
+      "title": "{count, plural, one {# confirmed shift with no hours yet} other {# confirmed shifts with no hours yet}}",
+      "hint": "Scheduled and confirmed, but no timesheet for that worker, day and client so far. This never stops the run; hours come only from timesheets."
+    }
+  },
+  "shiftsWorker": {
+    "title": "Your shifts",
+    "previewNote": "Demo: the worker app's Shifts screen, seen as one demo worker.",
+    "viewingAs": "Seen as",
+    "tabs": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "cancelled": "Cancelled"
+    },
+    "needsAnswer": "{count, plural, one {# needs your answer} other {# need your answer}}",
+    "offered": "Offered to you",
+    "accept": "Accept",
+    "decline": "Decline",
+    "confirm": "Confirm",
+    "cantMakeIt": "Can't make it",
+    "reason": "Why can't you make it?",
+    "reasonHint": "The agency sees this and offers the shift to someone else.",
+    "send": "Send",
+    "cancel": "Cancel",
+    "states": {
+      "assigned": "Scheduled",
+      "awaiting": "Waiting for your answer",
+      "confirmed": "Confirmed",
+      "open": "Open",
+      "cancelled": "Cancelled by the agency",
+      "declined": "You couldn't make it"
+    },
+    "confirmBy": "Answer by {when}",
+    "empty": {
+      "upcoming": "No upcoming shifts.",
+      "past": "No past shifts.",
+      "cancelled": "No cancelled shifts."
+    },
+    "errors": {
+      "not_found": "That shift is no longer available.",
+      "not_yours": "That shift is not yours.",
+      "already_answered": "That was already answered.",
+      "not_open": "Someone else took that shift.",
+      "reason_required": "Say why, in a few words.",
+      "generic": "That did not go through. Try again."
+    },
+    "done": "Done"
+  },
+  "attendance": {
+    "range": "{from} – {to}",
+    "figures": {
+      "scheduled": "Scheduled shifts",
+      "fill": "Fill rate",
+      "fillNote": "{filled} of {requested} shifts filled",
+      "noShows": "No-shows",
+      "late": "Late",
+      "rateNote": "{count} · {rate} of past shifts",
+      "lateNote": "More than {minutes} minutes after the start"
+    },
+    "byClient": "By client",
+    "columns": {
+      "client": "Client",
+      "requested": "Requested",
+      "filled": "Filled",
+      "fillRate": "Fill rate",
+      "scheduled": "Past shifts",
+      "noShows": "No-shows",
+      "noShowRate": "No-show rate",
+      "late": "Late"
+    },
+    "problems": "Problem shifts",
+    "problemColumns": {
+      "date": "Date",
+      "client": "Client",
+      "worker": "Worker",
+      "jobOrder": "Job order",
+      "issue": "Issue"
+    },
+    "issues": {
+      "no_show": "No-show",
+      "late": "Late by {minutes} min",
+      "open": "Still open"
+    },
+    "nothing": "No shifts in these four weeks."
   }
 }
