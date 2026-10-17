@@ -1,6 +1,6 @@
 # Slice (m) — agencies sign themselves up and pay monthly (decision 0036)
 
-Status: in progress (2026-10-17)
+Status: built (2026-10-17), waiting for the owner's Stripe settings
 
 ## Plain summary
 Today every agency is made by a command and nobody pays. After this slice:
@@ -46,3 +46,13 @@ Today every agency is made by a command and nobody pays. After this slice:
 ## Done when
 Typecheck, lint, unit, integration, goldens (55) and the new e2e specs (plus sign-in and acceptance)
 pass; screenshots checked against the pattern files.
+
+## Result (2026-10-17)
+Typecheck and lint clean; unit 1287 passed; goldens 55 passed; integration 427 of 428 (the one failure,
+reference-data's Illinois citation saying "Shiftbook's", is on the base commit and untouched here; the
+new sign-up 10 and billing 17 pass); e2e: the new sign-up/billing spec (9), sign-in (4) and acceptance
+(4) pass, 18 with the setup. Screens checked in both languages in demo and live mode against Stripe's
+register form, Linear's signup email step, Linear's settings panels and Polaris's banner.
+
+Left for the owner: the four Stripe settings and the webhook address (docs/hosting-settings.md);
+agencies made before this get 30 free days from the day it is installed.
