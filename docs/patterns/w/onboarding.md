@@ -25,7 +25,10 @@ and the signing; medium for Rippling.
      date; no E-Verify.
    - Payment: direct deposit (routing number, account number twice, checking or savings) or paper
      check.
-   - Policies: each agency policy with **I have read this**.
+   - Policies: each agency policy in force — its title, its text (in Spanish when the worker reads
+     Spanish and the agency wrote one), "optional" when not required — with **I have read this**
+     (decision 0043, `settings/onboarding.md`). A required policy changed since the worker
+     confirmed it is unticked again; the page opens on this step while one is owed.
    - Review and sign: the summary of each step (numbers masked); "Type your full name to sign"; a box
      agreeing that typing the name is the electronic signature; **Sign and finish**.
 3. Done: "You're all set" and Home.

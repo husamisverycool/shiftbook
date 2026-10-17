@@ -49,7 +49,7 @@ for (const locale of ["en", "es"] as const) {
     await page.goto(`/${locale}/sign-in`);
     await expect(page.getByRole("heading", { level: 1, name: m.signIn.title })).toBeVisible();
     const people = page.getByTestId("demo-people").getByRole("button");
-    await expect(people).toHaveCount(4);
+    await expect(people).toHaveCount(5);
     await expect(people.first()).toHaveAttribute("data-testid", "continue-owner");
     await expect(page.getByTestId("continue-coordinator")).toContainText("Lena Ortiz");
     await expect(page.getByTestId("continue-coordinator")).not.toContainText("(demo)");

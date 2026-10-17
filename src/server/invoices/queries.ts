@@ -94,6 +94,8 @@ export interface InvoiceDetail {
   /** The invoice this one corrects, and the documents that correct it (Stripe history; Bullhorn credits). */
   original: { id: string; number: string; kind: s.InvoiceKind } | null;
   corrections: { id: string; number: string; kind: s.InvoiceKind; totalCents: number; issuedOn: string }[];
+  manualCredit: boolean;
+  voided: { at: string; reason: string; by: string } | null;
 }
 
 export async function invoiceDetail(tx: Tx, id: string): Promise<InvoiceDetail | null> {
@@ -136,6 +138,9 @@ export async function invoiceDetail(tx: Tx, id: string): Promise<InvoiceDetail |
     backup: doc?.backup ?? null,
     original: original ?? null,
     corrections,
+    // A credit note issued by hand can be voided (decision 0043); one voided says when, why, by whom.
+    manualCredit: inv!.kind === "credit_note" && inv!.creditReason !== null,
+    voided: inv!.voidedAt ? { at: inv!.voidedAt.toISOString(), reason: inv!.voidReason ?? "", by: inv!.voidedByLabel ?? "" } : null,
   };
 }
 

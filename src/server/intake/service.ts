@@ -14,6 +14,7 @@ import { ExtractionRefusedError, RecordingMissingError } from "../extraction/tra
 import { openPeriod, PeriodBusyError, PeriodLockedError } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
+import { agencyProfiles } from "./agency-profiles";
 import { assessEntry, resolveClient, settleDocumentClient, type AssessContext, type EntryDraft } from "./assess";
 import { parseStructuredUpload, UnrecognisedFileError } from "./structured";
 import type { ParsedDocument } from "./types";
@@ -233,8 +234,10 @@ export async function readStoredDocument(
       if (!d) return null;
       const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
       const clients = await tx.select({ name: s.clients.name }).from(s.clients);
+      // A spreadsheet is read with the agency's own column names for each profile (decision 0043).
+      const profiles = d.kind === "image" || d.kind === "pdf" ? null : await agencyProfiles(tx);
       // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
-      return { at: now, doc: { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() } };
+      return { at: now, profiles, doc: { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() } };
     });
     if (!claimed) return NOTHING_READ; // read, archived, gone, or being read by another reading
     claim = claimed.at; // only once the claim is committed
@@ -253,7 +256,8 @@ export async function readStoredDocument(
     const result: ReadResult =
       doc.kind === "image" || doc.kind === "pdf"
         ? await deps.imageReader.read({ agencyId: actor.agencyId, documentId, filename: doc.filename, mediaType: doc.mediaType, bytes, period: doc.period, clients: doc.clients, onPage })
-        : { parsed: await parseStructuredUpload(doc.filename, bytes), pages: [] };
+        : { parsed: await parseStructuredUpload(doc.filename, bytes, claimed.profiles?.profiles), pages: [] };
+    const profileRowId = result.parsed.profileKey ? (claimed.profiles?.rowIds.get(result.parsed.profileKey) ?? null) : null;
 
     return await deps.withAgency(actor.agencyId, async (tx) => {
       await openPeriod(tx, doc.payPeriodId);
@@ -266,7 +270,7 @@ export async function readStoredDocument(
       // Saved only while the claim holds; otherwise the whole save is rolled back.
       const done = await tx
         .update(s.sourceDocuments)
-        .set({ status: "read", kind: result.parsed.kind, clientId: settled.clientId, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
+        .set({ status: "read", kind: result.parsed.kind, clientId: settled.clientId, mappingProfileId: profileRowId, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
         .where(mine(claim!))
         .returning({ id: s.sourceDocuments.id });
       if (done.length === 0) throw new ClaimLostError();

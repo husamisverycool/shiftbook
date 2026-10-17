@@ -39,6 +39,8 @@ export const ABILITIES = {
   employment: ["owner", "coordinator"],
   /** Onboarding links and the worker app's messages with a worker (slice t; SPEC §27). */
   workerApp: ["owner", "coordinator", "recruiter"],
+  /** The policies workers acknowledge at onboarding (Settings › Onboarding; decision 0043). */
+  onboardingPolicies: ["owner", "coordinator"],
   /** A whole SSN on screen, with a reason, every time recorded (SPEC §2, §17). */
   revealSsn: ["owner"],
   /** The margin pages (reading). */

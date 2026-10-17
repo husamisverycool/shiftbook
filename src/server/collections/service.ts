@@ -7,7 +7,7 @@
  */
 import { addDays, formatCents } from "@shiftbook/rules";
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
-import { and, asc, desc, eq, gt, inArray, like, ne, or } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, like, ne, or } from "drizzle-orm";
 import { createTranslator } from "next-intl";
 import { createElement, type ReactElement } from "react";
 import en from "../../../messages/en.json";
@@ -272,6 +272,58 @@ export async function issueCreditNote(tx: Tx, store: DocumentStore, actor: Actor
   await settleStatuses(tx, [original.id]);
   await audit(tx, actor, [{ action: "create", entityType: "invoice", entityId: row!.id, after: { number, kind: "credit_note", original: original.number, amountCents: amount, reason, memo, roomBeforeCents: room } }]);
   return { ok: true, creditNoteId: row!.id, number };
+}
+
+export type VoidCreditError = "forbidden" | "not_found" | "not_credit_note" | "correction" | "already_void" | "settled" | "reason";
+
+/**
+ * "Void credit note" (Stripe: "You can void a credit note only if it's on an open invoice. Voiding a
+ * credit note reverses its adjustment, increasing the amount due on the invoice by the amount of the
+ * credit note"; decision 0043). Open here: nothing paid, written off or applied against the invoice it
+ * credits, so taking the credit back can never leave money it did not receive. A credit note a
+ * correction run made belongs to that run and is not voided by hand. The note stays, marked void, with
+ * its reason; its PDF says VOID; balances, aging and margin stop counting it (they skip void notes).
+ */
+export async function voidCreditNote(tx: Tx, store: DocumentStore, actor: Actor, creditNoteId: unknown, rawReason: unknown): Promise<{ ok: true } | { ok: false; error: VoidCreditError }> {
+  if (!can(actor, "cash")) return { ok: false, error: "forbidden" };
+  if (typeof creditNoteId !== "string" || !UUID.test(creditNoteId)) return { ok: false, error: "not_found" };
+  const reason = cleanText(rawReason, 500);
+  if (!reason) return { ok: false, error: "reason" };
+  await lockReceivables(tx, actor.agencyId);
+  const [note] = await tx.select().from(s.invoices).where(eq(s.invoices.id, creditNoteId));
+  if (!note) return { ok: false, error: "not_found" };
+  if (note.kind !== "credit_note" || !note.originalInvoiceId) return { ok: false, error: "not_credit_note" };
+  if (note.status === "void") return { ok: false, error: "already_void" };
+  if (!note.creditReason) return { ok: false, error: "correction" };
+  const [original] = await tx.select().from(s.invoices).where(eq(s.invoices.id, note.originalInvoiceId));
+  if (!original) return { ok: false, error: "not_found" };
+  const paid = await tx
+    .select({ id: s.paymentMatches.id })
+    .from(s.paymentMatches)
+    .innerJoin(s.payments, eq(s.payments.id, s.paymentMatches.paymentId))
+    .where(and(eq(s.paymentMatches.invoiceId, original.id), isNull(s.payments.voidedAt)))
+    .limit(1);
+  const offs = await tx.select({ id: s.writeOffs.id }).from(s.writeOffs).where(eq(s.writeOffs.invoiceId, original.id)).limit(1);
+  const applied = await tx
+    .select({ id: s.creditApplications.id })
+    .from(s.creditApplications)
+    .where(or(eq(s.creditApplications.fromInvoiceId, original.id), eq(s.creditApplications.toInvoiceId, original.id)))
+    .limit(1);
+  if (paid.length > 0 || offs.length > 0 || applied.length > 0) return { ok: false, error: "settled" };
+  const amount = -note.totalCents;
+  const [client] = await tx.select().from(s.clients).where(eq(s.clients.id, note.clientId));
+  const agency = await agencyOf(tx);
+  const data = creditNoteData({ agency, client: client!, original, number: note.number, today: note.issuedOn ?? (await agencyToday(tx)), amountCents: amount, reason: note.creditReason, memo: note.memo });
+  const pdf = new Uint8Array(await renderToBuffer(createElement(InvoiceDocument, { data: { ...data, voidMark: fill(t.voidMark, { reason }) } }) as unknown as ReactElement<DocumentProps>));
+  const key = `${actor.agencyId}/credit-notes/${original.id}/credit-note-${note.number}-void.pdf`;
+  await store.put(key, pdf);
+  await tx.update(s.invoices).set({ status: "void", voidedAt: new Date(), voidReason: reason, voidedByLabel: actor.label, pdfStorageKey: key }).where(eq(s.invoices.id, note.id));
+  const [before] = await invoiceBalances(tx, { invoiceIds: [original.id] });
+  await settleStatuses(tx, [original.id]);
+  await audit(tx, actor, [
+    { action: "update", entityType: "invoice", entityId: note.id, before: { status: note.status, pdf: note.pdfStorageKey }, after: { status: "void", reason, original: original.number, amountCents: amount, originalBalanceCents: before?.balanceCents ?? null } },
+  ]);
+  return { ok: true };
 }
 
 // ---------- promises to pay ----------

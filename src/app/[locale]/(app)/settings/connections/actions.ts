@@ -7,8 +7,25 @@ import { audit } from "@/server/audit";
 import { testMapping, testPayroll } from "@/server/connections/queries";
 import { withAgency } from "@/server/db";
 import * as s from "@/server/db/schema";
+import { profileForEditing, saveProfileColumns, type SaveColumnsResult } from "@/server/intake/agency-profiles";
+import type { MappingProfile } from "@/server/intake/profiles";
 import { SOURCES, type Mapping } from "@/server/placements/fields";
 import { actorAllowedTo } from "@/server/session";
+
+/** A time-file profile's columns, built-in and the agency's own (decision 0043: Edit columns). */
+export async function profileColumnsAction(key: string): Promise<{ base: MappingProfile; current: MappingProfile } | null> {
+  const actor = await actorAllowedTo("hours");
+  const found = await withAgency(actor.agencyId, (tx) => profileForEditing(tx, key));
+  return found ? { base: found.base, current: found.current } : null;
+}
+
+/** Saves the agency's column names for a time-file profile, or (`restore`) the built-in names again. */
+export async function saveProfileColumnsAction(key: string, input: unknown, restore = false): Promise<SaveColumnsResult> {
+  const actor = await actorAllowedTo("hours");
+  const result = await withAgency(actor.agencyId, (tx) => saveProfileColumns(tx, actor, key, input, restore === true));
+  if (result.ok) revalidatePath("/[locale]/(app)/settings/connections", "page");
+  return result;
+}
 
 type TestResult = { status: "ready" | "attention"; attention?: { key: string; values?: Record<string, string | number> } };
 

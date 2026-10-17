@@ -17,7 +17,7 @@ import { dateRange, longDate, money } from "../format";
 import { Crumbs, Facts, Page, PageHeader, RECORD_LINK, RecordLayout, Section } from "../page";
 import { InvoicePayments } from "../receivables/invoice-payments";
 import { downloadHref, InvoiceStatusBadge } from "./invoices-table";
-import { CreditNoteDialog, PromiseDialog, SendInvoiceDialog } from "./collect-dialogs";
+import { CreditNoteDialog, PromiseDialog, SendInvoiceDialog, VoidCreditDialog } from "./collect-dialogs";
 import { useDateTime } from "../agency-zone";
 
 /** Slice r: when it was last emailed, what may still be credited, the promises to pay (invoices/[id].md). */
@@ -42,7 +42,8 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect, coll
   const credit = r.kind === "credit_note";
   const tk = useTranslations("collect");
   const when = useDateTime();
-  const [dialog, setDialog] = useState<"send" | "credit" | "promise" | null>(null);
+  const [dialog, setDialog] = useState<"send" | "credit" | "promise" | "void" | null>(null);
+  const tv = useTranslations("voidCredit");
   const live = r.status !== "void";
   // Each line's detail in the reader's language when its parts say exactly what was printed; else as printed.
   const detailOf = (l: Line) =>
@@ -86,6 +87,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect, coll
       : [{ label: td("amountDue"), value: money(r.totalCents, locale), testId: "summary-due" }];
   const summary: { label: string; value: ReactNode; testId?: string }[] = [
     ...amounts,
+    ...(detail.voided ? [{ label: tv("voided"), value: tv("voidedLine", { date: when(detail.voided.at, { time: false }), by: detail.voided.by, reason: detail.voided.reason }), testId: "summary-voided" }] : []),
     { label: td("issued"), value: longDate(r.issuedOn, locale) },
     // Stripe shows when an invoice was sent; Granite says to whom too.
     { label: tk("send.action"), value: collect.lastSent ? tk("send.lastSent", { date: when(collect.lastSent.at, { time: false }), email: collect.lastSent.to }) : tk("send.never"), testId: "summary-sent" },
@@ -118,6 +120,11 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect, coll
                 {canCollect && live && !credit && (
                   <DropdownMenuItem onClick={() => setDialog("credit")} data-testid="issue-credit-note">
                     {tk("credit.action")}
+                  </DropdownMenuItem>
+                )}
+                {canCollect && live && credit && detail.manualCredit && (
+                  <DropdownMenuItem variant="destructive" onClick={() => setDialog("void")} data-testid="void-credit-note">
+                    {tv("action")}
                   </DropdownMenuItem>
                 )}
                 {canCollect && live && !credit && ar && ar.balanceCents > 0 && (
@@ -239,6 +246,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect, coll
       {dialog === "send" && <SendInvoiceDialog invoiceId={r.id} number={r.number} kind={r.kind} billingEmail={collect.billingEmail} onClose={() => setDialog(null)} />}
       {dialog === "credit" && <CreditNoteDialog invoiceId={r.id} number={r.number} roomCents={collect.roomCents} balanceCents={ar?.balanceCents ?? r.totalCents} onClose={() => setDialog(null)} />}
       {dialog === "promise" && <PromiseDialog invoiceId={r.id} number={r.number} today={today} onClose={() => setDialog(null)} />}
+      {dialog === "void" && <VoidCreditDialog creditNoteId={r.id} number={r.number} amountCents={-r.totalCents} onClose={() => setDialog(null)} />}
 
       <Section id="related-title" title={td("related")}>
         <ul className="flex flex-col divide-y text-sm" data-testid="related-list">

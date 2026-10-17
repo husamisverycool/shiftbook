@@ -7,7 +7,7 @@ import { PaperclipIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { issueCreditNoteAction, promiseAction, sendInvoiceAction } from "@/app/[locale]/(app)/invoices/collect-actions";
+import { issueCreditNoteAction, promiseAction, sendInvoiceAction, voidCreditNoteAction } from "@/app/[locale]/(app)/invoices/collect-actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -144,6 +144,52 @@ export function CreditNoteDialog({ invoiceId, number, roomCents, balanceCents, o
               {t("submit")}
             </Button>
           )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** "Void credit note" (Stripe; decision 0043): a reason, then the credit is taken back. */
+export function VoidCreditDialog({ creditNoteId, number, amountCents, onClose }: { creditNoteId: string; number: string; amountCents: number; onClose: () => void }) {
+  const t = useTranslations("voidCredit");
+  const locale = useLocale();
+  const router = useRouter();
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState(false);
+  const [pending, start] = useTransition();
+  const confirm = () =>
+    start(async () => {
+      const r = await voidCreditNoteAction(creditNoteId, reason);
+      if (r.ok) {
+        toast.success(t("done", { number }));
+        onClose();
+        router.refresh();
+      } else if (r.error === "reason") setError(true);
+      else toast.error(r.error === "busy" ? t("errors.not_found") : t(`errors.${r.error}`));
+    });
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("title", { number })}</DialogTitle>
+          <DialogDescription>{t("body", { amount: money(amountCents, locale) })}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="void-reason">{t("reason")}</Label>
+          <Textarea id="void-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} aria-invalid={error || undefined} aria-describedby="void-reason-hint" data-testid="void-reason" />
+          <p id="void-reason-hint" className="text-sm text-muted-foreground">
+            {t("reasonHint")}
+          </p>
+          {error && <p className="text-sm text-destructive">{t("errors.reason")}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button variant="destructive" onClick={confirm} loading={pending} loadingLabel={t("voiding")} data-testid="confirm-void-credit">
+            {t("confirm")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

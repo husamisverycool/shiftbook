@@ -87,6 +87,7 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
       { href: "/settings/connections", label: t("connections"), icon: PlugIcon },
       { href: "/settings/notifications", label: `${t("settings")} › ${t("notificationSettings")}`, icon: BellIcon },
       { href: "/settings/money", label: t("moneySettings"), icon: CoinsIcon },
+      { href: "/settings/onboarding", label: t("onboardingSettings"), icon: ClipboardCheckIcon },
       { href: "/settings/members", label: t("members"), icon: UserCogIcon },
       ...(mayManageMembers ? [{ href: "/settings/sso", label: t("sso"), icon: Building2Icon }] : []),
       ...(mayViewActivity ? [{ href: "/settings/activity", label: t("activity"), icon: ActivityIcon }] : []),
@@ -182,6 +183,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
               <DropdownMenuItem render={<Link href="/settings/connections" />} data-testid="menu-connections">
                 <PlugIcon />
                 {t("connections")}
+              </DropdownMenuItem>
+              {/* Decision 0043: the policies workers acknowledge, beside the other agency settings. */}
+              <DropdownMenuItem render={<Link href="/settings/onboarding" />} data-testid="menu-onboarding">
+                <ClipboardCheckIcon />
+                {t("onboardingSettings")}
               </DropdownMenuItem>
               <DropdownMenuItem render={<Link href="/settings/members" />} data-testid="menu-members">
                 <UserCogIcon />

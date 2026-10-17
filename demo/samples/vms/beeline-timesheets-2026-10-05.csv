@@ -1,0 +1,21 @@
+Timesheet ID,Timesheet Status,Beeline ID,Resource Last Name,Resource First Name,Assignment ID,Client,Location,Cost Center,Work Date,Pay Code,Hours
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/05/2026,Regular Time,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/06/2026,Regular Time,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/07/2026,Regular Time,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/07/2026,Overtime,1.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/08/2026,Regular Time,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/09/2026,Regular Time,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/05/2026,Regular Time,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/06/2026,Regular Time,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/07/2026,Regular Time,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/08/2026,Regular Time,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/05/2026,Regular Time,7.50
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/06/2026,Regular Time,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/07/2026,Regular Time,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/08/2026,Regular Time,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/09/2026,Regular Time,8.00
+TS-2619,Submitted,DEMO-V-1004,Mercer,Owen,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/05/2026,Regular Time,8.00
+TS-2619,Submitted,DEMO-V-1004,Mercer,Owen,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/06/2026,Regular Time,8.00
+TS-2619,Submitted,DEMO-V-1004,Mercer,Owen,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/07/2026,Regular Time,8.00
+TS-2619,Submitted,DEMO-V-1004,Mercer,Owen,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/08/2026,Regular Time,8.00
+TS-2619,Submitted,DEMO-V-1004,Mercer,Owen,A-9039,Harborview Events (demo),Boston Seaport Pavilion,Events,10/09/2026,Regular Time,8.00

@@ -34,7 +34,8 @@ each is used for, when it was last used, whether it is ready, and where to set o
    Time clocks and VMS, Partners — each a heading with one muted line and a panel of rows: the
    system's name over one sentence of what Granite exchanges with it, and at the right **Set up**
    (a link to where it is set up) or "In use" for one already connected, or "Not available yet"
-   (muted) for one Granite cannot read yet.
+   (muted) for one Granite cannot read yet. Each VMS (Fieldglass, Beeline, Coupa, Magnit; decision
+   0043) is available, with **Edit columns** for those who may.
 
 ## Interactions
 - ⋯ menu per connection (Zapier): **Test** (Granite checks the connection now and says Ready, or
@@ -44,6 +45,12 @@ each is used for, when it was last used, whether it is ready, and where to set o
   mapping** for a recruiting system, with a confirmation (Zapier's Delete: "automations that use it
   must be repointed" — here: the next import maps columns again). No Rename: Granite names each
   connection after its system.
+- **Edit columns** (a VMS row's ⋯ menu, or its Available row; decision 0043; Zapier's field mapping
+  as "the column in your file" per field): a dialog with one field per Granite field holding the
+  column name in the agency's export (optional fields may be left empty), the statuses that count
+  (comma separated), and the date format; **Save** keeps a new version (the next file is read with
+  it), **Restore** brings back the usual names, **Cancel**. A missing, duplicated or invalid name
+  is said under its field. Owner and Coordinator (the hours ability).
 - Who changes what (Stripe's installed-apps rule): everyone sees the page; Forget saved mapping is
   the placements ability's; the payroll system is changed on Payroll settings by those who may.
 - Tabs keep their place in the address (`?tab=available`).

@@ -10,6 +10,9 @@ Researched: 2026-10-17 (`docs/research/workers-app-slice-t.md` §2, §4). Confid
 ## Hierarchy
 1. Greeting with the worker's first name.
 2. **Finish onboarding** card while steps remain: how many of how many are done, **Continue**.
+   Once onboarding is done, a **Policies to confirm** card (decision 0043; Gusto's onboarding to-do
+   first) while a required policy changed after the worker confirmed it, or is new: how many, and
+   **Review** (the onboarding Policies step).
 3. **Clock in** card (when a current assignment's client allows clocking in): the assignment
    (position at client), **Clock in**; while clocked in, since when and **Clock out**.
 4. **This week** card: hours so far and the week's dates; **See hours**.

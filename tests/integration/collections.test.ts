@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { setBillingSettings } from "../../src/server/catalog/billing";
-import { issueCreditNote, recordPromise, saveSchedule, sendInvoice, setClientReminders, sweepReminders, type CollectionsDeps } from "../../src/server/collections/service";
+import { creditRoomOf, issueCreditNote, recordPromise, saveSchedule, sendInvoice, setClientReminders, sweepReminders, voidCreditNote, type CollectionsDeps } from "../../src/server/collections/service";
 import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY, DEMO_OWNER, demoUuid, RECRUITERS } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, clientId, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
@@ -120,6 +120,64 @@ describe("credit notes issued by hand (Stripe credit notes)", () => {
     expect(made.ok).toBe(true);
     const id = made.ok ? made.creditNoteId : "";
     expect(await inAgency((tx) => issueCreditNote(tx, store, theOwner, id, { reason: "other", amountCents: 1, memo: null }))).toEqual({ ok: false, error: "not_invoice" });
+  });
+});
+
+describe("voiding a credit note (Stripe: only on an open invoice; it reverses the adjustment; decision 0043)", () => {
+  beforeEach(invoicedWeek);
+  const voidNote = (id: string, reason: unknown = "Discount was not agreed", who: Actor = theOwner) => inAgency((tx) => voidCreditNote(tx, store, who, id, reason));
+  const noteOf = async (id: string) => (await inAgency((tx) => tx.select().from(s.invoices).where(eq(s.invoices.id, id))))[0]!;
+
+  it("gives the credit back to the invoice: $1,425.00 − $425.00 = $1,000.00 due, voided → $1,425.00 due again; the note stays, void, with its reason and a VOID PDF", async () => {
+    const made = await credit(42_500);
+    const id = made.ok ? made.creditNoteId : "";
+    expect(await balanceOf()).toMatchObject({ creditedCents: 42_500, balanceCents: 100_000 });
+    expect(await voidNote(id, "  Discount was not agreed  ")).toEqual({ ok: true });
+    expect(await balanceOf()).toMatchObject({ creditedCents: 0, balanceCents: 142_500 });
+    const note = await noteOf(id);
+    expect(note).toMatchObject({ status: "void", voidReason: "Discount was not agreed", voidedByLabel: "Test owner", number: "PLM-20261005-CN-01", totalCents: -42_500 });
+    expect(note.pdfStorageKey).toMatch(/-void\.pdf$/);
+    expect(Buffer.from((await store.get(note.pdfStorageKey!)).subarray(0, 5)).toString()).toBe("%PDF-");
+    // All $1,425.00 can be credited again, and the next number follows the void one.
+    expect(await inAgency((tx) => creditRoomOf(tx, invoice.id))).toBe(142_500);
+    expect(await credit(1_000)).toMatchObject({ ok: true, number: "PLM-20261005-CN-02" });
+    const events = await inAgency((tx) => tx.select().from(s.auditEvents).where(and(eq(s.auditEvents.entityType, "invoice"), eq(s.auditEvents.entityId, id))));
+    expect(events.map((e) => e.action).sort()).toEqual(["create", "update"]);
+  });
+
+  it("a credit note that made the invoice paid: voided, the invoice is open again for the full amount", async () => {
+    const made = await credit(142_500);
+    expect((await noteOf(invoice.id)).status).toBe("paid");
+    expect(await voidNote(made.ok ? made.creditNoteId : "")).toEqual({ ok: true });
+    expect((await noteOf(invoice.id)).status).toBe("issued");
+    expect(await balanceOf()).toMatchObject({ balanceCents: 142_500 });
+  });
+
+  it("refuses once the invoice is not open: a payment, a write-off or credit applied against it", async () => {
+    const made = await credit(42_500);
+    const id = made.ok ? made.creditNoteId : "";
+    expect(await inAgency((tx) => recordPayment(tx, theOwner, { clientId: PLM, receivedOn: "2026-10-14", amountCents: 50_000, method: "check", reference: "1044", memo: null, applications: [{ invoiceId: invoice.id, amountCents: 50_000 }] }))).toMatchObject({ ok: true });
+    expect(await voidNote(id)).toEqual({ ok: false, error: "settled" });
+    expect(await balanceOf()).toMatchObject({ creditedCents: 42_500, paidCents: 50_000, balanceCents: 50_000 });
+  });
+
+  it("refuses a role that cannot, no reason, an invoice, a void note, and a correction run's credit note", async () => {
+    const made = await credit(10_000);
+    const id = made.ok ? made.creditNoteId : "";
+    expect(await voidNote(id, "Mistake", coordinator)).toEqual({ ok: false, error: "forbidden" });
+    expect(await voidNote(id, "   ")).toEqual({ ok: false, error: "reason" });
+    expect(await voidNote(id, "x".repeat(501))).toEqual({ ok: false, error: "reason" });
+    expect(await voidNote(invoice.id)).toEqual({ ok: false, error: "not_credit_note" });
+    expect(await voidNote("not-an-id")).toEqual({ ok: false, error: "not_found" });
+    expect(await voidNote(id, "Mistake", billing)).toEqual({ ok: true });
+    expect(await voidNote(id)).toEqual({ ok: false, error: "already_void" });
+    // A credit note a correction run made carries no reason of its own: the run corrects it, not a person.
+    await owner.db.update(s.invoices).set({ creditReason: null, status: "issued", voidedAt: null, voidReason: null, voidedByLabel: null }).where(eq(s.invoices.id, id));
+    expect(await voidNote(id)).toEqual({ ok: false, error: "correction" });
+  });
+
+  it("the database refuses a void reason on anything but a void credit note", async () => {
+    expect(await databaseError(owner.db.update(s.invoices).set({ voidedAt: new Date(), voidReason: "x", voidedByLabel: "y" }).where(eq(s.invoices.id, invoice.id)))).toMatch(/invoices_void_reason/);
   });
 });
 

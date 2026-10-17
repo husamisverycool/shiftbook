@@ -20,6 +20,7 @@ import { agencyZone, settingOn } from "../settings";
 import { last4Of, sealSsn, ssnIndex } from "../workers/ssn";
 import { outsideWorkerFence } from "./fence";
 import { onboardingProgress, readDeposit, readI9, readPersonal, readSignature, readW4, STEPS, type Deposit, type I9Answers, type Progress, type Step } from "./forms";
+import { acknowledgedVersion, currentPolicies, policiesDue } from "./policies";
 import type { Lang, Translator } from "./translate";
 
 export interface Who {
@@ -31,12 +32,14 @@ const by = (w: Who) => ({ agencyId: w.agencyId, userId: null, label: w.label });
 
 // ---------- onboarding ----------
 
-/** The agency's policies a worker acknowledges (an agency setting; these when the agency has none). */
-export const DEFAULT_POLICIES = ["safety", "harassment", "timekeeping"] as const;
-
-export async function policiesOf(tx: Tx, today: string): Promise<string[]> {
-  const v = await settingOn<unknown>(tx, "onboarding.policies", today);
-  return Array.isArray(v) && v.every((x) => typeof x === "string") ? (v as string[]) : [...DEFAULT_POLICIES];
+/** A policy as the worker reads it: its text in both languages and whether this version is acknowledged. */
+export interface OnboardingPolicy {
+  key: string;
+  version: number;
+  title: { en: string; es: string | null };
+  body: { en: string; es: string | null };
+  required: boolean;
+  at: string | null;
 }
 
 export interface OnboardingView {
@@ -47,7 +50,9 @@ export interface OnboardingView {
   i9Status: s.I9Status | null;
   paymentKind: "direct_deposit" | "paper_check" | null;
   depositLast4: string | null;
-  policies: { key: string; at: string | null }[];
+  policies: OnboardingPolicy[];
+  /** Required policies changed since the worker acknowledged them (asked again; decision 0043). */
+  policiesDue: number;
   signedName: string | null;
   signedAt: Date | null;
 }
@@ -55,7 +60,13 @@ export interface OnboardingView {
 export async function onboardingOf(tx: Tx, workerId: string, today: string): Promise<OnboardingView> {
   const [row] = await tx.select().from(s.workerOnboarding).where(eq(s.workerOnboarding.workerId, workerId));
   const [w] = await tx.select({ ssnLast4: s.workers.ssnLast4 }).from(s.workers).where(eq(s.workers.id, workerId));
-  const acknowledged = new Map((row?.policies ?? []).map((p) => [p.key, p.at]));
+  const acks = row?.policies ?? [];
+  const byKey = new Map(acks.map((p) => [p.key, p]));
+  const current = await currentPolicies(tx, today);
+  const policies: OnboardingPolicy[] = current.map((p) => {
+    const ack = byKey.get(p.key);
+    return { key: p.key, version: p.version, title: { en: p.titleEn, es: p.titleEs }, body: { en: p.bodyEn, es: p.bodyEs }, required: p.required, at: ack && acknowledgedVersion(ack) === p.version ? ack.at : null };
+  });
   return {
     progress: onboardingProgress(row ?? null),
     personal: row?.personal ?? null,
@@ -64,7 +75,9 @@ export async function onboardingOf(tx: Tx, workerId: string, today: string): Pro
     i9Status: row?.i9Status ?? null,
     paymentKind: row?.paymentKind ?? null,
     depositLast4: row?.depositLast4 ?? null,
-    policies: (await policiesOf(tx, today)).map((key) => ({ key, at: acknowledged.get(key) ?? null })),
+    policies,
+    // Only once the worker reached the policies step: before that, the step itself asks.
+    policiesDue: row?.policiesAt ? policiesDue(current, acks).length : 0,
     signedName: row?.signedName ?? null,
     signedAt: row?.signedAt ?? null,
   };
@@ -158,10 +171,14 @@ export async function saveStep(tx: Tx, who: Who, step: Step, a: Answers, ctx: St
     return { ok: true };
   }
   if (step === "policies") {
-    const keys = await policiesOf(tx, ctx.today);
-    if (!keys.every((k) => a[`policy_${k}`] === "on")) return { ok: false, field: "policies" };
-    await set({ policies: keys.map((key) => ({ key, at: now.toISOString() })), policiesAt: now });
-    await log({ policies: keys });
+    // Every required policy in force, in its current version; an optional one counts when ticked.
+    const current = await currentPolicies(tx, ctx.today);
+    if (!current.filter((p) => p.required).every((p) => a[`policy_${p.key}`] === "on")) return { ok: false, field: "policies" };
+    const kept = (row.policies ?? []).filter((p) => !current.some((c) => c.key === p.key));
+    const given = current.filter((p) => a[`policy_${p.key}`] === "on").map((p) => ({ key: p.key, version: p.version, at: now.toISOString() }));
+    const earlier = (row.policies ?? []).filter((p) => current.some((c) => c.key === p.key && a[`policy_${p.key}`] !== "on"));
+    await set({ policies: [...kept, ...earlier, ...given], policiesAt: now });
+    await log({ policies: given.map((p) => `${p.key}@${p.version}`) });
     return { ok: true };
   }
   // Review and sign: every other step first (Gusto's Review step).
@@ -506,6 +523,8 @@ export interface HomeView {
   thisWeek: HoursWeek | null;
   latestPay: StubSummary | null;
   unread: number;
+  /** Required policies changed since the worker acknowledged them (decision 0043). */
+  policiesDue: number;
 }
 
 export async function homeOf(tx: Tx, workerId: string, today: string): Promise<HomeView> {
@@ -520,5 +539,6 @@ export async function homeOf(tx: Tx, workerId: string, today: string): Promise<H
     thisWeek: weeks[0] ?? null,
     latestPay: pay.stubs[0] ?? null,
     unread: await unreadForWorker(tx, workerId),
+    policiesDue: row?.policiesAt ? policiesDue(await currentPolicies(tx, today), row.policies).length : 0,
   };
 }
