@@ -1,5 +1,5 @@
 /**
- * Shiftbook's own server messages as message keys and values (decision 0030), the same way as the
+ * Granite's own server messages as message keys and values (decision 0030), the same way as the
  * rules engine's: a run's own blockers and warnings, invoice problems, days to pay, a bank deposit's
  * suggested match, the margin's overtime and burden workings and the workers' comp packet's rows carry
  * `said` beside their English, and the English is made from it (`saidEnglish`), so the two cannot

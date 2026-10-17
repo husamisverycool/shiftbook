@@ -112,7 +112,7 @@ export function collect(fixture: ExportFixture, format: ExportFormat, opts: { st
     const mapped = rule.blank === "fixed" ? { code: (rule.hours?.column ?? rule.dollars?.column)!, as: rule.hours ? ("hours" as const) : ("dollars" as const), factor: saved?.factor } : saved;
     const savedCode = typeof mapped?.code === "string" ? mapped.code : "";
     // A line with no minutes is money only (a bonus): it can only travel as dollars.
-    // With no code set, a format that falls back to Shiftbook's own code sends the kind its default way.
+    // With no code set, a format that falls back to Granite's own code sends the kind its default way.
     const fallback: CarriedAs | undefined = rule.blank === "own_code" ? (line.minutes > 0 ? defaultAs(format, line.type) : "dollars") : undefined;
     const as: CarriedAs | undefined = line.minutes === 0 && rule.dollars ? "dollars" : (mapped?.as ?? fallback);
     const way = as === "hours" ? rule.hours : as === "dollars" ? rule.dollars : undefined;
@@ -212,7 +212,7 @@ export interface CodeTotal {
   types: EarningType[];
   minutes: number;
   amountCents: number;
-  /** Shiftbook lines added up (each rounded once). */
+  /** Granite lines added up (each rounded once). */
   lines: number;
 }
 

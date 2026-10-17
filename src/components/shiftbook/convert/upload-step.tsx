@@ -40,7 +40,7 @@ const MEDIA_TYPES: Record<string, string> = { csv: "text/csv", jpg: "image/jpeg"
 
 export function UploadStep({ periodId, documents, demo = false }: { periodId: string; documents: UploadDoc[]; demo?: boolean }) {
   const t = useTranslations("convert.upload");
-  // Why a timesheet could not be read, in the reader's language (the stored reason is Shiftbook's English).
+  // Why a timesheet could not be read, in the reader's language (the stored reason is Granite's English).
   const said = (error: string | null) => {
     const why = readError(error);
     if (!why) return error;

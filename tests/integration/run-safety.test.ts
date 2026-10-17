@@ -229,7 +229,7 @@ describe("sixth review", () => {
     await expect(inAgency((tx) => createRunFiles(tx, actor, store, period, { today: TODAY, expectedFingerprint: again.fingerprint }))).rejects.toBeInstanceOf(TotalsChangedError);
   });
 
-  it("treats a period paid before Shiftbook (all hours locked, no run) as closed", async () => {
+  it("treats a period paid before Granite (all hours locked, no run) as closed", async () => {
     await expect(inAgency((tx) => computeRun(tx, actor, periodId("w1")))).rejects.toBeInstanceOf(PeriodLockedError);
     await expect(
       inAgency((tx) => receiveDocument(tx, actor, store, { payPeriodId: periodId("w1"), filename: SAMPLE, bytes: readFileSync(`demo/samples/2026-10-05/${SAMPLE}`) })),
@@ -356,7 +356,7 @@ describe("seventh review", () => {
     await expect(inAgency((tx) => confirmDistinctDay(tx, actor, [a.id, gone], "x"))).rejects.toBeInstanceOf(StaleRequestError);
   });
 
-  it("keeps a period paid before Shiftbook closed even when one of its entries was rejected (N1, N2)", async () => {
+  it("keeps a period paid before Granite closed even when one of its entries was rejected (N1, N2)", async () => {
     const w1 = periodId("w1");
     const [one] = await inAgency((tx) => tx.select().from(timeEntries).where(eq(timeEntries.payPeriodId, w1)).limit(1));
     await inAgency((tx) => tx.update(timeEntries).set({ status: "rejected" }).where(eq(timeEntries.id, one!.id)));
@@ -496,7 +496,7 @@ describe("eighth review", () => {
     expect(event!.before).toEqual({ status: "disputed" });
   });
 
-  it("a period paid before Shiftbook stays history even with a draft run on it (note 3)", async () => {
+  it("a period paid before Granite stays history even with a draft run on it (note 3)", async () => {
     const w1 = periodId("w1");
     await inAgency((tx) => tx.insert(payRuns).values({ agencyId: actor.agencyId, payPeriodId: w1, version: 1, status: "draft", rulesVersion: "x" }));
     expect(await inAgency((tx) => periodState(tx, w1))).toBe("history");

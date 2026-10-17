@@ -46,7 +46,7 @@ describe("emailed sign-in codes", () => {
     expect(emailCodeState({ ...row, failures: 5 }, NOW)).toBe("spent");
   });
 
-  it("are hidden in the copy of the email Shiftbook keeps", () => {
+  it("are hidden in the copy of the email Granite keeps", () => {
     expect(hideEmailCode("Your code: 012345. It works once.", "012345")).toBe("Your code: [code hidden]. It works once.");
     expect(hideEmailCode("012345 is your code", "012345")).toBe("[code hidden] is your code");
   });

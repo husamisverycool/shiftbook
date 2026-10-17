@@ -17,7 +17,7 @@ Source URL: https://support.freshbooks.com/hc/en-us/articles/217181797-What-are-
 Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §5.3). Confidence: high for the
 sections and the dated versions; the page layout follows Stripe's documented Details → Edit flow.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 A client's invoice settings (SPEC §4 ClientBillingProfile), dated so a change applies from a date,
 and the client's invoices.
 

@@ -51,7 +51,7 @@ export interface ActivityEvent {
   id: number;
   /** When, as an ISO timestamp. */
   at: string;
-  /** Who, as the log recorded them ("Shiftbook" for what it works out itself). */
+  /** Who, as the log recorded them ("Granite" for what it works out itself). */
   actor: string;
   action: string;
   event: ActivityEventKind | string;

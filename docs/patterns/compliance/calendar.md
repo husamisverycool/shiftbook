@@ -11,7 +11,7 @@ Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §7). Confidence: 
 and keys (Google's help page lists no key for the previous range; Outlook's does); low for the grid's
 look (not described in words by either).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The same duties as the list, on the dates they are due (SPEC §16: "List and calendar views").
 
 ## Hierarchy

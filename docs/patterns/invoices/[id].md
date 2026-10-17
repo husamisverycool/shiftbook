@@ -18,7 +18,7 @@ Source URL: https://kb.tempworks.com/help/how-to-write-off-a-small-invoice-balan
 Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §5.2). Confidence: high for the
 sections and actions; the exact placement on Stripe's page is not documented.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 One invoice (or supplemental invoice, or credit note) with everything sent with it: its PDF with the
 backup, its CSV, the Fieldglass upload file, the timesheets behind it and the documents related to
 it. Invoices are made only by the weekly run; this page changes nothing in them (SPEC §11).
@@ -53,7 +53,7 @@ it. Invoices are made only by the weekly run; this page changes nothing in them 
 - **Prepare reminder** (QuickBooks Online manual reminder; FreshBooks template variables): a dialog
   with the stage chosen from the days overdue (before due, overdue, final at 30 or more days), the
   language (English, Spanish), the subject and message filled from the template and editable, the
-  client's billing email; **Copy** and **Open in email app** (a mailto link). Shiftbook sends
+  client's billing email; **Copy** and **Open in email app** (a mailto link). Granite sends
   nothing; the day is recorded and shown as "Reminder prepared on …".
 - Payments, write-offs and reminders: Owner and Billing; others see them read only.
 - Back to Invoices keeps the list's filters (the address).

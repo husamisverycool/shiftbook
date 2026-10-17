@@ -248,7 +248,7 @@ describe("the Illinois equal-pay counter through the weekly run", () => {
   });
 
   it("after 4,160 hours a wage-survey median entered before then holds the run until the 75th percentile is entered or asked for", async () => {
-    // 4,200 hours at Prairie Line before Shiftbook, through Sunday 2026-10-04: both counters crossed before this pay period.
+    // 4,200 hours at Prairie Line before Granite, through Sunday 2026-10-04: both counters crossed before this pay period.
     await inAgency((tx) => tx.update(timeEntries).set({ status: "rejected" }).where(and(eq(timeEntries.workerId, marcus), lt(timeEntries.workDate, "2026-10-05"))));
     expect(await inAgency((tx) => addOpeningBalance(tx, theOwner, { workerId: marcus, clientId: clientId("il"), minutes: 252_000, throughOn: "2026-10-04", note: "Hours from the old payroll system" }, TODAY))).toEqual({ ok: true });
     await weekOfWork();

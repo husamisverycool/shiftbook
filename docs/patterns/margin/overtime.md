@@ -9,7 +9,7 @@ Source URL: https://kb.tempworks.com/help/gross-profit-detail-report
 Researched: 2026-10-16 (`docs/research/margin-slice-i.md` §3). Confidence: high for the paired paid
 and billed columns (Bullhorn); no product names this report, so its rows follow Bullhorn's columns.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Overtime the agency paid but did not bill at the overtime multiplier (SPEC §15 "overtime paid but not
 billed"), and why: the client's overtime terms (billed at straight time, billed only at its own
 sites, not billable).

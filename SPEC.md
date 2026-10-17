@@ -1,15 +1,15 @@
-# Shiftbook — Product Contract (SPEC)
+# Granite — Product Contract (SPEC)
 
 > Source of truth for what we build. Changes to this file need the owner's explicit approval.
 > Stack changes need a decision record in `docs/decisions/`.
 
 ## 1. What it is
 
-Shiftbook is the complete back office for small temporary staffing agencies (20–500 workers on
+Granite is the complete back office for small temporary staffing agencies (20–500 workers on
 assignment: warehouse, light industrial, manufacturing, events, hospitality, janitorial, clerical).
 
 Every week an agency gets a pile of timesheets in messy forms, retypes them into payroll and
-invoices, and loses money to mistakes. Shiftbook reads every timesheet, applies the correct wage
+invoices, and loses money to mistakes. Granite reads every timesheet, applies the correct wage
 rules, and produces the payroll file for the agency's existing payroll system and one invoice per
 client, plus margin, cash, collections and compliance views.
 

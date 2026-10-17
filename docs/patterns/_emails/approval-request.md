@@ -13,12 +13,12 @@ Source URL: https://docs.stripe.com/invoicing/hosted-invoice-page.md
 Researched: 2026-10-16. Confidence: medium — Bullhorn does not publish the subject or body text;
 the order below is from Stripe's invoice email and Bullhorn's description of its contents.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The emails that carry the approval link (SPEC §10: "reminders") and confirm the client's decision.
 Plain text with a simple HTML copy; no images, no tracking pixels, nothing loaded from other sites.
 
 ## Hierarchy (request, reminder and new link)
-1. Sender: "{agency} via Shiftbook"; replies go to the agency's email address.
+1. Sender: "{agency} via Granite"; replies go to the agency's email address.
 2. Subject: the client, the period and that hours wait for approval (reminder: says it is a
    reminder).
 3. One line: who asks and what (the agency asks the approver to review the period's hours).
@@ -30,7 +30,7 @@ Plain text with a simple HTML copy; no images, no tracking pixels, nothing loade
 1. Subject: hours approved (and disputed, when any) for the client and period.
 2. What was approved (shifts and hours) and what was disputed (worker, day, reason), by whom and
    when (Bullhorn's confirmation lists approved and disputed time).
-3. The agency's contact details (to the approver); a link into Shiftbook to the request (to the agency).
+3. The agency's contact details (to the approver); a link into Granite to the request (to the agency).
 
 ## States
 - Language: the approver's language chosen when the request was sent (English or Spanish); the

@@ -17,14 +17,14 @@ Researched: 2026-10-15 and 2026-10-16. Confidence: high for the sidebar's role, 
 navigation shortcuts; medium for the inset sheet (shadcn's documented variant; Linear's refresh
 describes the dimmer sidebar and softer structure, not the sheet itself).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The frame around every app page: one place to move between areas, the same on every page, inside the
 root frame (demo banner above it).
 
 ## Hierarchy
 1. **Sidebar** on the left, full height under the demo banner, on the frame's dim tone (Linear's
    refresh: a sidebar "a few notches dimmer", inactive items muted):
-   1. Workspace name at the top (Linear: the workspace menu at the top of the sidebar). In Shiftbook:
+   1. Workspace name at the top (Linear: the workspace menu at the top of the sidebar). In Granite:
       the agency's name, a button that opens a menu with **Settings** (Linear: "Click your workspace
       name in the upper-left corner and select Settings"). Settings opens the payroll file settings
       (slice f), the first settings page; Margin settings (slice i) is the next item, for the Owner
@@ -63,7 +63,7 @@ root frame (demo banner above it).
 - `?` (or the sidebar's Keyboard shortcuts) opens the list of keyboard shortcuts (Linear, Stripe).
 
 ## States
-- Narrow screens: not documented by Linear for the web app. Shiftbook uses shadcn's sidebar default
+- Narrow screens: not documented by Linear for the web app. Granite uses shadcn's sidebar default
   (collapses behind a menu button; the sheet fills the width) — listed as a difference.
 
 ## Never copy

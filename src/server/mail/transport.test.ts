@@ -24,7 +24,7 @@ function fakeFetch(response: { status: number; body: unknown }) {
 describe("Resend transport (decision 0012)", () => {
   it("posts the message to Resend's emails endpoint with the key, an idempotency key and a reply-to", async () => {
     const f = fakeFetch({ status: 200, body: { id: "re-msg-1" } });
-    const transport = new ResendTransport({ apiKey: "test-key-not-real", fromAddress: "approvals@shiftbook.example", fetch: f.fn });
+    const transport = new ResendTransport({ apiKey: "test-key-not-real", fromAddress: "approvals@granite.example", fetch: f.fn });
     expect(await transport.send(mail())).toEqual({ providerId: "re-msg-1" });
     expect(f.calls).toHaveLength(1);
     const [call] = f.calls;
@@ -35,7 +35,7 @@ describe("Resend transport (decision 0012)", () => {
     expect(headers.get("content-type")).toBe("application/json");
     expect(headers.get("idempotency-key")).toBe("6f1e2c1a-1111-4222-8333-944455556666");
     expect(JSON.parse(String(call!.init.body))).toEqual({
-      from: '"Cedar Row Staffing (demo) via Shiftbook" <approvals@shiftbook.example>',
+      from: '"Cedar Row Staffing (demo) via Granite" <approvals@granite.example>',
       to: ['"Dana Approver" <approver@client.example>'],
       reply_to: "office@cedar-row.example",
       subject: "Hours to approve",
@@ -46,26 +46,26 @@ describe("Resend transport (decision 0012)", () => {
 
   it("keeps display names from breaking the address (quotes, backslashes, angle brackets, line breaks)", async () => {
     const f = fakeFetch({ status: 200, body: { id: "x" } });
-    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@shiftbook.example", fetch: f.fn });
+    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@granite.example", fetch: f.fn });
     await transport.send({ ...mail(), fromName: 'Evil "Agency" \\ <x@y.z>\nBcc: z', to: { email: "c@d.example", name: "A <b>" } });
     const body = JSON.parse(String(f.calls[0]!.init.body)) as { from: string; to: string[] };
-    expect(body.from).toBe('"Evil Agency x@y.z Bcc: z via Shiftbook" <a@shiftbook.example>');
+    expect(body.from).toBe('"Evil Agency x@y.z Bcc: z via Granite" <a@granite.example>');
     expect(body.to).toEqual(['"A b" <c@d.example>']);
   });
 
   it("quotes names with commas, so an agency like \"Acme Staffing, LLC\" is one name, not two addresses", async () => {
     const f = fakeFetch({ status: 200, body: { id: "x" } });
-    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@shiftbook.example", fetch: f.fn });
+    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@granite.example", fetch: f.fn });
     await transport.send({ ...mail(), fromName: "Acme Staffing, LLC", to: { email: "c@d.example", name: "Smith, Dana" } });
     const body = JSON.parse(String(f.calls[0]!.init.body)) as { from: string; to: string[] };
-    expect(body.from).toBe('"Acme Staffing, LLC via Shiftbook" <a@shiftbook.example>');
+    expect(body.from).toBe('"Acme Staffing, LLC via Granite" <a@granite.example>');
     expect(body.to).toEqual(['"Smith, Dana" <c@d.example>']);
   });
 
   it("fails with Resend's message, never repeating a link that was in the email", async () => {
     const { token } = newApprovalToken();
     const f = fakeFetch({ status: 422, body: { name: "validation_error", message: `Invalid to field near ${token}` } });
-    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@shiftbook.example", fetch: f.fn });
+    const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@granite.example", fetch: f.fn });
     const error = await transport.send(mail(`Open /approve/${token}`)).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(MailSendError);
     expect((error as Error).message).toContain("422");
@@ -76,7 +76,7 @@ describe("Resend transport (decision 0012)", () => {
   it("fails clearly when the network does", async () => {
     const transport = new ResendTransport({
       apiKey: "k",
-      fromAddress: "a@shiftbook.example",
+      fromAddress: "a@granite.example",
       fetch: (async () => {
         throw new TypeError("fetch failed");
       }) as typeof fetch,
@@ -85,7 +85,7 @@ describe("Resend transport (decision 0012)", () => {
   });
 
   it("refuses to start without a key or a sending address", () => {
-    expect(() => new ResendTransport({ apiKey: "", fromAddress: "a@shiftbook.example" })).toThrow(/RESEND_API_KEY/);
+    expect(() => new ResendTransport({ apiKey: "", fromAddress: "a@granite.example" })).toThrow(/RESEND_API_KEY/);
     expect(() => new ResendTransport({ apiKey: "k", fromAddress: "" })).toThrow(/MAIL_FROM/);
   });
 });

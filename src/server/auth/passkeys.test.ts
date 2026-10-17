@@ -50,15 +50,15 @@ describe("the visitor's address, as the caps and the throttle count it", () => {
 
 describe("the site a passkey belongs to", () => {
   it("is the base URL's hostname and origin", () => {
-    expect(relyingParty("https://app.example/")).toEqual({ id: "app.example", origin: "https://app.example", name: "Shiftbook" });
-    expect(relyingParty("http://localhost:3600")).toEqual({ id: "localhost", origin: "http://localhost:3600", name: "Shiftbook" });
+    expect(relyingParty("https://app.example/")).toEqual({ id: "app.example", origin: "https://app.example", name: "Granite" });
+    expect(relyingParty("http://localhost:3600")).toEqual({ id: "localhost", origin: "http://localhost:3600", name: "Granite" });
   });
 });
 
 describe("adding a passkey", () => {
   it("asks for a discoverable, user-verified passkey, not one the person already has, with no attestation", async () => {
     const options = await registrationOptionsFor(rp, PERSON, [{ credentialId: "AAAAAAAAAAAAAAAAAAAAAA", transports: ["internal"] }]);
-    expect(options.rp).toEqual({ id: "app.example", name: "Shiftbook" });
+    expect(options.rp).toEqual({ id: "app.example", name: "Granite" });
     expect(options.user).toEqual({ id: userHandleOf(PERSON.id), name: PERSON.email, displayName: PERSON.name });
     expect(options.authenticatorSelection).toMatchObject({ residentKey: "required", requireResidentKey: true, userVerification: "required" });
     expect(options.attestation).toBe("none");

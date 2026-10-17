@@ -8,7 +8,7 @@ const renderDecisionEmail = (input: Parameters<typeof renderDecision>[0]) => pla
 
 const agency = { name: "Cedar Row Staffing (demo)", phone: "(555) 010-0000", email: "office@cedar-row.example", timeZone: "America/Chicago" };
 const period = { startsOn: "2026-10-05", endsOn: "2026-10-11" };
-const link = "https://shiftbook.example/en/approve/sbap_TESTTOKENTESTTOKENTESTTOKENTESTTOKENTESTTOK";
+const link = "https://granite.example/en/approve/sbap_TESTTOKENTESTTOKENTESTTOKENTESTTOKENTESTTOK";
 
 describe("approval link emails (docs/patterns/_emails/approval-request.md)", () => {
   it("asks for approval with the summary, one link, how long it lasts and the agency's contact", () => {
@@ -94,9 +94,9 @@ describe("decision emails", () => {
     expect(m.text).toContain("To change anything, contact Cedar Row Staffing (demo).");
   });
 
-  it("tells the agency, with a link into Shiftbook, in the agency's language", () => {
-    const m = renderDecisionEmail({ ...base, kind: "approval_notice", locale: "es", disputed: [], agencyLink: "https://shiftbook.example/es/approvals/1" });
+  it("tells the agency, with a link into Granite, in the agency's language", () => {
+    const m = renderDecisionEmail({ ...base, kind: "approval_notice", locale: "es", disputed: [], agencyLink: "https://granite.example/es/approvals/1" });
     expect(m.subject).toBe("Prairie Molding (demo) aprobó horas del 5–11 de octubre de 2026");
-    expect(m.text).toContain("https://shiftbook.example/es/approvals/1");
+    expect(m.text).toContain("https://granite.example/es/approvals/1");
   });
 });

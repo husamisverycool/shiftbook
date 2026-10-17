@@ -11,21 +11,21 @@ const base = { name: "Pat Lee", agencyName: "Cedar Row Staffing (demo)", passkey
 describe("the passkey added email", () => {
   it("says which passkey was added and when, and what to do if it was not them (English)", () => {
     const mail = renderPasskeyAddedEmail({ ...base, locale: "en", accountLink: "https://app.example/en/settings/account" });
-    expect(mail.subject).toBe("A passkey was added to your Shiftbook account");
+    expect(mail.subject).toBe("A passkey was added to your Granite account");
     const lines = mail.text.split("\n\n");
     expect(lines[0]).toBe("Hello Pat Lee,");
     expect(lines[1]).toMatch(/^A passkey named “Synced passkey” was added to the account you use for Cedar Row Staffing \(demo\) on October 16, 2026 at 10:00/);
     expect(lines[2]).toBe("If you added it, there is nothing to do.");
     expect(lines[3]).toBe("If you did not, open Your account, remove the passkey and change your password, then tell your agency's Owner.");
     expect(lines[4]).toBe("Open Your account: https://app.example/en/settings/account");
-    expect(lines[5]).toBe("Sent by Shiftbook on behalf of Cedar Row Staffing (demo).\n");
+    expect(lines[5]).toBe("Sent by Granite on behalf of Cedar Row Staffing (demo).\n");
     expect(mail.html).toContain('<a href="https://app.example/en/settings/account">Open Your account</a>');
     expect(mail.text).not.toMatch(/sbau_/);
   });
 
   it("in Spanish, with the date the Spanish way", () => {
     const mail = renderPasskeyAddedEmail({ ...base, passkeyName: "Llave de acceso sincronizada", locale: "es", accountLink: "https://app.example/es/settings/account" });
-    expect(mail.subject).toBe("Se agregó una llave de acceso a su cuenta de Shiftbook");
+    expect(mail.subject).toBe("Se agregó una llave de acceso a su cuenta de Granite");
     expect(mail.text).toContain("Hola, Pat Lee:");
     expect(mail.text).toContain("«Llave de acceso sincronizada»");
     expect(mail.text).toContain("16 de octubre de 2026");

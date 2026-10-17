@@ -17,10 +17,10 @@ Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §2a, �
 high for the two panes, the filters, Refresh, Copy link, the filtered export and its columns; the
 spacing and the page size are not documented.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 SPEC §19: every create, update, approval, export and reveal, viewable globally and per record.
 SPEC §24 step 10: the Owner's reveal of an SSN shows here, with its reason. The Owner and the
-accountant read it (GitHub, Linear and Vercel keep their logs to owners; Shiftbook's accountant
+accountant read it (GitHub, Linear and Vercel keep their logs to owners; Granite's accountant
 reads everything except SSNs, and the log never holds one — decision 0028).
 
 ## Hierarchy
@@ -53,7 +53,7 @@ reads everything except SSNs, and the log never holds one — decision 0028).
 - Nothing matches: "No activity matches these filters." and **Clear filters**.
 - Not the Owner or the accountant: one line saying who reads the agency's activity; the records'
   own histories stay where they are (a job order's Activity tab, a duty's history).
-- Events by Shiftbook itself (duties it works out) show "Shiftbook" as who.
+- Events by Granite itself (duties it works out) show "Granite" as who.
 
 ## Never copy
 Stripe's, GitHub's or Vercel's wording, icons, colors or logos.

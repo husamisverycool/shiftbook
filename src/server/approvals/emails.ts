@@ -40,7 +40,7 @@ export interface DecisionEmailInput extends Common {
   decidedAt: Date;
   approved: { shifts: number; minutes: number };
   disputed: { workerName: string; workDate: string; reason: string }[];
-  /** The request in Shiftbook (agency notice only). */
+  /** The request in Granite (agency notice only). */
   agencyLink?: string;
 }
 

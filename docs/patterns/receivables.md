@@ -13,7 +13,7 @@ Source URL: https://kb.tempworks.com/help/invoice-aging-report
 Researched: 2026-10-16 (`docs/research/receivables-slice-h.md` §1, §6). Confidence: high for the
 hierarchy and drill-down (FreshBooks), medium for the exact column labels (QuickBooks Online).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Who owes the agency what, and how late (SPEC §14, decision H1), and which invoices were paid short
 (H4).
 

@@ -8,29 +8,29 @@ the browser back with a code); Linear — the demo people as full-width buttons,
 Source URL: https://openid.net/specs/openid-connect-core-1_0.html
 Source URL: https://linear.app/docs/login-methods
 Researched: 2026-10-16. Confidence: high for the step's job (choose an account, go back with a code);
-the page is Shiftbook's own, and deliberately looks nothing like Google's or Microsoft's.
+the page is Granite's own, and deliberately looks nothing like Google's or Microsoft's.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The demo makes no outside call, so "Continue with Google", "Continue with Microsoft" and SSO go
-through this stand-in: the same client code, the same callback, a provider played by Shiftbook
+through this stand-in: the same client code, the same callback, a provider played by Granite
 itself. It must never be mistaken for the real provider's page.
 
 ## Hierarchy
 1. **H1** "Demo sign-in: <Google | Microsoft | your agency's SSO>", centred.
 2. One line saying plainly that this page stands in for that provider in the demo, nothing leaves
-   Shiftbook, and no password is asked.
+   Granite, and no password is asked.
 3. **Choose an account** — the list of accounts as full-width outlined buttons, one under another:
    each demo person's email with their name; last, an address that belongs to no member ("Someone who
    is not a member"), to see the refusal.
-4. **Cancel** — back to Shiftbook's sign-in page without signing in (the provider's "access denied").
+4. **Cancel** — back to Granite's sign-in page without signing in (the provider's "access denied").
 
 ## Interactions
-- Choosing an account → back to Shiftbook with a code, which Shiftbook exchanges and checks as with
+- Choosing an account → back to Granite with a code, which Granite exchanges and checks as with
   the real provider.
 - Cancel → the sign-in page with a notice that the provider did not sign them in.
 
 ## States
-- The request is not one Shiftbook made (wrong client, wrong return address, expired): a message and
+- The request is not one Granite made (wrong client, wrong return address, expired): a message and
   **Back to sign in**.
 - Choosing: the buttons show it is working and cannot be pressed twice.
 

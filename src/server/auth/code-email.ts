@@ -2,7 +2,7 @@
  * The emails of decision 0033, in the person's language, plain text with a simple HTML copy:
  * - the code email (docs/patterns/_emails/sign-in-code.md): to sign in, to finish connecting an
  *   outside account, or to confirm it's them; never the code in the subject, and a line saying never
- *   to share it (review L4); the copy Shiftbook keeps hides the code (identities.ts, hideEmailCode);
+ *   to share it (review L4); the copy Granite keeps hides the code (identities.ts, hideEmailCode);
  * - the notice that an outside account was connected (docs/patterns/_emails/identity-linked.md;
  *   GitHub's "added to your account" security notice; review H2c).
  */

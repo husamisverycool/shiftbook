@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/job-orders.md — Linear create modal (C): the fields in one dialog; closing
-// with changes asks whether to keep a draft (Linear drafts; Shiftbook keeps it in this browser).
+// with changes asks whether to keep a draft (Linear drafts; Granite keeps it in this browser).
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";

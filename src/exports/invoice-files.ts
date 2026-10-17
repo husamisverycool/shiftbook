@@ -1,6 +1,6 @@
 /**
  * Files made with each invoice (slice g): the invoice's lines as CSV (decision G8: the Beeline
- * default invoice fields Shiftbook has) and the SAP Fieldglass supplier "Time Sheet Invoice Upload"
+ * default invoice fields Granite has) and the SAP Fieldglass supplier "Time Sheet Invoice Upload"
  * (decision G9; research §4.2: header components, one blank line, the column headings, the rows).
  * Pure: the invoice's issued lines in, bytes out. Amounts are the invoice's cents, never recomputed.
  */

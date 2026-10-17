@@ -19,7 +19,7 @@ Researched: 2026-10-16 (`docs/research/margin-slice-i.md` §1, §5). Confidence:
 metric-to-detail, group-by and export pattern (Stripe, Brex, TempWorks); medium for the exact
 placement of the time frame (Mercury's help article was read only as a snippet).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 What each week's work earned after paying the workers and the estimated employer costs (SPEC §15):
 gross margin = billed − pay − estimated burden, by client, worker, recruiter, branch and week, every
 amount traceable to its lines and their explain strings. For the Owner and the accountant.

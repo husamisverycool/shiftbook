@@ -12,7 +12,7 @@
  * that multiple, so overtime at a worked-week regular rate travels exactly (to four decimals). Money
  * (bonuses, premiums, top-ups) goes out as an `Earnings 3` code with dollars, paid as written. At most
  * four code pairs per record (the guide's limit without expanded fields): more dollars go on another
- * record. No name or SSN column (informational in ADP; the SSN never leaves Shiftbook).
+ * record. No name or SSN column (informational in ADP; the SSN never leaves Granite).
  *
  * Hours are written with two decimals rounded up (no worked time lost), as for Gusto; the notes say
  * what that does to ADP's gross.

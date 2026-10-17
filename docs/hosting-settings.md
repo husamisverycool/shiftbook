@@ -1,4 +1,4 @@
-# Settings for hosting Shiftbook
+# Settings for hosting Granite
 
 These go in the hosting service's environment settings — never in the code, never in chat.
 

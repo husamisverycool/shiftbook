@@ -8,7 +8,7 @@ Source URL: https://docs.stripe.com/billing/customer
 Researched: 2026-10-16. Confidence: high for the list-to-page interaction; Stripe documents no
 columns, so the row shows the customer's name and its billing essentials.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The agency's clients, to open one and set how it is invoiced (decision G2–G9).
 
 ## Hierarchy

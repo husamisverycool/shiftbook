@@ -39,7 +39,7 @@ Source URL: https://help.workyard.com/en/articles/15467712-how-to-map-pay-types-
 Source URL: https://support.clicktime.com/hc/en-us/articles/41018977335565-Export-Payroll-Data-to-ADP
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/settingRebillInvoiceNumber.htm
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The smallest end-to-end product: take last week's timesheets for one period, read them, let a
 person fix what needs review, and hand back the payroll file and one client invoice.
 
@@ -122,7 +122,7 @@ period is the first row.
 
 ## States
 Run states (Gusto: editable → calculated → submitting → processed; Check: draft → preview →
-approved): Shiftbook PayRun `draft` → `ready` / `blocked` → `approved` → `exported` (SPEC §4). A
+approved): Granite PayRun `draft` → `ready` / `blocked` → `approved` → `exported` (SPEC §4). A
 change after approval returns the run to `ready`/`blocked` (Gusto: preparing again cancels the
 calculations; Check: a change resets the preview). A correction is the next version of the same
 period, through the same steps. Loading panels while reading files, computing totals and

@@ -25,7 +25,7 @@ Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3a, �
 2026-10-17 as Linear's settings, from Linear's own screenshots (`_components/settings.md`). Confidence:
 high for the sections, their actions and the layout.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Each person's own settings, whatever their role (the read-only accountant too: these change only
 their own account): their language, their password, their authenticator and recovery codes, their
 passkeys and the outside accounts they sign in with.
@@ -36,7 +36,7 @@ centred column, each section's rows in a rounded bordered panel.
 1. **Page header:** "Settings" above, H1 "Your account"; under it the person's name, then their email
    and role, then (demo) the demo line.
 2. **Preferences** section (Linear's Preferences "General": rows in a panel): one row — **Language**
-   over its muted line (it sets their screens, their sign-in page and the emails Shiftbook sends them;
+   over its muted line (it sets their screens, their sign-in page and the emails Granite sends them;
    Square), the select (English, Español) at the row's right, saved when chosen (Slack's Language).
 3. **Password** section (GitHub "Change password"), the muted line under the heading saying when it was
    last changed: a panel holding **Current password**, **New password** (the rule under it), **Confirm
@@ -71,7 +71,7 @@ centred column, each section's rows in a rounded bordered panel.
      the provider (the demo's stand-in in the demo), then back here with a toast.
    - Connected: the account's email as the provider gave it and "Connected <date>" under the name, and
      **Disconnect** at the right in the destructive colour (a confirmation; confirm it's them first).
-7. **Sign out:** a last panel of one row (Linear's "Workspace access"): "Sign out of Shiftbook in this
+7. **Sign out:** a last panel of one row (Linear's "Workspace access"): "Sign out of Granite in this
    browser", **Sign out** at the right.
 
 ## Interactions
@@ -93,7 +93,7 @@ centred column, each section's rows in a rounded bordered panel.
   Setting a first password (a person who joined with Google or Microsoft) confirms it's them first,
   as any new way in does (decision 0033, review L3).
 - Connect → back from the provider with a toast: connected; or already connected to another
-  Shiftbook person; or the provider did not sign them in.
+  Granite person; or the provider did not sign them in.
 
 ## States
 - Wrong current password, the passwords differ, or the rule is broken: a message under the field.

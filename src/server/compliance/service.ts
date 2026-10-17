@@ -146,7 +146,7 @@ export async function linkDocument(tx: Tx, actor: Actor, obligationId: string, d
   await audit(tx, actor, [{ action: "update", entityType: "obligation", entityId: obligationId, after: { linkedDocumentId: documentId } }]);
 }
 
-/** Form I-9 copies are never kept in Shiftbook: dates only (decision J4). */
+/** Form I-9 copies are never kept in Granite: dates only (decision J4). */
 export const keepsNoFiles = (kind: string) => kind.startsWith("i9_");
 
 export async function addObligationFile(tx: Tx, actor: Actor, store: DocumentStore, id: string, file: EvidenceFile): Promise<ComplianceResult> {

@@ -1,7 +1,7 @@
 /**
  * Slice (j) step 3c (decision J8): the ACA look-back through the database — the Owner's measurement
- * settings checked against the dated limits, months imported from before Shiftbook, the hours
- * Shiftbook paid, and an "offer coverage by" duty for each worker measured full-time.
+ * settings checked against the dated limits, months imported from before Granite, the hours
+ * Granite paid, and an "offer coverage by" duty for each worker measured full-time.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -37,7 +37,7 @@ beforeEach(async () => {
   await inAgency(async (tx) => {
     await clearDemoAgency(tx);
     await seedDemoAgency(tx);
-    // Hired long before Shiftbook: the start is the hire date.
+    // Hired long before Granite: the start is the hire date.
     await tx.update(s.workers).set({ hireDate: "2024-05-06" }).where(inArray(s.workers.id, [marcus, anita]));
   });
 });
@@ -120,12 +120,12 @@ describe("the ACA look-back through the database", () => {
     expect(duty).toMatchObject({ workerId: marcus, occurrence: "standard:2025-10-01", dueOn: "2026-11-29", remindOn: "2026-10-30", status: "open", jurisdiction: "US" });
     expect(duty!.message).toContain("Measured full-time in the standard measurement period 2025-10-01 to 2026-09-30: 1680h 00m of service over 365 days");
     expect(await offers()).toHaveLength(1);
-    // Marcus's months corrected to 120 h: no longer full-time, so Shiftbook sets the duty aside, saying why.
+    // Marcus's months corrected to 120 h: no longer full-time, so Granite sets the duty aside, saying why.
     await inAgency((tx) => importAcaHours(tx, theOwner, "corrected.csv", csv(MONTHS.map((m): [string, string, string] => ["Marcus Bell", m, "120"])), TODAY));
     expect((await offers()).map((o) => [o.status, o.closedBySystem, o.statusNote])).toEqual([["not_applicable", true, NO_LONGER]]);
   });
 
-  it("counts the hours Shiftbook paid: each worked entry on its day, and a holiday not worked on the holiday confirmed", async () => {
+  it("counts the hours Granite paid: each worked entry on its day, and a holiday not worked on the holiday confirmed", async () => {
     const luis = workerId("luis-hernandez");
     const period = periodId("w2");
     const coordinatorActor: Actor = coordinator;
@@ -149,8 +149,8 @@ describe("the ACA look-back through the database", () => {
     expect(await inAgency((tx) => paidCoverage(tx))).toEqual([{ start: "2026-10-05", end: "2026-10-11" }]);
   });
 
-  it("second opinion: a month Shiftbook paid in full is refused (it would count twice), unless the worker was skipped; a payroll ID tells two workers apart", async () => {
-    // September 2026 paid week by week in Shiftbook (Monday 2026-08-31 to Sunday 2026-10-04).
+  it("second opinion: a month Granite paid in full is refused (it would count twice), unless the worker was skipped; a payroll ID tells two workers apart", async () => {
+    // September 2026 paid week by week in Granite (Monday 2026-08-31 to Sunday 2026-10-04).
     const weeks = ["2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"];
     for (const start of weeks) {
       // The demo's own week of 2026-09-28 is there already.

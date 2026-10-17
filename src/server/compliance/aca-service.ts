@@ -1,6 +1,6 @@
 /**
  * The Owner's ACA changes (slice j step 3c, decision J8): the measurement settings, from today and
- * checked against the limits in force, and the hours imported from before Shiftbook. Each works the
+ * checked against the limits in force, and the hours imported from before Granite. Each works the
  * duties out again at once. Audited.
  */
 import { addDays, addMonths, floorDiv, isIsoDate, mod } from "@shiftbook/rules";
@@ -101,10 +101,10 @@ const nameKey = (v: string) => v.toLowerCase().normalize("NFC").replace(/\s+/g, 
 const monthEnd = (first: string) => addDays(addMonths(first, 1), -1);
 
 /**
- * Hours from before Shiftbook: a CSV with the columns Worker, Month and Hours, and optionally Payroll
+ * Hours from before Granite: a CSV with the columns Worker, Month and Hours, and optionally Payroll
  * ID (an ID the worker has in any payroll system on file, for two workers of one name). Months as a
  * spreadsheet writes them; hours whole, h:mm or decimal. Only months that have ended, and not one
- * Shiftbook paid in full for the worker (its hours would count twice); for a month Shiftbook paid in
+ * Granite paid in full for the worker (its hours would count twice); for a month Granite paid in
  * part, the hours outside the weeks it paid. Nothing is saved unless every row is good; a month already
  * on file for the worker is replaced (kept as replaced).
  */
@@ -128,7 +128,7 @@ export async function importAcaHours(tx: Tx, actor: Actor, filename: string, tex
     byName.set(k, [...(byName.get(k) ?? []), w.id]);
     for (const p of new Set(Object.values(w.payrollIds).map((x) => x?.id.trim().toLowerCase()).filter((x): x is string => Boolean(x)))) byPayrollId.set(p, [...(byPayrollId.get(p) ?? []), w.id]);
   }
-  // A month Shiftbook paid in full for a worker is on file already.
+  // A month Granite paid in full for a worker is on file already.
   const paid = await paidCoverage(tx);
   const paidInFull = (workerId: string, first: string) => {
     const last = monthEnd(first);

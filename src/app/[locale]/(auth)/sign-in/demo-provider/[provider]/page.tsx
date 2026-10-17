@@ -1,5 +1,5 @@
 // Pattern: docs/patterns/sign-in/demo-provider/[provider].md — the demo's stand-in for a provider's
-// sign-in step (OpenID Connect Core §3.1.2.4), Shiftbook's own plain page; demo mode only (decision 0033).
+// sign-in step (OpenID Connect Core §3.1.2.4), Granite's own plain page; demo mode only (decision 0033).
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { DemoProviderView } from "@/components/shiftbook/auth/demo-provider";

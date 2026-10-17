@@ -14,8 +14,8 @@ Source URL: https://learn.microsoft.com/en-us/dynamics365/business-central/recei
 Source URL: https://www.zoho.com/us/books/help/banking/matching-transactions.html
 Researched: 2026-10-16 (`docs/research/receivables-slice-h.md` §3). Confidence: high.
 
-## Purpose in Shiftbook
-Turn the bank's deposits into payments: Shiftbook suggests, a person confirms (SPEC §14, H6).
+## Purpose in Granite
+Turn the bank's deposits into payments: Granite suggests, a person confirms (SPEC §14, H6).
 
 ## Hierarchy
 1. **View header:** H1 "Bank"; at the right **Import bank file** (to `/bank/import`).

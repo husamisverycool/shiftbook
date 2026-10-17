@@ -29,7 +29,7 @@ What they share:
 1. **Frame** (`_layouts/auth.md`): the page in the app's sidebar tone (Linear's grey), no header bar;
    the Shiftbook mark centred at the top of the column; the language switch at the foot of the page
    (Notion).
-2. **The mark** (`brand-mark.tsx`): shadcn/ui's blocks set a product as a small rounded square in
+2. **The mark** (`brand-mark.tsx`; replaced by Granite's own mark, decision 0034): shadcn/ui's blocks set a product as a small rounded square in
    the primary color holding one icon (their "Acme Inc." placeholder); Shiftbook's holds lucide's
    book-with-a-check. The same square, with the agency's initials, starts the sidebar's agency menu
    (Linear's workspace menu; shadcn's team switcher).

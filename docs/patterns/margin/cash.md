@@ -9,7 +9,7 @@ Source URL: https://quickbooks.intuit.com/learn-support/en-ca/help-article/budge
 Researched: 2026-10-16 (`docs/research/margin-slice-i.md` §4). Confidence: medium (Xero's product
 page; no staffing product shows this figure).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 "Cash you are floating" (SPEC §15): payroll the agency has paid for work its clients have not paid for
 yet, and what the next payroll adds before the money expected in arrives.
 

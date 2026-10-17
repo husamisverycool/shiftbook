@@ -11,7 +11,7 @@ Source URL: https://docs.stripe.com/get-started/account/sso
 Researched: 2026-10-16. Confidence: high for "type the work email, then the provider"; the page's
 layout is shown in screenshots, not described.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 For a member of an agency whose Owner turned single sign-on on (Settings › Single sign-on): their
 agency's own identity provider signs them in. The authenticator code or its setup follows as after a
 password (SPEC §2).
@@ -27,7 +27,7 @@ password (SPEC §2).
 
 ## Interactions
 - Enter submits. Continue → the agency's identity provider (the browser leaves for it), then back to
-  Shiftbook signed in, or to the sign-in page with a notice saying why not. The first time, the code
+  Granite signed in, or to the sign-in page with a notice saying why not. The first time, the code
   sent to the member's email connects the provider's account (`sign-in/link.md`; Slack asks members
   to bind their accounts by email).
 

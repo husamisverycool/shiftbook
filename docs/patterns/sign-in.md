@@ -16,13 +16,13 @@ Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3). C
 the steps (password first, then the code; reset by email); the page's exact layout is shown in
 screenshots, not described in text.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Where everyone signs in (SPEC §2): email and password; then, for a person with an authenticator or
 whose role needs one, the code page. In demo mode the page also lists the demo people, so the demo
 opens with no password (decision K3).
 
 ## Hierarchy
-1. **H1** "Sign in to Shiftbook", centred; in demo mode one muted line under it saying what the demo
+1. **H1** "Sign in to Granite", centred; in demo mode one muted line under it saying what the demo
    is (Notion's two-line heading).
 2. **Notice** (only when there is one): signed out; the session ended (timed out or signed out
    elsewhere); the password was changed; the link used has expired; another way in was refused

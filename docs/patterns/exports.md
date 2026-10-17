@@ -10,14 +10,14 @@ Source URL: https://support.stripe.com/questions/customizing-your-reports
 Researched: 2026-10-15. Confidence: high for the export dialog and report sections; low for a
 history list of past exports (Stripe does not document one in the Dashboard).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Produce the payroll file for the agency's payroll system and the client invoice files for a period,
 see each file's control totals, and download it again later.
 
 ## Hierarchy
 1. **Report controls at the top** (Stripe report page): period (date range; defaults to the most
    recent period, choices of previous periods or custom dates, inclusive); format selector
-   (Shiftbook: Gusto CSV, ADP Paydata, QuickBooks Online CSV, IIF, ADP RUN, generic mapped CSV).
+   (Granite: Gusto CSV, ADP Paydata, QuickBooks Online CSV, IIF, ADP RUN, generic mapped CSV).
 2. **Stacked sections, each with Download in its upper-right corner** (Stripe report sections):
    - Summary — the control totals (workers, minutes by earning type, gross cents) for the period.
    - Payroll file — one row per worker with the export's columns.

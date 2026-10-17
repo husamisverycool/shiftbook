@@ -40,7 +40,7 @@ describe("six-digit codes (RFC 4226, RFC 6238)", () => {
   });
 
   it("the authenticator link names the issuer and the account", () => {
-    expect(otpauthUri("Shiftbook", "owner@agency.example", Buffer.from("foobar"))).toBe("otpauth://totp/Shiftbook%3Aowner%40agency.example?secret=MZXW6YTBOI&issuer=Shiftbook&algorithm=SHA1&digits=6&period=30");
+    expect(otpauthUri("Granite", "owner@agency.example", Buffer.from("foobar"))).toBe("otpauth://totp/Granite%3Aowner%40agency.example?secret=MZXW6YTBOI&issuer=Granite&algorithm=SHA1&digits=6&period=30");
   });
 });
 

@@ -20,7 +20,7 @@ Source URL: https://docs.stripe.com/invoicing/hosted-invoice-page.md
 Researched: 2026-10-16 (research notes: the slice (d) plan). Confidence: medium — the Bullhorn facts
 are spread over short help articles; its page header and phone layout are not documented.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 SPEC §10: a page per client per pay period, opened from an emailed link without signing in, where
 the client's approver sees their own workers' hours by worker and day, approves them, or disputes a
 shift with a reason. Nothing else of the agency's is shown (no pay rates, bill amounts or other

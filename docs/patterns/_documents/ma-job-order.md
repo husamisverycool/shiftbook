@@ -1,7 +1,7 @@
 # Pattern: Massachusetts job order (`src/pdf/ma-job-order.tsx`)
 
 Status: adopted — slice (j) plan, decision J3 (2026-10-16)
-Reference product and screen: Shiftbook's own statement document (`_documents/statement.md`), with
+Reference product and screen: Granite's own statement document (`_documents/statement.md`), with
 the contents the law lists: M.G.L. c. 149 § 159C(b) (contact details of the agency, its workers'
 compensation carrier, the worksite employer and the Department of Labor Standards; the job and any
 clothing, equipment, training or licenses and their costs; the pay day, hourly rate and whether
@@ -13,7 +13,7 @@ Source URL: https://www.mass.gov/doc/454-cmr-24-employment-agency-and-temporary-
 Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §3). Confidence: high for the statute's
 list (read today); medium for the regulation's extra items (read through a government-search index).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The written job order a Massachusetts placement's worker gets by the end of the first pay period.
 
 ## Hierarchy

@@ -215,7 +215,7 @@ async function issueCode(tx: Tx, found: Found, purpose: CodePurpose, now: Date):
   return { id, code };
 }
 
-/** The code email for a purpose; the copy Shiftbook keeps hides the code. */
+/** The code email for a purpose; the copy Granite keeps hides the code. */
 async function queueCodeMail(tx: Tx, found: Found, code: string, render: CodeMailRender, context: { purpose: CodePurpose; provider?: ProviderId }, now: Date): Promise<Pending> {
   const mail = render(code, { name: found.user.name, locale: found.user.preferredLocale, agencyName: found.agency.name }, context);
   return queueMail(tx, found, "sign_in_code", mail, { subject: hideEmailCode(mail.subject, code), text: hideEmailCode(mail.text, code) }, now);

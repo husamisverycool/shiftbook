@@ -26,7 +26,7 @@ export async function listPeriods(tx: Tx) {
   const periods = await tx.select().from(s.payPeriods);
   const out = [];
   for (const p of [...periods].sort((a, b) => cmp(b.startsOn, a.startsOn))) {
-    // A period paid before Shiftbook is history, not to run.
+    // A period paid before Granite is history, not to run.
     if ((await periodState(tx, p.id)) === "history") continue;
     const run = await latestRun(tx, p.id);
     const docs = await tx.select({ id: s.sourceDocuments.id }).from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, p.id)).limit(1);

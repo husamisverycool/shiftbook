@@ -6,7 +6,7 @@ import { PeriodBusyError, PeriodLockedError } from "../server/run/period-lock";
 import { readError } from "./read-errors";
 
 describe("why a timesheet could not be read, said again in the reader's language", () => {
-  it("knows each of Shiftbook's own reasons, with the file's name where it has one", () => {
+  it("knows each of Granite's own reasons, with the file's name where it has one", () => {
     expect(readError(new RecordingMissingError("a".repeat(64)).message)).toEqual({ key: "noRecording" });
     expect(readError(READ_FAILED)).toEqual({ key: "readFailed" });
     expect(readError(new PeriodLockedError().message)).toEqual({ key: "periodLocked" });

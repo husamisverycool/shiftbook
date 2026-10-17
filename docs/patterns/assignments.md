@@ -13,7 +13,7 @@ Source URL: https://kb.bullhorn.com/backoffice/Content/backoffice/Topics/usingVa
 Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/bh1CanvasUserScorecardReport.htm
 Researched: 2026-10-15. Confidence: high (same mechanics as the job orders list).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Every assignment — the spine (SPEC §4): which worker is placed on which job order, from when to when,
 and whether it is active. Also the entry point to importing placements.
 

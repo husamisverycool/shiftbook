@@ -14,9 +14,9 @@ Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §6; the regulatio
 for hours of service, the 90-day total for new workers and the transition to standard periods).
 Confidence: high for the columns (TempWorks) and the periods (the regulation).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Who is full-time under the look-back measurement method, so the agency offers coverage in time
-(SPEC §16 "ACA look-back"), from the hours Shiftbook paid and the months imported from before it.
+(SPEC §16 "ACA look-back"), from the hours Granite paid and the months imported from before it.
 
 ## Hierarchy
 1. **View header and tabs** as `compliance.md` (ACA tab).
@@ -32,9 +32,9 @@ Who is full-time under the look-back measurement method, so the agency offers co
    "offer coverage by" duty and stays listed until its stability period ends; a worker on a break
    keeps the rows of periods already ended.
 4. **Import hours** (a dialog): a CSV with the columns Worker, Month and Hours, and optionally
-   Payroll ID, of hours of service before Shiftbook (months as spreadsheets write them, 2025-10,
+   Payroll ID, of hours of service before Granite (months as spreadsheets write them, 2025-10,
    10/2025 or Oct-25; hours whole, h:mm or decimal); rows are matched by the payroll ID, else the
-   worker's full name; only months that have ended and that Shiftbook did not pay in full; rows that
+   worker's full name; only months that have ended and that Granite did not pay in full; rows that
    are wrong are listed by row number with what is wrong, and nothing is saved until every row is
    good; a month imported again replaces the one on file.
 

@@ -1,6 +1,6 @@
 /**
- * Duty explanations and Shiftbook's notes as keys (decision 0028), on the server: the English the keys
- * say, which citations the messages carry, the Illinois equal-pay sentence, and Shiftbook's notes read
+ * Duty explanations and Granite's notes as keys (decision 0028), on the server: the English the keys
+ * say, which citations the messages carry, the Illinois equal-pay sentence, and Granite's notes read
  * back into keys. Keys are kept only when they say exactly the stored English, so a reader in another
  * language is never told something the record does not say.
  */
@@ -35,7 +35,7 @@ export function equalPayExplain(
 const DATE = "(\\d{4}-\\d{2}-\\d{2})";
 type Where = { kind: string; closedBySystem: boolean };
 const EQUAL_PAY = ["il_equal_pay_720h", "il_equal_pay_4160h"];
-/** Each fixed note, where Shiftbook writes it (so a person's words that happen to read alike stay theirs). */
+/** Each fixed note, where Granite writes it (so a person's words that happen to read alike stay theirs). */
 const NOTES: [RegExp, (w: Where) => boolean, (m: RegExpExecArray) => ExplainPart][] = [
   [new RegExp(`^Reverified on ${DATE}\\.$`), (w) => w.kind === "i9_reverify" && !w.closedBySystem, (m) => ({ key: "noteReverified", values: { date: { date: m[1]! } } })],
   [new RegExp(`^The work authorization's end was changed from ${DATE} to ${DATE}\\.$`), (w) => w.kind === "i9_reverify" && !w.closedBySystem, (m) => ({ key: "noteWorkAuthChanged", values: { from: { date: m[1]! }, to: { date: m[2]! } } })],
@@ -46,7 +46,7 @@ const NOTES: [RegExp, (w: Where) => boolean, (m: RegExpExecArray) => ExplainPart
   [new RegExp(`^(Section 1|Section 2) completed on ${DATE}\\.$`), (w) => w.closedBySystem, (m) => ({ key: "noteCompleted", values: { part: m[1] === "Section 1" ? "section1" : "section2", date: { date: m[2]! } } })],
 ];
 
-/** A note Shiftbook wrote, as keys — null for anything else (a person's own words stay as typed). */
+/** A note Granite wrote, as keys — null for anything else (a person's own words stay as typed). */
 export function noteKeyOf(note: string, where: Where): Explain | null {
   for (const [pattern, writes, part] of NOTES) {
     const m = pattern.exec(note);

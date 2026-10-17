@@ -80,7 +80,7 @@ export const I9_DATES = { hireDate: "2026-08-03", section1On: "2026-08-03", sect
 /** One worker's work authorization ends within 90 days: reverification is due soon. */
 export const WORK_AUTH_ENDS: Record<string, string> = { "kateryna-bondarenko": "2026-12-20" };
 /** What the Massachusetts job orders state (slice j step 2), and the Department's contact as the agency keeps it. */
-/** Hours one Illinois worker did at Prairie Line before Shiftbook: with the demo's weeks, near 720 (slice j, J11). */
+/** Hours one Illinois worker did at Prairie Line before Granite: with the demo's weeks, near 720 (slice j, J11). */
 export const OPENING_BALANCES = [{ worker: "fatima-haddad", client: "il" as const, minutes: 35_400, throughOn: "2026-07-31", note: "Prairie Line hours from the old timekeeping system, August 2025 to July 2026 (demo)" }];
 export const MA_NOTICE_DETAILS = { employerPhone: "(617) 555-0123", startTime: "16:00", endTime: "23:00", overtime: "possible" as const, requirements: "Black pants and black non-slip shoes (the worker's own); no cost", meals: "One staff meal each shift, no charge", transport: "Not provided", strike: false };
 export const MA_DEPARTMENT_CONTACT = "Massachusetts Department of Labor Standards\n100 Cambridge Street, Suite 500, Boston, MA 02114\n(Demo: check the current phone number on mass.gov.)";

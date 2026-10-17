@@ -15,7 +15,7 @@
  *
  * Hours are written with two decimals, ROUNDED UP to the next hundredth, so a worker is never paid
  * for less time than worked. Gusto multiplies those hours by the rate stored in Gusto, so its gross
- * can differ from Shiftbook's minute-exact gross by a few cents: every such line gets a note with the
+ * can differ from Granite's minute-exact gross by a few cents: every such line gets a note with the
  * money effect, and the control totals carry the gross Gusto should compute and the difference.
  *
  * Reconciliation: the file is read back and must give the run's workers and minutes by type exactly

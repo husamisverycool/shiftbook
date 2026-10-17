@@ -48,7 +48,7 @@ const CODE_IN_ROW_LIMIT = 100;
 /**
  * A change to how one signs in (an authenticator, recovery codes) or to the agency's people needs
  * the password or a code given within this long in the session (GitHub's sudo mode; GitHub allows
- * two hours, Shiftbook a quarter of one).
+ * two hours, Granite a quarter of one).
  */
 export const CONFIRM_MS = 15 * MINUTE;
 export const INVITE_DAYS = 10;
@@ -56,7 +56,7 @@ const RESET_MS = 60 * MINUTE;
 /** Links in emails carry this prefix, so every kept text can hide them. */
 const LINK_TOKEN = /sbau_[A-Za-z0-9_-]{20,}/g;
 export const HIDDEN_AUTH_LINK = "[sign-in link hidden]";
-const ISSUER = "Shiftbook";
+const ISSUER = "Granite";
 
 /** The roles that need the second step (SPEC §2: MFA for Owner and Coordinator). */
 export const requiresSecondStep = (role: Role) => role === "owner" || role === "coordinator";
@@ -884,8 +884,8 @@ export async function firstOwnerInvite(deps: AuthDeps, agencyId: string, input: 
     if (owner) return { ok: false, error: "has_owner" };
     const [user] = await tx.insert(s.users).values({ agencyId, name, email, role: "owner", preferredLocale: input.locale === "es" ? "es" : "en", status: "invited" }).returning();
     await tx.insert(s.userLogins).values({ userId: user!.id, agencyId, email });
-    const token = await newLink(tx, user!, "invite", new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000), "Shiftbook setup", now);
-    await auditBy(tx, { agencyId, userId: null, label: "Shiftbook setup" }, [{ action: "create", entityType: "user", entityId: user!.id, after: { name, email, role: "owner", status: "invited" } }]);
+    const token = await newLink(tx, user!, "invite", new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000), "Granite setup", now);
+    await auditBy(tx, { agencyId, userId: null, label: "Granite setup" }, [{ action: "create", entityType: "user", entityId: user!.id, after: { name, email, role: "owner", status: "invited" } }]);
     return { ok: true, link: `${baseUrl}/${user!.preferredLocale}/invite/${token}` };
   });
 }

@@ -13,7 +13,7 @@ Source URL: https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-
 Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3e). Confidence: high for
 the expiry and the requirement; the invite page's layout is not described in text.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The page the invite email links to: the invited person sets their password and joins the agency.
 
 ## Hierarchy

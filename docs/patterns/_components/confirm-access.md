@@ -10,7 +10,7 @@ Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-d
 Researched: 2026-10-16; the emailed code 2026-10-17 (decision 0033, review L3). Confidence: high for when it asks and what it accepts; the dialog's layout is
 shown in screenshots, not described.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 A stolen or forgotten-open session must not change how someone signs in, or the agency's people,
 without the password or a code (decision 0025). Asked before: setting up or replacing an
 authenticator, making new recovery codes, inviting, changing roles, suspending; removing a passkey;

@@ -107,7 +107,7 @@ describe("adding a passkey", () => {
     expect(await passkeyRegistrationOptions(deps, session, rp, null)).toEqual({ ok: false, error: "confirm" });
 
     // One email to the person, in their language, kept with its text.
-    expect(sent.map((m) => [m.to.email, m.subject])).toEqual([["pat@agency.example", "A passkey was added to your Shiftbook account"]]);
+    expect(sent.map((m) => [m.to.email, m.subject])).toEqual([["pat@agency.example", "A passkey was added to your Granite account"]]);
     expect(sent[0]!.text).toContain("“Synced passkey”");
     expect(sent[0]!.text).toContain("https://app.example/en/settings/account");
     const kept = await inLive((tx) => tx.select().from(s.emailMessages).where(eq(s.emailMessages.kind, "passkey_added")));

@@ -1,5 +1,5 @@
 /**
- * The only way Shiftbook calls an identity provider (decision 0033, review M2): https on port 443 to a
+ * The only way Granite calls an identity provider (decision 0033, review M2): https on port 443 to a
  * named host, never an IP address, never with credentials in the address. The connection resolves the
  * name itself and refuses it when ANY of its addresses is private, loopback, link-local, shared,
  * documentation, multicast or otherwise reserved — at every connection, so a name that resolves to a

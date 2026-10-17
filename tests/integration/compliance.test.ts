@@ -130,7 +130,7 @@ describe("acting on a duty (J9)", () => {
     expect(d.item.status).toBe("done");
     expect(d.history.map((h) => [h.by, h.after?.status])).toEqual([
       ["Test coordinator", "done"],
-      ["Shiftbook", "open"],
+      ["Granite", "open"],
     ]);
     // Syncing again never undoes a person's decision.
     await inAgency((tx) => syncObligations(tx, theOwner.agencyId, TODAY));
@@ -163,7 +163,7 @@ describe("the data closes and reopens what it settles (J3)", () => {
     expect(await inAgency((tx) => addRegistration(tx, theOwner, { jurisdiction: "IL", branchId: null, number: "IL-DTLSA-0001-DEMO", issuedOn: "2027-01-01", expiresOn: "2026-12-31", documentId: null }, TODAY))).toEqual({ ok: false, error: "invalid", field: "expiresOn" });
     expect(await inAgency((tx) => addRegistration(tx, theOwner, { jurisdiction: "IL", branchId: null, number: "IL-DTLSA-0001-DEMO", issuedOn: "2027-01-01", expiresOn: "2027-12-31", documentId: null }, TODAY))).toEqual({ ok: true });
     const d = (await inAgency((tx) => obligationDetail(tx, theOwner, old.id, TODAY)))!;
-    expect([d.item.status, d.statusNote, d.doneByLabel, d.closedBySystem]).toEqual(["done", "Renewed: IL-DTLSA-0001-DEMO, expires 2027-12-31.", "Shiftbook", true]);
+    expect([d.item.status, d.statusNote, d.doneByLabel, d.closedBySystem]).toEqual(["done", "Renewed: IL-DTLSA-0001-DEMO, expires 2027-12-31.", "Granite", true]);
     expect((await items()).items.filter((i) => i.kind === "il_registration_renewal").map((i) => [i.dueOn, i.status])).toEqual([
       ["2027-11-01", "upcoming"],
       ["2026-11-01", "done"],
@@ -235,7 +235,7 @@ describe("second opinion (slice j)", () => {
     expect(await inAgency((tx) => syncObligations(tx, theOwner.agencyId, TODAY))).toEqual({ created: 0, changed: 0, closed: 0 });
   });
 
-  it("what the data closed cannot be reopened by hand; what Shiftbook set aside, the data may close as done", async () => {
+  it("what the data closed cannot be reopened by hand; what Granite set aside, the data may close as done", async () => {
     const old = await one("il_registration_renewal");
     await inAgency((tx) => addRegistration(tx, theOwner, { jurisdiction: "IL", branchId: null, number: "IL-DTLSA-0001-DEMO", issuedOn: "2027-01-01", expiresOn: "2027-12-31", documentId: null }, TODAY));
     expect(await inAgency((tx) => reopenObligation(tx, theOwner, old.id))).toEqual({ ok: false, error: "closed_by_data" });

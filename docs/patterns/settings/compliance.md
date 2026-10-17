@@ -14,12 +14,12 @@ Source URL: https://linear.app/docs/account-preferences
 Source URL: https://linear.app/docs/saml-and-access-control
 Source URL: https://linear.app/docs/scim
 Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §1–§5, §7). Confidence: high for the
-renewal behavior; low for the page's layout (Vanta keeps these on each document, Shiftbook gathers
+renewal behavior; low for the page's layout (Vanta keeps these on each document, Granite gathers
 them on one page as Margin settings does). Laid out on 2026-10-17 as Linear's settings from Linear's own
 screenshots (`_components/settings.md`).
 
-## Purpose in Shiftbook
-The facts the compliance duties are worked out from that are not elsewhere in Shiftbook: the
+## Purpose in Granite
+The facts the compliance duties are worked out from that are not elsewhere in Granite: the
 agency's state registrations, its workers' comp policy, and the Massachusetts statement sent with
 job orders (SPEC §16).
 

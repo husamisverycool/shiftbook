@@ -10,7 +10,7 @@ Researched: 2026-10-16 from the products' own screenshots (`docs/research/design
 part C). Confidence: high for the parts and their order (Stripe's screenshot shows "Today" then
 "Your overview"; Polaris puts the setup guide on the homepage).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The first page after signing in: where to begin (a setup guide that walks a new agency — or a
 stranger in the demo, SPEC §24 — through a week), the week now, what needs someone, and the past
 quarter at a glance.
@@ -19,13 +19,13 @@ quarter at a glance.
 1. **Setup guide** (Polaris, as its screenshot shows it; for the Owner, while not hidden): a white
    card with "Setup guide", hide (×) and collapse (⌃) buttons on the right, one intro line, "N of M
    steps done", then the steps in a bordered box with dividers — each a checkbox (ticked by
-   Shiftbook when the step has happened, never by hand: Polaris "Mark tasks as complete when
+   Granite when the step has happened, never by hand: Polaris "Mark tasks as complete when
    merchants finish them"), its title and a chevron. One step open at a time, the first not done:
    its one-line description and its button. The steps:
    1. Choose the payroll system → payroll file settings. Done: a payroll system is chosen.
    2. Add clients and job orders → Job orders. Done: a worker is on an assignment.
    3. Convert a week's timesheets → the pay period's upload. Done: a pay period not paid before
-      Shiftbook has a timesheet or hours. (In the demo it points at "Use the sample timesheets".)
+      Granite has a timesheet or hours. (In the demo it points at "Use the sample timesheets".)
    4. Ask a client to approve the hours → Client approvals. Done: an approval request was sent.
    5. Approve the week and create the files → the pay period. Done: a week has its files.
    6. Match a bank file to the invoices → Bank. Done: a bank file was imported. (In the demo it

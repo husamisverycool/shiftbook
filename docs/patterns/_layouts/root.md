@@ -10,7 +10,7 @@ low for its wording, color and controls (not documented).
 
 Owner decision 2026-10-15: "go and do what you think is best but the BIGGEST thing is to purely rely on inspiration from great products NOT your own idea of what's best".
 
-## Purpose in Shiftbook
+## Purpose in Granite
 The outermost frame of every page: language from the URL (`/en/...`, `/es/...`), and in demo mode a
 banner on every page (SPEC §18) with the one-click reset.
 

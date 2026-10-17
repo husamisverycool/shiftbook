@@ -18,7 +18,7 @@ Researched: 2026-10-15 (date format and preview records re-checked on the first 
 exact export header text (none publishes it — presets match documented labels and API field names,
 and the mapping step lets the person correct them).
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Bring an agency's current placements in from its recruiting system (SPEC §8: CSV import of
 placements from Bullhorn, Spott and JobAdder exports via column mapping), without retyping.
 
@@ -28,12 +28,12 @@ A step frame, one step at a time, with Back and Next (Attio's import steps):
    the preset mapping.
 1. **Upload** (Attio): drop area or choose a file (CSV or Excel); after upload, the number of
    columns and rows found.
-2. **Map columns** (Attio): file columns on the left, Shiftbook fields on the right, auto-mapped from
+2. **Map columns** (Attio): file columns on the left, Granite fields on the right, auto-mapped from
    the preset or a mapping remembered from an earlier import (Flatfile memory); hover a field for
    sample values; leave a column unmapped to skip it. Required: worker name, client, position, start
    date. Columns that look like Social Security numbers or birth dates are never shown; the ones
    removed when the file was received are listed above the columns by position, with why and what
-   to do (SPEC §21 data safety — a Shiftbook rule, not from the references).
+   to do (SPEC §21 data safety — a Granite rule, not from the references).
 3. **Review values** (Attio): column list on the left; for the chosen column, each distinct value
    with its row count and what it maps to — workers matched to the roster (or "leave out"; never
    "create"), clients matched to existing clients, positions to job orders (or a new job order, with

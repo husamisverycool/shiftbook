@@ -82,12 +82,12 @@
     "disputedTitle": "Disputados, a la espera de {agency}:",
     "disputedLine": "{worker}, {date}: {reason}",
     "changeHint": "Para cambiar algo, comuníquese con {agency}.",
-    "noticeOpen": "Abra la solicitud en Shiftbook: {link}",
+    "noticeOpen": "Abra la solicitud en Granite: {link}",
     "contact": "¿Preguntas? Comuníquese con {agency}: {contact}.",
-    "footer": "Enviado por Shiftbook en nombre de {agency}."
+    "footer": "Enviado por Granite en nombre de {agency}."
   },
   "meta": {
-    "title": "Shiftbook"
+    "title": "Granite"
   },
   "banner": {
     "demo": "Agencia de demostración con datos inventados. Nada aquí es real y la demostración no se conecta con servicios externos.",
@@ -411,7 +411,7 @@
         "pay_bill_mismatch": "Las horas de pago y de facturación no coinciden",
         "invalid_input": "Horas que no se pueden pagar como están",
         "unknown_jurisdiction": "No hay reglas salariales para el estado del lugar de trabajo",
-        "rule_not_supported_yet": "Una regla salarial que Shiftbook aún no maneja",
+        "rule_not_supported_yet": "Una regla salarial que Granite aún no maneja",
         "rule_data_missing": "Faltan datos de reglas salariales",
         "rule_data_invalid": "Los datos de reglas salariales tienen un problema",
         "below_minimum_wage": "Pago por debajo del salario mínimo",
@@ -465,7 +465,7 @@
       "controlTotals": "Totales de control",
       "workers": "Trabajadores",
       "minutes": "Horas {type}",
-      "gross": "Pago bruto (Shiftbook)",
+      "gross": "Pago bruto (Granite)",
       "difference": "Diferencia",
       "notes": "Notas",
       "fingerprint": "SHA-256",
@@ -1038,7 +1038,7 @@
         "dispute_kept": "Disputa resuelta: se mantuvieron las horas",
         "approval_withdrawn": "Aprobación retirada"
       },
-      "automatic": "Shiftbook, automáticamente",
+      "automatic": "Granite, automáticamente",
       "viewEmail": "Ver correo",
       "emailKind": {
         "approval_request": "Solicitud",
@@ -1186,11 +1186,11 @@
     },
     "back": "Atrás",
     "next": "Siguiente",
-    "mapBody": "Relacione cada columna del archivo con un campo de Shiftbook. Las columnas en \"No importar\" se omiten.",
+    "mapBody": "Relacione cada columna del archivo con un campo de Granite. Las columnas en \"No importar\" se omiten.",
     "missingTitle": "Todavía falta",
     "fileColumn": "Columna del archivo",
     "samples": "Valores de ejemplo",
-    "shiftbookField": "Campo de Shiftbook",
+    "shiftbookField": "Campo de Granite",
     "fieldFor": "Campo para {column}",
     "dontImport": "No importar",
     "fields": {
@@ -1378,7 +1378,7 @@
       "body": "Las horas de este periodo ya se pagaron. Para cambiar algo, comuníquese con {agency}."
     },
     "contact": "¿Preguntas? Comuníquese con {agency}: {contact}",
-    "providedBy": "Proporcionado por {agency} a través de Shiftbook.",
+    "providedBy": "Proporcionado por {agency} a través de Granite.",
     "language": "Idioma",
     "english": "English",
     "spanish": "Español",
@@ -1487,7 +1487,7 @@
         "columns": "Columnas de la hoja"
       },
       "codes": {
-        "hint": "El código que usa {system} para cada tipo de pago que Shiftbook puede producir.",
+        "hint": "El código que usa {system} para cada tipo de pago que Granite puede producir.",
         "colKind": "Tipo de pago",
         "colCode": "Código",
         "colAs": "Se envía como",
@@ -1498,7 +1498,7 @@
         "notCarried": "Este sistema no lo admite.",
         "blank": {
           "refused": "La nómina se detiene y nombra al trabajador, para pagarlo a mano.",
-          "own_code": "Se usa el código de Shiftbook ({code}).",
+          "own_code": "Se usa el código de Granite ({code}).",
           "fixed": "Siempre en su columna.",
           "not_carried": "La nómina nombra al trabajador, para pagarlo a mano."
         },
@@ -2119,7 +2119,7 @@
     "deposits": "Depósitos",
     "withdrawals": "Retiros",
     "type": "Tipo (crédito o débito)",
-    "previewTitle": "Cómo lee Shiftbook las primeras líneas",
+    "previewTitle": "Cómo lee Granite las primeras líneas",
     "previewEmpty": "Ninguna línea se puede leer con estas columnas. Revise las columnas de fecha y monto y el formato de fecha.",
     "problems": {
       "date": "Línea {row}: la fecha «{text}» no se puede leer con este formato.",
@@ -2211,7 +2211,7 @@
     "noEmail": "No hay correo de facturación",
     "subject": "Asunto",
     "message": "Mensaje",
-    "sendsNothing": "Shiftbook no envía nada: copie el mensaje o ábralo en su aplicación de correo. El día queda registrado en esta factura.",
+    "sendsNothing": "Granite no envía nada: copie el mensaje o ábralo en su aplicación de correo. El día queda registrado en esta factura.",
     "copy": "Copiar",
     "openEmail": "Abrir en la aplicación de correo",
     "creditForClient": "Crédito para el cliente",
@@ -2574,7 +2574,7 @@
       "openPlacement": "Abrir la orden de trabajo",
       "doneBy": "Hecha por {by} el {date}.",
       "naBy": "Descartada por {by} el {date}.",
-      "byShiftbook": "Shiftbook",
+      "byGranite": "Granite",
       "note": "Nota: {note}",
       "addFile": "Agregar archivo",
       "file": "Archivo",
@@ -2585,7 +2585,7 @@
       "unlink": "Desvincular",
       "download": "Descargar",
       "uploaded": "Subido",
-      "generated": "Hecho por Shiftbook",
+      "generated": "Hecho por Granite",
       "addedBy": "Agregado por {by} el {date}",
       "unlinkedBy": "Desvinculado por {by} el {date}",
       "fileTypes": "PDF, imágenes, hojas de cálculo, documentos o texto, hasta 20 MB.",
@@ -2611,7 +2611,7 @@
         "workAuth": "La autorización de trabajo vence (si vence)",
         "save": "Guardar fechas",
         "saved": "Guardado.",
-        "datesOnly": "Shiftbook guarda solo fechas, nunca copias del formulario ni de los documentos."
+        "datesOnly": "Granite guarda solo fechas, nunca copias del formulario ni de los documentos."
       },
       "reverify": {
         "title": "Registrar la reverificación",
@@ -2633,11 +2633,11 @@
         "ma_job_order": "Hacer la orden de trabajo",
         "wc_audit": "Hacer el paquete",
         "made": "Hecho y agregado a la evidencia.",
-        "hint": "Shiftbook hace el documento con lo que sabe y lo guarda aquí."
+        "hint": "Granite hace el documento con lo que sabe y lo guarda aquí."
       },
       "notice": {
         "title": "Datos de la orden de trabajo",
-        "intro": "Lo que la orden de trabajo indica y Shiftbook no sabe de otra forma. Se guarda en la orden de trabajo para cada asignación.",
+        "intro": "Lo que la orden de trabajo indica y Granite no sabe de otra forma. Se guarda en la orden de trabajo para cada asignación.",
         "startTime": "Inicio diario",
         "endTime": "Fin previsto",
         "overtime": "Horas extra",
@@ -2659,7 +2659,7 @@
         "agencyPhone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo."
       },
       "missingRegistration": "No hay registro de Illinois vigente: primero agréguelo en Configuración de cumplimiento.",
-      "noI9Files": "Las copias del Formulario I-9 no se guardan en Shiftbook (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
+      "noI9Files": "Las copias del Formulario I-9 no se guardan en Granite (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
       "proofNoRegistration": "No hay registro de Illinois vigente el {date}, el día en que el cliente verifica: primero agregue el registro renovado.",
       "equalPay": {
         "title": "Tarifa de igualdad salarial",
@@ -2733,7 +2733,7 @@
         "meals": "Diga si se dan comidas y su costo (hasta 300 caracteres).",
         "transport": "Diga si se da transporte y su tarifa (hasta 300 caracteres).",
         "contact": "Escriba los datos de contacto (hasta 500 caracteres).",
-        "i9_files": "Las copias del Formulario I-9 no se guardan en Shiftbook: registre solo las fechas.",
+        "i9_files": "Las copias del Formulario I-9 no se guardan en Granite: registre solo las fechas.",
         "agency_phone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo.",
         "employerPhone": "Escriba el teléfono del empleador del lugar de trabajo.",
         "carrierContact": "La dirección y el teléfono de la aseguradora deben tener menos de 500 caracteres.",
@@ -2754,7 +2754,7 @@
         "stabilityMonths": "El periodo de estabilidad debe ser al menos el mínimo y no más corto que el de medición.",
         "rule": "Los límites de la ACA no están registrados."
       },
-      "closed_by_data": "Shiftbook cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
+      "closed_by_data": "Granite cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
     },
     "calendar": {
       "today": "Hoy",
@@ -2810,7 +2810,7 @@
       "tieSettled": "Cuadra con los archivos de nómina con estas fechas de pago ({files}): bruto {gross}, y {settled} que las correcciones liquidaron fuera de los archivos ({decisions, plural, one {# decisión} other {# decisiones}})."
     },
     "counters": {
-      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica (820 ILCS 175/42) después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Shiftbook se agregan como saldos iniciales, y la nómina también las cuenta.",
+      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica (820 ILCS 175/42) después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Granite se agregan como saldos iniciales, y la nómina también las cuenta.",
       "search": "Buscar",
       "searchPlaceholder": "Trabajador",
       "client": "Cliente",
@@ -2833,7 +2833,7 @@
         "client": "Cliente",
         "twelve": "{months} meses",
         "fortyEight": "{months} meses",
-        "before": "Antes de Shiftbook",
+        "before": "Antes de Granite",
         "state": "Igualdad salarial"
       },
       "of": "{hours} de {limit} h",
@@ -2843,7 +2843,7 @@
       "near": "Cerca: faltan {hours}",
       "toGo": "Faltan {hours}",
       "toggle": "Saldos iniciales de {worker} en {client}",
-      "balancesTitle": "Horas antes de Shiftbook",
+      "balancesTitle": "Horas antes de Granite",
       "noBalances": "No hay saldos iniciales.",
       "balance": "{hours} hasta el {date}",
       "addedBy": "agregado por {by}, {date}",
@@ -2851,8 +2851,8 @@
       "remove": "Quitar",
       "removeTitle": "Quitar este saldo",
       "removeBody": "Queda en la lista como quitado, con su motivo; la próxima nómina ya no lo cuenta.",
-      "addTitle": "Agregar horas trabajadas antes de Shiftbook",
-      "addBody": "Las horas que el trabajador hizo para este cliente antes de Shiftbook. Cuentan en la fecha hasta la que llegan, la más tardía en que pudieron trabajarse.",
+      "addTitle": "Agregar horas trabajadas antes de Granite",
+      "addBody": "Las horas que el trabajador hizo para este cliente antes de Granite. Cuentan en la fecha hasta la que llegan, la más tardía en que pudieron trabajarse.",
       "fields": {
         "pair": "Trabajador y cliente",
         "choose": "Elija…",
@@ -2872,10 +2872,10 @@
       "changeSettings": "Cámbielos en Configuración de cumplimiento",
       "setSettings": "Definir los periodos",
       "hoursTitle": "Horas registradas",
-      "paidLine": "Semanas pagadas en Shiftbook: {range}.",
-      "noPaid": "Aún no se ha pagado ninguna semana en Shiftbook.",
-      "importsLine": "Importadas de antes de Shiftbook: {rows, plural, one {# total mensual} other {# totales mensuales}} de {workers, plural, one {# trabajador} other {# trabajadores}}, {range}. Último archivo {source}, por {by}, {date}.",
-      "noImports": "No se importaron horas de antes de Shiftbook.",
+      "paidLine": "Semanas pagadas en Granite: {range}.",
+      "noPaid": "Aún no se ha pagado ninguna semana en Granite.",
+      "importsLine": "Importadas de antes de Granite: {rows, plural, one {# total mensual} other {# totales mensuales}} de {workers, plural, one {# trabajador} other {# trabajadores}}, {range}. Último archivo {source}, por {by}, {date}.",
+      "noImports": "No se importaron horas de antes de Granite.",
       "needsSettings": "El método retrospectivo necesita primero sus periodos: cuánto dura un periodo de medición y cuándo empieza, los días administrativos y el periodo de estabilidad.",
       "noRule": "Los límites de la ACA no están registrados, así que no se puede medir a nadie.",
       "search": "Buscar",
@@ -2923,8 +2923,8 @@
       "since": "Desde el {date}",
       "import": {
         "open": "Importar horas",
-        "title": "Importar horas de antes de Shiftbook",
-        "body": "Un archivo CSV con una fila por trabajador y mes: el nombre completo del trabajador, el mes y las horas de servicio, con los feriados y permisos pagados. Agregue una columna Payroll ID para distinguir a dos trabajadores con el mismo nombre. Los meses pueden escribirse 2025-10, 10/2025 u Oct-25; las horas como 140, 140:30 o 140.5. Solo meses ya terminados; para un mes que Shiftbook pagó en parte, solo las horas fuera de las semanas que pagó. No se guarda nada hasta que todas las filas estén bien; un mes importado de nuevo reemplaza al registrado.",
+        "title": "Importar horas de antes de Granite",
+        "body": "Un archivo CSV con una fila por trabajador y mes: el nombre completo del trabajador, el mes y las horas de servicio, con los feriados y permisos pagados. Agregue una columna Payroll ID para distinguir a dos trabajadores con el mismo nombre. Los meses pueden escribirse 2025-10, 10/2025 u Oct-25; las horas como 140, 140:30 o 140.5. Solo meses ya terminados; para un mes que Granite pagó en parte, solo las horas fuera de las semanas que pagó. No se guarda nada hasta que todas las filas estén bien; un mes importado de nuevo reemplaza al registrado.",
         "example": "Worker,Month,Hours\nMarcus Bell,2025-10,140\nAnita Patel,2025-10,121:30",
         "file": "Archivo CSV",
         "problemsTitle": "No se guardó nada. Corrija estas filas e importe de nuevo:",
@@ -2935,7 +2935,7 @@
           "columns": "La primera fila debe nombrar las columnas Worker, Month y Hours.",
           "duplicate": "Fila {row}: el mismo trabajador y mes otra vez.",
           "empty": "El archivo no tiene filas debajo de los nombres de las columnas.",
-          "paid": "Fila {row}: Shiftbook ya pagó ese mes completo, así que sus horas ya están registradas.",
+          "paid": "Fila {row}: Granite ya pagó ese mes completo, así que sus horas ya están registradas.",
           "too_many": "El archivo tiene más de 5000 filas: impórtelo por partes."
         },
         "cancel": "Cancelar",
@@ -3200,13 +3200,13 @@
     }
   },
   "authFrame": {
-    "product": "Shiftbook",
+    "product": "Granite",
     "language": "Idioma",
     "english": "English",
     "spanish": "Español"
   },
   "signIn": {
-    "title": "Inicie sesión en Shiftbook",
+    "title": "Inicie sesión en Granite",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "forgot": "¿Olvidó su contraseña?",
@@ -3221,11 +3221,11 @@
       "password_changed": "Su contraseña cambió. Inicie sesión con la nueva.",
       "link_expired": "Ese enlace ya no funciona.",
       "provider_failed": "El proveedor no inició su sesión. Inténtelo de nuevo, o use otra forma de entrar.",
-      "no_account": "Ningún miembro de Shiftbook usa esa cuenta. Pida una invitación al Propietario de su agencia.",
+      "no_account": "Ningún miembro de Granite usa esa cuenta. Pida una invitación al Propietario de su agencia.",
       "not_verified": "El proveedor no confirmó el correo de esa cuenta. Inicie sesión de otra forma y conéctela desde Su cuenta.",
       "suspended": "Su acceso a esta agencia está suspendido. Consulte al Propietario de la agencia.",
       "too_many": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
-      "other_identity": "Su inicio de sesión en Shiftbook ya está conectado a otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
+      "other_identity": "Su inicio de sesión en Granite ya está conectado a otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
     },
     "demoTitle": "Pruebe la demostración como",
     "demoHint": "Las personas de la demostración no necesitan contraseña ni código.",
@@ -3244,7 +3244,7 @@
   },
   "signInCode": {
     "title": "Escriba su código",
-    "body": "Abra su aplicación de autenticación y escriba el código de seis dígitos que muestra para Shiftbook.",
+    "body": "Abra su aplicación de autenticación y escriba el código de seis dígitos que muestra para Granite.",
     "code": "Código de seis dígitos",
     "verify": "Verificar",
     "verifying": "Verificando…",
@@ -3287,7 +3287,7 @@
     "copied": "Códigos de recuperación copiados.",
     "saved": "Ya guardé mis códigos de recuperación",
     "fileName": "shiftbook-codigos-de-recuperacion.txt",
-    "fileHeader": "Códigos de recuperación de Shiftbook para {email}. Cada código funciona una vez.",
+    "fileHeader": "Códigos de recuperación de Granite para {email}. Cada código funciona una vez.",
     "on": "Su autenticador está activado.",
     "signOut": "Cerrar sesión",
     "cancel": "Cancelar"
@@ -3347,7 +3347,7 @@
     "who": "{email} · {role}",
     "preferencesTitle": "Preferencias",
     "language": "Idioma",
-    "languageHint": "Sus pantallas, su página de inicio de sesión y los correos que Shiftbook le envía.",
+    "languageHint": "Sus pantallas, su página de inicio de sesión y los correos que Granite le envía.",
     "languageSaved": "Idioma guardado.",
     "passwordTitle": "Contraseña",
     "passwordChanged": "Último cambio: {date}.",
@@ -3374,7 +3374,7 @@
     "setUpAgain": "Configurar de nuevo",
     "setUpAgainHint": "Para un teléfono nuevo. La aplicación anterior sigue funcionando hasta que se verifique la nueva.",
     "signOut": "Cerrar sesión",
-    "signOutLine": "Cerrar la sesión de Shiftbook en este navegador",
+    "signOutLine": "Cerrar la sesión de Granite en este navegador",
     "demoNote": "Demostración: nada de aquí sale de la demostración; pruebe la contraseña y el autenticador libremente."
   },
   "members": {
@@ -3452,17 +3452,17 @@
   },
   "authEmail": {
     "greeting": "Hola, {name}:",
-    "footer": "Enviado por Shiftbook en nombre de {agency}.",
+    "footer": "Enviado por Granite en nombre de {agency}.",
     "invite": {
-      "subject": "Invitación de {by} para unirse a {agency} en Shiftbook",
-      "intro": "{by} le envió una invitación para unirse a {agency} en Shiftbook como {role}.",
+      "subject": "Invitación de {by} para unirse a {agency} en Granite",
+      "intro": "{by} le envió una invitación para unirse a {agency} en Granite como {role}.",
       "open": "Aceptar la invitación",
       "expires": "La invitación funciona hasta el {date}. Es solo para usted, así que por favor no la reenvíe.",
       "unexpected": "Si no esperaba esta invitación, puede ignorar este correo."
     },
     "reset": {
-      "subject": "Restablezca su contraseña de Shiftbook",
-      "intro": "Alguien pidió restablecer la contraseña con la que inicia sesión en {agency} en Shiftbook.",
+      "subject": "Restablezca su contraseña de Granite",
+      "intro": "Alguien pidió restablecer la contraseña con la que inicia sesión en {agency} en Granite.",
       "open": "Elegir una contraseña nueva",
       "expires": "El enlace funciona una vez, durante una hora.",
       "unexpected": "Si no fue usted, ignore este correo: su contraseña sigue igual."
@@ -3556,7 +3556,7 @@
       "too_many": "Demasiados números de Seguro Social ingresados en la última hora. Inténtelo más tarde.",
       "not_found": "Este trabajador ya no está aquí. Vuelva a cargar la página.",
       "generic": "No se guardó. Inténtelo de nuevo.",
-      "busy": "Shiftbook está ocupado. Inténtelo de nuevo en un momento.",
+      "busy": "Granite está ocupado. Inténtelo de nuevo en un momento.",
       "ended": "El empleo de este trabajador ya terminó.",
       "active": "Este trabajador ya está activo.",
       "none": "No hay número de Seguro Social registrado para este trabajador.",
@@ -3642,7 +3642,7 @@
         "endConfirm": "Dar de baja",
         "i9": {
           "title": "Fecha de contratación y Formulario I-9",
-          "hint": "Solo fechas: Shiftbook no guarda copia del formulario ni de documentos de identidad.",
+          "hint": "Solo fechas: Granite no guarda copia del formulario ni de documentos de identidad.",
           "hireDate": "Fecha de contratación",
           "section1On": "Sección 1 completada",
           "section2On": "Sección 2 completada",
@@ -3829,7 +3829,7 @@
       "steps": {
         "payroll": {
           "title": "Elija su sistema de nómina",
-          "body": "Shiftbook crea el archivo que importa su sistema de nómina: Gusto, ADP, QuickBooks o una hoja de cálculo.",
+          "body": "Granite crea el archivo que importa su sistema de nómina: Gusto, ADP, QuickBooks o una hoja de cálculo.",
           "action": "Abrir la configuración del archivo de nómina"
         },
         "placements": {
@@ -3839,7 +3839,7 @@
         },
         "convert": {
           "title": "Convierta una semana de hojas de horas",
-          "body": "Suelte fotos, PDF y exportaciones del reloj checador, y revise solo las filas que Shiftbook marca.",
+          "body": "Suelte fotos, PDF y exportaciones del reloj checador, y revise solo las filas que Granite marca.",
           "demo": "En esta demostración, elija «Usar las hojas de horas de ejemplo» en la página de carga.",
           "action": "Convertir hojas de horas"
         },
@@ -3850,7 +3850,7 @@
         },
         "files": {
           "title": "Apruebe la semana y cree los archivos",
-          "body": "Se revisa cada regla de pago y luego Shiftbook crea el archivo de nómina y la factura de cada cliente con su respaldo.",
+          "body": "Se revisa cada regla de pago y luego Granite crea el archivo de nómina y la factura de cada cliente con su respaldo.",
           "action": "Abrir el periodo de pago"
         },
         "bank": {
@@ -4354,11 +4354,11 @@
     "result": {
       "connected": "{provider} conectada. Ya puede iniciar sesión con ella.",
       "disconnected": "{provider} desconectada.",
-      "taken": "Esa cuenta ya está conectada a otra persona de Shiftbook.",
+      "taken": "Esa cuenta ya está conectada a otra persona de Granite.",
       "already": "Primero desconecte la cuenta que tiene conectada.",
       "failed": "{provider} no se conectó. Inténtelo de nuevo.",
       "confirm": "Confirme que es usted y vuelva a conectar.",
-      "unavailable": "{provider} no está configurado en este Shiftbook."
+      "unavailable": "{provider} no está configurado en este Granite."
     },
     "demo": {
       "title": "Inicio de sesión de demostración: {provider}",
@@ -4367,12 +4367,12 @@
         "microsoft": "Microsoft",
         "sso": "el SSO de su agencia"
       },
-      "body": "Esta página reemplaza a {provider} en la demostración. Nada sale de Shiftbook y no se pide contraseña: elija quién es usted.",
+      "body": "Esta página reemplaza a {provider} en la demostración. Nada sale de Granite y no se pide contraseña: elija quién es usted.",
       "choose": "Elija una cuenta",
       "notMember": "Alguien que no es miembro",
       "cancel": "Cancelar",
       "working": "Iniciando sesión…",
-      "badTitle": "Este no es un inicio de sesión que Shiftbook haya empezado",
+      "badTitle": "Este no es un inicio de sesión que Granite haya empezado",
       "badBody": "Empiece de nuevo desde la página de inicio de sesión.",
       "back": "Volver a iniciar sesión"
     },
@@ -4385,24 +4385,24 @@
       "provider_failed": "El proveedor no inició su sesión. Inténtelo de nuevo, o cree una contraseña.",
       "not_verified": "El proveedor no confirmó el correo de esa cuenta. Cree una contraseña, o use otra cuenta.",
       "email_mismatch": "El correo de esa cuenta no es el invitado ({email}). Use el correo invitado, o cree una contraseña.",
-      "taken": "Esa cuenta ya está conectada a otra persona de Shiftbook."
+      "taken": "Esa cuenta ya está conectada a otra persona de Granite."
     },
     "mail": {
       "providers": {
         "google": "Google",
         "microsoft": "Microsoft"
       },
-      "subject": "{provider} se conectó a su cuenta de Shiftbook",
+      "subject": "{provider} se conectó a su cuenta de Granite",
       "greeting": "Hola, {name}:",
-      "body": "La cuenta de {provider} {email} ya puede iniciar su sesión en {agency} en Shiftbook.",
-      "bodyNoEmail": "Una cuenta de {provider} ya puede iniciar su sesión en {agency} en Shiftbook.",
+      "body": "La cuenta de {provider} {email} ya puede iniciar su sesión en {agency} en Granite.",
+      "bodyNoEmail": "Una cuenta de {provider} ya puede iniciar su sesión en {agency} en Granite.",
       "when": "Se conectó el {date}.",
       "review": "Revisar sus cuentas conectadas",
       "unexpected": "Si no fue usted, desconéctela de inmediato desde Su cuenta e informe al Propietario de su agencia.",
-      "footer": "Enviado por Shiftbook en nombre de {agency}.",
-      "subjectSso": "El inicio de sesión único (SSO) se conectó a su cuenta de Shiftbook",
-      "bodySso": "La cuenta {email} del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Shiftbook.",
-      "bodyNoEmailSso": "Una cuenta del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Shiftbook."
+      "footer": "Enviado por Granite en nombre de {agency}.",
+      "subjectSso": "El inicio de sesión único (SSO) se conectó a su cuenta de Granite",
+      "bodySso": "La cuenta {email} del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Granite.",
+      "bodyNoEmailSso": "Una cuenta del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Granite."
     }
   },
   "emailCode": {
@@ -4424,19 +4424,19 @@
     "demoCopy": "Demostración: no se envía ningún correo. Esta es la copia del buzón de la demostración:",
     "back": "Volver a iniciar sesión",
     "mail": {
-      "subject": "Su código de acceso a Shiftbook",
+      "subject": "Su código de acceso a Granite",
       "greeting": "Hola, {name}:",
-      "intro": "Alguien pidió iniciar sesión en {agency} en Shiftbook con este correo. Su código:",
+      "intro": "Alguien pidió iniciar sesión en {agency} en Granite con este correo. Su código:",
       "expires": "Funciona una vez, durante 10 minutos.",
       "unexpected": "Si no fue usted, ignore este correo: nadie puede iniciar sesión sin el código.",
-      "footer": "Enviado por Shiftbook en nombre de {agency}.",
-      "subjectLink": "Confirme la conexión de {provider} con Shiftbook",
-      "subjectConfirm": "Su código de confirmación de Shiftbook",
-      "introLink": "Alguien está conectando una cuenta de {provider} a su inicio de sesión de Shiftbook en {agency}. Si es usted, escriba este código:",
-      "introConfirm": "Alguien pidió confirmar un cambio en su cuenta de Shiftbook en {agency}. Si es usted, escriba este código:",
-      "never": "Nunca comparta este código con nadie. Shiftbook nunca se lo pedirá por teléfono, chat ni correo.",
-      "subjectLinkSso": "Confirme la conexión del inicio de sesión único (SSO) con Shiftbook",
-      "introLinkSso": "Alguien está conectando la cuenta del inicio de sesión único (SSO) de su agencia a su inicio de sesión de Shiftbook en {agency}. Si es usted, escriba este código:"
+      "footer": "Enviado por Granite en nombre de {agency}.",
+      "subjectLink": "Confirme la conexión de {provider} con Granite",
+      "subjectConfirm": "Su código de confirmación de Granite",
+      "introLink": "Alguien está conectando una cuenta de {provider} a su inicio de sesión de Granite en {agency}. Si es usted, escriba este código:",
+      "introConfirm": "Alguien pidió confirmar un cambio en su cuenta de Granite en {agency}. Si es usted, escriba este código:",
+      "never": "Nunca comparta este código con nadie. Granite nunca se lo pedirá por teléfono, chat ni correo.",
+      "subjectLinkSso": "Confirme la conexión del inicio de sesión único (SSO) con Granite",
+      "introLinkSso": "Alguien está conectando la cuenta del inicio de sesión único (SSO) de su agencia a su inicio de sesión de Granite en {agency}. Si es usted, escriba este código:"
     }
   },
   "sso": {
@@ -4500,7 +4500,7 @@
   },
   "linkProof": {
     "title": "Confirme que es su correo",
-    "body": "Para conectar esta cuenta de {provider} a su inicio de sesión de Shiftbook, escriba el código enviado a {hint}. Funciona una vez, durante 10 minutos.",
+    "body": "Para conectar esta cuenta de {provider} a su inicio de sesión de Granite, escriba el código enviado a {hint}. Funciona una vez, durante 10 minutos.",
     "providers": {
       "google": "Google",
       "microsoft": "Microsoft",
@@ -4518,7 +4518,7 @@
       "invalid": "Ese código no funciona. Revíselo, o pida uno nuevo.",
       "locked": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
       "expired": "Este inicio de sesión esperó demasiado. Empiece de nuevo desde la página de inicio de sesión.",
-      "taken": "Esa cuenta ya está conectada a otra persona de Shiftbook.",
+      "taken": "Esa cuenta ya está conectada a otra persona de Granite.",
       "other_identity": "Ya conectó otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
     }
   },
@@ -4537,13 +4537,13 @@
     },
     "done": "Listo",
     "email": {
-      "footer": "Enviado por Shiftbook en nombre de {agency}.",
+      "footer": "Enviado por Granite en nombre de {agency}.",
       "greeting": "Hola, {name}:",
       "ifNot": "Si no fue usted, abra Su cuenta, quite la llave de acceso y cambie su contraseña; después avise al Propietario de su agencia.",
       "ifYou": "Si la agregó usted, no tiene que hacer nada.",
       "intro": "Se agregó una llave de acceso llamada «{passkey}» a la cuenta que usa para {agency}, el {when}.",
       "open": "Abrir Su cuenta",
-      "subject": "Se agregó una llave de acceso a su cuenta de Shiftbook"
+      "subject": "Se agregó una llave de acceso a su cuenta de Granite"
     },
     "intro": "Inicie sesión con la huella, el rostro o el bloqueo de pantalla de su dispositivo en lugar de su contraseña y su código. Una llave de acceso cuenta como los dos pasos.",
     "lastUsed": "Último uso: {date}",

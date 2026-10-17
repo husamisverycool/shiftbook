@@ -23,7 +23,7 @@ Adopted: Dext's Costs inbox for the list structure, Expensify for upload and rea
 for upload channels and matching rules.
 Owner decision 2026-10-15: "go and do what you think is best but the BIGGEST thing is to purely rely on inspiration from great products NOT your own idea of what's best".
 
-## Purpose in Shiftbook
+## Purpose in Granite
 Every incoming timesheet (photo, scan, PDF, time-clock CSV/XLSX, VMS export, email) lands here,
 gets read, and is matched to assignments. Coordinators see what is still being read, what needs
 review, and what is done.
@@ -41,7 +41,7 @@ review, and what is done.
    structure): Status · Received via · Received · Client · Kind · Entries · Needs review.
    Column settings control to add/remove columns and set density (Dext).
 5. **Row selection:** checkbox per row, select all, Shift+click range (Expensify).
-6. **Footer:** totals for the current view (Expensify "total" footer). Shiftbook: documents, entries,
+6. **Footer:** totals for the current view (Expensify "total" footer). Granite: documents, entries,
    minutes read.
 
 ## Interactions
@@ -52,13 +52,13 @@ review, and what is done.
 - A document that cannot be read shows a red-dot indicator and a message, and can be retried by
   replacing the file (Expensify).
 - Matching (Ramp): each extracted entry is matched to an active assignment; dates match within the
-  assignment's date range (Ramp uses ±1 day for receipts; Shiftbook uses the SPEC validators instead).
+  assignment's date range (Ramp uses ±1 day for receipts; Granite uses the SPEC validators instead).
 - Click a row → opens the single document review (`/documents/[documentId]`).
 - Bulk actions on selected rows via an Actions menu (Dext): export, archive, delete.
 
 ## States
 - Reading (Expensify "scanning"), Read, Needs review, Failed to read, Matched / Unmatched (Ramp).
-- Shiftbook status names come from SPEC §4.
+- Granite status names come from SPEC §4.
 
 ## Not known from the references (ask the owner before building)
 - Empty state (use the Linear empty-state pattern, `_components/empty-state.md`).

@@ -8,7 +8,7 @@ const SETTINGS: AcaSettings = { measurementMonths: 12, firstMonth: 10, adminDays
 const TODAY = "2026-10-16";
 /** `count` days of `minutes` each from a date. */
 const daily = (workerId: string, from: string, count: number, minutes: number): ServiceDay[] => Array.from({ length: count }, (_, i) => ({ workerId, date: addDays(from, i), minutes }));
-/** Shiftbook paid every week from 2025-10-01 to yesterday (the hours on file). */
+/** Granite paid every week from 2025-10-01 to yesterday (the hours on file). */
 const COVERED: Covered[] = [{ start: "2025-10-01", end: "2026-10-15" }];
 const rows = (over: Partial<Parameters<typeof acaRows>[0]>) => acaRows({ today: TODAY, settings: SETTINGS, limits: LIMITS, workers: [], days: [], months: [], covered: COVERED, ...over });
 const at = (today: string, over: Partial<Parameters<typeof acaRows>[0]>) => acaRows({ today, settings: SETTINGS, limits: LIMITS, workers: [], days: [], months: [], covered: [{ start: "2025-01-01", end: addDays(today, -1) }], ...over });
@@ -150,7 +150,7 @@ describe("ACA look-back (26 C.F.R. § 54.4980H-3(d))", () => {
     expect(short.every((x) => x.breakStart === null)).toBe(true);
   });
 
-  it("hours from before Shiftbook come in whole months; a worker with no hours and no hire date is left out", () => {
+  it("hours from before Granite come in whole months; a worker with no hours and no hire date is left out", () => {
     // 12 months of 8,000 minutes = 96,000 over 365 days: full-time.
     const months = ["2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"].map((m) => ({ workerId: "g", month: `${m}-01`, minutes: 8000 }));
     const r = rows({ workers: [{ id: "g", name: "G", hireDate: "2024-03-04" }, { id: "z", name: "Z", hireDate: null }], months });
@@ -159,21 +159,21 @@ describe("ACA look-back (26 C.F.R. § 54.4980H-3(d))", () => {
   });
 
   it("a period with days not on file is never decided on what is missing: ended, hours missing from the first such day; running, counted to the last day on file", () => {
-    // Shiftbook paid from 2026-01-05 to 2026-10-04 only: 2026-01-05 to 2026-09-30 is 269 days × 480 = 129,120 minutes.
+    // Granite paid from 2026-01-05 to 2026-10-04 only: 2026-01-05 to 2026-09-30 is 269 days × 480 = 129,120 minutes.
     const r = rows({ workers: [{ id: "m", name: "M", hireDate: "2024-06-03" }], days: daily("m", "2026-01-05", 285, 480), covered: [{ start: "2026-01-05", end: "2026-10-04" }] });
     expect(r.map((x) => [x.measurementStart, x.result, x.missingFrom, x.countedThrough, x.days, x.minutes])).toEqual([
       ["2025-10-01", "missing_hours", "2025-10-01", "2026-09-30", 365, 129_120],
       // 2026-10-01 to 2026-10-04 on file: 4 days × 480; the days since are not paid yet, not missing.
       ["2026-10-01", "measuring", null, "2026-10-04", 4, 1920],
     ]);
-    // Months imported from before Shiftbook fill the gap: 2025-10 to 2025-12 at 10,000 minutes, with 2026-01-01 to 01-04 still missing.
+    // Months imported from before Granite fill the gap: 2025-10 to 2025-12 at 10,000 minutes, with 2026-01-01 to 01-04 still missing.
     const months = ["2025-10", "2025-11", "2025-12"].map((m) => ({ workerId: "m", month: `${m}-01`, minutes: 10_000 }));
     const filled = rows({ workers: [{ id: "m", name: "M", hireDate: "2024-06-03" }], days: daily("m", "2026-01-05", 285, 480), months, covered: [{ start: "2026-01-01", end: "2026-10-04" }] });
     expect(filled[0]).toMatchObject({ result: "full_time", missingFrom: null, minutes: 129_120 + 30_000 });
   });
 
   it("second opinion: an imported month is on file only for its worker; a worker a run skipped has no hours on file there", () => {
-    // Imported January to June 2025 for A only; Shiftbook paid from 2025-07-01, with B in every run; B worked 8 h every day.
+    // Imported January to June 2025 for A only; Granite paid from 2025-07-01, with B in every run; B worked 8 h every day.
     const r = acaRows({
       today: "2026-02-10",
       settings: { ...SETTINGS, firstMonth: 1 },
@@ -218,7 +218,7 @@ describe("ACA look-back (26 C.F.R. § 54.4980H-3(d))", () => {
   });
 
   it("second opinion: with no hire date, a worker whose first day on file has no 13 weeks on file before it was employed all along", () => {
-    // Shiftbook paid from 2026-03-01: nothing on file before, so the 2025 period is listed as hours missing, not skipped as a new hire.
+    // Granite paid from 2026-03-01: nothing on file before, so the 2025 period is listed as hours missing, not skipped as a new hire.
     const r = rows({ workers: [{ id: "u", name: "U", hireDate: null }], days: daily("u", "2026-03-01", 229, 480), covered: [{ start: "2026-03-01", end: "2026-10-15" }] });
     expect(cycles(r)).toEqual([
       ["U", "standard", "2025-10-01", "2026-09-30", "missing_hours"],

@@ -9,7 +9,7 @@
  *
  * One row per pay line (worker, workweek, kind of pay, rate). Hours go out with two decimals rounded
  * up (no worked time lost), rates with four, amounts to the cent. A kind of pay with no code set goes
- * out under Shiftbook's own code (REG, OT, …). With an amount column the receiver pays what is
+ * out under Granite's own code (REG, OT, …). With an amount column the receiver pays what is
  * written; without one it prices hours × the written rate, and the notes say what rounding does.
  */
 import { exactDecimal, formatCents, roundHalfUpBig, type Fraction } from "@shiftbook/rules";

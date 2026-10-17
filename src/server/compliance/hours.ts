@@ -2,7 +2,7 @@
  * The hours the Illinois equal-pay counter counts (820 ILCS 175/42; slice c step 5, slice j J5): work
  * at a worksite in a state with a counter rule, on day and temporary labor, from time entries not set
  * aside (on timesheets not archived), per worker, client and day; and the hours worked before
- * Shiftbook (opening balances not removed), on the date each runs to. The run and the counters page
+ * Granite (opening balances not removed), on the date each runs to. The run and the counters page
  * read the same hours.
  */
 import { and, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql } from "drizzle-orm";

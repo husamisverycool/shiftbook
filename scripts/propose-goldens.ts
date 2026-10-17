@@ -566,7 +566,7 @@ exportRefusal(
 const ADP_CODES = { REG: { code: "Reg Hours", as: "hours" as const }, OT: { code: "O/T Hours", as: "hours" as const, factor: { num: 3, den: 2 } }, DT: { code: "D", as: "hours" as const, factor: { num: 2, den: 1 } }, BONUS: { code: "B", as: "dollars" as const } };
 exportCaseWithText(
   "adp-wfn-basic",
-  "ADP Workforce Now paydata (decision F4), the gusto-hours-basic week plus a $150.00 bonus for Marcus. One row per worker and Temp Rate ($18.2500), hours to two decimals rounded up, dollars under code B on their own row, blanks never zeros, CRLF, batch 26101101 (period end 10/11/26, version 01), file PRXYZEPI.csv. Shiftbook: $2,279.88 + $150.00 = $2,429.88. ADP: 40.00 × 18.25 = $730.00 and 4.00 × 18.25 × 1.5 = $109.50 and $150.00 (Marcus); 38.00 × 18.25 = $693.50 (Lucía); 40.00 × 18.25 = $730.00 and 0.62 × 18.25 × 1.5 = $16.9725 → $16.97 (Tran: 37 min written as 0.62 h, rounded up) = $2,429.97, 9 cents more; the notes say so and name the multiples assumed.",
+  "ADP Workforce Now paydata (decision F4), the gusto-hours-basic week plus a $150.00 bonus for Marcus. One row per worker and Temp Rate ($18.2500), hours to two decimals rounded up, dollars under code B on their own row, blanks never zeros, CRLF, batch 26101101 (period end 10/11/26, version 01), file PRXYZEPI.csv. Granite: $2,279.88 + $150.00 = $2,429.88. ADP: 40.00 × 18.25 = $730.00 and 4.00 × 18.25 × 1.5 = $109.50 and $150.00 (Marcus); 38.00 × 18.25 = $693.50 (Lucía); 40.00 × 18.25 = $730.00 and 0.62 × 18.25 × 1.5 = $16.9725 → $16.97 (Tran: 37 min written as 0.62 h, rounded up) = $2,429.97, 9 cents more; the notes say so and name the multiples assumed.",
   { format: "adp_wfn_paydata", mappingVersion: "adp-wfn-v1", period: PERIOD, earningCodeMap: {}, target: { format: "adp_wfn_paydata", companyCode: "XYZ" }, codes: ADP_CODES, workers: THREE("adp_wfn", ["000101", "000102", "000103"]), payLines: [...WEEK_LINES, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 } }] },
   { workers: 3, minutesByType: { REG: 7080, OT: 277 }, amountsByType: { BONUS: 15000 }, grossCents: 242988, payrollSystemGrossCents: 242997, payrollSystemDifferenceCents: 9 },
   ["Co Code,Batch ID,File #,Temp Rate,Reg Hours,O/T Hours,Earnings 3 Code,Earnings 3 Amount", "XYZ,26101101,000102,18.2500,40.00,4.00,,", "XYZ,26101101,000102,,,,B,150.00", "XYZ,26101101,000101,18.2500,38.00,,,", "XYZ,26101101,000103,18.2500,40.00,0.62,,", ""].join("\r\n"),
@@ -574,7 +574,7 @@ exportCaseWithText(
 
 exportCaseWithText(
   "adp-wfn-weighted-overtime",
-  "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Shiftbook's ($365.00 + $400.00 + $57.50). Only the multiples note.",
+  "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Granite's ($365.00 + $400.00 + $57.50). Only the multiples note.",
   {
     format: "adp_wfn_paydata",
     mappingVersion: "adp-wfn-v1",
@@ -613,7 +613,7 @@ const RUN_CODES = { REG: { code: "REG", as: "hours" as const }, OT: { code: "OT"
 const runRow = (id: string, code: string, hours: string, dollars: string) => `ABC1234,W,10/05/2026,10/11/2026,${id},${code},${hours},${dollars},0,,BASE`;
 exportCaseWithText(
   "adp-run-basic",
-  "RUN Powered by ADP time sheet import (decision F5), the gusto-hours-basic week plus Marcus's $150.00 bonus: the version row, the headings, then one row per worker and earnings code at rate code BASE, weekly (W, a 7-day period). RUN pays the stored rate × 1 or 1.5: Marcus 40.00 × $18.25 = $730.00, 4.00 × $18.25 × 1.5 = $109.50, $150.00; Lucía 38.00 × $18.25 = $693.50; Tran $730.00 and 0.62 × $18.25 × 1.5 = $16.9725 → $16.97 (37 min rounded up to 0.62 h). RUN $2,429.97 against Shiftbook's $2,429.88: 9 cents, in the notes.",
+  "RUN Powered by ADP time sheet import (decision F5), the gusto-hours-basic week plus Marcus's $150.00 bonus: the version row, the headings, then one row per worker and earnings code at rate code BASE, weekly (W, a 7-day period). RUN pays the stored rate × 1 or 1.5: Marcus 40.00 × $18.25 = $730.00, 4.00 × $18.25 × 1.5 = $109.50, $150.00; Lucía 38.00 × $18.25 = $693.50; Tran $730.00 and 0.62 × $18.25 × 1.5 = $16.9725 → $16.97 (37 min rounded up to 0.62 h). RUN $2,429.97 against Granite's $2,429.88: 9 cents, in the notes.",
   { format: "adp_run_csv", mappingVersion: "adp-run-v1", period: PERIOD, earningCodeMap: {}, target: { format: "adp_run_csv", companyCode: "ABC1234" }, codes: RUN_CODES, workers: THREE("adp_run", ["101", "102", "103"]), payLines: [...WEEK_LINES, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 } }] },
   { workers: 3, minutesByType: { REG: 7080, OT: 277 }, amountsByType: { BONUS: 15000 }, grossCents: 242988, payrollSystemGrossCents: 242997, payrollSystemDifferenceCents: 9 },
   [
@@ -667,7 +667,7 @@ const SHEET = {
 };
 exportCaseWithText(
   "spreadsheet-basic",
-  "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Shiftbook's own (REG), overtime under the agency's code OT15. The amount column carries Shiftbook's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
+  "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Granite's own (REG), overtime under the agency's code OT15. The amount column carries Granite's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
   {
     format: "spreadsheet_csv",
     mappingVersion: "spreadsheet-v1",

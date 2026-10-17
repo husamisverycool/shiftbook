@@ -12,19 +12,19 @@ Source URL: https://help.dext.com/en/articles/551293-are-there-keyboard-shortcut
 Researched: 2026-10-15 (sources fetched by a research subagent). Confidence: high for states,
 shortcuts and bounding-box behavior; medium for exact left/right placement.
 
-## Purpose in Shiftbook
+## Purpose in Granite
 One uploaded timesheet (photo, scan, PDF) with every value we read from it. The coordinator checks
 the values that need review against the image and confirms the document.
 
 ## Hierarchy
 Top to bottom, as documented by the references:
 1. **Status messages bar** (Dext): messages about the document shown above everything (Dext shows
-   publish failures/rejections here). Shiftbook: extraction failures and "this document has N values
+   publish failures/rejections here). Granite: extraction failures and "this document has N values
    that need review".
 2. **Document toolbar** (Rossum top-left + top-centre): document name with an overflow menu (copy
    name / link); document details control; zoom in, zoom out, reset zoom; search within document.
 3. **Issues panel** (Dext "Please resolve these issues"; Rossum automation-blocker list, expandable):
-   list of the problems that stop this document being confirmed. Shiftbook: failed validators
+   list of the problems that stop this document being confirmed. Granite: failed validators
    (date outside period, in after out, > 24h, worker not on roster, no active assignment) and
    pass A / pass B disagreements.
 4. **Body, two panes** (Dext: image on the left, data on the right):
@@ -50,17 +50,17 @@ Top to bottom, as documented by the references:
 - Editing a value requires a reason (SPEC §7) and is audited.
 - Reject: enter a note; the document moves to a Rejected state and the note shows when reopened
   (Rossum).
-- After Confirm: go to the next document that needs review (Rossum setting; Shiftbook default).
+- After Confirm: go to the next document that needs review (Rossum setting; Granite default).
 
 ## States
 - Box / field colors by state (Rossum): **extracted, not reviewed** · **reviewed by a user** ·
-  **blocks confirmation**. Shiftbook maps these to `extracted` · `reviewed` · `needs_review`
+  **blocks confirmation**. Granite maps these to `extracted` · `reviewed` · `needs_review`
   (SPEC §4). Colors come from the shadcn/Tailwind neutral palette tokens, not from Rossum.
 - Field indicator (Rossum): a tick when confidence is at/above the threshold; no tick when it needs
-  validation; field details show where the validation came from. Shiftbook: field details show
+  validation; field details show where the validation came from. Granite: field details show
   pass A value, pass B value, which validators ran, and the confidence.
 - Document lifecycle (Rossum): importing → to review → reviewing → confirmed; also postponed,
-  rejected; failed import. Shiftbook document statuses use the same shape.
+  rejected; failed import. Granite document statuses use the same shape.
 - Hover a status badge → tooltip listing the issues (Dext).
 
 ## Not known from the references (ask the owner before building)

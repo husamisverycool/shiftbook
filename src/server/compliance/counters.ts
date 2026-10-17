@@ -1,7 +1,7 @@
 /**
  * The Illinois equal-pay hours counters (SPEC §4 HoursCounter, §16; slice j decision J5): each
  * worker's hours of day and temporary labor at each client in the rule's 12- and 48-month windows
- * ending today, with the hours worked there before Shiftbook (opening balances, counted on the date
+ * ending today, with the hours worked there before Granite (opening balances, counted on the date
  * they run to, the safe reading the run uses too). Pure: the windows, thresholds and heads-up are the
  * rule row's (820 ILCS 175/42); crossings come from the duties on file, never worked out here.
  */
