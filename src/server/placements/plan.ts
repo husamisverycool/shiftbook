@@ -7,7 +7,7 @@
 import { parseDollars } from "../../lib/amounts";
 import { parseIsoDateText } from "../intake/parse";
 import { matchWorker, type RosterWorker } from "../intake/names";
-import type { Mapping, Source } from "./fields";
+import { FIELDS, type Field, type Mapping, type Source } from "./fields";
 import { MONTH_NAME, MONTH_NUMBER, WEEKDAY } from "./sensitive";
 
 export interface Catalog {
@@ -39,7 +39,8 @@ export type SkipReason = {
     | "end_before_start"
     | "invalid_rate"
     | "cancelled_in_source"
-    | "status_unclear";
+    | "status_unclear"
+    | "removed_by_person";
   value: string;
 };
 
@@ -329,4 +330,62 @@ export function distinctValues(header: string[], rows: string[][], mapping: Mapp
   }
   const sorted = (m: Map<string, DistinctValue>) => [...m.values()].sort((a, b) => (a.match === null ? 0 : 1) - (b.match === null ? 0 : 1) || b.count - a.count || a.raw.localeCompare(b.raw));
   return { worker: sorted(worker), client: sorted(client), jobOrder: sorted(jobOrder), status: sorted(status) };
+}
+
+// ---------- fixing only the rows with errors (Avionté BOLD bulk import, decision 0040) ----------
+
+/** A row's own fixes, by its number in the file: file column → the value typed in its place. */
+export type RowEdits = Record<string, Record<string, string>>;
+
+/** The file's rows with the fixes typed for them; `rowNumbers[i]` is row i's number in the file. */
+export function applyRowEdits(header: string[], rows: string[][], rowNumbers: number[] | undefined, edits: RowEdits): string[][] {
+  if (Object.keys(edits).length === 0) return rows;
+  return rows.map((r, i) => {
+    const fix = edits[String(rowNumbers?.[i] ?? i + 2)];
+    if (!fix) return r;
+    const out = [...r];
+    for (const [column, value] of Object.entries(fix)) {
+      const at = header.indexOf(column);
+      if (at >= 0) out[at] = value;
+    }
+    return out;
+  });
+}
+
+/** Rows the person left out are skipped with that reason, whatever else was wrong with them. */
+export function withRemoved(plan: PlannedRow[], removed: number[]): PlannedRow[] {
+  if (removed.length === 0) return plan;
+  const set = new Set(removed);
+  return plan.map((p) => (set.has(p.row) ? { row: p.row, outcome: "skip" as const, reason: { code: "removed_by_person" as const, value: "" } } : p));
+}
+
+/**
+ * The one field a skipped row can be fixed in, typed in place (the file column mapped to it), or null
+ * when the fix is elsewhere (a value matched on Review values, a duplicate, a decision to leave out).
+ */
+export function fixableField(reason: SkipReason, header: string[], row: string[], mapping: Mapping): { field: Field; column: string; value: string } | null {
+  const cell = (f: Field) => {
+    const column = mapping[f];
+    return column ? { field: f, column, value: row[header.indexOf(column)] ?? "" } : null;
+  };
+  switch (reason.code) {
+    case "missing_value":
+    case "invalid_value":
+      if (reason.value === "worker") return mapping.workerName ? cell("workerName") : null;
+      return (FIELDS as readonly string[]).includes(reason.value) ? cell(reason.value as Field) : null;
+    case "invalid_date": {
+      const start = cell("startDate");
+      return start && start.value.trim() === reason.value.trim() ? start : cell("endDate");
+    }
+    case "end_before_start":
+      return cell("endDate");
+    case "invalid_rate": {
+      const pay = cell("payRate");
+      return pay && pay.value.trim() === reason.value.trim() ? pay : cell("billRate");
+    }
+    case "status_unclear":
+      return cell("status");
+    default:
+      return null;
+  }
 }

@@ -95,6 +95,8 @@ const NO_PAYROLL_ID: Record<PayrollSystem, SaidKey> = {
   qbo: "noPayrollIdQbo",
   adp_wfn: "noPayrollIdAdpWfn",
   adp_run: "noPayrollIdAdpRun",
+  paychex: "noPayrollIdPaychex",
+  paylocity: "noPayrollIdPaylocity",
   spreadsheet: "noPayrollIdSpreadsheet",
 };
 const effective = (date: string, from: string, to: string | null) => from <= date && (to === null || date <= to);

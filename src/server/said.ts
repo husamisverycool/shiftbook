@@ -49,6 +49,8 @@ export const SAID_EN = {
   noPayrollIdQbo: "{name} has no QuickBooks Online display name, so the QuickBooks Online file could not match them.",
   noPayrollIdAdpWfn: "{name} has no ADP file number, so the ADP Workforce Now file could not match them.",
   noPayrollIdAdpRun: "{name} has no RUN employee id, so the RUN Powered by ADP file could not match them.",
+  noPayrollIdPaychex: "{name} has no Paychex worker id, so the Paychex Flex file could not match them.",
+  noPayrollIdPaylocity: "{name} has no Paylocity employee id, so the Paylocity file could not match them.",
   noPayrollIdSpreadsheet: "{name} has no spreadsheet worker id, so the spreadsheet could not match them.",
   equalPayRateDue720:
     "{name} passed 720 hours at {client} on {date}, before this pay period began ({start}), so the client's equal-pay figures are due now (820 ILCS 175/42; 56 Ill. Adm. Code 260.505(b)). On the equal-pay duty in Compliance, enter the rate, or record that the client was asked: the rate card is then paid and a correction trues it up.",

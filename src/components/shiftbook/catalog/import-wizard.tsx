@@ -9,7 +9,8 @@ import { CheckIcon, CircleAlertIcon, FileSpreadsheetIcon, ShieldCheckIcon, Uploa
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { runImportAction, saveDateOrderAction, saveDecisionAction, saveMappingAction, startImportAction } from "@/app/[locale]/(app)/assignments/import/actions";
+import { runImportAction, saveDateOrderAction, saveDecisionAction, saveMappingAction, saveRowFixAction, setRowRemovedAction, startImportAction } from "@/app/[locale]/(app)/assignments/import/actions";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -156,6 +157,9 @@ function SourceStep() {
         <Button variant="outline" size="sm" onClick={() => input.current?.click()}>
           {t("choose")}
         </Button>
+        <a href={`/api/files/placement-template?source=${source}`} download className="rounded-sm text-xs text-muted-foreground underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="placement-template">
+          {t("template", { source: t(`sources.${source}`) })}
+        </a>
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -465,7 +469,6 @@ function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
   const locale = useLocale();
   const go = useGo();
   const router = useRouter();
-  const reason = useReason();
   const [pending, run] = useTransition();
   const skips = view.plan.filter((p): p is Extract<PlannedRow, { outcome: "skip" }> => p.outcome === "skip" && p.reason.code !== "already_imported");
   const p = view.preview;
@@ -553,28 +556,87 @@ function PreviewStep({ view }: { view: ImportView; options: CatalogOptions }) {
           </Table>
         </div>
       )}
-      {skips.length > 0 && (
-        <div className="min-w-0">
-          <Table aria-label={t("willSkip")}>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">{t("row")}</TableHead>
-                <TableHead>{t("reason")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {skips.map((x) => (
-                <TableRow key={x.row}>
-                  <TableCell className="tabular-nums">{x.row}</TableCell>
-                  <TableCell>{reason(x.reason)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      {skips.length > 0 && <ProblemRows view={view} />}
       <p className="text-sm text-muted-foreground">{t("previewNote")}</p>
       <Nav back={() => go(view.id, "values")} onNext={start} disabled={p.create === 0} pending={pending} nextLabel={t("start")} />
+    </section>
+  );
+}
+
+/**
+ * Avionté BOLD's validation step (decision 0040): only the rows that cannot be imported yet, each with
+ * its reason, the one value to fix in place when there is one, and Leave out / Take back.
+ */
+function ProblemRows({ view }: { view: ImportView }) {
+  const t = useTranslations("import");
+  const tf = useTranslations("import.fields");
+  const reason = useReason();
+  const router = useRouter();
+  const [pending, run] = useTransition();
+  const [busyRow, setBusyRow] = useState<number | null>(null);
+  const [typed, setTyped] = useState<Record<number, string>>({});
+  const act = (row: number, fn: () => Promise<{ ok: boolean; error?: string }>) =>
+    run(async () => {
+      setBusyRow(row);
+      const r = await fn();
+      if (!r.ok) toast.error(t(`refused.${r.error}` as "refused.stale"));
+      setBusyRow(null);
+      router.refresh();
+    });
+  return (
+    <section className="flex min-w-0 flex-col gap-2" aria-labelledby="problems-title" data-testid="problem-rows">
+      <h3 id="problems-title" className="text-base font-semibold">
+        {t("problemsTitle")}
+      </h3>
+      <p className="text-sm text-muted-foreground">{t("problemsBody")}</p>
+      <Table aria-label={t("problemsTitle")}>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-20">{t("row")}</TableHead>
+            <TableHead>{t("reason")}</TableHead>
+            <TableHead className="w-[22rem]">{t("fix")}</TableHead>
+            <TableHead className="w-32 text-right" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {view.problems.map((p) => {
+            const value = typed[p.row] ?? p.fix?.value ?? "";
+            const busy = pending && busyRow === p.row;
+            return (
+              <TableRow key={p.row} data-testid="problem-row" className={cn(p.removed && "text-muted-foreground")}>
+                <TableCell className="tabular-nums">{p.row}</TableCell>
+                <TableCell>{reason(p.reason)}</TableCell>
+                <TableCell>
+                  {p.fix ? (
+                    <form
+                      className="flex items-center gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        act(p.row, () => saveRowFixAction(view.id, p.row, p.fix!.column, value));
+                      }}
+                    >
+                      <label className="sr-only" htmlFor={`fix-${p.row}`}>
+                        {t("fixFor", { row: p.row })} · {tf(p.fix.field)}
+                      </label>
+                      <Input id={`fix-${p.row}`} className="h-8" value={value} placeholder={tf(p.fix.field)} maxLength={500} onChange={(e) => setTyped((x) => ({ ...x, [p.row]: e.target.value }))} data-testid="problem-fix" />
+                      <Button type="submit" size="sm" variant="outline" disabled={pending} loading={busy} loadingLabel={t("saveFix")}>
+                        {t("saveFix")}
+                      </Button>
+                    </form>
+                  ) : p.removed ? null : (
+                    <span className="text-sm text-muted-foreground">{t("fixElsewhere")}</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button size="sm" variant="ghost" disabled={pending} onClick={() => act(p.row, () => setRowRemovedAction(view.id, p.row, !p.removed))} data-testid={p.removed ? "problem-take-back" : "problem-leave-out"}>
+                    {p.removed ? t("takeBack") : t("leaveRowOut")}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </section>
   );
 }
@@ -669,6 +731,7 @@ function HistoryList({ history }: { history: History }) {
                 <TableHead>{t("source")}</TableHead>
                 <TableHead>{t("when")}</TableHead>
                 <TableHead>{t("result")}</TableHead>
+                <TableHead className="text-right">{t("download")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -682,6 +745,20 @@ function HistoryList({ history }: { history: History }) {
                   <TableCell>{t(`sources.${h.source as Source}`)}</TableCell>
                   <TableCell>{when(h.createdAt, { date: "long", time: false })}</TableCell>
                   <TableCell>{h.status === "done" ? t("historyDone", { imported: h.imported, skipped: h.skipped }) : t("historyDraft")}</TableCell>
+                  {/* Avionté's View Imports: Download CSV — the rows as kept, and each row's result. */}
+                  <TableCell className="text-right whitespace-nowrap">
+                    <a href={`/api/files/placement-import/${h.id}?file=rows`} download className="rounded-sm text-sm underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/50">
+                      {t("downloadRows")}
+                    </a>
+                    {h.status === "done" && (
+                      <>
+                        <span className="text-muted-foreground"> · </span>
+                        <a href={`/api/files/placement-import/${h.id}?file=results`} download className="rounded-sm text-sm underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/50" data-testid="download-results">
+                          {t("downloadResults")}
+                        </a>
+                      </>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

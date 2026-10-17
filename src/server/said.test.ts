@@ -75,7 +75,7 @@ describe("the server's own messages (decision 0030)", () => {
   });
 
   it("a missing payroll id names each system's id and file as the export does", () => {
-    const keys: Record<PayrollSystem, keyof typeof SAID_EN> = { gusto: "noPayrollIdGusto", qbd: "noPayrollIdQbd", qbo: "noPayrollIdQbo", adp_wfn: "noPayrollIdAdpWfn", adp_run: "noPayrollIdAdpRun", spreadsheet: "noPayrollIdSpreadsheet" };
+    const keys: Record<PayrollSystem, keyof typeof SAID_EN> = { gusto: "noPayrollIdGusto", qbd: "noPayrollIdQbd", qbo: "noPayrollIdQbo", adp_wfn: "noPayrollIdAdpWfn", adp_run: "noPayrollIdAdpRun", paychex: "noPayrollIdPaychex", paylocity: "noPayrollIdPaylocity", spreadsheet: "noPayrollIdSpreadsheet" };
     for (const system of Object.keys(keys) as PayrollSystem[]) {
       expect(saidEnglish([say(keys[system], { name: "Ana Ruiz" })])).toBe(`Ana Ruiz has no ${WORKER_ID_NAME[system]}, so ${FILE_OF[system]} could not match them.`);
     }

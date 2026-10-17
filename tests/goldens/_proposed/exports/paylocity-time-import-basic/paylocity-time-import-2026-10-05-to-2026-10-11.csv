@@ -1,0 +1,5 @@
+Id,Det,detCode,Hours,Amount,Rate,rateCode
+A123,E,REG,40.00,,18.2500,
+A123,E,OT,0.62,,27.3750,
+A123,E,BON,,150.00,,
+B456,E,REG,38.00,,18.2500,

@@ -6,7 +6,7 @@
  */
 import { normalizeHeader } from "../intake/profiles";
 
-export const SOURCES = ["bullhorn", "jobadder", "spott", "other"] as const;
+export const SOURCES = ["bullhorn", "jobadder", "spott", "avionte", "other"] as const;
 export type Source = (typeof SOURCES)[number];
 
 export const FIELDS = [
@@ -79,8 +79,37 @@ export const PRESETS: Record<Source, Partial<Record<Field, string[]>>> = {
     payRate: ["pay rate"],
     billRate: ["charge rate", "base charge rate"],
   },
+  // Avionté BOLD's Comprehensive Placement report columns (decision 0040; research
+  // docs/research/connections-exports-slice-s.md §4) and its bulk import's placement fields (§3).
+  avionte: {
+    ...COMMON,
+    externalId: ["placement id", "bo placement id"],
+    workerName: ["talent name"],
+    workerFirstName: ["talent first name", "first name"],
+    workerLastName: ["talent last name", "last name"],
+    client: ["company name", "company"],
+    position: ["job title"],
+    shift: ["shift"],
+    startDate: ["start date"],
+    endDate: ["end date"],
+    status: ["placement status", "status"],
+    payRate: ["reg pay rate"],
+    billRate: ["reg bill rate"],
+  },
   other: COMMON,
 };
+
+/**
+ * A template to fill for each source (Avionté: "a downloadable template per type"): one column per
+ * field, headed with the source's own first label — first and last name rather than a full name.
+ */
+export function templateHeader(source: Source): string[] {
+  const label = (f: Field) => {
+    const first = PRESETS[source][f]?.[0] ?? COMMON[f]?.[0] ?? f;
+    return first.split(/([ .])/).map((w) => (w === " " || w === "." ? w : w.charAt(0).toUpperCase() + w.slice(1))).join("");
+  };
+  return FIELDS.filter((f) => f !== "workerName").map(label);
+}
 
 /** Each field mapped to a file column: a remembered mapping first (Flatfile memory), then the preset. */
 export function autoMap(header: string[], source: Source, remembered: Mapping = {}): Mapping {

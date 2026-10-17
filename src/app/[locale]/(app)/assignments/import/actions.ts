@@ -7,7 +7,7 @@ import { withAgency } from "@/server/db";
 import { StaleRequestError } from "@/server/errors";
 import { FIELDS, SOURCES, type Mapping, type Source } from "@/server/placements/fields";
 import type { DateOrder, Decisions } from "@/server/placements/plan";
-import { ImportFileError, runImport, saveDateOrder, saveDecision, saveMapping, startImport } from "@/server/placements/service";
+import { ImportFileError, runImport, saveDateOrder, saveDecision, saveMapping, saveRowFix, setRowRemoved, startImport } from "@/server/placements/service";
 import { PeriodBusyError } from "@/server/run/period-lock";
 import { actorAllowedTo } from "@/server/session";
 import { agencyToday } from "@/server/settings";
@@ -83,6 +83,30 @@ export async function saveDateOrderAction(importId: string, order: DateOrder | n
   if (!id.safeParse(importId).success || !DateOrderSchema.safeParse(order).success) return { ok: false, error: "stale" };
   return guarded(async () => {
     await withAgency(actor.agencyId, (tx) => saveDateOrder(tx, actor, importId, order));
+    return { ok: true as const };
+  });
+}
+
+const RowSchema = z.number().int().min(1).max(1_000_000);
+const ColumnSchema = z.string().min(1).max(500);
+const FixSchema = z.string().max(500);
+
+/** A value typed in place of one cell of a row with an error (decision 0040: Avionté's inline fix). */
+export async function saveRowFixAction(importId: string, row: number, column: string, value: string): Promise<{ ok: true } | { ok: false; error: Refusal }> {
+  const actor = await actorAllowedTo("placements");
+  if (!id.safeParse(importId).success || !RowSchema.safeParse(row).success || !ColumnSchema.safeParse(column).success || !FixSchema.safeParse(value).success) return { ok: false, error: "stale" };
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => saveRowFix(tx, actor, documentStore, importId, row, column, value));
+    return { ok: true as const };
+  });
+}
+
+/** Leaves a row out of the import, or takes it back (Avionté's Remove). */
+export async function setRowRemovedAction(importId: string, row: number, removed: boolean): Promise<{ ok: true } | { ok: false; error: Refusal }> {
+  const actor = await actorAllowedTo("placements");
+  if (!id.safeParse(importId).success || !RowSchema.safeParse(row).success || typeof removed !== "boolean") return { ok: false, error: "stale" };
+  return guarded(async () => {
+    await withAgency(actor.agencyId, (tx) => setRowRemoved(tx, actor, documentStore, importId, row, removed));
     return { ok: true as const };
   });
 }

@@ -117,6 +117,10 @@ function normalTarget(t: PayrollTarget): PayrollTarget {
     case "adp_wfn_paydata":
     case "adp_run_csv":
       return { format: t.format, companyCode: t.companyCode };
+    case "paychex_flex_csv":
+      return { format: t.format, clientId: t.clientId };
+    case "paylocity_time_csv":
+      return { format: t.format };
     case "spreadsheet_csv":
       return {
         format: t.format,

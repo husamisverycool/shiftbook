@@ -242,6 +242,8 @@ export function demoPayrollIds(workerKey: string, title: string): PayrollIds {
     qbo: { id: `${w.firstName} ${w.lastName}` },
     ...(workerKey === "anita-patel" ? {} : { adp_wfn: { id: String(100_101 + at) } }),
     adp_run: { id: String(101 + at) },
+    paychex: { id: `PX${String(at + 1).padStart(4, "0")}` },
+    paylocity: { id: String(2001 + at) },
     spreadsheet: { id: `SB-${String(at + 1).padStart(4, "0")}` },
   };
 }
@@ -301,6 +303,43 @@ export const AGENCY_SETTINGS: { key: string; value: unknown }[] = [
   {
     key: "earning_code_map.adp_run_csv",
     value: { REG: { code: "REG", as: "hours" }, OT: { code: "OT", as: "hours" }, DT: { code: "DT", as: "hours" }, HOL_NOT_WORKED: { code: "HOL", as: "hours" }, BONUS: { code: "BONUS", as: "dollars" } },
+  },
+  // Paychex Flex and Paylocity (decision 0040): the company's own codes; premiums and top-ups as dollars.
+  {
+    key: "earning_code_map.paychex_flex_csv",
+    value: {
+      REG: { code: "Hourly", as: "hours" },
+      OT: { code: "Overtime", as: "hours" },
+      DT: { code: "Double Time", as: "hours" },
+      HOL_NOT_WORKED: { code: "Holiday", as: "hours" },
+      MW_TRUEUP: { code: "Min Wage Adj", as: "dollars" },
+      REPORTING_PAY: { code: "Reporting Pay", as: "dollars" },
+      HOL: { code: "Holiday Premium", as: "dollars" },
+      DIFF: { code: "Shift Diff", as: "dollars" },
+      MEAL_PREMIUM: { code: "Meal Premium", as: "dollars" },
+      REST_PREMIUM: { code: "Rest Premium", as: "dollars" },
+      MIN_GUARANTEE: { code: "Min Guarantee", as: "dollars" },
+      BONUS: { code: "Bonus", as: "dollars" },
+      BONUS_OT: { code: "Bonus OT", as: "dollars" },
+    },
+  },
+  {
+    key: "earning_code_map.paylocity_time_csv",
+    value: {
+      REG: { code: "REG", as: "hours" },
+      OT: { code: "OT", as: "hours" },
+      DT: { code: "DT", as: "hours" },
+      HOL_NOT_WORKED: { code: "HOL", as: "hours" },
+      MW_TRUEUP: { code: "MWADJ", as: "dollars" },
+      REPORTING_PAY: { code: "RPT", as: "dollars" },
+      HOL: { code: "HOLP", as: "dollars" },
+      DIFF: { code: "DIFF", as: "dollars" },
+      MEAL_PREMIUM: { code: "MEAL", as: "dollars" },
+      REST_PREMIUM: { code: "REST", as: "dollars" },
+      MIN_GUARANTEE: { code: "MING", as: "dollars" },
+      BONUS: { code: "BON", as: "dollars" },
+      BONUS_OT: { code: "BONOT", as: "dollars" },
+    },
   },
   // Bill multipliers a new rate card starts with (imported placements, a job order's first card).
   { key: "rate_card.default_bill_multipliers", value: { ot: { num: 3, den: 2 }, dt: { num: 2, den: 1 } } },

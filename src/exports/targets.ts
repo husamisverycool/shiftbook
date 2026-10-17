@@ -11,7 +11,7 @@ import type { EarningType, Fraction } from "@shiftbook/rules";
 import type { PayrollIds } from "../server/db/schema";
 import { badCharacter } from "./lines";
 
-export const EXPORT_FORMATS = ["gusto_hours_csv", "qbd_iif", "qbo_time_csv", "adp_wfn_paydata", "adp_run_csv", "spreadsheet_csv"] as const;
+export const EXPORT_FORMATS = ["gusto_hours_csv", "qbd_iif", "qbo_time_csv", "adp_wfn_paydata", "adp_run_csv", "paychex_flex_csv", "paylocity_time_csv", "spreadsheet_csv"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
 export type PayrollSystem = keyof PayrollIds;
 
@@ -22,6 +22,8 @@ export const SYSTEM_OF: Record<ExportFormat, PayrollSystem> = {
   qbo_time_csv: "qbo",
   adp_wfn_paydata: "adp_wfn",
   adp_run_csv: "adp_run",
+  paychex_flex_csv: "paychex",
+  paylocity_time_csv: "paylocity",
   spreadsheet_csv: "spreadsheet",
 };
 
@@ -32,6 +34,8 @@ export const SYSTEM_NAME: Record<PayrollSystem, string> = {
   qbo: "QuickBooks Online",
   adp_wfn: "ADP Workforce Now",
   adp_run: "RUN Powered by ADP",
+  paychex: "Paychex Flex",
+  paylocity: "Paylocity",
   spreadsheet: "the spreadsheet's receiver",
 };
 
@@ -42,6 +46,8 @@ export const FILE_OF: Record<PayrollSystem, string> = {
   qbo: "the QuickBooks Online file",
   adp_wfn: "the ADP Workforce Now file",
   adp_run: "the RUN Powered by ADP file",
+  paychex: "the Paychex Flex file",
+  paylocity: "the Paylocity file",
   spreadsheet: "the spreadsheet",
 };
 
@@ -57,6 +63,8 @@ export const WORKER_ID_NAME: Record<PayrollSystem, string> = {
   qbo: "QuickBooks Online display name",
   adp_wfn: "ADP file number",
   adp_run: "RUN employee id",
+  paychex: "Paychex worker id",
+  paylocity: "Paylocity employee id",
   spreadsheet: "spreadsheet worker id",
 };
 
@@ -114,6 +122,8 @@ export type PayrollTarget =
   | { format: "qbo_time_csv"; customer: string }
   | { format: "adp_wfn_paydata"; companyCode: string }
   | { format: "adp_run_csv"; companyCode: string }
+  | { format: "paychex_flex_csv"; clientId: string }
+  | { format: "paylocity_time_csv" }
   | { format: "spreadsheet_csv"; layout: SpreadsheetLayout };
 
 /** A field of the settings and what is wrong with it (shown under the field). */
@@ -155,6 +165,11 @@ export function targetProblems(value: unknown): SettingProblem[] {
       return /^[A-Z0-9]{2,3}$/.test(text("companyCode")) ? [] : [{ field: "companyCode", rule: "adp_company_code", message: "ADP's company code: 2 or 3 capital letters or digits." }];
     case "adp_run_csv":
       return /^[A-Za-z0-9]{1,10}$/.test(text("companyCode")) ? [] : [{ field: "companyCode", rule: "run_company_code", message: "RUN's company code: up to 10 letters or digits." }];
+    case "paychex_flex_csv":
+      // Paychex SPI: Client ID, up to 8 characters (research slice f §5.1).
+      return /^[A-Za-z0-9]{1,8}$/.test(text("clientId")) ? [] : [{ field: "clientId", rule: "paychex_client_id", message: "Paychex's client id: up to 8 letters or digits." }];
+    case "paylocity_time_csv":
+      return [];
     case "spreadsheet_csv":
       return layoutProblems(t.layout);
   }
@@ -247,6 +262,16 @@ export const KIND_RULES: Record<ExportFormat, Partial<Record<EarningType, KindRu
     HOL_NOT_WORKED: { hours: { factor: ONE }, dollars: {}, blank: "refused" },
     ...Object.fromEntries(MONEY_KINDS.map((k) => [k, money()])),
   },
+  // Paychex Flex and Paylocity (decision 0040): every kind as hours at the written rate or as dollars,
+  // always under a code the agency sets — their codes are the company's own (case-sensitive).
+  paychex_flex_csv: {
+    ...Object.fromEntries(EARNING_TYPES.filter((k) => k !== "BONUS").map((k) => [k, { hours: { factor: ONE }, dollars: {}, blank: "refused" } satisfies KindRule])),
+    BONUS: { dollars: {}, blank: "refused" },
+  },
+  paylocity_time_csv: {
+    ...Object.fromEntries(EARNING_TYPES.filter((k) => k !== "BONUS").map((k) => [k, { hours: { factor: ONE }, dollars: {}, blank: "refused" } satisfies KindRule])),
+    BONUS: { dollars: {}, blank: "refused" },
+  },
   spreadsheet_csv: {
     ...Object.fromEntries(EARNING_TYPES.filter((k) => k !== "BONUS").map((k) => [k, { hours: { factor: ONE }, dollars: {}, blank: "own_code" } satisfies KindRule])),
     BONUS: { dollars: {}, blank: "own_code" },
@@ -287,6 +312,11 @@ function codeProblem(format: ExportFormat, code: string): string | null {
         : "ADP's code: 1 or 2 letters, a number from 0 to 79 (not 40, 50, 60 or 61), or 3 letters and digits with ADP's expanded fields.";
     case "adp_run_csv":
       return /^[A-Za-z0-9_-]{1,10}$/.test(code) ? null : "RUN's earnings code: up to 10 letters, digits, dashes or underscores.";
+    case "paychex_flex_csv":
+      // SPI's Pay Component: up to 20 characters, matched case for case.
+      return code.length <= 20 && isTrimmed(code) && !controlCharacter(code) && !code.includes(",") ? null : "The pay component exactly as Paychex shows it, up to 20 characters, no commas.";
+    case "paylocity_time_csv":
+      return /^[A-Za-z0-9_-]{1,10}$/.test(code) ? null : "Paylocity's earning code (detCode) exactly as it is set up: up to 10 letters, digits, dashes or underscores.";
     case "spreadsheet_csv":
       return code.length <= 20 && isTrimmed(code) && !controlCharacter(code) ? null : "Up to 20 characters.";
     default:
@@ -364,6 +394,10 @@ export function workerIdProblem(system: PayrollSystem, id: string, title?: strin
       return /^\d{1,6}$/.test(id) && Number(id) >= 51 ? null : { field: "id", rule: "adp_file_number", message: "ADP's file number: digits, from 51 to 999999." };
     case "adp_run":
       return /^[A-Za-z0-9-]{1,15}$/.test(id) ? null : { field: "id", rule: "run_employee_id", message: "RUN's employee id: up to 15 letters, digits or dashes." };
+    case "paychex":
+      return /^[A-Za-z0-9]{1,10}$/.test(id) ? null : { field: "id", rule: "paychex_worker_id", message: "Paychex's worker id: up to 10 letters or digits." };
+    case "paylocity":
+      return /^[A-Za-z0-9]{1,10}$/.test(id) ? null : { field: "id", rule: "paylocity_id", message: "Paylocity's employee id: up to 10 letters or digits." };
     case "spreadsheet":
       return id.length <= 50 && !controlCharacter(id) ? null : { field: "id", rule: "sheet_id", message: "Up to 50 characters." };
   }

@@ -485,7 +485,9 @@
         "qbo_time_csv": "QuickBooks Online time import",
         "adp_wfn_paydata": "ADP Workforce Now paydata",
         "adp_run_csv": "RUN Powered by ADP time sheet import",
-        "spreadsheet_csv": "Spreadsheet"
+        "spreadsheet_csv": "Spreadsheet",
+        "paychex_flex_csv": "Paychex Flex payroll import",
+        "paylocity_time_csv": "Paylocity time import"
       },
       "systems": {
         "gusto_hours_csv": "Gusto",
@@ -493,7 +495,9 @@
         "qbo_time_csv": "QuickBooks Online",
         "adp_wfn_paydata": "ADP",
         "adp_run_csv": "RUN",
-        "spreadsheet_csv": "the receiver"
+        "spreadsheet_csv": "the receiver",
+        "paychex_flex_csv": "Paychex Flex",
+        "paylocity_time_csv": "Paylocity"
       },
       "systemGross": "Gross {system} will compute",
       "dollars": "Paid as dollars"
@@ -638,7 +642,8 @@
     "notificationSettings": "Notifications",
     "collections": "Collections",
     "money": "Money",
-    "moneySettings": "Money settings"
+    "moneySettings": "Money settings",
+    "connections": "Connections"
   },
   "list": {
     "filter": "Filter",
@@ -1177,13 +1182,15 @@
       "bullhorn": "Bullhorn",
       "jobadder": "JobAdder",
       "spott": "Spott",
-      "other": "Other spreadsheet"
+      "other": "Other spreadsheet",
+      "avionte": "Avionté"
     },
     "sourceHint": {
       "bullhorn": "A placement list exported as CSV.",
       "jobadder": "A placements export (CSV).",
       "spott": "A placements export (Excel or CSV).",
-      "other": "Any CSV or Excel file with one placement per row."
+      "other": "Any CSV or Excel file with one placement per row.",
+      "avionte": "A placement report exported as CSV or Excel."
     },
     "whichSource": "Where do the placements come from?",
     "drop": "Drop the file here",
@@ -1295,7 +1302,8 @@
       "invalid_date_assignment": "A date is not valid.",
       "invalid_value": "{value} is not valid.",
       "status_unclear": "The status \"{value}\" is not clear; choose what it means in the review step.",
-      "could_not_save": "This row could not be saved."
+      "could_not_save": "This row could not be saved.",
+      "removed_by_person": "Left out of this import."
     },
     "rateVersions": "Own rate versions to add",
     "alreadyImported": "Already imported",
@@ -1334,7 +1342,21 @@
     "invalidDates": "{count, plural, one {# date} other {# dates}} with an invalid format",
     "jobOrder": "Job order",
     "newBadge": "New",
-    "readOnly": "Only the Owner and coordinators import placements."
+    "readOnly": "Only the Owner and coordinators import placements.",
+    "template": "Download a template for {source}",
+    "problemsTitle": "Rows with errors",
+    "problemsBody": "Only the rows that cannot be imported yet. Fix a value in place, or leave the row out; every other row is ready.",
+    "problemsNone": "No rows with errors.",
+    "fix": "Fix",
+    "fixFor": "New value for row {row}",
+    "fixedNote": "Fixed here",
+    "saveFix": "Save",
+    "leaveRowOut": "Leave out",
+    "takeBack": "Take back",
+    "fixElsewhere": "Fix on Review values",
+    "download": "Download",
+    "downloadRows": "Rows",
+    "downloadResults": "Results"
   },
   "portal": {
     "attestation": "I confirm that the shifts I am approving were worked as shown, and I approve them for {client}.",
@@ -1470,6 +1492,14 @@
         "spreadsheet_csv": {
           "name": "Spreadsheet",
           "carries": "Every pay line, in the columns you choose (a PEO's or factoring company's template)."
+        },
+        "paychex_flex_csv": {
+          "name": "Paychex Flex",
+          "carries": "Hours with their rate, or dollars, under your pay components."
+        },
+        "paylocity_time_csv": {
+          "name": "Paylocity",
+          "carries": "Hours with their rate, or dollars, under your earning codes."
         }
       },
       "fields": {
@@ -1480,7 +1510,8 @@
         "companyName": "Company name",
         "companyCreateTime": "Company file number",
         "customer": "Customer",
-        "fileName": "File name: {name}"
+        "fileName": "File name: {name}",
+        "clientId": "Client ID"
       },
       "help": {
         "adpCompanyCode": "ADP's company code: 2 or 3 capital letters or digits.",
@@ -1488,7 +1519,8 @@
         "companyName": "Exactly as QuickBooks shows it in Company Information.",
         "companyCreateTime": "The number on the second line of a Timer Lists export from QuickBooks.",
         "customer": "The QuickBooks Online customer every row is recorded against; import apps need one. Use one you keep for payroll time.",
-        "spreadsheetFileName": "Set the file name in Spreadsheet columns."
+        "spreadsheetFileName": "Set the file name in Spreadsheet columns.",
+        "clientId": "Paychex's client id: up to 8 letters or digits. It is in the first column of a Paychex import file."
       },
       "save": "Save",
       "saving": "Saving…",
@@ -1559,7 +1591,9 @@
           "qbo": "QuickBooks Online display name",
           "adp_wfn": "ADP file number",
           "adp_run": "RUN employee id",
-          "spreadsheet": "worker id"
+          "spreadsheet": "worker id",
+          "paychex": "Paychex worker id",
+          "paylocity": "Paylocity employee id"
         }
       },
       "columns": {
@@ -1644,7 +1678,12 @@
         "sheet_id": "Up to 50 characters.",
         "code_text": "A code is text.",
         "choose_as": "Choose hours or dollars.",
-        "no_ssn": "An SSN can't be a payroll number: it would go into the payroll file."
+        "no_ssn": "An SSN can't be a payroll number: it would go into the payroll file.",
+        "paychex_client_id": "Up to 8 letters or digits.",
+        "code_form_paychex_flex_csv": "The pay component exactly as Paychex shows it, up to 20 characters, no commas.",
+        "code_form_paylocity_time_csv": "Up to 10 letters, digits, dashes or underscores, exactly as set up in Paylocity.",
+        "paychex_worker_id": "Up to 10 letters or digits.",
+        "paylocity_id": "Up to 10 letters or digits."
       },
       "errors": {
         "stale": "These settings changed in another tab or window. The page now shows the latest.",
@@ -3568,7 +3607,9 @@
       "qbo": "QuickBooks Online",
       "adp_wfn": "ADP Workforce Now",
       "adp_run": "RUN",
-      "spreadsheet": "Spreadsheet"
+      "spreadsheet": "Spreadsheet",
+      "paychex": "Paychex Flex",
+      "paylocity": "Paylocity"
     },
     "new": {
       "title": "Add worker",
@@ -4380,7 +4421,9 @@
     "whatPo": "PO {po} on the deposit (invoice {invoices})",
     "whatPoMany": "PO {po} on the deposit (invoices {invoices})",
     "whyNamed": "; the client is named on the deposit",
-    "whyOnlyClient": "; the only client with invoices adding up to it"
+    "whyOnlyClient": "; the only client with invoices adding up to it",
+    "noPayrollIdPaychex": "{name} has no Paychex worker id, so the Paychex Flex file could not match them.",
+    "noPayrollIdPaylocity": "{name} has no Paylocity employee id, so the Paylocity file could not match them."
   },
   "identities": {
     "connectedTitle": "Connected accounts",
@@ -5459,6 +5502,146 @@
       "line": "{available} available of {earned} earned from unpaid hours",
       "off": "Wage access is off for the agency.",
       "open": "Open wage access"
+    }
+  },
+  "payrollSample": {
+    "title": "Read a sample file",
+    "hint": "Choose an import file you already use with this system. Granite checks its columns and lists the codes in it. The file stays on this computer.",
+    "choose": "Choose sample file",
+    "matches": "{name}: the columns are the ones Granite writes ({rows, plural, one {# row} other {# rows}} read).",
+    "differs": "{name}: the columns are not the ones Granite writes.",
+    "clientIdFound": "Client ID in the sample: {id} (filled in above; Save to keep it).",
+    "codesFound": "Codes in the sample, to use on the Codes tab:"
+  },
+  "scheduleOfAccounts": {
+    "pdf": {
+      "title": "Schedule of accounts",
+      "number": "Schedule number",
+      "date": "Date",
+      "seller": "Seller",
+      "assignedTo": "Assigned to",
+      "debtor": "Debtor",
+      "invoice": "Invoice",
+      "issued": "Invoice date",
+      "due": "Due date",
+      "reference": "PO / reference",
+      "amount": "Amount",
+      "total": "Total of {count} invoices",
+      "certification": "{seller} certifies that each invoice listed above is for work performed and approved, that each amount is owed by the debtor named and is not paid, disputed or subject to any credit, and assigns these invoices to the party named above under the agreement between them.",
+      "signature": "Signature",
+      "printedName": "Printed name",
+      "titleLine": "Title",
+      "dateLine": "Date",
+      "factorUse": "For the factor's use"
+    },
+    "action": "Schedule of accounts",
+    "hint": "For your factor: the schedule to sign, as PDF and CSV, with each invoice and its timesheets, in one file.",
+    "onlyOpen": "Only open invoices can go on a schedule: {number} is not.",
+    "refused": "That schedule could not be made: {message}"
+  },
+  "connections": {
+    "title": "Connections",
+    "tabs": {
+      "connected": "Connected",
+      "available": "Available"
+    },
+    "empty": "Nothing is connected yet. See what Granite works with under",
+    "kinds": {
+      "payroll": "Payroll system",
+      "recruiting": "Recruiting system",
+      "time_file": "Time file",
+      "invoice_upload": "Invoice upload",
+      "partner": "Partner"
+    },
+    "lastUsed": "last used {date} ({count, plural, one {# time} other {# times}})",
+    "notUsed": "not used yet",
+    "status": {
+      "ready": "Ready",
+      "attention": "Needs attention"
+    },
+    "attention": {
+      "noPayroll": "No payroll system is chosen.",
+      "payrollSettings": "The payroll system's settings are not complete.",
+      "payrollCodes": "Some kinds of pay have no code yet.",
+      "payrollIds": "{count, plural, one {# active worker has} other {# active workers have}} no id in this system.",
+      "noMapping": "No saved column mapping yet.",
+      "mappingIncomplete": "The saved mapping is missing a required field."
+    },
+    "menu": "Actions for {name}",
+    "testing": "Testing",
+    "testReady": "{name} is ready.",
+    "actions": {
+      "test": "Test",
+      "open": "Open",
+      "template": "Download template",
+      "forget": "Forget saved mapping"
+    },
+    "forgetTitle": "Forget the saved mapping for {name}?",
+    "forgetBody": "The next import from this system maps its columns again. Imports already made are kept.",
+    "forgotten": "The saved mapping for {name} is forgotten.",
+    "cancel": "Cancel",
+    "stale": "That could not be done. Reload the page and try again.",
+    "forClient": "{name} for {client}",
+    "setUp": "Set up",
+    "inUse": "In use",
+    "notYet": "Not available yet",
+    "groups": {
+      "payroll": "Payroll systems",
+      "recruiting": "Recruiting systems",
+      "time": "Time clocks and VMS",
+      "partners": "Partners"
+    },
+    "groupHints": {
+      "payroll": "Granite makes the hours file each system imports; one system at a time.",
+      "recruiting": "Bring placements in from a recruiting system's export file.",
+      "time": "Time files Granite reads on Convert timesheets.",
+      "partners": "Packages for licensed partners. No money moves through Granite."
+    },
+    "systems": {
+      "gusto_hours_csv": "Gusto",
+      "qbd_iif": "QuickBooks Desktop",
+      "qbo_time_csv": "QuickBooks Online",
+      "adp_wfn_paydata": "ADP Workforce Now",
+      "adp_run_csv": "RUN Powered by ADP",
+      "paychex_flex_csv": "Paychex Flex",
+      "paylocity_time_csv": "Paylocity",
+      "spreadsheet_csv": "Spreadsheet in your own layout",
+      "bullhorn": "Bullhorn",
+      "jobadder": "JobAdder",
+      "spott": "Spott",
+      "avionte": "Avionté",
+      "other": "Other spreadsheet",
+      "fieldglass-approved-time-sheet": "SAP Fieldglass time sheets",
+      "timeclock-punch-export": "Time clock punch export",
+      "fieldglass_time_sheet_invoice": "SAP Fieldglass invoice upload",
+      "beeline": "Beeline",
+      "coupa": "Coupa",
+      "magnit": "Magnit"
+    },
+    "about": {
+      "gusto_hours_csv": "Hours by kind of pay in Gusto's hours import.",
+      "qbd_iif": "Time data for QuickBooks Desktop payroll as an IIF file.",
+      "qbo_time_csv": "Regular hours in QuickBooks Online's time import.",
+      "adp_wfn_paydata": "ADP's Paydata batch, named PRcccEPI.csv.",
+      "adp_run_csv": "RUN's time sheet import.",
+      "paychex_flex_csv": "Paychex Flex's standard payroll import, hours with their rate or dollars.",
+      "paylocity_time_csv": "Paylocity's time import batch, by earning code.",
+      "spreadsheet_csv": "Any PEO's or factor's template: you choose the columns.",
+      "bullhorn": "Placements from a Bullhorn placement list export.",
+      "jobadder": "Placements from a JobAdder placements export.",
+      "spott": "Placements from a Spott placements export.",
+      "avionte": "Placements from an Avionté placement report.",
+      "other": "Any CSV or Excel file with one placement per row.",
+      "fieldglass-approved-time-sheet": "Approved time sheets downloaded from SAP Fieldglass.",
+      "timeclock-punch-export": "Punches exported from a time clock, read as hours.",
+      "vmsNotYet": "Granite cannot read this system's export yet.",
+      "partner": "Arrives with the partner packages: Granite prepares, a licensed partner acts."
+    },
+    "partners": {
+      "embedded_payroll": "Payroll partner",
+      "wage_access": "Earned wage access partner",
+      "invoice_funding": "Invoice funding partner",
+      "insurance": "Workers' comp insurance broker"
     }
   }
 }

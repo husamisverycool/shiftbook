@@ -11,6 +11,8 @@ Source URL: https://linear.app/docs/import-issues
 Source URL: https://linear.app/docs/cli-importer
 Source URL: https://support.flatfile.com/articles/8569925090-mapping-data
 Source URL: https://support.flatfile.com/articles/7763163677-importing-data-with-flatfile-overview
+Source URL: https://support.avionte.com/hc/en-us/articles/55995315997203-Bulk-Import-Functionality-Jobs-Placements-and-Companies
+Source URL: https://avionteboldsupport.zendesk.com/hc/en-us/articles/52633019456275-Enhanced-Comprehensive-Placement-Report
 Source URL: https://bullhorn.github.io/rest-api-docs/entityref.html#placement
 Source URL: https://api.jobadder.com/v2/openapi.json
 Source URL: https://docs.spott.io/docs/placements/placements.md
@@ -24,10 +26,12 @@ placements from Bullhorn, Spott and JobAdder exports via column mapping), withou
 
 ## Hierarchy
 A step frame, one step at a time, with Back and Next (Attio's import steps):
-0. **Source** (Linear importers): Bullhorn · JobAdder · Spott · Other spreadsheet. The choice sets
-   the preset mapping.
+0. **Source** (Linear importers): Bullhorn · JobAdder · Spott · Avionté · Other spreadsheet. The
+   choice sets the preset mapping (Avionté: its Comprehensive Placement report's columns; decision
+   0040).
 1. **Upload** (Attio): drop area or choose a file (CSV or Excel); after upload, the number of
-   columns and rows found.
+   columns and rows found. Under the button, a link to a template for the chosen source (Avionté's
+   bulk import: a downloadable template per import type).
 2. **Map columns** (Attio): file columns on the left, Granite fields on the right, auto-mapped from
    the preset or a mapping remembered from an earlier import (Flatfile memory); hover a field for
    sample values; leave a column unmapped to skip it. Required: worker name, client, position, start
@@ -45,10 +49,15 @@ A step frame, one step at a time, with Back and Next (Attio's import steps):
 4. **Preview** (Attio): what will happen — assignments to create, job orders to create, rate versions
    to add, rows skipped (each with its reason), rows already imported (Linear re-import skip); the
    records to create listed (Attio: "click between tabs to view the records"), each with its row,
-   worker, job order and dates.
+   worker, job order and dates. Then **Rows with errors** (Avionté's Data Validation: "only rows
+   with errors"): each row's number and reason; where one value is wrong or missing, a field holding
+   it to fix in place with Save (the stored file never changes; the fix is kept on the import and in
+   its activity); where the fix is a match on Review values, a note saying so; and **Leave out** /
+   **Take back** at the row's right (Avionté's Remove).
 5. **Run** (Attio): progress, then every row with imported or skipped and the reason; filter by
    result.
-- **Import history** under the step frame (Attio): earlier imports with source, file, date, counts.
+- **Import history** under the step frame (Attio): earlier imports with source, file, date, counts,
+  and Download — the rows as kept and, once run, each row's result (Avionté's View Imports).
 
 ## Interactions
 - Back/Next between steps loses nothing (Attio).

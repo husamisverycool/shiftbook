@@ -344,6 +344,13 @@
       "when": 1792180200000,
       "tag": "0052_partner_handoffs",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1792180300000,
+      "tag": "0053_connections_and_row_fixes",
+      "breakpoints": true
     }
   ]
 }

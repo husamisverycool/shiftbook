@@ -5,6 +5,7 @@ Reference product and screen: Stripe Dashboard — Invoices page (status chips o
 the list, a status badge per row, an export, a ⋯ menu per row with "Download PDF", the row opens
 the invoice); Bullhorn Back Office — Receivables (check rows, then "# Selected" actions such as
 saving several invoices as one PDF)
+Source URL: https://compassfs.net/_Old_Website/scac011.pdf
 Source URL: https://docs.stripe.com/invoicing/dashboard/manage-invoices
 Source URL: https://docs.stripe.com/invoicing/overview
 Source URL: https://docs.stripe.com/dashboard/basics
@@ -27,13 +28,20 @@ documents; and the way to put several of one client's invoices into one statemen
    menu at the right (Stripe row menu: Download PDF; Granite adds Download CSV and, when the
    client is on Fieldglass, Download VMS file).
 4. **Selection bar** when rows are checked (Bullhorn "# Selected"): the count and **Make
-   statement** (Avionté Invoice Merge: invoices of one client), and Clear.
+   statement** (Avionté Invoice Merge: invoices of one client), **Schedule of accounts** for the
+   Owner and Billing (a factor's schedule form, decision 0040; any clients' open invoices), and
+   Clear.
 
 ## Interactions
 - Clicking a row opens the invoice page (Stripe).
 - Checking invoices of more than one client disables Make statement and says it takes one client's
   invoices (Avionté merges one customer's invoices).
 - Make statement downloads the statement PDF (`_documents/statement.md`).
+- Schedule of accounts downloads one .zip: the schedule as CSV and as a PDF to sign
+  (`_documents/schedule-of-accounts.md`), and each invoice's PDF with its timesheet backup. It is
+  disabled, with the reason beside it, when a chosen invoice is paid, void, a credit note or was made
+  before invoices kept their document; a tooltip says what the file holds. Each invoice's activity
+  shows the schedule it went out on.
 - Keyboard: `?` lists shortcuts (Stripe documents `?`); G then I opens the list (app frame).
 
 ## States
