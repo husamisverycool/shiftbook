@@ -7,6 +7,7 @@
  */
 import { createHash } from "node:crypto";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
+import { holdsSsn } from "../../lib/ssn-text";
 import { audit } from "../audit";
 import { createAssignment } from "../catalog/assignments";
 import { createJobOrder } from "../catalog/job-orders";
@@ -23,7 +24,7 @@ import { settingOn } from "../settings";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { autoMap, FIELDS, missingFields, SOURCES, type Field, type Mapping, type Source } from "./fields";
-import { dateOrderFor, dateValues, distinctValues, planRows, type Catalog, type DateOrder, type Decisions, type PlannedRow } from "./plan";
+import { applyRowEdits, dateOrderFor, dateValues, distinctValues, fixableField, planRows, withRemoved, type Catalog, type DateOrder, type Decisions, type PlannedRow } from "./plan";
 import { dropSensitive, headingProblem, safeFilename, type RemovedColumn } from "./sensitive";
 
 /** The most rows one import takes: it runs under the catalog lock, so "create files" waits for it. */
@@ -108,7 +109,10 @@ async function load(tx: Tx, store: DocumentStore, id: string) {
   if (!record) return null;
   const [header = [], ...rows] = readCsv(new TextDecoder().decode(await store.get(record.storageKey)));
   // Stored rows are never blank (a trailing line end aside), so they line up with their numbers.
-  return { record, header, rows: rows.filter((r) => r.some((c) => c.trim() !== "")), opts: { dateOrder: record.dateOrder, rowNumbers: record.rowNumbers.length > 0 ? record.rowNumbers : undefined } };
+  const stored = rows.filter((r) => r.some((c) => c.trim() !== ""));
+  const rowNumbers = record.rowNumbers.length > 0 ? record.rowNumbers : undefined;
+  // The fixes typed for rows with errors are laid over the stored copy, which is never changed (decision 0040).
+  return { record, header, stored, rows: applyRowEdits(header, stored, rowNumbers, record.rowEdits), opts: { dateOrder: record.dateOrder, rowNumbers } };
 }
 
 export async function catalogFor(tx: Tx): Promise<Catalog> {
@@ -140,8 +144,16 @@ export async function importView(tx: Tx, store: DocumentStore, id: string) {
   const decisions = record.decisions as Decisions;
   const catalog = await catalogFor(tx);
   const missing = missingFields(mapping);
-  const plan = missing.length === 0 ? planRows(record.source as Source, header, rows, mapping, decisions, catalog, opts) : [];
+  const plan = missing.length === 0 ? withRemoved(planRows(record.source as Source, header, rows, mapping, decisions, catalog, opts), record.removedRows) : [];
   const order = dateOrderFor(header, rows, mapping, record.dateOrder);
+  // Avionté's validation step: only the rows with errors, each with the one cell to fix in place, or left out.
+  const byNumber = new Map(rows.map((r, i) => [opts.rowNumbers?.[i] ?? i + 2, r]));
+  const problems = plan.flatMap((p) => {
+    if (p.outcome !== "skip" || p.reason.code === "already_imported") return [];
+    const row = byNumber.get(p.row) ?? [];
+    const removed = p.reason.code === "removed_by_person";
+    return [{ row: p.row, reason: p.reason, removed, fix: removed ? null : fixableField(p.reason, header, row, mapping), fixed: Object.keys(record.rowEdits[String(p.row)] ?? {}) }];
+  });
   // What the run will add, worked out the same way the run does.
   const cards = await tx.select().from(s.rateCards);
   const names = new Map(catalog.workers.map((w) => [w.workerId, `${w.firstName} ${w.lastName}`]));
@@ -183,6 +195,7 @@ export async function importView(tx: Tx, store: DocumentStore, id: string) {
     values: missing.length === 0 ? distinctValues(header, rows, mapping, decisions, catalog) : null,
     dates: { order, chosen: record.dateOrder ?? null, values: missing.length === 0 ? dateValues(header, rows, mapping, order) : [] },
     plan,
+    problems,
     preview: {
       create: plan.filter((p) => p.outcome === "create").length,
       newJobOrders,
@@ -232,6 +245,43 @@ export async function saveDateOrder(tx: Tx, actor: Actor, id: string, order: Dat
   await audit(tx, actor, [{ action: "update", entityType: "placement_import", entityId: id, after: { dateOrder: order } }]);
 }
 
+/**
+ * A value typed in place of one cell of a row with an error (Avionté: "fix values inline"); an empty
+ * value goes back to the file's own. Only a cell of a stored row, in a mapped column, can be fixed.
+ */
+export async function saveRowFix(tx: Tx, actor: Actor, store: DocumentStore, id: string, row: number, column: string, value: string): Promise<void> {
+  const record = await draft(tx, id);
+  const loaded = (await load(tx, store, id))!;
+  const numbers = loaded.opts.rowNumbers ?? loaded.stored.map((_, i) => i + 2);
+  const at = numbers.indexOf(row);
+  if (at < 0 || !loaded.header.includes(column) || !Object.values(record.mapping).includes(column) || value.length > 500) throw new StaleRequestError();
+  // A typed fix is kept and logged: never an SSN (SPEC §21), as the stored file never holds one.
+  if (holdsSsn(value)) throw new ImportFileError("unsupported");
+  const original = loaded.stored[at]![loaded.header.indexOf(column)] ?? "";
+  const edits = { ...record.rowEdits };
+  const forRow = { ...(edits[String(row)] ?? {}) };
+  if (value.trim() === "" || value === original) delete forRow[column];
+  else forRow[column] = value.trim();
+  if (Object.keys(forRow).length === 0) delete edits[String(row)];
+  else edits[String(row)] = forRow;
+  await tx.update(s.placementImports).set({ rowEdits: edits, updatedAt: new Date() }).where(eq(s.placementImports.id, id));
+  await audit(tx, actor, [{ action: "update", entityType: "placement_import", entityId: id, before: { row, column, value: original }, after: { row, column, value: forRow[column] ?? original } }]);
+}
+
+/** Leaves a row out of the import, or takes it back (Avionté: "Remove"). */
+export async function setRowRemoved(tx: Tx, actor: Actor, store: DocumentStore, id: string, row: number, removed: boolean): Promise<void> {
+  const record = await draft(tx, id);
+  const loaded = (await load(tx, store, id))!;
+  const numbers = loaded.opts.rowNumbers ?? loaded.stored.map((_, i) => i + 2);
+  if (!numbers.includes(row)) throw new StaleRequestError();
+  const set = new Set(record.removedRows);
+  if (removed) set.add(row);
+  else set.delete(row);
+  const removedRows = [...set].sort((a, b) => a - b);
+  await tx.update(s.placementImports).set({ removedRows, updatedAt: new Date() }).where(eq(s.placementImports.id, id));
+  await audit(tx, actor, [{ action: "update", entityType: "placement_import", entityId: id, after: { row, removed } }]);
+}
+
 /** Runs the import once; afterwards it only returns what happened. */
 export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: string, today: string): Promise<ImportResult[]> {
   await lockCatalog(tx, actor.agencyId, "exclusive");
@@ -242,7 +292,7 @@ export async function runImport(tx: Tx, actor: Actor, store: DocumentStore, id: 
   const mapping = record.mapping as Mapping;
   if (missingFields(mapping).length > 0) throw new StaleRequestError();
   const source = record.source as Source;
-  const plan = planRows(source, loaded.header, loaded.rows, mapping, record.decisions as Decisions, await catalogFor(tx), loaded.opts);
+  const plan = withRemoved(planRows(source, loaded.header, loaded.rows, mapping, record.decisions as Decisions, await catalogFor(tx), loaded.opts), record.removedRows);
   const defaults = await settingOn<Defaults>(tx, "rate_card.default_bill_multipliers", today);
   const newJobs = new Map<string, string>();
   const results: ImportResult[] = [];

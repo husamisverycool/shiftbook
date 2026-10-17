@@ -499,6 +499,10 @@ export const placementImports = pgTable("placement_imports", {
   rowNumbers: jsonb("row_numbers").$type<number[]>().notNull().default([]),
   /** The date order the person chose; null reads it from the file. */
   dateOrder: text("date_order").$type<"month_first" | "day_first">(),
+  /** Slice s (drizzle/0053): fixes typed for rows with errors, by row number: column → value. */
+  rowEdits: jsonb("row_edits").$type<Record<string, Record<string, string>>>().notNull().default({}),
+  /** Slice s: the rows (by number in the file) the person left out. */
+  removedRows: jsonb("removed_rows").$type<number[]>().notNull().default([]),
   createdBy: uuid("created_by"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),

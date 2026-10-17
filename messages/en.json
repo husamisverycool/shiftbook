@@ -1175,13 +1175,15 @@
       "bullhorn": "Bullhorn",
       "jobadder": "JobAdder",
       "spott": "Spott",
-      "other": "Other spreadsheet"
+      "other": "Other spreadsheet",
+      "avionte": "Avionté"
     },
     "sourceHint": {
       "bullhorn": "A placement list exported as CSV.",
       "jobadder": "A placements export (CSV).",
       "spott": "A placements export (Excel or CSV).",
-      "other": "Any CSV or Excel file with one placement per row."
+      "other": "Any CSV or Excel file with one placement per row.",
+      "avionte": "A placement report exported as CSV or Excel."
     },
     "whichSource": "Where do the placements come from?",
     "drop": "Drop the file here",
@@ -1293,7 +1295,8 @@
       "invalid_date_assignment": "A date is not valid.",
       "invalid_value": "{value} is not valid.",
       "status_unclear": "The status \"{value}\" is not clear; choose what it means in the review step.",
-      "could_not_save": "This row could not be saved."
+      "could_not_save": "This row could not be saved.",
+      "removed_by_person": "Left out of this import."
     },
     "rateVersions": "Own rate versions to add",
     "alreadyImported": "Already imported",
@@ -1332,7 +1335,21 @@
     "invalidDates": "{count, plural, one {# date} other {# dates}} with an invalid format",
     "jobOrder": "Job order",
     "newBadge": "New",
-    "readOnly": "Only the Owner and coordinators import placements."
+    "readOnly": "Only the Owner and coordinators import placements.",
+    "template": "Download a template for {source}",
+    "problemsTitle": "Rows with errors",
+    "problemsBody": "Only the rows that cannot be imported yet. Fix a value in place, or leave the row out; every other row is ready.",
+    "problemsNone": "No rows with errors.",
+    "fix": "Fix",
+    "fixFor": "New value for row {row}",
+    "fixedNote": "Fixed here",
+    "saveFix": "Save",
+    "leaveRowOut": "Leave out",
+    "takeBack": "Take back",
+    "fixElsewhere": "Fix on Review values",
+    "download": "Download",
+    "downloadRows": "Rows",
+    "downloadResults": "Results"
   },
   "portal": {
     "attestation": "I confirm that the shifts I am approving were worked as shown, and I approve them for {client}.",
