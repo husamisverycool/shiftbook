@@ -51,4 +51,10 @@ and whether it is active. Also the entry point to importing placements.
 ## Never copy
 Linear's or Attio's wording, icons, colors or logos.
 
+## Look (Linear's list view, from its own screenshot at https://linear.app/docs/filters)
+Each row is one line, as Linear's rows are: the worker, then the position, shift and client in muted type; the properties at the
+row's right as small rounded chips (Linear's label and project chips), each saying what it is when the
+value alone does not ("Pay $17.00", "Bill $25.00"); dates as plain muted text, short ("Aug 3, 2026"). A
+property the group's band already names is not repeated in its rows.
+
 Deviations allowed: none

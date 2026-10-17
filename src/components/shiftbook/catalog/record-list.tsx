@@ -38,6 +38,8 @@ export interface Column<R> {
   label: string;
   cell: (r: R) => ReactNode;
   className?: string;
+  /** Shown as a small rounded chip, as Linear's rows show labels and projects; dates stay plain text. */
+  chip?: boolean;
 }
 export interface Grouping<R> {
   key: string;
@@ -431,15 +433,16 @@ export function RecordList<R extends { id: string }>(p: Props<R>) {
                             className={cn("transition-opacity", !isSelected && "opacity-0 group-hover:opacity-100 focus-visible:opacity-100", selected.size > 0 && "opacity-100")}
                           />
                         </span>
-                        <span role="gridcell" className="min-w-0 flex-1">
-                          <Link href={p.hrefFor(r)} className="block truncate font-medium hover:underline">
+                        {/* One line, as Linear's rows: the name, then its muted detail; the properties at the right. */}
+                        <span role="gridcell" className="flex min-w-0 flex-1 items-baseline gap-2">
+                          <Link href={p.hrefFor(r)} className="max-w-[60%] shrink-0 truncate font-medium hover:underline">
                             {p.primary(r)}
                           </Link>
-                          {p.secondary?.(r, grouping.key) && <span className="block truncate text-xs text-muted-foreground">{p.secondary(r, grouping.key)}</span>}
+                          {p.secondary?.(r, grouping.key) && <span className="min-w-0 truncate text-muted-foreground">{p.secondary(r, grouping.key)}</span>}
                         </span>
                         {visibleColumns.map((c) => (
                           <span key={c.key} role="gridcell" className={cn("hidden shrink-0 text-muted-foreground md:block", c.className)}>
-                            {c.cell(r)}
+                            {c.chip ? <span className="inline-flex h-6 max-w-full items-center rounded-full border px-2.5 text-xs whitespace-nowrap text-foreground/80">{c.cell(r)}</span> : c.cell(r)}
                           </span>
                         ))}
                         <span role="gridcell" className="shrink-0">
