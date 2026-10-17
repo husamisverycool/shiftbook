@@ -5530,7 +5530,7 @@
       "issued": "Invoice date",
       "due": "Due date",
       "reference": "PO / reference",
-      "amount": "Amount",
+      "amount": "Amount owed",
       "total": "Total of {count} invoices",
       "certification": "{seller} certifies that each invoice listed above is for work performed and approved, that each amount is owed by the debtor named and is not paid, disputed or subject to any credit, and assigns these invoices to the party named above under the agreement between them.",
       "signature": "Signature",

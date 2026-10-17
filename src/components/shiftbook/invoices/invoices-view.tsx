@@ -94,11 +94,15 @@ export function InvoicesView({ rows, today }: { rows: InvoiceRow[]; today: strin
             )}
             {can("cash") &&
               (!notOpen && !early ? (
-                <Tip label={ts("hint")}>
-                  <a href={`/api/files/schedule-of-accounts?ids=${chosen.map((r) => r.id).join(",")}`} download className={buttonVariants({ size: "sm", variant: "outline" })} data-testid="schedule-of-accounts">
-                    {ts("action")}
-                  </a>
-                </Tip>
+                // A form, not a link: making a schedule records it, which a prefetch or a shared link must never do.
+                <form method="post" action="/api/files/schedule-of-accounts" className="contents">
+                  <input type="hidden" name="ids" value={chosen.map((r) => r.id).join(",")} />
+                  <Tip label={ts("hint")}>
+                    <Button type="submit" size="sm" variant="outline" data-testid="schedule-of-accounts">
+                      {ts("action")}
+                    </Button>
+                  </Tip>
+                </form>
               ) : (
                 <Button size="sm" variant="outline" disabled data-testid="schedule-of-accounts">
                   {ts("action")}

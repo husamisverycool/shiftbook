@@ -5530,7 +5530,7 @@
       "issued": "Fecha de factura",
       "due": "Vencimiento",
       "reference": "OC / referencia",
-      "amount": "Importe",
+      "amount": "Importe adeudado",
       "total": "Total de {count} facturas",
       "certification": "{seller} certifica que cada factura enumerada arriba corresponde a trabajo realizado y aprobado, que cada importe lo debe el deudor indicado y no está pagado, en disputa ni sujeto a ningún crédito, y cede estas facturas a la parte indicada arriba conforme al contrato entre ellas.",
       "signature": "Firma",
