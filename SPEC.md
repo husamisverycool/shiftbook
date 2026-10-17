@@ -29,6 +29,8 @@ money, lends, runs payroll, files taxes, schedules shifts, or does recruiting.
 | Billing | Invoices, accounts receivable, cash application |
 | Client approver | Magic link only: sees and approves/disputes their own hours for one period |
 | Read-only accountant | Read everything except SSNs; changes nothing |
+| Recruiter | Job orders, placements, worker onboarding (§27) |
+| Worker | Phone one-time-code login to the worker app only: their hours, pay stubs, documents, shifts, messages (§27) |
 
 MFA is required for Owner and Coordinator.
 
@@ -220,9 +222,12 @@ currency localized.
 
 ## 22. Out of scope for version one (even if asked in passing)
 
-Any money movement, lending or funding; payroll processing or tax filing; scheduling or shift fill;
-ATS or CRM; a worker mobile app; E-Verify submission; live bank connections; VMS API integrations
-(file-based only).
+Owner, 2026-10-17: "all the stuff you said was out of scope i want everything to be built in full" —
+scheduling, the worker app, onboarding and the partner-ready money flows moved into scope (§27).
+What stays out, because it needs licences and partner contracts rather than software: actually
+moving money, lending or funding, payroll processing or tax filing, E-Verify submission, live bank
+connections, VMS API integrations (file-based only), native mobile apps (the worker app is mobile
+web), and a full ATS or CRM (placements are imported).
 
 ## 23. Golden tests
 
@@ -308,4 +313,53 @@ illustrations, wording or brand colors from any reference).
 | Client portal | Stripe Customer Portal; Bill.com customer portal |
 | Audit log | Stripe Dashboard events |
 | Empty states | Linear empty states |
-| Pay stub PDF (later) | Gusto pay stub |
+| Pay stub PDF | Gusto pay stub |
+| Worker onboarding | Gusto employee self-onboarding; Rippling onboarding checklist |
+| Worker app (mobile web) | Square Team app; Gusto Wallet; WhatsApp for messages |
+| Scheduling and shift board | Deputy schedule view; When I Work scheduler |
+| Shift offers (worker side) | Instawork shift list |
+| Connections | Zapier connection setup; Stripe integrations page |
+| Partner-ready money flows | Stripe Connect onboarding; Stripe Capital offer pages |
+| Notifications and emails | Linear notification settings; Stripe email templates |
+| Collections reminders | Stripe Billing dunning settings |
+| Clients and worksites | Rippling company directory; Stripe customers list |
+
+## 27. The whole product (owner, 2026-10-17)
+
+Added to version one by the owner's explicit approval, built in slices after (m) (§25 order
+continues: n motion, o every state, p command menu, q 720-hour checker, r notifications and
+invoice email, s connections and more exports, t worker onboarding and app, u scheduling and shift
+fill, v client portal, w partner-ready money flows, x New Jersey and the whole acceptance test).
+
+1. **Command menu** (⌘K / Ctrl+K): jump to any page, record or action.
+2. **Free Illinois 720-hour checker**: a public page an agency uses without an account — upload
+   hours, see who is near or over 720 hours at one client in 12 months; nothing is stored.
+3. **Notifications and email**: in-app and email notices for approvals needed, runs blocked,
+   obligations due, disputes and shift confirmations, with per-user settings; invoices emailed with
+   the PDF attached; scheduled collection reminders; credit notes; promise-to-pay notes.
+4. **Connections and exports**: an integrations page (ATS imports by file from Bullhorn, Spott,
+   JobAdder and Avionté; payroll export targets; VMS mapping profiles; the forwarding address;
+   partner handoffs); Paychex Flex and Paylocity through a mapped CSV profile configured from a
+   sample file; a factor "schedule of accounts" export with the timesheet backup bundle.
+5. **Worker onboarding**: W-4 and I-9 Section 1 captured as data and PDF, direct-deposit details for
+   the payroll handoff, policy acknowledgments, e-signature.
+6. **Worker app** (mobile web, phone one-time-code login, English and Spanish, Spanish by default
+   when that is the worker's preference): hours, pay stubs from locked runs (Gusto pay stub), documents,
+   shift offers and confirmations, messages with the coordinator (translated), clock in and out with
+   location when the client allows it.
+7. **Scheduling and shift fill**: a shift board per client and worksite; shifts from job orders;
+   offers to eligible workers; confirmations, no-shows and replacements; confirmed shifts attach to
+   assignments; attendance feeds time intake. Fill rate and no-show rate per client in analytics.
+8. **Client portal**: approve hours, see invoices and backup, download a remittance stub, download
+   proof of the agency's state registration, request workers for a shift (a job-order draft).
+9. **Partner-ready money flows — compute everything, move nothing**: an embedded-payroll payload per
+   locked run; earned-wage-access availability per worker under a configurable cap; an invoice-funding
+   underwriting packet and eligibility decision per approved invoice; a payroll-by-class export for
+   insurance brokers. Each "send to partner" records a handoff and nothing else; every such screen
+   says no money moves in this version.
+10. **New Jersey**: weekly overtime over 40; the Temporary Workers' Bill of Rights notice per
+    assignment.
+11. **Acceptance** (§24) grows to cover these: a worker signs in to the worker app in Spanish and sees
+    hours and a pay stub; a shift is offered and confirmed; the handoff packets are generated and
+    recorded; invoices are emailed.
+
