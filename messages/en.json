@@ -6185,7 +6185,8 @@
       "not_yours": "These hours were sent to someone else to approve.",
       "not_found": "That isn't available any more.",
       "send_failed": "The email could not be sent. Try again in a moment.",
-      "settings_missing": "The agency hasn't finished setting up links. Contact them."
+      "settings_missing": "The agency hasn't finished setting up links. Contact them.",
+      "review_limit": "This was opened too many times in the last hour. Try again later."
     }
   },
   "portalEmail": {

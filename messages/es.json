@@ -6185,7 +6185,8 @@
       "not_yours": "Estas horas se enviaron a otra persona para que las apruebe.",
       "not_found": "Eso ya no está disponible.",
       "send_failed": "No se pudo enviar el correo electrónico. Inténtelo de nuevo en un momento.",
-      "settings_missing": "La agencia todavía no terminó de configurar los enlaces. Comuníquese con ella."
+      "settings_missing": "La agencia todavía no terminó de configurar los enlaces. Comuníquese con ella.",
+      "review_limit": "Esto se abrió demasiadas veces en la última hora. Inténtelo de nuevo más tarde."
     }
   },
   "portalEmail": {

@@ -1306,6 +1306,8 @@ export const approvalLinks = pgTable(
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     renewalRequestedAt: timestamp("renewal_requested_at", { withTimezone: true }),
     firstOpenedAt: timestamp("first_opened_at", { withTimezone: true }),
+    /** Made from the client portal by this contact (drizzle/0057): it ends with the contact's portal access. */
+    portalContactId: uuid("portal_contact_id"),
     createdAt: createdAt(),
   },
   (t) => [index("approval_links_request").on(t.agencyId, t.requestId)],

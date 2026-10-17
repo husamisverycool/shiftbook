@@ -40,7 +40,8 @@ export type PortalError =
   | "link_active"
   | "link_too_old"
   | "not_yours"
-  | "nothing_waiting";
+  | "nothing_waiting"
+  | "review_limit";
 
 export type PortalResult<T = object> = ({ ok: true } & T) | { ok: false; error: PortalError; fields?: string[] };
 
@@ -54,6 +55,10 @@ export const PORTAL_RENEWAL_MAX_DAYS_AFTER_EXPIRY = 30;
 export const PORTAL_SEND_WAIT_SECONDS = 60;
 /** Requests for workers from one contact still waiting on the agency, at most. */
 export const PENDING_REQUESTS_MAX = 20;
+/** An approval link made from the portal is opened at once: it lasts this long (security review, M1). */
+export const PORTAL_APPROVAL_LINK_MINUTES = 60;
+/** …and a contact makes at most this many in an hour. */
+export const PORTAL_APPROVAL_LINKS_PER_HOUR = 10;
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const LOCALES = ["en", "es"] as const;
@@ -93,11 +98,17 @@ interface Pending {
   linkId: string;
 }
 
+/** The approval links a contact opened from the portal stop working with the portal link that made them. */
+async function endPortalApprovalLinks(tx: Tx, contactId: string, now: Date) {
+  await tx.update(s.approvalLinks).set({ revokedAt: now }).where(and(eq(s.approvalLinks.portalContactId, contactId), isNull(s.approvalLinks.revokedAt)));
+}
+
 /** Makes a new link for a contact (earlier links stop working) and queues its email. */
 async function issueAndQueue(tx: Tx, deps: ApprovalDeps, contact: s.PortalContactRow, now: Date): Promise<PortalResult<{ pending: Pending }>> {
   const days = await linkDays(tx, now);
   if (days === null) return { ok: false, error: "settings_missing" };
   await tx.update(s.portalLinks).set({ revokedAt: now }).where(and(eq(s.portalLinks.contactId, contact.id), isNull(s.portalLinks.revokedAt)));
+  await endPortalApprovalLinks(tx, contact.id, now);
   const { token, hash } = newPortalToken();
   const expiresAt = new Date(now.getTime() + days * DAY_MS);
   const [link] = await tx.insert(s.portalLinks).values({ agencyId: contact.agencyId, contactId: contact.id, tokenHash: hash, expiresAt, createdAt: now }).returning({ id: s.portalLinks.id });
@@ -241,6 +252,7 @@ export async function revokePortalContact(deps: ApprovalDeps, actor: Actor, cont
     const [contact] = await tx.update(s.portalContacts).set({ revokedAt: now, revokedByLabel: actor.label }).where(and(eq(s.portalContacts.id, contactId), isNull(s.portalContacts.revokedAt))).returning();
     if (!contact) return { ok: false as const, error: "not_found" as const };
     await tx.update(s.portalLinks).set({ revokedAt: now }).where(and(eq(s.portalLinks.contactId, contactId), isNull(s.portalLinks.revokedAt)));
+    await endPortalApprovalLinks(tx, contactId, now);
     await audit(tx, actor, [contactEvent(contactId, "portal_revoked")]);
     return { ok: true as const };
   });
@@ -734,10 +746,19 @@ export async function reviewHoursLink(deps: ApprovalDeps, token: string, request
     const [r] = await tx.select().from(s.approvalRequests).where(and(eq(s.approvalRequests.id, requestId), eq(s.approvalRequests.clientId, p.clientId), eq(s.approvalRequests.status, "open")));
     if (!r) return { ok: false as const, error: "not_found" as const };
     if (r.approverEmail.toLowerCase() !== p.contact.email.toLowerCase()) return { ok: false as const, error: "not_yours" as const };
-    const days = await linkDays(tx, now);
-    if (days === null) return { ok: false as const, error: "settings_missing" as const };
+    // One at a time, briefly, and rarely: the page opens it at once, and it ends with the portal access.
+    await tx.select({ id: s.portalContacts.id }).from(s.portalContacts).where(eq(s.portalContacts.id, p.contact.id)).for("update");
+    const [made] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(s.approvalLinks)
+      .where(and(eq(s.approvalLinks.portalContactId, p.contact.id), gt(s.approvalLinks.createdAt, new Date(now.getTime() - 3_600_000))));
+    if ((made?.n ?? 0) >= PORTAL_APPROVAL_LINKS_PER_HOUR) return { ok: false as const, error: "review_limit" as const };
+    await endPortalApprovalLinks(tx, p.contact.id, now);
     const { token: approvalToken, hash } = newApprovalToken();
-    const [link] = await tx.insert(s.approvalLinks).values({ agencyId: p.agencyId, requestId: r.id, tokenHash: hash, purpose: "renewal", expiresAt: new Date(now.getTime() + days * DAY_MS), createdAt: now }).returning({ id: s.approvalLinks.id });
+    const [link] = await tx
+      .insert(s.approvalLinks)
+      .values({ agencyId: p.agencyId, requestId: r.id, tokenHash: hash, purpose: "renewal", portalContactId: p.contact.id, expiresAt: new Date(now.getTime() + PORTAL_APPROVAL_LINK_MINUTES * 60_000), createdAt: now })
+      .returning({ id: s.approvalLinks.id });
     await auditBy(tx, byContact(p.agencyId, p.contact), [{ action: "update", entityType: "approval_request", entityId: r.id, after: { event: "opened_from_portal", linkId: link!.id } }]);
     return { ok: true as const, approvalToken, locale: r.locale };
   });
@@ -755,13 +776,18 @@ export async function requestNewPortalLink(deps: ApprovalDeps, token: string): P
     if (state === "revoked") return { ok: false, error: "link_revoked" };
     if (state === "active") return { ok: false, error: "link_active" };
     if (now.getTime() - lc.link.expiresAt.getTime() > PORTAL_RENEWAL_MAX_DAYS_AFTER_EXPIRY * DAY_MS) return { ok: false, error: "link_too_old" };
+    // The contact first, as the agency's send locks it, so a renewal and a send never both leave a link.
+    const [contact] = await tx.select().from(s.portalContacts).where(and(eq(s.portalContacts.id, lc.contact.id), isNull(s.portalContacts.revokedAt))).for("update");
+    if (!contact) return { ok: false, error: "link_revoked" };
     const [locked] = await tx.select().from(s.portalLinks).where(eq(s.portalLinks.id, lc.link.id)).for("update");
+    if (locked!.revokedAt) return { ok: false, error: "link_revoked" };
     if (locked!.renewalRequestedAt && now.getTime() - locked!.renewalRequestedAt.getTime() < PORTAL_RENEWAL_WAIT_MINUTES * 60_000) return { ok: false, error: "too_soon" };
+    // Renewals only (the agency's sends do not count): each one marks the link that asked.
     const [recent] = await tx
       .select({ n: sql<number>`count(*)::int` })
       .from(s.portalLinks)
-      .where(and(eq(s.portalLinks.contactId, lc.contact.id), gt(s.portalLinks.createdAt, new Date(now.getTime() - DAY_MS))));
-    if ((recent?.n ?? 0) > PORTAL_RENEWALS_PER_DAY) return { ok: false, error: "too_soon" };
+      .where(and(eq(s.portalLinks.contactId, lc.contact.id), gt(s.portalLinks.renewalRequestedAt, new Date(now.getTime() - DAY_MS))));
+    if ((recent?.n ?? 0) >= PORTAL_RENEWALS_PER_DAY) return { ok: false, error: "too_soon" };
     await tx.update(s.portalLinks).set({ renewalRequestedAt: now }).where(eq(s.portalLinks.id, lc.link.id));
     const issued = await issueAndQueue(tx, deps, lc.contact, now);
     if (!issued.ok) return issued;
