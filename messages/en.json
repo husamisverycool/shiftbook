@@ -636,7 +636,9 @@
     "notifications": "Notifications",
     "notificationsBadge": "{count} unread",
     "notificationSettings": "Notifications",
-    "collections": "Collections"
+    "collections": "Collections",
+    "money": "Money",
+    "moneySettings": "Money settings"
   },
   "list": {
     "filter": "Filter",
@@ -5105,6 +5107,358 @@
     "history": {
       "emailed": "Emailed to {email} · {date}",
       "reminderEmailed": "Reminder emailed on {date} · {stage}"
+    }
+  },
+  "money": {
+    "title": "Money",
+    "settingsLink": "Settings",
+    "tabsLabel": "Money",
+    "tabs": {
+      "handoffs": "Handoffs",
+      "payroll": "Payroll",
+      "wageAccess": "Wage access",
+      "funding": "Funding",
+      "insurance": "Insurance"
+    },
+    "noMoneyMoves": "No money moves in this version. A licensed partner would act on what is recorded here.",
+    "kinds": {
+      "payroll": "Payroll",
+      "wage_access": "Wage access",
+      "funding": "Invoice funding",
+      "insurance": "Payroll by class"
+    },
+    "partners": {
+      "check": "Check",
+      "zeal": "Zeal",
+      "file": "File (JSON)",
+      "wage_access_partner": "Wage-access partner",
+      "funding_partner": "Funding partner",
+      "broker": "Insurance broker"
+    },
+    "recorded": "Recorded",
+    "handoffs": {
+      "cols": {
+        "when": "Recorded",
+        "what": "What",
+        "about": "About",
+        "partner": "Partner",
+        "amount": "Amount",
+        "status": "Status",
+        "by": "By"
+      },
+      "emptyTitle": "Nothing handed off yet",
+      "emptyBody": "Handoffs start from a run's payroll once its files are made.",
+      "emptyAction": "Go to Payroll",
+      "aboutRun": "Pay period {period}",
+      "aboutDates": "Pay dates {range}"
+    },
+    "payroll": {
+      "cols": {
+        "period": "Pay period",
+        "payday": "Pay date",
+        "workers": "Workers",
+        "gross": "Gross",
+        "handoff": "Handoff"
+      },
+      "version": "version {version}",
+      "ready": "To hand off",
+      "recordedOn": "Recorded {date}",
+      "correction": "Through its payroll file",
+      "emptyTitle": "No payroll to hand off yet",
+      "emptyBody": "A run appears here once its payroll files are made.",
+      "emptyAction": "Go to Convert timesheets"
+    },
+    "run": {
+      "crumbs": "Money",
+      "title": "Payroll for {period}",
+      "status": {
+        "ready": "Ready",
+        "recorded": "Recorded",
+        "notReady": "Not ready"
+      },
+      "facts": "Pay date {payday} · {workers, plural, one {# worker} other {# workers}} · {gross} gross",
+      "earnings": "Earnings by worker",
+      "cols": {
+        "worker": "Worker",
+        "regular": "Regular",
+        "overtime": "Overtime",
+        "other": "Other",
+        "gross": "Gross",
+        "ready": "Ready"
+      },
+      "total": "Total",
+      "hoursAmount": "{hours} h · {amount}",
+      "readyYes": "Ready",
+      "missing": {
+        "start_date": "start date",
+        "workplace": "worksite",
+        "ssn": "SSN on file"
+      },
+      "missingList": "Missing: {items}",
+      "collectsTitle": "What the partner collects",
+      "collectsBody": "Granite never holds these. The payroll partner's own onboarding asks each worker for them before their first paycheck.",
+      "collects": {
+        "dob": "Date of birth",
+        "residence": "Home address",
+        "payment_method": "How they are paid (direct deposit or check)",
+        "withholdings": "Tax withholdings (Form W-4 and the state's form)"
+      },
+      "reconcileTitle": "Reconciliation",
+      "fileGross": "Payroll file",
+      "payloadGross": "This payload",
+      "reconciled": "Equal to the cent.",
+      "notReconciled": "Different by {amount}. Make the run's files again before handing off.",
+      "zealTitle": "Lines Zeal would compute differently",
+      "zealBody": "Zeal multiplies the hours and wage it receives. These lines would come out a cent apart from the run; the run's amount is the one approved.",
+      "zealCols": {
+        "worker": "Worker",
+        "line": "Line",
+        "exact": "Run",
+        "partner": "Zeal",
+        "difference": "Difference"
+      },
+      "details": {
+        "version": "Run version",
+        "rules": "Rules version",
+        "approved": "Approved",
+        "payday": "Pay date",
+        "recordedAt": "Recorded",
+        "by": "By",
+        "fingerprint": "Fingerprint"
+      },
+      "formatLabel": "Partner format",
+      "formats": {
+        "check": "Check",
+        "zeal": "Zeal",
+        "file": "File (JSON)"
+      },
+      "download": "Download payload",
+      "approve": "Approve and record handoff",
+      "notReadyReason": "Fix what is missing before handing off.",
+      "dialogTitle": "Record this payroll handoff?",
+      "dialogBody": "{workers, plural, one {# worker} other {# workers}}, {gross} gross, as {format}. Nothing is sent: the payload is recorded for a payroll partner.",
+      "confirm": "Record handoff",
+      "done": "Payroll handoff recorded",
+      "errors": {
+        "not_allowed": "Only the Owner records handoffs.",
+        "not_found": "This run can't be handed off.",
+        "not_ready": "Fix what is missing before handing off.",
+        "already": "This run's payroll was already handed off.",
+        "generic": "That didn't work. Try again."
+      }
+    },
+    "wage": {
+      "rules": "Up to {cap} of earned pay · {limit} · faster delivery {fee}",
+      "noLimit": "no per-request limit",
+      "limit": "at most {amount} a request",
+      "free": "free",
+      "change": "Change",
+      "cols": {
+        "worker": "Worker",
+        "hours": "Unpaid hours",
+        "earned": "Earned",
+        "outstanding": "Outstanding",
+        "available": "Available"
+      },
+      "request": "Request",
+      "offTitle": "Wage access is off",
+      "offBody": "Turn it on in Money settings to let workers draw on pay they have already earned.",
+      "offAction": "Open settings",
+      "emptyTitle": "No unpaid hours",
+      "emptyBody": "Hours that are reviewed or approved and not yet paid appear here.",
+      "noRate": "{hours} h left out: no rate card in force",
+      "dialogTitle": "Request for {name}",
+      "amount": "Amount",
+      "amountHint": "Up to {amount}",
+      "delivery": "Delivery",
+      "standard": "Standard",
+      "standardNote": "Free · next business day",
+      "faster": "Faster",
+      "fasterNote": "{fee} fee · within minutes",
+      "termsTitle": "Terms",
+      "terms": {
+        "only_earned": "Only pay already earned, from approved hours",
+        "payroll_deduction": "Repaid by a deduction from the next paycheck",
+        "no_recourse": "No recourse if the paycheck falls short",
+        "no_collection": "Never sent to collections or reported to credit bureaus",
+        "no_credit_check": "No credit check",
+        "free_option": "The standard delivery is always free"
+      },
+      "confirm": "Record request",
+      "done": "Request recorded",
+      "errors": {
+        "amount": "Enter an amount of at least $1.00.",
+        "too_much": "That is more than is available.",
+        "none": "Nothing is available.",
+        "not_allowed": "Only the Owner records requests.",
+        "not_found": "This worker has nothing to request.",
+        "generic": "That didn't work. Try again."
+      }
+    },
+    "funding": {
+      "rules": "Advance {advance} · flat fee {fee} · one client at most {share} of all owed · up to {days} days old · {approval}",
+      "approvalRequired": "client approval required",
+      "approvalNotRequired": "client approval not required",
+      "off": "Funding is off",
+      "change": "Change",
+      "cols": {
+        "invoice": "Invoice",
+        "client": "Client",
+        "issued": "Issued",
+        "age": "Age",
+        "balance": "Balance",
+        "share": "Share of all owed",
+        "decision": "Decision"
+      },
+      "days": "{days, plural, one {# day} other {# days}}",
+      "prequalified": "Prequalified",
+      "notEligible": "Not eligible",
+      "submitted": "Submitted",
+      "reasons": {
+        "disabled": "Funding is off in Money settings",
+        "not_open": "The invoice is not open",
+        "credit_note": "A credit note is never funded",
+        "no_balance": "Nothing is owed on it",
+        "too_old": "Older than the agency's limit",
+        "concentration": "The client's share of all money owed is above the limit",
+        "no_approval": "The client has not approved these hours by link",
+        "open_disputes": "A dispute on these hours is still open"
+      },
+      "emptyTitle": "No open invoices",
+      "emptyBody": "Invoices are made with a run's files.",
+      "crumbs": "Money",
+      "title": "Invoice {number}",
+      "facts": "{client} · {balance} owed · issued {issued} · due {due}",
+      "offerTitle": "Offer",
+      "offerLine": "Prequalified, subject to the funding partner's review",
+      "advance": "Advance",
+      "fee": "Flat fee",
+      "reserve": "Held in reserve",
+      "released": "Released when the client pays",
+      "disclosure": "The funding partner's own disclosure and agreement go here. The fee is a flat amount, not an interest rate. If approved, the partner advances the amount above and keeps the reserve until the client pays.",
+      "reasonsTitle": "Why it is not eligible",
+      "scheduleTitle": "Schedule of accounts",
+      "scheduleCols": {
+        "debtor": "Debtor",
+        "invoice": "Invoice",
+        "date": "Date",
+        "po": "PO",
+        "amount": "Amount"
+      },
+      "approvalsTitle": "Approval trail",
+      "approvalLine": "{name} approved {approved, plural, one {# shift} other {# shifts}} and disputed {disputed} on {date}",
+      "noApprovals": "No approval by link.",
+      "historyTitle": "Payment history",
+      "historyLine": "{count, plural, =0 {No invoices paid yet.} one {# invoice paid, in {days} days on average, {late} days late on average.} other {# invoices paid, in {days} days on average, {late} days late on average.}}",
+      "riskTitle": "Risk",
+      "share": "Share of all money owed",
+      "disputeRate": "Shifts disputed",
+      "noDisputeRate": "No decisions yet",
+      "aging": "Aging",
+      "buckets": {
+        "current": "Current",
+        "d1_30": "1–30 days late",
+        "d31_60": "31–60 days late",
+        "d61_90": "61–90 days late",
+        "d91_plus": "Over 90 days late"
+      },
+      "details": {
+        "client": "Client",
+        "total": "Total",
+        "balance": "Balance",
+        "issued": "Issued",
+        "due": "Due",
+        "age": "Age",
+        "submittedAt": "Submitted",
+        "by": "By",
+        "fingerprint": "Fingerprint"
+      },
+      "download": "Download packet",
+      "submit": "Submit to funding partner",
+      "dialogTitle": "Submit this invoice's packet?",
+      "dialogBody": "Advance {advance}, flat fee {fee}, {reserve} held in reserve. Nothing is lent: the packet is recorded for a funding partner.",
+      "confirm": "Submit packet",
+      "done": "Packet submitted",
+      "errors": {
+        "not_allowed": "Only the Owner submits packets.",
+        "not_found": "This invoice can't be found.",
+        "not_ready": "This invoice is not eligible.",
+        "already": "This invoice was already submitted.",
+        "generic": "That didn't work. Try again."
+      }
+    },
+    "insurance": {
+      "from": "From",
+      "to": "To",
+      "show": "Show",
+      "download": "Download CSV",
+      "record": "Record handoff to broker",
+      "cols": {
+        "state": "State",
+        "class": "Class",
+        "description": "Description",
+        "hours": "Hours",
+        "straight": "Straight time",
+        "otPremium": "Overtime premium",
+        "dtPremium": "Double-time premium",
+        "other": "Other pay",
+        "total": "Total"
+      },
+      "total": "Total",
+      "note": "By pay date. The full workers' comp packet, worker by worker, is under Compliance.",
+      "emptyTitle": "No pay in these dates",
+      "emptyBody": "Pay appears here once a run's files are made and its pay date falls in the range.",
+      "dialogTitle": "Record this handoff to the broker?",
+      "dialogBody": "Pay dates {range}, {total} in all. Nothing is sent: the figures are recorded for the broker.",
+      "confirm": "Record handoff",
+      "done": "Handoff to the broker recorded",
+      "errors": {
+        "not_allowed": "Only the Owner records handoffs.",
+        "range": "Choose a From date on or before the To date.",
+        "none": "No pay in these dates.",
+        "generic": "That didn't work. Try again."
+      }
+    },
+    "settings": {
+      "kicker": "Settings",
+      "title": "Money settings",
+      "wageTitle": "Wage access",
+      "wageLine": "Workers may draw on pay already earned; it is repaid by a deduction from the next paycheck.",
+      "on": "On",
+      "onHint": "Show what each worker may request",
+      "cap": "Share of earned pay",
+      "capHint": "At most 100%: never more than was earned",
+      "maxPerRequest": "Most per request",
+      "maxPerRequestHint": "In dollars; 0 for no limit beyond the share",
+      "fee": "Faster delivery fee",
+      "feeHint": "In dollars; the standard delivery is always free",
+      "fundingTitle": "Invoice funding",
+      "fundingLine": "Which open invoices a funding partner would consider, and on what terms.",
+      "fundingOnHint": "Show each open invoice's decision",
+      "advance": "Advance",
+      "advanceHint": "Share of the balance paid up front",
+      "feePct": "Flat fee",
+      "feePctHint": "Share of the balance, charged once",
+      "concentration": "Largest share one client may be",
+      "concentrationHint": "Of all money owed to the agency; factors flag 20–30%",
+      "maxAge": "Oldest invoice",
+      "maxAgeHint": "Days from its issue date",
+      "approval": "Client approval by link required",
+      "approvalHint": "Only invoices whose hours the client approved",
+      "save": "Save",
+      "saved": "Saved",
+      "fromToday": "Changes apply from today.",
+      "problems": {
+        "range": "Out of range",
+        "type": "Choose a value"
+      },
+      "readOnly": "Only the Owner changes these."
+    },
+    "worker": {
+      "title": "Earned wage access",
+      "line": "{available} available of {earned} earned from unpaid hours",
+      "off": "Wage access is off for the agency.",
+      "open": "Open wage access"
     }
   }
 }

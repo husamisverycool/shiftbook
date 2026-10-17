@@ -15,6 +15,7 @@ import { ReadOnlyNote, useCan } from "../abilities";
 import { longDate } from "../format";
 import { Crumbs, Facts as DetailFacts, Page, PageHeader, RECORD_LINK, RecordLayout, Section as RecordSection } from "../page";
 import { Status } from "../status";
+import { WorkerWageAccess, type WorkerWage } from "../money/worker-wage";
 import { DocumentsTab } from "./documents";
 import { EmploymentTab } from "./employment";
 import { PayrollSection, PersonalSection, SsnSection } from "./profile-sections";
@@ -22,7 +23,7 @@ import { PayrollSection, PersonalSection, SsnSection } from "./profile-sections"
 const TABS = ["profile", "employment", "documents"] as const;
 type Tab = (typeof TABS)[number];
 
-export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; today: string }) {
+export function WorkerProfileView({ profile, today, wage }: { profile: WorkerProfile; today: string; wage?: WorkerWage }) {
   const t = useTranslations("workers");
   const router = useRouter();
   const pathname = usePathname();
@@ -85,9 +86,12 @@ export function WorkerProfileView({ profile, today }: { profile: WorkerProfile; 
 
       <RecordLayout
         aside={
-          <RecordSection id="worker-details" title={t("profile.details")}>
-            <DetailFacts items={details} />
-          </RecordSection>
+          <>
+            <RecordSection id="worker-details" title={t("profile.details")}>
+              <DetailFacts items={details} />
+            </RecordSection>
+            {wage && <WorkerWageAccess wage={wage} />}
+          </>
         }
       >
       <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="min-w-0">

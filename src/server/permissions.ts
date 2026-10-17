@@ -37,6 +37,8 @@ export const ABILITIES = {
   viewActivity: ["owner", "accountant"],
   /** The agency's subscription to Granite: Stripe's checkout and billing pages (decision 0036). */
   billing: ["owner"],
+  /** Partner handoffs — payroll payloads, wage access, invoice funding, the broker's export — and their rules (slice w). */
+  money: ["owner"],
 } as const satisfies Record<string, readonly Role[]>;
 export type Ability = keyof typeof ABILITIES;
 

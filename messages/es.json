@@ -636,7 +636,9 @@
     "notifications": "Notificaciones",
     "notificationsBadge": "{count} sin leer",
     "notificationSettings": "Notificaciones",
-    "collections": "Cobranza"
+    "collections": "Cobranza",
+    "money": "Dinero",
+    "moneySettings": "Configuración de Dinero"
   },
   "list": {
     "filter": "Filtrar",
@@ -5105,6 +5107,358 @@
     "history": {
       "emailed": "Enviado por correo a {email} · {date}",
       "reminderEmailed": "Recordatorio enviado por correo el {date} · {stage}"
+    }
+  },
+  "money": {
+    "title": "Dinero",
+    "settingsLink": "Configuración",
+    "tabsLabel": "Dinero",
+    "tabs": {
+      "handoffs": "Entregas",
+      "payroll": "Nómina",
+      "wageAccess": "Acceso al salario",
+      "funding": "Financiamiento",
+      "insurance": "Seguro"
+    },
+    "noMoneyMoves": "En esta versión no se mueve dinero. Un socio con licencia actuaría sobre lo que se registra aquí.",
+    "kinds": {
+      "payroll": "Nómina",
+      "wage_access": "Acceso al salario",
+      "funding": "Financiamiento de facturas",
+      "insurance": "Nómina por clase"
+    },
+    "partners": {
+      "check": "Check",
+      "zeal": "Zeal",
+      "file": "Archivo (JSON)",
+      "wage_access_partner": "Socio de acceso al salario",
+      "funding_partner": "Socio de financiamiento",
+      "broker": "Corredor de seguros"
+    },
+    "recorded": "Registrada",
+    "handoffs": {
+      "cols": {
+        "when": "Registrada",
+        "what": "Qué",
+        "about": "Sobre",
+        "partner": "Socio",
+        "amount": "Monto",
+        "status": "Estado",
+        "by": "Por"
+      },
+      "emptyTitle": "Todavía no hay entregas",
+      "emptyBody": "Las entregas empiezan por la nómina de una nómina semanal cuando se crean sus archivos.",
+      "emptyAction": "Ir a Nómina",
+      "aboutRun": "Periodo de pago {period}",
+      "aboutDates": "Fechas de pago {range}"
+    },
+    "payroll": {
+      "cols": {
+        "period": "Periodo de pago",
+        "payday": "Fecha de pago",
+        "workers": "Trabajadores",
+        "gross": "Bruto",
+        "handoff": "Entrega"
+      },
+      "version": "versión {version}",
+      "ready": "Por entregar",
+      "recordedOn": "Registrada el {date}",
+      "correction": "Por su archivo de nómina",
+      "emptyTitle": "Todavía no hay nómina para entregar",
+      "emptyBody": "Una nómina semanal aparece aquí cuando se crean sus archivos de nómina.",
+      "emptyAction": "Ir a Convertir hojas de horas"
+    },
+    "run": {
+      "crumbs": "Dinero",
+      "title": "Nómina de {period}",
+      "status": {
+        "ready": "Lista",
+        "recorded": "Registrada",
+        "notReady": "No está lista"
+      },
+      "facts": "Fecha de pago {payday} · {workers, plural, one {# trabajador} other {# trabajadores}} · {gross} bruto",
+      "earnings": "Ganancias por trabajador",
+      "cols": {
+        "worker": "Trabajador",
+        "regular": "Regular",
+        "overtime": "Horas extra",
+        "other": "Otros",
+        "gross": "Bruto",
+        "ready": "Lista"
+      },
+      "total": "Total",
+      "hoursAmount": "{hours} h · {amount}",
+      "readyYes": "Lista",
+      "missing": {
+        "start_date": "fecha de inicio",
+        "workplace": "lugar de trabajo",
+        "ssn": "número de Seguro Social registrado"
+      },
+      "missingList": "Falta: {items}",
+      "collectsTitle": "Lo que solicita el socio",
+      "collectsBody": "Granite nunca guarda estos datos. La incorporación del propio socio de nómina se los pide a cada trabajador antes de su primer cheque.",
+      "collects": {
+        "dob": "Fecha de nacimiento",
+        "residence": "Domicilio",
+        "payment_method": "Cómo se le paga (depósito directo o cheque)",
+        "withholdings": "Retenciones de impuestos (Formulario W-4 y el formulario del estado)"
+      },
+      "reconcileTitle": "Conciliación",
+      "fileGross": "Archivo de nómina",
+      "payloadGross": "Este paquete",
+      "reconciled": "Igual al centavo.",
+      "notReconciled": "Diferencia de {amount}. Vuelva a crear los archivos de la nómina semanal antes de entregar.",
+      "zealTitle": "Líneas que Zeal calcularía distinto",
+      "zealBody": "Zeal multiplica las horas y el salario que recibe. Estas líneas darían un centavo de diferencia con la nómina semanal; el monto aprobado es el de la nómina semanal.",
+      "zealCols": {
+        "worker": "Trabajador",
+        "line": "Línea",
+        "exact": "Nómina semanal",
+        "partner": "Zeal",
+        "difference": "Diferencia"
+      },
+      "details": {
+        "version": "Versión de la nómina semanal",
+        "rules": "Versión de las reglas",
+        "approved": "Aprobada",
+        "payday": "Fecha de pago",
+        "recordedAt": "Registrada",
+        "by": "Por",
+        "fingerprint": "Huella"
+      },
+      "formatLabel": "Formato del socio",
+      "formats": {
+        "check": "Check",
+        "zeal": "Zeal",
+        "file": "Archivo (JSON)"
+      },
+      "download": "Descargar paquete",
+      "approve": "Aprobar y registrar la entrega",
+      "notReadyReason": "Corrija lo que falta antes de entregar.",
+      "dialogTitle": "¿Registrar esta entrega de nómina?",
+      "dialogBody": "{workers, plural, one {# trabajador} other {# trabajadores}}, {gross} bruto, en formato {format}. No se envía nada: el paquete se registra para un socio de nómina.",
+      "confirm": "Registrar entrega",
+      "done": "Entrega de nómina registrada",
+      "errors": {
+        "not_allowed": "Solo el Propietario registra entregas.",
+        "not_found": "Esta nómina semanal no se puede entregar.",
+        "not_ready": "Corrija lo que falta antes de entregar.",
+        "already": "La nómina de esta nómina semanal ya se entregó.",
+        "generic": "No funcionó. Inténtelo de nuevo."
+      }
+    },
+    "wage": {
+      "rules": "Hasta {cap} de lo ganado · {limit} · entrega rápida {fee}",
+      "noLimit": "sin límite por solicitud",
+      "limit": "como máximo {amount} por solicitud",
+      "free": "gratis",
+      "change": "Cambiar",
+      "cols": {
+        "worker": "Trabajador",
+        "hours": "Horas sin pagar",
+        "earned": "Ganado",
+        "outstanding": "Pendiente",
+        "available": "Disponible"
+      },
+      "request": "Solicitar",
+      "offTitle": "El acceso al salario está desactivado",
+      "offBody": "Actívelo en la configuración de Dinero para que los trabajadores puedan recibir parte de lo que ya ganaron.",
+      "offAction": "Abrir configuración",
+      "emptyTitle": "No hay horas sin pagar",
+      "emptyBody": "Aquí aparecen las horas revisadas o aprobadas que aún no se pagan.",
+      "noRate": "{hours} h sin contar: no hay tarifa vigente",
+      "dialogTitle": "Solicitud para {name}",
+      "amount": "Monto",
+      "amountHint": "Hasta {amount}",
+      "delivery": "Entrega",
+      "standard": "Estándar",
+      "standardNote": "Gratis · el siguiente día hábil",
+      "faster": "Rápida",
+      "fasterNote": "Cargo de {fee} · en minutos",
+      "termsTitle": "Condiciones",
+      "terms": {
+        "only_earned": "Solo pago ya ganado, de horas aprobadas",
+        "payroll_deduction": "Se reembolsa con una deducción del siguiente cheque",
+        "no_recourse": "Sin recurso si el cheque no alcanza",
+        "no_collection": "Nunca se envía a cobranza ni se reporta a burós de crédito",
+        "no_credit_check": "Sin revisión de crédito",
+        "free_option": "La entrega estándar siempre es gratis"
+      },
+      "confirm": "Registrar solicitud",
+      "done": "Solicitud registrada",
+      "errors": {
+        "amount": "Escriba un monto de al menos $1.00.",
+        "too_much": "Es más de lo disponible.",
+        "none": "No hay nada disponible.",
+        "not_allowed": "Solo el Propietario registra solicitudes.",
+        "not_found": "Este trabajador no tiene nada que solicitar.",
+        "generic": "No funcionó. Inténtelo de nuevo."
+      }
+    },
+    "funding": {
+      "rules": "Anticipo {advance} · cargo fijo {fee} · un cliente como máximo {share} de todo lo adeudado · hasta {days} días de antigüedad · {approval}",
+      "approvalRequired": "se requiere aprobación del cliente",
+      "approvalNotRequired": "no se requiere aprobación del cliente",
+      "off": "El financiamiento está desactivado",
+      "change": "Cambiar",
+      "cols": {
+        "invoice": "Factura",
+        "client": "Cliente",
+        "issued": "Emitida",
+        "age": "Antigüedad",
+        "balance": "Saldo",
+        "share": "Parte de lo adeudado",
+        "decision": "Decisión"
+      },
+      "days": "{days, plural, one {# día} other {# días}}",
+      "prequalified": "Precalificada",
+      "notEligible": "No elegible",
+      "submitted": "Enviada",
+      "reasons": {
+        "disabled": "El financiamiento está desactivado en la configuración de Dinero",
+        "not_open": "La factura no está abierta",
+        "credit_note": "Una nota de crédito nunca se financia",
+        "no_balance": "No se debe nada",
+        "too_old": "Más antigua que el límite de la agencia",
+        "concentration": "La parte del cliente en todo lo adeudado supera el límite",
+        "no_approval": "El cliente no aprobó estas horas por enlace",
+        "open_disputes": "Sigue abierta una disputa sobre estas horas"
+      },
+      "emptyTitle": "No hay facturas abiertas",
+      "emptyBody": "Las facturas se crean con los archivos de una nómina semanal.",
+      "crumbs": "Dinero",
+      "title": "Factura {number}",
+      "facts": "{client} · {balance} adeudado · emitida el {issued} · vence el {due}",
+      "offerTitle": "Oferta",
+      "offerLine": "Precalificada, sujeta a la revisión del socio de financiamiento",
+      "advance": "Anticipo",
+      "fee": "Cargo fijo",
+      "reserve": "Retenido en reserva",
+      "released": "Se libera cuando el cliente paga",
+      "disclosure": "Aquí van la divulgación y el contrato del propio socio de financiamiento. El cargo es un monto fijo, no una tasa de interés. Si se aprueba, el socio anticipa el monto indicado y retiene la reserva hasta que el cliente pague.",
+      "reasonsTitle": "Por qué no es elegible",
+      "scheduleTitle": "Relación de cuentas",
+      "scheduleCols": {
+        "debtor": "Deudor",
+        "invoice": "Factura",
+        "date": "Fecha",
+        "po": "Orden de compra",
+        "amount": "Monto"
+      },
+      "approvalsTitle": "Historial de aprobación",
+      "approvalLine": "{name} aprobó {approved, plural, one {# turno} other {# turnos}} y disputó {disputed} el {date}",
+      "noApprovals": "Sin aprobación por enlace.",
+      "historyTitle": "Historial de pagos",
+      "historyLine": "{count, plural, =0 {Todavía no hay facturas pagadas.} one {# factura pagada, en {days} días en promedio, {late} días de retraso en promedio.} other {# facturas pagadas, en {days} días en promedio, {late} días de retraso en promedio.}}",
+      "riskTitle": "Riesgo",
+      "share": "Parte de todo lo adeudado",
+      "disputeRate": "Turnos disputados",
+      "noDisputeRate": "Todavía no hay decisiones",
+      "aging": "Antigüedad",
+      "buckets": {
+        "current": "Al corriente",
+        "d1_30": "1–30 días de retraso",
+        "d31_60": "31–60 días de retraso",
+        "d61_90": "61–90 días de retraso",
+        "d91_plus": "Más de 90 días de retraso"
+      },
+      "details": {
+        "client": "Cliente",
+        "total": "Total",
+        "balance": "Saldo",
+        "issued": "Emitida",
+        "due": "Vence",
+        "age": "Antigüedad",
+        "submittedAt": "Enviada",
+        "by": "Por",
+        "fingerprint": "Huella"
+      },
+      "download": "Descargar paquete",
+      "submit": "Enviar al socio de financiamiento",
+      "dialogTitle": "¿Enviar el paquete de esta factura?",
+      "dialogBody": "Anticipo {advance}, cargo fijo {fee}, {reserve} retenido en reserva. No se presta nada: el paquete se registra para un socio de financiamiento.",
+      "confirm": "Enviar paquete",
+      "done": "Paquete enviado",
+      "errors": {
+        "not_allowed": "Solo el Propietario envía paquetes.",
+        "not_found": "No se encuentra esta factura.",
+        "not_ready": "Esta factura no es elegible.",
+        "already": "Esta factura ya se envió.",
+        "generic": "No funcionó. Inténtelo de nuevo."
+      }
+    },
+    "insurance": {
+      "from": "Desde",
+      "to": "Hasta",
+      "show": "Mostrar",
+      "download": "Descargar CSV",
+      "record": "Registrar entrega al corredor",
+      "cols": {
+        "state": "Estado",
+        "class": "Clase",
+        "description": "Descripción",
+        "hours": "Horas",
+        "straight": "Tiempo regular",
+        "otPremium": "Prima de horas extra",
+        "dtPremium": "Prima de tiempo doble",
+        "other": "Otros pagos",
+        "total": "Total"
+      },
+      "total": "Total",
+      "note": "Por fecha de pago. El paquete completo de compensación laboral, trabajador por trabajador, está en Cumplimiento.",
+      "emptyTitle": "No hay pagos en estas fechas",
+      "emptyBody": "Los pagos aparecen aquí cuando se crean los archivos de una nómina semanal y su fecha de pago cae en el rango.",
+      "dialogTitle": "¿Registrar esta entrega al corredor?",
+      "dialogBody": "Fechas de pago {range}, {total} en total. No se envía nada: las cifras se registran para el corredor.",
+      "confirm": "Registrar entrega",
+      "done": "Entrega al corredor registrada",
+      "errors": {
+        "not_allowed": "Solo el Propietario registra entregas.",
+        "range": "Elija una fecha Desde igual o anterior a la fecha Hasta.",
+        "none": "No hay pagos en estas fechas.",
+        "generic": "No funcionó. Inténtelo de nuevo."
+      }
+    },
+    "settings": {
+      "kicker": "Configuración",
+      "title": "Configuración de Dinero",
+      "wageTitle": "Acceso al salario",
+      "wageLine": "Los trabajadores pueden recibir parte de lo que ya ganaron; se reembolsa con una deducción del siguiente cheque.",
+      "on": "Activado",
+      "onHint": "Mostrar lo que cada trabajador puede solicitar",
+      "cap": "Parte de lo ganado",
+      "capHint": "Como máximo 100 %: nunca más de lo ganado",
+      "maxPerRequest": "Máximo por solicitud",
+      "maxPerRequestHint": "En dólares; 0 para no tener límite además de la parte",
+      "fee": "Cargo por entrega rápida",
+      "feeHint": "En dólares; la entrega estándar siempre es gratis",
+      "fundingTitle": "Financiamiento de facturas",
+      "fundingLine": "Qué facturas abiertas consideraría un socio de financiamiento, y en qué condiciones.",
+      "fundingOnHint": "Mostrar la decisión de cada factura abierta",
+      "advance": "Anticipo",
+      "advanceHint": "Parte del saldo pagada por adelantado",
+      "feePct": "Cargo fijo",
+      "feePctHint": "Parte del saldo, cobrada una vez",
+      "concentration": "Mayor parte que puede tener un cliente",
+      "concentrationHint": "De todo lo que se le debe a la agencia; las empresas de factoraje lo señalan entre 20 y 30 %",
+      "maxAge": "Factura más antigua",
+      "maxAgeHint": "Días desde su emisión",
+      "approval": "Se requiere aprobación del cliente por enlace",
+      "approvalHint": "Solo facturas cuyas horas aprobó el cliente",
+      "save": "Guardar",
+      "saved": "Guardado",
+      "fromToday": "Los cambios se aplican desde hoy.",
+      "problems": {
+        "range": "Fuera de rango",
+        "type": "Elija un valor"
+      },
+      "readOnly": "Solo el Propietario cambia esto."
+    },
+    "worker": {
+      "title": "Acceso al salario ganado",
+      "line": "{available} disponible de {earned} ganado en horas sin pagar",
+      "off": "El acceso al salario está desactivado para la agencia.",
+      "open": "Abrir acceso al salario"
     }
   }
 }

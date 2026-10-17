@@ -337,6 +337,13 @@
       "when": 1792180000000,
       "tag": "0048_new_jersey_review",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1792180200000,
+      "tag": "0052_partner_handoffs",
+      "breakpoints": true
     }
   ]
 }

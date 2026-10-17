@@ -65,7 +65,9 @@ documents, and their employment (hire date, I-9 dates, assignments, end of emplo
 Toast's or Square's wording, icons, colors or logos.
 
 ## Look (decision 0029, from the products' own screenshots)
-Laid out as `_components/record-page.md`: "Workers" above the name with its status, and under them one muted line: the worker's number in the payroll system in use and when they were hired (Stripe's detail page description, "Pro plan customer since March 2022.", https://docs.stripe.com/stripe-apps/components/detailpage); the tabs and their sections on the left, each section a module with its own Edit; Details on the right (status, assignment linking to its job order — underlined, as the record pages' links are — hired, preferred language).
+Laid out as `_components/record-page.md`: "Workers" above the name with its status, and under them one muted line: the worker's number in the payroll system in use and when they were hired (Stripe's detail page description, "Pro plan customer since March 2022.", https://docs.stripe.com/stripe-apps/components/detailpage); the tabs and their sections on the left, each section a module with its own Edit; Details on the right (status, assignment linking to its job order — underlined, as the record pages' links are — hired, preferred language). Under Details, a second module **Earned wage access** (slice w,
+`money/wage-access.md`; Stripe detail sidebar modules): what is available of what was earned from
+unpaid hours, or that wage access is off, and a link to the Money › Wage access page.
 
 ## Loading and errors (slice o)
 - Loading: the page's outline in the record shape (`_components/loading.md`); buttons that start

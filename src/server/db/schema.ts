@@ -1744,7 +1744,36 @@ export const TENANT_TABLES = [
   "notifications",
   "notification_settings",
   "promises_to_pay",
+  "partner_handoffs",
 ] as const;
+
+// ---------- partner-ready money flows (slice w, SPEC §27 item 9; drizzle/0052) ----------
+
+export const HANDOFF_KINDS = ["payroll", "wage_access", "funding", "insurance"] as const;
+export type HandoffKind = (typeof HANDOFF_KINDS)[number];
+export type HandoffPartner = "check" | "zeal" | "file" | "wage_access_partner" | "funding_partner" | "broker";
+
+/** A payload or packet prepared and approved for a licensed partner. Nothing moves: this is the record. */
+export const partnerHandoffs = pgTable(
+  "partner_handoffs",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    kind: text("kind").$type<HandoffKind>().notNull(),
+    subjectType: text("subject_type").$type<"pay_run" | "worker" | "invoice" | "pay_dates">().notNull(),
+    subjectId: text("subject_id").notNull(),
+    partner: text("partner").$type<HandoffPartner>().notNull(),
+    status: text("status").$type<"recorded">().notNull().default("recorded"),
+    amountCents: integer("amount_cents"),
+    summary: jsonb("summary").$type<Record<string, unknown>>().notNull().default(sql`'{}'::jsonb`),
+    payload: jsonb("payload").notNull(),
+    payloadSha256: text("payload_sha256").notNull(),
+    createdAt: createdAt(),
+    createdBy: uuid("created_by"),
+    createdByLabel: text("created_by_label").notNull(),
+  },
+  (t) => [index("partner_handoffs_list").on(t.agencyId, t.createdAt), index("partner_handoffs_subject_idx").on(t.agencyId, t.kind, t.subjectId)],
+);
 
 // ---------- other ways in: Google, Microsoft, an agency's single sign-on, emailed codes (decision 0033; drizzle/0039) ----------
 

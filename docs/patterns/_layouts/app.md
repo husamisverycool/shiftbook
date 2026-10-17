@@ -35,7 +35,7 @@ root frame (demo banner above it).
       Activity (slice k, the agency's log) after it, for the Owner and the accountant;
       Billing (decision 0036; Linear's Administration › Billing, Vercel's Settings › Billing) after it,
       for the Owner only. Collections (slice r; Stripe's reminder settings) after Compliance settings,
-      for everyone (only the Owner changes them).
+      for everyone (only the Owner changes them); Money settings (slice w) after it, likewise.
       Below a separator, the person's own items (slice k): their name and role (not a link),
       **Your account**, **Notifications** (slice r; Linear: Account › Notifications), and **Sign out**. Linear's docs do not say where its log-out item sits —
       listed as a difference.
@@ -45,7 +45,8 @@ root frame (demo banner above it).
       sections; Apple "succinct, descriptive labels to title each group", "No more than two levels";
       Linear's sections):
       - **Payroll**: Convert timesheets, Client approvals (slice d);
-      - **Billing**: Invoices, Receivables, Payments, Bank (slices g, h);
+      - **Billing**: Invoices, Receivables, Payments, Bank (slices g, h), Money (slice w: the
+        partner handoffs);
       - **Staffing**: Job orders, Assignments, Workers (slice k), Clients (slice g);
       - **Oversight**: Margin (slice i; the Owner and the accountant only, SPEC §2), Compliance
         (slice j) with a badge count of the duties overdue or due soon (Linear's "count or dot").
@@ -62,7 +63,8 @@ root frame (demo banner above it).
   J → Job orders, G then A → Assignments, G then P → Client approvals (A is taken; P as in
   "approval"), G then I → Invoices, G then L → Clients (C is taken; L as in "cLients"), G then R →
   Receivables, G then Y → Payments (P is taken; Y as in "paYments"), G then B → Bank, G then M →
-  Margin, G then O → Compliance (C is taken; O as in "Obligations"), G then W → Workers. Not active
+  Margin, G then O → Compliance (C is taken; O as in "Obligations"), G then W → Workers, G then N →
+  Notifications (slice r), G then F → Money (M is taken; F as in "Funding"). Not active
   while typing in a field.
 - `?` (or the sidebar's Keyboard shortcuts) opens the list of keyboard shortcuts (Linear, Stripe).
 - ⌘K / Ctrl+K, or the search row under the workspace menu (Linear's search button), opens the command
