@@ -216,13 +216,15 @@ describe("the demo's passkeys", () => {
   });
 
   it("the demo Owner's passkey session is marked (demo) in the log", async () => {
+    // Other test files sign the demo Owner in too: only this test's events are compared.
+    const earlier = (await eventsOf(DEMO_AGENCY.id, DEMO_OWNER.id)).length;
     const demo = await demoSignIn(deps, DEMO_AGENCY.id, DEMO_OWNER.id, "test");
     if (!demo.ok) throw new Error("demo");
     const { device } = await withPasskey(demo.token);
     const { result } = await passkeyIn(device);
     if (!result.ok) throw new Error(result.error);
     expect((await readSession(deps, result.token))!.demo).toBe(true);
-    const signIns = (await eventsOf(DEMO_AGENCY.id, DEMO_OWNER.id)).filter((e) => e.action === "sign_in");
+    const signIns = (await eventsOf(DEMO_AGENCY.id, DEMO_OWNER.id)).slice(earlier).filter((e) => e.action === "sign_in");
     expect(signIns.map((e) => [e.actorLabel, (e.after as { method: string }).method])).toEqual([
       ["Demo Owner (demo)", "demo"],
       ["Demo Owner (demo)", "passkey"],

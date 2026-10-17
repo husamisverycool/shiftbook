@@ -1692,6 +1692,7 @@ export const agencySso = pgTable("agency_sso", {
   secretLast4: text("secret_last4").notNull(),
   updatedAt: updatedAt(),
   updatedByLabel: text("updated_by_label").notNull(),
+});
 
 // ---------- passkeys (decision 0032) ----------
 
