@@ -43,7 +43,7 @@ export async function getPeriod(tx: Tx, payPeriodId: string) {
 export async function uploadStep(tx: Tx, payPeriodId: string) {
   const docs = await tx.select().from(s.sourceDocuments).where(eq(s.sourceDocuments.payPeriodId, payPeriodId));
   const entries = await tx
-    .select({ documentId: s.timeEntries.sourceDocumentId, status: s.timeEntries.status })
+    .select({ documentId: s.timeEntries.sourceDocumentId, status: s.timeEntries.status, minutes: s.timeEntries.minutes })
     .from(s.timeEntries)
     .where(eq(s.timeEntries.payPeriodId, payPeriodId));
   const clients = await tx.select({ id: s.clients.id, name: s.clients.name }).from(s.clients);
@@ -63,6 +63,10 @@ export async function uploadStep(tx: Tx, payPeriodId: string) {
         clientName: clients.find((c) => c.id === d.clientId)?.name ?? null,
         entries: mine.length,
         needsReview: mine.filter((e) => e.status === "needs_review").length,
+        /** Minutes read from it, rejected lines left out (the inbox's footer totals). */
+        minutes: mine.filter((e) => e.status !== "rejected").reduce((sum, e) => sum + (e.minutes ?? 0), 0),
+        receivedVia: d.receivedVia,
+        receivedAt: d.createdAt.toISOString(),
       };
     });
 }

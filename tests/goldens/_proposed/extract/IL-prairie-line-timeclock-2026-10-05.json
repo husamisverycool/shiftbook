@@ -1,0 +1,422 @@
+{
+  "name": "IL-prairie-line-timeclock-2026-10-05",
+  "summary": "The time-clock export read through its saved profile: every line, worker, date and hours exactly as the file states them (demo/truth).",
+  "document": "demo/samples/2026-10-05/IL-prairie-line-timeclock-2026-10-05.csv",
+  "mediaType": "text/csv",
+  "recordings": null,
+  "period": {
+    "startsOn": "2026-10-05",
+    "endsOn": "2026-10-11"
+  },
+  "minAccuracy": 1,
+  "expected": [
+    {
+      "workerKey": "marcus-bell",
+      "date": "2026-10-05",
+      "inMinute": 358,
+      "outMinute": 931,
+      "breakMinutes": 30,
+      "minutes": 543
+    },
+    {
+      "workerKey": "marcus-bell",
+      "date": "2026-10-06",
+      "inMinute": 361,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 539
+    },
+    {
+      "workerKey": "marcus-bell",
+      "date": "2026-10-07",
+      "inMinute": 359,
+      "outMinute": 933,
+      "breakMinutes": 30,
+      "minutes": 544
+    },
+    {
+      "workerKey": "marcus-bell",
+      "date": "2026-10-08",
+      "inMinute": 360,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 540
+    },
+    {
+      "workerKey": "marcus-bell",
+      "date": "2026-10-09",
+      "inMinute": 362,
+      "outMinute": 929,
+      "breakMinutes": 30,
+      "minutes": 537
+    },
+    {
+      "workerKey": "anita-patel",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "anita-patel",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "anita-patel",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "anita-patel",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "anita-patel",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "jerome-washington",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "jerome-washington",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "jerome-washington",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "jerome-washington",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "jerome-washington",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "jerome-washington",
+      "date": "2026-10-10",
+      "inMinute": 420,
+      "outMinute": 660,
+      "breakMinutes": 0,
+      "minutes": 240
+    },
+    {
+      "workerKey": "katarzyna-nowak",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "katarzyna-nowak",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "katarzyna-nowak",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "katarzyna-nowak",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "katarzyna-nowak",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 810,
+      "breakMinutes": 30,
+      "minutes": 360
+    },
+    {
+      "workerKey": "daniel-ruiz",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "daniel-ruiz",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "daniel-ruiz",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "daniel-ruiz",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "daniel-ruiz",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 967,
+      "breakMinutes": 30,
+      "minutes": 517
+    },
+    {
+      "workerKey": "fatima-haddad",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "fatima-haddad",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "fatima-haddad",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "fatima-haddad",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "fatima-haddad",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "trevor-lindqvist",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "trevor-lindqvist",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "trevor-lindqvist",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "trevor-lindqvist",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "trevor-lindqvist",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "grace-mensah",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "grace-mensah",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "grace-mensah",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "grace-mensah",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "grace-mensah",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 690,
+      "breakMinutes": 30,
+      "minutes": 240
+    },
+    {
+      "workerKey": "pedro-alcantara",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "pedro-alcantara",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "pedro-alcantara",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "pedro-alcantara",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "pedro-alcantara",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 1050,
+      "breakMinutes": 30,
+      "minutes": 600
+    },
+    {
+      "workerKey": "olivia-hart",
+      "date": "2026-10-05",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "olivia-hart",
+      "date": "2026-10-06",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "olivia-hart",
+      "date": "2026-10-07",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "olivia-hart",
+      "date": "2026-10-08",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "olivia-hart",
+      "date": "2026-10-09",
+      "inMinute": 420,
+      "outMinute": 930,
+      "breakMinutes": 30,
+      "minutes": 480
+    }
+  ]
+}

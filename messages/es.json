@@ -649,7 +649,8 @@
     "connections": "Conexiones",
     "schedule": "Horario",
     "agencySettings": "Agencia",
-    "branches": "Sucursales"
+    "branches": "Sucursales",
+    "names": "Nombres"
   },
   "list": {
     "filter": "Filtrar",
@@ -6797,6 +6798,192 @@
     "rules": {
       "required": "Escriba un nombre de hasta 100 caracteres.",
       "name_taken": "Otra sucursal abierta tiene este nombre."
+    }
+  },
+  "inbox": {
+    "tabs": {
+      "inbox": "Bandeja",
+      "processing": "En proceso",
+      "archive": "Archivo"
+    },
+    "search": "Buscar por archivo o cliente",
+    "filters": "Filtros",
+    "filtersCount": "Filtros ({count})",
+    "filterStatus": "Estado",
+    "filterKind": "Tipo",
+    "clearFilters": "Quitar filtros",
+    "statusFilter": {
+      "read": "Leído",
+      "review": "Requiere revisión",
+      "failed": "No se pudo leer"
+    },
+    "kindFilter": {
+      "image": "Foto o escaneo",
+      "pdf": "PDF",
+      "timeclock": "Reloj checador",
+      "vms": "Exportación de VMS"
+    },
+    "display": "Vista",
+    "density": "Densidad",
+    "comfortable": "Amplia",
+    "compact": "Compacta",
+    "actions": "Acciones ({count})",
+    "exportSelected": "Exportar seleccionadas",
+    "readAgain": "Leer de nuevo",
+    "archiveSelected": "Archivar…",
+    "export": "Exportar",
+    "cols": {
+      "file": "Archivo",
+      "status": "Estado",
+      "via": "Recibida por",
+      "received": "Recibida",
+      "client": "Cliente",
+      "kind": "Tipo",
+      "entries": "Registros",
+      "review": "Requieren revisión",
+      "hours": "Horas"
+    },
+    "via": {
+      "upload": "Carga",
+      "email": "Correo",
+      "manual": "A mano"
+    },
+    "selectAll": "Seleccionar todas las hojas mostradas",
+    "selectRow": "Seleccionar {file}",
+    "totals": "{docs, plural, one {# hoja de horas} other {# hojas de horas}} · {entries, plural, one {# registro} other {# registros}}",
+    "totalHours": "{hours} leídas",
+    "noMatch": "Ninguna hoja de horas coincide con la búsqueda y los filtros.",
+    "emptyProcessing": "No se está leyendo nada en este momento.",
+    "emptyArchive": "No hay hojas de horas archivadas.",
+    "mapThisFile": "Asignar columnas"
+  },
+  "timeMapping": {
+    "title": "Asignar columnas de {file}",
+    "step": {
+      "header": "Elija la línea que tiene los nombres de las columnas.",
+      "columns": "Indique qué columna tiene cada dato. Las columnas sin asignar no se leen.",
+      "preview": "Las primeras filas tal como se leerán. Ponga nombre a este formato para guardarlo."
+    },
+    "headerLegend": "La línea con los nombres de las columnas",
+    "fields": {
+      "name": "Nombre del trabajador",
+      "date": "Fecha",
+      "in": "Hora de entrada",
+      "out": "Hora de salida",
+      "breakMinutes": "Descanso (minutos)",
+      "totalHours": "Horas",
+      "clientName": "Cliente o sitio",
+      "externalId": "ID del trabajador"
+    },
+    "unmapped": "No leer",
+    "blankColumn": "Columna {n} (sin nombre)",
+    "hoursOrPunches": "Asigne Hora de entrada y Hora de salida, u Horas, o ambas.",
+    "dateFormat": "Las fechas se escriben",
+    "formats": {
+      "us": "Mes primero (10/05/2026)",
+      "iso": "Año primero (2026-10-05)"
+    },
+    "previewLabel": "Filas tal como se leerán",
+    "hours": "Horas",
+    "unreadable": "No legible",
+    "name": "Nombre de este formato",
+    "namePlaceholder": "Por ejemplo: reloj checador de Northside",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "save": "Guardar y leer",
+    "saved": "Formato guardado. El archivo se está leyendo de nuevo.",
+    "stale": "Este archivo cambió. Cierre e inténtelo de nuevo.",
+    "busy": "Otra persona está cambiando este periodo de pago en este momento. Inténtelo de nuevo en un momento.",
+    "locked": "Los archivos de este periodo ya se crearon; sus horas ya no pueden cambiar.",
+    "problems": {
+      "name": "Elija la columna con el nombre del trabajador.",
+      "date": "Elija la columna con la fecha.",
+      "hours_or_punches": "Elija Hora de entrada y Hora de salida, u Horas.",
+      "used_twice": "Cada columna se puede usar una sola vez.",
+      "not_in_header": "Una columna elegida no está en la línea con los nombres de las columnas."
+    }
+  },
+  "documentReview": {
+    "inbox": "Hojas de horas del {start} al {end}",
+    "toReview": "Requiere revisión",
+    "noClient": "Aún sin cliente",
+    "received": "{via}, {at}",
+    "via": {
+      "upload": "cargada",
+      "email": "por correo",
+      "manual": "ingresada a mano"
+    },
+    "lines": "{count, plural, one {# línea} other {# líneas}}",
+    "previous": "Hoja de horas anterior (Ctrl+J)",
+    "next": "Hoja de horas siguiente (Ctrl+K)",
+    "failedTitle": "Esta hoja de horas no se pudo leer",
+    "valuesToReview": "{count, plural, one {# línea requiere revisión} other {# líneas requieren revisión}} antes de confirmar esta hoja de horas.",
+    "issues": "{count, plural, one {# problema por resolver} other {# problemas por resolver}}",
+    "documentPane": "La hoja de horas",
+    "dataPane": "Valores leídos",
+    "fileRows": "Las filas del archivo",
+    "details": "Detalles",
+    "history": "Historial",
+    "client": "Cliente",
+    "period": "Periodo de pago",
+    "kind": "Tipo",
+    "totalHours": "Horas",
+    "noLines": "No se leyó ninguna línea de esta hoja de horas.",
+    "checkedValue": "Revisado",
+    "passA": "Primera lectura",
+    "passB": "Segunda lectura",
+    "source": "Dónde",
+    "confidence": "Confianza",
+    "checks": "Verificaciones",
+    "correct": "Corregir este valor",
+    "inMinutes": "En minutos.",
+    "saved": "Valor guardado.",
+    "rememberNickname": "¿Recordar «{nickname}» como {given}?",
+    "remember": "Recordar",
+    "notNow": "Ahora no",
+    "nicknameLearned": "«{nickname}» se leerá como {given} de ahora en adelante.",
+    "confirm": "Confirmar",
+    "allConfirmed": "Confirmada",
+    "reject": "Rechazar",
+    "confirmed": "Hoja de horas confirmada.",
+    "rejected": "Se rechazaron sus horas.",
+    "refused": "No funcionó. Inténtelo de nuevo.",
+    "stillToReview": "{count, plural, one {Primero hay que corregir un valor de # línea.} other {Primero hay que corregir un valor de # líneas.}}",
+    "rejectTitle": "¿Rechazar las horas de esta hoja?",
+    "rejectBody": "{count, plural, one {Su línea no se paga ni se factura.} other {Sus # líneas no se pagan ni se facturan.}} Se pueden restaurar desde Revisar horas.",
+    "nextValue": "Siguiente valor por revisar (Intro)",
+    "historyAction": {
+      "create": "agregó",
+      "update": "cambió",
+      "delete": "quitó",
+      "other": "registró"
+    },
+    "theDocument": "la hoja de horas",
+    "aLine": "una línea",
+    "shortcuts": "Intro: siguiente valor por revisar · Ctrl+J / Ctrl+K: hoja anterior / siguiente",
+    "openHours": "Abrir Revisar horas"
+  },
+  "names": {
+    "title": "Nombres",
+    "description": "Los apodos escritos en las hojas de horas y los nombres de pila que representan, usados al relacionar nombres con la lista de trabajadores.",
+    "readOnly": "Solo el Propietario y los coordinadores cambian la lista de apodos.",
+    "section": "Apodos",
+    "sectionBody": "Una hoja de horas que dice «Mike Brown» se relaciona con Michael Brown cuando «Mike» representa a Michael.",
+    "add": "Agregar apodo",
+    "nickname": "Apodo",
+    "standsFor": "Representa a",
+    "nicknamePlaceholder": "Mike",
+    "givenPlaceholder": "Michael",
+    "standsForValue": "Representa a {given}",
+    "empty": "Aún no hay apodos.",
+    "added": "Apodo agregado.",
+    "removed": "Se quitó «{nickname}».",
+    "remove": "Quitar {nickname}",
+    "problems": {
+      "blank": "Complete ambos nombres.",
+      "same": "Un apodo debe ser distinto del nombre que representa.",
+      "too_long": "Use 40 caracteres o menos.",
+      "exists": "Ese apodo ya está en la lista."
     }
   }
 }

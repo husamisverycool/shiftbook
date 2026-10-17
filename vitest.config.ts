@@ -36,6 +36,11 @@ export default defineConfig({
         extends: true,
         test: { name: "proposed", include: ["tests/golden-runners/proposed.test.ts"] },
       },
+      {
+        // Extraction goldens (SPEC §23): approved and proposed cases, read from recorded readings only.
+        extends: true,
+        test: { name: "extract", include: ["tests/golden-runners/extract.test.ts"], testTimeout: 120_000 },
+      },
     ],
   },
 });

@@ -1,6 +1,6 @@
 # Pattern: Single document review (`/documents/[documentId]`)
 
-Status: researched — ready for owner review
+Status: adopted — built 2026-10-17 (owner: "build everything")
 Reference product and screen: Rossum — document validation screen (primary); Dext — item details page (secondary)
 Source URL: https://knowledge-base.rossum.ai/docs/document-validation-screen-in-rossum
 Source URL: https://knowledge-base.rossum.ai/docs/interactive-bounding-boxes-in-rossum
@@ -63,9 +63,19 @@ Top to bottom, as documented by the references:
   rejected; failed import. Granite document statuses use the same shape.
 - Hover a status badge → tooltip listing the issues (Dext).
 
-## Not known from the references (ask the owner before building)
-- Empty and loading states of the screen.
-- Exact placement of Postpone and Delete.
+## Decided after research (2026-10-17)
+- Loading: the record outline (`_components/loading.md`); a document not found: `_components/error.md`.
+- A time file (CSV, XLSX) has no page image: the document pane shows the file's rows the values came
+  from, the row of the chosen field highlighted (SPEC §6 provenance by row and column).
+- Reject: the document's hours are rejected (not paid) after a confirmation; they can be restored
+  from Review hours. Postpone and Delete are not built (placement not documented).
+- Matching a written name to a worker offers to remember the nickname ("Remember 'Mike' as
+  Michael?"), which adds it to the agency's nickname map (`settings/names.md`).
+
+## Loading and errors (slice o)
+- Loading: the page's outline in the record shape (`_components/loading.md`).
+- A failure: the frame stays; the failed content's place says so with "Try again"
+  (`_components/error.md`).
 
 ## Never copy
 Logos, product names, icons, illustrations, wording or colors from Rossum or Dext.

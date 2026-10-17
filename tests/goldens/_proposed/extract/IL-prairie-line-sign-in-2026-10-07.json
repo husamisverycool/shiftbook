@@ -1,0 +1,68 @@
+{
+  "name": "IL-prairie-line-sign-in-2026-10-07",
+  "summary": "The hand-written sign-in sheet read by the two passes from recorded readings: each line's worker, date and hours as written (demo/truth). Runs once its recorded readings exist; until then it is reported as waiting.",
+  "document": "demo/samples/2026-10-05/IL-prairie-line-sign-in-2026-10-07.jpg",
+  "mediaType": "image/jpeg",
+  "recordings": "demo/recordings",
+  "period": {
+    "startsOn": "2026-10-05",
+    "endsOn": "2026-10-11"
+  },
+  "minAccuracy": 0.95,
+  "expected": [
+    {
+      "workerKey": "robert-jones",
+      "date": "2026-10-07",
+      "written": "Bob Jones",
+      "inMinute": 900,
+      "outMinute": 1410,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "maria-jose-fernandez-ruiz",
+      "date": "2026-10-07",
+      "written": "Maria Fernandez",
+      "inMinute": 900,
+      "outMinute": 1410,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "jesus-delgado",
+      "date": "2026-10-07",
+      "written": "Chuy Delgado",
+      "inMinute": 900,
+      "outMinute": 1410,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "andre-lewis",
+      "date": "2026-10-07",
+      "written": "Andre Lewis",
+      "inMinute": 900,
+      "outMinute": 1350,
+      "breakMinutes": 30,
+      "minutes": 420
+    },
+    {
+      "workerKey": "tran-nguyen",
+      "date": "2026-10-07",
+      "written": "Tran Nguyen",
+      "inMinute": 900,
+      "outMinute": 1410,
+      "breakMinutes": 30,
+      "minutes": 480
+    },
+    {
+      "workerKey": "kateryna-bondarenko",
+      "date": "2026-10-07",
+      "written": "K. Bondarenko",
+      "inMinute": 900,
+      "outMinute": 1380,
+      "breakMinutes": 30,
+      "minutes": 450
+    }
+  ]
+}

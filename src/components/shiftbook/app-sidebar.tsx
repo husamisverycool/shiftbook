@@ -194,6 +194,11 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <PlugIcon />
                 {t("connections")}
               </DropdownMenuItem>
+              {/* SPEC §6: the agency's nickname map (docs/patterns/settings/names.md). */}
+              <DropdownMenuItem render={<Link href="/settings/names" />} data-testid="menu-names">
+                <ContactRoundIcon />
+                {t("names")}
+              </DropdownMenuItem>
               <DropdownMenuItem render={<Link href="/settings/members" />} data-testid="menu-members">
                 <UserCogIcon />
                 {t("members")}

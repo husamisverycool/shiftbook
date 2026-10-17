@@ -19,6 +19,7 @@
     "test:integration": "vitest run --project integration",
     "test:goldens": "vitest run --project goldens",
     "test:proposed": "vitest run --project proposed",
+    "test:extract": "vitest run --project extract",
     "test:e2e": "playwright test",
     "hooks:test": "bash .claude/hooks/tests/run.sh",
     "db:generate": "drizzle-kit generate",

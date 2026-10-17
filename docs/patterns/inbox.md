@@ -1,6 +1,6 @@
 # Pattern: Timesheet inbox (`/inbox`)
 
-Status: approved — Dext Costs inbox adopted for the list structure (decision D1)
+Status: adopted — Dext Costs inbox for the list structure (decision D1); built in full on the Convert upload step (2026-10-17)
 Reference product and screen: Dext — Costs inbox (list structure, decision D1); Expensify — SmartScan receipt list (upload and reading states);
 Ramp — receipt matching (secondary; Ramp publishes no inbox screen, only its behaviors)
 Source URL: https://help.expensify.com/articles/new-expensify/reports-and-expenses/Getting-Started-with-the-Spend-Page
@@ -54,15 +54,28 @@ review, and what is done.
 - Matching (Ramp): each extracted entry is matched to an active assignment; dates match within the
   assignment's date range (Ramp uses ±1 day for receipts; Granite uses the SPEC validators instead).
 - Click a row → opens the single document review (`/documents/[documentId]`).
-- Bulk actions on selected rows via an Actions menu (Dext): export, archive, delete.
+- Bulk actions on selected rows via an Actions menu (Dext): export, archive, delete. Granite: export
+  (the selected rows as CSV), archive (one reason for all, only timesheets that could not be read),
+  read again (failed or stuck ones). Delete is not offered: a timesheet's history is kept (SPEC §19).
+- Search (Expensify) filters the current tab by file name and client as you type; Filters (Expensify)
+  narrow it by status (read, needs review, failed) and kind (photo, PDF, time clock, VMS export);
+  Export (Expensify) downloads the current view as CSV.
+- Column settings (Dext): a density choice, comfortable or compact, remembered on this browser.
+- A time file whose columns no saved profile knows (SPEC §6 saved column-mapping profiles): its row
+  offers **Map this file**, which opens the column mapping of the placement import
+  (`assignments/import.md` step 2, Attio): the line holding the column names chosen from the file's
+  first lines; each Granite field (worker, date, in, out, break, hours, client or site, worker id)
+  given a file column with sample values beside it; the date format; the first rows as they will be
+  read; a name; Save. The file is then read again, and later files with those columns are read
+  without asking.
 
 ## States
 - Reading (Expensify "scanning"), Read, Needs review, Failed to read, Matched / Unmatched (Ramp).
 - Granite status names come from SPEC §4.
 
-## Not known from the references (ask the owner before building)
-- Empty state (use the Linear empty-state pattern, `_components/empty-state.md`).
-- Whether rows show a thumbnail of the document.
+## Decided after research (2026-10-17)
+- Empty state: the Linear empty-state pattern (`_components/empty-state.md`), per tab.
+- Rows show no thumbnail (Dext's default columns have none).
 
 ## Never copy
 Logos, product names, icons, illustrations, wording or colors from Expensify, Ramp or Dext.
