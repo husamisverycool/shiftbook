@@ -16,13 +16,19 @@ export class UnrecognisedFileError extends Error {
 }
 
 /** A file's header and rows, with each row's own number in the spreadsheet (blank rows count). */
-export type Table = { header: string[]; rows: string[][]; rowNumbers: number[] };
+export type Table = { header: string[]; rows: string[][]; rowNumbers: number[]; lines?: Line[] };
+export type Line = { n: number; values: string[] };
 
 const blank = (r: string[]) => r.every((c) => c.trim() === "");
 
-function table(numbered: { n: number; values: string[] }[]): Table {
+function table(numbered: Line[]): Table {
   const [header, ...rows] = numbered;
-  return { header: header?.values ?? [], rows: rows.map((r) => r.values), rowNumbers: rows.map((r) => r.n) };
+  return { header: header?.values ?? [], rows: rows.map((r) => r.values), rowNumbers: rows.map((r) => r.n), lines: numbered };
+}
+
+/** The same file read with its column names on spreadsheet line `headerRow` (lines above it are titles). */
+function fromHeaderRow(t: Table, headerRow: number): Table {
+  return table((t.lines ?? []).filter((l) => l.n >= headerRow));
 }
 
 export function tableFromCsv(bytes: Uint8Array): Table {
@@ -87,42 +93,48 @@ const parseDate = (text: string, format: MappingProfile["dateFormat"]) => (forma
 
 function readTimeclock(table: Table, profile: TimeclockProfile, kind: "timeclock_csv" | "timeclock_xlsx"): ParsedDocument {
   const c = profile.columns;
+  const at = (name: string | undefined) => (name ? column(table, name) : -1);
   const idx = {
-    externalId: c.externalId ? column(table, c.externalId) : -1,
-    name: column(table, c.name),
-    date: column(table, c.date),
-    in: column(table, c.in),
-    out: column(table, c.out),
-    breakMinutes: column(table, c.breakMinutes),
-    totalHours: c.totalHours ? column(table, c.totalHours) : -1,
+    externalId: at(c.externalId),
+    name: at(c.name),
+    date: at(c.date),
+    in: at(c.in),
+    out: at(c.out),
+    breakMinutes: at(c.breakMinutes),
+    totalHours: at(c.totalHours),
+    clientName: at(c.clientName),
   };
+  // A saved profile may read hours alone (no punches): then the day's total is the value read.
+  const punches = Boolean(c.in && c.out);
+  const clientHint = idx.clientName >= 0 ? (table.rows.map((r) => (r[idx.clientName] ?? "").trim()).find((v) => v !== "") ?? null) : null;
   const entries: RawEntry[] = table.rows.map((row, i) => {
     const rowNumber = table.rowNumbers[i] ?? i + 2;
     const cell = (j: number) => (j >= 0 ? (row[j] ?? "").trim() : "");
     const src = (name: string) => ({ kind: "cell" as const, row: rowNumber, column: name });
     const checks: string[] = [];
     const date = parseDate(cell(idx.date), profile.dateFormat);
-    const inR = parseClockText(cell(idx.in));
-    const outR = parseClockText(cell(idx.out));
-    const brk = parseWholeMinutes(cell(idx.breakMinutes) || "0");
+    const inR = punches ? parseClockText(cell(idx.in)) : null;
+    const outR = punches ? parseClockText(cell(idx.out)) : null;
+    const brk = c.breakMinutes ? parseWholeMinutes(cell(idx.breakMinutes) || "0") : 0;
     const total = idx.totalHours >= 0 ? parseDecimalHours(cell(idx.totalHours)) : null;
     if (!date) checks.push("unreadable:date");
-    if (!inR) checks.push("unreadable:in");
-    if (!outR) checks.push("unreadable:out");
+    if (punches && !inR) checks.push("unreadable:in");
+    if (punches && !outR) checks.push("unreadable:out");
     if (brk === null) checks.push("unreadable:break");
+    if (!punches && total === null) checks.push("unreadable:total");
     return {
       rowIndex: i,
       worker: reading(cell(idx.name), cell(idx.name) || null, src(c.name)),
       date: reading(cell(idx.date), date, src(c.date)),
-      in: reading(cell(idx.in), inR?.minute ?? null, src(c.in)),
-      out: reading(cell(idx.out), outR ? (outR.minute === 0 ? 1440 : outR.minute) : null, src(c.out)),
-      break: reading(cell(idx.breakMinutes), brk, src(c.breakMinutes)),
+      in: punches ? reading(cell(idx.in), inR?.minute ?? null, src(c.in!)) : null,
+      out: punches ? reading(cell(idx.out), outR ? (outR.minute === 0 ? 1440 : outR.minute) : null, src(c.out!)) : null,
+      break: c.breakMinutes ? reading(cell(idx.breakMinutes), brk, src(c.breakMinutes)) : null,
       total: c.totalHours ? reading(cell(idx.totalHours), total, src(c.totalHours)) : null,
       externalId: idx.externalId >= 0 ? cell(idx.externalId) || null : null,
       checks,
     };
   });
-  return { kind, profileKey: profile.key, clientHint: null, entries, notes: [] };
+  return { kind, profileKey: profile.key, clientHint, entries, notes: [] };
 }
 
 function readVms(table: Table, profile: VmsProfile): ParsedDocument {
@@ -195,13 +207,27 @@ function readVms(table: Table, profile: VmsProfile): ParsedDocument {
   return { kind: "vms_export", profileKey: profile.key, clientHint, entries, notes };
 }
 
-function fromTable(filename: string, table: Table, kindHint: "csv" | "xlsx", profiles: MappingProfile[]): ParsedDocument {
-  const profile = detectProfile(table.header, profiles);
-  if (!profile) {
-    throw new UnrecognisedFileError(`${filename}: the columns do not match any saved mapping profile.`);
+function fromTable(filename: string, file: Table, kindHint: "csv" | "xlsx", profiles: MappingProfile[]): ParsedDocument {
+  // A profile whose column names sit below lines of titles is tried on the file read from that line.
+  for (const profile of profiles) {
+    const t = profile.kind === "timeclock" && profile.headerRow && profile.headerRow > 1 ? fromHeaderRow(file, profile.headerRow) : file;
+    if (detectProfile(t.header, [profile]) !== profile) continue;
+    if (profile.kind === "vms") return readVms(t, profile);
+    return readTimeclock(t, profile, kindHint === "xlsx" ? "timeclock_xlsx" : "timeclock_csv");
   }
-  if (profile.kind === "vms") return readVms(table, profile);
-  return readTimeclock(table, profile, kindHint === "xlsx" ? "timeclock_xlsx" : "timeclock_csv");
+  throw new UnrecognisedFileError(`${filename}: the columns do not match any saved mapping profile.`);
+}
+
+/** The first lines of a file (at most 15), each with its spreadsheet line number: the person picks the header among them. */
+export async function firstLines(filename: string, bytes: Uint8Array): Promise<Line[]> {
+  const t = /\.xlsx$/i.test(filename) ? await tableFromXlsx(bytes) : tableFromCsv(bytes);
+  return (t.lines ?? []).slice(0, 15);
+}
+
+/** A whole table read with its header on spreadsheet line `headerRow` (for the mapping preview). */
+export async function tableAt(filename: string, bytes: Uint8Array, headerRow: number): Promise<Table> {
+  const t = /\.xlsx$/i.test(filename) ? await tableFromXlsx(bytes) : tableFromCsv(bytes);
+  return headerRow > 1 ? fromHeaderRow(t, headerRow) : t;
 }
 
 /** Reads a CSV time file synchronously through the first saved profile that fits its header. */

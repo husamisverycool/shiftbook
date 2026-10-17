@@ -15,6 +15,8 @@ import { openPeriod, PeriodBusyError, PeriodLockedError } from "../run/period-lo
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
 import { assessEntry, resolveClient, settleDocumentClient, type AssessContext, type EntryDraft } from "./assess";
+import { BUILT_IN_PROFILES } from "./profiles";
+import { savedTimeProfiles } from "./saved-profiles";
 import { parseStructuredUpload, UnrecognisedFileError } from "./structured";
 import type { ParsedDocument } from "./types";
 
@@ -233,8 +235,10 @@ export async function readStoredDocument(
       if (!d) return null;
       const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
       const clients = await tx.select({ name: s.clients.name }).from(s.clients);
+      const profiles = await savedTimeProfiles(tx);
+      const builtIns = await tx.select({ id: s.mappingProfiles.id, source: s.mappingProfiles.source }).from(s.mappingProfiles).where(inArray(s.mappingProfiles.source, BUILT_IN_PROFILES.map((b) => b.key)));
       // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
-      return { at: now, doc: { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort() } };
+      return { at: now, doc: { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort(), profiles, builtIns } };
     });
     if (!claimed) return NOTHING_READ; // read, archived, gone, or being read by another reading
     claim = claimed.at; // only once the claim is committed
@@ -253,7 +257,9 @@ export async function readStoredDocument(
     const result: ReadResult =
       doc.kind === "image" || doc.kind === "pdf"
         ? await deps.imageReader.read({ agencyId: actor.agencyId, documentId, filename: doc.filename, mediaType: doc.mediaType, bytes, period: doc.period, clients: doc.clients, onPage })
-        : { parsed: await parseStructuredUpload(doc.filename, bytes), pages: [] };
+        : { parsed: await parseStructuredUpload(doc.filename, bytes, [...doc.profiles.map((p) => p.definition), ...BUILT_IN_PROFILES]), pages: [] };
+    // The saved profile row that read it, if the agency has one (Settings › Connections counts its files).
+    const mappingProfileId = doc.profiles.find((p) => p.definition.key === result.parsed.profileKey)?.id ?? doc.builtIns.find((p) => p.source === result.parsed.profileKey)?.id ?? null;
 
     return await deps.withAgency(actor.agencyId, async (tx) => {
       await openPeriod(tx, doc.payPeriodId);
@@ -266,7 +272,7 @@ export async function readStoredDocument(
       // Saved only while the claim holds; otherwise the whole save is rolled back.
       const done = await tx
         .update(s.sourceDocuments)
-        .set({ status: "read", kind: result.parsed.kind, clientId: settled.clientId, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
+        .set({ status: "read", kind: result.parsed.kind, clientId: settled.clientId, mappingProfileId, pageCount: result.pages.length || null, error: result.parsed.notes.join("\n") || null, updatedAt: new Date() })
         .where(mine(claim!))
         .returning({ id: s.sourceDocuments.id });
       if (done.length === 0) throw new ClaimLostError();

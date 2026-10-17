@@ -12,14 +12,19 @@ export interface TimeclockProfile {
   name: string;
   version: number;
   dateFormat: DateFormat;
+  /** The spreadsheet line that holds the column names, when lines of titles come before it (a saved profile). */
+  headerRow?: number;
   columns: {
     externalId?: string;
-    name: string; // "Last, First"
+    name: string; // as the file writes it ("Last, First" or "First Last")
     date: string;
-    in: string;
-    out: string;
-    breakMinutes: string;
+    /** Punches, or hours alone: either in and out, or the day's total hours (a saved profile). */
+    in?: string;
+    out?: string;
+    breakMinutes?: string;
     totalHours?: string;
+    /** The client or site the file names, used as the document's client hint (a saved profile). */
+    clientName?: string;
   };
 }
 
@@ -100,4 +105,19 @@ export function detectProfile(header: string[], profiles: MappingProfile[] = BUI
     if (required.every((c) => have.has(normalizeHeader(c)))) return p;
   }
   return null;
+}
+
+/** Why a profile a person built cannot be saved yet (each a key under convert.mapping.problems). */
+export type ProfileProblem = "name" | "date" | "hours_or_punches" | "used_twice" | "not_in_header";
+
+export function profileProblems(p: TimeclockProfile, header: string[]): ProfileProblem[] {
+  const c = p.columns;
+  if (!c.name) return ["name"];
+  if (!c.date) return ["date"];
+  if (!(c.in && c.out) && !c.totalHours) return ["hours_or_punches"];
+  const used = Object.values(c).filter((v): v is string => typeof v === "string" && v !== "");
+  if (new Set(used.map(normalizeHeader)).size !== used.length) return ["used_twice"];
+  const have = new Set(header.map(normalizeHeader));
+  if (used.some((v) => !have.has(normalizeHeader(v)))) return ["not_in_header"];
+  return [];
 }
