@@ -24,7 +24,8 @@ export function Onboarding({ view }: { view: OnboardingView }) {
   const t = useTranslations("workerApp.onboarding");
   const locale = useLocale();
   const id = useId();
-  const [step, setStep] = useState<Step | "done">(view.progress.complete ? "done" : (view.progress.next ?? "personal"));
+  // A policy changed since the worker acknowledged it: straight to the policies step (decision 0043).
+  const [step, setStep] = useState<Step | "done">(view.policiesDue > 0 ? "policies" : view.progress.complete ? "done" : (view.progress.next ?? "personal"));
   const [values, setValues] = useState<Record<string, string>>(() => initial(view));
   const [errorField, setErrorField] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -171,8 +172,12 @@ export function Onboarding({ view }: { view: OnboardingView }) {
       <>
         <p className="text-sm text-muted-foreground">{t("policies.intro")}</p>
         {view.policies.map((p) => (
-          <div key={p.key} className="flex flex-col gap-3 rounded-lg border p-3">
-            <p className="text-sm">{t.has(`policies.${p.key}`) ? t(`policies.${p.key}` as "policies.safety") : p.key}</p>
+          <div key={p.key} className="flex flex-col gap-2 rounded-lg border p-3" data-testid={`worker-policy-${p.key}`}>
+            <p className="text-sm font-medium">
+              {(locale === "es" && p.title.es) || p.title.en}
+              {!p.required && <span className="font-normal text-muted-foreground"> · {t("policies.optional")}</span>}
+            </p>
+            <p className="text-sm whitespace-pre-line text-muted-foreground">{(locale === "es" && p.body.es) || p.body.en}</p>
             {check(`policy_${p.key}`, t("policies.read"))}
           </div>
         ))}

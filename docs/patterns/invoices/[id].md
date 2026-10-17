@@ -85,5 +85,13 @@ Laid out as `_components/record-page.md`: "Invoices" above the title (keeping th
   credit note is numbered `{invoice}-CN-{nn}`, gets its PDF, and is listed under the invoice.
 - **Promise to pay** (slice h collections): date, amount (optional), note; listed in the payments
   panel and in receivables; "broken" when the date passes with money still owed.
+- **Void credit note** (decision 0043; Stripe: "click the overflow menu at the top right of the credit
+  note, then select Void credit note"; "only if it's on an open invoice"; "reverses its adjustment,
+  increasing the amount due on the invoice"): on a credit note issued by hand, in the header's overflow
+  menu, Owner and Billing; a dialog says how much more the invoice will ask for, asks for a reason, and
+  confirms with a destructive button. Open means nothing paid, written off or applied against the
+  invoice. The voided note keeps its number, its status reads Void, the summary row says when, by whom
+  and why, and its PDF says VOID with the reason. A correction run's credit note is not voided by hand.
+Source URL: https://docs.stripe.com/invoicing/dashboard/credit-notes
 
 Deviations allowed: none

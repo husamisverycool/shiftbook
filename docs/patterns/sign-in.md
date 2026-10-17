@@ -41,7 +41,7 @@ opens with no password (decision K3).
    4. Under the button, a refusal in place when there is one (see States).
 4. **Demo only — the demo people, before the form** (Linear: the main way in first, one filled
    full-width button, the other ways outlined under it): "Continue as Demo Owner" filled; Lena
-   (coordinator), Rosa (billing) and Morgan (accountant) outlined; each with the person's initials
+   (coordinator), Rosa (billing), Morgan (accountant) and Priya (recruiter; decision 0043) outlined; each with the person's initials
    on the left and the role on the right; one muted line under them (no password, no code). Then a
    rule with "or" (GitHub, Stripe, Notion) and the form, whose Sign in is outlined in demo mode
    (the demo people are the main way in). The demo has no phones, so these skip the code (decision

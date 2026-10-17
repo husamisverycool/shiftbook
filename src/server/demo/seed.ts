@@ -61,6 +61,7 @@ const CLEAR_ORDER = [
   "worker_sessions",
   "worker_onboarding",
   "sms_messages",
+  "onboarding_policies",
   "partner_handoffs",
   "jobs",
   "staff_requests",

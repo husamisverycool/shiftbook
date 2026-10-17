@@ -740,6 +740,10 @@ export const invoices = pgTable(
     /** A credit note issued by hand (slice r; Stripe: a reason and a memo). */
     creditReason: text("credit_reason").$type<CreditNoteReason>(),
     memo: text("memo"),
+    /** A credit note voided (Stripe: "Void credit note"; decision 0043): when, why and by whom. */
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
+    voidedByLabel: text("voided_by_label"),
     createdAt: createdAt(),
   },
   // An invoice number is issued once per agency; a run makes one invoice per client and part.
@@ -1833,6 +1837,7 @@ export const TENANT_TABLES = [
   "worker_messages",
   "worker_clock_punches",
   "sms_messages",
+  "onboarding_policies",
   "portal_contacts",
   "portal_links",
   "staff_requests",
@@ -2025,6 +2030,31 @@ export const billingEvents = pgTable("billing_events", {
 
 // ---------- the worker app (slice t; SPEC §27 items 5–6; drizzle/0046) ----------
 
+/**
+ * A policy workers acknowledge at onboarding, one row per version (decision 0043; drizzle/0060): the
+ * agency edits it in Settings › Onboarding; a worker who acknowledged an older version is asked again;
+ * an inactive version removes the policy from its date. Never changed, only added to.
+ */
+export const onboardingPolicies = pgTable(
+  "onboarding_policies",
+  {
+    id: id(),
+    agencyId: agencyId(),
+    policyKey: text("policy_key").notNull(),
+    version: integer("version").notNull(),
+    titleEn: text("title_en").notNull(),
+    bodyEn: text("body_en").notNull(),
+    titleEs: text("title_es"),
+    bodyEs: text("body_es"),
+    required: boolean("required").notNull().default(true),
+    active: boolean("active").notNull().default(true),
+    effectiveFrom: isoDate("effective_from").notNull(),
+    createdByLabel: text("created_by_label").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("onboarding_policies_one_version").on(t.agencyId, t.policyKey, t.version)],
+);
+
 /** A worker's onboarding (Gusto's self-onboarding steps); the I-9 answers and bank details sealed. */
 export const workerOnboarding = pgTable(
   "worker_onboarding",
@@ -2047,7 +2077,8 @@ export const workerOnboarding = pgTable(
     depositSealed: jsonb("deposit_sealed").$type<Sealed>(),
     depositLast4: text("deposit_last4"),
     paymentAt: timestamp("payment_at", { withTimezone: true }),
-    policies: jsonb("policies").$type<{ key: string; at: string }[]>().notNull().default(sql`'[]'::jsonb`),
+    /** Each policy acknowledged, with the version it was (none recorded: version 1; decision 0043). */
+    policies: jsonb("policies").$type<{ key: string; at: string; version?: number }[]>().notNull().default(sql`'[]'::jsonb`),
     policiesAt: timestamp("policies_at", { withTimezone: true }),
     signedName: text("signed_name"),
     signedAt: timestamp("signed_at", { withTimezone: true }),

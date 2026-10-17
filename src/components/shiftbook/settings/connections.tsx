@@ -19,6 +19,7 @@ import { useCan } from "../abilities";
 import { useDateTime } from "../agency-zone";
 import { SettingsEmpty, SettingsPage, SettingsRow, SettingsRows, SettingsSection, SettingsTile } from "../settings-panel";
 import { Status } from "../status";
+import { ProfileColumnsButton, useProfileColumns } from "./profile-columns";
 
 const ICON: Record<ConnectionKind, LucideIcon> = { payroll: BanknoteIcon, recruiting: BriefcaseIcon, time_file: ClockIcon, invoice_upload: ReceiptTextIcon, partner: HandshakeIcon };
 const ORDER: ConnectionKind[] = ["payroll", "recruiting", "time_file", "invoice_upload", "partner"];
@@ -90,6 +91,8 @@ function ConnectionRow({ c, canForget }: { c: Connection; canForget: boolean }) 
   const [forgetting, forget] = useTransition();
   const [confirm, setConfirm] = useState(false);
   const can = useCan();
+  const tColumns = useTranslations("vmsColumns");
+  const columns = useProfileColumns(c.system, name(c));
   const Icon = ICON[c.kind];
   const attention = c.attention ? t(`attention.${c.attention.key}` as "attention.noMapping", c.attention.values ?? {}) : null;
   const runTest = () =>
@@ -122,7 +125,7 @@ function ConnectionRow({ c, canForget }: { c: Connection; canForget: boolean }) 
             {t(`status.${c.status}`)}
           </Status>
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={t("menu", { name: name(c) })} loading={testing || forgetting} loadingLabel={t("testing")} />}>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={t("menu", { name: name(c) })} loading={testing || forgetting || columns.loading} loadingLabel={t("testing")} />}>
               <EllipsisIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
@@ -133,6 +136,11 @@ function ConnectionRow({ c, canForget }: { c: Connection; canForget: boolean }) 
               )}
               <DropdownMenuItem render={<Link href={c.href} />}>{t("actions.open")}</DropdownMenuItem>
               {c.kind === "recruiting" && <DropdownMenuItem render={<a href={`/api/files/placement-template?source=${c.system}`} download />}>{t("actions.template")}</DropdownMenuItem>}
+              {c.editable && can("hours") && (
+                <DropdownMenuItem onClick={columns.openDialog} data-testid="connection-edit-columns">
+                  {tColumns("edit")}
+                </DropdownMenuItem>
+              )}
               {c.forgettable && canForget && (
                 <>
                   <DropdownMenuSeparator />
@@ -143,6 +151,7 @@ function ConnectionRow({ c, canForget }: { c: Connection; canForget: boolean }) 
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+          {columns.dialog}
           <AlertDialog open={confirm} onOpenChange={setConfirm}>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -185,7 +194,8 @@ function Available({ view }: { view: ConnectionsView }) {
     </Link>
   );
   const inUse = <span className="text-sm text-muted-foreground">{t("inUse")}</span>;
-  const notYet = <span className="text-sm text-muted-foreground">{t("notYet")}</span>;
+  const tColumns = useTranslations("vmsColumns");
+  const can = useCan();
   return (
     <div className="flex flex-col gap-12">
       <SettingsSection title={t("groups.payroll")} description={t("groupHints.payroll")}>
@@ -205,10 +215,19 @@ function Available({ view }: { view: ConnectionsView }) {
       <SettingsSection title={t("groups.time")} description={t("groupHints.time")}>
         <SettingsRows as="ul" testId="available-time">
           {view.timeProfiles.map((p) => (
-            <SettingsRow as="li" key={p} label={t(`systems.${p}` as "systems.other")} description={t(`about.${p}` as "about.other")} control={view.inUse.time.includes(p) ? inUse : setUp("/convert", `set-up-${p}`)} />
-          ))}
-          {view.vmsNotYet.map((v) => (
-            <SettingsRow as="li" key={v} label={t(`systems.${v}` as "systems.other")} description={t("about.vmsNotYet")} control={notYet} />
+            <SettingsRow
+              as="li"
+              key={p.key}
+              testId={`available-${p.key}`}
+              label={t(`systems.${p.key}` as "systems.other")}
+              description={t(`about.${p.key}` as "about.other")}
+              control={
+                <>
+                  {view.inUse.time.includes(p.key) && inUse}
+                  {p.vms && can("hours") ? <ProfileColumnsButton profileKey={p.key} name={t(`systems.${p.key}` as "systems.other")} label={tColumns("edit")} /> : !view.inUse.time.includes(p.key) && setUp("/convert", `set-up-${p.key}`)}
+                </>
+              }
+            />
           ))}
         </SettingsRows>
       </SettingsSection>

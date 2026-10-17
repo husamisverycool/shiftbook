@@ -14,6 +14,7 @@ import { ExtractionRefusedError, RecordingMissingError } from "../extraction/tra
 import { openPeriod, PeriodBusyError, PeriodLockedError } from "../run/period-lock";
 import type { Actor } from "../session";
 import type { DocumentStore } from "../storage";
+import { agencyProfiles } from "./agency-profiles";
 import { assessEntry, resolveClient, settleDocumentClient, type AssessContext, type EntryDraft } from "./assess";
 import { BUILT_IN_PROFILES } from "./profiles";
 import { savedTimeProfiles } from "./saved-profiles";
@@ -236,10 +237,14 @@ export async function readStoredDocument(
       if (!d) return null;
       const [p] = await tx.select().from(s.payPeriods).where(eq(s.payPeriods.id, d.payPeriodId));
       const clients = await tx.select({ name: s.clients.name }).from(s.clients);
-      const profiles = await savedTimeProfiles(tx);
+      // The agency's own mapped layouts (read first), and the built-in profiles with the agency's own
+      // column names (decision 0043); images and PDFs need neither.
+      const sheet = d.kind !== "image" && d.kind !== "pdf";
+      const saved = sheet ? await savedTimeProfiles(tx) : [];
       const builtIns = await tx.select({ id: s.mappingProfiles.id, source: s.mappingProfiles.source }).from(s.mappingProfiles).where(inArray(s.mappingProfiles.source, BUILT_IN_PROFILES.map((b) => b.key)));
+      const profiles = sheet ? await agencyProfiles(tx) : null;
       // Sorted: the prompt (and so the recorded-reading hash) must not depend on row order.
-      return { at: now, doc: { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort(), profiles, builtIns } };
+      return { at: now, profiles, doc: { ...d, period: { startsOn: p!.startsOn, endsOn: p!.endsOn }, clients: clients.map((c) => c.name).sort(), saved, builtIns } };
     });
     if (!claimed) return NOTHING_READ; // read, archived, gone, or being read by another reading
     claim = claimed.at; // only once the claim is committed
@@ -258,9 +263,11 @@ export async function readStoredDocument(
     const result: ReadResult =
       doc.kind === "image" || doc.kind === "pdf"
         ? await deps.imageReader.read({ agencyId: actor.agencyId, documentId, filename: doc.filename, mediaType: doc.mediaType, bytes, period: doc.period, clients: doc.clients, onPage })
-        : { parsed: await parseStructuredUpload(doc.filename, bytes, [...doc.profiles.map((p) => p.definition), ...BUILT_IN_PROFILES]), pages: [] };
-    // The saved profile row that read it, if the agency has one (Settings › Connections counts its files).
-    const mappingProfileId = doc.profiles.find((p) => p.definition.key === result.parsed.profileKey)?.id ?? doc.builtIns.find((p) => p.source === result.parsed.profileKey)?.id ?? null;
+        : { parsed: await parseStructuredUpload(doc.filename, bytes, [...doc.saved.map((p) => p.definition), ...(claimed.profiles?.profiles ?? BUILT_IN_PROFILES)]), pages: [] };
+    // The profile row that read it (Settings › Connections counts its files): the agency's own layout,
+    // else its saved columns for a built-in profile, else the built-in profile's row.
+    const key = result.parsed.profileKey;
+    const mappingProfileId = doc.saved.find((p) => p.definition.key === key)?.id ?? (key ? claimed.profiles?.rowIds.get(key) : undefined) ?? doc.builtIns.find((p) => p.source === key)?.id ?? null;
 
     return await deps.withAgency(actor.agencyId, async (tx) => {
       await openPeriod(tx, doc.payPeriodId);

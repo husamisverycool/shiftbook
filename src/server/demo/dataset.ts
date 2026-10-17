@@ -38,10 +38,14 @@ export const RECRUITERS = [
   { key: "sam", name: "Sam Whitfield (demo)", email: "sam@cedarrow.example.com", role: "coordinator" as const },
 ] as const;
 
-/** The demo's billing clerk and outside accountant (slice k): with the Owner and Lena, the "Continue as" choices. Invented people. */
+/**
+ * The demo's billing clerk, outside accountant and recruiter (slice k; the recruiter, decision 0043):
+ * with the Owner and Lena, the "Continue as" choices. Invented people.
+ */
 export const STAFF = [
   { key: "billing", name: "Rosa Delgado (demo)", email: "billing@cedarrow.example.com", role: "billing" as const },
   { key: "accountant", name: "Morgan Ellis (demo)", email: "accountant@cedarrow.example.com", role: "accountant" as const },
+  { key: "recruiter", name: "Priya Raman (demo)", email: "recruiter@cedarrow.example.com", role: "recruiter" as const },
 ] as const;
 
 /**

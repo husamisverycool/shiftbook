@@ -1,0 +1,21 @@
+Timesheet Number,Timesheet Status,Contractor ID,Contractor Last Name,Contractor First Name,Client Name,Work Location,Date Worked,Time Type,Hours Worked
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,Pacific Crest Distribution (demo),Ontario DC,10/05/2026,ST,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,Pacific Crest Distribution (demo),Ontario DC,10/06/2026,ST,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,Pacific Crest Distribution (demo),Ontario DC,10/07/2026,ST,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,Pacific Crest Distribution (demo),Ontario DC,10/07/2026,OT,1.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,Pacific Crest Distribution (demo),Ontario DC,10/08/2026,ST,8.00
+TS-2610,Approved,DEMO-V-1001,Duarte,Renata,Pacific Crest Distribution (demo),Ontario DC,10/09/2026,ST,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,Pacific Crest Distribution (demo),Ontario DC,10/05/2026,ST,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,Pacific Crest Distribution (demo),Ontario DC,10/06/2026,ST,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,Pacific Crest Distribution (demo),Ontario DC,10/07/2026,ST,8.00
+TS-2611,Approved,DEMO-V-1002,Ibarra,Tomás,Pacific Crest Distribution (demo),Ontario DC,10/08/2026,ST,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,Pacific Crest Distribution (demo),Ontario DC,10/05/2026,ST,7.50
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,Pacific Crest Distribution (demo),Ontario DC,10/06/2026,ST,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,Pacific Crest Distribution (demo),Ontario DC,10/07/2026,ST,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,Pacific Crest Distribution (demo),Ontario DC,10/08/2026,ST,8.00
+TS-2612,Approved,DEMO-V-1003,Whitaker,Grace,Pacific Crest Distribution (demo),Ontario DC,10/09/2026,ST,8.00
+TS-2619,Rejected,DEMO-V-1004,Mercer,Owen,Pacific Crest Distribution (demo),Ontario DC,10/05/2026,ST,8.00
+TS-2619,Rejected,DEMO-V-1004,Mercer,Owen,Pacific Crest Distribution (demo),Ontario DC,10/06/2026,ST,8.00
+TS-2619,Rejected,DEMO-V-1004,Mercer,Owen,Pacific Crest Distribution (demo),Ontario DC,10/07/2026,ST,8.00
+TS-2619,Rejected,DEMO-V-1004,Mercer,Owen,Pacific Crest Distribution (demo),Ontario DC,10/08/2026,ST,8.00
+TS-2619,Rejected,DEMO-V-1004,Mercer,Owen,Pacific Crest Distribution (demo),Ontario DC,10/09/2026,ST,8.00

@@ -39,7 +39,9 @@ root frame (demo banner above it).
       Agency (business details and time zone; Linear's Workspace › General, Gusto's company details)
       and Branches (Gusto's company locations) right after Settings, for everyone (only the Owner
       changes them; completeness audit G1); Names (SPEC §6 nickname map, `settings/names.md`) after
-      Connections, for everyone (the Owner and coordinators change it).
+      Connections, for everyone (the Owner and coordinators change it);
+      Onboarding (decision 0043: the policies workers acknowledge) before Members, for everyone
+      (the Owner and the Coordinator change them).
       Below a separator, the person's own items (slice k): their name and role (not a link),
       **Your account**, **Notifications** (slice r; Linear: Account › Notifications), and **Sign out**. Linear's docs do not say where its log-out item sits —
       listed as a difference.

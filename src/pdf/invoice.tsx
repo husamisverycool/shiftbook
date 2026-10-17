@@ -51,6 +51,8 @@ export interface InvoiceData {
   detail?: InvoiceDetail | null;
   /** Backup: one timesheet picture per page (redacted copies). */
   images?: InvoiceImage[];
+  /** A voided credit note: "VOID — {reason}" under the title (decision 0043). */
+  voidMark?: string | null;
 }
 
 export interface InvoiceDetail {
@@ -67,6 +69,7 @@ export interface InvoiceImage {
 const styles = StyleSheet.create({
   page: { paddingTop: 48, paddingBottom: 64, paddingHorizontal: 48, fontSize: 9, fontFamily: "Helvetica", color: "#111111" },
   title: { fontSize: 20, fontFamily: "Helvetica-Bold", marginBottom: 16 },
+  voidMark: { fontFamily: "Helvetica-Bold", marginBottom: 16 },
   meta: { marginBottom: 24 },
   metaRow: { flexDirection: "row", marginBottom: 2 },
   metaLabel: { width: 110, color: "#555555" },
@@ -132,7 +135,8 @@ export function InvoicePages({ data }: { data: InvoiceData }) {
     <>
       <Page size="LETTER" style={styles.page}>
         {poHeader}
-        <Text style={styles.title}>{l.title}</Text>
+        <Text style={data.voidMark ? [styles.title, { marginBottom: 4 }] : styles.title}>{l.title}</Text>
+        {data.voidMark && <Text style={styles.voidMark}>{data.voidMark}</Text>}
         <View style={styles.meta}>
           {[
             { label: l.number, value: data.number },

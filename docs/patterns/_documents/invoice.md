@@ -52,6 +52,9 @@ same hierarchy as above, with these differences only:
   of issue, line-level credits, total credited): title "Credit note"; number `{original}-CN-{nn}`; no
   due date; a custom field naming the invoice it credits; the large line says the amount credited to
   that invoice; the last totals row is "Total credited". Amounts below zero carry a minus sign.
+- **Voided credit note** (decision 0043; Stripe: "Voiding a credit note reverses its adjustment" —
+  the voided note keeps its number and stays in the history): the same document, with one line under
+  the title in bold, "VOID — {reason}"; nothing else changes.
 
 ## Interactions
 None (static document). Page size Letter by default; A4 selectable (Stripe docs).

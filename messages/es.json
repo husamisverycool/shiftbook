@@ -58,7 +58,8 @@
     "nextDay": "{time} (día siguiente)",
     "approvedBy": "Aprobado por {name} ({email}) el {date} a las {time}",
     "proposedBy": "Horarios propuestos por {name} ({email}) el {date} a las {time}, aceptados por {agency}",
-    "reviewedBy": "Revisado por {agency}"
+    "reviewedBy": "Revisado por {agency}",
+    "voidMark": "ANULADA — {reason}"
   },
   "approvalEmail": {
     "subject": {
@@ -650,7 +651,8 @@
     "schedule": "Horario",
     "agencySettings": "Agencia",
     "branches": "Sucursales",
-    "names": "Nombres"
+    "names": "Nombres",
+    "onboardingSettings": "Incorporación"
   },
   "list": {
     "filter": "Filtrar",
@@ -5673,7 +5675,10 @@
       "fieldglass_time_sheet_invoice": "Carga de facturas en SAP Fieldglass",
       "beeline": "Beeline",
       "coupa": "Coupa",
-      "magnit": "Magnit"
+      "magnit": "Magnit",
+      "beeline-timesheet-export": "Hojas de horas de Beeline",
+      "coupa-time-sheet-lines": "Líneas de hojas de horas de Coupa",
+      "magnit-timesheet-export": "Hojas de horas de Magnit"
     },
     "about": {
       "gusto_hours_csv": "Horas por tipo de pago en la importación de horas de Gusto.",
@@ -5693,7 +5698,10 @@
       "timeclock-punch-export": "Marcaciones exportadas de un reloj de control, leídas como horas.",
       "vmsNotYet": "Granite todavía no puede leer la exportación de este sistema.",
       "partner": "Granite prepara el paquete en Dinero; un socio con licencia actuaría con él. Aún no hay nada registrado.",
-      "partnerLast": "Último registro {date} · {count, plural, one {# paquete} other {# paquetes}} en Dinero. En Granite no se mueve dinero."
+      "partnerLast": "Último registro {date} · {count, plural, one {# paquete} other {# paquetes}} en Dinero. En Granite no se mueve dinero.",
+      "beeline-timesheet-export": "Hojas de horas aprobadas exportadas de Beeline; los nombres de las columnas se pueden cambiar según el informe del cliente.",
+      "coupa-time-sheet-lines": "Líneas de hojas de servicio/horas aprobadas exportadas de Coupa; los nombres de las columnas se pueden cambiar según el informe del cliente.",
+      "magnit-timesheet-export": "Hojas de horas aprobadas exportadas de Magnit; los nombres de las columnas se pueden cambiar según el informe del cliente."
     },
     "partners": {
       "embedded_payroll": "Socio de nómina",
@@ -5759,7 +5767,10 @@
       "wageBody": "Disponible ahora de {earned} ganados en horas aprobadas aún no pagadas.",
       "wageNote": "En Granite no se mueve dinero: el socio de su agencia lo pagaría y lo descontaría de su próximo cheque.",
       "wageRequest": "Solicitar",
-      "wageDialogTitle": "Solicitar pago ganado"
+      "wageDialogTitle": "Solicitar pago ganado",
+      "policiesTitle": "Políticas por confirmar",
+      "policiesAction": "Revisar",
+      "policiesBody": "{count, plural, one {Hay # política nueva o modificada. Léala y confírmela.} other {Hay # políticas nuevas o modificadas. Léalas y confírmelas.}}"
     },
     "clock": {
       "title": "Marcar entrada",
@@ -5916,7 +5927,8 @@
         "read": "Lo he leído",
         "safety": "Seguridad en el lugar de trabajo: use el equipo de protección que el trabajo requiere y reporte cualquier lesión el mismo día.",
         "harassment": "No se permite el acoso ni la discriminación. Repórtelos a su agencia en cualquier momento.",
-        "timekeeping": "Registre solo las horas que trabaja. Marque usted mismo la entrada y la salida, nunca por otra persona."
+        "timekeeping": "Registre solo las horas que trabaja. Marque usted mismo la entrada y la salida, nunca por otra persona.",
+        "optional": "opcional"
       },
       "sign": {
         "intro": "Revise sus respuestas y luego firme.",
@@ -6984,6 +6996,126 @@
       "same": "Un apodo debe ser distinto del nombre que representa.",
       "too_long": "Use 40 caracteres o menos.",
       "exists": "Ese apodo ya está en la lista."
+    }
+  },
+  "vmsColumns": {
+    "edit": "Editar columnas",
+    "title": "Columnas en {name}",
+    "description": "Cada cliente puede organizar su informe de otra forma. Escriba el nombre de la columna tal como aparece en la primera fila del archivo.",
+    "builtIn": "Normalmente “{column}”",
+    "optional": "{field} (opcional)",
+    "statuses": "Estados que cuentan",
+    "statusesHint": "Sepárelos con comas. Las filas con cualquier otro estado se omiten y se enumeran.",
+    "dateFormat": "Formato de fecha",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "cancel": "Cancelar",
+    "restore": "Restablecer los nombres habituales",
+    "loading": "Cargando…",
+    "saved": "Columnas guardadas para {name}.",
+    "restored": "Se restablecieron las columnas habituales de {name}.",
+    "stale": "Esto cambió mientras tanto. Vuelva a cargar la página e inténtelo de nuevo.",
+    "fields": {
+      "timeSheetId": "Número de hoja de horas",
+      "status": "Estado de la hoja de horas",
+      "externalId": "Identificador del trabajador en el sistema",
+      "lastName": "Apellido del trabajador",
+      "firstName": "Nombre del trabajador",
+      "date": "Fecha trabajada",
+      "hours": "Horas",
+      "rateCategory": "Tipo de horas",
+      "site": "Lugar de trabajo",
+      "clientName": "Cliente",
+      "name": "Nombre del trabajador",
+      "in": "Entrada",
+      "out": "Salida",
+      "breakMinutes": "Minutos de descanso",
+      "totalHours": "Total de horas"
+    },
+    "problems": {
+      "required": "Escriba el nombre de la columna.",
+      "invalid": "Use el nombre tal como está escrito, en una línea, de hasta 80 caracteres.",
+      "duplicate": "Otro campo ya usa esta columna.",
+      "unknown": "Este campo no forma parte del archivo."
+    }
+  },
+  "voidCredit": {
+    "action": "Anular nota de crédito",
+    "title": "¿Anular la nota de crédito {number}?",
+    "body": "Al anularla se retira el crédito: la factura pide {amount} más. La nota de crédito conserva su número, marcada como anulada.",
+    "reason": "Motivo",
+    "reasonHint": "Se guarda con la nota de crédito y se imprime en ella.",
+    "confirm": "Anular nota de crédito",
+    "cancel": "Cancelar",
+    "voiding": "Anulando…",
+    "done": "La nota de crédito {number} quedó anulada.",
+    "voided": "Anulada",
+    "voidedLine": "Anulada el {date} por {by}: {reason}",
+    "errors": {
+      "forbidden": "Solo el Propietario y Facturación pueden anular una nota de crédito.",
+      "not_found": "Esa nota de crédito ya no existe. Vuelva a cargar la página.",
+      "not_credit_note": "Aquí solo se puede anular una nota de crédito.",
+      "correction": "Esta nota de crédito proviene de una corrección; corrija la nómina en su lugar.",
+      "already_void": "Esta nota de crédito ya está anulada.",
+      "settled": "La factura tiene registrado un pago, una cancelación de saldo o un crédito aplicado, por lo que su nota de crédito ya no se puede anular.",
+      "reason": "Escriba el motivo, en un máximo de 500 caracteres."
+    }
+  },
+  "onboardingPolicies": {
+    "title": "Incorporación",
+    "policies": "Políticas",
+    "policiesHint": "Lo que cada trabajador lee y confirma durante la incorporación. Al cambiar una política se guarda una nueva versión; a quienes confirmaron una anterior se les pide de nuevo.",
+    "add": "Agregar política",
+    "none": "No hay políticas. Los trabajadores omiten este paso.",
+    "required": "Obligatoria",
+    "optional": "Opcional",
+    "builtIn": "Predeterminada",
+    "version": "Versión {version}",
+    "since": "Desde el {date}",
+    "owing": "{count, plural, =0 {Todos la han confirmado} one {Falta que # trabajador la confirme} other {Falta que # trabajadores la confirmen}}",
+    "edit": "Editar",
+    "menu": "Más acciones para {title}",
+    "remove": "Quitar",
+    "scheduled": "Programadas",
+    "scheduledHint": "Cambios que comienzan en una fecha posterior.",
+    "from": "Nueva versión desde el {date}",
+    "removedFrom": "Se quita desde el {date}",
+    "editTitle": "Editar política",
+    "addTitle": "Agregar política",
+    "editHint": "Al guardar se crea una nueva versión. A quienes confirmaron una versión anterior se les pedirá que confirmen de nuevo.",
+    "addHint": "Se pedirá a los trabajadores que la confirmen durante la incorporación, o en su pantalla de inicio si ya están trabajando.",
+    "titleEn": "Título (inglés)",
+    "bodyEn": "Texto (inglés)",
+    "titleEs": "Título (español)",
+    "bodyEs": "Texto (español)",
+    "requiredLabel": "Obligatoria",
+    "requiredHint": "Los trabajadores deben confirmarla para terminar la incorporación.",
+    "effectiveFrom": "Comienza",
+    "effectiveHint": "Hoy o más adelante.",
+    "cancel": "Cancelar",
+    "saving": "Guardando…",
+    "save": "Guardar",
+    "saved": "Política guardada.",
+    "removeTitle": "¿Quitar «{title}»?",
+    "removeBody": "Los trabajadores dejan de verla a partir de la fecha que usted elija. Lo que ya confirmaron queda registrado.",
+    "removeFrom": "Quitar a partir del",
+    "removed": "Se quitará «{title}».",
+    "problems": {
+      "title_en": "Escriba un título de hasta 120 caracteres.",
+      "body_en": "Escriba el texto, de hasta 4,000 caracteres.",
+      "title_es": "Escriba un título en español de hasta 120 caracteres, o deje vacíos ambos campos en español.",
+      "body_es": "Escriba el texto en español, de hasta 4,000 caracteres, o deje vacíos ambos campos en español.",
+      "effective_from": "Elija hoy o una fecha posterior.",
+      "key": "No se pudo nombrar esa política. Cambie el título."
+    },
+    "errors": {
+      "forbidden": "Solo el Propietario y los Coordinadores pueden cambiar las políticas de incorporación.",
+      "not_found": "Esa política ya no existe. Vuelva a cargar la página."
+    },
+    "defaults": {
+      "safety": "Seguridad en el lugar de trabajo",
+      "harassment": "Acoso y discriminación",
+      "timekeeping": "Registro de sus horas"
     }
   }
 }

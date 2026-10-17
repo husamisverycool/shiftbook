@@ -38,6 +38,10 @@ was the demo Owner.
   client's clock-in setting, saved import mappings; `employment` (Owner, Coordinator) — a worker's
   payroll numbers and ending or restarting employment. `placements` keeps job orders, placements and
   the placement import; `workers` keeps a worker's details, documents and an SSN entered.
+- Decision 0043 added `onboardingPolicies` (Owner, Coordinator): the policies workers acknowledge at
+  onboarding (Settings › Onboarding). The Recruiter sends onboarding links but does not write policy.
+  Editing a VMS time file's column names uses `hours` (Owner, Coordinator: they read timesheets in);
+  voiding a credit note uses `cash` (Owner, Billing), as issuing one does.
 
 ## Alternatives considered
 - Permissions per person (Rippling's custom roles): more than SPEC asks; four fixed roles are what a

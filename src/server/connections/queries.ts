@@ -30,14 +30,13 @@ export interface Connection {
   href: string;
   /** Recruiting systems: a saved mapping that can be forgotten. */
   forgettable?: boolean;
+  /** A VMS time-file profile whose column names the agency can edit (decision 0043). */
+  editable?: boolean;
 }
 
 /** Partner handoffs (SPEC §27 item 9): filled by slice w; listed here so the page names them now. */
 export const PARTNER_HANDOFFS = ["embedded_payroll", "wage_access", "invoice_funding", "insurance"] as const;
 export type PartnerHandoff = (typeof PARTNER_HANDOFFS)[number];
-
-/** Time files Granite cannot read yet (no profile): listed as not available, never as a dead link. */
-export const VMS_NOT_YET = ["beeline", "coupa", "magnit"] as const;
 
 const iso = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString() : null);
 
@@ -91,17 +90,21 @@ export async function connectionsView(tx: Tx) {
     connected.push({ key: `recruiting:${source}`, kind: "recruiting", system: source, lastUsedAt: iso(used?.at ?? profile?.createdAt), uses: used?.n ?? 0, ...testMapping(mapping), href: "/assignments/import", forgettable: !!profile });
   }
 
-  // Time files: each saved profile and the files read with it.
+  // Time files: each saved profile (every version of its columns, decision 0043) and the files read with it.
   const timeProfiles = await tx.select().from(s.mappingProfiles).where(inArray(s.mappingProfiles.source, BUILT_IN_PROFILES.map((p) => p.key)));
-  if (timeProfiles.length > 0) {
+  const timeSources = [...new Set(timeProfiles.map((p) => p.source))];
+  if (timeSources.length > 0) {
     const reads = await tx
       .select({ profile: s.sourceDocuments.mappingProfileId, at: max(s.sourceDocuments.createdAt), n: sql<number>`count(*)::int` })
       .from(s.sourceDocuments)
       .where(isNotNull(s.sourceDocuments.mappingProfileId))
       .groupBy(s.sourceDocuments.mappingProfileId);
-    for (const p of timeProfiles) {
-      const r = reads.find((x) => x.profile === p.id);
-      connected.push({ key: `time:${p.source}`, kind: "time_file", system: p.source, lastUsedAt: iso(r?.at), uses: r?.n ?? 0, status: "ready", href: "/convert" });
+    for (const source of timeSources) {
+      const ids = new Set(timeProfiles.filter((p) => p.source === source).map((p) => p.id));
+      const mine = reads.filter((x) => x.profile && ids.has(x.profile));
+      const at = mine.reduce<Date | null>((a, x) => (x.at && (!a || new Date(x.at) > a) ? new Date(x.at) : a), null);
+      const profile = BUILT_IN_PROFILES.find((p) => p.key === source)!;
+      connected.push({ key: `time:${source}`, kind: "time_file", system: source, lastUsedAt: iso(at), uses: mine.reduce((n, x) => n + x.n, 0), status: "ready", href: "/convert", editable: profile.kind === "vms" });
     }
   }
 
@@ -123,7 +126,7 @@ export async function connectionsView(tx: Tx) {
   const inUse = {
     payroll: target?.format ?? null,
     recruiting: connected.filter((c) => c.kind === "recruiting").map((c) => c.system as Source),
-    time: timeProfiles.map((p) => p.source),
+    time: timeSources,
   };
   // The partner packages (slice w): each opens its Money page, with when one was last recorded.
   const lastHandoff = await tx.select({ kind: s.partnerHandoffs.kind, at: max(s.partnerHandoffs.createdAt), n: sql<number>`count(*)::int` }).from(s.partnerHandoffs).groupBy(s.partnerHandoffs.kind);
@@ -131,7 +134,7 @@ export async function connectionsView(tx: Tx) {
     const r = lastHandoff.find((x) => x.kind === HANDOFF_OF[key]);
     return { key, href: MONEY_PAGE[key], lastUsedAt: iso(r?.at), uses: r?.n ?? 0 };
   });
-  return { connected, inUse, payrollFormats: [...EXPORT_FORMATS], sources: [...SOURCES], timeProfiles: BUILT_IN_PROFILES.map((p) => p.key), vmsNotYet: [...VMS_NOT_YET], partners };
+  return { connected, inUse, payrollFormats: [...EXPORT_FORMATS], sources: [...SOURCES], timeProfiles: BUILT_IN_PROFILES.map((p) => ({ key: p.key, vms: p.kind === "vms" })), partners };
 }
 
 const HANDOFF_OF: Record<PartnerHandoff, s.HandoffKind> = { embedded_payroll: "payroll", wage_access: "wage_access", invoice_funding: "funding", insurance: "insurance" };

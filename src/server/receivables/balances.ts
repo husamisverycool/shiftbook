@@ -66,7 +66,8 @@ export async function invoiceBalances(tx: Tx, opts: { asOf?: string; clientIds?:
     .where(or(inArray(s.creditApplications.fromInvoiceId, ids), inArray(s.creditApplications.toInvoiceId, ids)));
   const upTo = (date: string) => !opts.asOf || date <= opts.asOf;
   return rows.map(({ invoice, clientName }) => {
-    const creditedCents = -credits.filter((c) => c.originalInvoiceId === invoice.id && upTo(c.issuedOn)).reduce((sum, c) => sum + c.totalCents, 0);
+    // Credit notes carry negative totals; their sum turned positive (and never "-0" when there are none).
+    const creditedCents = credits.filter((c) => c.originalInvoiceId === invoice.id && upTo(c.issuedOn)).reduce((sum, c) => sum - c.totalCents, 0);
     const mine = matches.filter((m) => m.invoiceId === invoice.id && upTo(m.receivedOn)).sort((a, b) => cmp(a.receivedOn, b.receivedOn));
     const paidCents = mine.reduce((sum, m) => sum + m.amountCents, 0);
     const writtenOffCents = offs.filter((w) => w.invoiceId === invoice.id && upTo(w.writtenOn)).reduce((sum, w) => sum + w.amountCents, 0);

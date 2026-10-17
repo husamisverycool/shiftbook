@@ -58,7 +58,8 @@
     "nextDay": "{time} (next day)",
     "approvedBy": "Approved by {name} ({email}) on {date} at {time}",
     "proposedBy": "Times proposed by {name} ({email}) on {date} at {time}, accepted by {agency}",
-    "reviewedBy": "Reviewed by {agency}"
+    "reviewedBy": "Reviewed by {agency}",
+    "voidMark": "VOID — {reason}"
   },
   "approvalEmail": {
     "subject": {
@@ -650,7 +651,8 @@
     "schedule": "Schedule",
     "agencySettings": "Agency",
     "branches": "Branches",
-    "names": "Names"
+    "names": "Names",
+    "onboardingSettings": "Onboarding"
   },
   "list": {
     "filter": "Filter",
@@ -5673,7 +5675,10 @@
       "fieldglass_time_sheet_invoice": "SAP Fieldglass invoice upload",
       "beeline": "Beeline",
       "coupa": "Coupa",
-      "magnit": "Magnit"
+      "magnit": "Magnit",
+      "beeline-timesheet-export": "Beeline timesheets",
+      "coupa-time-sheet-lines": "Coupa time sheet lines",
+      "magnit-timesheet-export": "Magnit timesheets"
     },
     "about": {
       "gusto_hours_csv": "Hours by kind of pay in Gusto's hours import.",
@@ -5693,7 +5698,10 @@
       "timeclock-punch-export": "Punches exported from a time clock, read as hours.",
       "vmsNotYet": "Granite cannot read this system's export yet.",
       "partner": "Granite prepares the package in Money; a licensed partner would act on it. Nothing recorded yet.",
-      "partnerLast": "Last recorded {date} · {count, plural, one {# package} other {# packages}} in Money. Nothing moves in Granite."
+      "partnerLast": "Last recorded {date} · {count, plural, one {# package} other {# packages}} in Money. Nothing moves in Granite.",
+      "beeline-timesheet-export": "Approved timesheets exported from Beeline; the column names can be changed to match the buyer's report.",
+      "coupa-time-sheet-lines": "Approved service/time sheet lines exported from Coupa; the column names can be changed to match the buyer's report.",
+      "magnit-timesheet-export": "Approved timesheets exported from Magnit; the column names can be changed to match the buyer's report."
     },
     "partners": {
       "embedded_payroll": "Payroll partner",
@@ -5759,7 +5767,10 @@
       "wageBody": "Available now from {earned} earned in approved hours not yet paid.",
       "wageNote": "No money moves in Granite: your agency's partner would pay it and take it back from your next paycheck.",
       "wageRequest": "Request",
-      "wageDialogTitle": "Request earned pay"
+      "wageDialogTitle": "Request earned pay",
+      "policiesTitle": "Policies to confirm",
+      "policiesAction": "Review",
+      "policiesBody": "{count, plural, one {# policy is new or changed. Read it and confirm.} other {# policies are new or changed. Read them and confirm.}}"
     },
     "clock": {
       "title": "Clock in",
@@ -5916,7 +5927,8 @@
         "read": "I have read this",
         "safety": "Safety at the worksite: wear the protective equipment the job requires and report any injury the same day.",
         "harassment": "Harassment and discrimination are not allowed. Report them to your agency at any time.",
-        "timekeeping": "Record only the hours you work. Clock in and out yourself, never for someone else."
+        "timekeeping": "Record only the hours you work. Clock in and out yourself, never for someone else.",
+        "optional": "optional"
       },
       "sign": {
         "intro": "Check your answers, then sign.",
@@ -6984,6 +6996,126 @@
       "same": "A nickname must differ from the name it stands for.",
       "too_long": "Use 40 characters or fewer.",
       "exists": "That nickname is already there."
+    }
+  },
+  "vmsColumns": {
+    "edit": "Edit columns",
+    "title": "Columns in {name}",
+    "description": "Each buyer can lay out its report differently. Type the column name as it appears in the first row of the file.",
+    "builtIn": "Usually “{column}”",
+    "optional": "{field} (optional)",
+    "statuses": "Statuses that count",
+    "statusesHint": "Separate them with commas. Rows with any other status are skipped and listed.",
+    "dateFormat": "Date format",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "restore": "Restore the usual names",
+    "loading": "Loading…",
+    "saved": "Columns saved for {name}.",
+    "restored": "The usual columns are back for {name}.",
+    "stale": "That changed in the meantime. Reload the page and try again.",
+    "fields": {
+      "timeSheetId": "Timesheet number",
+      "status": "Timesheet status",
+      "externalId": "Worker's ID in the system",
+      "lastName": "Worker's last name",
+      "firstName": "Worker's first name",
+      "date": "Date worked",
+      "hours": "Hours",
+      "rateCategory": "Kind of hours",
+      "site": "Worksite",
+      "clientName": "Client",
+      "name": "Worker's name",
+      "in": "Clock in",
+      "out": "Clock out",
+      "breakMinutes": "Break minutes",
+      "totalHours": "Total hours"
+    },
+    "problems": {
+      "required": "Type the column's name.",
+      "invalid": "Use the name as written, on one line, up to 80 characters.",
+      "duplicate": "Another field already uses this column.",
+      "unknown": "This field is not part of the file."
+    }
+  },
+  "voidCredit": {
+    "action": "Void credit note",
+    "title": "Void credit note {number}?",
+    "body": "Voiding takes the credit back: the invoice asks for {amount} more. The credit note keeps its number, marked void.",
+    "reason": "Reason",
+    "reasonHint": "Kept with the credit note and printed on it.",
+    "confirm": "Void credit note",
+    "cancel": "Cancel",
+    "voiding": "Voiding…",
+    "done": "Credit note {number} is void.",
+    "voided": "Void",
+    "voidedLine": "Voided {date} by {by}: {reason}",
+    "errors": {
+      "forbidden": "Only the Owner and Billing can void a credit note.",
+      "not_found": "That credit note is gone. Reload the page.",
+      "not_credit_note": "Only a credit note can be voided here.",
+      "correction": "This credit note came from a correction run; correct the run instead.",
+      "already_void": "This credit note is already void.",
+      "settled": "A payment, write-off or applied credit is recorded on the invoice, so its credit note can no longer be voided.",
+      "reason": "Write why, in up to 500 characters."
+    }
+  },
+  "onboardingPolicies": {
+    "title": "Onboarding",
+    "policies": "Policies",
+    "policiesHint": "What every worker reads and confirms during onboarding. Changing a policy saves a new version; workers who confirmed an older one are asked again.",
+    "add": "Add policy",
+    "none": "No policies. Workers skip this step.",
+    "required": "Required",
+    "optional": "Optional",
+    "builtIn": "Built in",
+    "version": "Version {version}",
+    "since": "Since {date}",
+    "owing": "{count, plural, =0 {Everyone has confirmed} one {# worker still to confirm} other {# workers still to confirm}}",
+    "edit": "Edit",
+    "menu": "More actions for {title}",
+    "remove": "Remove",
+    "scheduled": "Scheduled",
+    "scheduledHint": "Changes that start on a later date.",
+    "from": "New version from {date}",
+    "removedFrom": "Removed from {date}",
+    "editTitle": "Edit policy",
+    "addTitle": "Add policy",
+    "editHint": "Saving makes a new version. Workers who confirmed an earlier version will be asked to confirm again.",
+    "addHint": "Workers will be asked to confirm it at onboarding, or on their home screen if they are already working.",
+    "titleEn": "Title (English)",
+    "bodyEn": "Text (English)",
+    "titleEs": "Title (Spanish)",
+    "bodyEs": "Text (Spanish)",
+    "requiredLabel": "Required",
+    "requiredHint": "Workers must confirm it to finish onboarding.",
+    "effectiveFrom": "Starts",
+    "effectiveHint": "Today or later.",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "save": "Save",
+    "saved": "Policy saved.",
+    "removeTitle": "Remove “{title}”?",
+    "removeBody": "Workers stop seeing it from the date you choose. What they already confirmed stays on record.",
+    "removeFrom": "Remove from",
+    "removed": "“{title}” will be removed.",
+    "problems": {
+      "title_en": "Write a title of up to 120 characters.",
+      "body_en": "Write the text, up to 4,000 characters.",
+      "title_es": "Write a Spanish title of up to 120 characters, or leave both Spanish fields empty.",
+      "body_es": "Write the Spanish text, up to 4,000 characters, or leave both Spanish fields empty.",
+      "effective_from": "Choose today or a later date.",
+      "key": "That policy could not be named. Change the title."
+    },
+    "errors": {
+      "forbidden": "Only the Owner and Coordinators can change onboarding policies.",
+      "not_found": "That policy no longer exists. Reload the page."
+    },
+    "defaults": {
+      "safety": "Safety at the worksite",
+      "harassment": "Harassment and discrimination",
+      "timekeeping": "Recording your hours"
     }
   }
 }

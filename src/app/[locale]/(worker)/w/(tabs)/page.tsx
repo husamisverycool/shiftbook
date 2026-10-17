@@ -62,6 +62,12 @@ export default async function WorkerHome(props: { params: Promise<{ locale: stri
           </div>
         </Card>
       )}
+      {view.onboarding.complete && view.policiesDue > 0 && (
+        // A policy changed since the worker acknowledged it (Rippling: an updated handbook rolls out to everyone).
+        <Card title={t("policiesTitle")} action={{ href: "/w/onboarding", label: t("policiesAction") }} testId="worker-policies-card">
+          <p className="text-base font-medium">{t("policiesBody", { count: view.policiesDue })}</p>
+        </Card>
+      )}
       <ClockCard clock={view.clock} zone={zone} />
       <Card title={t("weekTitle")} action={{ href: "/w/time", label: t("seeHours") }} testId="worker-week">
         {view.thisWeek ? (

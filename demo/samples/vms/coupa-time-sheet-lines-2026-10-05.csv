@@ -1,0 +1,21 @@
+Time Sheet Number,Time Sheet Status,Worker Number,Worker Last Name,Worker First Name,Customer,Work Location,Line Date,Rate Type,Hours
+TS-2610,approved,DEMO-V-1001,Duarte,Renata,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-05,Straight Time,8.00
+TS-2610,approved,DEMO-V-1001,Duarte,Renata,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-06,Straight Time,8.00
+TS-2610,approved,DEMO-V-1001,Duarte,Renata,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-07,Straight Time,8.00
+TS-2610,approved,DEMO-V-1001,Duarte,Renata,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-07,Overtime,1.00
+TS-2610,approved,DEMO-V-1001,Duarte,Renata,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-08,Straight Time,8.00
+TS-2610,approved,DEMO-V-1001,Duarte,Renata,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-09,Straight Time,8.00
+TS-2611,approved,DEMO-V-1002,Ibarra,Tomás,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-05,Straight Time,8.00
+TS-2611,approved,DEMO-V-1002,Ibarra,Tomás,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-06,Straight Time,8.00
+TS-2611,approved,DEMO-V-1002,Ibarra,Tomás,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-07,Straight Time,8.00
+TS-2611,approved,DEMO-V-1002,Ibarra,Tomás,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-08,Straight Time,8.00
+TS-2612,approved,DEMO-V-1003,Whitaker,Grace,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-05,Straight Time,7.50
+TS-2612,approved,DEMO-V-1003,Whitaker,Grace,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-06,Straight Time,8.00
+TS-2612,approved,DEMO-V-1003,Whitaker,Grace,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-07,Straight Time,8.00
+TS-2612,approved,DEMO-V-1003,Whitaker,Grace,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-08,Straight Time,8.00
+TS-2612,approved,DEMO-V-1003,Whitaker,Grace,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-09,Straight Time,8.00
+TS-2619,pending_approval,DEMO-V-1004,Mercer,Owen,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-05,Straight Time,8.00
+TS-2619,pending_approval,DEMO-V-1004,Mercer,Owen,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-06,Straight Time,8.00
+TS-2619,pending_approval,DEMO-V-1004,Mercer,Owen,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-07,Straight Time,8.00
+TS-2619,pending_approval,DEMO-V-1004,Mercer,Owen,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-08,Straight Time,8.00
+TS-2619,pending_approval,DEMO-V-1004,Mercer,Owen,Prairie Line Manufacturing (demo),Joliet Plant 2,2026-10-09,Straight Time,8.00
