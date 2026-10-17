@@ -4745,5 +4745,151 @@
     "notFoundBody": "Es posible que la dirección esté mal escrita o que el registro ya no exista.",
     "goHome": "Ir a Inicio",
     "loadingPage": "Cargando la página"
+  },
+  "commandMenu": {
+    "title": "Menú de comandos",
+    "description": "Vaya a una página, encuentre un registro o realice una acción.",
+    "open": "Buscar o ir a…",
+    "placeholder": "Busque, o escriba > para acciones, # para facturas y órdenes, @ para personas…",
+    "scopedPlaceholder": "Buscar dentro de {name}…",
+    "empty": "Nada coincide con “{text}”.",
+    "loading": "Buscando registros…",
+    "count": "{count, plural, =0 {Sin resultados} one {# resultado} other {# resultados}}",
+    "removeScope": "Quitar {name} de la búsqueda",
+    "groups": {
+      "suggestions": "Sugerencias",
+      "recent": "Recientes",
+      "pages": "Ir a",
+      "actions": "Acciones",
+      "worker": "Trabajadores",
+      "client": "Clientes",
+      "invoice": "Facturas",
+      "jobOrder": "Órdenes de trabajo",
+      "assignment": "Asignaciones",
+      "help": "Cómo buscar"
+    },
+    "status": {
+      "active": "activa",
+      "ended": "terminada",
+      "cancelled": "cancelada",
+      "draft": "borrador",
+      "issued": "emitida",
+      "paid": "pagada",
+      "void": "anulada"
+    },
+    "actions": {
+      "createJobOrder": "Crear una orden de trabajo…",
+      "payWeek": "Pagar una semana…",
+      "importPlacements": "Importar asignaciones…",
+      "importBank": "Importar un archivo del banco…",
+      "inviteMember": "Invitar a un miembro…",
+      "switchLanguage": "Cambiar a inglés",
+      "shortcuts": "Mostrar los atajos de teclado",
+      "signOut": "Cerrar sesión"
+    },
+    "help": {
+      "actions": "Solo acciones",
+      "work": "Facturas, órdenes de trabajo y asignaciones",
+      "people": "Trabajadores y clientes",
+      "tab": "Buscar dentro del cliente o trabajador resaltado",
+      "newTab": "Abrir en una pestaña nueva",
+      "copy": "Copiar el enlace"
+    },
+    "copied": "Enlace copiado",
+    "shortcut": "Abrir el menú de comandos"
+  },
+  "hoursChecker": {
+    "metaTitle": "Verificador gratuito de 720 horas de Illinois",
+    "eyebrow": "Verificador de 720 horas de Illinois",
+    "title": "Vea qué trabajadores temporales están cerca de la igualdad salarial de Illinois.",
+    "intro": "Illinois exige igualdad salarial para un trabajador por día o temporal después de más de 720 horas con el mismo cliente en 12 meses. Agregue sus horas y este verificador cuenta a cada trabajador con cada cliente como lo hace la nómina semanal de Granite, y muestra quién pasó las 720 horas, quién está cerca y cuándo.",
+    "header": {
+      "signIn": "Iniciar sesión",
+      "demo": "Ver la demostración",
+      "home": "Herramientas gratuitas de Granite"
+    },
+    "tool": {
+      "heading": "Contar horas por trabajador y cliente",
+      "define": "Una fila por trabajador por día: quién trabajó, para qué cliente, en qué fecha y cuántas horas.",
+      "file": "Archivo de horas",
+      "fileHelp": "Un archivo CSV o de Excel con las columnas Worker, Client, Date y Hours (o Trabajador, Cliente, Fecha y Horas), en cualquier orden. Fechas como 2026-03-02 o 3/2/2026; horas como 8, 8.5 u 8:30.",
+      "drop": "Suelte un archivo aquí, o",
+      "choose": "Elija un archivo",
+      "chosen": "{name} elegido",
+      "clearFile": "Quitar el archivo",
+      "paste": "O pegue filas",
+      "pasteHelp": "Pegue desde una hoja de cálculo, con la fila de encabezados primero.",
+      "sample": "Pruebe un archivo de ejemplo",
+      "asOf": "Contar hasta",
+      "asOfHelp": "Las horas después de esta fecha no se cuentan.",
+      "check": "Verificar horas",
+      "checking": "Contando horas",
+      "nothing": "Primero agregue un archivo o pegue filas."
+    },
+    "errors": {
+      "missing": "Este archivo no tiene la columna {columns}. Nombre las columnas Worker, Client, Date y Hours (o Trabajador, Cliente, Fecha y Horas).",
+      "unreadable": "No se pudo leer este archivo. Guárdelo como CSV o Excel (.xlsx) e inténtelo de nuevo.",
+      "tooLarge": "Este archivo es demasiado grande. Verifique hasta 50,000 filas o 5 MB a la vez.",
+      "empty": "No se encontraron filas con horas.",
+      "generic": "No funcionó. Inténtelo de nuevo."
+    },
+    "columns": {
+      "worker": "Trabajador",
+      "client": "Cliente",
+      "date": "Fecha",
+      "hours": "Horas"
+    },
+    "results": {
+      "heading": "Resultados",
+      "over": "Más de 720 horas",
+      "near": "Más de 600 horas",
+      "pairs": "Pares de trabajador y cliente",
+      "pairsNote": "{days, plural, one {# día} other {# días}} de horas contados",
+      "colWorker": "Trabajador",
+      "colClient": "Cliente",
+      "col12": "Últimos 12 meses",
+      "col48": "Últimos 48 meses",
+      "colStatus": "Estado",
+      "col720": "Pasó 720 horas",
+      "col4160": "Pasó 4,160 horas",
+      "statusOver": "Más de 720",
+      "statusNear": "Cerca",
+      "statusOk": "Por debajo",
+      "about": "Alrededor del {date} a este ritmo",
+      "hours": "{hours} h",
+      "download": "Descargar resultados (CSV)",
+      "problems": "{count, plural, one {No se pudo leer # fila} other {No se pudieron leer # filas}}",
+      "problem": "Fila {row}: {what}",
+      "problemWhat": {
+        "date": "la fecha no es una fecha",
+        "hours": "las horas no están entre 0 y 24",
+        "worker": "sin trabajador",
+        "client": "sin cliente"
+      },
+      "file": "illinois-720-horas.csv"
+    },
+    "demo": {
+      "line": "Granite cuenta estas horas cada semana a partir de sus hojas de horas, avisa a las 600 horas y abre la obligación de igualdad salarial el día en que un trabajador pasa las 720.",
+      "button": "Véalo con una agencia de demostración"
+    },
+    "how": {
+      "heading": "Cómo se cuenta",
+      "ruleHeading": "La regla",
+      "rule": "Según la Sección 42 de la Ley de Servicios de Trabajo por Día y Temporal de Illinois, a un trabajador asignado que trabaja con el mismo cliente más de 720 horas en 12 meses se le debe pagar al menos la tarifa y los beneficios del empleado directo comparable del cliente, o su valor en efectivo por hora.",
+      "statute": "Lea 820 ILCS 175/42",
+      "countsHeading": "Qué cuenta",
+      "counts": "Cuentan las horas realmente trabajadas para el mismo cliente; cada cliente se cuenta por separado. El trabajo antes del 1 de abril de 2024 no cuenta. Los 12 meses son móviles: cada día mira los 12 meses que terminan ese día.",
+      "longHeading": "La regla de las 4,160 horas",
+      "long": "Más de 4,160 horas con el mismo cliente en 48 meses trae más obligaciones sobre la información del cliente. El verificador también muestra cuándo se pasaron.",
+      "nearHeading": "El aviso de las 600 horas",
+      "near": "Granite señala a un trabajador que pasa las 600 horas para que haya tiempo de pedir al cliente el salario comparable. Las 600 horas son un aviso de Granite, no de la ley.",
+      "afterHeading": "Después de que un trabajador pasa las 720 horas",
+      "after": "Pague la tarifa de igualdad salarial por las horas después del cruce, con la información del cliente sobre su empleado comparable. La información del cliente debe llegar antes del inicio del siguiente periodo de pago del trabajador."
+    },
+    "privacy": {
+      "heading": "Sus datos",
+      "body": "No hay cuenta y no se guarda nada. Su archivo se lee para contar las horas y luego se olvida; nada de lo que agrega se almacena ni se conserva."
+    },
+    "disclaimer": "Este verificador es una estimación a partir de las horas que usted le da. No conoce las horas trabajadas por medio de otras agencias y no es asesoría legal."
   }
 }

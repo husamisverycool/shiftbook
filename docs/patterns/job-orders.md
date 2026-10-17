@@ -41,6 +41,8 @@ workers, the rate in force today. Open one to see its details, assignments and r
    fields (Attio "Highlights") and the most recent activity with a link to all of it.
 
 ## Interactions
+- The command menu's "Create a job order…" opens this page with the create form open
+  (`_components/command-menu.md`, decision 0038).
 - ↑/↓ or J/K highlight a row; hover also highlights; nothing is selected on open (Linear).
 - Space opens the side panel for the highlighted row and closes it again (Linear peek); in the panel,
   previous/next move through the view (Attio). Enter or the expand control opens the job order page.

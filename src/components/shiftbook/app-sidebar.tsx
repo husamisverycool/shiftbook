@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/_layouts/app.md — Linear sidebar and keyboard navigation.
-import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
+import { ActivityIcon, BanknoteIcon, BriefcaseIcon, Building2Icon, ChartColumnIcon, ChevronDownIcon, ClipboardCheckIcon, ContactRoundIcon, CreditCardIcon, FileSpreadsheetIcon, HouseIcon, KeyboardIcon, LandmarkIcon, LogOutIcon, ReceiptTextIcon, SearchIcon, SettingsIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { signOutAction } from "@/app/[locale]/(auth)/actions";
@@ -11,6 +11,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupConte
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { can, type Role } from "@/server/permissions";
 import { useCan } from "./abilities";
+import { CommandMenu, type CommandPage } from "./command-menu";
 import { initialsOf, withoutNote } from "./person";
 import { Tip } from "./tip";
 
@@ -55,6 +56,36 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
   // Single sign-on stays in the menu while changes are paused (turning it off still works; decision 0036).
   const mayManageMembers = can({ role: person.role }, "members");
   const mayManageBilling = useCan()("billing");
+
+  // The command menu (decision 0038): every area, the settings pages this person opens, and its actions.
+  const [commandOpen, setCommandOpen] = useState(false);
+  const tc = useTranslations("commandMenu");
+  const commandPages = useMemo<CommandPage[]>(
+    () => [
+      ...areas.map((a) => ({ href: a.href, label: t(a.key), icon: a.icon, jump: a.jump })),
+      { href: "/settings/payroll", label: t("settings"), icon: SettingsIcon },
+      ...(showMargin ? [{ href: "/settings/margin", label: t("marginSettings"), icon: ChartColumnIcon }] : []),
+      { href: "/settings/compliance", label: t("complianceSettings"), icon: ShieldCheckIcon },
+      { href: "/settings/members", label: t("members"), icon: UserCogIcon },
+      ...(mayManageMembers ? [{ href: "/settings/sso", label: t("sso"), icon: Building2Icon }] : []),
+      ...(mayViewActivity ? [{ href: "/settings/activity", label: t("activity"), icon: ActivityIcon }] : []),
+      ...(mayManageBilling ? [{ href: "/settings/billing", label: t("billing"), icon: CreditCardIcon }] : []),
+      { href: "/settings/account", label: t("account"), icon: UserIcon },
+    ],
+    [areas, t, showMargin, mayManageMembers, mayViewActivity, mayManageBilling],
+  );
+
+  // ⌘K / Ctrl+K toggles it from anywhere, fields included (GitHub: the open shortcut also closes it).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -161,6 +192,16 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          {/* Linear: the search row under the workspace menu, its shortcut beside it (decision 0038). */}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => setCommandOpen(true)} className="text-sidebar-foreground/80 [&>svg]:text-muted-foreground" data-testid="command-menu-button">
+                <SearchIcon />
+                <span>{tc("open")}</span>
+              </SidebarMenuButton>
+              <kbd className="pointer-events-none absolute top-1.5 right-2 rounded border bg-background px-1.5 font-mono text-xs text-muted-foreground">⌘K</kbd>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
           <nav aria-label={t("label")} className="contents">
@@ -227,12 +268,17 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
               </div>
             ))}
             <dt>
+              <kbd className="rounded border px-1.5 font-mono text-xs">⌘</kbd> <kbd className="rounded border px-1.5 font-mono text-xs">K</kbd>
+            </dt>
+            <dd>{tc("shortcut")}</dd>
+            <dt>
               <kbd className="rounded border px-1.5 font-mono text-xs">?</kbd>
             </dt>
             <dd>{t("shortcuts")}</dd>
           </dl>
         </DialogContent>
       </Dialog>
+      <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} pages={commandPages} onShortcuts={() => setHelp(true)} />
     </>
   );
 }
