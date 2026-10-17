@@ -33,7 +33,7 @@ export async function testConnectionAction(key: string): Promise<TestResult | { 
 
 /** Forgets a recruiting system's saved mapping (Zapier's Delete): the next import maps its columns again. */
 export async function forgetMappingAction(source: string): Promise<{ ok: true } | { ok: false; error: "stale" }> {
-  const actor = await actorAllowedTo("placements");
+  const actor = await actorAllowedTo("placementTerms");
   if (!z.enum(SOURCES).safeParse(source).success) return { ok: false, error: "stale" };
   await withAgency(actor.agencyId, async (tx) => {
     const removed = await tx.delete(s.mappingProfiles).where(eq(s.mappingProfiles.source, `placements:${source}`)).returning({ id: s.mappingProfiles.id, definition: s.mappingProfiles.definition });

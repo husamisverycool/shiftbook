@@ -152,7 +152,7 @@ export async function sendAgencyMessage(tx: Tx, actor: Actor, workerId: string, 
 
 /** Whether a client's workers may clock in from the app (and with their location). */
 export async function setClientWorkerClock(tx: Tx, actor: Actor, clientId: string, value: string): Promise<{ ok: true } | { ok: false; error: AgencyError }> {
-  if (!can(actor, "placements")) return { ok: false, error: "not_allowed" };
+  if (!can(actor, "placementTerms")) return { ok: false, error: "not_allowed" };
   if (!UUID.test(clientId)) return { ok: false, error: "not_found" };
   if (value !== "off" && value !== "on" && value !== "location") return { ok: false, error: "invalid" };
   const [c] = await tx.select({ id: s.clients.id, workerClock: s.clients.workerClock }).from(s.clients).where(eq(s.clients.id, clientId)).for("update");

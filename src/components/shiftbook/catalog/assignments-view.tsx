@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { AssignmentRow } from "@/server/catalog/queries";
+import { useCan } from "../abilities";
 import { EmptyState } from "../empty-state";
 import { listDate, longDate, money } from "../format";
 import type { CatalogOptions } from "./job-order-form";
@@ -294,7 +295,10 @@ function CreateAssignment({ options, today, onClose }: { options: CatalogOptions
 }
 
 /** Whose placement it is (slice i, decision I10; Bullhorn User Scorecard by recruiter): saves when chosen. */
-function RecruiterField({ row, users, canChange }: { row: AssignmentRow; users: CatalogOptions["users"]; canChange: boolean }) {
+function RecruiterField({ row, users, canChange: mayPlace }: { row: AssignmentRow; users: CatalogOptions["users"]; canChange: boolean }) {
+  // Who is credited with the placement is a term of it: the Owner's and Coordinators' (security review).
+  const can = useCan();
+  const canChange = mayPlace && can("placementTerms");
   const t = useTranslations("assignments");
   const te = useTranslations("convert.errors");
   const router = useRouter();

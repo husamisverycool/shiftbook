@@ -158,8 +158,8 @@ export type WorkerIdResult = SettingsResult | { ok: false; error: "taken"; by: s
 
 /** Sets (or, with an empty id, clears) a worker's id in a payroll system. */
 export async function setWorkerPayrollId(tx: Tx, actor: Actor, workerId: string, system: PayrollSystem, id: string, title?: string): Promise<WorkerIdResult> {
-  // The roster's (the Owner and Coordinators, decision 0027); the settings page's tab is the Owner's.
-  if (!can(actor, "workers")) return { ok: false, error: "not_allowed" };
+  // The Owner's and Coordinators' (decision 0027; not the Recruiter's); the settings page's tab is the Owner's.
+  if (!can(actor, "employment")) return { ok: false, error: "not_allowed" };
   // Two people setting the same id on two workers at once: the second waits and sees the first.
   await lockPayrollSettings(tx, actor.agencyId, "exclusive");
   if (!Object.values(SYSTEM_OF).includes(system)) return { ok: false, error: "invalid", problems: [{ field: "system", rule: "choose_system", message: "Choose a payroll system." }] };

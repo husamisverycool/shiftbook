@@ -243,7 +243,9 @@ describe("clock in and out", () => {
     const [client] = await owner.db.select({ id: s.clients.id }).from(s.clients).innerJoin(s.jobOrders, eq(s.jobOrders.clientId, s.clients.id)).innerJoin(s.assignments, eq(s.assignments.jobOrderId, s.jobOrders.id)).where(eq(s.assignments.id, assignmentId("daniel-ruiz")));
     expect((await asDaniel((tx) => clockOf(tx, DANIEL, TODAY))).choices).toEqual([]);
     expect(await inAgency((tx) => setClientWorkerClock(tx, accountant, client!.id, "on"))).toEqual({ ok: false, error: "not_allowed" });
-    expect(await inAgency((tx) => setClientWorkerClock(tx, recruiter, client!.id, "location"))).toEqual({ ok: true });
+    // A client's clock-in setting is a placement's term: not the Recruiter's (security review, slice t).
+    expect(await inAgency((tx) => setClientWorkerClock(tx, recruiter, client!.id, "location"))).toEqual({ ok: false, error: "not_allowed" });
+    expect(await inAgency((tx) => setClientWorkerClock(tx, theOwner, client!.id, "location"))).toEqual({ ok: true });
     const view = await asDaniel((tx) => clockOf(tx, DANIEL, TODAY));
     expect(view.choices).toHaveLength(1);
     const a = view.choices[0]!.assignmentId;
@@ -262,7 +264,7 @@ describe("clock in and out", () => {
 
   it("closes a forgotten clock-in without its end, for a person to fill in, and tells the worker", async () => {
     const [client] = await owner.db.select({ id: s.clients.id }).from(s.clients).innerJoin(s.jobOrders, eq(s.jobOrders.clientId, s.clients.id)).innerJoin(s.assignments, eq(s.assignments.jobOrderId, s.jobOrders.id)).where(eq(s.assignments.id, assignmentId("daniel-ruiz")));
-    await inAgency((tx) => setClientWorkerClock(tx, recruiter, client!.id, "on"));
+    await inAgency((tx) => setClientWorkerClock(tx, theOwner, client!.id, "on"));
     const a = (await asDaniel((tx) => clockOf(tx, DANIEL, TODAY))).choices[0]!.assignmentId;
     const at = new Date("2026-10-08T12:00:00Z");
     expect(await asDaniel((tx) => clockIn(tx, daniel, a, null, TODAY, at))).toEqual({ ok: true });
@@ -276,11 +278,11 @@ describe("clock in and out", () => {
 
   it("marks a clock-out after the client turned the clock off, for a person to check", async () => {
     const [client] = await owner.db.select({ id: s.clients.id }).from(s.clients).innerJoin(s.jobOrders, eq(s.jobOrders.clientId, s.clients.id)).innerJoin(s.assignments, eq(s.assignments.jobOrderId, s.jobOrders.id)).where(eq(s.assignments.id, assignmentId("daniel-ruiz")));
-    await inAgency((tx) => setClientWorkerClock(tx, recruiter, client!.id, "on"));
+    await inAgency((tx) => setClientWorkerClock(tx, theOwner, client!.id, "on"));
     const a = (await asDaniel((tx) => clockOf(tx, DANIEL, TODAY))).choices[0]!.assignmentId;
     const at = new Date("2026-10-08T12:00:00Z");
     await asDaniel((tx) => clockIn(tx, daniel, a, null, TODAY, at));
-    await inAgency((tx) => setClientWorkerClock(tx, recruiter, client!.id, "off"));
+    await inAgency((tx) => setClientWorkerClock(tx, theOwner, client!.id, "off"));
     const out = await asDaniel((tx) => clockOut(tx, daniel, null, new Date(at.getTime() + 4 * 60 * 60_000)));
     if (!out.ok) throw new Error(out.error);
     const [entry] = await owner.db.select().from(s.timeEntries).where(eq(s.timeEntries.id, out.entryId));

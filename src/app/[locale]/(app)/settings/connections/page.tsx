@@ -16,5 +16,5 @@ export default async function ConnectionsPage(props: { params: Promise<{ locale:
   const { tab } = await props.searchParams;
   const actor = await currentActor();
   const view = await withAgency(actor.agencyId, (tx) => connectionsView(tx));
-  return <ConnectionsSettings view={view} tab={tab === "available" ? "available" : "connected"} canForget={can(actor, "placements")} />;
+  return <ConnectionsSettings view={view} tab={tab === "available" ? "available" : "connected"} canForget={can(actor, "placementTerms")} />;
 }

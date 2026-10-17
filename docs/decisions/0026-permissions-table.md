@@ -31,6 +31,13 @@ was the demo Owner.
   "anyone but the accountant"); it is now the Coordinator's and the Owner's work, as SPEC §2 reads.
 - The demo's "Reset demo" is the demo's own control, not the agency's: anyone in a demo session may
   use it.
+- Slice t added the Recruiter (SPEC §2: job orders, placements, worker onboarding) and `workerApp`
+  (Owner, Coordinator, Recruiter: onboarding links, messages with workers). After its security
+  review (2026-10-17), two abilities keep the Recruiter to that: `placementTerms` (Owner,
+  Coordinator) — rate cards, who is credited as a placement's recruiter (their own margin credit), a
+  client's clock-in setting, saved import mappings; `employment` (Owner, Coordinator) — a worker's
+  payroll numbers and ending or restarting employment. `placements` keeps job orders, placements and
+  the placement import; `workers` keeps a worker's details, documents and an SSN entered.
 
 ## Alternatives considered
 - Permissions per person (Rippling's custom roles): more than SPEC asks; four fixed roles are what a

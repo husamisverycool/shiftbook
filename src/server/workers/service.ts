@@ -131,14 +131,14 @@ export async function revealSsn(tx: Tx, actor: Actor, id: string, reason: string
 
 /** A payroll number from the profile (the same rules as the payroll settings' Worker ids tab). */
 export async function setWorkerPayrollNumber(tx: Tx, actor: Actor, id: string, system: PayrollSystem, value: string, title?: string): Promise<WorkerResult | { ok: false; error: "taken"; by: string } | { ok: false; error: "invalid"; problems: { field: string; rule: string; message: string }[] }> {
-  if (!can(actor, "workers")) return { ok: false, error: "not_allowed" };
+  if (!can(actor, "employment")) return { ok: false, error: "not_allowed" };
   const r = await setWorkerPayrollId(tx, actor, id, system, typeof value === "string" ? value.trim() : "", title);
   return r as WorkerResult | { ok: false; error: "taken"; by: string } | { ok: false; error: "invalid"; problems: { field: string; rule: string; message: string }[] };
 }
 
 /** Employment ends on a date (Toast's status change); the record stays. */
 export async function endEmployment(tx: Tx, actor: Actor, id: string, endedOn: string, today: string): Promise<WorkerResult> {
-  if (!can(actor, "workers")) return { ok: false, error: "not_allowed" };
+  if (!can(actor, "employment")) return { ok: false, error: "not_allowed" };
   if (!isIsoDate(endedOn)) return { ok: false, error: "invalid", field: "endedOn" };
   const w = await workerOf(tx, id);
   if (!w) return { ok: false, error: "not_found" };
@@ -151,7 +151,7 @@ export async function endEmployment(tx: Tx, actor: Actor, id: string, endedOn: s
 
 /** Back to work (Toast's rehire). */
 export async function rehire(tx: Tx, actor: Actor, id: string): Promise<WorkerResult> {
-  if (!can(actor, "workers")) return { ok: false, error: "not_allowed" };
+  if (!can(actor, "employment")) return { ok: false, error: "not_allowed" };
   const w = await workerOf(tx, id);
   if (!w) return { ok: false, error: "not_found" };
   if (w.status === "active") return { ok: false, error: "active" };

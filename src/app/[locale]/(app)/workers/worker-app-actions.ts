@@ -81,7 +81,7 @@ export async function openWorkerFormAction(workerId: string, kind: string, reaso
 }
 
 export async function setClientWorkerClockAction(clientId: string, value: string): Promise<{ ok: true } | Fail<"invalid" | "not_found" | "not_allowed">> {
-  const actor = await actorAllowedTo("placements");
+  const actor = await actorAllowedTo("placementTerms");
   const r = await withAgency(actor.agencyId, (tx) => setClientWorkerClock(tx, actor, clientId, String(value)));
   revalidatePath("/[locale]/(app)/clients/[id]", "page");
   if (r.ok) return r;

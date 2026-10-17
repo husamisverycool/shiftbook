@@ -70,7 +70,7 @@ export async function revealSsnAction(workerId: string, reason: string): Promise
 }
 
 export async function setPayrollNumberAction(workerId: string, system: string, value: string, title?: string): Promise<WorkerActionResult> {
-  const actor = await actorAllowedTo("workers");
+  const actor = await actorAllowedTo("employment");
   if (!id.safeParse(workerId).success || !(SYSTEMS as readonly string[]).includes(system) || !text.safeParse(value).success || (title !== undefined && !text.safeParse(title).success)) return { ok: false, error: "generic" };
   const r = await withAgency(actor.agencyId, (tx) => setWorkerPayrollNumber(tx, actor, workerId, system as (typeof SYSTEMS)[number], value, title));
   refresh();
@@ -78,7 +78,7 @@ export async function setPayrollNumberAction(workerId: string, system: string, v
 }
 
 export async function endEmploymentAction(workerId: string, endedOn: string): Promise<WorkerActionResult> {
-  const actor = await actorAllowedTo("workers");
+  const actor = await actorAllowedTo("employment");
   if (!id.safeParse(workerId).success || !isoDate.safeParse(endedOn).success) return { ok: false, error: "invalid", field: "endedOn" };
   const r = await withAgency(actor.agencyId, async (tx) => endEmployment(tx, actor, workerId, endedOn, await agencyToday(tx)));
   refresh();
@@ -86,7 +86,7 @@ export async function endEmploymentAction(workerId: string, endedOn: string): Pr
 }
 
 export async function rehireAction(workerId: string): Promise<WorkerActionResult> {
-  const actor = await actorAllowedTo("workers");
+  const actor = await actorAllowedTo("employment");
   if (!id.safeParse(workerId).success) return { ok: false, error: "not_found" };
   const r = await withAgency(actor.agencyId, (tx) => rehire(tx, actor, workerId));
   refresh();

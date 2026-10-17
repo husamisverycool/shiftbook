@@ -307,7 +307,10 @@ function RevealDialog({ profile, onClose }: { profile: WorkerProfile; onClose: (
 type Typed = Record<PayrollSystem, { id: string; title: string }>;
 type RowProblem = SettingProblem | { field: "id"; rule: "taken"; by: string; message: string };
 
-export function PayrollSection({ profile, mayChange }: { profile: WorkerProfile; mayChange: boolean }) {
+export function PayrollSection({ profile, mayChange: mayEdit }: { profile: WorkerProfile; mayChange: boolean }) {
+  // Payroll numbers are the payroll side: the Owner's and Coordinators' ("employment").
+  const can = useCan();
+  const mayChange = mayEdit && can("employment");
   const t = useTranslations("workers");
   const tp = useTranslations("settings.payroll.workers");
   const id = useId();

@@ -16,7 +16,7 @@ export function ClientClockSetting({ clientId, value }: { clientId: string; valu
   const te = useTranslations("workerAppAgency.phoneErrors");
   const id = useId();
   const router = useRouter();
-  const mayChange = useCan()("placements");
+  const mayChange = useCan()("placementTerms");
   const [current, setCurrent] = useState(value);
   const [pending, start] = useTransition();
   return (

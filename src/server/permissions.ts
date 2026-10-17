@@ -15,8 +15,14 @@ export const ABILITIES = {
   hours: ["owner", "coordinator"],
   /** Approving or reopening a weekly run, the payroll files, corrections, which clients must approve first. */
   run: ["owner"],
-  /** Job orders, rate cards, placements, placement import, recruiters. */
+  /** Job orders, placements, placement import. */
   placements: ["owner", "coordinator", "recruiter"],
+  /**
+   * A placement's terms: rate cards (pay and bill rates), who is credited as its recruiter, a client's
+   * clock-in setting, saved import mappings. Not the Recruiter's (security review of slice t): a
+   * recruiter would otherwise set their own margin credit and the rates behind it.
+   */
+  placementTerms: ["owner", "coordinator"],
   /** A client's billing details. */
   clientBilling: ["owner", "billing"],
   /** Payments, credits, write-offs, short-pays, reminders, the bank file. */
@@ -27,8 +33,10 @@ export const ABILITIES = {
   settings: ["owner"],
   /** Invites, roles and suspensions. */
   members: ["owner"],
-  /** The worker roster: a worker's details, payroll numbers, documents, an SSN entered, employment (slice k). */
+  /** The worker roster: a worker's details, documents, an SSN entered (slice k). */
   workers: ["owner", "coordinator", "recruiter"],
+  /** A worker's payroll numbers and the end or restart of their employment: the payroll side, not the Recruiter's. */
+  employment: ["owner", "coordinator"],
   /** Onboarding links and the worker app's messages with a worker (slice t; SPEC §27). */
   workerApp: ["owner", "coordinator", "recruiter"],
   /** A whole SSN on screen, with a reason, every time recorded (SPEC §2, §17). */

@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { WorkerProfile } from "@/server/workers/queries";
+import { useCan } from "../abilities";
 import { longDate } from "../format";
 import { mediumDate } from "./dates";
 import { FieldError, useWorkerFailure } from "./results";
@@ -35,7 +36,10 @@ export function EmploymentTab({ profile, today, mayChange }: { profile: WorkerPr
   );
 }
 
-function StatusSection({ profile, today, mayChange }: { profile: WorkerProfile; today: string; mayChange: boolean }) {
+function StatusSection({ profile, today, mayChange: mayEdit }: { profile: WorkerProfile; today: string; mayChange: boolean }) {
+  // Ending or restarting employment is the payroll side: the Owner's and Coordinators' ("employment").
+  const can = useCan();
+  const mayChange = mayEdit && can("employment");
   const t = useTranslations("workers.profile.employment");
   const tc = useTranslations("common");
   const locale = useLocale();
