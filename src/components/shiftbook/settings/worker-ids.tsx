@@ -174,5 +174,5 @@ export function WorkerIds({ system, workers, filter, onFilter, canEdit }: { syst
 
 /** The format whose name names the system. */
 function systemFormat(system: PayrollSystem) {
-  return ({ gusto: "gusto_hours_csv", qbd: "qbd_iif", qbo: "qbo_time_csv", adp_wfn: "adp_wfn_paydata", adp_run: "adp_run_csv", spreadsheet: "spreadsheet_csv" } as const)[system];
+  return ({ gusto: "gusto_hours_csv", qbd: "qbd_iif", qbo: "qbo_time_csv", adp_wfn: "adp_wfn_paydata", adp_run: "adp_run_csv", paychex: "paychex_flex_csv", paylocity: "paylocity_time_csv", spreadsheet: "spreadsheet_csv" } as const)[system];
 }

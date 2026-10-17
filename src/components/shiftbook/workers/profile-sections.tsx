@@ -24,7 +24,7 @@ import { FieldError, useWorkerFailure } from "./results";
 import { EditButtons, Facts, Section, useEscapeCancels } from "./worker-profile";
 import { useDateTime } from "../agency-zone";
 
-const SYSTEMS: PayrollSystem[] = ["gusto", "qbd", "qbo", "adp_wfn", "adp_run", "spreadsheet"];
+const SYSTEMS: PayrollSystem[] = ["gusto", "qbd", "qbo", "adp_wfn", "adp_run", "paychex", "paylocity", "spreadsheet"];
 
 export function PersonalSection({ profile, mayChange }: { profile: WorkerProfile; mayChange: boolean }) {
   const t = useTranslations("workers");

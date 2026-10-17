@@ -18,6 +18,8 @@ export const MAPPING_VERSION: Record<ExportFormat, string> = {
   qbo_time_csv: "qbo-time-v1",
   adp_wfn_paydata: "adp-wfn-v1",
   adp_run_csv: "adp-run-v1",
+  paychex_flex_csv: "paychex-flex-spi-v1",
+  paylocity_time_csv: "paylocity-timeimprt-v1",
   spreadsheet_csv: "spreadsheet-v1",
 };
 

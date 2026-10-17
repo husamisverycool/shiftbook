@@ -19,6 +19,7 @@ import { useRouter } from "@/i18n/navigation";
 import { adpWfnFileName, DEFAULT_LAYOUT, EXPORT_FORMATS, SYSTEM_OF, type ExportFormat, type PayrollTarget, type SettingProblem } from "@/exports/targets";
 import type { PayrollSettingsView } from "@/server/payroll/queries";
 import { EarningCodes } from "./earning-codes";
+import { PayrollSample } from "./payroll-sample";
 import { problemFor } from "./problems";
 import { SpreadsheetColumns } from "./spreadsheet-columns";
 import { WorkerIds } from "./worker-ids";
@@ -36,6 +37,7 @@ interface Fields {
   companyName: string;
   companyCreateTime: string;
   customer: string;
+  clientId: string;
 }
 
 function fieldsOf(target: PayrollTarget | null): Fields {
@@ -46,6 +48,7 @@ function fieldsOf(target: PayrollTarget | null): Fields {
     companyName: target?.format === "qbd_iif" && target.version === "2021_or_earlier" ? target.companyName : "",
     companyCreateTime: target?.format === "qbd_iif" && target.version === "2021_or_earlier" ? target.companyCreateTime : "",
     customer: target?.format === "qbo_time_csv" ? target.customer : "",
+    clientId: target?.format === "paychex_flex_csv" ? target.clientId : "",
   };
 }
 
@@ -62,6 +65,10 @@ function fileNameOf(format: ExportFormat, f: Fields): string | null {
       return /^[A-Z0-9]{2,3}$/.test(f.adpCompanyCode) ? adpWfnFileName(f.adpCompanyCode) : "PRcccEPI.csv";
     case "adp_run_csv":
       return "adp-run-YYYY-MM-DD-to-YYYY-MM-DD.csv";
+    case "paychex_flex_csv":
+      return "paychex-flex-YYYY-MM-DD-to-YYYY-MM-DD.csv";
+    case "paylocity_time_csv":
+      return "paylocity-time-import-YYYY-MM-DD-to-YYYY-MM-DD.csv";
     case "spreadsheet_csv":
       return null;
   }
@@ -133,6 +140,10 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
         return { format: f, companyCode: fields.adpCompanyCode };
       case "adp_run_csv":
         return { format: f, companyCode: fields.runCompanyCode };
+      case "paychex_flex_csv":
+        return { format: f, clientId: fields.clientId };
+      case "paylocity_time_csv":
+        return { format: f };
       case "spreadsheet_csv":
         return { format: f, layout: view.target?.format === "spreadsheet_csv" ? view.target.layout : DEFAULT_LAYOUT };
     }
@@ -243,6 +254,8 @@ export function PayrollSettings({ view, tab: initialTab, filter: initialFilter }
             {format === "adp_wfn_paydata" && field("adpCompanyCode", tp("fields.companyCode"), tp("help.adpCompanyCode"), "companyCode", { uppercase: true })}
             {format === "adp_run_csv" && field("runCompanyCode", tp("fields.companyCode"), tp("help.runCompanyCode"), "companyCode")}
             {format === "qbo_time_csv" && field("customer", tp("fields.customer"), tp("help.customer"), "customer")}
+            {format === "paychex_flex_csv" && field("clientId", tp("fields.clientId"), tp("help.clientId"), "clientId")}
+            {(format === "paychex_flex_csv" || format === "paylocity_time_csv") && <PayrollSample format={format} disabled={!view.canEdit} onClientId={format === "paychex_flex_csv" ? (id) => set("clientId", id) : undefined} />}
             {format === "qbd_iif" && (
               <fieldset className="flex flex-col gap-2">
                 <legend className="mb-2 text-sm font-medium">{tp("fields.version")}</legend>

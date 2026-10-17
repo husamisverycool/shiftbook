@@ -22,6 +22,7 @@ Source URL: https://help.deputy.com/hc/en-au/articles/4694853299087-Exporting-to
 Source URL: https://quickbooks.intuit.com/learn-support/en-us/help-articles/map-quickbooks-payroll-items/00/380722
 Source URL: https://support.clicktime.com/hc/en-us/articles/41018977335565-Export-Payroll-Data-to-ADP
 Source URL: https://help.workyard.com/en/articles/15467712-how-to-map-pay-types-for-quickbooks-online-payroll-exports
+Source URL: https://support.avionte.com/hc/en-us/articles/55995315997203-Bulk-Import-Functionality-Jobs-Placements-and-Companies
 Source URL: https://linear.app/docs/workspaces
 Source URL: https://linear.app/docs/account-preferences
 Source URL: https://linear.app/docs/scim
@@ -47,13 +48,18 @@ centred column, each section's rows in a rounded bordered panel, a form's Save i
    2. A panel of rows, one per system (Linear's rows; Deputy's format list; §7.7 capability hint): the
       system's name (with "In use" beside the one in use) over a one-line hint of what its file carries,
       the radio at the row's right; the whole row chooses it. Gusto, QuickBooks Desktop, QuickBooks
-      Online, ADP Workforce Now, RUN Powered by ADP, Spreadsheet.
+      Online, ADP Workforce Now, RUN Powered by ADP, Paychex Flex, Paylocity, Spreadsheet (decision 0040).
    3. Under it, once a system is chosen, a panel with only that system's own fields (Deputy: fields
       appear once a format is chosen; 7shifts: the company code), label over field with its rule as
       the hint (Linear's SAML setup): ADP Workforce Now and RUN — company code; QuickBooks Desktop —
       version (2022 and later, or 2021 and earlier with the company name and company file number from a
-      Timer Lists export); QuickBooks Online — the customer every row is recorded against. Then the
-      file name the system expects, read only (7shifts; Deputy).
+      Timer Lists export); QuickBooks Online — the customer every row is recorded against; Paychex
+      Flex — client id. Then the file name the system expects, read only (7shifts; Deputy).
+      Paychex Flex and Paylocity add **Read a sample file** (Avionté BOLD's "create a mapping from a
+      file", docs/research/connections-exports-slice-s.md §3): a dashed box with its title and one
+      line at the left and the button at the right; once a file is read, one line says whether its
+      columns are the ones Granite writes (with any difference), the client id found (filled into the
+      field, kept on Save) and the codes found, for the Codes tab. The file is read in the browser.
    4. That panel's foot: when it was last changed and by whom at the left; "Saved" and **Save** (7shifts
       saves explicitly) at the right.
 3. **Tabs** (7shifts Settings tabs) for the system in use: **Earning codes** · **Worker ids** ·

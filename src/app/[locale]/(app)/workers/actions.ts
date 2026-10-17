@@ -16,7 +16,7 @@ import { addWorkerDocument, createWorker, endEmployment, openWorkerDocument, reh
 const id = z.uuid();
 const text = z.string().max(500);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const SYSTEMS = ["gusto", "qbd", "qbo", "adp_wfn", "adp_run", "spreadsheet"] as const;
+const SYSTEMS = ["gusto", "qbd", "qbo", "adp_wfn", "adp_run", "paychex", "paylocity", "spreadsheet"] as const;
 
 export type WorkerActionResult<T = object> = WorkerResult<T> | { ok: false; error: "confirm" | "generic" | "taken"; by?: string } | { ok: false; error: "invalid"; problems: { field: string; rule: string; message: string }[] };
 

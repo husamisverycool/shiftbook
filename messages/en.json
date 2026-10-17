@@ -485,7 +485,9 @@
         "qbo_time_csv": "QuickBooks Online time import",
         "adp_wfn_paydata": "ADP Workforce Now paydata",
         "adp_run_csv": "RUN Powered by ADP time sheet import",
-        "spreadsheet_csv": "Spreadsheet"
+        "spreadsheet_csv": "Spreadsheet",
+        "paychex_flex_csv": "Paychex Flex payroll import",
+        "paylocity_time_csv": "Paylocity time import"
       },
       "systems": {
         "gusto_hours_csv": "Gusto",
@@ -493,7 +495,9 @@
         "qbo_time_csv": "QuickBooks Online",
         "adp_wfn_paydata": "ADP",
         "adp_run_csv": "RUN",
-        "spreadsheet_csv": "the receiver"
+        "spreadsheet_csv": "the receiver",
+        "paychex_flex_csv": "Paychex Flex",
+        "paylocity_time_csv": "Paylocity"
       },
       "systemGross": "Gross {system} will compute",
       "dollars": "Paid as dollars"
@@ -1461,6 +1465,14 @@
           "name": "RUN Powered by ADP",
           "carries": "Hours at the stored rate, or dollars, under your earnings codes."
         },
+        "paychex_flex_csv": {
+          "name": "Paychex Flex",
+          "carries": "Hours with their rate, or dollars, under your pay components."
+        },
+        "paylocity_time_csv": {
+          "name": "Paylocity",
+          "carries": "Hours with their rate, or dollars, under your earning codes."
+        },
         "spreadsheet_csv": {
           "name": "Spreadsheet",
           "carries": "Every pay line, in the columns you choose (a PEO's or factoring company's template)."
@@ -1474,7 +1486,8 @@
         "companyName": "Company name",
         "companyCreateTime": "Company file number",
         "customer": "Customer",
-        "fileName": "File name: {name}"
+        "fileName": "File name: {name}",
+        "clientId": "Client ID"
       },
       "help": {
         "adpCompanyCode": "ADP's company code: 2 or 3 capital letters or digits.",
@@ -1482,7 +1495,8 @@
         "companyName": "Exactly as QuickBooks shows it in Company Information.",
         "companyCreateTime": "The number on the second line of a Timer Lists export from QuickBooks.",
         "customer": "The QuickBooks Online customer every row is recorded against; import apps need one. Use one you keep for payroll time.",
-        "spreadsheetFileName": "Set the file name in Spreadsheet columns."
+        "spreadsheetFileName": "Set the file name in Spreadsheet columns.",
+        "clientId": "Paychex's client id: up to 8 letters or digits. It is in the first column of a Paychex import file."
       },
       "save": "Save",
       "saving": "Saving…",
@@ -1553,7 +1567,9 @@
           "qbo": "QuickBooks Online display name",
           "adp_wfn": "ADP file number",
           "adp_run": "RUN employee id",
-          "spreadsheet": "worker id"
+          "spreadsheet": "worker id",
+          "paychex": "Paychex worker id",
+          "paylocity": "Paylocity employee id"
         }
       },
       "columns": {
@@ -1638,7 +1654,12 @@
         "sheet_id": "Up to 50 characters.",
         "code_text": "A code is text.",
         "choose_as": "Choose hours or dollars.",
-        "no_ssn": "An SSN can't be a payroll number: it would go into the payroll file."
+        "no_ssn": "An SSN can't be a payroll number: it would go into the payroll file.",
+        "paychex_client_id": "Up to 8 letters or digits.",
+        "code_form_paychex_flex_csv": "The pay component exactly as Paychex shows it, up to 20 characters, no commas.",
+        "code_form_paylocity_time_csv": "Up to 10 letters, digits, dashes or underscores, exactly as set up in Paylocity.",
+        "paychex_worker_id": "Up to 10 letters or digits.",
+        "paylocity_id": "Up to 10 letters or digits."
       },
       "errors": {
         "stale": "These settings changed in another tab or window. The page now shows the latest.",
@@ -3558,7 +3579,9 @@
       "qbo": "QuickBooks Online",
       "adp_wfn": "ADP Workforce Now",
       "adp_run": "RUN",
-      "spreadsheet": "Spreadsheet"
+      "spreadsheet": "Spreadsheet",
+      "paychex": "Paychex Flex",
+      "paylocity": "Paylocity"
     },
     "new": {
       "title": "Add worker",
@@ -4369,7 +4392,9 @@
     "whatPo": "PO {po} on the deposit (invoice {invoices})",
     "whatPoMany": "PO {po} on the deposit (invoices {invoices})",
     "whyNamed": "; the client is named on the deposit",
-    "whyOnlyClient": "; the only client with invoices adding up to it"
+    "whyOnlyClient": "; the only client with invoices adding up to it",
+    "noPayrollIdPaychex": "{name} has no Paychex worker id, so the Paychex Flex file could not match them.",
+    "noPayrollIdPaylocity": "{name} has no Paylocity employee id, so the Paylocity file could not match them."
   },
   "identities": {
     "connectedTitle": "Connected accounts",
@@ -4745,5 +4770,14 @@
     "notFoundBody": "The address may be mistyped, or the record no longer exists.",
     "goHome": "Go to Home",
     "loadingPage": "Loading the page"
+  },
+  "payrollSample": {
+    "title": "Read a sample file",
+    "hint": "Choose an import file you already use with this system. Granite checks its columns and lists the codes in it. The file stays on this computer.",
+    "choose": "Choose sample file",
+    "matches": "{name}: the columns are the ones Granite writes ({rows, plural, one {# row} other {# rows}} read).",
+    "differs": "{name}: the columns are not the ones Granite writes.",
+    "clientIdFound": "Client ID in the sample: {id} (filled in above; Save to keep it).",
+    "codesFound": "Codes in the sample, to use on the Codes tab:"
   }
 }

@@ -485,7 +485,9 @@
         "qbo_time_csv": "Importación de tiempo de QuickBooks Online",
         "adp_wfn_paydata": "Datos de pago de ADP Workforce Now",
         "adp_run_csv": "Importación de hojas de horas de RUN Powered by ADP",
-        "spreadsheet_csv": "Hoja de cálculo"
+        "spreadsheet_csv": "Hoja de cálculo",
+        "paychex_flex_csv": "Importación de nómina de Paychex Flex",
+        "paylocity_time_csv": "Importación de horas de Paylocity"
       },
       "systems": {
         "gusto_hours_csv": "Gusto",
@@ -493,7 +495,9 @@
         "qbo_time_csv": "QuickBooks Online",
         "adp_wfn_paydata": "ADP",
         "adp_run_csv": "RUN",
-        "spreadsheet_csv": "quien lo recibe"
+        "spreadsheet_csv": "quien lo recibe",
+        "paychex_flex_csv": "Paychex Flex",
+        "paylocity_time_csv": "Paylocity"
       },
       "systemGross": "Pago bruto que calculará {system}",
       "dollars": "Pagado en dólares"
@@ -1461,6 +1465,14 @@
           "name": "RUN Powered by ADP",
           "carries": "Horas a la tarifa guardada, o dólares, con sus códigos de ingreso."
         },
+        "paychex_flex_csv": {
+          "name": "Paychex Flex",
+          "carries": "Horas con su tarifa, o dólares, con sus componentes de pago."
+        },
+        "paylocity_time_csv": {
+          "name": "Paylocity",
+          "carries": "Horas con su tarifa, o dólares, con sus códigos de ingreso."
+        },
         "spreadsheet_csv": {
           "name": "Hoja de cálculo",
           "carries": "Cada línea de pago, en las columnas que elija (la plantilla de una PEO o empresa de factoraje)."
@@ -1474,7 +1486,8 @@
         "companyName": "Nombre de la empresa",
         "companyCreateTime": "Número del archivo de la empresa",
         "customer": "Cliente",
-        "fileName": "Nombre del archivo: {name}"
+        "fileName": "Nombre del archivo: {name}",
+        "clientId": "ID de cliente"
       },
       "help": {
         "adpCompanyCode": "El código de empresa de ADP: 2 o 3 letras mayúsculas o dígitos.",
@@ -1482,7 +1495,8 @@
         "companyName": "Exactamente como aparece en la información de la empresa en QuickBooks.",
         "companyCreateTime": "El número en la segunda línea de una exportación de listas de Timer desde QuickBooks.",
         "customer": "El cliente de QuickBooks Online con el que se registra cada fila; las aplicaciones de importación lo necesitan. Use uno que reserve para horas de nómina.",
-        "spreadsheetFileName": "El nombre del archivo se define en Columnas de la hoja."
+        "spreadsheetFileName": "El nombre del archivo se define en Columnas de la hoja.",
+        "clientId": "El ID de cliente de Paychex: hasta 8 letras o dígitos. Está en la primera columna de un archivo de importación de Paychex."
       },
       "save": "Guardar",
       "saving": "Guardando…",
@@ -1553,7 +1567,9 @@
           "qbo": "nombre visible en QuickBooks Online",
           "adp_wfn": "número de archivo de ADP",
           "adp_run": "número de empleado de RUN",
-          "spreadsheet": "número de trabajador"
+          "spreadsheet": "número de trabajador",
+          "paychex": "ID de trabajador de Paychex",
+          "paylocity": "ID de empleado de Paylocity"
         }
       },
       "columns": {
@@ -1638,7 +1654,12 @@
         "sheet_id": "Hasta 50 caracteres.",
         "code_text": "Un código es texto.",
         "choose_as": "Elija horas o dólares.",
-        "no_ssn": "Un número de Seguro Social no puede ser número de nómina: iría en el archivo de nómina."
+        "no_ssn": "Un número de Seguro Social no puede ser número de nómina: iría en el archivo de nómina.",
+        "paychex_client_id": "Hasta 8 letras o dígitos.",
+        "code_form_paychex_flex_csv": "El componente de pago tal como lo muestra Paychex, hasta 20 caracteres, sin comas.",
+        "code_form_paylocity_time_csv": "Hasta 10 letras, dígitos, guiones o guiones bajos, tal como está configurado en Paylocity.",
+        "paychex_worker_id": "Hasta 10 letras o dígitos.",
+        "paylocity_id": "Hasta 10 letras o dígitos."
       },
       "errors": {
         "stale": "Esta configuración cambió en otra pestaña o ventana. La página ya muestra lo más reciente.",
@@ -3558,7 +3579,9 @@
       "qbo": "QuickBooks Online",
       "adp_wfn": "ADP Workforce Now",
       "adp_run": "RUN",
-      "spreadsheet": "Hoja de cálculo"
+      "spreadsheet": "Hoja de cálculo",
+      "paychex": "Paychex Flex",
+      "paylocity": "Paylocity"
     },
     "new": {
       "title": "Agregar trabajador",
@@ -4369,7 +4392,9 @@
     "whatPo": "la orden de compra {po} en el depósito (factura {invoices})",
     "whatPoMany": "la orden de compra {po} en el depósito (facturas {invoices})",
     "whyNamed": "; el cliente aparece en el depósito",
-    "whyOnlyClient": "; es el único cliente con facturas que suman eso"
+    "whyOnlyClient": "; es el único cliente con facturas que suman eso",
+    "noPayrollIdPaychex": "{name} no tiene ID de trabajador de Paychex, así que el archivo de Paychex Flex no pudo identificar a esta persona.",
+    "noPayrollIdPaylocity": "{name} no tiene ID de empleado de Paylocity, así que el archivo de Paylocity no pudo identificar a esta persona."
   },
   "identities": {
     "connectedTitle": "Cuentas conectadas",
@@ -4745,5 +4770,14 @@
     "notFoundBody": "Es posible que la dirección esté mal escrita o que el registro ya no exista.",
     "goHome": "Ir a Inicio",
     "loadingPage": "Cargando la página"
+  },
+  "payrollSample": {
+    "title": "Leer un archivo de muestra",
+    "hint": "Elija un archivo de importación que ya usa con este sistema. Granite revisa sus columnas y enumera los códigos que contiene. El archivo no sale de esta computadora.",
+    "choose": "Elegir archivo de muestra",
+    "matches": "{name}: las columnas son las que Granite escribe ({rows, plural, one {# fila leída} other {# filas leídas}}).",
+    "differs": "{name}: las columnas no son las que Granite escribe.",
+    "clientIdFound": "ID de cliente en la muestra: {id} (completado arriba; guarde para conservarlo).",
+    "codesFound": "Códigos en la muestra, para usar en la pestaña Códigos:"
   }
 }

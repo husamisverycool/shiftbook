@@ -19,7 +19,7 @@ import { readCsv, writeCsv } from "./csv";
 import { ExportError } from "./errors";
 import { cmp, eachLine, formatDate, hundredthsToMinutes, readTwoDecimals, signedCents, toHundredths, twoDecimals } from "./lines";
 import type { ExportFixture, ExportResult } from "./registry";
-import { DELIMITERS, layoutProblems, type SpreadsheetField } from "./targets";
+import { DELIMITERS, layoutProblems, type ExportFormat, type SpreadsheetField, type SpreadsheetLayout } from "./targets";
 
 /** cents per hour (exact) → ten-thousandths of a dollar, rounded half up: 1825 → 182500 ("18.2500"). */
 const tenThousandths = (rate: Fraction) => BigInt(roundHalfUpBig(BigInt(rate.num) * 100n, BigInt(rate.den)));
@@ -47,11 +47,29 @@ interface Row {
 
 export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
   const target = targetOf(fixture, "spreadsheet_csv");
-  const layout = target.layout;
-  const bad = layoutProblems(layout);
+  const bad = layoutProblems(target.layout);
   if (bad.length > 0) throw new ExportError("unknown_format", `The spreadsheet layout cannot be used: ${bad.map((p) => p.message).join(" ")}`);
+  return renderLayout(fixture, "spreadsheet_csv", target.layout, { amountOn: "every_row", file: "spreadsheet", receiver: "receiver's" });
+}
+
+/**
+ * How a fixed-layout file differs from the agency's own spreadsheet: `amountOn: "dollars_rows"` —
+ * the receiver takes hours with a rate or an amount, never both (Paychex SPI: "Amount must be empty
+ * if Hours is nonzero"), so hours rows leave the amount blank and are priced hours × the written rate.
+ */
+export interface LayoutOptions {
+  amountOn: "every_row" | "dollars_rows";
+  /** How refusals and the reconciliation name the file. */
+  file: string;
+  /** Whose pay the notes describe ("Paychex Flex"). */
+  receiver: string;
+}
+
+/** One row per worker, workweek, kind of pay and rate, in a layout; read back and reconciled. */
+export function renderLayout(fixture: ExportFixture, format: ExportFormat, layout: SpreadsheetLayout, opts: LayoutOptions): ExportResult {
   const has = (field: SpreadsheetField) => layout.columns.some((c) => c.field === field);
-  const c = collect(fixture, "spreadsheet_csv", { storedRate: false, carries: "every kind of pay" });
+  const c = collect(fixture, format, { storedRate: false, carries: "every kind of pay" });
+  const amountOf = (row: { as: "hours" | "dollars" }) => has("amount") && (opts.amountOn === "every_row" || row.as === "dollars");
 
   // Dollars need an amount column; hours need hours and a rate, or an amount.
   for (const w of c.workers) {
@@ -59,7 +77,7 @@ export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
       w.lines.map((l) => l.line),
       (line) => {
         const bucket = w.lines.find((l) => l.line === line)!.bucket;
-        if (bucket.as === "dollars" && !has("amount")) throw new ExportError("unsupported_earning_type", `${who(w.worker)}: the spreadsheet has no amount column, so it cannot carry ${KIND_TEXT[line.type]}. Add an amount column, or skip this worker and pay it by hand.`);
+        if (bucket.as === "dollars" && !has("amount")) throw new ExportError("unsupported_earning_type", `${who(w.worker)}: the ${opts.file} has no amount column, so it cannot carry ${KIND_TEXT[line.type]}. Add an amount column, or skip this worker and pay it by hand.`);
       },
     );
   }
@@ -115,7 +133,7 @@ export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
       case "rate":
         return row.as === "hours" ? rateText(tenThousandths(row.rate)) : "";
       case "amount":
-        return twoDecimals(row.amountCents);
+        return amountOf(row) ? twoDecimals(row.amountCents) : "";
       case "fixed":
         return fixed ?? "";
     }
@@ -125,10 +143,10 @@ export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
   const bytes = writeCsv(lines, { eol: "\r\n", delimiter });
 
   // What the receiver pays: the amount when the file has one; otherwise hours × the written rate.
-  const notes = correctionNote(fixture, "receiver's");
+  const notes = correctionNote(fixture, opts.receiver);
   let payrollSystemGrossCents = 0;
   for (const row of ordered) {
-    if (has("amount")) {
+    if (amountOf(row)) {
       payrollSystemGrossCents += row.amountCents;
       continue;
     }
@@ -140,7 +158,7 @@ export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
     if (!exactHours || cents !== row.amountCents) {
       const written = exactHours ? `${row.minutes} min written as ${twoDecimals(h)} h (exact)` : `${row.minutes} min written as ${twoDecimals(h)} h (${exactDecimal(row.minutes, 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
       const worker = c.workers[row.workerIndex]!.worker;
-      notes.push(`${who(worker)} — ${row.type}: ${written}. The receiver pays ${twoDecimals(h)} h × ${rateText(t4)} = ${formatCents(cents)}; Granite computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
+      notes.push(`${who(worker)} — ${row.type}: ${written}. ${opts.amountOn === "every_row" ? "The receiver" : opts.receiver} pays ${twoDecimals(h)} h × ${rateText(t4)} = ${formatCents(cents)}; Granite computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
     }
   }
 
@@ -160,10 +178,11 @@ export function renderSpreadsheet(fixture: ExportFixture): ExportResult {
   read.forEach((r, i) => {
     const row = ordered[i]!;
     if (r[at("worker_id")] !== row.id || r[at("earning_code")] !== row.code) problems.push(`row ${i + 1} is not ${row.id} ${row.code}`);
-    if (has("hours") && row.as === "hours" && hundredthsToMinutes(readTwoDecimals(r[at("hours")] ?? "", "hours", "spreadsheet")) !== row.minutes) problems.push(`row ${i + 1} minutes`);
-    if (has("amount") && readTwoDecimals(r[at("amount")] ?? "", "amount", "spreadsheet") !== row.amountCents) problems.push(`row ${i + 1} amount`);
+    if (has("hours") && row.as === "hours" && hundredthsToMinutes(readTwoDecimals(r[at("hours")] ?? "", "hours", opts.file)) !== row.minutes) problems.push(`row ${i + 1} minutes`);
+    if (amountOf(row) && readTwoDecimals(r[at("amount")] ?? "", "amount", opts.file) !== row.amountCents) problems.push(`row ${i + 1} amount`);
+    if (!amountOf(row) && has("amount") && (r[at("amount")] ?? "") !== "") problems.push(`row ${i + 1} has an amount beside its hours`);
   });
-  if (problems.length > 0) throw new ExportError("does_not_reconcile", `The spreadsheet does not reconcile to the run: ${problems.join("; ")}.`);
+  if (problems.length > 0) throw new ExportError("does_not_reconcile", `The ${opts.file} does not reconcile to the run: ${problems.join("; ")}.`);
 
   const name = layout.fileName.replaceAll("{start}", fixture.period.startsOn).replaceAll("{end}", fixture.period.endsOn);
   const dot = name.lastIndexOf(".");

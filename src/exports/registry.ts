@@ -4,6 +4,8 @@ import { ExportError } from "./errors";
 import { renderAdpRun } from "./adp-run";
 import { renderAdpWfn } from "./adp-wfn";
 import { renderGustoHours } from "./gusto-hours";
+import { renderPaychexFlex } from "./paychex-flex";
+import { renderPaylocity } from "./paylocity";
 import { renderQbdIif } from "./qbd-iif";
 import { renderQboTime } from "./qbo-time";
 import { renderSpreadsheet } from "./spreadsheet";
@@ -76,6 +78,10 @@ export function renderExport(fixture: ExportFixture): ExportResult {
       return renderAdpWfn(fixture);
     case "adp_run_csv":
       return renderAdpRun(fixture);
+    case "paychex_flex_csv":
+      return renderPaychexFlex(fixture);
+    case "paylocity_time_csv":
+      return renderPaylocity(fixture);
     case "spreadsheet_csv":
       return renderSpreadsheet(fixture);
     default:
