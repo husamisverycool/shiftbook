@@ -94,12 +94,13 @@ describe("every server action checks the table first", () => {
   });
 
   // An action either asks for an ability (actorAllowedTo("…")), is one of the person's own settings
-  // (currentActor("setup") / their own session), is a client's link (the portal), or only reads.
-  const READS = new Set(["entryHistory"]);
+  // (currentActor("setup") / their own session), is a client's link (the portal), or only reads. The
+  // command menu's search only reads (decision 0038); the free tools are public and store nothing (SPEC §27).
+  const READS = new Set(["entryHistory", "searchRecordsAction"]);
   const OWN = new Set(["resetDemoAction"]);
   for (const file of files) {
     const text = readFileSync(file, "utf8");
-    if (file.includes("(portal)") || file.includes("(auth)")) continue;
+    if (file.includes("(portal)") || file.includes("(auth)") || file.includes("(tools)")) continue;
     const actions = [...text.matchAll(/export async function (\w+)\(/g)].map((m) => [m[1]!, m.index!] as const);
     for (const [name, at] of actions) {
       it(`${file.split("/app/")[1]} ${name}`, () => {

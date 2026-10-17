@@ -5,6 +5,7 @@
 // (no one placed), half (some places open), checked (filled). Lucide's icons, not Linear's.
 import { BriefcaseIcon, Building2Icon, CircleCheckIcon, CircleIcon, ClockIcon, ContrastIcon, LandmarkIcon, MapPinIcon, PlusIcon, ReceiptTextIcon, UsersIcon, WalletIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,14 @@ export function JobOrdersView({ rows, options }: { rows: JobOrderRow[]; options:
   // Decision 0026: job orders are changed by the Owner and coordinators (placements).
   const mayChange = useCan()("placements");
   const [creating, setCreating] = useState(false);
+  // The command menu's "Create a job order…" arrives with ?new=1 and opens the form once (decision 0038).
+  const askedToCreate = useSearchParams().get("new") === "1";
+  const [answered, setAnswered] = useState(false);
+  if (askedToCreate && !answered) {
+    setAnswered(true);
+    if (mayChange) setCreating(true);
+  }
+  if (!askedToCreate && answered) setAnswered(false);
   const tl = useTranslations("list");
   const rate = (c: number | null) => (c === null ? "—" : money(c, locale));
 

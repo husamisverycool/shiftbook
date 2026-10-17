@@ -63,6 +63,8 @@ root frame (demo banner above it).
   Margin, G then O → Compliance (C is taken; O as in "Obligations"), G then W → Workers. Not active
   while typing in a field.
 - `?` (or the sidebar's Keyboard shortcuts) opens the list of keyboard shortcuts (Linear, Stripe).
+- ⌘K / Ctrl+K, or the search row under the workspace menu (Linear's search button), opens the command
+  menu (`_components/command-menu.md`, decision 0038); the shortcuts list names it.
 - After a navigation the content panel fades in (Fluent: "a quick fade transition instead of moving
   or sliding"; Primer's 200ms; `_components/motion.md`, decision 0037); the sidebar stays still.
 

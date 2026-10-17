@@ -4749,5 +4749,151 @@
     "notFoundBody": "The address may be mistyped, or the record no longer exists.",
     "goHome": "Go to Home",
     "loadingPage": "Loading the page"
+  },
+  "commandMenu": {
+    "title": "Command menu",
+    "description": "Go to a page, find a record or run an action.",
+    "open": "Search or jump to…",
+    "placeholder": "Search, or type > for actions, # for invoices and orders, @ for people…",
+    "scopedPlaceholder": "Search within {name}…",
+    "empty": "Nothing matches “{text}”.",
+    "loading": "Finding records…",
+    "count": "{count, plural, =0 {No results} one {# result} other {# results}}",
+    "removeScope": "Remove {name} from the search",
+    "groups": {
+      "suggestions": "Suggestions",
+      "recent": "Recent",
+      "pages": "Go to",
+      "actions": "Actions",
+      "worker": "Workers",
+      "client": "Clients",
+      "invoice": "Invoices",
+      "jobOrder": "Job orders",
+      "assignment": "Assignments",
+      "help": "How to search"
+    },
+    "status": {
+      "active": "active",
+      "ended": "ended",
+      "cancelled": "cancelled",
+      "draft": "draft",
+      "issued": "issued",
+      "paid": "paid",
+      "void": "void"
+    },
+    "actions": {
+      "createJobOrder": "Create a job order…",
+      "payWeek": "Pay a week…",
+      "importPlacements": "Import placements…",
+      "importBank": "Import a bank file…",
+      "inviteMember": "Invite a member…",
+      "switchLanguage": "Switch to Spanish",
+      "shortcuts": "Show keyboard shortcuts",
+      "signOut": "Sign out"
+    },
+    "help": {
+      "actions": "Actions only",
+      "work": "Invoices, job orders and assignments",
+      "people": "Workers and clients",
+      "tab": "Search within the highlighted client or worker",
+      "newTab": "Open in a new tab",
+      "copy": "Copy the link"
+    },
+    "copied": "Link copied",
+    "shortcut": "Open the command menu"
+  },
+  "hoursChecker": {
+    "metaTitle": "Free Illinois 720-hour checker",
+    "eyebrow": "Illinois 720-hour checker",
+    "title": "See which temps are close to Illinois equal pay.",
+    "intro": "Illinois requires equal pay for a day or temporary laborer after more than 720 hours at the same client within 12 months. Add your hours and this checker counts each worker at each client the way Granite's weekly run does, and shows who has passed 720 hours, who is close, and when.",
+    "header": {
+      "signIn": "Sign in",
+      "demo": "See the demo",
+      "home": "Granite free tools"
+    },
+    "tool": {
+      "heading": "Count hours by worker and client",
+      "define": "One row per worker per day: who worked, for which client, on what date, and how many hours.",
+      "file": "Hours file",
+      "fileHelp": "A CSV or Excel file with the columns Worker, Client, Date and Hours, in any order. Dates like 2026-03-02 or 3/2/2026; hours like 8, 8.5 or 8:30.",
+      "drop": "Drop a file here, or",
+      "choose": "Choose a file",
+      "chosen": "{name} chosen",
+      "clearFile": "Remove the file",
+      "paste": "Or paste rows",
+      "pasteHelp": "Paste from a spreadsheet, with the heading row first.",
+      "sample": "Try a sample file",
+      "asOf": "Count as of",
+      "asOfHelp": "Hours after this date are not counted.",
+      "check": "Check hours",
+      "checking": "Counting hours",
+      "nothing": "Add a file or paste rows first."
+    },
+    "errors": {
+      "missing": "This file has no {columns} column. Name the columns Worker, Client, Date and Hours.",
+      "unreadable": "This file could not be read. Save it as CSV or Excel (.xlsx) and try again.",
+      "tooLarge": "This file is too large. Check up to 50,000 rows or 5 MB at a time.",
+      "empty": "No rows with hours were found.",
+      "generic": "That didn't work. Try again."
+    },
+    "columns": {
+      "worker": "Worker",
+      "client": "Client",
+      "date": "Date",
+      "hours": "Hours"
+    },
+    "results": {
+      "heading": "Results",
+      "over": "Past 720 hours",
+      "near": "Past 600 hours",
+      "pairs": "Worker and client pairs",
+      "pairsNote": "{days, plural, one {# day} other {# days}} of hours counted",
+      "colWorker": "Worker",
+      "colClient": "Client",
+      "col12": "Last 12 months",
+      "col48": "Last 48 months",
+      "colStatus": "Status",
+      "col720": "Passed 720 hours",
+      "col4160": "Passed 4,160 hours",
+      "statusOver": "Past 720",
+      "statusNear": "Near",
+      "statusOk": "Under",
+      "about": "About {date} at this pace",
+      "hours": "{hours} h",
+      "download": "Download results (CSV)",
+      "problems": "{count, plural, one {# row could not be read} other {# rows could not be read}}",
+      "problem": "Row {row}: {what}",
+      "problemWhat": {
+        "date": "the date is not a date",
+        "hours": "the hours are not between 0 and 24",
+        "worker": "no worker",
+        "client": "no client"
+      },
+      "file": "illinois-720-hours.csv"
+    },
+    "demo": {
+      "line": "Granite counts these hours every week from your timesheets, warns at 600 hours and opens the equal-pay duty on the day a worker passes 720.",
+      "button": "See it with a demo agency"
+    },
+    "how": {
+      "heading": "How the count works",
+      "ruleHeading": "The rule",
+      "rule": "Under Section 42 of the Illinois Day and Temporary Labor Services Act, a laborer who is assigned to and works at the same client for more than 720 hours within 12 months must be paid at least the rate and benefits of the client's comparable direct employee, or their hourly cash value.",
+      "statute": "Read 820 ILCS 175/42",
+      "countsHeading": "What counts",
+      "counts": "Hours actually worked for the same client count; each client is counted apart. Work before April 1, 2024 does not count. The 12 months roll: each day looks back over the 12 months ending that day.",
+      "longHeading": "The 4,160-hour rule",
+      "long": "More than 4,160 hours at the same client within 48 months brings further duties for the client's information. The checker shows when that was passed too.",
+      "nearHeading": "The 600-hour heads-up",
+      "near": "Granite flags a worker past 600 hours so there is time to ask the client for the comparable pay. The 600 hours are Granite's warning, not the law's.",
+      "afterHeading": "After a worker passes 720 hours",
+      "after": "Pay the equal-pay rate for the hours after the crossing, using the client's information on its comparable employee. The client's information is due before the start of the worker's next pay period."
+    },
+    "privacy": {
+      "heading": "Your data",
+      "body": "There is no account and nothing is saved. Your file is read to count the hours and then forgotten; nothing you add is stored or kept."
+    },
+    "disclaimer": "This checker is an estimate from the hours you give it. It does not know hours worked through other agencies, and it is not legal advice."
   }
 }
