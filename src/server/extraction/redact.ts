@@ -8,8 +8,8 @@ import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import sharp from "sharp";
-import { existsSync } from "node:fs";
 import { createWorker, OEM, type Worker } from "tesseract.js";
+import { packageDir } from "../package-dir";
 
 export type SensitiveKind = "ssn" | "dob";
 export interface Region {
@@ -42,22 +42,13 @@ export function sensitiveSpans(line: string, periodYear: number): { kind: Sensit
 
 let workerPromise: Promise<Worker> | null = null;
 
-/**
- * The bundled English model. Inside the Next.js server bundle, module resolution can return a
- * virtual path, so the project's node_modules is tried as well; the first real file wins.
- */
+/** The bundled English model (found as packageDir finds any package's own files). */
 export function ocrLanguageDir(): string {
-  const candidates = [
-    () => dirname(createRequire(import.meta.url).resolve("@tesseract.js-data/eng/package.json")),
-    () => join(process.cwd(), "node_modules", "@tesseract.js-data", "eng"),
-  ];
-  for (const candidate of candidates) {
-    try {
-      const dir = join(candidate(), "4.0.0_best_int");
-      if (existsSync(join(dir, "eng.traineddata.gz"))) return dir;
-    } catch {
-      // try the next place
-    }
+  const model = join("4.0.0_best_int", "eng.traineddata.gz");
+  try {
+    return join(packageDir("@tesseract.js-data/eng", model, [() => dirname(createRequire(import.meta.url).resolve("@tesseract.js-data/eng/package.json"))]), "4.0.0_best_int");
+  } catch {
+    // said plainly below
   }
   throw new Error("The text-recognition model (@tesseract.js-data/eng) is not installed, so identifying numbers cannot be blacked out.");
 }

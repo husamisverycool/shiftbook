@@ -36,7 +36,15 @@ both languages, the way a stranger would.
    line explanations, the run's own blockers, bank suggestions, days-to-pay and the workers' comp
    packet carry keys beside their English (the English stays the record; parity tests as in decision
    0028; answer keys compare the English).
-5. **The acceptance test**: `tests/e2e/acceptance.spec.ts`, SPEC §24 steps 1–10 in English and in
+5. **Every way to sign in** (owner, 2026-10-16: "Incorporate the 'Continue with Google' stuff, and
+   make sure they can log into different stuff"): passkeys (decision 0032), Google, Microsoft, an
+   agency's own SSO and emailed codes (decision 0033), each with a second-opinion security review.
+6. **Exact to the references** (owner, 2026-10-16, again: "Every fraction of our website needs to be
+   modeled off of the inspiration precisely … being as exact as you can"): every screen compared side
+   by side with the reference product's own published screens (its Source URL), and its hierarchy,
+   density, alignment, type scale, spacing and component treatment matched as exactly as the shadcn
+   base allows; the differences that remain listed in `docs/screens/slice-l.md`.
+7. **The acceptance test**: `tests/e2e/acceptance.spec.ts`, SPEC §24 steps 1–10 in English and in
    Spanish, from a fresh demo; plus a demo guide on the first screen (a setup checklist, as documented
    onboarding guides do) so a stranger needs no help.
 
