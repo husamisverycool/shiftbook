@@ -136,7 +136,7 @@ export function ComplianceFrame({
                     data-testid={`area-${a}`}
                   >
                     <span>{t(`areas.${a}`)}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
+                    <span className={cn("text-xs tabular-nums", area === a ? "text-foreground" : "text-muted-foreground")}>
                       {a === "all"
                         ? Object.values(counts).reduce((s, n) => s + n, 0)
                         : (counts[a] ?? 0)}
