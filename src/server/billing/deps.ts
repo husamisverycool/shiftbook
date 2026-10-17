@@ -9,6 +9,6 @@ import type { BillingDeps } from "./service";
 import { StripeHttp } from "./stripe";
 
 export function billingDeps(): BillingDeps {
-  const { secretKey } = billingConfig();
-  return { db, stripe: env.mode === "live" && secretKey ? new StripeHttp({ secretKey }) : null };
+  const { secretKey, priceId } = billingConfig();
+  return { db, stripe: env.mode === "live" && secretKey ? new StripeHttp({ secretKey }) : null, priceId };
 }

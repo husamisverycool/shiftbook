@@ -35,7 +35,8 @@ Laid out as Linear's settings (`_components/settings.md`).
    1. **Granite monthly** over the plan's state in words, its status badge at the right (Linear and
       Stripe show the status as a chip): Free trial (until a date) · Trial (Stripe's; first charge on a
       date) · Active · Past due (the last payment failed; Stripe retries) · Canceled · Ends on a date
-      (canceled at the period's end) · No subscription · Active (demo).
+      (canceled at the period's end) · No subscription · Other plan (a subscription to another price in
+      the same Stripe account: it does not keep changes going; security review) · Active (demo).
    2. **Next charge** over the amount and the date (Vercel's billing cycle; Linear's "charged on a
       monthly basis"), or "None" with why (canceled, no subscription, the demo).
    3. The panel's foot: a muted note at the left (card details, invoices and canceling are on Stripe's

@@ -8,8 +8,9 @@
  * Granite is sent a note instead of a link (only its inbox learns which), and its agency's log records
  * the attempt. Too many requests for one email (3 an hour) or from one address (10 an hour) wait.
  *
- * The app role cannot insert agencies (drizzle/0001): signup_create_agency (drizzle/0043) spends an
- * unused, unexpired link and makes its agency; everything else is written under that agency's fence.
+ * The app role cannot insert agencies (drizzle/0001): signup_create_agency (drizzle/0043, given the raw
+ * token since drizzle/0044) spends an unused, unexpired link and makes its agency; everything else is
+ * written under that agency's fence.
  * Nothing here logs or returns a password, a token or a digest. The demo never calls this (its pages
  * and actions refuse first): the demo makes no agencies.
  */
@@ -20,6 +21,7 @@ import type { Db, Tx } from "../db/client";
 import * as s from "../db/schema";
 import type { MailTransport, OutgoingMail } from "../mail/transport";
 import { digest } from "./crypto";
+import { addressGroup } from "./passkeys";
 import { hashPassword, PasswordBusyError, passwordProblem } from "./password";
 import { addFirstOwner, enterAgency, LINK_TOKEN_SHAPE, linkToken, looksLikeEmail, normalEmail, startSession, type LinkMail, type PasswordError } from "./service";
 
@@ -37,8 +39,8 @@ export interface SignupDeps {
 }
 
 export interface SignupRender {
-  /** The link that finishes creating the agency. */
-  link(link: string, who: { name: string; agencyName: string; locale: string }): LinkMail;
+  /** The link that finishes creating the agency (only the language: nothing the requester typed). */
+  link(link: string, who: { locale: string }): LinkMail;
   /** The note for an email that already signs in to Granite: the ways back in. */
   existing(links: { signIn: string; reset: string }, who: { locale: string }): LinkMail;
 }
@@ -62,10 +64,19 @@ function inSignInMode<T>(db: Db, fn: (tx: Tx) => Promise<T>): Promise<T> {
   });
 }
 
-/** The throttle's keys (the sign-in throttle's table, keys of their own): this email; this address when known. */
-const throttleKeys = (email: string, address: string | null): string[] => [digest(`signup-email|${email}`), ...(address ? [digest(`signup-address|${address}`)] : [])];
+/**
+ * The throttle's keys (the sign-in throttle's table, keys of their own): this email; this address when
+ * known — an IPv6 address by its /64, as the passkey throttle counts it (security review).
+ */
+const throttleKeys = (email: string, address: string | null): string[] => [digest(`signup-email|${email}`), ...(address ? [digest(`signup-address|${addressGroup(address)}`)] : [])];
 
+/**
+ * Over the hour, too many for this email or this address? Each key is locked first (sorted, so two
+ * requests never wait on each other in a circle), so parallel requests count one by one (security
+ * review: under READ COMMITTED a count then an insert let a fourth or an eleventh through).
+ */
 async function tooMany(tx: Tx, keys: string[], now: Date): Promise<boolean> {
+  for (const key of [...keys].sort()) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`signup throttle:${key}`}, 0))`);
   const rows = await tx
     .select({ key: s.signInFailures.keyHash, n: sql<number>`count(*)::int` })
     .from(s.signInFailures)
@@ -107,10 +118,11 @@ export async function requestSignup(deps: SignupDeps, input: SignupInput, addres
     const token = linkToken();
     const [row] = await tx
       .insert(s.signupRequests)
-      .values({ email, name, agencyName, locale, tokenHash: digest(token), addressHash: address ? digest(`signup-address|${address}`) : null, createdAt: now, expiresAt: new Date(now.getTime() + SIGNUP_LINK_HOURS * HOUR_MS) })
+      .values({ email, name, agencyName, locale, tokenHash: digest(token), addressHash: address ? digest(`signup-address|${addressGroup(address)}`) : null, createdAt: now, expiresAt: new Date(now.getTime() + SIGNUP_LINK_HOURS * HOUR_MS) })
       .returning({ id: s.signupRequests.id });
-    const mail = render.link(`${baseUrl}/${locale}/sign-up/${token}`, { name, agencyName, locale });
-    return { requestId: row!.id, mail: outgoing(row!.id, { email, name }, mail) };
+    const mail = render.link(`${baseUrl}/${locale}/sign-up/${token}`, { locale });
+    // No display name either: nothing the requester typed goes into an email to an unproved address.
+    return { requestId: row!.id, mail: outgoing(row!.id, { email, name: null }, mail) };
   });
   if (!pending) return { ok: false, error: "too_many" };
   const send = () => deliverSignupMail(deps, pending.requestId, pending.mail);
@@ -196,7 +208,8 @@ export async function completeSignup(deps: SignupDeps, token: string, password: 
         await tx.update(s.signupRequests).set({ usedAt: now }).where(eq(s.signupRequests.id, row.id));
         return { ok: false, error: "email_taken" };
       }
-      const made = await tx.execute<{ id: string | null }>(sql`select signup_create_agency(${row.tokenHash}) as id`);
+      // The function hashes the raw token itself (drizzle/0044): only the token from the email makes an agency.
+      const made = await tx.execute<{ id: string | null }>(sql`select signup_create_agency(${token}) as id`);
       const agencyId = made[0]?.id;
       if (!agencyId) return { ok: false, error: "expired" };
       await enterAgency(tx, agencyId);

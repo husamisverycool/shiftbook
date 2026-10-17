@@ -25,7 +25,7 @@ const authDeps: AuthDeps = { db: app.db, mailTransport: () => deps.mail, now: ()
 const PASSWORD = "a long enough passphrase";
 const BASE = "https://app.example";
 const render: SignupRender = {
-  link: (link, who) => ({ subject: `Finish ${who.agencyName}`, text: `Hi ${who.name}, open ${link}`, html: `<a href="${link}">Finish</a>` }),
+  link: (link, who) => ({ subject: `Finish (${who.locale})`, text: `Open ${link}`, html: `<a href="${link}">Finish</a>` }),
   existing: (links) => ({ subject: "You already have an account", text: `Sign in at ${links.signIn} or reset at ${links.reset}`, html: "<p>Already</p>" }),
 };
 const linkIn = (m: OutgoingMail) => /sbau_[A-Za-z0-9_-]{43}/.exec(m.text)?.[0] ?? null;
@@ -60,7 +60,10 @@ describe("an agency signs itself up (decision 0036)", () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]!.to.email).toBe(email);
     expect(sent[0]!.fromName).toBe("Granite");
-    expect(sent[0]!.text).toMatch(new RegExp(`^Hi Robin Vega, open ${BASE}/es/sign-up/sbau_`));
+    // Nothing the requester typed goes into the email, not even the To line's display name (security review).
+    expect(sent[0]!.to).toEqual({ email, name: null });
+    expect(JSON.stringify(sent[0])).not.toContain("Robin Vega");
+    expect(sent[0]!.text).toMatch(new RegExp(`^Open ${BASE}/es/sign-up/sbau_`));
     const token = linkIn(sent[0]!)!;
     // Only the link's digest is kept, with when it was sent.
     const [kept] = await owner.db.select().from(s.signupRequests).where(eq(s.signupRequests.email, email));
@@ -194,8 +197,7 @@ describe("an agency signs itself up (decision 0036)", () => {
     expect(await completeSignup(deps, token, PASSWORD, "test", { trialDays: 0 })).toEqual({ ok: false, error: "expired" });
     // The definer function checks the time itself: an expired row makes no agency even if asked directly.
     await owner.db.update(s.signupRequests).set({ expiresAt: new Date(Date.now() - 60_000) }).where(eq(s.signupRequests.email, email));
-    const [{ tokenHash }] = (await owner.db.select({ tokenHash: s.signupRequests.tokenHash }).from(s.signupRequests).where(eq(s.signupRequests.email, email))) as [{ tokenHash: string }];
-    const rows = await app.db.execute<{ id: string | null }>(sql`select signup_create_agency(${tokenHash}) as id`);
+    const rows = await app.db.execute<{ id: string | null }>(sql`select signup_create_agency(${token}) as id`);
     expect(rows[0]!.id).toBeNull();
   });
 
@@ -223,6 +225,7 @@ describe("an agency signs itself up (decision 0036)", () => {
   it("the app role still cannot make an agency directly, nor see sign-up requests outside sign-in mode", async () => {
     expect(await databaseError(app.db.insert(s.agencies).values({ name: "Sneaky" }))).toMatch(/permission denied/);
     expect((await app.db.execute<{ id: string | null }>(sql`select signup_create_agency(${"0".repeat(64)}) as id`))[0]!.id).toBeNull();
+    expect((await app.db.execute<{ id: string | null }>(sql`select signup_create_agency(${"sbau_" + "A".repeat(43)}) as id`))[0]!.id).toBeNull();
     await requestSignup(deps, input(fresh()), null, render, BASE);
     expect(await app.db.select().from(s.signupRequests)).toHaveLength(0);
     expect(await app.withAgency(DEMO_AGENCY.id, (tx) => tx.select().from(s.signupRequests))).toHaveLength(0);
@@ -235,5 +238,42 @@ describe("an agency signs itself up (decision 0036)", () => {
     const [kept] = await owner.db.select().from(s.signupRequests).where(eq(s.signupRequests.email, email));
     expect(kept!.sentAt).toBeNull();
     expect(kept!.sendFailedAt).not.toBeNull();
+  });
+});
+
+describe("sign-up hardening (decision 0036, security review)", () => {
+  it("the throttle holds under parallel requests: exactly 3 for one email, exactly 10 from one address", async () => {
+    const email = fresh("race");
+    const same = await Promise.all(Array.from({ length: 8 }, (_, i) => requestSignup(deps, input(email), `198.51.100.${100 + i}`, render, BASE)));
+    expect(same.filter((r) => r.ok)).toHaveLength(3);
+    const many = await Promise.all(Array.from({ length: 16 }, (_, i) => requestSignup(deps, input(fresh(`race${i}`)), "192.0.2.77", render, BASE)));
+    expect(many.filter((r) => r.ok)).toHaveLength(10);
+  });
+
+  it("an IPv6 visitor is counted by its /64: other addresses in it share the limit", async () => {
+    for (let i = 1; i <= 10; i++) expect(await requestSignup(deps, input(fresh(`v6${i}`)), `2001:db8:5:6::${i.toString(16)}`, render, BASE)).toEqual({ ok: true });
+    expect(await requestSignup(deps, input(fresh("v6x")), "2001:db8:5:6:ffff::1", render, BASE)).toEqual({ ok: false, error: "too_many" });
+    expect(await requestSignup(deps, input(fresh("v6y")), "2001:db8:5:7::1", render, BASE)).toEqual({ ok: true });
+  });
+
+  it("only a real link makes an agency: the function wants the raw token (its digest does nothing), and a used request cannot be made new", async () => {
+    const email = fresh();
+    await requestSignup(deps, input(email), null, render, BASE);
+    const token = linkIn(sent[0]!)!;
+    const [kept] = await owner.db.select().from(s.signupRequests).where(eq(s.signupRequests.email, email));
+    // Knowing the stored digest is not enough.
+    expect((await app.db.execute<{ id: string | null }>(sql`select signup_create_agency(${kept!.tokenHash}) as id`))[0]!.id).toBeNull();
+    const done = await completeSignup(deps, token, PASSWORD, "test", { trialDays: 0 });
+    expect(done.ok).toBe(true);
+    // The app role may not delete requests, set the agency a request made, or make a used request unused.
+    const inSignInMode = <T>(fn: Parameters<typeof app.db.transaction<T>>[0]) =>
+      app.db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.auth', 'on', true)`);
+        return fn(tx);
+      });
+    expect(await databaseError(inSignInMode((tx) => tx.delete(s.signupRequests).where(eq(s.signupRequests.email, email))))).toMatch(/permission denied/);
+    expect(await databaseError(inSignInMode((tx) => tx.update(s.signupRequests).set({ createdAgencyId: DEMO_AGENCY.id }).where(eq(s.signupRequests.email, email))))).toMatch(/permission denied/);
+    expect(await databaseError(inSignInMode((tx) => tx.update(s.signupRequests).set({ usedAt: null }).where(eq(s.signupRequests.email, email))))).toMatch(/stays used/);
+    expect((await app.db.execute<{ id: string | null }>(sql`select signup_create_agency(${token}) as id`))[0]!.id).toBeNull();
   });
 });

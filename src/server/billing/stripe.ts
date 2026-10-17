@@ -52,7 +52,12 @@ export interface SubscriptionFacts {
   amountCents: number | null;
   currency: string | null;
   interval: "day" | "week" | "month" | "year" | null;
+  /** The item's price id: only Granite's own price (STRIPE_PRICE_ID) counts as paying. */
+  priceId: string | null;
 }
+
+/** A price id as Stripe writes it. */
+export const PRICE_ID = /^price_[A-Za-z0-9_]{1,250}$/;
 
 const seconds = (v: unknown): Date | null => (typeof v === "number" && Number.isInteger(v) && v > 0 ? new Date(v * 1000) : null);
 const record = (v: unknown): Record<string, unknown> | null => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
@@ -85,7 +90,31 @@ export function subscriptionFacts(value: unknown): SubscriptionFacts | null {
     amountCents: unit === null ? null : unit * quantity,
     currency,
     interval: interval === "day" || interval === "week" || interval === "month" || interval === "year" ? interval : null,
+    priceId: typeof price?.id === "string" && PRICE_ID.test(price.id) ? price.id : null,
   };
+}
+
+/** How good a subscription's state is (active first, canceled last). */
+const RANK: Record<SubscriptionStatus, number> = { active: 6, trialing: 5, past_due: 4, unpaid: 3, paused: 3, incomplete: 2, canceled: 1, incomplete_expired: 1 };
+
+/**
+ * The subscription that counts for an agency among its customer's (two Checkout tabs can make two;
+ * security review): those to Granite's own price first, then the best state, then the later period's
+ * end. Only other prices: the best of those (the billing page then says it is not Granite's plan).
+ */
+export function bestSubscription(subscriptions: readonly SubscriptionFacts[], priceId: string | null): SubscriptionFacts | null {
+  const score = (x: SubscriptionFacts) => [priceId && x.priceId === priceId ? 1 : 0, RANK[x.status], x.currentPeriodEnd?.getTime() ?? 0];
+  let best: SubscriptionFacts | null = null;
+  for (const x of subscriptions) {
+    if (!best) {
+      best = x;
+      continue;
+    }
+    const [a, b] = [score(x), score(best)];
+    const i = a.findIndex((v, k) => v !== b[k]);
+    if (i >= 0 && a[i]! > b[i]!) best = x;
+  }
+  return best;
 }
 
 /** An address Stripe hosts (checkout.stripe.com, billing.stripe.com): the only kind the page is sent to. */
@@ -112,6 +141,8 @@ export interface StripeApi {
   createCheckoutSession(input: { customer: string; priceId: string; agencyId: string; trialEnd: number | null; locale: string; successUrl: string; cancelUrl: string; idempotencyKey: string }): Promise<{ id: string; url: string }>;
   createPortalSession(input: { customer: string; returnUrl: string; locale: string }): Promise<{ url: string }>;
   getSubscription(id: string): Promise<SubscriptionFacts>;
+  /** Every subscription of the customer, whatever its status (the newest 100). */
+  listSubscriptions(customer: string): Promise<SubscriptionFacts[]>;
   getCheckoutSession(id: string): Promise<CheckoutSessionFacts>;
 }
 
@@ -183,6 +214,13 @@ export class StripeHttp implements StripeApi {
     const facts = subscriptionFacts(await this.call("GET", `/subscriptions/${id}`));
     if (!facts) throw new StripeError("Stripe answered with a subscription Granite cannot read.", 502);
     return facts;
+  }
+
+  async listSubscriptions(customer: string) {
+    if (!CUSTOMER_ID.test(customer)) throw new StripeError("Not a customer id.", 400);
+    const r = await this.call("GET", `/subscriptions?customer=${customer}&status=all&limit=100`);
+    const data = Array.isArray(r.data) ? r.data : [];
+    return data.map(subscriptionFacts).filter((x): x is SubscriptionFacts => x !== null && x.customer === customer);
   }
 
   async getCheckoutSession(id: string) {

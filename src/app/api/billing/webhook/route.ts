@@ -3,6 +3,7 @@
  * (STRIPE_WEBHOOK_SECRET); each event is handled once; a failure answers 5xx so Stripe retries. The
  * demo makes no Stripe calls and has no webhook. Nothing about the request is logged.
  */
+import { readCapped } from "@/server/billing/body";
 import { billingConfig } from "@/server/billing/config";
 import { billingDeps } from "@/server/billing/deps";
 import { handleStripeEvent, MAX_WEBHOOK_BYTES } from "@/server/billing/service";
@@ -14,8 +15,10 @@ export async function POST(request: Request): Promise<Response> {
   if (env.mode !== "live") return new Response(null, { status: 404 });
   const length = Number(request.headers.get("content-length") ?? "0");
   if (length > MAX_WEBHOOK_BYTES) return Response.json({ received: false }, { status: 413 });
-  // The raw bytes, exactly as sent: the signature is over them (never re-serialized JSON).
-  const raw = new Uint8Array(await request.arrayBuffer());
-  const result = await handleStripeEvent(billingDeps(), raw, request.headers.get("stripe-signature"), billingConfig().webhookSecret);
+  // The raw bytes, exactly as sent (the signature is over them), read with a hard cap: the header alone
+  // is not trusted (a request may have none, or a false one).
+  const body = await readCapped(request.body, MAX_WEBHOOK_BYTES);
+  if (!body.ok) return Response.json({ received: false }, { status: 413 });
+  const result = await handleStripeEvent(billingDeps(), body.bytes, request.headers.get("stripe-signature"), billingConfig().webhookSecret);
   return Response.json({ received: result.status === 200 }, { status: result.status });
 }

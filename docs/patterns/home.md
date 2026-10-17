@@ -24,7 +24,8 @@ quarter at a glance.
    its data but cannot change things until it pays):
    - **Changes are paused** (critical tone): one sentence on why — the free days are over with no
      subscription, the last payment failed, payments failed and Stripe stopped trying, the trial ended
-     without a card, the first payment was not completed, or the subscription was canceled — then that
+     without a card, the first payment was not completed, the subscription was canceled, or it is not to
+     Granite's plan (decision 0036, security review) — then that
      everything can still be read and downloaded and nothing is deleted. After a change was refused, a
      first sentence says that change was not made. For the Owner: **Go to Billing**. For everyone else:
      ask the agency's Owner to restart it in Settings › Billing (no button).

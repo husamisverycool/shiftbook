@@ -52,6 +52,11 @@ class FakeStripe implements StripeApi {
     if (!sub) throw new StripeError("Stripe refused the request (404 invalid_request_error resource_missing).", 404, "resource_missing");
     return sub;
   }
+  async listSubscriptions(customer: string) {
+    this.calls.push(`subscriptions of ${customer}`);
+    if (this.failing) throw new StripeError("Granite could not reach Stripe (TypeError).", 0);
+    return [...this.subscriptions.values()].filter((x) => x.customer === customer);
+  }
   async getCheckoutSession(id: string) {
     this.calls.push(`session ${id}`);
     const session = this.sessions.get(id);
@@ -61,8 +66,10 @@ class FakeStripe implements StripeApi {
 }
 
 let stripe = new FakeStripe();
-const deps = (over: Partial<BillingDeps> = {}): BillingDeps => ({ db: app.db, stripe, now: () => clock, ...over });
-const sub = (over: Partial<SubscriptionFacts> = {}): SubscriptionFacts => ({ id: "sub_test1", customer: "cus_test1", status: "active", currentPeriodEnd: new Date(clock.getTime() + 30 * DAY), cancelAt: null, trialEnd: null, amountCents: 9900, currency: "usd", interval: "month", ...over });
+/** The configured monthly price (STRIPE_PRICE_ID): only a subscription to it counts as paying. */
+const PRICE = "price_test1";
+const deps = (over: Partial<BillingDeps> = {}): BillingDeps => ({ db: app.db, stripe, now: () => clock, priceId: PRICE, ...over });
+const sub = (over: Partial<SubscriptionFacts> = {}): SubscriptionFacts => ({ id: "sub_test1", customer: "cus_test1", status: "active", currentPeriodEnd: new Date(clock.getTime() + 30 * DAY), cancelAt: null, trialEnd: null, amountCents: 9900, currency: "usd", interval: "month", priceId: PRICE, ...over });
 let eventCount = 0;
 /** A Stripe event as delivered: the raw body and the header Stripe would sign it with. */
 function delivery(type: string, object: Record<string, unknown>, id = `evt_test${(eventCount += 1)}`) {
@@ -130,7 +137,7 @@ describe("Stripe's Checkout and Customer Portal (the Owner's; never the demo's)"
     expect(stripe.calls).toEqual([]);
     expect(await startCheckout(deps({ stripe: null }), theOwner, { baseUrl: "https://app.example", locale: "en", priceId: "price_test1" })).toEqual({ ok: false, error: "not_set_up" });
     expect(await startCheckout(deps(), theOwner, { baseUrl: "https://app.example", locale: "en", priceId: null })).toEqual({ ok: false, error: "not_set_up" });
-    await owner.db.update(s.agencySubscriptions).set({ stripeCustomerId: "cus_test9", stripeSubscriptionId: "sub_test9", status: "active" }).where(eq(s.agencySubscriptions.agencyId, agencyId));
+    await owner.db.update(s.agencySubscriptions).set({ stripeCustomerId: "cus_test9", stripeSubscriptionId: "sub_test9", status: "active", stripePriceId: PRICE }).where(eq(s.agencySubscriptions.agencyId, agencyId));
     expect(await startCheckout(deps(), theOwner, { baseUrl: "https://app.example", locale: "en", priceId: "price_test1" })).toEqual({ ok: false, error: "already_subscribed" });
     expect(stripe.calls).toEqual([]);
   });
@@ -192,7 +199,7 @@ describe("Stripe's webhook (/api/billing/webhook)", () => {
     stripe.subscriptions.set("sub_test1", sub({ status: "past_due" }));
     expect(await deliver(d)).toEqual({ status: 200, outcome: "duplicate" });
     expect((await row()).status).toBe("active");
-    expect(stripe.calls.filter((c) => c.startsWith("subscription"))).toHaveLength(1);
+    expect(stripe.calls.filter((c) => c.startsWith("subscriptions of"))).toHaveLength(1);
     expect(await log()).toHaveLength(1);
     // Two deliveries of one event at once: one records it.
     const e = delivery("customer.subscription.updated", { id: "sub_test1", customer: "cus_test1" });
@@ -240,6 +247,33 @@ describe("Stripe's webhook (/api/billing/webhook)", () => {
     expect(await deliver({ body, header: stripeSignatureHeader(body, SECRET, seconds()) })).toMatchObject({ status: 400 });
     const notEvent = JSON.stringify({ hello: "world" });
     expect(await deliver({ body: notEvent, header: stripeSignatureHeader(notEvent, SECRET, seconds()) })).toMatchObject({ status: 400 });
+  });
+
+  it("two subscriptions (two checkout tabs): when the one kept is canceled, the other one, still paid, counts (security review)", async () => {
+    stripe.subscriptions.set("sub_test1", sub());
+    await deliver(delivery("customer.subscription.created", { id: "sub_test1", customer: "cus_test1" }));
+    stripe.subscriptions.set("sub_test2", sub({ id: "sub_test2", currentPeriodEnd: new Date(clock.getTime() + 20 * DAY) }));
+    await deliver(delivery("customer.subscription.created", { id: "sub_test2", customer: "cus_test1" }));
+    expect((await row()).stripeSubscriptionId).toBe("sub_test1");
+    // The kept one is canceled in Stripe's portal: the agency still pays through the other.
+    stripe.subscriptions.set("sub_test1", sub({ status: "canceled" }));
+    await deliver(delivery("customer.subscription.deleted", { id: "sub_test1", customer: "cus_test1" }));
+    expect(await row()).toMatchObject({ stripeSubscriptionId: "sub_test2", status: "active" });
+    await owner.db.update(s.agencySubscriptions).set({ trialEndsAt: null }).where(eq(s.agencySubscriptions.agencyId, agencyId));
+    expect(await agencyStanding(deps(), agencyId)).toMatchObject({ standing: { changes: true, reason: "subscribed" } });
+  });
+
+  it("a subscription to another price in the same Stripe account (a cheaper or free plan) is kept but does not count as paying", async () => {
+    await owner.db.update(s.agencySubscriptions).set({ trialEndsAt: null }).where(eq(s.agencySubscriptions.agencyId, agencyId));
+    stripe.subscriptions.set("sub_free", sub({ id: "sub_free", priceId: "price_free", amountCents: 0 }));
+    expect(await deliver(delivery("customer.subscription.created", { id: "sub_free", customer: "cus_test1" }))).toEqual({ status: 200, outcome: "recorded" });
+    expect(await row()).toMatchObject({ stripeSubscriptionId: "sub_free", status: "active", stripePriceId: "price_free" });
+    expect(await agencyStanding(deps(), agencyId)).toMatchObject({ standing: { changes: false, reason: "other_plan" } });
+    // Granite's own price, started later, wins over it.
+    stripe.subscriptions.set("sub_test1", sub());
+    await deliver(delivery("customer.subscription.created", { id: "sub_test1", customer: "cus_test1" }));
+    expect(await row()).toMatchObject({ stripeSubscriptionId: "sub_test1", stripePriceId: PRICE });
+    expect(await agencyStanding(deps(), agencyId)).toMatchObject({ standing: { changes: true, reason: "subscribed" } });
   });
 
   it("two subscriptions for one agency (two checkout tabs): the better one is kept", async () => {

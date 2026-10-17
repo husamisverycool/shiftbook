@@ -17,13 +17,16 @@ import * as s from "../db/schema";
 import { can } from "../permissions";
 import type { Actor } from "../session";
 import { checkoutTrialEnd, planView, standing, type BillingRow, type Standing } from "./access";
+import { billingConfig } from "./config";
 import { verifyStripeSignature } from "./signature";
-import { CHECKOUT_SESSION_ID, CUSTOMER_ID, StripeError, SUBSCRIPTION_ID, type StripeApi, type SubscriptionFacts } from "./stripe";
+import { bestSubscription, CHECKOUT_SESSION_ID, CUSTOMER_ID, StripeError, SUBSCRIPTION_ID, type StripeApi, type SubscriptionFacts } from "./stripe";
 
 export interface BillingDeps {
   db: Db;
   /** Null in demo mode and when STRIPE_SECRET_KEY is not set. */
   stripe: StripeApi | null;
+  /** The monthly price that counts as paying (STRIPE_PRICE_ID); other prices never do (security review). */
+  priceId: string | null;
   now?: () => Date;
 }
 const nowOf = (deps: BillingDeps) => (deps.now ? deps.now() : new Date());
@@ -46,6 +49,7 @@ const BILLING_COLUMNS = {
   amountCents: s.agencySubscriptions.amountCents,
   currency: s.agencySubscriptions.currency,
   billingInterval: s.agencySubscriptions.billingInterval,
+  stripePriceId: s.agencySubscriptions.stripePriceId,
 };
 
 /** The agency's billing row (inside its fence), or null. */
@@ -54,14 +58,18 @@ export async function billingRowOf(tx: Tx, agencyId: string): Promise<BillingRow
   return row ?? null;
 }
 
-/** Whether the agency is the demo, its billing row, and whether it may change things now. */
-export async function agencyStanding(deps: Pick<BillingDeps, "db" | "now">, agencyId: string): Promise<{ demo: boolean; billing: BillingRow | null; standing: Standing }> {
+/**
+ * Whether the agency is the demo, its billing row, and whether it may change things now; `priceId` is
+ * the price that counts (STRIPE_PRICE_ID unless given).
+ */
+export async function agencyStanding(deps: Pick<BillingDeps, "db" | "now"> & { priceId?: string | null }, agencyId: string): Promise<{ demo: boolean; billing: BillingRow | null; standing: Standing; priceId: string | null }> {
   const now = deps.now ? deps.now() : new Date();
+  const priceId = deps.priceId === undefined ? billingConfig().priceId : deps.priceId;
   return inAgency(deps.db, agencyId, async (tx) => {
     const [agency] = await tx.select({ isDemo: s.agencies.isDemo }).from(s.agencies).where(eq(s.agencies.id, agencyId));
     const demo = Boolean(agency?.isDemo);
     const billing = demo ? null : await billingRowOf(tx, agencyId);
-    return { demo, billing, standing: standing({ demo, billing, now }) };
+    return { demo, billing, standing: standing({ demo, billing, now, priceId }), priceId };
   });
 }
 
@@ -91,7 +99,7 @@ export async function startCheckout(deps: BillingDeps, actor: Actor, input: { ba
   const ctx = await context(deps, actor);
   if (!ctx.agency || ctx.agency.isDemo) return { ok: false, error: "demo" };
   if (!deps.stripe || !input.priceId) return { ok: false, error: "not_set_up" };
-  if (!planView({ demo: false, billing: ctx.billing, now }).canStart) return { ok: false, error: "already_subscribed" };
+  if (!planView({ demo: false, billing: ctx.billing, now, priceId: input.priceId }).canStart) return { ok: false, error: "already_subscribed" };
   const locale = input.locale === "es" ? "es" : "en";
   try {
     let customer = ctx.billing?.stripeCustomerId ?? null;
@@ -146,23 +154,25 @@ export async function openPortal(deps: BillingDeps, actor: Actor, input: { baseU
   }
 }
 
-/** How good a subscription's state is, to keep the better of two (two checkout tabs). */
-const RANK: Record<s.SubscriptionStatus, number> = { active: 3, trialing: 3, past_due: 2, unpaid: 2, paused: 2, incomplete: 2, canceled: 1, incomplete_expired: 1 };
-
-/** Stripe's subscription, as read back from Stripe, kept on the agency's row (its row locked). */
-async function recordSubscription(tx: Tx, agencyId: string, facts: SubscriptionFacts, by: { userId: string | null; label: string }, now: Date): Promise<"recorded" | "kept"> {
+/**
+ * The subscription that counts, as Stripe has it now, kept on the agency's row (its row locked): the best
+ * of the customer's subscriptions (Granite's price first, then the best state; security review — a second
+ * subscription still paid counts when the kept one is canceled), or none.
+ */
+async function recordSubscription(tx: Tx, agencyId: string, facts: SubscriptionFacts | null, by: { userId: string | null; label: string }, now: Date): Promise<"recorded" | "unchanged"> {
   const [current] = await tx.select().from(s.agencySubscriptions).where(eq(s.agencySubscriptions.agencyId, agencyId)).for("update");
-  if (!current) return "kept";
-  if (current.stripeSubscriptionId && current.stripeSubscriptionId !== facts.id && current.status && RANK[facts.status] < RANK[current.status]) return "kept";
+  if (!current) return "unchanged";
+  if (!facts && !current.stripeSubscriptionId) return "unchanged";
   const next = {
-    stripeSubscriptionId: facts.id,
-    status: facts.status,
-    currentPeriodEnd: facts.currentPeriodEnd,
-    cancelAt: facts.cancelAt,
-    stripeTrialEnd: facts.trialEnd,
-    amountCents: facts.amountCents,
-    currency: facts.currency,
-    billingInterval: facts.interval,
+    stripeSubscriptionId: facts?.id ?? null,
+    status: facts?.status ?? null,
+    currentPeriodEnd: facts?.currentPeriodEnd ?? null,
+    cancelAt: facts?.cancelAt ?? null,
+    stripeTrialEnd: facts?.trialEnd ?? null,
+    amountCents: facts?.amountCents ?? null,
+    currency: facts?.currency ?? null,
+    billingInterval: facts?.interval ?? null,
+    stripePriceId: facts?.priceId ?? null,
   };
   await tx.update(s.agencySubscriptions).set({ ...next, updatedAt: now }).where(eq(s.agencySubscriptions.agencyId, agencyId));
   const iso = (d: Date | null) => d?.toISOString() ?? null;
@@ -171,15 +181,16 @@ async function recordSubscription(tx: Tx, agencyId: string, facts: SubscriptionF
     current.status !== next.status ||
     iso(current.currentPeriodEnd) !== iso(next.currentPeriodEnd) ||
     iso(current.cancelAt) !== iso(next.cancelAt) ||
-    current.amountCents !== next.amountCents;
+    current.amountCents !== next.amountCents ||
+    current.stripePriceId !== next.stripePriceId;
   if (changed)
     await auditBy(tx, { agencyId, userId: by.userId, label: by.label }, [
       {
         action: "update",
         entityType: "subscription",
         entityId: agencyId,
-        before: { status: current.status, periodEnd: iso(current.currentPeriodEnd), endsAt: iso(current.cancelAt) },
-        after: { status: next.status, periodEnd: iso(next.currentPeriodEnd), endsAt: iso(next.cancelAt), amountCents: next.amountCents, currency: next.currency },
+        before: { subscription: current.stripeSubscriptionId, status: current.status, periodEnd: iso(current.currentPeriodEnd), endsAt: iso(current.cancelAt), price: current.stripePriceId },
+        after: { subscription: next.stripeSubscriptionId, status: next.status, periodEnd: iso(next.currentPeriodEnd), endsAt: iso(next.cancelAt), amountCents: next.amountCents, currency: next.currency, price: next.stripePriceId },
       },
     ]);
   return "recorded";
@@ -198,9 +209,9 @@ export async function syncFromCheckout(deps: BillingDeps, actor: Actor, sessionI
     const session = await deps.stripe.getCheckoutSession(sessionId);
     if (session.customer !== customer) return "ignored";
     if (!session.subscription) return "pending";
-    const facts = await deps.stripe.getSubscription(session.subscription);
-    if (facts.customer !== customer) return "ignored";
-    await inAgency(deps.db, actor.agencyId, (tx) => recordSubscription(tx, actor.agencyId, facts, { userId: actor.userId, label: actor.label }, nowOf(deps)));
+    const best = bestSubscription(await deps.stripe.listSubscriptions(customer), deps.priceId);
+    if (!best) return "pending";
+    await inAgency(deps.db, actor.agencyId, (tx) => recordSubscription(tx, actor.agencyId, best, { userId: actor.userId, label: actor.label }, nowOf(deps)));
     return "synced";
   } catch (error) {
     if (error instanceof StripeError) return "pending";
@@ -265,17 +276,19 @@ export async function handleStripeEvent(deps: BillingDeps, rawBody: Uint8Array, 
   const agencyId = found?.id ?? null;
   if (!agencyId || !deps.stripe) return agencyId ? { status: 503, outcome: "not set up" } : ignore();
 
-  let facts: SubscriptionFacts;
+  // Every subscription of the customer, as Stripe has them now (order-proof; a second one still paid
+  // counts when the kept one ends — security review); only the customer's own are kept.
+  let best: SubscriptionFacts | null;
   try {
-    facts = await deps.stripe.getSubscription(subscriptionId);
-  } catch (error) {
-    if (error instanceof StripeError && error.status === 404) return ignore();
+    best = bestSubscription((await deps.stripe.listSubscriptions(customer)).filter((x) => x.customer === customer), deps.priceId);
+  } catch {
     return { status: 500, outcome: "stripe unreachable" };
   }
-  if (facts.customer !== customer) return ignore();
+  const result: { outcome: "recorded" | "unchanged" } = { outcome: "unchanged" };
   const done = await remember(async (tx) => {
     await tx.execute(sql`select set_config('app.agency_id', ${agencyId}, true)`);
-    await recordSubscription(tx, agencyId, facts, { userId: null, label: STRIPE_LABEL }, now);
+    result.outcome = await recordSubscription(tx, agencyId, best, { userId: null, label: STRIPE_LABEL }, now);
   });
-  return done === "duplicate" ? { status: 200, outcome: "duplicate" } : { status: 200, outcome: "recorded" };
+  if (done === "duplicate") return { status: 200, outcome: "duplicate" };
+  return { status: 200, outcome: result.outcome === "recorded" ? "recorded" : "ignored" };
 }
