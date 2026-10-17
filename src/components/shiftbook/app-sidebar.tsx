@@ -51,6 +51,7 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
   const pendingG = useRef<number | null>(null);
   const areas = useMemo(() => AREAS.filter((a) => a.key !== "margin" || showMargin), [showMargin]);
   const mayViewActivity = useCan()("viewActivity");
+  const mayManageMembers = useCan()("members");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -121,11 +122,13 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <UserCogIcon />
                 {t("members")}
               </DropdownMenuItem>
-              {/* Decision 0033: the agency's single sign-on, beside Members (Linear: Security; Notion: Identity). */}
-              <DropdownMenuItem render={<Link href="/settings/sso" />} data-testid="menu-sso">
-                <Building2Icon />
-                {t("sso")}
-              </DropdownMenuItem>
+              {/* Decision 0033: the agency's single sign-on, beside Members (Linear: Security; Notion: Identity), for the Owner. */}
+              {mayManageMembers && (
+                <DropdownMenuItem render={<Link href="/settings/sso" />} data-testid="menu-sso">
+                  <Building2Icon />
+                  {t("sso")}
+                </DropdownMenuItem>
+              )}
               {/* Slice k: the agency's log, for the Owner and the accountant (decision 0028). */}
               {mayViewActivity && (
                 <DropdownMenuItem render={<Link href="/settings/activity" />} data-testid="menu-activity">

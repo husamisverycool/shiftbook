@@ -59,3 +59,21 @@ Screens: `i15-invite-providers.png`, `i16-invite-mismatch.png`.
 - ✓ "Join with Google" / "Join with Microsoft" as full-width outlined buttons with the provider's
   mark, a rule with "or", then the password form.
 - ✓ Back from the provider with another account's email: the notice above the buttons (`i16`).
+
+## After the security review (2026-10-17)
+
+### Confirm it's your email — `docs/patterns/sign-in/link.md`
+Screens: `i18-link-proof.png`, `i19-link-proof-wrong.png`, `i20-link-proof-es.png`.
+- ✓ H1 "Confirm it's your email", the line naming the account being connected and the hinted address
+  ("b***@…", never its length), the six-digit field (sends itself at six digits), Confirm.
+- ✓ A wrong code's message in place (`i19`); "Send a new code"; demo only, the demo mailbox's copy —
+  the code email names what is being connected and says never to share the code.
+- ✓ Spanish (`i20`).
+
+### Settings › Single sign-on, not the Owner — `docs/patterns/settings/sso.md`
+Screen: `i21-sso-not-for-role.png`.
+- ✓ Only the header and the "not for your role" state the other Owner settings use (a lock, "Single
+  sign-on is for the Owner"); the agency menu has no Single sign-on item for them (Playwright).
+- The emailed "confirm it's you" in the shared dialog (`_components/confirm-access.md`) is shown only to
+  a person with no password and no authenticator after 15 minutes; it is covered by the integration
+  tests, not a screenshot.

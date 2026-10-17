@@ -52,6 +52,8 @@ their own account): their language, their password, their authenticator and reco
   `_components/confirm-access.md`).
 - Language → saved at once; the page reloads in that language.
 - Update password → saved; the other places they were signed in are signed out; a toast says so.
+  Setting a first password (a person who joined with Google or Microsoft) confirms it's them first,
+  as any new way in does (decision 0033, review L3).
 - Connect → back from the provider with a toast: connected; or already connected to another
   Shiftbook person; or the provider did not sign them in.
 

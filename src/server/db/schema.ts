@@ -1357,7 +1357,7 @@ export const clientDisputes = pgTable(
   ],
 );
 
-export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset" | "sign_in_code";
+export type EmailKind = "approval_request" | "approval_reminder" | "approval_renewal" | "approval_confirmation" | "approval_notice" | "invite" | "password_reset" | "sign_in_code" | "identity_linked";
 
 /** Every email sent, with any approval link hidden (Stripe keeps a log of customer emails). */
 export const emailMessages = pgTable(
@@ -1675,6 +1675,8 @@ export const emailSignInCodes = pgTable("email_sign_in_codes", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   usedAt: timestamp("used_at", { withTimezone: true }),
   failures: integer("failures").notNull().default(0),
+  /** What the code is for (drizzle/0040): signing in, proving the mailbox before a first link, confirming it's them. */
+  purpose: text("purpose").$type<"sign_in" | "link" | "confirm">().notNull().default("sign_in"),
 });
 
 /** An agency's own OpenID Connect provider; the client secret sealed under the app key, bound to the agency. */

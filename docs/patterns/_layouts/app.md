@@ -30,8 +30,8 @@ root frame (demo banner above it).
       (slice f), the first settings page; Margin settings (slice i) is the next item, for the Owner
       and the accountant; Compliance settings (slice j) after it, for everyone (only the Owner
       changes them); Members (slice k) after it, for everyone (only the Owner manages them); Single
-      sign-on (decision 0033) after it, for everyone (only the Owner changes it; Linear and Notion
-      keep it with the workspace's security and members settings);
+      sign-on (decision 0033) after it, for the Owner only (Linear and Notion keep it with the
+      workspace's security and members settings, for owners and admins);
       Activity (slice k, the agency's log) after it, for the Owner and the accountant.
       Below a separator, the person's own items (slice k): their name and role (not a link),
       **Your account**, and **Sign out**. Linear's docs do not say where its log-out item sits —

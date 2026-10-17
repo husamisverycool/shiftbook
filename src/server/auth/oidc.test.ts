@@ -8,7 +8,10 @@ import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT, type JWK, type 
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   authorizationUrl,
+  discover,
+  discoveryCacheSize,
   exchangeCode,
+  forgetDiscovery,
   GOOGLE_ISSUERS,
   identityOf,
   newAuthRequest,
@@ -73,7 +76,7 @@ async function refused(p: Promise<unknown>): Promise<string> {
 describe("ID token verification (OpenID Connect Core §3.1.3.7)", () => {
   it("accepts a token signed RS256 or ES256 by the issuer's key, and reads the identity from it", async () => {
     const claims = await verify(await signed(base()));
-    expect(identityOf("google", claims)).toEqual({ issuer: "https://accounts.google.com", subject: "1098765432101234567", email: "lena@example.com", emailVerified: true, name: null });
+    expect(identityOf("google", claims)).toEqual({ issuer: "https://accounts.google.com", subject: "1098765432101234567", email: "lena@example.com", emailVerified: true, mailboxProven: false, name: null });
     expect((await verify(await signed(base(), { alg: "ES256" }))).sub).toBe("1098765432101234567");
   });
 
@@ -159,6 +162,22 @@ describe("what counts as a verified email (decision 0033)", () => {
     expect(identityOf("sso", { iss: "x", sub: "1", email: "a@example.com", email_verified: "yes" }).emailVerified).toBe(false);
     // No email: never verified.
     expect(identityOf("google", { iss: "x", sub: "1", email_verified: true })).toMatchObject({ email: null, emailVerified: false });
+    // An agency's provider on Entra ID vouches with xms_edov (it sends no email_verified).
+    expect(identityOf("sso", { iss: "x", sub: "1", email: "a@example.com", xms_edov: true }).emailVerified).toBe(true);
+  });
+
+  it("whether the provider is the mailbox's own host (review H2): Google for gmail.com or its Workspace domain (hd); Microsoft with xms_edov; never an agency's provider", () => {
+    const g = (email: string, extra: Record<string, unknown> = {}) => identityOf("google", { iss: "x", sub: "1", email, email_verified: true, ...extra });
+    expect(g("someone@gmail.com").mailboxProven).toBe(true);
+    expect(g("pat@agency.example", { hd: "agency.example" }).mailboxProven).toBe(true);
+    expect(g("pat@Agency.example", { hd: "AGENCY.example" }).mailboxProven).toBe(true);
+    // A Google account made with an address hosted elsewhere: Google verified it once, but does not host it.
+    expect(g("pat@agency.example").mailboxProven).toBe(false);
+    expect(g("pat@agency.example", { hd: "other.example" }).mailboxProven).toBe(false);
+    expect(identityOf("google", { iss: "x", sub: "1", email: "someone@gmail.com", email_verified: false }).mailboxProven).toBe(false);
+    expect(identityOf("microsoft", { iss: "x", sub: "1", email: "pat@agency.example", xms_edov: true }).mailboxProven).toBe(true);
+    expect(identityOf("microsoft", { iss: "x", sub: "1", email: "pat@agency.example" }).mailboxProven).toBe(false);
+    expect(identityOf("sso", { iss: "x", sub: "1", email: "pat@agency.example", email_verified: true }).mailboxProven).toBe(false);
   });
 });
 
@@ -177,7 +196,7 @@ describe("the request: PKCE, state and nonce, the authorization address", () => 
 
   it("asks for a code with openid, email and profile, the state, nonce and S256 challenge", () => {
     const d: Discovery = { issuer: "https://accounts.google.com", authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth", tokenEndpoint: "https://oauth2.googleapis.com/token", jwksUri: "https://www.googleapis.com/oauth2/v3/certs" };
-    const client: OidcClient = { provider: "google", discoveryUrl: "https://accounts.google.com/.well-known/openid-configuration", discoveryIssuer: "https://accounts.google.com", issuer: GOOGLE, clientId: CLIENT, clientSecret: "test-only", allowHttp: false };
+    const client: OidcClient = { provider: "google", discoveryUrl: "https://accounts.google.com/.well-known/openid-configuration", discoveryIssuer: "https://accounts.google.com", issuer: GOOGLE, clientId: CLIENT, clientSecret: "test-only", allowHttp: false, endpointHosts: ["accounts.google.com"] };
     const url = new URL(authorizationUrl(d, client, { redirectUri: "https://app.example/api/auth/oidc/google/callback", state: "s1", nonce: "n1", verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk", locale: "es", loginHint: "lena@example.com" }));
     expect(url.origin + url.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth");
     expect(Object.fromEntries(url.searchParams)).toEqual({
@@ -203,21 +222,47 @@ describe("the discovery document", () => {
     expect(() => parseDiscovery({ ...doc, token_endpoint: "http://idp.example/token" }, { allowHttp: false })).toThrow(OidcError);
     expect(() => parseDiscovery(doc, { allowHttp: false, expectedIssuer: "https://other.example" })).toThrow(OidcError);
     expect(() => parseDiscovery("nonsense", { allowHttp: false })).toThrow(OidcError);
-    // The demo's stand-in runs on the app itself, over plain http locally.
+    // Plain http only where a client allows it.
     expect(parseDiscovery({ ...doc, token_endpoint: "http://localhost:3000/token" }, { allowHttp: true }).tokenEndpoint).toBe("http://localhost:3000/token");
+  });
+
+  it("refuses endpoints on another host than the provider's, at an IP address, or on another port (review M2)", () => {
+    const hosts = ["idp.example"];
+    expect(parseDiscovery(doc, { allowHttp: false, hosts }).jwksUri).toBe("https://idp.example/keys");
+    expect(() => parseDiscovery({ ...doc, jwks_uri: "https://elsewhere.example/keys" }, { allowHttp: false, hosts })).toThrow(OidcError);
+    expect(() => parseDiscovery({ ...doc, token_endpoint: "https://169.254.169.254/token" }, { allowHttp: false })).toThrow(OidcError);
+    expect(() => parseDiscovery({ ...doc, token_endpoint: "https://[::1]/token" }, { allowHttp: false })).toThrow(OidcError);
+    expect(() => parseDiscovery({ ...doc, token_endpoint: "https://idp.example:8443/token" }, { allowHttp: false })).toThrow(OidcError);
+  });
+
+  it("reads through the client's own transport, keeps a bounded cache, and forgets a document on request", async () => {
+    let calls = 0;
+    const transport = (async () => {
+      calls += 1;
+      return Response.json(doc);
+    }) as unknown as typeof fetch;
+    const client: OidcClient = { provider: "sso", discoveryUrl: "https://idp.example/.well-known/openid-configuration", discoveryIssuer: "https://idp.example", issuer: { kind: "exact", values: ["https://idp.example"] }, clientId: CLIENT, clientSecret: "x", allowHttp: false, endpointHosts: ["idp.example"], fetch: transport };
+    await discover(client);
+    await discover(client);
+    expect(calls).toBe(1);
+    forgetDiscovery(client.discoveryUrl);
+    await discover(client);
+    expect(calls).toBe(2);
+    for (let i = 0; i < 80; i += 1) await discover({ ...client, discoveryUrl: `https://idp.example/${i}/.well-known/openid-configuration` });
+    expect(discoveryCacheSize()).toBeLessThanOrEqual(64);
   });
 });
 
 describe("the code exchange", () => {
   const d: Discovery = { issuer: "https://idp.example", authorizationEndpoint: "https://idp.example/authorize", tokenEndpoint: "https://idp.example/token", jwksUri: "https://idp.example/keys" };
-  const client: OidcClient = { provider: "sso", discoveryUrl: "https://idp.example/.well-known/openid-configuration", discoveryIssuer: "https://idp.example", issuer: { kind: "exact", values: ["https://idp.example"] }, clientId: CLIENT, clientSecret: "test-only-secret", allowHttp: false };
+  const client: OidcClient = { provider: "sso", discoveryUrl: "https://idp.example/.well-known/openid-configuration", discoveryIssuer: "https://idp.example", issuer: { kind: "exact", values: ["https://idp.example"] }, clientId: CLIENT, clientSecret: "test-only-secret", allowHttp: false, endpointHosts: ["idp.example"] };
   it("posts the code, the verifier and the client's credentials, and returns the ID token", async () => {
     let seen: { url: string; body: string; method: string } | null = null;
     const fetchFn = (async (url: string | URL, init?: RequestInit) => {
       seen = { url: String(url), body: String(init?.body), method: init?.method ?? "GET" };
       return new Response(JSON.stringify({ access_token: "at", token_type: "Bearer", id_token: "the.id.token" }), { status: 200, headers: { "Content-Type": "application/json" } });
     }) as typeof fetch;
-    expect(await exchangeCode(d, client, { code: "c1", redirectUri: "https://app.example/cb", verifier: "v1" }, fetchFn)).toBe("the.id.token");
+    expect(await exchangeCode(d, { ...client, fetch: fetchFn }, { code: "c1", redirectUri: "https://app.example/cb", verifier: "v1" })).toBe("the.id.token");
     expect(seen!.method).toBe("POST");
     expect(seen!.url).toBe("https://idp.example/token");
     expect(Object.fromEntries(new URLSearchParams(seen!.body))).toEqual({ grant_type: "authorization_code", code: "c1", redirect_uri: "https://app.example/cb", client_id: CLIENT, client_secret: "test-only-secret", code_verifier: "v1" });
@@ -225,8 +270,8 @@ describe("the code exchange", () => {
 
   it("refuses an error answer, or an answer without an ID token", async () => {
     const answer = (status: number, body: unknown) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
-    expect(await refused(exchangeCode(d, client, { code: "c", redirectUri: "r", verifier: "v" }, answer(400, { error: "invalid_grant" })))).toBe("token");
-    expect(await refused(exchangeCode(d, client, { code: "c", redirectUri: "r", verifier: "v" }, answer(200, { access_token: "at" })))).toBe("token");
+    expect(await refused(exchangeCode(d, { ...client, fetch: answer(400, { error: "invalid_grant" }) }, { code: "c", redirectUri: "r", verifier: "v" }))).toBe("token");
+    expect(await refused(exchangeCode(d, { ...client, fetch: answer(200, { access_token: "at" }) }, { code: "c", redirectUri: "r", verifier: "v" }))).toBe("token");
   });
 });
 

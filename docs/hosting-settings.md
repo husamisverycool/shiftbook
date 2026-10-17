@@ -25,9 +25,11 @@ These go in the hosting service's environment settings — never in the code, ne
 | `SHIFTBOOK_MICROSOFT_CLIENT_ID`, `SHIFTBOOK_MICROSOFT_CLIENT_SECRET` | "Continue with Microsoft" (optional; decision 0033). From a Microsoft Entra app registration for "accounts in any organizational directory and personal Microsoft accounts", web redirect URI `<SHIFTBOOK_APP_URL>/api/auth/oidc/microsoft/callback`, with the optional ID-token claims `email` and `xms_edov` added (without `xms_edov`, people connect Microsoft from Your account before signing in with it). |
 
 An agency's own single sign-on needs no setting here: its Owner enters the provider's details in
-Settings › Single sign-on and registers `<SHIFTBOOK_APP_URL>/api/auth/oidc/sso/callback` with it. In
-demo mode none of these are used: Google, Microsoft and SSO go through the demo's stand-in, inside the
-app.
+Settings › Single sign-on and registers `<SHIFTBOOK_APP_URL>/api/auth/oidc/sso/callback` with it (the
+issuer must be a public https name whose endpoints are on the same host; an agency on Entra ID adds the
+optional ID-token claims `email` and `xms_edov` to its app registration). In demo mode none of these
+are used: Google, Microsoft and SSO go through the demo's stand-in, inside the app, with no network
+call at all.
 
 ## The first agency and its Owner
 

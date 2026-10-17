@@ -117,7 +117,9 @@ export function AccountView(props: AccountProps) {
             labels={{ password: t("new"), confirm: t("confirm") }}
             onSubmit={(next, current) =>
               startPassword(async () => {
-                const r = await changePasswordAction(current, next);
+                // A first password (no current one to give) confirms it's them first (decision 0033, review L3).
+                const r = await confirmed(() => changePasswordAction(current, next));
+                if (!r) return;
                 if (r.ok) {
                   setPasswordError(null);
                   setPasswordKey((k) => k + 1);

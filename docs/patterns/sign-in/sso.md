@@ -27,10 +27,13 @@ password (SPEC §2).
 
 ## Interactions
 - Enter submits. Continue → the agency's identity provider (the browser leaves for it), then back to
-  Shiftbook signed in, or to the sign-in page with a notice saying why not.
+  Shiftbook signed in, or to the sign-in page with a notice saying why not. The first time, the code
+  sent to the member's email connects the provider's account (`sign-in/link.md`; Slack asks members
+  to bind their accounts by email).
 
 ## States
 - No SSO for the email (unknown email, no member, SSO off): one answer for all of them.
+- Too many emails tried from one place (20 in 15 minutes): wait, then try again (review L1).
 - Continuing: the button shows it is working.
 - Refused after the provider (the identity belongs to no member of that agency, its email is not
   verified, the member is suspended): back on the sign-in page with the notice.

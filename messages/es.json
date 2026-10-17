@@ -3218,7 +3218,8 @@
       "no_account": "Ningún miembro de Shiftbook usa esa cuenta. Pida una invitación al Propietario de su agencia.",
       "not_verified": "El proveedor no confirmó el correo de esa cuenta. Inicie sesión de otra forma y conéctela desde Su cuenta.",
       "suspended": "Su acceso a esta agencia está suspendido. Consulte al Propietario de la agencia.",
-      "too_many": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo."
+      "too_many": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
+      "other_identity": "Su inicio de sesión en Shiftbook ya está conectado a otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
     },
     "demoTitle": "Pruebe la demostración como",
     "demoHint": "Las personas de la demostración no necesitan contraseña ni código.",
@@ -3477,7 +3478,15 @@
     "cancel": "Cancelar",
     "invalid": "No coincide. Inténtelo de nuevo.",
     "locked": "Demasiados intentos: espere un rato y vuelva a intentarlo.",
-    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento."
+    "busy": "Hay demasiadas personas iniciando sesión ahora. Inténtelo de nuevo en un momento.",
+    "bodyEmail": "Este cambio necesita un código enviado a su correo, escrito en los últimos 15 minutos.",
+    "sendCode": "Enviar el código",
+    "sendAgain": "Enviar un código nuevo",
+    "sending": "Enviando…",
+    "sent": "El código va en camino a su correo.",
+    "emailCode": "Código del correo",
+    "too_many": "Pidió demasiados códigos. Espere un rato y vuelva a intentarlo.",
+    "demoCopy": "Demostración: la copia del buzón de la demostración"
   },
   "workers": {
     "title": "Trabajadores",
@@ -4369,6 +4378,23 @@
       "not_verified": "El proveedor no confirmó el correo de esa cuenta. Cree una contraseña, o use otra cuenta.",
       "email_mismatch": "El correo de esa cuenta no es el invitado ({email}). Use el correo invitado, o cree una contraseña.",
       "taken": "Esa cuenta ya está conectada a otra persona de Shiftbook."
+    },
+    "mail": {
+      "providers": {
+        "google": "Google",
+        "microsoft": "Microsoft"
+      },
+      "subject": "{provider} se conectó a su cuenta de Shiftbook",
+      "greeting": "Hola, {name}:",
+      "body": "La cuenta de {provider} {email} ya puede iniciar su sesión en {agency} en Shiftbook.",
+      "bodyNoEmail": "Una cuenta de {provider} ya puede iniciar su sesión en {agency} en Shiftbook.",
+      "when": "Se conectó el {date}.",
+      "review": "Revisar sus cuentas conectadas",
+      "unexpected": "Si no fue usted, desconéctela de inmediato desde Su cuenta e informe al Propietario de su agencia.",
+      "footer": "Enviado por Shiftbook en nombre de {agency}.",
+      "subjectSso": "El inicio de sesión único (SSO) se conectó a su cuenta de Shiftbook",
+      "bodySso": "La cuenta {email} del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Shiftbook.",
+      "bodyNoEmailSso": "Una cuenta del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Shiftbook."
     }
   },
   "emailCode": {
@@ -4390,12 +4416,19 @@
     "demoCopy": "Demostración: no se envía ningún correo. Esta es la copia del buzón de la demostración:",
     "back": "Volver a iniciar sesión",
     "mail": {
-      "subject": "{code} es su código de acceso a Shiftbook",
+      "subject": "Su código de acceso a Shiftbook",
       "greeting": "Hola, {name}:",
       "intro": "Alguien pidió iniciar sesión en {agency} en Shiftbook con este correo. Su código:",
       "expires": "Funciona una vez, durante 10 minutos.",
       "unexpected": "Si no fue usted, ignore este correo: nadie puede iniciar sesión sin el código.",
-      "footer": "Enviado por Shiftbook en nombre de {agency}."
+      "footer": "Enviado por Shiftbook en nombre de {agency}.",
+      "subjectLink": "Confirme la conexión de {provider} con Shiftbook",
+      "subjectConfirm": "Su código de confirmación de Shiftbook",
+      "introLink": "Alguien está conectando una cuenta de {provider} a su inicio de sesión de Shiftbook en {agency}. Si es usted, escriba este código:",
+      "introConfirm": "Alguien pidió confirmar un cambio en su cuenta de Shiftbook en {agency}. Si es usted, escriba este código:",
+      "never": "Nunca comparta este código con nadie. Shiftbook nunca se lo pedirá por teléfono, chat ni correo.",
+      "subjectLinkSso": "Confirme la conexión del inicio de sesión único (SSO) con Shiftbook",
+      "introLinkSso": "Alguien está conectando la cuenta del inicio de sesión único (SSO) de su agencia a su inicio de sesión de Shiftbook en {agency}. Si es usted, escriba este código:"
     }
   },
   "sso": {
@@ -4409,7 +4442,8 @@
       "failed": "No se pudo llegar al inicio de sesión de su agencia. Inténtelo de nuevo en un momento, o use otra forma de entrar.",
       "otherWay": "Iniciar sesión de otra forma",
       "emailCode": "Enviarme un código de acceso por correo",
-      "back": "Volver a iniciar sesión"
+      "back": "Volver a iniciar sesión",
+      "tooMany": "Demasiados intentos desde aquí. Espere 15 minutos y vuelva a intentarlo."
     },
     "settings": {
       "eyebrow": "Configuración",
@@ -4427,9 +4461,9 @@
       "copied": "Dirección copiada.",
       "details": "Datos del proveedor",
       "issuer": "Dirección del emisor",
-      "issuerHint": "Una dirección https. Su documento de descubrimiento se lee al guardar.",
+      "issuerHint": "Una dirección https pública, con nombre. Su documento de descubrimiento se lee al guardar, y sus direcciones deben estar en el mismo servidor.",
       "clientId": "ID de cliente",
-      "clientSecret": "Secreto de cliente",
+      "clientSecret": "Secreto de cliente (al menos 16 caracteres)",
       "secretSet": "Guardado, termina en ····{last4}",
       "replaceSecret": "Reemplazar el secreto",
       "replaceHint": "Déjelo vacío para conservar el secreto guardado. Un secreto nunca se vuelve a mostrar una vez guardado.",
@@ -4449,8 +4483,35 @@
         "demo_issuer_only": "En la demostración, el inicio de sesión único solo puede apuntar al sustituto de la demostración.",
         "not_set_up": "Guarde primero los datos del proveedor.",
         "not_allowed": "Solo el Propietario cambia el inicio de sesión único.",
-        "generic": "Eso no funcionó. Inténtelo de nuevo."
-      }
+        "generic": "Eso no funcionó. Inténtelo de nuevo.",
+        "issuer_private": "Esa dirección es una dirección IP o apunta dentro de una red privada. Use la dirección https pública del proveedor.",
+        "secret_too_short": "Ese secreto es demasiado corto: los proveedores emiten secretos de al menos 16 caracteres."
+      },
+      "notForRoleTitle": "El inicio de sesión único es para el Propietario"
+    }
+  },
+  "linkProof": {
+    "title": "Confirme que es su correo",
+    "body": "Para conectar esta cuenta de {provider} a su inicio de sesión de Shiftbook, escriba el código enviado a {hint}. Funciona una vez, durante 10 minutos.",
+    "providers": {
+      "google": "Google",
+      "microsoft": "Microsoft",
+      "sso": "SSO"
+    },
+    "code": "Código de seis dígitos",
+    "confirm": "Confirmar",
+    "confirming": "Confirmando…",
+    "resend": "Enviar un código nuevo",
+    "resent": "Va en camino un código nuevo.",
+    "notResent": "Todavía no hay un código nuevo: uno por minuto como máximo, y solo unos pocos por hora.",
+    "demoCopy": "Demostración: no se envía ningún correo. Esta es la copia del buzón de la demostración:",
+    "back": "Volver a iniciar sesión",
+    "errors": {
+      "invalid": "Ese código no funciona. Revíselo, o pida uno nuevo.",
+      "locked": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
+      "expired": "Este inicio de sesión esperó demasiado. Empiece de nuevo desde la página de inicio de sesión.",
+      "taken": "Esa cuenta ya está conectada a otra persona de Shiftbook.",
+      "other_identity": "Ya conectó otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
     }
   }
 }

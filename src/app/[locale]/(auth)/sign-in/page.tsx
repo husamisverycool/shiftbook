@@ -11,7 +11,7 @@ import { currentSession, isDemo } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
-const NOTICES: SignInNotice[] = ["signed_out", "expired", "password_changed", "link_expired", "provider_failed", "no_account", "not_verified", "suspended", "too_many"];
+const NOTICES: SignInNotice[] = ["signed_out", "expired", "password_changed", "link_expired", "provider_failed", "no_account", "not_verified", "suspended", "too_many", "other_identity"];
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 export default async function SignInPage(props: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {

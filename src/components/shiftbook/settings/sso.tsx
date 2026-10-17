@@ -4,6 +4,7 @@
 // address to copy into the identity provider, the provider's details, then save), Linear's Security ›
 // Authentication methods, Stripe's configuration checks; every change confirms it's the Owner first
 // (GitHub's sudo mode).
+import { LockIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useId, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -14,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "@/i18n/navigation";
 import { useConfirmed } from "../auth/confirm-access";
+import { EmptyState } from "../empty-state";
+import { Page, PageHeader } from "../page";
 
 export interface SsoSettingsProps {
   canManage: boolean;
@@ -33,8 +36,19 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-const ISSUER_ERRORS = ["invalid_issuer", "issuer_unreachable", "demo_issuer_only"];
-const SECRET_ERRORS = ["secret_required", "invalid_secret"];
+const ISSUER_ERRORS = ["invalid_issuer", "issuer_private", "issuer_unreachable", "demo_issuer_only"];
+const SECRET_ERRORS = ["secret_required", "secret_too_short", "invalid_secret"];
+
+/** Not the Owner: the same state the other settings pages show a role they are not for (margin settings). */
+export function SsoNotForRole() {
+  const t = useTranslations("sso.settings");
+  return (
+    <Page>
+      <PageHeader title={t("title")} />
+      <EmptyState icon={LockIcon} title={t("notForRoleTitle")} description={t("ownerOnly")} testId="sso-not-allowed" />
+    </Page>
+  );
+}
 
 export function SsoSettingsView({ canManage, demo, redirectUri, settings }: SsoSettingsProps) {
   const t = useTranslations("sso.settings");

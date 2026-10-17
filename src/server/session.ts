@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { cache } from "react";
 import { authDeps } from "./auth/deps";
-import { confirmMethod, mustConfirm, nextStep, readSession, SESSION_COOKIE, type SessionInfo } from "./auth/service";
+import { confirmMethodOf, mustConfirm, nextStep, readSession, SESSION_COOKIE, type SessionInfo } from "./auth/service";
 import { env } from "./env";
 import { NotAllowedError } from "./errors";
 import { can, type Ability, type Role } from "./permissions";
@@ -77,10 +77,10 @@ export async function mustConfirmNow(): Promise<boolean> {
   return info ? mustConfirm(authDeps(), info) : true;
 }
 
-/** What they confirm with: a code (when they have an authenticator) or their password. */
-export async function confirmWith(): Promise<"code" | "password"> {
+/** What they confirm with: a code (when they have an authenticator), their password, or (with neither) an emailed code. */
+export async function confirmWith(): Promise<"code" | "password" | "email"> {
   const info = await session();
-  return info ? confirmMethod(info) : "password";
+  return info ? confirmMethodOf(authDeps(), info) : "password";
 }
 
 export const isDemo = () => env.mode === "demo";

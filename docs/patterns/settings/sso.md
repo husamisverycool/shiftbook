@@ -30,8 +30,8 @@ other ways in (Linear and Notion keep owners able to sign in when the provider f
 4. **Provider details** form (Notion's identity provider details):
    1. **Issuer address** (an https address; its discovery document is read when saved).
    2. **Client ID**.
-   3. **Client secret**: when one is saved, "Set — ends in ····abcd" and a **Replace** field left
-      empty keeps it; never shown again once saved.
+   3. **Client secret** (at least 16 characters): when one is saved, "Set — ends in ····abcd" and a
+      **Replace** field left empty keeps it; never shown again once saved.
    4. **Save** (primary).
 5. A muted line at the foot: who changed it last, and when.
 
@@ -43,8 +43,12 @@ other ways in (Linear and Notion keep owners able to sign in when the provider f
 - Copy → the address is copied; a toast says so.
 
 ## States
-- Not the Owner: the page shows the status only, and a line that only the Owner changes it.
+- Not the Owner: the page holds only the header and the "not for your role" state the other
+  settings pages use (margin settings), saying only the Owner manages single sign-on; the agency menu
+  does not list it for them.
 - The issuer cannot be reached or is not an OpenID Connect provider: a message under Issuer.
+- The issuer is an IP address, resolves to a private or internal address, or names its endpoints on
+  another host: a message under Issuer (decision 0033, review M2).
 - Missing client ID or secret when turning it on: a message under the field.
 - Demo: the switch and the form work against the demo's stand-in provider; another issuer cannot be
   saved (the demo makes no outside call).
