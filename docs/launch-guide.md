@@ -1,5 +1,8 @@
 # Putting Granite online — the owner's guide
 
+> The complete, ordered walkthrough with domain, email, payments, texts and costs is
+> `docs/go-live.md`. This page is the shorter reference it builds on.
+
 Plain steps, one click at a time. You never type code. Keys and passwords go only into Railway's
 "Variables" page, never into a chat. Railway is the hosting company we use (decision 0035); its
 buttons sometimes move, so if one is named slightly differently, pick the closest match.
