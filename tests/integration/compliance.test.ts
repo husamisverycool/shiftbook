@@ -76,20 +76,22 @@ describe("the demo's duties, most urgent first (J1, J3)", () => {
   it("overdue, then due soon by date, then upcoming; done ones only when asked for", async () => {
     const { items: all } = await items();
     const open = filterItems(all, { area: null, statuses: [], jurisdiction: null, owner: null, q: "" }, theOwner);
+    // The Newark placements start 21 days after the demo's today, so their duties' date moves with it.
+    const [nj] = await owner.db.select({ startDate: s.assignments.startDate }).from(s.assignments).innerJoin(s.jobOrders, eq(s.jobOrders.id, s.assignments.jobOrderId)).where(eq(s.jobOrders.position, "Packer"));
+    const NJ_START = nj!.startDate;
     expect(open.map((i) => [i.kind, i.status, i.dueOn, i.subject])).toEqual([
       ["ma_job_order", "overdue", "2026-08-09", "Kwame Boateng · Event Server · Harborview Events & Hospitality (demo)"],
       ["ma_registration_renewal", "due_soon", "2026-10-21", "Cedar Row Staffing (demo) · MA-PA-0000-DEMO"],
       ["il_registration_renewal", "due_soon", "2026-11-01", "Cedar Row Staffing (demo) · IL-DTLSA-0000-DEMO"],
       ["i9_reverify", "due_soon", "2026-12-20", "Kateryna Bondarenko"],
-      // The Newark packers (SPEC §27.10): the assignment notice and day-one equal pay for each; Leticia,
-      // who speaks Spanish, also the notice in her language (until the owner approves the change).
-      ["nj_assignment_notice", "upcoming", "2026-11-07", "Andre Lewis · Packer · Prairie Line Manufacturing (demo)"],
-      ["nj_equal_pay_check", "upcoming", "2026-11-07", "Andre Lewis · Packer · Prairie Line Manufacturing (demo)"],
-      ["nj_assignment_notice", "upcoming", "2026-11-07", "Grace Mensah · Packer · Prairie Line Manufacturing (demo)"],
-      ["nj_equal_pay_check", "upcoming", "2026-11-07", "Grace Mensah · Packer · Prairie Line Manufacturing (demo)"],
-      ["nj_assignment_notice", "upcoming", "2026-11-07", "Leticia Ramos Vega · Packer · Prairie Line Manufacturing (demo)"],
-      ["nj_equal_pay_check", "upcoming", "2026-11-07", "Leticia Ramos Vega · Packer · Prairie Line Manufacturing (demo)"],
-      ["nj_language_notice", "upcoming", "2026-11-07", "Leticia Ramos Vega · Packer · Prairie Line Manufacturing (demo)"],
+      // The Newark packers (SPEC §27.10): the assignment notice (in English and Spanish, so Leticia needs
+      // no separate notice in her language) and day-one equal pay for each.
+      ["nj_assignment_notice", "upcoming", NJ_START, "Andre Lewis · Packer · Prairie Line Manufacturing (demo)"],
+      ["nj_equal_pay_check", "upcoming", NJ_START, "Andre Lewis · Packer · Prairie Line Manufacturing (demo)"],
+      ["nj_assignment_notice", "upcoming", NJ_START, "Grace Mensah · Packer · Prairie Line Manufacturing (demo)"],
+      ["nj_equal_pay_check", "upcoming", NJ_START, "Grace Mensah · Packer · Prairie Line Manufacturing (demo)"],
+      ["nj_assignment_notice", "upcoming", NJ_START, "Leticia Ramos Vega · Packer · Prairie Line Manufacturing (demo)"],
+      ["nj_equal_pay_check", "upcoming", NJ_START, "Leticia Ramos Vega · Packer · Prairie Line Manufacturing (demo)"],
       ["wc_policy_renewal", "upcoming", "2026-12-31", "Example Mutual Insurance (demo) · WC-0000-DEMO"],
       ["wc_audit", "upcoming", "2027-02-15", "Example Mutual Insurance (demo) · WC-0000-DEMO"],
       ["il_client_proof", "upcoming", "2027-03-01", "Prairie Line Manufacturing (demo)"],

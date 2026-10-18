@@ -1,6 +1,6 @@
 {
   "name": "duties-placement-notices",
-  "summary": "A Massachusetts placement starting 2026-10-07 whose first pay period ends 2026-10-11: the job order is due by then (M.G.L. c. 149 § 159C(b)). A New Jersey production placement (SOC 51) starting 2026-10-12 for a Spanish speaker: the notice in English and Spanish is due when it starts (N.J.S.A. 34:8D-3(a)). A New Jersey office placement (SOC 43, not a designated classification): no notice.",
+  "summary": "A Massachusetts placement starting 2026-10-07 whose first pay period ends 2026-10-11: the job order is due by then (M.G.L. c. 149 § 159C(b)). A New Jersey production placement (SOC 51) starting 2026-10-12 for a Spanish speaker: the assignment notice (form MW-23, in English and Spanish) is due when it starts (N.J.S.A. 34:8D-3(a)), so no separate notice in the worker's language. The same placement for a Polish speaker: the notice in the worker's language is due too. A New Jersey office placement (SOC 43, not a designated classification): no notice.",
   "kind": "duties",
   "input": {
     "today": "2026-10-16",
@@ -249,6 +249,36 @@
         "effectiveTo": null
       },
       {
+        "code": "nj_assignment_notice",
+        "jurisdiction": "NJ",
+        "area": "placements",
+        "subjectKind": "assignment",
+        "anchor": "start",
+        "offsetDays": 0,
+        "businessDays": 0,
+        "remindDays": 0,
+        "fixedDates": [],
+        "lookbackDays": 365,
+        "windowDays": 0,
+        "socGroups": [
+          "33",
+          "35",
+          "37",
+          "39",
+          "47",
+          "49",
+          "51",
+          "53"
+        ],
+        "roles": [
+          "coordinator"
+        ],
+        "citation": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the Temporary Laborer Assignment Notification, form MW-23, when the laborer is sent to the assignment)",
+        "sourceUrl": "https://www.nj.gov/labor/wageandhour/assets/PDFs/Forms%20and%20Publications/MW-23%20(5-15-23)pkg.pdf",
+        "effectiveFrom": "2024-09-16",
+        "effectiveTo": null
+      },
+      {
         "code": "nj_language_notice",
         "jurisdiction": "NJ",
         "area": "placements",
@@ -274,6 +304,34 @@
           "coordinator"
         ],
         "citation": "N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the assignment notice in English and the worker's primary language)",
+        "sourceUrl": "https://pub.njleg.gov/Bills/2022/PL23/10_.HTM",
+        "effectiveFrom": "2024-09-16",
+        "effectiveTo": null
+      },
+      {
+        "code": "nj_equal_pay_check",
+        "jurisdiction": "NJ",
+        "area": "equal_pay",
+        "subjectKind": "assignment",
+        "anchor": "start",
+        "offsetDays": 0,
+        "businessDays": 0,
+        "remindDays": 7,
+        "fixedDates": [],
+        "lookbackDays": 365,
+        "windowDays": 0,
+        "socGroups": [
+          "33",
+          "35",
+          "37",
+          "39",
+          "47",
+          "49",
+          "51",
+          "53"
+        ],
+        "roles": [],
+        "citation": "N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no less than the average rate of pay and average cost of benefits, or their cash equivalent, of the client's employees doing substantially similar work)",
         "sourceUrl": "https://pub.njleg.gov/Bills/2022/PL23/10_.HTM",
         "effectiveFrom": "2024-09-16",
         "effectiveTo": null
@@ -347,6 +405,19 @@
         "workerLanguage": "es"
       },
       {
+        "id": "asg-nj-pl",
+        "workerId": "worker-1",
+        "clientId": "client-nj",
+        "state": "NJ",
+        "dayAndTemporaryLabor": false,
+        "socCode": "51-2092",
+        "startDate": "2026-10-12",
+        "endDate": null,
+        "status": "active",
+        "firstPeriodEnd": "2026-10-18",
+        "workerLanguage": "pl"
+      },
+      {
         "id": "asg-nj-office",
         "workerId": "worker-1",
         "clientId": "client-nj",
@@ -376,13 +447,13 @@
         "startDate": "2026-10-07",
         "firstPeriodEnd": "2026-10-11"
       },
-      "done": null,
       "kind": "ma_job_order",
       "jurisdiction": "MA",
       "subjectKind": "assignment",
       "remindOn": "2026-10-11",
       "message": "The placement starts 2026-10-07; due by the end of its first pay period, 2026-10-11 (M.G.L. c. 149 § 159C(b); 454 CMR 24.08 (the job order confirmed in writing before the end of the first pay period)).",
-      "tooOld": false
+      "tooOld": false,
+      "done": null
     },
     {
       "workerId": "worker-1",
@@ -397,13 +468,95 @@
         "language": "es",
         "socCode": "51-2092"
       },
-      "done": null,
+      "kind": "nj_assignment_notice",
+      "jurisdiction": "NJ",
+      "subjectKind": "assignment",
+      "remindOn": "2026-10-12",
+      "message": "The placement (SOC 51-2092, a designated classification) starts 2026-10-12; the notice is given when the worker is sent, by then (N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the Temporary Laborer Assignment Notification, form MW-23, when the laborer is sent to the assignment)).",
+      "tooOld": false,
+      "done": null
+    },
+    {
+      "workerId": "worker-1",
+      "clientId": "client-nj",
+      "assignmentId": "asg-nj",
+      "registrationId": null,
+      "policyId": null,
+      "occurrence": "",
+      "dueOn": "2026-10-12",
+      "facts": {
+        "startDate": "2026-10-12",
+        "socCode": "51-2092"
+      },
+      "kind": "nj_equal_pay_check",
+      "jurisdiction": "NJ",
+      "subjectKind": "assignment",
+      "remindOn": "2026-10-05",
+      "message": "The placement (SOC 51-2092, a designated classification) starts 2026-10-12; its pay is confirmed against the client's comparable employees by then (N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no less than the average rate of pay and average cost of benefits, or their cash equivalent, of the client's employees doing substantially similar work)).",
+      "tooOld": false,
+      "done": null
+    },
+    {
+      "workerId": "worker-1",
+      "clientId": "client-nj",
+      "assignmentId": "asg-nj-pl",
+      "registrationId": null,
+      "policyId": null,
+      "occurrence": "",
+      "dueOn": "2026-10-12",
+      "facts": {
+        "startDate": "2026-10-12",
+        "language": "pl",
+        "socCode": "51-2092"
+      },
+      "kind": "nj_assignment_notice",
+      "jurisdiction": "NJ",
+      "subjectKind": "assignment",
+      "remindOn": "2026-10-12",
+      "message": "The placement (SOC 51-2092, a designated classification) starts 2026-10-12; the notice is given when the worker is sent, by then (N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the Temporary Laborer Assignment Notification, form MW-23, when the laborer is sent to the assignment)).",
+      "tooOld": false,
+      "done": null
+    },
+    {
+      "workerId": "worker-1",
+      "clientId": "client-nj",
+      "assignmentId": "asg-nj-pl",
+      "registrationId": null,
+      "policyId": null,
+      "occurrence": "",
+      "dueOn": "2026-10-12",
+      "facts": {
+        "startDate": "2026-10-12",
+        "language": "pl",
+        "socCode": "51-2092"
+      },
       "kind": "nj_language_notice",
       "jurisdiction": "NJ",
       "subjectKind": "assignment",
       "remindOn": "2026-10-12",
-      "message": "The placement (SOC 51-2092, a designated classification) starts 2026-10-12; the worker's language is \"es\"; due by then (N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the assignment notice in English and the worker's primary language)).",
-      "tooOld": false
+      "message": "The placement (SOC 51-2092, a designated classification) starts 2026-10-12; the worker's language is \"pl\"; due by then (N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1 (the assignment notice in English and the worker's primary language)).",
+      "tooOld": false,
+      "done": null
+    },
+    {
+      "workerId": "worker-1",
+      "clientId": "client-nj",
+      "assignmentId": "asg-nj-pl",
+      "registrationId": null,
+      "policyId": null,
+      "occurrence": "",
+      "dueOn": "2026-10-12",
+      "facts": {
+        "startDate": "2026-10-12",
+        "socCode": "51-2092"
+      },
+      "kind": "nj_equal_pay_check",
+      "jurisdiction": "NJ",
+      "subjectKind": "assignment",
+      "remindOn": "2026-10-05",
+      "message": "The placement (SOC 51-2092, a designated classification) starts 2026-10-12; its pay is confirmed against the client's comparable employees by then (N.J.S.A. 34:8D-7(b); N.J.A.C. 12:72-7.2 (no less than the average rate of pay and average cost of benefits, or their cash equivalent, of the client's employees doing substantially similar work)).",
+      "tooOld": false,
+      "done": null
     }
   ]
 }

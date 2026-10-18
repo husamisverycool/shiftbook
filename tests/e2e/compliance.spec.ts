@@ -45,9 +45,9 @@ for (const locale of ["en", "es"] as const) {
     await page.keyboard.press("g");
     await page.keyboard.press("o");
     await expect(page.getByRole("heading", { level: 1, name: m.compliance.title })).toBeVisible();
-    // 14: the demo's 7 duties, and for its three New Jersey packers starting in 21 days an assignment
-    // notice and an equal-pay check each, plus the notice in Leticia's language (she prefers Spanish).
-    await expect(rows).toHaveCount(14);
+    // 13: the demo's 7 duties, and for its three New Jersey packers starting in 21 days an assignment
+    // notice (in English and Spanish) and an equal-pay check each.
+    await expect(rows).toHaveCount(13);
     await expect(rows.first()).toContainText(m.compliance.kinds.ma_job_order);
     await expect(rows.first()).toContainText("Kwame Boateng");
     await expect(rows.first().getByTestId("status-overdue")).toBeVisible();
@@ -57,12 +57,12 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("compliance-state").selectOption("MA");
     await expect(rows).toHaveCount(2);
     await page.getByTestId("compliance-state").selectOption("");
-    await expect(rows).toHaveCount(14);
+    await expect(rows).toHaveCount(13);
     await page.getByTestId("area-workers").click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("Kateryna Bondarenko");
     await page.getByTestId("area-all").click();
-    await expect(rows).toHaveCount(14);
+    await expect(rows).toHaveCount(13);
     await page.keyboard.press("/");
     await page.keyboard.type("IL-DTLSA");
     await page.keyboard.press("Enter");

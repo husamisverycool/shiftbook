@@ -294,7 +294,9 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
         });
       }
     }
-    if (p.state === "NJ" && p.workerLanguage !== "en" && p.socCode) {
+    // The assignment notice above is already in English and Spanish (form MW-23); a separate notice in
+    // the worker's language is needed only for another language.
+    if (p.state === "NJ" && p.workerLanguage !== "en" && p.workerLanguage !== "es" && p.socCode) {
       const r = ruleOn("nj_language_notice", p.startDate);
       if (r && r.socGroups.includes(p.socCode.slice(0, 2))) {
         const dueOn = addDays(p.startDate, r.offsetDays);
