@@ -29,6 +29,10 @@ Free alternative: none that is safe. Free hosting tiers either delete the databa
 and Granite must keep uploaded files and the key that locks Social Security numbers. Railway at about
 $5–20 a month is the cheapest reliable option, and it is what Granite is built for (decision 0035).
 
+**The cheapest start ($5 a month, nothing else):** do Part 2 (the demo) only, skip Part 1 and keep
+Railway's free address (it ends in `.up.railway.app`) instead of buying a domain. Skip Parts 3 to 8
+until the first agency is ready to pay. Email (Resend), Stripe and Anthropic cost nothing until used.
+
 ---
 
 ## Part 1 — Buy your domain (15 minutes, about $10/year)
