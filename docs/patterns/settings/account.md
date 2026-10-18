@@ -18,6 +18,7 @@ Source URL: https://docs.github.com/en/authentication/authenticating-with-a-pass
 Source URL: https://docs.github.com/en/authentication/authenticating-with-a-passkey/signing-in-with-a-passkey
 Source URL: https://passkeys.dev/docs/use-cases/bootstrapping/
 Source URL: https://linear.app/docs/account-preferences
+Source URL: https://docs.github.com/en/get-started/accessibility/managing-your-theme-settings
 Source URL: https://linear.app/docs/notifications
 Source URL: https://linear.app/docs/saml-and-access-control
 Source URL: https://linear.app/docs/profile
@@ -35,9 +36,16 @@ Laid out as Linear's settings (`_components/settings.md`): the shared header, th
 centred column, each section's rows in a rounded bordered panel.
 1. **Page header:** "Settings" above, H1 "Your account"; under it the person's name, then their email
    and role, then (demo) the demo line.
-2. **Preferences** section (Linear's Preferences "General": rows in a panel): rows — **Appearance**
-   (System, Light, Dark; Geist, GitHub and Linear offer exactly these three, saved when chosen;
-   decision 0046) and **Language**
+2. **Appearance** section (GitHub Settings › Appearance "Theme mode"; Linear Preferences "Interface
+   and theme": each person chooses their own; decision 0046, owner 2026-10-18 "customize between
+   different styles of colors … not just one choice"), its rows in a panel: **Theme** (System,
+   Light, Dark — exactly these three, a select at the row's right, saved when chosen) and **Colour**:
+   the label over a muted line, then a row of four selectable cards (Indigo, Blue, Teal, Graphite),
+   each a swatch of its button colour over its name, the chosen one ringed and ticked; a radio group
+   (arrow keys move, the choice applies at once as a preview and is saved; GitHub's theme cards).
+   Also reachable from ⌘K ("Change colour…", "Switch to dark/light"; GitHub: "also reachable from the
+   command palette").
+2a. **Preferences** section: **Language**
    over its muted line (it sets their screens, their sign-in page and the emails Granite sends them;
    Square), the select (English, Español) at the row's right, saved when chosen (Slack's Language).
 3. **Password** section (GitHub "Change password"), the muted line under the heading saying when it was

@@ -3,11 +3,12 @@
 // Pattern: docs/patterns/_components/command-menu.md (decision 0038) — GitHub's command palette:
 // the scope at the input's left, suggestions for where you are, recent items (Linear), pages and
 // verb-first actions; records searched on the server; GitHub's prefixes and keys; cmdk's list.
-import { ArrowRightIcon, BriefcaseIcon, Building2Icon, CalendarDaysIcon, ContactRoundIcon, CornerDownLeftIcon, FileUpIcon, KeyboardIcon, LandmarkIcon, LanguagesIcon, LogOutIcon, PlusIcon, ReceiptTextIcon, UserPlusIcon, UsersIcon, XIcon, type LucideIcon } from "lucide-react";
+import { ArrowRightIcon, BriefcaseIcon, Building2Icon, CalendarDaysIcon, ContactRoundIcon, CornerDownLeftIcon, FileUpIcon, KeyboardIcon, LandmarkIcon, LanguagesIcon, LogOutIcon, MoonIcon, PaletteIcon, PlusIcon, ReceiptTextIcon, SunIcon, UserPlusIcon, UsersIcon, XIcon, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
-import { signOutAction } from "@/app/[locale]/(auth)/actions";
+import { useTheme } from "next-themes";
+import { setAppearanceAction, signOutAction } from "@/app/[locale]/(auth)/actions";
 import { searchRecordsAction } from "@/app/[locale]/(app)/search-actions";
 import { CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
 import { usePathname, useRouter } from "@/i18n/navigation";
@@ -141,6 +142,7 @@ export function CommandMenu({ open, onOpenChange, pages, onShortcuts }: { open: 
     [locale, onOpenChange, router],
   );
 
+  const { resolvedTheme, setTheme } = useTheme();
   const actions = useMemo(() => {
     const all: { key: string; icon: LucideIcon; ability?: Ability; run: () => void }[] = [
       { key: "createJobOrder", icon: PlusIcon, ability: "placements", run: () => go("/job-orders?new=1", { href: "/job-orders", title: t("actions.createJobOrder"), kind: "page" }) },
@@ -149,6 +151,18 @@ export function CommandMenu({ open, onOpenChange, pages, onShortcuts }: { open: 
       { key: "publishSchedule", icon: CalendarDaysIcon, ability: "placements", run: () => go("/schedule?publish=1", { href: "/schedule", title: t("actions.publishSchedule"), kind: "page" }) },
       { key: "importBank", icon: LandmarkIcon, ability: "cash", run: () => go("/bank/import", { href: "/bank/import", title: t("actions.importBank"), kind: "page" }) },
       { key: "inviteMember", icon: UserPlusIcon, ability: "members", run: () => go("/settings/members", { href: "/settings/members", title: t("actions.inviteMember"), kind: "page" }) },
+      // Decision 0046: the person's colour and theme (GitHub: appearance "also reachable from the command palette").
+      { key: "changeColor", icon: PaletteIcon, run: () => go("/settings/account#appearance", { href: "/settings/account", title: t("actions.changeColor"), kind: "page" }) },
+      {
+        key: resolvedTheme === "dark" ? "switchToLight" : "switchToDark",
+        icon: resolvedTheme === "dark" ? SunIcon : MoonIcon,
+        run: () => {
+          const next = resolvedTheme === "dark" ? "light" : "dark";
+          onOpenChange(false);
+          setTheme(next);
+          void setAppearanceAction(next);
+        },
+      },
       {
         key: "switchLanguage",
         icon: LanguagesIcon,
@@ -175,7 +189,7 @@ export function CommandMenu({ open, onOpenChange, pages, onShortcuts }: { open: 
       },
     ];
     return all.filter((a) => !a.ability || can(a.ability));
-  }, [can, go, locale, onOpenChange, onShortcuts, pathname, router, t]);
+  }, [can, go, locale, onOpenChange, onShortcuts, pathname, resolvedTheme, router, setTheme, t]);
 
   const showStatic = (m: CommandMode) => mode === m || mode === "all";
   // cmdk's ranking: a match at the start of a word beats one elsewhere; the whole label best of all.

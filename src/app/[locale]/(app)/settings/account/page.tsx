@@ -38,6 +38,7 @@ export default async function AccountPage(props: { params: Promise<{ locale: str
       passkeys={passkeys.map((p) => ({ id: p.id, name: p.name, createdAt: p.createdAt.toISOString(), lastUsedAt: p.lastUsedAt?.toISOString() ?? null }))}
       recoveryCodesLeft={account.recoveryCodesLeft}
       appearance={session.appearance ?? "system"}
+      accent={session.accent ?? "indigo"}
     />
     </ConnectedAccountsData>
   );

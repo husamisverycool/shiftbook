@@ -5,6 +5,7 @@
  * session cookie; none acts on the agency's records. Every input is checked for its shape first.
  */
 import { cookies, headers } from "next/headers";
+import { ACCENT_COOKIE } from "@/lib/accent";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { getLocale } from "next-intl/server";
@@ -31,6 +32,7 @@ import {
   requestPasswordReset,
   SESSION_COOKIE,
   setAppearance,
+  setAccent,
   setLanguage,
   signIn,
   verifyResetCode,
@@ -203,6 +205,14 @@ export async function changePasswordAction(current: string, next: string): Promi
 export async function setAppearanceAction(appearance: string): Promise<{ ok: boolean }> {
   await currentActor();
   return { ok: await setAppearance(authDeps(), (await currentSession())!, appearance) };
+}
+
+/** Decision 0046: saved for the person, and kept in a cookie so every page opens in it. */
+export async function setAccentAction(accent: string): Promise<{ ok: boolean }> {
+  await currentActor();
+  const ok = await setAccent(authDeps(), (await currentSession())!, accent);
+  if (ok) (await cookies()).set(ACCENT_COOKIE, accent, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: false });
+  return { ok };
 }
 
 export async function setLanguageAction(locale: string): Promise<{ ok: boolean }> {

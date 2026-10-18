@@ -3637,7 +3637,18 @@
     "appearanceSystem": "System",
     "appearanceLight": "Light",
     "appearanceDark": "Dark",
-    "appearanceSaved": "Appearance saved"
+    "appearanceSaved": "Appearance saved",
+    "appearanceTitle": "Appearance",
+    "themeLabel": "Theme",
+    "accentLabel": "Color",
+    "accentHint": "Buttons, the selected item and charts use it. Only you see your choice.",
+    "accentSaved": "Color saved",
+    "accentNames": {
+      "indigo": "Indigo",
+      "blue": "Blue",
+      "teal": "Teal",
+      "graphite": "Graphite"
+    }
   },
   "members": {
     "eyebrow": "Settings",
@@ -5078,7 +5089,10 @@
       "switchLanguage": "Switch to Spanish",
       "shortcuts": "Show keyboard shortcuts",
       "signOut": "Sign out",
-      "publishSchedule": "Publish the schedule…"
+      "publishSchedule": "Publish the schedule…",
+      "changeColor": "Change color…",
+      "switchToDark": "Switch to dark",
+      "switchToLight": "Switch to light"
     },
     "help": {
       "actions": "Actions only",

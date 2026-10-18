@@ -73,3 +73,10 @@ Apple and shadcn give their own product screens character — and where each say
   pattern files name them.
 - The `users.appearance` column (drizzle/0065) keeps the person's choice; the browser keeps it too
   so pages open in the right theme.
+- Owner, 2026-10-18: "customize between different styles of colors … not just one choice". Each person
+  picks their own accent — Indigo (default), Blue, Teal or Graphite (the neutral look before this
+  decision, stone-900 / stone-200) — in Settings › Account › Appearance, as Linear ("custom themes by
+  selecting base UI and accent colors", L2) and GitHub (Appearance, P3) allow. Kept in `users.accent`
+  (drizzle/0066) and a `granite-accent` cookie so each page opens in it; GRANITE_ACCENT now only sets
+  the default for people who have not chosen.
+

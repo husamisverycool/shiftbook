@@ -3637,7 +3637,18 @@
     "appearanceSystem": "Sistema",
     "appearanceLight": "Clara",
     "appearanceDark": "Oscura",
-    "appearanceSaved": "Apariencia guardada"
+    "appearanceSaved": "Apariencia guardada",
+    "appearanceTitle": "Apariencia",
+    "themeLabel": "Tema",
+    "accentLabel": "Color",
+    "accentHint": "Los botones, el elemento seleccionado y los gráficos lo usan. Solo usted ve su elección.",
+    "accentSaved": "Color guardado",
+    "accentNames": {
+      "indigo": "Índigo",
+      "blue": "Azul",
+      "teal": "Verde azulado",
+      "graphite": "Grafito"
+    }
   },
   "members": {
     "eyebrow": "Configuración",
@@ -5078,7 +5089,10 @@
       "switchLanguage": "Cambiar a inglés",
       "shortcuts": "Mostrar los atajos de teclado",
       "signOut": "Cerrar sesión",
-      "publishSchedule": "Publicar el horario…"
+      "publishSchedule": "Publicar el horario…",
+      "changeColor": "Cambiar color…",
+      "switchToDark": "Cambiar a oscuro",
+      "switchToLight": "Cambiar a claro"
     },
     "help": {
       "actions": "Solo acciones",

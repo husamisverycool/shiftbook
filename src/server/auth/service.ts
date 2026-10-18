@@ -14,6 +14,7 @@
  * in 15 minutes lock the code for 15 minutes, 100 in a row for a day, and a half session ends after 5.
  * Every count is read and written under the login row's lock, so parallel tries count one by one.
  */
+import { parseAccent } from "@/lib/accent";
 import { and, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { auditBy, type AuditInput } from "../audit";
 import type { Db, Tx } from "../db/client";
@@ -105,6 +106,8 @@ export interface SessionInfo {
   hasAuthenticator: boolean;
   /** System, Light or Dark (decision 0046). */
   appearance?: "system" | "light" | "dark";
+  /** Decision 0046: the person's accent colour. */
+  accent?: "indigo" | "blue" | "teal" | "graphite";
 }
 
 /** The session a cookie names, still valid and its person active; it notes the person was seen. */
@@ -128,7 +131,7 @@ export async function readSession(deps: AuthDeps, token: string | undefined): Pr
     const [login] = await tx.select({ totpEnabledAt: s.userLogins.totpEnabledAt }).from(s.userLogins).where(eq(s.userLogins.userId, user.id));
     // Seen: at most one write every five minutes.
     if (now.getTime() - row.lastSeenAt.getTime() > 5 * MINUTE) await tx.update(s.sessions).set({ lastSeenAt: now }).where(eq(s.sessions.id, row.id));
-    return { sessionId: row.id, agencyId: row.agencyId, userId: user.id, name: user.name, email: user.email, role: user.role, locale: user.preferredLocale, demo: row.demo, secondStepAt: row.secondStepAt, confirmedAt: row.confirmedAt, hasAuthenticator: Boolean(login?.totpEnabledAt), appearance: user.appearance };
+    return { sessionId: row.id, agencyId: row.agencyId, userId: user.id, name: user.name, email: user.email, role: user.role, locale: user.preferredLocale, demo: row.demo, secondStepAt: row.secondStepAt, confirmedAt: row.confirmedAt, hasAuthenticator: Boolean(login?.totpEnabledAt), appearance: user.appearance, accent: user.accent };
   });
 }
 
@@ -1036,6 +1039,17 @@ export async function setAppearance(deps: AuthDeps, session: SessionInfo, appear
   await withAuth(deps, async (tx) => {
     await enterAgency(tx, session.agencyId);
     await tx.update(s.users).set({ appearance }).where(eq(s.users.id, session.userId));
+  });
+  return true;
+}
+
+/** The person's own accent colour (decision 0046: each person picks theirs, as Linear and GitHub allow). */
+export async function setAccent(deps: AuthDeps, session: SessionInfo, accent: string): Promise<boolean> {
+  const chosen = parseAccent(accent);
+  if (!chosen) return false;
+  await withAuth(deps, async (tx) => {
+    await enterAgency(tx, session.agencyId);
+    await tx.update(s.users).set({ accent: chosen }).where(eq(s.users.id, session.userId));
   });
   return true;
 }

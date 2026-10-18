@@ -7,7 +7,7 @@ import { AppSidebar } from "@/components/shiftbook/app-sidebar";
 import { AbilitiesProvider } from "@/components/shiftbook/abilities";
 import { AgencyZoneProvider } from "@/components/shiftbook/agency-zone";
 import { PageFade } from "@/components/shiftbook/page-fade";
-import { ApplyAppearance } from "@/components/shiftbook/theme";
+import { ApplyAccent, ApplyAppearance } from "@/components/shiftbook/theme";
 import { ConfirmAccessProvider } from "@/components/shiftbook/auth/confirm-access";
 import { SignInNotice } from "@/components/shiftbook/auth/sign-in-notice";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -44,6 +44,7 @@ export default async function AppLayout({ children, params }: { children: ReactN
               <PageFade />
               {/* The person's saved appearance (decision 0046). */}
               <ApplyAppearance appearance={(await currentSession())?.appearance ?? "system"} />
+              <ApplyAccent accent={(await currentSession())?.accent ?? "indigo"} />
               <div className="flex items-center gap-2 border-b px-4 py-2 md:hidden">
                 <SidebarTrigger />
                 <span className="truncate text-sm font-medium">{agency?.name}</span>

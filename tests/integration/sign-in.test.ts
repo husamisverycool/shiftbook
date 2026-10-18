@@ -20,6 +20,7 @@ import {
   readSession,
   replaceRecoveryCodes,
   requestPasswordReset,
+  setAccent,
   setLanguage,
   setSuspended,
   signIn,
@@ -459,6 +460,21 @@ describe("sign-in through the database", () => {
     } finally {
       await owner.db.update(s.agencies).set({ isDemo: true }).where(eq(s.agencies.id, DEMO_AGENCY.id));
     }
+  });
+
+  it("decision 0046: each person keeps their own accent colour; only the four colours are taken", async () => {
+    const demo = await demoSignIn(deps, DEMO_AGENCY.id, DEMO_OWNER.id, "test");
+    if (!demo.ok) throw new Error("demo sign-in refused");
+    const session = (await readSession(deps, demo.token))!;
+    expect(session.accent).toBe("indigo");
+    expect(await setAccent(deps, session, "teal")).toBe(true);
+    expect((await readSession(deps, demo.token))!.accent).toBe("teal");
+    expect(await setAccent(deps, session, "red")).toBe(false);
+    expect((await readSession(deps, demo.token))!.accent).toBe("teal");
+    // Another person in the same agency keeps the default.
+    const others = await owner.db.select({ accent: s.users.accent }).from(s.users).where(and(eq(s.users.agencyId, DEMO_AGENCY.id), sql`${s.users.id} <> ${DEMO_OWNER.id}`));
+    expect(others.length).toBeGreaterThan(0);
+    expect(others.every((u) => u.accent === "indigo")).toBe(true);
   });
 
   it("the sign-in tables are fenced by agency: an ordinary transaction sees only its own agency's rows, none without one", async () => {

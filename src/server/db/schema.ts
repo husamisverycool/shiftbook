@@ -123,6 +123,7 @@ export const users = pgTable(
     preferredLocale: text("preferred_locale").notNull().default("en"),
     /** System, Light or Dark (decision 0046, drizzle/0065). */
     appearance: text("appearance").$type<"system" | "light" | "dark">().notNull().default("system"),
+    accent: text("accent").$type<"indigo" | "blue" | "teal" | "graphite">().notNull().default("indigo"),
     /** "invited" until they accept; "suspended" people cannot sign in (slice k, drizzle/0034). */
     status: text("status").$type<UserStatus>().notNull().default("active"),
     createdAt: createdAt(),

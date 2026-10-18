@@ -5,12 +5,15 @@
 // "Password and authentication" (change password; two-factor setup; recovery codes, a new set ends the old).
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useId, useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { changePasswordAction, newRecoveryCodesAction, setAppearanceAction, setLanguageAction, signOutAction } from "@/app/[locale]/(auth)/actions";
-import type { Appearance } from "../theme";
+import { changePasswordAction, newRecoveryCodesAction, setAccentAction, setAppearanceAction, setLanguageAction, signOutAction } from "@/app/[locale]/(auth)/actions";
+import { applyAccent, type Appearance } from "../theme";
+import { ACCENTS, type Accent } from "@/lib/accent";
+import { CheckIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { usePathname, useRouter } from "@/i18n/navigation";
@@ -37,6 +40,7 @@ export interface AccountProps {
   passkeys: PasskeyItem[];
   recoveryCodesLeft: number | null;
   appearance: Appearance;
+  accent: Accent;
 }
 
 export function AccountView(props: AccountProps) {
@@ -52,6 +56,8 @@ export function AccountView(props: AccountProps) {
   const [appearance, setAppearanceState] = useState<Appearance>(props.appearance);
   const [savingAppearance, startAppearance] = useTransition();
   const { setTheme } = useTheme();
+  const [accent, setAccentState] = useState<Accent>(props.accent);
+  const [, startAccent] = useTransition();
   const [savingPassword, startPassword] = useTransition();
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordKey, setPasswordKey] = useState(0);
@@ -75,12 +81,12 @@ export function AccountView(props: AccountProps) {
         </>
       }
     >
-      {/* Linear's Preferences: a section of rows, the select at the row's right. */}
-      <SettingsSection title={t("preferencesTitle")}>
+      {/* GitHub's Appearance and Linear's "Interface and theme": each person's own theme and colour (decision 0046). */}
+      <SettingsSection title={t("appearanceTitle")} id="appearance" testId="appearance-section">
         <SettingsRows>
-          {/* Geist, GitHub and Linear: System, Light, Dark — applied at once, kept for the person (decision 0046). */}
+          {/* Geist, GitHub and Linear: System, Light, Dark — applied at once, kept for the person. */}
           <SettingsRow
-            label={t("appearance")}
+            label={t("themeLabel")}
             htmlFor={`${id}-appearance-select`}
             description={t("appearanceHint")}
             descriptionId={`${id}-appearance-hint`}
@@ -108,6 +114,23 @@ export function AccountView(props: AccountProps) {
               </NativeSelect>
             }
           />
+          <AccentPicker
+            value={accent}
+            onChange={(next) => {
+              setAccentState(next);
+              applyAccent(next);
+              startAccent(async () => {
+                const r = await setAccentAction(next);
+                if (r.ok) toast.success(t("accentSaved"));
+              });
+            }}
+          />
+        </SettingsRows>
+      </SettingsSection>
+
+      {/* Linear's Preferences: a section of rows, the select at the row's right. */}
+      <SettingsSection title={t("preferencesTitle")}>
+        <SettingsRows>
           <SettingsRow
             label={t("language")}
             htmlFor={`${id}-language-select`}
@@ -284,5 +307,70 @@ export function AccountView(props: AccountProps) {
         </DialogContent>
       </Dialog>
     </SettingsPage>
+  );
+}
+
+/**
+ * The colour cards (GitHub's theme cards): a radio group — arrow keys move and choose, the choice shows
+ * at once. Each swatch takes its accent's own button colour from globals.css through data-accent.
+ */
+function AccentPicker({ value, onChange }: { value: Accent; onChange: (next: Accent) => void }) {
+  const t = useTranslations("account");
+  const id = useId();
+  const refs = useRef(new Map<Accent, HTMLButtonElement>());
+  const move = (from: Accent, step: number) => {
+    const next = ACCENTS[(ACCENTS.indexOf(from) + step + ACCENTS.length) % ACCENTS.length]!;
+    onChange(next);
+    refs.current.get(next)?.focus();
+  };
+  return (
+    <div className="flex flex-col gap-3 py-4">
+      <div className="flex flex-col gap-0.5">
+        <span id={`${id}-label`} className="text-sm font-medium">
+          {t("accentLabel")}
+        </span>
+        <span id={`${id}-hint`} className="text-[13px] text-muted-foreground">
+          {t("accentHint")}
+        </span>
+      </div>
+      <div role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={`${id}-hint`} className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="accent-picker">
+        {ACCENTS.map((a) => {
+          const chosen = a === value;
+          return (
+            <button
+              key={a}
+              ref={(el) => {
+                if (el) refs.current.set(a, el);
+                else refs.current.delete(a);
+              }}
+              type="button"
+              role="radio"
+              aria-checked={chosen}
+              tabIndex={chosen ? 0 : -1}
+              onClick={() => onChange(a)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                  move(a, 1);
+                } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                  e.preventDefault();
+                  move(a, -1);
+                }
+              }}
+              data-testid={`accent-${a}`}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2.5 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50",
+                chosen && "border-foreground",
+              )}
+            >
+              <span data-accent={a} aria-hidden className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                {chosen && <CheckIcon className="size-3" />}
+              </span>
+              <span className="font-medium">{t(`accentNames.${a}`)}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
