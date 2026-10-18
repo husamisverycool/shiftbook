@@ -212,7 +212,7 @@ export function CodeFields({ onSubmit, pending, error }: { onSubmit: (code: stri
         <p className="text-muted-foreground">{t("moreOptions")}</p>
         <button
           type="button"
-          className="w-fit text-left text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="w-fit text-left text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => {
             setRecovery((r) => !r);
             setCode("");

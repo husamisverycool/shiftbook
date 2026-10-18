@@ -92,7 +92,7 @@ export function LinkProofView({ provider, hint, demoCopy: initialCopy }: { provi
         <div className="flex flex-col items-center gap-1 text-sm">
           <button
             type="button"
-            className="text-primary underline-offset-4 hover:underline disabled:opacity-50 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="text-accent-text underline-offset-4 hover:underline disabled:opacity-50 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             disabled={sending}
             onClick={() =>
               startSend(async () => {
@@ -120,7 +120,7 @@ export function LinkProofView({ provider, hint, demoCopy: initialCopy }: { provi
           </div>
         </div>
       )}
-      <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+      <Link href="/sign-in" className="self-center text-sm text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
         {t("back")}
       </Link>
     </>

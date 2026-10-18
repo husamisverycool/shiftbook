@@ -30,6 +30,7 @@ import {
   replaceRecoveryCodes,
   requestPasswordReset,
   SESSION_COOKIE,
+  setAppearance,
   setLanguage,
   signIn,
   verifyResetCode,
@@ -197,6 +198,11 @@ export async function changePasswordAction(current: string, next: string): Promi
   await currentActor();
   if (!password.safeParse(current).success || !password.safeParse(next).success) return { ok: false, error: "too_long" };
   return changePassword(authDeps(), (await currentSession())!, current, next);
+}
+
+export async function setAppearanceAction(appearance: string): Promise<{ ok: boolean }> {
+  await currentActor();
+  return { ok: await setAppearance(authDeps(), (await currentSession())!, appearance) };
 }
 
 export async function setLanguageAction(locale: string): Promise<{ ok: boolean }> {

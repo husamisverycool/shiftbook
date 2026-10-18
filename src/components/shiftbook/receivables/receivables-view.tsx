@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ReceivablesView as View } from "@/server/receivables/queries";
+import { ColorDot } from "../avatar";
 import { EmptyState } from "../empty-state";
 import { useEngineSay } from "../engine-say";
 import { longDate, money, moneyParts, tableDate } from "../format";
@@ -150,7 +151,8 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
                       <Fragment key={c.clientId}>
                         <TableRow data-testid="aging-row">
                           <TableCell className="font-medium">
-                            <Link href={`/clients/${c.clientId}`} className="underline-offset-4 hover:underline">
+                            <Link href={`/clients/${c.clientId}`} className="inline-flex items-center gap-2 underline-offset-4 hover:underline">
+                              <ColorDot id={c.clientId} />
                               {c.clientName}
                             </Link>
                           </TableCell>
@@ -256,7 +258,12 @@ export function ReceivablesView({ view, tab, today }: { view: View; tab: "aging"
             <TableBody>
               {view.shortPaid.map((r) => (
                 <TableRow key={r.invoiceId} className="cursor-pointer" onClick={() => router.push(`/invoices/${r.invoiceId}`)} data-testid="short-row">
-                  <TableCell>{r.clientName}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-2">
+                      <ColorDot id={r.clientId} />
+                      {r.clientName}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <Link href={`/invoices/${r.invoiceId}`} className="font-medium underline-offset-4 hover:underline" onClick={(e) => e.stopPropagation()}>
                       {r.number}

@@ -72,4 +72,8 @@ The figures as plain type in a row over a hairline, as Stripe's app overview and
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Colour (decision 0046)
+
+The figures 24px semibold; billed and margin each with a small accent sparkline of the weeks under the figure (Stripe's label → figure → sparkline). The weekly bars in the accent, a loss in the destructive tone (`_components/color.md`).
+
 Deviations allowed: none

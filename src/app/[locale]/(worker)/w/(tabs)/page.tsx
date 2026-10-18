@@ -21,7 +21,7 @@ function Card({ title, children, action, testId }: { title: string; children: Re
       <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
       {children}
       {action && (
-        <Link href={action.href} className="-mx-1 inline-flex items-center gap-1 self-start rounded-sm px-1 text-sm font-medium text-primary outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/50">
+        <Link href={action.href} className="-mx-1 inline-flex items-center gap-1 self-start rounded-sm px-1 text-sm font-medium text-accent-text outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/50">
           {action.label}
           <ChevronRightIcon className="size-4" aria-hidden />
         </Link>

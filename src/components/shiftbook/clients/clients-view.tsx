@@ -13,6 +13,7 @@ import { useCan } from "../abilities";
 import { EmptyState } from "../empty-state";
 import { AddClientButton } from "./client-setup";
 import { ResultsCount } from "../list-controls";
+import { Avatar } from "../avatar";
 import { Page, PageHeader, TableFrame } from "../page";
 
 export function ClientsView({ rows, archivedCount, showArchived }: { rows: ClientRow[]; archivedCount: number; showArchived: boolean }) {
@@ -55,7 +56,8 @@ export function ClientsView({ rows, archivedCount, showArchived }: { rows: Clien
               {rows.map((c) => (
                 <TableRow key={c.id} data-testid="client-row">
                   <TableCell className="font-medium">
-                    <Link href={`/clients/${c.id}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                    <Link href={`/clients/${c.id}`} className="inline-flex items-center gap-2 underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                      <Avatar name={c.name} id={c.id} kind="organization" />
                       {c.name}
                     </Link>
                     {c.archived && (

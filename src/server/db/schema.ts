@@ -121,6 +121,8 @@ export const users = pgTable(
     email: text("email").notNull(),
     role: userRole("role").notNull(),
     preferredLocale: text("preferred_locale").notNull().default("en"),
+    /** System, Light or Dark (decision 0046, drizzle/0065). */
+    appearance: text("appearance").$type<"system" | "light" | "dark">().notNull().default("system"),
     /** "invited" until they accept; "suspended" people cannot sign in (slice k, drizzle/0034). */
     status: text("status").$type<UserStatus>().notNull().default("active"),
     createdAt: createdAt(),

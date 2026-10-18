@@ -111,7 +111,7 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
       href={`/compliance/${i.id}`}
       className={cn(
         "block truncate rounded px-1.5 py-0.5 text-xs outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
-        i.status === "overdue" ? "border border-destructive text-destructive" : i.status === "due_soon" ? "bg-primary/10" : i.status === "done" || i.status === "not_applicable" ? "text-muted-foreground line-through" : "bg-muted/60",
+        i.status === "overdue" ? "border border-destructive text-destructive" : i.status === "due_soon" ? "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200" : i.status === "done" || i.status === "not_applicable" ? "text-muted-foreground line-through" : "bg-muted/60",
       )}
       title={`${t(`kinds.${i.kind}` as "kinds.ma_job_order")} — ${i.subject} (${t(`statuses.${i.status}`)})`}
       data-testid="calendar-chip"
@@ -169,7 +169,7 @@ export function ComplianceCalendar({ items, view, date, today, startsOn, nextDue
             .filter((d) => on(d).length > 0)
             .map((d) => (
               <li key={d} className="overflow-hidden rounded-xl border bg-card">
-                <h3 className={cn("border-b bg-muted/40 px-3 py-1.5 text-sm font-medium", d === today && "text-primary")}>{longDate(d, locale)}</h3>
+                <h3 className={cn("border-b bg-muted/40 px-3 py-1.5 text-sm font-medium", d === today && "text-accent-text")}>{longDate(d, locale)}</h3>
                 <ul>
                   {on(d).map((i) => (
                     <li key={i.id} className="flex items-center gap-3 border-b px-3 py-2 transition-colors last:border-b-0 hover:bg-muted/40">

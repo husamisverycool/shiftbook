@@ -56,4 +56,8 @@ The summary is set as Mercury's Transactions page sets its figures (https://merc
 - An invoice with a promise shows it beside its status: "Promised {date}" (muted), or "Promise broken"
   (warning tone) once the date has passed with money still owed.
 
+## Colour (decision 0046)
+
+Client names in the aging and short-paid tables show the client's colour dot (`_components/avatar.md`).
+
 Deviations allowed: none

@@ -53,4 +53,8 @@ Stripe's table (https://docs.stripe.com/invoicing/dashboard): full width, small-
 - A failure: the frame stays; the failed content's place says so with "Try again"
   (`_components/error.md`).
 
+## Colour (decision 0046)
+
+Each worker's initials in their own colour (`_components/avatar.md`).
+
 Deviations allowed: none

@@ -21,7 +21,7 @@ function HaveAccount() {
   return (
     <p className="text-center text-sm text-muted-foreground" data-testid="sign-up-have-account">
       {t("haveAccount")}{" "}
-      <Link href="/sign-in" className="text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+      <Link href="/sign-in" className="text-accent-text underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
         {t("signIn")}
       </Link>
     </p>
@@ -73,12 +73,12 @@ export function SignUpView({ demo, trialDays }: { demo: boolean; trialDays: numb
         </div>
         <p className="text-center text-sm text-muted-foreground">
           {t("sentHint")}{" "}
-          <button type="button" className="text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={() => setSentTo(null)} data-testid="sign-up-different-email">
+          <button type="button" className="text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={() => setSentTo(null)} data-testid="sign-up-different-email">
             {t("differentEmail")}
           </button>
           .
         </p>
-        <Link href="/sign-in" className="self-center text-sm text-primary underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+        <Link href="/sign-in" className="self-center text-sm text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
           {t("back")}
         </Link>
       </>
@@ -181,7 +181,7 @@ export function SignUpFinishView({ token, info }: { token: string; info: { email
         <Alert data-testid="sign-up-taken">
           <AlertDescription>
             {t("taken")}{" "}
-            <Link href="/sign-in" className="text-primary underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+            <Link href="/sign-in" className="text-accent-text underline underline-offset-4 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
               {t("toSignIn")}
             </Link>
           </AlertDescription>

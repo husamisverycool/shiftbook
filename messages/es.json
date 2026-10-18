@@ -3631,7 +3631,13 @@
     "setUpAgainHint": "Para un teléfono nuevo. La aplicación anterior sigue funcionando hasta que se verifique la nueva.",
     "signOut": "Cerrar sesión",
     "signOutLine": "Cerrar la sesión de Granite en este navegador",
-    "demoNote": "Demostración: nada de aquí sale de la demostración; pruebe la contraseña y el autenticador libremente."
+    "demoNote": "Demostración: nada de aquí sale de la demostración; pruebe la contraseña y el autenticador libremente.",
+    "appearance": "Apariencia",
+    "appearanceHint": "Sistema sigue la configuración clara u oscura de su dispositivo.",
+    "appearanceSystem": "Sistema",
+    "appearanceLight": "Clara",
+    "appearanceDark": "Oscura",
+    "appearanceSaved": "Apariencia guardada"
   },
   "members": {
     "eyebrow": "Configuración",

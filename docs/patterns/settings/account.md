@@ -35,7 +35,9 @@ Laid out as Linear's settings (`_components/settings.md`): the shared header, th
 centred column, each section's rows in a rounded bordered panel.
 1. **Page header:** "Settings" above, H1 "Your account"; under it the person's name, then their email
    and role, then (demo) the demo line.
-2. **Preferences** section (Linear's Preferences "General": rows in a panel): one row — **Language**
+2. **Preferences** section (Linear's Preferences "General": rows in a panel): rows — **Appearance**
+   (System, Light, Dark; Geist, GitHub and Linear offer exactly these three, saved when chosen;
+   decision 0046) and **Language**
    over its muted line (it sets their screens, their sign-in page and the emails Granite sends them;
    Square), the select (English, Español) at the row's right, saved when chosen (Slack's Language).
 3. **Password** section (GitHub "Change password"), the muted line under the heading saying when it was

@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 import type { WorkerProfile } from "@/server/workers/queries";
 import { ReadOnlyNote, useCan } from "../abilities";
 import { longDate } from "../format";
+import { Avatar } from "../avatar";
 import { Crumbs, Facts as DetailFacts, Page, PageHeader, RECORD_LINK, RecordLayout, Section as RecordSection } from "../page";
 import { Status } from "../status";
 import { WorkerWageAccess, type WorkerWage } from "../money/worker-wage";
@@ -84,6 +85,7 @@ export function WorkerProfileView({ profile, today, wage, app, zone }: { profile
     <Page>
       <PageHeader
         context={<Crumbs label={tc("breadcrumb")} items={[{ label: t("profile.back"), href: "/workers" }]} />}
+        leading={<Avatar name={name} id={profile.id} size={40} />}
         title={name}
         status={
           <Status tone={profile.status === "active" ? "success" : "neutral"} size="lg" data-testid="worker-status">

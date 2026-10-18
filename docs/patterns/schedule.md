@@ -71,4 +71,8 @@ that job order; hours still come only from timesheets (SPEC §6) — a schedule 
 ## Never copy
 When I Work's or Deputy's wording, colors, icons or logos.
 
+## Colour (decision 0046)
+
+Worker rows lead with the worker's avatar; job-order and worksite rows show the client's colour dot before the client; each shift chip shows its client's dot before the time (`_components/avatar.md`, `_components/color.md`).
+
 Deviations allowed: none

@@ -78,3 +78,33 @@ test("exceptions, totals and files steps, with their dialogs, have no serious ac
   await approveAndCreateFiles(page, en);
   await check(page, "files");
 });
+
+// Decision 0046: the sample screens in both themes. The person's appearance is "System", so the
+// emulated colour scheme picks the theme.
+for (const scheme of ["light", "dark"] as const) {
+  test(`sample screens have no serious accessibility problems (${scheme})`, async ({ page }) => {
+    execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
+    await page.emulateMedia({ colorScheme: scheme });
+    const settle = () => page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity));
+    for (const [where, path] of [
+      ["home", "/en"],
+      ["invoices", "/en/invoices"],
+      ["workers", "/en/workers"],
+      ["clients", "/en/clients"],
+      ["margin", "/en/margin"],
+      ["receivables", "/en/receivables"],
+      ["schedule", "/en/schedule"],
+      ["account", "/en/settings/account"],
+    ] as const) {
+      await page.goto(path);
+      await expect(page.locator("html")).toHaveClass(new RegExp(scheme === "dark" ? "\\bdark\\b" : "^(?!.*\\bdark\\b)"));
+      await settle();
+      await check(page, `${where} (${scheme})`);
+    }
+    await page.goto("/en/clients");
+    await page.getByTestId("client-row").first().getByRole("link").click();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await settle();
+    await check(page, `client page (${scheme})`);
+  });
+}

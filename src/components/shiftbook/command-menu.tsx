@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Ability } from "@/server/permissions";
 import type { FoundRecord, RecordKind, Scope } from "@/server/search/records";
 import { useCan } from "./abilities";
+import { Avatar } from "./avatar";
 import { parseCommandQuery, type CommandMode } from "./command-query";
 import { money } from "./format";
 
@@ -206,7 +207,8 @@ export function CommandMenu({ open, onOpenChange, pages, onShortcuts }: { open: 
     const line = recordLine(r);
     return (
       <CommandItem key={`${prefix}-${r.kind}-${r.id}`} value={`${prefix}-${r.kind}-${r.id}`} onSelect={() => go(r.href, { href: r.href, title: r.title, kind: r.kind })} data-href={r.href} data-scope={r.kind === "client" || r.kind === "worker" ? `${r.kind}:${r.id}` : undefined} data-name={r.title}>
-        <Icon />
+        {/* People and clients by their avatar, as Linear's command menu shows a person (decision 0046). */}
+        {r.kind === "worker" || r.kind === "client" ? <Avatar name={r.title} id={r.id} kind={r.kind === "client" ? "organization" : "person"} size={20} /> : <Icon />}
         <span className="min-w-0 truncate">
           <Marked text={r.title} term={term} />
         </span>

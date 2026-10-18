@@ -103,6 +103,8 @@ export interface SessionInfo {
   /** When the password or a code was last given in this session. */
   confirmedAt: Date | null;
   hasAuthenticator: boolean;
+  /** System, Light or Dark (decision 0046). */
+  appearance?: "system" | "light" | "dark";
 }
 
 /** The session a cookie names, still valid and its person active; it notes the person was seen. */
@@ -126,7 +128,7 @@ export async function readSession(deps: AuthDeps, token: string | undefined): Pr
     const [login] = await tx.select({ totpEnabledAt: s.userLogins.totpEnabledAt }).from(s.userLogins).where(eq(s.userLogins.userId, user.id));
     // Seen: at most one write every five minutes.
     if (now.getTime() - row.lastSeenAt.getTime() > 5 * MINUTE) await tx.update(s.sessions).set({ lastSeenAt: now }).where(eq(s.sessions.id, row.id));
-    return { sessionId: row.id, agencyId: row.agencyId, userId: user.id, name: user.name, email: user.email, role: user.role, locale: user.preferredLocale, demo: row.demo, secondStepAt: row.secondStepAt, confirmedAt: row.confirmedAt, hasAuthenticator: Boolean(login?.totpEnabledAt) };
+    return { sessionId: row.id, agencyId: row.agencyId, userId: user.id, name: user.name, email: user.email, role: user.role, locale: user.preferredLocale, demo: row.demo, secondStepAt: row.secondStepAt, confirmedAt: row.confirmedAt, hasAuthenticator: Boolean(login?.totpEnabledAt), appearance: user.appearance };
   });
 }
 
@@ -1024,6 +1026,16 @@ export async function setLanguage(deps: AuthDeps, session: SessionInfo, locale: 
     await enterAgency(tx, session.agencyId);
     await tx.update(s.users).set({ preferredLocale: locale }).where(eq(s.users.id, session.userId));
     await log(tx, { id: session.userId, agencyId: session.agencyId, name: session.name }, [{ action: "update", entityType: "user", entityId: session.userId, before: { language: session.locale }, after: { language: locale } }], session.demo);
+  });
+  return true;
+}
+
+/** The person's own appearance (decision 0046: System, Light or Dark, as Geist, GitHub and Linear offer). */
+export async function setAppearance(deps: AuthDeps, session: SessionInfo, appearance: string): Promise<boolean> {
+  if (appearance !== "system" && appearance !== "light" && appearance !== "dark") return false;
+  await withAuth(deps, async (tx) => {
+    await enterAgency(tx, session.agencyId);
+    await tx.update(s.users).set({ appearance }).where(eq(s.users.id, session.userId));
   });
   return true;
 }

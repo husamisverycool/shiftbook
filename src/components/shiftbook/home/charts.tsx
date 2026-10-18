@@ -5,11 +5,13 @@
 // the day so far over a hairline for each step of the day, no values, an end dot, the first and last
 // times under it; and the app overview's bars (https://docs.stripe.com/stripe-apps/patterns/chart-layout)
 // — wide bars from zero on gridlines, each bar's date under it. The same numbers are in a table for
-// screen readers.
-import type { ReactNode } from "react";
+// screen readers. In colour (decision 0046): the current period in the accent, a faint area under a
+// single line, bars in the accent, and Primer's hover — crosshair, point, tooltip.
+import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { gridTicks } from "../chart-axis";
 import { Tip } from "../tip";
+import { ChartHover } from "./chart-hover";
 
 interface Point {
   label: string;
@@ -73,15 +75,32 @@ function ScreenReaderTable({ caption, head, rows }: { caption: string; head?: st
 /** An SVG path through `values`, the i-th at i/steps of the width (steps: the whole axis, which a line may stop short of). */
 const path = (values: number[], y: (v: number) => number, steps = Math.max(values.length - 1, 1)) => values.map((v, i) => `${i === 0 ? "M" : "L"}${(i / steps) * 100},${y(v)}`).join(" ");
 
+/** The faint same-hue fill under a single line (Carbon's area chart; Primer: one series only). */
+function AreaFill({ d, id, end = 100 }: { d: string; id: string; end?: number }) {
+  return (
+    <>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1" className="text-chart-1">
+          <stop offset="0" stopColor="currentColor" stopOpacity="0.2" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${d} L${end},100 L0,100 Z`} fill={`url(#${id})`} stroke="none" />
+    </>
+  );
+}
+
 /**
  * Stripe Home's overview chart: the line of this period, the period before dashed under it, gridlines
- * on round steps of `unit` (100 cents: dollars; 60 minutes: hours) written by `axis`.
+ * on round steps of `unit` (100 cents: dollars; 60 minutes: hours) written by `axis`. `describePrevious`
+ * writes the period before's value in the hover's tooltip.
  */
 export function LineChart({
   points,
   previous,
   axis,
   format,
+  describePrevious,
   caption,
   height = 176,
   unit = 1,
@@ -90,20 +109,33 @@ export function LineChart({
   previous?: number[];
   axis: (ticks: number[]) => string[];
   format: (n: number) => string;
+  describePrevious?: (value: string) => string;
   caption: string;
   height?: number;
   unit?: number;
 }) {
+  const fill = useId();
   const ticks = gridTicks({ max: Math.max(0, ...points.map((p) => p.value), ...(previous ?? [])), unit, intervals: 3 });
   const top = ticks[0]!;
   const y = (v: number) => (top > 0 ? 100 - (Math.max(v, 0) / top) * 100 : 100);
+  const comparing = previous !== undefined && previous.length === points.length;
+  const line = path(points.map((p) => p.value), y);
   return (
     <figure className="flex flex-col gap-2.5">
       <Gridlines ticks={ticks} labels={axis(ticks)} height={height}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="size-full overflow-visible" aria-hidden>
-          {previous && previous.length === points.length && <path d={path(previous, y)} fill="none" className="stroke-foreground/30" strokeWidth="1.5" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
-          <path d={path(points.map((p) => p.value), y)} fill="none" className="stroke-foreground" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+          {!comparing && <AreaFill d={line} id={fill} />}
+          {comparing && <path d={path(previous, y)} fill="none" className="stroke-muted-foreground/60" strokeWidth="1.5" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
+          <path d={line} fill="none" className="stroke-chart-1" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
         </svg>
+        <ChartHover
+          points={points.map((p, i) => ({
+            label: p.label,
+            value: format(p.value),
+            previous: comparing ? (describePrevious ?? ((v: string) => v))(format(previous[i]!)) : undefined,
+            top: y(p.value),
+          }))}
+        />
       </Gridlines>
       <div className="mr-[3.375rem] flex justify-between text-[13px] text-muted-foreground" aria-hidden>
         <span>{points[0]?.label}</span>
@@ -125,6 +157,8 @@ export function TodayChart({ totals, first, last, through, note, caption, table,
   const n = Math.max(totals.length - 1, 1);
   // Up to the last day with hours, as Stripe's line stops at the time now.
   const drawn = totals.slice(0, Math.max(through + 1, 1));
+  const line = path(drawn, y, n);
+  const fill = useId();
   return (
     <figure className="flex flex-col gap-2.5">
       {note && <figcaption className="self-end text-[13px] text-foreground/70">{note}</figcaption>}
@@ -133,9 +167,10 @@ export function TodayChart({ totals, first, last, through, note, caption, table,
           <div key={i} className="absolute inset-y-0 w-px bg-border/70" style={{ left: `${(i / n) * 100}%` }} />
         ))}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible">
-          <path d={path(drawn, y, n)} fill="none" className="stroke-foreground" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+          {top > 0 && <AreaFill d={line} end={((drawn.length - 1) / n) * 100} id={fill} />}
+          <path d={line} fill="none" className="stroke-chart-1" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
         </svg>
-        {top > 0 && <div className="absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground" style={{ left: `${((drawn.length - 1) / n) * 100}%`, top: `${y(drawn.at(-1) ?? 0)}%` }} />}
+        {top > 0 && <div className="absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-chart-1 ring-2 ring-background" style={{ left: `${((drawn.length - 1) / n) * 100}%`, top: `${y(drawn.at(-1) ?? 0)}%` }} />}
       </div>
       <div className="flex justify-between text-[13px] text-muted-foreground" aria-hidden>
         <span>{first}</span>
@@ -170,7 +205,7 @@ export function ColumnChart({ points, axis, caption, head, rows, height = 208, u
             return (
               <Tip key={p.label} label={p.hint}>
                 <div className="relative flex-1 transition-opacity group-hover/bars:opacity-50 hover:opacity-100!">
-                  {p.value !== 0 && <div className={cn("absolute inset-x-[14%]", p.value > 0 ? "rounded-t-[2px] bg-foreground/80" : "rounded-b-[2px] bg-destructive/80")} style={{ top: `${from}%`, height: `${Math.max(to - from, 0.5)}%` }} />}
+                  {p.value !== 0 && <div className={cn("absolute inset-x-[14%]", p.value > 0 ? "rounded-t-[2px] bg-chart-1" : "rounded-b-[2px] bg-destructive/80")} style={{ top: `${from}%`, height: `${Math.max(to - from, 0.5)}%` }} />}
                 </div>
               </Tip>
             );

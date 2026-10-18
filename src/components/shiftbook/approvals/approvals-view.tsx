@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import type { ClientApprovalRow, ClientApprovalState } from "@/server/approvals/service";
 import { ReadOnlyNote, useCan } from "../abilities";
+import { Avatar } from "../avatar";
 import { EmptyState } from "../empty-state";
 import { dateRange, hoursMinutes } from "../format";
 import { FilterPill, ListToolbar, NavPill, PillChoices, ResultsCount, StatusTabs } from "../list-controls";
@@ -190,6 +191,7 @@ export function ApprovalsView(props: { rows: ClientApprovalRow[]; periods: { id:
                         <TableRow key={r.clientId} data-testid="approval-row">
                           <TableCell className="font-medium">
                             <span className="inline-flex flex-wrap items-center gap-2">
+                            <Avatar name={r.clientName} id={r.clientId} kind="organization" />
                             {r.request ? (
                               <Link href={`/approvals/${r.request.id}`} className="underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
                                 {r.clientName}

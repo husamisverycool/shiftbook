@@ -44,7 +44,8 @@ for (const locale of ["en", "es"] as const) {
     const prairie = menu.getByRole("group", { name: c.groups.client }).getByRole("option").first();
     await expect(prairie).toBeVisible();
     await expect(menu.getByRole("group", { name: c.groups.invoice })).toHaveCount(0);
-    const clientName = (await prairie.locator("span").first().textContent())!.trim();
+    // The record's name (its avatar's initials come first in the row, decision 0046).
+    const clientName = (await prairie.getAttribute("data-name"))!.trim();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(new RegExp(`/${locale}/clients/[0-9a-f-]{36}$`));
 

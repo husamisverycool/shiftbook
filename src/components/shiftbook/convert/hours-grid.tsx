@@ -480,7 +480,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
           {children}
           {f.edited && (
             <>
-              <CircleIcon className="size-1.5 fill-primary text-primary" aria-hidden />
+              <CircleIcon className="size-1.5 fill-primary text-accent-text" aria-hidden />
               <span className="sr-only">{t("edited")}</span>
             </>
           )}
