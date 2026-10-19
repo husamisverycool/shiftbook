@@ -12,7 +12,7 @@ Researched: 2026-10-17 (`docs/research/notifications-slice-r.md`). Confidence: h
    count as the item's badge (Linear: the Inbox in the sidebar with its badge count).
 2. Page header (`_components/page-header.md`): the title; actions on the right: "Mark all read",
    "Delete read".
-3. Tabs: Unread, All (Linear's Priority / Other split is replaced by unread / all: Granite has no
+3. Tabs: Unread, All (Linear's Priority / Other split is replaced by unread / all: Tabulado has no
    priority filter — listed as a difference).
 4. The list (`_components/table.md` rhythm, Linear rows): one row per notice — an unread dot at the
    left edge for unread rows (Linear marks unread), the notice's icon by kind, one line of what

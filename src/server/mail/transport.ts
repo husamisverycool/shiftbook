@@ -1,5 +1,5 @@
 /**
- * How Granite sends email (decision 0012). One interface, two implementations:
+ * How Tabulado sends email (decision 0012). One interface, two implementations:
  * - DemoMailboxTransport: demo mode and tests — the message lands in the agency's demo mailbox
  *   table (no outside calls), the same code path otherwise.
  * - ResendTransport: the live app — Resend's HTTP API with plain fetch.
@@ -11,7 +11,7 @@ import { redactApprovalLinks } from "../approvals/token";
 export interface OutgoingMail {
   /** The email_messages row; Resend's idempotency key, so a retried send goes out once. */
   id: string;
-  /** The agency's name; sent as "{name} via Granite". */
+  /** The agency's name; sent as "{name} via Tabulado". */
   fromName: string;
   replyTo: string | null;
   to: { email: string; name?: string | null };
@@ -45,7 +45,7 @@ export class ResendTransport implements MailTransport {
 
   constructor(options: { apiKey: string | undefined; fromAddress: string | undefined; fetch?: typeof fetch }) {
     if (!options.apiKey) throw new Error("Email cannot be sent: RESEND_API_KEY is not set in the environment settings.");
-    if (!options.fromAddress) throw new Error("Email cannot be sent: MAIL_FROM (Granite's sending address) is not set in the environment settings.");
+    if (!options.fromAddress) throw new Error("Email cannot be sent: MAIL_FROM (Tabulado's sending address) is not set in the environment settings.");
     this.apiKey = options.apiKey;
     this.fromAddress = options.fromAddress;
     this.fetchFn = options.fetch ?? fetch;
@@ -53,7 +53,7 @@ export class ResendTransport implements MailTransport {
 
   async send(mail: OutgoingMail): Promise<{ providerId: string | null }> {
     const body: Record<string, unknown> = {
-      from: address(this.fromAddress, `${mail.fromName} via Granite`),
+      from: address(this.fromAddress, `${mail.fromName} via Tabulado`),
       to: [address(mail.to.email, mail.to.name)],
       ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
       subject: mail.subject,
@@ -69,7 +69,7 @@ export class ResendTransport implements MailTransport {
         body: JSON.stringify(body),
       });
     } catch (error) {
-      throw new MailSendError(`Granite could not reach the email service (${error instanceof Error ? error.message : String(error)}). Try again in a moment.`);
+      throw new MailSendError(`Tabulado could not reach the email service (${error instanceof Error ? error.message : String(error)}). Try again in a moment.`);
     }
     const answer = (await response.json().catch(() => ({}))) as { id?: unknown; name?: unknown; message?: unknown };
     if (!response.ok) {

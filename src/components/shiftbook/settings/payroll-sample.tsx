@@ -2,7 +2,7 @@
 
 // Pattern: docs/patterns/settings/payroll.md — "Read a sample file" (Avionté's mapping from a file):
 // the payroll system's own import file is read in the browser, its columns checked against the layout
-// Granite writes, and the client id and the company's own codes it holds offered. Nothing is sent.
+// Tabulado writes, and the client id and the company's own codes it holds offered. Nothing is sent.
 import { CheckIcon, CircleAlertIcon, FileUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";

@@ -46,7 +46,7 @@ const OPEN_CHALLENGES_IN_ALL = 10_000;
 const SWEEP_BATCH = 500;
 /** Passkeys a person may have at once (removed ones aside). */
 export const MAX_PASSKEYS = 20;
-const RP_NAME = "Granite";
+const RP_NAME = "Tabulado";
 
 export type DeviceType = "singleDevice" | "multiDevice";
 

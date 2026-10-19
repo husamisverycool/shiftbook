@@ -1,7 +1,7 @@
 # Pattern: Worker sign-in by text message (`/w/sign-in`)
 
 Status: adopted — slice t (2026-10-17)
-Reference product and screen: Granite's own emailed-code sign-in (decision 0033, Linear's and
+Reference product and screen: Tabulado's own emailed-code sign-in (decision 0033, Linear's and
 Vercel's emailed code) with the phone number in place of the email; NIST SP 800-63B §5.1.3 for the
 text-message code
 Source URL: https://linear.app/docs/login-methods

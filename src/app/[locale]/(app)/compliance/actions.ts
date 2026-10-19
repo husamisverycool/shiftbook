@@ -193,7 +193,7 @@ export async function setOpenDaysAction(days: unknown): Promise<ComplianceAction
 
 const BalanceSchema = z.object({ workerId: id, clientId: id, minutes: z.number().int(), throughOn: isoDate, note: z.string().max(1000) }).strict();
 
-/** Hours a worker did for a client before Granite (the Owner). */
+/** Hours a worker did for a client before Tabulado (the Owner). */
 export async function addBalanceAction(input: unknown): Promise<ComplianceActionResult> {
   const parsed = BalanceSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid", field: String(parsed.error.issues[0]?.path[0] ?? "form") };
@@ -242,7 +242,7 @@ export async function setAcaSettingsAction(input: unknown): Promise<ComplianceAc
 /** At most a megabyte of CSV: 5,000 rows of a name, a month and hours fit with room to spare. */
 const MAX_IMPORT_BYTES = 1_000_000;
 
-/** Hours of service before Granite, a CSV (FormData: file) — the Owner. */
+/** Hours of service before Tabulado, a CSV (FormData: file) — the Owner. */
 export async function importAcaHoursAction(form: FormData): Promise<ImportResult | { ok: false; error: "busy" | "generic" | "too_large" }> {
   const file = form.get("file");
   if (!(file instanceof File)) return { ok: false, error: "generic" };

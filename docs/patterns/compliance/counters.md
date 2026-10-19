@@ -10,9 +10,9 @@ Source URL: https://ilga.gov/documents/legislation/ilcs/documents/082001750K42.h
 Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §1, §6; slice (c) research §4).
 Confidence: high for the columns' meaning (TempWorks report); the counter's terms are the statute's.
 
-## Purpose in Granite
+## Purpose in Tabulado
 Each Illinois worker's hours at each client toward the equal-pay thresholds (SPEC §4 HoursCounter,
-§16 "Illinois Section 42 triggers"), with the hours worked there before Granite.
+§16 "Illinois Section 42 triggers"), with the hours worked there before Tabulado.
 
 ## Hierarchy
 1. **View header and tabs** as `compliance.md` (Counters tab); a line saying what is counted (the
@@ -21,7 +21,7 @@ Each Illinois worker's hours at each client toward the equal-pay thresholds (SPE
    heads-up and not crossed, crossed).
 3. **Table**, one row per worker and client (TempWorks: one row per employee and window): worker,
    client, hours in the 12 months to today (of the 720) with the window's first day, hours in the 48
-   months (of the 4,160), hours before Granite included, and the state — crossed on a date (a link to
+   months (of the 4,160), hours before Tabulado included, and the state — crossed on a date (a link to
    its duty), near (hours to go), or hours to go.
 4. **A row opens** (a button on the row, keyboard reachable): its opening balances — hours, the date
    they run to, the note, who added them and when; removed ones struck through with who, when and why

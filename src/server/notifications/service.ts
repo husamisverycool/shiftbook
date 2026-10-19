@@ -254,7 +254,7 @@ export async function emailNotices(deps: NotifyMailDeps, withAgency: <T>(agencyI
   let sent = 0;
   for (const p of prepared) {
     try {
-      const { providerId } = await deps.mailTransport(agencyId).send({ id: p.mailId, fromName: "Granite", replyTo: null, to: p.to, ...p.rendered });
+      const { providerId } = await deps.mailTransport(agencyId).send({ id: p.mailId, fromName: "Tabulado", replyTo: null, to: p.to, ...p.rendered });
       await withAgency(agencyId, (tx) => tx.update(s.emailMessages).set({ status: "sent", providerId, sentAt: new Date() }).where(eq(s.emailMessages.id, p.mailId)));
       sent += 1;
     } catch (error) {

@@ -7,7 +7,7 @@
  * of pay at the agreed upon rate of pay"; contracted to work at another location during the same
  * shift: "a minimum of two hours of pay". The same shape as the Illinois day-labor minimum, so the
  * same arithmetic: the shortfall at the agreed rate, not hours worked. Applies only where the job
- * order is day and temporary labor (Granite's stand-in for the designated classifications of
+ * order is day and temporary labor (Tabulado's stand-in for the designated classifications of
  * N.J.S.A. 34:8D-2). Minutes are rule data.
  */
 import type { GuaranteeRule } from "../types";

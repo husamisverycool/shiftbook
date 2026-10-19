@@ -12,7 +12,7 @@ Researched: 2026-10-16 from the products' own screenshots (`docs/research/design
 part C). Confidence: high for the parts and their order (Stripe's screenshot shows "Today" then
 "Your overview"; Polaris puts the setup guide on the homepage).
 
-## Purpose in Granite
+## Purpose in Tabulado
 The first page after signing in: where to begin (a setup guide that walks a new agency — or a
 stranger in the demo, SPEC §24 — through a week), the week now, what needs someone, and the past
 quarter at a glance.
@@ -25,7 +25,7 @@ quarter at a glance.
    - **Changes are paused** (critical tone): one sentence on why — the free days are over with no
      subscription, the last payment failed, payments failed and Stripe stopped trying, the trial ended
      without a card, the first payment was not completed, the subscription was canceled, or it is not to
-     Granite's plan (decision 0036, security review) — then that
+     Tabulado's plan (decision 0036, security review) — then that
      everything can still be read and downloaded and nothing is deleted. After a change was refused, a
      first sentence says that change was not made. For the Owner: **Go to Billing**. For everyone else:
      ask the agency's Owner to restart it in Settings › Billing (no button).
@@ -34,7 +34,7 @@ quarter at a glance.
 1. **Setup guide** (Polaris, as its screenshot shows it; for the Owner, while not hidden): a white
    card with "Setup guide", hide (×) and collapse (⌃) buttons on the right, one intro line, "N of M
    steps done", then the steps in a bordered box with dividers — each a checkbox (ticked by
-   Granite when the step has happened, never by hand: Polaris "Mark tasks as complete when
+   Tabulado when the step has happened, never by hand: Polaris "Mark tasks as complete when
    merchants finish them"), its title and a chevron. One step open at a time, the first not done:
    its one-line description and its button. The steps (the first three added by completeness audit
    G1, so an agency that signs itself up sets up its business first; Polaris: the guide lists what a
@@ -46,7 +46,7 @@ quarter at a glance.
    4. Choose the payroll system → payroll file settings. Done: a payroll system is chosen.
    5. Add job orders and place workers → Job orders. Done: a worker is on an assignment.
    6. Convert a week's timesheets → the pay period's upload. Done: a pay period not paid before
-      Granite has a timesheet or hours. (In the demo it points at "Use the sample timesheets".)
+      Tabulado has a timesheet or hours. (In the demo it points at "Use the sample timesheets".)
    7. Ask a client to approve the hours → Client approvals. Done: an approval request was sent.
    8. Approve the week and create the files → the pay period. Done: a week has its files.
    9. Match a bank file to the invoices → Bank. Done: a bank file was imported. (In the demo it

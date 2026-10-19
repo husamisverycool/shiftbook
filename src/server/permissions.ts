@@ -52,7 +52,7 @@ export const ABILITIES = {
   viewMargin: ["owner", "accountant"],
   /** The agency's whole activity log (reading; decision 0028). */
   viewActivity: ["owner", "accountant"],
-  /** The agency's subscription to Granite: Stripe's checkout and billing pages (decision 0036). */
+  /** The agency's subscription to Tabulado: Stripe's checkout and billing pages (decision 0036). */
   billing: ["owner"],
   /** Partner handoffs — payroll payloads, wage access, invoice funding, the broker's export — and their rules (slice w). */
   money: ["owner"],

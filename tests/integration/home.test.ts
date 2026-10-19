@@ -51,7 +51,7 @@ describe("Home's Today and Your overview", () => {
     await addShift("marcus-bell", "2026-10-05", 420, 900);
     await addShift("marcus-bell", "2026-10-06", 420, 960);
     const view = await inAgency((tx) => homeView(tx, theOwner.agencyId, TODAY, { viewMargin: true }));
-    // The week before (paid before Granite) still counts its hours: every entry not rejected.
+    // The week before (paid before Tabulado) still counts its hours: every entry not rejected.
     const [before] = await owner.db
       .select({ n: sql<number>`coalesce(sum(${s.timeEntries.minutes}), 0)::int` })
       .from(s.timeEntries)

@@ -24,7 +24,7 @@ Researched: 2026-10-17 (`docs/research/client-portal-slice-v.md` §1, §3, §4).
      until {date}", and the language switch.
 3. **Right:** the section's page, one column at a readable width, its title as the page's h1.
 4. **Footer** under the page: the agency's contact details and that the portal is provided by the
-   agency through Granite (Stripe hosted invoice page).
+   agency through Tabulado (Stripe hosted invoice page).
 5. **Phones:** the left column becomes a bar on top with the agency's name and the sections as a
    horizontally scrolling row (Stripe's responsive portal; exact behaviour unverified).
 

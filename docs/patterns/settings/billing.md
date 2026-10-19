@@ -18,12 +18,12 @@ Source URL: https://docs.stripe.com/payments/checkout/free-trials
 Researched: 2026-10-17 from the documentation (Linear's and Vercel's billing pages are behind sign-in
 and their docs publish no screenshot of them); laid out with the settings component measured from
 Linear's own settings screenshots (`_components/settings.md`). Confidence: high for what the page shows
-and does; the exact arrangement follows Granite's Linear settings panels.
+and does; the exact arrangement follows Tabulado's Linear settings panels.
 
-## Purpose in Granite
-The agency's subscription to Granite (decision 0036): where the Owner sees whether the agency is in its
+## Purpose in Tabulado
+The agency's subscription to Tabulado (decision 0036): where the Owner sees whether the agency is in its
 free days, subscribed, behind on a payment or canceled, when the next charge comes, and goes to Stripe
-to start, pay, change or cancel. Granite never shows a card form.
+to start, pay, change or cancel. Tabulado never shows a card form.
 
 ## Hierarchy
 Laid out as Linear's settings (`_components/settings.md`).
@@ -32,7 +32,7 @@ Laid out as Linear's settings (`_components/settings.md`).
 2. **Notice** (only when there is one), above the first section: back from Stripe's checkout — the
    subscription is being set up (it shows here in a moment) or the checkout was left without paying.
 3. **Plan** section (Linear's plan information), a panel of rows:
-   1. **Granite monthly** over the plan's state in words, its status badge at the right (Linear and
+   1. **Tabulado monthly** over the plan's state in words, its status badge at the right (Linear and
       Stripe show the status as a chip): Free trial (until a date) · Trial (Stripe's; first charge on a
       date) · Active · Past due (the last payment failed; Stripe retries) · Canceled · Ends on a date
       (canceled at the period's end) · No subscription · Other plan (a subscription to another price in

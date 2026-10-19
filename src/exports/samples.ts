@@ -1,7 +1,7 @@
 /**
  * Reading a sample of the payroll system's own import file (decision 0040; Avionté's mapping step:
- * "create a mapping from a file"): the columns are checked against the layout Granite writes, and the
- * company's own codes and ids in it are offered, so the agency sets Granite up from a file it already
+ * "create a mapping from a file"): the columns are checked against the layout Tabulado writes, and the
+ * company's own codes and ids in it are offered, so the agency sets Tabulado up from a file it already
  * has. Pure: the settings page reads the file in the browser and nothing is sent or kept.
  */
 import { readCsv } from "./csv";
@@ -9,7 +9,7 @@ import { PAYCHEX_HEADER } from "./paychex-flex";
 import { PAYLOCITY_HEADER } from "./paylocity";
 
 export interface SampleReading {
-  /** The file's columns are the layout Granite writes (with or without its header row). */
+  /** The file's columns are the layout Tabulado writes (with or without its header row). */
   layoutMatches: boolean;
   /** Paychex: the client id on the data rows, when every row has the same one. */
   clientId: string | null;
@@ -45,7 +45,7 @@ export function readPayrollSample(format: "paychex_flex_csv" | "paylocity_time_c
   if (format === "paychex_flex_csv") {
     const ids = new Set(data.map((r) => (r[0] ?? "").trim()).filter(Boolean));
     if (ids.size === 1) clientId = [...ids][0]!;
-    else if (ids.size > 1) problems.push("The file holds more than one client id; Granite writes one.");
+    else if (ids.size > 1) problems.push("The file holds more than one client id; Tabulado writes one.");
   }
   return { layoutMatches, clientId, codes, rows: data.length, problems };
 }

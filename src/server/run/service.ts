@@ -514,7 +514,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const tables = await ruleTables(tx);
   // Hours worked before this period that count toward a rolling equal-pay counter (Illinois § 42):
   // covered work at a worksite in a state with a counter, on timesheets not set aside, as far back as
-  // the longest window, and the hours worked before Granite (opening balances, on the date each runs
+  // the longest window, and the hours worked before Tabulado (opening balances, on the date each runs
   // to); and the obligations already on file from other runs (a crossing never resets). The compliance
   // lock keeps the balances and duties still until this run has written its own (slice j).
   await lockCompliance(tx, actor.agencyId);
@@ -530,7 +530,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
       (a, b) => cmp(a.workerId, b.workerId) || cmp(a.clientId, b.clientId) || cmp(a.date, b.date) || a.minutes - b.minutes,
     );
   }
-  // This run's own obligations are recomputed, except one a person already closed; one Granite set
+  // This run's own obligations are recomputed, except one a person already closed; one Tabulado set
   // aside (the hours that crossed changed) is not on file.
   const crossingsOnFile = equalPayRows(await tx.select().from(s.obligations).where(and(inArray(s.obligations.kind, [...EQUAL_PAY_KINDS]), eq(s.obligations.closedBySystem, false), or(isNull(s.obligations.payRunId), ne(s.obligations.payRunId, run.id), ne(s.obligations.status, "open")))));
   const obligationsOnFile = crossingsOnFile
@@ -801,7 +801,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
   const keyOf = (o: { kind: string; workerId: string; clientId: string; crossedOn: string }) => `${o.kind}|${o.workerId}|${o.clientId}|${o.crossedOn}`;
   const wanted = new Set(result.obligations.map(keyOf));
   // One no longer crossed goes: deleted while nobody has touched it, else set aside with its notes,
-  // files and owner kept (Granite's own closing, so a later run may open it again).
+  // files and owner kept (Tabulado's own closing, so a later run may open it again).
   const gone = mine.filter((m) => m.status === "open" && !wanted.has(keyOf(m)));
   if (gone.length > 0) {
     const ids = gone.map((m) => m.id);
@@ -845,7 +845,7 @@ export async function computeRun(tx: Tx, actor: Actor, payPeriodId: string): Pro
     }
     // One obligation per worker, client and kind: the engine records one only when it crosses earlier
     // than the one on file (a late timesheet), and then the row moves to this run's earlier crossing.
-    // One Granite set aside is not on file for the engine: the new crossing takes it over, open.
+    // One Tabulado set aside is not on file for the engine: the new crossing takes it over, open.
     const [held] = equalPayRows(await tx.select().from(s.obligations).where(and(eq(s.obligations.kind, o.kind), eq(s.obligations.workerId, o.workerId), eq(s.obligations.clientId, o.clientId))));
     if (held?.closedBySystem) {
       await tx.update(s.obligations).set({ payRunId: run.id, crossedOn: o.crossedOn, dueOn, facts, message: o.message, explain: explainOf(o), ...reopened }).where(eq(s.obligations.id, held.id));

@@ -98,7 +98,7 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
       />
       {!open && (
         <p className="text-sm" data-testid="closed-note">
-          {(i.status === "done" ? td("doneBy", { by: d.closedBySystem ? td("byGranite") : (d.doneByLabel ?? ""), date: d.doneAt ? when(d.doneAt, { date: "long", time: false }) : "" }) : td("naBy", { by: d.closedBySystem ? td("byGranite") : (d.doneByLabel ?? ""), date: d.doneAt ? when(d.doneAt, { date: "long", time: false }) : "" })) +
+          {(i.status === "done" ? td("doneBy", { by: d.closedBySystem ? td("byTabulado") : (d.doneByLabel ?? ""), date: d.doneAt ? when(d.doneAt, { date: "long", time: false }) : "" }) : td("naBy", { by: d.closedBySystem ? td("byTabulado") : (d.doneByLabel ?? ""), date: d.doneAt ? when(d.doneAt, { date: "long", time: false }) : "" })) +
             (d.closedBySystem ? ` ${systemNote(td, d, locale)}` : d.noteKey ? ` ${td("note", { note: say(d.noteKey) })}` : d.statusNote ? ` ${td("note", { note: d.statusNote })}` : "")}
         </p>
       )}
@@ -127,7 +127,7 @@ export function ObligationView({ d, tab, today }: { d: ObligationDetail; tab: De
   );
 }
 
-/** What Granite closed a duty for, in the reader's language (the stored note is the English record). */
+/** What Tabulado closed a duty for, in the reader's language (the stored note is the English record). */
 function systemNote(td: ReturnType<typeof useTranslations<"compliance.detail">>, d: ObligationDetail, locale: string): string {
   const f = d.facts as Record<string, string | null | undefined>;
   const date = (v: string | null | undefined) => (v ? longDate(v, locale) : "");
@@ -573,7 +573,7 @@ function History({ d }: { d: ObligationDetail }) {
   const what = (h: ObligationDetail["history"][number]) => {
     const after = h.after ?? {};
     if (h.action === "create") return td("history.created");
-    // Granite's own notes in the reader's language (decision 0028); a person's note as typed.
+    // Tabulado's own notes in the reader's language (decision 0028); a person's note as typed.
     const note = after.noteKey && typeof after.noteKey === "object" ? say(after.noteKey as Explain) : typeof after.note === "string" ? after.note : "";
     if (typeof after.status === "string") return td("history.status", { to: after.status === "open" ? td("reopen") : ts(after.status === "done" ? "done" : "not_applicable") }) + (note ? ` — ${note}` : "");
     if ("ownerUserId" in after) return td("history.owner");

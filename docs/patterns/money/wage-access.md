@@ -9,9 +9,9 @@ lists (`_components/table.md`); Stripe dialogs for a confirmed action
 Source URL: https://www.federalregister.gov/documents/2025/12/23/2025-23735/truth-in-lending-regulation-z-non-application-to-earned-wage-access-products
 Source URL: https://docs.zeal.com/reference/wallet/wallet-transaction-object.md
 Researched: 2026-10-17 (`docs/research/money-flows-slice-w.md` §5). Confidence: high for the
-conditions; the screen's arrangement is Granite's Stripe list and dialog.
+conditions; the screen's arrangement is Tabulado's Stripe list and dialog.
 
-## Purpose in Granite
+## Purpose in Tabulado
 For each worker: hours reviewed or approved and not yet paid, what that earned (straight time at the
 rate card, rounded down: never more than earned), and how much may be accessed under the agency's
 rules; a request recorded for a wage-access partner. Nothing is paid.

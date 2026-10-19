@@ -230,12 +230,12 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("counters-show").selectOption("near");
     await expect(page).toHaveURL(/show=near/);
     await expect(rows).toHaveCount(1);
-    // Her balance from before Granite.
+    // Her balance from before Tabulado.
     await rows.first().getByTestId("counter-toggle").click();
     await expect(page.getByTestId("balance")).toContainText("590:00");
     await check(page, "counter balances");
 
-    // Marcus Bell's hours before Granite, added and then removed.
+    // Marcus Bell's hours before Tabulado, added and then removed.
     await page.getByTestId("counters-show").selectOption("all");
     await expect(page).not.toHaveURL(/show=/);
     await page.getByTestId("add-balance").click();
@@ -260,7 +260,7 @@ for (const locale of ["en", "es"] as const) {
 }
 
 for (const locale of ["en", "es"] as const) {
-  test(`compliance equal pay: hours before Granite cross 720, the run waits for the rate, the rate is entered and paid (${locale})`, async ({ page }) => {
+  test(`compliance equal pay: hours before Tabulado cross 720, the run waits for the rate, the rate is entered and paid (${locale})`, async ({ page }) => {
     test.setTimeout(300_000);
     const m = MESSAGES[locale];
     execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
@@ -269,7 +269,7 @@ for (const locale of ["en", "es"] as const) {
     page.on("console", (msg) => msg.type() === "error" && /MISSING_MESSAGE|FORMATTING_ERROR/.test(msg.text()) && errors.push(msg.text()));
     const dialog = page.getByRole("dialog");
 
-    // Marcus Bell's 720 hours at Prairie Line before Granite, up to 2026-09-27: his next hour crosses.
+    // Marcus Bell's 720 hours at Prairie Line before Tabulado, up to 2026-09-27: his next hour crosses.
     await page.goto(`/${locale}/compliance/counters`);
     await page.getByTestId("add-balance").click();
     await dialog.getByTestId("balance-pair").selectOption({ label: "Marcus Bell · Prairie Line Manufacturing (demo)" });
@@ -322,7 +322,7 @@ for (const locale of ["en", "es"] as const) {
   });
 }
 
-/** Hours from before Granite: October 2025 to September 2026, Marcus 140 h a month (full-time), Anita 120 h (not). */
+/** Hours from before Tabulado: October 2025 to September 2026, Marcus 140 h a month (full-time), Anita 120 h (not). */
 const MONTHS = ["2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"];
 const HOURS_CSV = ["Worker,Month,Hours", ...MONTHS.map((m) => `Marcus Bell,${m},140`), ...MONTHS.map((m) => `Anita Patel,${m},120`)].join("\n");
 

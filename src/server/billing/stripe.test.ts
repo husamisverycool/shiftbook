@@ -178,7 +178,7 @@ describe("only Stripe's own pages are opened", () => {
 describe("the customer's subscriptions, and the one that counts (security review)", () => {
   const facts = (over: Partial<SubscriptionFacts>): SubscriptionFacts => ({ id: "sub_a", customer: "cus_test1", status: "active", currentPeriodEnd: new Date(1792800000 * 1000), cancelAt: null, trialEnd: null, amountCents: 9900, currency: "usd", interval: "month", priceId: "price_test1", ...over });
 
-  it("Granite's price first, then the best state: active, trialing, past due…, canceled last; the later period on a tie", () => {
+  it("Tabulado's price first, then the best state: active, trialing, past due…, canceled last; the later period on a tie", () => {
     const canceled = facts({ id: "sub_c", status: "canceled" });
     const trialing = facts({ id: "sub_t", status: "trialing" });
     const active = facts({ id: "sub_a", status: "active" });
@@ -187,9 +187,9 @@ describe("the customer's subscriptions, and the one that counts (security review
     expect(bestSubscription([canceled, trialing, pastDue], "price_test1")?.id).toBe("sub_t");
     expect(bestSubscription([canceled, pastDue], "price_test1")?.id).toBe("sub_p");
     expect(bestSubscription([facts({ id: "sub_old", currentPeriodEnd: new Date(1792700000 * 1000) }), facts({ id: "sub_new" })], "price_test1")?.id).toBe("sub_new");
-    // A cheaper plan never wins over Granite's, even active over canceled.
+    // A cheaper plan never wins over Tabulado's, even active over canceled.
     expect(bestSubscription([facts({ id: "sub_cheap", priceId: "price_cheap" }), canceled], "price_test1")?.id).toBe("sub_c");
-    // Only other plans: the best of them (the page says it is not Granite's plan).
+    // Only other plans: the best of them (the page says it is not Tabulado's plan).
     expect(bestSubscription([facts({ id: "sub_cheap", priceId: "price_cheap" })], "price_test1")?.id).toBe("sub_cheap");
     expect(bestSubscription([], "price_test1")).toBeNull();
   });

@@ -14,10 +14,10 @@ Source URL: https://docs.checkhq.com/reference/create-an-employee.md
 Source URL: https://docs.zeal.com/reference/employee-checks/employee-checks/create-employee-check.md
 Source URL: https://docs.zeal.com/reference/employee-checks/shifts/shift-object.md
 Researched: 2026-10-17 (`docs/research/money-flows-slice-w.md` §3, §4 and "Recommended hierarchy").
-Confidence: high for the objects and the approval step; the screen's arrangement is Granite's Stripe
+Confidence: high for the objects and the approval step; the screen's arrangement is Tabulado's Stripe
 record page.
 
-## Purpose in Granite
+## Purpose in Tabulado
 One run's payroll as the partner would receive it: every worker's earnings already computed by the
 pay rules (the partner taxes, it does not apply overtime rules), reconciled to the payroll file to
 the cent, approved by the Owner and recorded. Nothing is sent.
@@ -28,10 +28,10 @@ the cent, approved by the Owner and recorded. Nothing is sent.
 2. The plain line (no money moves).
 3. **Left column**, modules under hairlines:
    - **Earnings by worker** (Check payroll items): a table — Worker, Regular (hours and amount),
-     Overtime (hours and amount), Other, Gross (bold), Ready (a check, or what Granite is missing:
+     Overtime (hours and amount), Other, Gross (bold), Ready (a check, or what Tabulado is missing:
      start date, worksite, SSN on file). Totals row.
    - **What the partner collects** (Check `onboard`): date of birth, home address, how they are paid,
-     tax withholdings — never held by Granite; the partner's onboarding asks each worker.
+     tax withholdings — never held by Tabulado; the partner's onboarding asks each worker.
    - **Reconciliation**: the payroll file's gross and the payload's gross, equal or the difference.
      With Zeal chosen, any line whose hours × wage would come out a cent different (Zeal recomputes
      from the numbers it receives) is listed with both amounts.

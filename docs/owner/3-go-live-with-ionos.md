@@ -1,4 +1,4 @@
-# Putting all of Granite online, with an IONOS domain
+# Putting all of Tabulado online, with an IONOS domain
 
 You'll click and paste. You never type code. Keys and passwords go only into Railway's **Variables**
 page, never into a chat, an email or a document. If a button has a slightly different name, pick the
@@ -14,9 +14,9 @@ domain instead.
 | Address | What it is | Who uses it |
 |---|---|---|
 | `demo.yourname.com` | The demo: a complete made-up agency, no sign-up, "Continue as Owner" buttons | Prospects clicking around on their own, and you in sales calls |
-| `app.yourname.com` | The real Granite. Agencies sign up, pay monthly and run real payroll | Paying agencies and their staff |
+| `app.yourname.com` | The real Tabulado. Agencies sign up, pay monthly and run real payroll | Paying agencies and their staff |
 | `app.yourname.com/en/w` | The worker app, on workers' phones (sign-in by text) | Temp workers |
-| client links (sent by Granite) | The client portal and the "approve hours" pages | The agencies' clients |
+| client links (sent by Tabulado) | The client portal and the "approve hours" pages | The agencies' clients |
 | `app.yourname.com/en/tools/il-720-hours` | The free Illinois 720-hour checker (no account) | Anyone; good to send in cold emails |
 | `timesheets+…@in.yourname.com` | Each agency's own address for forwarding timesheets | Agencies and their clients |
 | `yourname.com` | Sends visitors on to the demo | Anyone who types the bare name |
@@ -118,7 +118,7 @@ New records usually work within minutes, but can take up to a few hours.
    2. Click **Update Variables**, then **Deploy** at the top.
 7. **Check:**
    1. After about 10 minutes the box shows a green tick. Open `https://demo.yourname.com`.
-   2. You should see **Sign in to Granite** with the demo people. Click **Continue as Demo Owner**.
+   2. You should see **Sign in to Tabulado** with the demo people. Click **Continue as Demo Owner**.
    3. Try ⌘K, the weekly run and the colour styles in Settings › Account.
 
 ## Step 4. Put the real app online (20 minutes, plus waiting)
@@ -137,7 +137,7 @@ New records usually work within minutes, but can take up to a few hours.
 
    - Write `live` exactly like that, in small letters.
 2. Do this before inviting anyone: passkeys only work on the address they were made on.
-3. **Check:** `https://app.yourname.com` shows **Sign in to Granite** with **New to Granite? Create an
+3. **Check:** `https://app.yourname.com` shows **Sign in to Tabulado** with **New to Tabulado? Create an
    agency**, and no demo people.
 
 From here on, **every Railway step means the real app's project** (the one with `SHIFTBOOK_MODE=live`).
@@ -157,11 +157,11 @@ From here on, **every Railway step means the real app's project** (the one with 
 6. In Railway, open the real app's **shiftbook** box, then **Variables**, then **New Variable**, and
    add two:
    - `RESEND_API_KEY` = the key you copied
-   - `MAIL_FROM` = `Granite <hello@yourname.com>`
+   - `MAIL_FROM` = `Tabulado <hello@yourname.com>`
 
    Click **Deploy**.
 7. **Check:**
-   1. Open `https://app.yourname.com` and click **New to Granite? Create an agency**. Sign up with your
+   1. Open `https://app.yourname.com` and click **New to Tabulado? Create an agency**. Sign up with your
       own email. The email arrives from your domain.
    2. Open its link, choose a password and set up an authenticator app on your phone (Google
       Authenticator, Microsoft Authenticator or 1Password).
@@ -183,7 +183,7 @@ From here on, **every Railway step means the real app's project** (the one with 
 2. **Try it with play money first:** switch on **Test mode** (top right) and do steps 3–7. Then do
    them all again with test mode off when you're ready to charge for real.
 3. **Your price:**
-   1. Go to **Product catalog** → **Add product**, name it `Granite monthly`, choose **Recurring** and
+   1. Go to **Product catalog** → **Add product**, name it `Tabulado monthly`, choose **Recurring** and
       **Monthly**, type your price and click **Save**.
    2. Open the product and copy the ID that starts with **`price_`**.
 4. **Your secret key:** go to **Developers** (bottom left) → **API keys** → **Secret key** → **Reveal**
@@ -233,7 +233,7 @@ from a registered number, and a toll-free number is the easiest kind to register
    1. Go to **Messaging** → **Regulatory Compliance** (or **Toll-free verification**) → **Create**.
    2. Fill in your business.
    3. For the use case, choose "Account notifications / one-time passcodes".
-   4. For the sample message, use `Your Granite sign-in code is 123456`.
+   4. For the sample message, use `Your Tabulado sign-in code is 123456`.
    5. For consent, write: "The staffing agency adds the worker's mobile number with their consent
       when they are hired."
    6. Submit. Approval usually takes a few business days.
@@ -271,10 +271,10 @@ You can skip this. Password + authenticator app and passkeys already work.
 
 **Google:**
 1. **Create the project:** go to **console.cloud.google.com**, sign in, and at the top click the
-   project picker → **New project**. Name it `Granite` and click **Create**.
+   project picker → **New project**. Name it `Tabulado` and click **Create**.
 2. **Set up the consent screen:**
    1. Open **APIs & Services** → **OAuth consent screen** and click **Get started**.
-   2. Fill in: app name `Granite`, your email, audience **External**.
+   2. Fill in: app name `Tabulado`, your email, audience **External**.
    3. Save, then click **Publish app**.
 3. **Create the sign-in client:**
    1. Go to **APIs & Services** → **Credentials** → **Create credentials** → **OAuth client ID**.
@@ -290,7 +290,7 @@ You can skip this. Password + authenticator app and passkeys already work.
 1. **Register the app:**
    1. Go to **entra.microsoft.com**, sign in, then open **Applications** → **App registrations** →
       **New registration**.
-   2. Name it `Granite`.
+   2. Name it `Tabulado`.
    3. Under supported account types, choose **Accounts in any organizational directory and personal
       Microsoft accounts**.
    4. Under redirect URI, choose **Web** and type
@@ -313,14 +313,14 @@ You can skip this. Password + authenticator app and passkeys already work.
    1. In Railway, open the real app's **Postgres** box → **Backups** and turn on scheduled backups.
    2. Do the same in its **shiftbook** box's **Backups** tab.
 2. **Never delete the real app's disk.** It holds uploaded files and the key that locks Social
-   Security numbers. If it were lost, Granite would refuse to start until it's restored from a backup.
+   Security numbers. If it were lost, Tabulado would refuse to start until it's restored from a backup.
    That's on purpose.
-3. Reminders and scheduled emails need nothing. Granite sends them itself every 15 minutes.
+3. Reminders and scheduled emails need nothing. Tabulado sends them itself every 15 minutes.
 4. **Before a real agency runs real payroll, line up these people:**
    - an employment lawyer, who reads `docs/legal-review-brief.md` and writes your terms of service
      and privacy policy
    - a security test of `app.yourname.com`
-   - one friendly agency running Granite alongside its old way for 2–3 weeks
+   - one friendly agency running Tabulado alongside its old way for 2–3 weeks
 
 ## Step 13. Final check: everything online
 

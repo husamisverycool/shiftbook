@@ -92,7 +92,7 @@ const snapshot = (p: Pick<Row, "clientId" | "name" | "holidayDates" | "workedMul
 
 /**
  * Dates whose pay a change would alter that fall in a pay period whose files exist (or that was paid
- * before Granite): a policy never rewrites a locked period (SPEC §5), as a rate change never does.
+ * before Tabulado): a policy never rewrites a locked period (SPEC §5), as a rate change never does.
  */
 async function lockedAmong(tx: Tx, dates: string[]): Promise<boolean> {
   for (const date of [...new Set(dates)].sort()) {

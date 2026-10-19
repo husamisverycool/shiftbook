@@ -1,15 +1,15 @@
-# Granite — Product Contract (SPEC)
+# Tabulado — Product Contract (SPEC)
 
 > Source of truth for what we build. Changes to this file need the owner's explicit approval.
 > Stack changes need a decision record in `docs/decisions/`.
 
 ## 1. What it is
 
-Granite is the complete back office for small temporary staffing agencies (20–500 workers on
+Tabulado is the complete back office for small temporary staffing agencies (20–500 workers on
 assignment: warehouse, light industrial, manufacturing, events, hospitality, janitorial, clerical).
 
 Every week an agency gets a pile of timesheets in messy forms, retypes them into payroll and
-invoices, and loses money to mistakes. Granite reads every timesheet, applies the correct wage
+invoices, and loses money to mistakes. Tabulado reads every timesheet, applies the correct wage
 rules, and produces the payroll file for the agency's existing payroll system and one invoice per
 client, plus margin, cash, collections and compliance views.
 
@@ -374,7 +374,7 @@ fill, v client portal, w partner-ready money flows, x New Jersey and the whole a
 10. **New Jersey**: weekly overtime over 40 and the minimum wage by year; the Temporary Workers'
     Bill of Rights notice per assignment, the four-hour (two when placed elsewhere) minimum for a
     laborer sent and not used, and a duty per designated-classification placement to confirm its pay
-    against the client's comparable employees from the first day (N.J.S.A. 34:8D-7(b)) — Granite
+    against the client's comparable employees from the first day (N.J.S.A. 34:8D-7(b)) — Tabulado
     cannot know the client's averages, so a person confirms it. Not modelled: the one-hour reporting
     pay of N.J.A.C. 12:56-5.5 outside designated classifications; long-term-care direct care rates.
 11. **Acceptance** (§24) grows to cover these: a worker signs in to the worker app in Spanish and sees

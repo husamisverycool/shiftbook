@@ -11,18 +11,18 @@ Source URL: https://docs.stripe.com/customer-management/activate-no-code-custome
 Researched: 2026-10-16. Confidence: medium for the parts listed; Stripe's exact layout is shown in
 screenshots, not described in text.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The frame for pages a client opens from an email (the approval page, SPEC §10). The client is not an
 agency user: no sidebar, no agency navigation, nothing beyond the one page.
 
 ## Hierarchy
 1. **Demo banner** (root frame, demo mode only) — unchanged.
-2. **Header:** the agency's name (Stripe shows the business's name and branding; Granite has no
+2. **Header:** the agency's name (Stripe shows the business's name and branding; Tabulado has no
    agency logos yet), and the language switch (SPEC §20).
 3. **Page content**, centred, one column, readable width.
 4. **Footer:** the agency's contact details (phone, email) — Stripe's expired-link page sends the
    customer to the business's contact details — and that the page is provided by the agency through
-   Granite.
+   Tabulado.
 
 ## Interactions
 - Language switch keeps the same link and changes only the language.

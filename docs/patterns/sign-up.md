@@ -18,14 +18,14 @@ signup and their email steps; kept outside the repository). Confidence: high for
 order, the full-width button and the "already have an account" line; the email step's wording is
 not copied.
 
-## Purpose in Granite
+## Purpose in Tabulado
 An agency's first person (who becomes its Owner) creates the agency themselves (decision 0036). Live
 mode only: the demo uses its own made-up agency.
 
 ## Hierarchy
 Inside the sign-in frame (`_layouts/auth.md`: the mark, one narrow column, the language at the foot).
 1. **H1** "Create your agency", centred (Linear centres its heading under the mark; Stripe's card is
-   wider and left-aligned — Granite keeps the frame's centred headings); one muted line under it: the
+   wider and left-aligned — Tabulado keeps the frame's centred headings); one muted line under it: the
    agency starts with a free trial when there is one, and the Owner sets a password and an
    authenticator next.
 2. **Form** (Stripe's register form, its fields in this order):
@@ -45,7 +45,7 @@ Inside the sign-in frame (`_layouts/auth.md`: the mark, one narrow column, the l
 ## Interactions
 - Enter submits. Focus starts in Work email.
 - Create agency → the same answer for every address (no one learns which emails have an account);
-  an address that already signs in to Granite receives a note instead of a link.
+  an address that already signs in to Tabulado receives a note instead of a link.
 
 ## States
 - **Demo:** the heading, then one notice in place of the form: the demo uses its own made-up agency,

@@ -93,7 +93,7 @@ describe("starting a correction", () => {
   it("is the Owner's, needs a reason, and only opens a paid period", async () => {
     expect(await start("x", coordinator)).toEqual({ ok: false, error: "not_allowed" });
     expect(await start("   ")).toEqual({ ok: false, error: "reason_required" });
-    // Paid before Granite: there is no version here to correct.
+    // Paid before Tabulado: there is no version here to correct.
     expect(await inAgency((tx) => startCorrection(tx, theOwner, periodId("w1"), "paid elsewhere"))).toEqual({ ok: false, error: "not_paid" });
     const r = await start();
     expect(r).toMatchObject({ ok: true, version: 2 });

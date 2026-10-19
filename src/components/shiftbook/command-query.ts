@@ -1,6 +1,6 @@
 /**
  * What the command menu's typed text asks for (decision 0038). GitHub's command palette prefixes, by
- * GitHub's own meanings: `>` command mode; `#` issues and pull requests → Granite's work records
+ * GitHub's own meanings: `>` command mode; `#` issues and pull requests → Tabulado's work records
  * (invoices, job orders, assignments); `@` users and organizations → workers and clients; `?` help.
  */
 export type CommandMode = "all" | "actions" | "work" | "people" | "help";

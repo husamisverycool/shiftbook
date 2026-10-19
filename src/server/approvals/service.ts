@@ -343,7 +343,7 @@ async function remind(
   });
   const mail = await queueEmail(tx, agency, request.id, "approval_reminder", { email: request.approverEmail, name: request.approverName }, rendered, now);
   const event = requestEvent(request.id, "reminder_sent", { automatic: how.automatic, number: how.automatic ? how.number : null });
-  if (how.automatic) await auditBy(tx, { agencyId: request.agencyId, userId: null, label: "Granite (automatic reminder)" }, [event]);
+  if (how.automatic) await auditBy(tx, { agencyId: request.agencyId, userId: null, label: "Tabulado (automatic reminder)" }, [event]);
   else await audit(tx, how.actor, [event]);
   return { agencyId: request.agencyId, mail, linkId: link.linkId };
 }

@@ -15,11 +15,11 @@ Source URL: https://support.ramp.com/how-to-automatically-forward-receipts-to-ra
 Source URL: https://support.ramp.com/submitting-receipts-memos-and-accounting-for-your-ramp-transactions
 Researched: 2026-10-17 (`docs/research/connections-exports-slice-s.md` §1–2; the forwarding address
 `docs/research/forwarding-email-slice-y.md` §3, decision 0042). Confidence: high for
-Zapier's columns, statuses and row menu and Stripe's catalogue; the look follows Granite's settings
+Zapier's columns, statuses and row menu and Stripe's catalogue; the look follows Tabulado's settings
 pages (decision 0029 rule 11).
 
-## Purpose in Granite
-One place to see every system Granite exchanges files with — recruiting systems' placement files,
+## Purpose in Tabulado
+One place to see every system Tabulado exchanges files with — recruiting systems' placement files,
 the payroll system's file, time clocks and VMS files, invoice uploads, and (slice w) partners — what
 each is used for, when it was last used, whether it is ready, and where to set one up.
 
@@ -50,21 +50,21 @@ each is used for, when it was last used, whether it is ready, and where to set o
    Time files, Invoice uploads. An empty Connected tab is one muted row pointing to Available.
 5. **Available** (Stripe's catalogue): one section per category — Payroll systems, Recruiting systems,
    Time clocks and VMS, Partners — each a heading with one muted line and a panel of rows: the
-   system's name over one sentence of what Granite exchanges with it, and at the right **Set up**
+   system's name over one sentence of what Tabulado exchanges with it, and at the right **Set up**
    (a link to where it is set up) or "In use" for one already connected, or "Not available yet"
-   (muted) for one Granite cannot read yet. Each VMS (Fieldglass, Beeline, Coupa, Magnit; decision
+   (muted) for one Tabulado cannot read yet. Each VMS (Fieldglass, Beeline, Coupa, Magnit; decision
    0043) is available, with **Edit columns** for those who may.
 
 ## Interactions
-- ⋯ menu per connection (Zapier): **Test** (Granite checks the connection now and says Ready, or
+- ⋯ menu per connection (Zapier): **Test** (Tabulado checks the connection now and says Ready, or
   what needs attention, in a message — payroll: the settings, the codes and every active worker's
   id; recruiting: the saved mapping still names every required field); **Open** (its settings or
   import page, Zapier's "edit"); **Download template** for a recruiting system; **Forget saved
   mapping** for a recruiting system, with a confirmation (Zapier's Delete: "automations that use it
-  must be repointed" — here: the next import maps columns again). No Rename: Granite names each
+  must be repointed" — here: the next import maps columns again). No Rename: Tabulado names each
   connection after its system.
 - **Edit columns** (a VMS row's ⋯ menu, or its Available row; decision 0043; Zapier's field mapping
-  as "the column in your file" per field): a dialog with one field per Granite field holding the
+  as "the column in your file" per field): a dialog with one field per Tabulado field holding the
   column name in the agency's export (optional fields may be left empty), the statuses that count
   (comma separated), and the date format; **Save** keeps a new version (the next file is read with
   it), **Restore** brings back the usual names, **Cancel**. A missing, duplicated or invalid name
@@ -75,7 +75,7 @@ each is used for, when it was last used, whether it is ready, and where to set o
 
 - **Partner packages** (Available › Partners; slice w, integration): each row says when a package was
   last recorded and how many, or that nothing is recorded yet; **Open** goes to its Money page
-  (Payroll, Wage access, Funding, Insurance). Nothing moves in Granite.
+  (Payroll, Wage access, Funding, Insurance). Nothing moves in Tabulado.
 
 ## States
 - Loading: the settings outline (`_components/loading.md`); failure: `_components/error.md`.

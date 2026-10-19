@@ -162,7 +162,7 @@ async function insertWeeks(tx: Tx, agencyId: string, starts: string[]): Promise<
 
 export type StartPeriodResult = { ok: true; id: string } | { ok: false; error: "not_allowed" | "no_workweek" | "future" | "exists" | "date" };
 
-/** Starts the pay period of an earlier week (a week paid late, or before Granite was used). */
+/** Starts the pay period of an earlier week (a week paid late, or before Tabulado was used). */
 export async function startPayPeriod(tx: Tx, actor: Actor, date: unknown): Promise<StartPeriodResult> {
   if (!can(actor, "hours")) return { ok: false, error: "not_allowed" };
   if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false, error: "date" };

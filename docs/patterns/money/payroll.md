@@ -8,7 +8,7 @@ Source URL: https://docs.checkhq.com/reference/payroll
 Source URL: https://docs.checkhq.com/docs/payroll-preview-and-approval
 Researched: 2026-10-17 (`docs/research/money-flows-slice-w.md` §3). Confidence: high.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The weekly runs whose payroll files were made, each one a payroll an embedded-payroll partner could
 pay. A regular run is handed off from its own page; a correction pays only differences and goes
 through its payroll file.

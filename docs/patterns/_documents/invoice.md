@@ -11,7 +11,7 @@ Researched: 2026-10-15. Confidence: medium-high for the order of sections (obser
 Stripe-generated PDFs); low for memo/footer placement. The observed sample PDFs belong to third
 parties and are used for layout only; they are not stored or quoted.
 
-## Purpose in Granite
+## Purpose in Tabulado
 One invoice per client per period (slice a: one invoice for one client), with line detail from the
 approved hours. Later slices add the backup bundle and the template variants in SPEC §12.
 
@@ -19,14 +19,14 @@ approved hours. Later slices add the backup bundle and the template variants in 
 Top to bottom (Stripe, observed):
 1. Title: the word for "Invoice" (from `messages/*.json`).
 2. Label/value stack: invoice number, date of issue, date due. Custom key-value fields (up to 4)
-   in the header (Stripe docs) — Granite: PO number, period, worksite.
+   in the header (Stripe docs) — Tabulado: PO number, period, worksite.
 3. Address columns: agency (name, address, phone, email) | Bill to | Ship to (only if present).
 4. Large amount line: "{amount} due {date}".
 5. Memo text block (Stripe docs say the memo appears on the PDF; position observed between the
    amount line and the table, but unconfirmed).
 6. Line-items table: Description | Qty | Unit price | Amount (a Tax column only if tax applies).
    A second line under the description carries the service period (Stripe observed).
-   Granite: description = worker · position · earning type; Qty = hours shown from integer
+   Tabulado: description = worker · position · earning type; Qty = hours shown from integer
    minutes; Unit price = bill rate; Amount = cents rounded once at line level (SPEC §5).
 7. Right-aligned totals: Subtotal, (tax lines), Total, **Amount due**.
 8. Footer text block (Stripe docs: optional footer, often legal text) and "Page X of Y" at the
@@ -34,7 +34,7 @@ Top to bottom (Stripe, observed):
 
 QuickBooks Online divides the same template into Header (company info, custom fields, tax) ·
 Activity table (product/service, description, quantity, rate, service date) · Footer (message,
-footer text); Granite's sections map onto those three parts.
+footer text); Tabulado's sections map onto those three parts.
 
 ## Correction documents (slice e, decision E11)
 Source URL: https://docs.stripe.com/invoicing/dashboard/credit-notes

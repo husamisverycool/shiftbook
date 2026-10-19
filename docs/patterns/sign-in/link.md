@@ -11,9 +11,9 @@ Source URL: https://slack.com/help/articles/203772216-SAML-single-sign-on
 Researched: 2026-10-17. Confidence: high for "an emailed code, the address hinted, typed in the
 browser"; the page's layout is GitHub's in screenshots, not described in text.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The first time a Google, Microsoft or agency SSO account signs someone in by their email — and that
-provider does not itself host the mailbox — Granite proves the mailbox now with a six-digit code
+provider does not itself host the mailbox — Tabulado proves the mailbox now with a six-digit code
 before connecting the account (an outside account made with someone's address must not become their
 way in on its own). Afterwards the account signs them in directly; the authenticator code or its
 setup still follows as after a password.

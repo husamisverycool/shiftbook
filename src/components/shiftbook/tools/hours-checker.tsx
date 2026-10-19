@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/tools/il-720-hours.md — Gusto's calculator: inputs each with a label and one
-// help line, the results right under them; Granite's figures, table and status badges for the results.
+// help line, the results right under them; Tabulado's figures, table and status badges for the results.
 import { CircleAlertIcon, DownloadIcon, UploadIcon, XIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useId, useRef, useState, useTransition } from "react";

@@ -18,7 +18,7 @@ Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3, §
 from Linear's own Members screenshot on linear.app/docs/invite-members (2026-10-17). Confidence: high
 for the list, the filters, the row menu and the invite dialog's fields.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The agency's people and their roles (SPEC §2). Only the Owner invites, changes roles and suspends;
 everyone else sees the list.
 
@@ -70,8 +70,8 @@ on one line, then one row per person with hairlines between them, no box.
 ## Look (checked against Linear's Members screenshot, 2026-10-17)
 Rows at least 60px with a hairline between them across the column, no box (Linear's members); the
 initials 32px; the name 14px medium over the email 13px muted; role and status columns 160px and 192px;
-the ⋯ menu a 32px ghost button. Remaining differences: Linear shows a photo where Granite shows
-initials (Linear's own default avatar is the initials, linear.app/docs/profile); Granite shows more per
+the ⋯ menu a 32px ghost button. Remaining differences: Linear shows a photo where Tabulado shows
+initials (Linear's own default avatar is the initials, linear.app/docs/profile); Tabulado shows more per
 person (authenticator, last seen) in two-line columns where Linear shows name, email and role on one line.
 
 ## Related

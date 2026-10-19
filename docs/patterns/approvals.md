@@ -16,7 +16,7 @@ Source URL: https://kb.tempworks.com/help/customer-portal-reviewing-and-approvin
 Researched: 2026-10-16. Confidence: high for Harvest and Stripe list mechanics; medium for
 Instawork's banner (one article).
 
-## Purpose in Granite
+## Purpose in Tabulado
 Where the agency asks each client to approve a pay period's hours (SPEC §10), sees who has approved,
 who has not, and which shifts a client disputed.
 

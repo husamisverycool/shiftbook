@@ -30,7 +30,7 @@ const store = new LocalDocumentStore(mkdtempSync(join(tmpdir(), "sb-catalog-")))
 const actor: Actor = { agencyId: DEMO_AGENCY.id, userId: "00000000-0000-4000-a000-000000000001", label: "Test coordinator", role: "coordinator" };
 const noImages: ImageReader = { read: () => Promise.reject(new Error("no images in this test")) };
 const inAgency = <T>(fn: Parameters<typeof app.withAgency<T>>[1]) => app.withAgency(actor.agencyId, fn);
-const week = periodId("w2"); // 2026-10-05 to 2026-10-11; w1 before it was paid before Granite
+const week = periodId("w2"); // 2026-10-05 to 2026-10-11; w1 before it was paid before Tabulado
 const SAMPLE = "IL-prairie-line-timeclock-2026-10-05.csv";
 const OPERATOR = jobOrderId("il-operator");
 

@@ -1,18 +1,18 @@
-# Granite pay rules and compliance: a brief for employment counsel
+# Tabulado pay rules and compliance: a brief for employment counsel
 
 Prepared 2026-10-17 from rules version `2026.10-c8`. File paths in parentheses are for a developer.
 Examples are invented.
 
-## 1. What Granite does
+## 1. What Tabulado does
 
-Granite turns timesheets into **gross pay lines** per worker, workweek, placement and earning type
+Tabulado turns timesheets into **gross pay lines** per worker, workweek, placement and earning type
 (packages/rules/src/engine.ts). The types are regular, overtime, double time, minimum-wage top-up,
 reporting pay, Illinois day-labor minimum, holiday, California meal and rest premiums, and bonus.
 Client bill lines are made too, and never change pay.
 
 It does **not** compute or withhold taxes, take deductions, work out net pay, issue pay statements,
 pay anyone or file returns. SPEC.md §1 and §22 exclude "payroll processing or tax filing", and no
-code computes withholding. Granite writes an import file, and the agency's payroll system (Gusto,
+code computes withholding. Tabulado writes an import file, and the agency's payroll system (Gusto,
 QuickBooks, ADP and others) does the rest (src/exports/).
 
 **Rounding.** Money is whole cents and time whole minutes; pay math uses no decimals
@@ -124,7 +124,7 @@ threshold and multiplier is a dated database row (drizzle/*.sql).
 
 ### 2.11 Illinois § 42 equal pay: the hours counter (il-equal-pay.ts)
 - **Citation:** 820 ILCS 175/42(a), (c) (P.A. 103-1030); 56 Ill. Adm. Code 260.505(b); IDOL bulletin of 2025-06-05.
-- **Does:** It counts minutes worked on Illinois day and temporary labor per worker and client (all sites) over a rolling 12 months, with pre-Granite opening balances counted on their last day. Over 720 hours records a duty, and over 4,160 in 48 months a second; neither resets. It warns at 600 hours (Granite's choice, not law).
+- **Does:** It counts minutes worked on Illinois day and temporary labor per worker and client (all sites) over a rolling 12 months, with pre-Tabulado opening balances counted on their last day. Over 720 hours records a duty, and over 4,160 in 48 months a second; neither resets. It warns at 600 hours (Tabulado's choice, not law).
 - **Data:** counts work from 2024-04-01; triggers over 43,200 min in 12 months and over 249,600 in 48; in force from 2024-08-09 (drizzle/0019).
 - **Admits:** Only this agency's hours are known. Guarantee, holiday and premium time are not counted.
 
@@ -139,8 +139,8 @@ Duties come from dated `compliance_rules` rows (drizzle/0029, 0030, 0033) via
 src/server/compliance/generate.ts. Duties over 365 days past are not created, but none closes for
 being old.
 
-- **3.1 Registration renewals.** Illinois (820 ILCS 175/45; 56 Ill. Adm. Code 260.320) is due 60 days before expiry. Massachusetts (454 CMR 24.06(2)) is due 30 days before. New Jersey (N.J.S.A. 34:8D-8) is due 30 days before; no lead time is stated, so this is Granite's safe reading.
-- **3.2 Illinois proof of registration** (820 ILCS 175/85(a); 260.510). For each client with Illinois day or temporary labor, proof is due before each contract and on each March 1 and September 1. A contract is new after a 183-day gap, which is Granite's own number.
+- **3.1 Registration renewals.** Illinois (820 ILCS 175/45; 56 Ill. Adm. Code 260.320) is due 60 days before expiry. Massachusetts (454 CMR 24.06(2)) is due 30 days before. New Jersey (N.J.S.A. 34:8D-8) is due 30 days before; no lead time is stated, so this is Tabulado's safe reading.
+- **3.2 Illinois proof of registration** (820 ILCS 175/85(a); 260.510). For each client with Illinois day or temporary labor, proof is due before each contract and on each March 1 and September 1. A contract is new after a 183-day gap, which is Tabulado's own number.
 - **3.3 Illinois equal pay.** See 2.11–2.12. The duty is due at the end of the crossing's pay period.
 - **3.4 Massachusetts job order** (M.G.L. c. 149 § 159C(b); 454 CMR 24.08). One is due per placement by the end of its first pay period. The code assumes weekly pay periods (src/server/compliance/sync.ts).
 - **3.5 New Jersey notice in the worker's language** (N.J.S.A. 34:8D-3(a); N.J.A.C. 12:72-3.1). It applies to New Jersey placements in the designated SOC groups (33, 35, 37, 39, 47, 49, 51, 53) when the worker's language is not English, and is due on the start date.
@@ -167,7 +167,7 @@ being old.
 14. Is it defensible to pay the rate card once a request is recorded, then true up? (2.12)
 15. The workers' comp premium is exact only in single-rate weeks; in the section 1 example the true premium is $56.87, but the packet would show $52.96. Will carriers accept that? (3.7)
 16. Should every Massachusetts placement get a job order? There is no professional or clerical exemption and no same-day deadline for daily pay. (3.4)
-17. Are Granite's own numbers acceptable: holidays as I-9 business days, the 183-day contract gap, the 365-day look-back? (3.2, 3.6)
+17. Are Tabulado's own numbers acceptable: holidays as I-9 business days, the 183-day contract gap, the 365-day look-back? (3.2, 3.6)
 18. Is paid work plus confirmed holidays a complete count of ACA hours of service? (3.8)
 
 ## 5. Not covered

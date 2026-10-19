@@ -118,7 +118,7 @@ async function activePlacements(tx: Tx, where: SQL): Promise<boolean> {
 /**
  * Archives a client (or brings it back): it leaves the lists and pickers; its runs, invoices and
  * receivables stay. Refused while workers are still placed there (Stripe deletes a customer only with
- * nothing outstanding; Granite archives instead, as runs and invoices name the client).
+ * nothing outstanding; Tabulado archives instead, as runs and invoices name the client).
  */
 export async function setClientArchived(tx: Tx, actor: Actor, id: string, archived: boolean): Promise<ArchiveResult> {
   if (!mayManageClients(actor)) return { ok: false, error: "not_allowed" };

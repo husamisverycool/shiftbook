@@ -96,7 +96,7 @@ export function guessMapping(rows: string[][]): BankMapping | null {
 }
 
 /**
- * A first mapping for a file whose header names nothing Granite knows (or that has none, like Wells
+ * A first mapping for a file whose header names nothing Tabulado knows (or that has none, like Wells
  * Fargo's): no header row when the first line already holds a date; the date column is the first
  * whose cells read as dates, the amount the first other whose cells read as amounts, the description
  * the one with the most words. The person checks it on the Map columns step.

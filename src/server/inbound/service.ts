@@ -3,7 +3,7 @@
  * recorded once (by the provider's id), its sender checked against the agency's list (Ramp's receipt
  * forwarding), and each file taken through the same intake as an upload (`receiveDocument`) into the
  * week that just ended. A week whose files are already made holds them for a person to file into an
- * open week; files Granite does not read are listed with why. Never creates a worker; reading,
+ * open week; files Tabulado does not read are listed with why. Never creates a worker; reading,
  * redaction and review are the upload's own (the body is kept with SSN- and date-shaped text removed).
  */
 import { and, desc, eq, inArray, sql } from "drizzle-orm";

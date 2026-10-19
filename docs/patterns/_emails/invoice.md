@@ -7,7 +7,7 @@ Source URL: https://docs.stripe.com/invoicing/send-email
 Researched: 2026-10-17. Confidence: medium (Stripe's email text is not published as text).
 
 ## Hierarchy (invoice)
-1. Sender "{agency} via Granite"; replies go to the agency.
+1. Sender "{agency} via Tabulado"; replies go to the agency.
 2. Subject: invoice number, from the agency.
 3. Amount due and due date (credit note: amount credited and the invoice it credits).
 4. The agency's message when one was typed.

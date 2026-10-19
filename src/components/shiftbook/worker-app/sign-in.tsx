@@ -1,6 +1,6 @@
 "use client";
 
-// Pattern: docs/patterns/w/sign-in.md — Granite's emailed-code sign-in (decision 0033) with the mobile
+// Pattern: docs/patterns/w/sign-in.md — Tabulado's emailed-code sign-in (decision 0033) with the mobile
 // number in place of the email: the number, then the six-digit code on the same page; the same answer
 // whatever the number; several agencies → choose one; in the demo, the text's copy and Continue as.
 import { useLocale, useTranslations } from "next-intl";

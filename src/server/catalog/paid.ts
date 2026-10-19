@@ -1,7 +1,7 @@
 /**
  * What has been paid already: the last day of the last paid week that holds hours of some
  * assignments. Hours are locked only when a period's files are created (or were paid before
- * Granite), so locked entries mark paid weeks.
+ * Tabulado), so locked entries mark paid weeks.
  */
 import { and, eq, inArray, max } from "drizzle-orm";
 import type { Tx } from "../db/client";

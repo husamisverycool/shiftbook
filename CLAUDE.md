@@ -1,4 +1,4 @@
-# CLAUDE.md — working rules for Granite
+# CLAUDE.md — working rules for Tabulado
 
 Product contract: `SPEC.md`. Current slice plan: `.claude/plans/`. Read both before working.
 

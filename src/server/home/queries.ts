@@ -107,7 +107,7 @@ export async function homeView(tx: Tx, agencyId: string, today: string, may: { v
     for (let d = current.startsOn; d <= current.endsOn; d = addDays(d, 1)) days.push({ date: d, minutes: entries.filter((e) => e.date === d).reduce((n, e) => n + (e.minutes ?? 0), 0) });
     workers = new Set(entries.filter((e) => e.workerId !== null && (e.minutes ?? 0) > 0).map((e) => e.workerId)).size;
     if (days.length > 31) days = [];
-    // Any period before it, a week paid before Granite included: its hours were worked all the same.
+    // Any period before it, a week paid before Tabulado included: its hours were worked all the same.
     const [before] = await tx.select().from(s.payPeriods).where(lt(s.payPeriods.startsOn, current.startsOn)).orderBy(sql`${s.payPeriods.startsOn} desc`).limit(1);
     if (before) previous = { startsOn: before.startsOn, endsOn: before.endsOn, minutes: (await periodEntries(tx, before.id)).reduce((n, e) => n + (e.minutes ?? 0), 0) };
   }

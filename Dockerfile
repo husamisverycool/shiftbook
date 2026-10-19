@@ -1,4 +1,4 @@
-# Granite on a host (decision 0035). The host builds this file and runs it; nothing else is needed.
+# Tabulado on a host (decision 0035). The host builds this file and runs it; nothing else is needed.
 # Settings come from the host's environment settings (docs/hosting-settings.md), never from here.
 FROM node:22-bookworm-slim
 

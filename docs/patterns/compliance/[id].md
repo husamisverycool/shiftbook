@@ -14,7 +14,7 @@ Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §7). Confidence: 
 evidence actions, statuses and History; medium for the layout of the Overview (Drata describes cards
 and sections, not their arrangement).
 
-## Purpose in Granite
+## Purpose in Tabulado
 One duty: what the law asks and where it says so, who it is about, when it is due, who owns it, the
 files that prove it was done, and what happened to it (SPEC §16: "each obligation with evidence
 attachments").
@@ -23,7 +23,7 @@ attachments").
 1. **Header:** a link back to Compliance; H1 the duty and its subject; badges for the status
    (Overdue, Due soon, Upcoming, Done, Not applicable) and the state; at the right the actions for
    its status: **Mark done** (with an optional note; Vanta "Mark as complete") and **Not applicable**
-   (with a reason) while open; **Reopen** once a person closed it (Owner only; what Granite closed
+   (with a reason) while open; **Reopen** once a person closed it (Owner only; what Tabulado closed
    from the data, the data reopens).
 2. **Tabs** (Drata, Vanta): Overview · Evidence · History · Notes, in the address.
 3. **Overview:** summary cards (Drata's readiness cards): Due (date and how far away), Owner (a
@@ -68,7 +68,7 @@ attachments").
 - Mark done asks for an optional note; Not applicable asks for a reason (required); both appear in
   History. Removing an equal-pay row asks for a reason (required); with no rate left, a duty that
   entering the rate closed is open again (in History). A person's decision is never undone by the system; only the Owner reopens it. What
-  Granite closed from the data (a renewal, a recorded date, a placement that no longer applies),
+  Tabulado closed from the data (a renewal, a recorded date, a placement that no longer applies),
   the data reopens or closes again.
 - Files: PDF, images, spreadsheets, text, up to 20 MB; the effective date defaults to today.
 - Keyboard: Esc goes back to the list.

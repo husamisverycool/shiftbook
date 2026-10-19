@@ -59,7 +59,7 @@ describe("an agency signs itself up (decision 0036)", () => {
     expect(await requestSignup(deps, input(email.toUpperCase(), { locale: "es" }), "203.0.113.7", render, BASE)).toEqual({ ok: true });
     expect(sent).toHaveLength(1);
     expect(sent[0]!.to.email).toBe(email);
-    expect(sent[0]!.fromName).toBe("Granite");
+    expect(sent[0]!.fromName).toBe("Tabulado");
     // Nothing the requester typed goes into the email, not even the To line's display name (security review).
     expect(sent[0]!.to).toEqual({ email, name: null });
     expect(JSON.stringify(sent[0])).not.toContain("Robin Vega");
@@ -123,7 +123,7 @@ describe("an agency signs itself up (decision 0036)", () => {
   });
 
   it("no enumeration: an email that already signs in gets the same answer, a note instead of a link, and no agency", async () => {
-    // Someone with a Granite login (invited to the demo agency).
+    // Someone with a Tabulado login (invited to the demo agency).
     const member = fresh("member");
     const invited = await inviteMember(authDeps, theOwner, { name: "Pat Lee", email: member, role: "billing", locale: "en" }, (link): LinkMail => ({ subject: "Join", text: link, html: link }), BASE);
     if (!invited.ok) throw new Error(invited.error);

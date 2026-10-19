@@ -1,5 +1,5 @@
 /**
- * How Granite sends text messages (slice t), as email is sent (decision 0012): one interface, two
+ * How Tabulado sends text messages (slice t), as email is sent (decision 0012): one interface, two
  * implementations. The demo keeps the whole text in sms_messages.demo_body (its outbox; no outside
  * calls). The live app sends through Twilio's Messages API with plain fetch, when the environment
  * names the account (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM) — set in the cloud
@@ -54,7 +54,7 @@ export class TwilioTransport implements SmsTransport {
         body,
       });
     } catch (error) {
-      throw new SmsSendError(`Granite could not reach the text message service (${error instanceof Error ? error.message : String(error)}).`);
+      throw new SmsSendError(`Tabulado could not reach the text message service (${error instanceof Error ? error.message : String(error)}).`);
     }
     const answer = (await response.json().catch(() => ({}))) as { sid?: unknown; code?: unknown; message?: unknown };
     if (!response.ok) throw new SmsSendError(`The text message service refused the message (${response.status} ${String(answer.code ?? "")}: ${String(answer.message ?? "no details")}).`);

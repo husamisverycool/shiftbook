@@ -110,7 +110,7 @@
 /*
  * The accent (decision 0046; docs/patterns/_components/color.md): one hue in --primary, --ring,
  * --sidebar-primary and --chart-1 only. Three candidates from Tailwind's default palette, chosen in
- * docs/research/visual-richness-slice-z.md §13; GRANITE_ACCENT picks one (indigo by default).
+ * docs/research/visual-richness-slice-z.md §13; TABULADO_ACCENT picks one (indigo by default).
  */
 :root,
 [data-accent="indigo"] {

@@ -5,7 +5,7 @@
  * is pinned to the SHA-256 of what the engine wrote before the keys: sha256(JSON.stringify(computePay(input)))
  * with the engine at commit b927d82. A later change to an answer key the owner approves changes its
  * fingerprint too, and this test says so: il-s42-720h-crossing-midweek carries the Illinois equal-pay
- * note, renamed "Granite's" with the owner's approval of the answer keys (2026-10-17, decision 0034).
+ * note, renamed "Tabulado's" with the owner's approval of the answer keys (2026-10-17, decision 0034).
  */
 import { createHash } from "node:crypto";
 import { computePay } from "@shiftbook/rules";

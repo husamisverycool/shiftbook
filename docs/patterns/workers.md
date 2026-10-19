@@ -11,7 +11,7 @@ Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §1a). 
 search, the add button, the default Active filter and the status checkboxes; the column widths and
 the page size are not documented.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The agency's roster (SPEC §17): every temporary worker, found by name or payroll number, opened to
 their profile. No SSN column (California's and New York's guidance: no SSNs on rosters).
 

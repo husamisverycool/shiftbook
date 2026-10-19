@@ -18,7 +18,7 @@ Researched: 2026-10-16 (`docs/research/margin-slice-i.md` §2). Confidence: high
 (Bullhorn, TempWorks); high for the pay date after the period (Gusto's article). Laid out on 2026-10-17
 as Linear's settings from Linear's own screenshots (`_components/settings.md`).
 
-## Purpose in Granite
+## Purpose in Tabulado
 The rates the margin's estimated burden uses (SPEC §15: employer tax percentage and workers' comp rate
 by class) and the pay day the cash floating figure uses, each kept by the date it applies from.
 

@@ -51,7 +51,7 @@ export default async function ConvertPage(props: { params: Promise<{ locale: str
   }
   const period = await inAgency((tx) => getPeriod(tx, periodId));
   if (!period) notFound();
-  // Paid before Granite: nothing to convert here, so back to the list of periods.
+  // Paid before Tabulado: nothing to convert here, so back to the list of periods.
   if ((await inAgency((tx) => periodState(tx, periodId))) === "history") redirect(`/${locale}/convert`);
   const run = await inAgency((tx) => latestRun(tx, periodId));
   const locked = run?.status === "exported" || run?.status === "closed";

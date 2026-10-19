@@ -2,7 +2,7 @@
  * New Jersey's primary-language pay statement (SPEC §16): a temporary laborer placed in New Jersey
  * whose primary language is not English gets the pay statement in that language too (Temporary
  * Workers' Bill of Rights, N.J.S.A. 34:8D-3; NJDOL publishes the forms in several languages).
- * Granite writes pay stubs in English and Spanish; another language is flagged for the agency.
+ * Tabulado writes pay stubs in English and Spanish; another language is flagged for the agency.
  */
 import { eq } from "drizzle-orm";
 import type { Tx } from "../db/client";
@@ -17,7 +17,7 @@ export function payStatementLanguage(placedStates: string[], preferredLanguage: 
   return lang === "" || lang === "en" ? null : lang;
 }
 
-/** The pay stub's language: the worker's own when the flag asks for one Granite writes (Spanish). */
+/** The pay stub's language: the worker's own when the flag asks for one Tabulado writes (Spanish). */
 export function payStubLocale(flag: string | null, requested: "en" | "es"): "en" | "es" {
   return flag === "es" ? "es" : requested;
 }

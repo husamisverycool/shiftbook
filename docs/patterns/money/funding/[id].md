@@ -15,7 +15,7 @@ Source URL: https://getscalefunding.com/scale-funding-insights/get-cash-to-run-y
 Researched: 2026-10-17 (`docs/research/money-flows-slice-w.md` §2, §6). Confidence: high for the
 offer's parts and wording; the hosted Capital page's layout is only an image (unverified).
 
-## Purpose in Granite
+## Purpose in Tabulado
 One invoice's underwriting packet and the decision under the agency's rules; when eligible, the
 offer as a funding partner would make it; submitting records the packet. Nothing is lent.
 

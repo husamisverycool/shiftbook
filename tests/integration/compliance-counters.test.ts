@@ -1,6 +1,6 @@
 /**
  * The Illinois hours counters with opening balances (slice j step 3a, decision J5). The demo: Fatima
- * Haddad has 590 hours (35,400 minutes) at Prairie Line before Granite, up to 2026-07-31, and her
+ * Haddad has 590 hours (35,400 minutes) at Prairie Line before Tabulado, up to 2026-07-31, and her
  * hours in the demo's paid week; she is near 720.
  */
 import { and, eq, inArray } from "drizzle-orm";
@@ -73,9 +73,9 @@ describe("hours counters (J5)", () => {
     expect((await inAgency((tx) => balanceChoices(tx))).some((c) => c.workerId === marcus && c.clientId === prairie)).toBe(true);
   });
 
-  it("the run counts a balance: 715 hours before Granite and a week of work cross 720 on the Monday at noon", async () => {
+  it("the run counts a balance: 715 hours before Tabulado and a week of work cross 720 on the Monday at noon", async () => {
     // 42,900 minutes up to 2026-10-04; Monday 2026-10-05 8 h → 43,380 > 43,200, so it crosses Monday at 7:00 + 300 min = 12:00.
-    await inAgency((tx) => addOpeningBalance(tx, theOwner, { workerId: marcus, clientId: prairie, minutes: 42_900, throughOn: "2026-10-04", note: "Before Granite" }, TODAY));
+    await inAgency((tx) => addOpeningBalance(tx, theOwner, { workerId: marcus, clientId: prairie, minutes: 42_900, throughOn: "2026-10-04", note: "Before Tabulado" }, TODAY));
     // Only this week counts: the demo's earlier week is set aside.
     await owner.db.update(s.timeEntries).set({ status: "rejected" }).where(eq(s.timeEntries.workerId, marcus));
     for (const d of ["2026-10-05", "2026-10-06"]) {

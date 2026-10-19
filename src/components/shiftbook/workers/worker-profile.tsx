@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/workers/[id].md — Toast Payroll employee profile: tabs at the top of the
-// record (Profile, Employment; Granite adds Documents), each subject a section with its own Edit,
+// record (Profile, Employment; Tabulado adds Documents), each subject a section with its own Edit,
 // Retrieve SSN; Square's order of sections (personal information first).
 import { PencilIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";

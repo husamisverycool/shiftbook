@@ -9,9 +9,9 @@ Source URL: https://help.vanta.com/hc/en-us/articles/6993220120980-Assignment-an
 Source URL: https://linear.app/docs/display-options
 Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §7). Confidence: high for the
 hierarchy (sidebar of areas, urgency order, search, filters, owners); low for column layout and
-labels (the Vanta article does not describe them; Granite's columns follow its own data).
+labels (the Vanta article does not describe them; Tabulado's columns follow its own data).
 
-## Purpose in Granite
+## Purpose in Tabulado
 Every compliance duty the agency has, most urgent first (SPEC §16): registrations and renewals,
 client proof pages, Illinois equal-pay crossings, New Jersey and Massachusetts notices, workers' comp,
 Form I-9 deadlines, ACA offers.

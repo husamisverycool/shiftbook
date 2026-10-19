@@ -30,9 +30,9 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   // The person's accent (decision 0046), from their cookie so the page opens in it; else the hosting's
-  // GRANITE_ACCENT; else indigo. The theme class is set by next-themes before paint, hence the
+  // TABULADO_ACCENT; else indigo. The theme class is set by next-themes before paint, hence the
   // hydration warning suppressed on <html> only.
-  const accent = accentFor((await cookies()).get(ACCENT_COOKIE)?.value, process.env.GRANITE_ACCENT);
+  const accent = accentFor((await cookies()).get(ACCENT_COOKIE)?.value, process.env.TABULADO_ACCENT);
   return (
     <html lang={locale} className={GeistSans.className} data-accent={accent} suppressHydrationWarning>
       {/* The banner's height, so the sidebar fits the screen under it (decision 0029). */}

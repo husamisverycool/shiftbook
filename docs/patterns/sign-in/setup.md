@@ -12,7 +12,7 @@ Source URL: https://docs.github.com/en/organizations/keeping-your-organization-s
 Researched: 2026-10-16. Confidence: high for the three parts, the setup key, the recovery code
 actions and the requirement.
 
-## Purpose in Granite
+## Purpose in Tabulado
 SPEC §2 requires the code for the Owner and Coordinators. A person in those roles who has no
 authenticator yet (just invited, or given the role) sets one up here before the app opens.
 

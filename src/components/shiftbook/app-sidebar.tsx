@@ -194,7 +194,7 @@ export function AppSidebar({ agencyName, person, showMargin = false, complianceC
                 <CalendarDaysIcon />
                 {t("holidays")}
               </DropdownMenuItem>
-              {/* Decision 0040: every system Granite exchanges files with (Zapier's App Connections). */}
+              {/* Decision 0040: every system Tabulado exchanges files with (Zapier's App Connections). */}
               <DropdownMenuItem render={<Link href="/settings/connections" />} data-testid="menu-connections">
                 <PlugIcon />
                 {t("connections")}

@@ -31,7 +31,7 @@ Researched: 2026-10-16 (`docs/research/payroll-formats-slice-f.md` §7). Confide
 medium for Deputy's destination step (beta article); no reference documents keyboard shortcuts. Laid
 out on 2026-10-17 as Linear's settings from Linear's own screenshots (`_components/settings.md`).
 
-## Purpose in Granite
+## Purpose in Tabulado
 Where the Owner chooses the payroll system the weekly payroll file is made for (SPEC §13), enters
 what that system needs (company code, QuickBooks version, a customer for QuickBooks Online, a
 spreadsheet's layout), the system's code for each kind of pay, and each worker's id in that system.
@@ -58,7 +58,7 @@ centred column, each section's rows in a rounded bordered panel, a form's Save i
       Paychex Flex and Paylocity add **Read a sample file** (Avionté BOLD's "create a mapping from a
       file", docs/research/connections-exports-slice-s.md §3): a dashed box with its title and one
       line at the left and the button at the right; once a file is read, one line says whether its
-      columns are the ones Granite writes (with any difference), the client id found (filled into the
+      columns are the ones Tabulado writes (with any difference), the client id found (filled into the
       field, kept on Save) and the codes found, for the Codes tab. The file is read in the browser.
    4. That panel's foot: when it was last changed and by whom at the left; "Saved" and **Save** (7shifts
       saves explicitly) at the right.
@@ -72,7 +72,7 @@ centred column, each section's rows in a rounded bordered panel, a form's Save i
    its panel (the tab names the section; its heading is for screen readers).
 4. **Earning codes** tab (7shifts custom export codes; QuickBooks Time one item per hour type): a panel
    of rows under a caption row (Kind of pay · Code · Sent as · Multiple), one row per kind of pay
-   Granite can produce: the kind of pay over **what happens when it is blank** (7shifts), then at the
+   Tabulado can produce: the kind of pay over **what happens when it is blank** (7shifts), then at the
    right the code in the system (a field, or the system's fixed column as text), hours or dollars where
    the system lets the agency choose, and the multiple the system applies to hours where the agency
    declares it (ADP Workforce Now). Kinds of pay the system cannot carry say so at the right. **Save** in

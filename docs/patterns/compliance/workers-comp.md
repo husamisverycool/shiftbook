@@ -11,7 +11,7 @@ Source URL: https://www.ncrb.org/digitallibrary/basicmanual/Rule_2_-_Premium_and
 Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §4). Confidence: high for Patriot's
 report; medium for the manual rule (North Carolina's version of the national manual).
 
-## Purpose in Granite
+## Purpose in Tabulado
 What the agency hands its workers' comp auditor: the payroll by state and class, with the overtime
 premium shown apart (SPEC §16: "a workers' comp audit packet (payroll by class and state)").
 

@@ -1,7 +1,7 @@
 /**
  * The demo's stand-in identity providers (decision 0033), demo mode only (404 otherwise): the browser's
  * step only — the authorization request becomes the stand-in's page (`/sign-in/demo-provider/…`), and
- * the account chosen there goes back to Granite's callback with a code. Discovery, keys and the token
+ * the account chosen there goes back to Tabulado's callback with a code. Discovery, keys and the token
  * endpoint are never served over HTTP: the server reaches them in-process (review H1).
  */
 import { NextResponse, type NextRequest } from "next/server";
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, context: Context): Promise<Resp
   const at = await where(context);
   if (!at) return NOT_FOUND();
   const now = new Date();
-  // The stand-in's page: the account chosen (or Cancel), back to Granite's callback.
+  // The stand-in's page: the account chosen (or Cancel), back to Tabulado's callback.
   const form = await request.formData();
   const asked = openAuthorize(String(form.get("request") ?? ""), now);
   if (!asked || asked.provider !== at.provider) return NextResponse.redirect(new URL(`/en/sign-in/demo-provider/${at.provider}`, at.base), { status: 303, headers: NO_STORE });

@@ -1,7 +1,7 @@
 /**
  * The invite and password reset emails (docs/patterns/_emails/sign-in-links.md): plain text with a
  * simple HTML copy, in the person's language; the link is the only thing in them that matters, and
- * the copy Granite keeps hides it (service.ts, hideAuthLinks).
+ * the copy Tabulado keeps hides it (service.ts, hideAuthLinks).
  */
 import { createTranslator } from "next-intl";
 import en from "../../../messages/en.json";

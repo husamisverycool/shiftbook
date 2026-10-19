@@ -2,7 +2,7 @@
 
 // Pattern: docs/patterns/settings/connections.md — Edit columns (decision 0043): the placement
 // import's mapping step (Attio import; docs/patterns/assignments/import.md) for a VMS time file —
-// each Granite field beside the column name in the buyer's report, the statuses that count and the
+// each Tabulado field beside the column name in the buyer's report, the statuses that count and the
 // date format; Save, Cancel, and Restore the built-in names.
 import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";

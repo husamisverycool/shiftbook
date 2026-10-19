@@ -1,6 +1,6 @@
 "use client";
 
-/** The rules engine's and Granite's own messages and explanations in the reader's language (decision 0030). */
+/** The rules engine's and Tabulado's own messages and explanations in the reader's language (decision 0030). */
 import { useTranslations } from "next-intl";
 import { useCallback } from "react";
 import { speak, type Speaker, type Spoken } from "@/lib/engine-say";

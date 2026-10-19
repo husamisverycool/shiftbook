@@ -2,7 +2,7 @@
 
 // Pattern: docs/patterns/sign-in/demo-provider/[provider].md (decision 0033) — the demo's stand-in for
 // a provider's sign-in step (OpenID Connect Core §3.1.2.4: choose the account, go back with a code),
-// as Granite's own plain page: the accounts as full-width buttons, one under another (Linear's ways
+// as Tabulado's own plain page: the accounts as full-width buttons, one under another (Linear's ways
 // in, decision K3). Nothing here imitates Google's or Microsoft's pages.
 import { useTranslations } from "next-intl";
 import { useState } from "react";

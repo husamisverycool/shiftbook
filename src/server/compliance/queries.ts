@@ -249,7 +249,7 @@ export async function obligationDetail(tx: Tx, actor: Actor, id: string, today: 
     equalPay: (EQUAL_PAY_KINDS as readonly string[]).includes(o.kind) && o.workerId && o.clientId ? { rates: await ratesForDuty(tx, o.workerId, o.clientId), trueUps: await weeksToTrueUp(tx, o.workerId, o.clientId) } : null,
     /** Form I-9 copies are never kept here (dates only). */
     keepsNoFiles: keepsNoFiles(o.kind),
-    /** Duties Granite can make a document for. */
+    /** Duties Tabulado can make a document for. */
     makes: ["il_client_proof", "il_client_proof_contract", "ma_job_order", "nj_assignment_notice", "wc_audit"].includes(o.kind),
   };
 }

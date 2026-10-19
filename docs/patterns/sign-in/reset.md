@@ -6,7 +6,7 @@ password reset email"; a link arrives by email and must be used in time)
 Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/updating-your-github-access-credentials
 Researched: 2026-10-16. Confidence: high for the steps.
 
-## Purpose in Granite
+## Purpose in Tabulado
 A person who forgot their password gets a one-time link by email (one hour, one use).
 
 ## Hierarchy

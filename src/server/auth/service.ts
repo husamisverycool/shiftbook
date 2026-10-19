@@ -49,7 +49,7 @@ const CODE_IN_ROW_LIMIT = 100;
 /**
  * A change to how one signs in (an authenticator, recovery codes) or to the agency's people needs
  * the password or a code given within this long in the session (GitHub's sudo mode; GitHub allows
- * two hours, Granite a quarter of one).
+ * two hours, Tabulado a quarter of one).
  */
 export const CONFIRM_MS = 15 * MINUTE;
 export const INVITE_DAYS = 10;
@@ -57,7 +57,7 @@ const RESET_MS = 60 * MINUTE;
 /** Links in emails carry this prefix, so every kept text can hide them. */
 const LINK_TOKEN = /sbau_[A-Za-z0-9_-]{20,}/g;
 export const HIDDEN_AUTH_LINK = "[sign-in link hidden]";
-const ISSUER = "Granite";
+const ISSUER = "Tabulado";
 
 /** The roles that need the second step (SPEC §2: MFA for Owner and Coordinator; the Recruiter handles workers' SSNs too). */
 export const requiresSecondStep = (role: Role) => role === "owner" || role === "coordinator" || role === "recruiter";
@@ -882,7 +882,7 @@ export const looksLikeEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.te
  * has entered the agency (decision 0036: the one way both scripts/create-agency.ts and sign-up make
  * an agency's Owner). Invited (the script hands over an invite link) or active with a password (a
  * sign-up has just proved the mailbox and chosen it). Refused when the email already signs in to
- * Granite, or the agency already has an Owner.
+ * Tabulado, or the agency already has an Owner.
  */
 export async function addFirstOwner(
   tx: Tx,
@@ -926,9 +926,9 @@ export async function firstOwnerInvite(
   const now = nowOf(deps);
   return withAuth(deps, async (tx) => {
     await enterAgency(tx, agencyId);
-    const made = await addFirstOwner(tx, agencyId, { name, email, locale: input.locale, status: "invited", trialEndsAt: opts.trialEndsAt ?? null, byLabel: "Granite setup" }, now);
+    const made = await addFirstOwner(tx, agencyId, { name, email, locale: input.locale, status: "invited", trialEndsAt: opts.trialEndsAt ?? null, byLabel: "Tabulado setup" }, now);
     if (!made.ok) return made;
-    const token = await newLink(tx, made.user, "invite", new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000), "Granite setup", now);
+    const token = await newLink(tx, made.user, "invite", new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000), "Tabulado setup", now);
     return { ok: true, link: `${baseUrl}/${made.user.preferredLocale}/invite/${token}` };
   });
 }

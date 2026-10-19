@@ -35,7 +35,7 @@ describe("Resend transport (decision 0012)", () => {
     expect(headers.get("content-type")).toBe("application/json");
     expect(headers.get("idempotency-key")).toBe("6f1e2c1a-1111-4222-8333-944455556666");
     expect(JSON.parse(String(call!.init.body))).toEqual({
-      from: '"Cedar Row Staffing (demo) via Granite" <approvals@granite.example>',
+      from: '"Cedar Row Staffing (demo) via Tabulado" <approvals@granite.example>',
       to: ['"Dana Approver" <approver@client.example>'],
       reply_to: "office@cedar-row.example",
       subject: "Hours to approve",
@@ -49,7 +49,7 @@ describe("Resend transport (decision 0012)", () => {
     const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@granite.example", fetch: f.fn });
     await transport.send({ ...mail(), fromName: 'Evil "Agency" \\ <x@y.z>\nBcc: z', to: { email: "c@d.example", name: "A <b>" } });
     const body = JSON.parse(String(f.calls[0]!.init.body)) as { from: string; to: string[] };
-    expect(body.from).toBe('"Evil Agency x@y.z Bcc: z via Granite" <a@granite.example>');
+    expect(body.from).toBe('"Evil Agency x@y.z Bcc: z via Tabulado" <a@granite.example>');
     expect(body.to).toEqual(['"A b" <c@d.example>']);
   });
 
@@ -58,7 +58,7 @@ describe("Resend transport (decision 0012)", () => {
     const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@granite.example", fetch: f.fn });
     await transport.send({ ...mail(), fromName: "Acme Staffing, LLC", to: { email: "c@d.example", name: "Smith, Dana" } });
     const body = JSON.parse(String(f.calls[0]!.init.body)) as { from: string; to: string[] };
-    expect(body.from).toBe('"Acme Staffing, LLC via Granite" <a@granite.example>');
+    expect(body.from).toBe('"Acme Staffing, LLC via Tabulado" <a@granite.example>');
     expect(body.to).toEqual(['"Smith, Dana" <c@d.example>']);
   });
 

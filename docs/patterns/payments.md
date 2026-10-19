@@ -13,7 +13,7 @@ Source URL: https://kb.tempworks.com/help/how-to-quick-pay-invoices
 Source URL: https://docs.stripe.com/invoicing/apply-payments
 Researched: 2026-10-16 (`docs/research/receivables-slice-h.md` §2). Confidence: high.
 
-## Purpose in Granite
+## Purpose in Tabulado
 Every payment received from a client, and recording one by hand (decision H2).
 
 ## Hierarchy

@@ -1,5 +1,5 @@
 /**
- * Decision 0030: Granite's own server messages as keys. messages/en.json `said` is SAID_EN, Spanish
+ * Decision 0030: Tabulado's own server messages as keys. messages/en.json `said` is SAID_EN, Spanish
  * says each key with the same values, and each working the server writes says exactly its English.
  */
 import { placeholders, PLAIN_SAY } from "@shiftbook/rules";

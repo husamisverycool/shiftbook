@@ -1,5 +1,5 @@
 /**
- * The rules engine's and Granite's own messages in the reader's language (decision 0030). An issue,
+ * The rules engine's and Tabulado's own messages in the reader's language (decision 0030). An issue,
  * a line or a working carries `say` (keys under `engine`) or `said` (keys under `said`, the server's
  * own) beside its English `message` or `explain`, which stays the record. Pure: the screens and the
  * tests share it.

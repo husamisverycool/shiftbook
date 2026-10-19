@@ -8,7 +8,7 @@ Source URL: https://linear.app/docs/account-preferences
 Researched: 2026-10-17. Confidence: medium (Linear documents the labels list and its actions; the
 exact row layout follows `_components/settings.md`).
 
-## Purpose in Granite
+## Purpose in Tabulado
 SPEC §6: names on timesheets are matched to the roster with "a per-agency nickname map". This page is
 that map: which written given names stand for which formal ones ("Mike" → Michael).
 

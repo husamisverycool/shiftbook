@@ -3,15 +3,15 @@
 Status: adopted — decision 0036 (2026-10-17)
 Reference product and screen: Stripe — the account's email is verified from the link Stripe sends, then
 the account is used; GitHub — an invitation page (the new password twice, then two-factor before access
-when it is required) as Granite's invite page already reproduces it (`invite/[token].md`); GitHub —
+when it is required) as Tabulado's invite page already reproduces it (`invite/[token].md`); GitHub —
 "Enable two-factor authentication" before the organization opens (`sign-in/setup.md`)
 Source URL: https://docs.stripe.com/get-started/account
 Source URL: https://docs.github.com/en/organizations/managing-membership-in-your-organization/inviting-users-to-join-your-organization
 Source URL: https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-two-factor-authentication-for-your-organization/requiring-two-factor-authentication-in-your-organization
 Researched: 2026-10-17. Confidence: high for the steps (verify the email by its link, choose the
-password, two-factor before access); the layout is Granite's invite page's.
+password, two-factor before access); the layout is Tabulado's invite page's.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The page the sign-up email links to: the person proves the mailbox is theirs, chooses a password, and
 goes on to set up the authenticator every Owner needs (SPEC §2). Only then does the app open.
 

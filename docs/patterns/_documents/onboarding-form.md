@@ -12,7 +12,7 @@ Researched: 2026-10-17. Confidence: high for the fields; the official forms' pag
 reproduced (a record of the answers, with the official step numbers).
 
 ## Hierarchy
-1. Title (the form's name) and a line saying it records the answers given in Granite.
+1. Title (the form's name) and a line saying it records the answers given in Tabulado.
 2. The worker's name and the last four of the SSN only (never the whole number).
 3. The answers, labelled with the official step or field names, in the official order.
 4. The electronic signature: the typed name, the date and time, and the statement agreed to.

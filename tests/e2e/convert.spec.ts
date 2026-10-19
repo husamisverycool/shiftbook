@@ -89,7 +89,7 @@ for (const locale of ["en", "es"] as const) {
   });
 }
 
-test("a period paid before Granite, opened by its link, goes back to the list of periods", async ({ page }) => {
+test("a period paid before Tabulado, opened by its link, goes back to the list of periods", async ({ page }) => {
   execSync("pnpm exec tsx scripts/demo-reset.ts", { stdio: "ignore" });
   for (const step of ["upload", "exceptions", "totals", "files"]) {
     await page.goto(`/en/convert?period=${demoUuid("period:w1")}&step=${step}`);

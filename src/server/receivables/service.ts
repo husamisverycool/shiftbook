@@ -1,5 +1,5 @@
 /**
- * Receivables and cash application (SPEC §14; slice h decisions H2–H9). Granite records what the
+ * Receivables and cash application (SPEC §14; slice h decisions H2–H9). Tabulado records what the
  * agency received and where it applied it; it never moves money and never sends anything. Every
  * change is the Owner's or Billing's, under the agency's receivables lock, audited.
  */
@@ -231,7 +231,7 @@ export async function setShortPay(tx: Tx, actor: Actor, invoiceId: string, reaso
   return { ok: true };
 }
 
-/** Records that a reminder was prepared (copied, or opened in the email app): Granite sends nothing (H8). */
+/** Records that a reminder was prepared (copied, or opened in the email app): Tabulado sends nothing (H8). */
 export async function recordReminder(tx: Tx, actor: Actor, invoiceId: string, stage: unknown, locale: unknown, how: unknown): Promise<ReceivablesResult> {
   if (!mayCollect(actor)) return { ok: false, error: "not_allowed" };
   if (!s.REMINDER_STAGES.includes(stage as s.ReminderStage) || (locale !== "en" && locale !== "es") || (how !== "copied" && how !== "email_app")) return { ok: false, error: "invalid", problems: [] };

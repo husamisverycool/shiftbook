@@ -1,6 +1,6 @@
 "use client";
 
-/** A duty's explanation and Granite's own notes in the reader's language (decision 0028). */
+/** A duty's explanation and Tabulado's own notes in the reader's language (decision 0028). */
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { readerFormat, renderExplain, type Explain, type ExplainFormat } from "@/lib/explain";

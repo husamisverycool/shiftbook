@@ -23,7 +23,7 @@ Adopted: Dext's Costs inbox for the list structure, Expensify for upload and rea
 for upload channels and matching rules.
 Owner decision 2026-10-15: "go and do what you think is best but the BIGGEST thing is to purely rely on inspiration from great products NOT your own idea of what's best".
 
-## Purpose in Granite
+## Purpose in Tabulado
 Every incoming timesheet (photo, scan, PDF, time-clock CSV/XLSX, VMS export, email) lands here,
 gets read, and is matched to assignments. Coordinators see what is still being read, what needs
 review, and what is done.
@@ -41,7 +41,7 @@ review, and what is done.
    structure): Status · Received via · Received · Client · Kind · Entries · Needs review.
    Column settings control to add/remove columns and set density (Dext).
 5. **Row selection:** checkbox per row, select all, Shift+click range (Expensify).
-6. **Footer:** totals for the current view (Expensify "total" footer). Granite: documents, entries,
+6. **Footer:** totals for the current view (Expensify "total" footer). Tabulado: documents, entries,
    minutes read.
 
 ## Interactions
@@ -52,9 +52,9 @@ review, and what is done.
 - A document that cannot be read shows a red-dot indicator and a message, and can be retried by
   replacing the file (Expensify).
 - Matching (Ramp): each extracted entry is matched to an active assignment; dates match within the
-  assignment's date range (Ramp uses ±1 day for receipts; Granite uses the SPEC validators instead).
+  assignment's date range (Ramp uses ±1 day for receipts; Tabulado uses the SPEC validators instead).
 - Click a row → opens the single document review (`/documents/[documentId]`).
-- Bulk actions on selected rows via an Actions menu (Dext): export, archive, delete. Granite: export
+- Bulk actions on selected rows via an Actions menu (Dext): export, archive, delete. Tabulado: export
   (the selected rows as CSV), archive (one reason for all, only timesheets that could not be read),
   read again (failed or stuck ones). Delete is not offered: a timesheet's history is kept (SPEC §19).
 - Search (Expensify) filters the current tab by file name and client as you type; Filters (Expensify)
@@ -64,14 +64,14 @@ review, and what is done.
 - A time file whose columns no saved profile knows (SPEC §6 saved column-mapping profiles): its row
   offers **Map this file**, which opens the column mapping of the placement import
   (`assignments/import.md` step 2, Attio): the line holding the column names chosen from the file's
-  first lines; each Granite field (worker, date, in, out, break, hours, client or site, worker id)
+  first lines; each Tabulado field (worker, date, in, out, break, hours, client or site, worker id)
   given a file column with sample values beside it; the date format; the first rows as they will be
   read; a name; Save. The file is then read again, and later files with those columns are read
   without asking.
 
 ## States
 - Reading (Expensify "scanning"), Read, Needs review, Failed to read, Matched / Unmatched (Ramp).
-- Granite status names come from SPEC §4.
+- Tabulado status names come from SPEC §4.
 
 ## Decided after research (2026-10-17)
 - Empty state: the Linear empty-state pattern (`_components/empty-state.md`), per tab.

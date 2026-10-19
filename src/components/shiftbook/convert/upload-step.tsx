@@ -70,7 +70,7 @@ export function UploadStep({ periodId, documents, demo = false, forwardTo = null
   const t = useTranslations("convert.upload");
   const tf = useTranslations("forwarding");
   const ti = useTranslations("inbox");
-  // Why a timesheet could not be read, in the reader's language (the stored reason is Granite's English).
+  // Why a timesheet could not be read, in the reader's language (the stored reason is Tabulado's English).
   const said = (error: string | null) => {
     const why = readError(error);
     if (!why) return error;

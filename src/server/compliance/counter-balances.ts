@@ -1,7 +1,7 @@
 /**
  * The Illinois hours counters page and its opening balances (slice j step 3a, decision J5;
  * docs/patterns/compliance/counters.md). A balance is the hours a worker did for a client before
- * Granite, with the date they run to and a note; the Owner adds one, or removes a wrong one with a
+ * Tabulado, with the date they run to and a note; the Owner adds one, or removes a wrong one with a
  * reason (it stays on file). The run counts them from its next computation.
  */
 import { addMonths, isIsoDate } from "@shiftbook/rules";

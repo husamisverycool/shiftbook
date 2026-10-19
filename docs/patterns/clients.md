@@ -9,7 +9,7 @@ Source URL: https://support.gusto.com/article/106622257100000/edit-company-detai
 Researched: 2026-10-16. Confidence: high for the list-to-page interaction; Stripe documents no
 columns, so the row shows the customer's name and its billing essentials.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The agency's clients, to open one and set how it is invoiced (decision G2–G9).
 
 ## Hierarchy

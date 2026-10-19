@@ -2,7 +2,7 @@
 
 // Pattern: docs/patterns/assignments/import.md — one step at a time with Back and Next (Attio's
 // import steps), the source system chosen first (Linear importers), file columns on the left and
-// Granite fields on the right with sample values (Attio), each distinct value with its row count
+// Tabulado fields on the right with sample values (Attio), each distinct value with its row count
 // and match, unresolved values marked (Flatfile), a preview of what will happen, then every row
 // with its result, filterable; earlier imports listed underneath (Attio import history).
 import { CheckIcon, CircleAlertIcon, FileSpreadsheetIcon, ShieldCheckIcon, UploadIcon } from "lucide-react";

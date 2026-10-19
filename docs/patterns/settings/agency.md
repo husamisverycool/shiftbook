@@ -9,7 +9,7 @@ Source URL: https://linear.app/docs/workspaces
 Researched: 2026-10-17 (`docs/research/agency-setup-g1.md`). Confidence: high for the fields; the
 layout is the settings column already used everywhere.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The agency's own details: the name, address, phone and reply-to email its invoices and emails carry,
 and its time zone (what "today" is for due dates, periods and reminders).
 

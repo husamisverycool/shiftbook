@@ -9,7 +9,7 @@ match. Prices are as published in October 2026; check each company's pricing pag
 
 - `demo.yourname.com` — the public demo anyone can click through (for cold calls and your YC
   application).
-- `app.yourname.com` — the real Granite, where agencies create an account and pay you monthly.
+- `app.yourname.com` — the real Tabulado, where agencies create an account and pay you monthly.
 - `yourname.com/tools/il-720-hours` style link — the free 720-hour checker (it lives inside the demo,
   at `demo.yourname.com/en/tools/il-720-hours`).
 - Email that comes from your own domain, text messages for the worker app, and card payments.
@@ -26,8 +26,8 @@ match. Prices are as published in October 2026; check each company's pricing pag
 | Reading photographed timesheets (optional) | Anthropic | pay as you go, starting at $5 of credit |
 
 Free alternative: none that is safe. Free hosting tiers either delete the database or have no disk,
-and Granite must keep uploaded files and the key that locks Social Security numbers. Railway at about
-$5–20 a month is the cheapest reliable option, and it is what Granite is built for (decision 0035).
+and Tabulado must keep uploaded files and the key that locks Social Security numbers. Railway at about
+$5–20 a month is the cheapest reliable option, and it is what Tabulado is built for (decision 0035).
 
 **The cheapest start ($5 a month, nothing else):** do Part 2 (the demo) only, skip Part 1 and keep
 Railway's free address (it ends in `.up.railway.app`) instead of buying a domain. Skip Parts 3 to 8
@@ -81,7 +81,7 @@ real address.
 
    (Write your real domain in the last line.) Then click **Deploy** at the top.
 8. **Check:** after about 10 minutes the box shows a green tick. Open `https://demo.yourname.com`. You
-   see **Sign in to Granite** with the demo people; click **Continue as Demo Owner** and look around.
+   see **Sign in to Tabulado** with the demo people; click **Continue as Demo Owner** and look around.
    Then open `https://demo.yourname.com/en/tools/il-720-hours` — that is the free checker to send to
    agencies.
 
@@ -95,7 +95,7 @@ Project**), with three differences:
   is `SHIFTBOOK_APP_URL=https://app.yourname.com`.
 - Add the address **before** inviting anyone: passkeys stay tied to the address they were made on.
 
-**Check:** `https://app.yourname.com` shows **Sign in to Granite** with **New to Granite? Create an
+**Check:** `https://app.yourname.com` shows **Sign in to Tabulado** with **New to Tabulado? Create an
 agency** and no demo people. (You cannot create an agency until Part 4 is done, because it emails a
 link.)
 
@@ -114,22 +114,22 @@ link.)
    Copy the key now — Resend shows it once.
 6. In Railway, open the **real** project's **shiftbook** box, **Variables**, **New Variable**:
    - Name `RESEND_API_KEY`, value: the key you copied.
-   - Name `MAIL_FROM`, value: `Granite <hello@yourname.com>`.
+   - Name `MAIL_FROM`, value: `Tabulado <hello@yourname.com>`.
    Click **Deploy**.
-7. **Check:** open `https://app.yourname.com`, click **New to Granite? Create an agency**, and sign up
+7. **Check:** open `https://app.yourname.com`, click **New to Tabulado? Create an agency**, and sign up
    with your own email. The email arrives from your domain. Open its link, choose a password, set up
    an authenticator app on your phone (Google Authenticator, Microsoft Authenticator or 1Password),
    and you are in as the Owner of your own test agency.
 
 ## Part 5 — Take payments (30 minutes, free until you're paid)
 
-Agencies pay you monthly by card on Stripe's own pages; Granite never sees a card.
+Agencies pay you monthly by card on Stripe's own pages; Tabulado never sees a card.
 
 1. Go to **dashboard.stripe.com/register**, sign up, and complete **Activate payments** (business
    type — "Individual / sole proprietor" is fine until you incorporate; your bank account for payouts).
 2. Try it with play money first: switch on **Test mode** (top right). Do steps 3–7 in test mode, then
    repeat them with test mode off when you're ready to charge.
-3. **The price:** **Product catalog** → **Add product** → name `Granite monthly` → **Recurring**,
+3. **The price:** **Product catalog** → **Add product** → name `Tabulado monthly` → **Recurring**,
    **Monthly**, your amount → **Save**. Open the product; under **Pricing**, copy the ID that starts
    with `price_`.
 4. **The secret key:** **Developers** (bottom left) → **API keys** → **Secret key** → **Reveal** →
@@ -164,7 +164,7 @@ business texts from a registered number; a **toll-free number** is the simplest 
    → **Buy** (about $2/month).
 3. **Messaging** → **Regulatory Compliance** (or **Toll-free verification**) → **Create** → fill in
    your business, the use case "Account notifications / one-time passcodes", an example message such
-   as `Your Granite sign-in code is 123456`, and how workers agree (the agency adds their mobile number
+   as `Your Tabulado sign-in code is 123456`, and how workers agree (the agency adds their mobile number
    with their consent when they are hired). Submit. Approval usually takes a few business days; texts
    may be blocked until it is approved.
 4. On the Twilio console's first page, copy the **Account SID** and **Auth Token**.
@@ -204,7 +204,7 @@ Each agency gets its own address to forward timesheets to.
 1. In Railway, open the real project's **Postgres** box → **Backups** → turn on scheduled backups.
    Do the same in the **shiftbook** box's **Backups** tab: its disk holds uploaded files and the key
    that locks Social Security numbers. **Never delete that disk.**
-2. Reminders (client approvals, notifications, collection reminders) need nothing: Granite sends them
+2. Reminders (client approvals, notifications, collection reminders) need nothing: Tabulado sends them
    itself every 15 minutes.
 3. Before any real payroll or real Social Security numbers: the people in Part 3 of
    `docs/launch-guide.md` — an employment lawyer reads `docs/legal-review-brief.md`, a security firm

@@ -21,7 +21,7 @@ describe("the site passkeys belong to", () => {
   it("live mode: the app's own URL, even when the request's Host and protocol say another site", async () => {
     Object.assign(env, { mode: "live", appUrl: "https://app.example" });
     request.headers = new Headers({ host: "evil.example", "x-forwarded-proto": "https" });
-    expect(await currentPasskeySite()).toEqual({ id: "app.example", origin: "https://app.example", name: "Granite" });
+    expect(await currentPasskeySite()).toEqual({ id: "app.example", origin: "https://app.example", name: "Tabulado" });
   });
 
   it("live mode without SHIFTBOOK_APP_URL: none, never the request's Host", async () => {
@@ -34,8 +34,8 @@ describe("the site passkeys belong to", () => {
   it("demo mode: the app's URL when set, otherwise the page's own address", async () => {
     Object.assign(env, { mode: "demo", appUrl: null });
     request.headers = new Headers({ host: "localhost:3600" });
-    expect(await currentPasskeySite()).toEqual({ id: "localhost", origin: "http://localhost:3600", name: "Granite" });
-    expect(passkeySite("http://localhost:3600", { mode: "demo", appUrl: "https://demo.example" })).toEqual({ id: "demo.example", origin: "https://demo.example", name: "Granite" });
+    expect(await currentPasskeySite()).toEqual({ id: "localhost", origin: "http://localhost:3600", name: "Tabulado" });
+    expect(passkeySite("http://localhost:3600", { mode: "demo", appUrl: "https://demo.example" })).toEqual({ id: "demo.example", origin: "https://demo.example", name: "Tabulado" });
     expect(passkeySite(null, { mode: "demo", appUrl: null })).toBeNull();
   });
 });

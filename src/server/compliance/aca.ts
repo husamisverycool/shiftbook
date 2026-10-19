@@ -22,7 +22,7 @@
  * - Hours of service (§ 54.4980H-1(a)(24)): hours paid for work, and for holidays, vacation and
  *   illness with no work.
  *
- * A worker's hours are on file for the periods Granite paid them in (the caller's `covered`
+ * A worker's hours are on file for the periods Tabulado paid them in (the caller's `covered`
  * periods, less a period's run that skipped them) and the months imported for them, a month of no
  * hours included. A period with days not on file is never decided on what is missing: an ended one is
  * "hours missing" from the first such day; a running one counts to the last day on file and says
@@ -62,7 +62,7 @@ export interface ServiceDay {
   minutes: number;
 }
 
-/** Hours from before Granite: a whole month (its first day). */
+/** Hours from before Tabulado: a whole month (its first day). */
 export interface ServiceMonth {
   workerId: string;
   month: string;
@@ -188,7 +188,7 @@ export function acaRows(args: { today: string; settings: AcaSettings; limits: Ac
     const months = imported.filter((m) => m.minutes > 0);
     // This worker's days on file: the periods paid, less those whose run skipped them, and their own imported months (none worked included).
     const onFile = coverage([...args.covered.filter((c) => !c.except?.includes(w.id)), ...imported.map((m) => ({ start: m.month, end: monthEnd(m.month, 1) }))]);
-    // A month from before Granite is service on its first and its last day (whole months, for breaks).
+    // A month from before Tabulado is service on its first and its last day (whole months, for breaks).
     const serviceDates = [...new Set([...days.map((d) => d.date), ...months.flatMap((m) => [m.month, monthEnd(m.month, 1)])])].sort(cmp);
     // Listed when there is something to measure: hours in the periods measured now, or a hire since.
     if (!serviceDates.some((d) => d >= ended.start) && !(w.hireDate !== null && w.hireDate >= ended.start)) continue;

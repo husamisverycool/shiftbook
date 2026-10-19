@@ -89,7 +89,7 @@ export function InvoicePage({ detail, back, ar, clients, today, canCollect, coll
     ...amounts,
     ...(detail.voided ? [{ label: tv("voided"), value: tv("voidedLine", { date: when(detail.voided.at, { time: false }), by: detail.voided.by, reason: detail.voided.reason }), testId: "summary-voided" }] : []),
     { label: td("issued"), value: longDate(r.issuedOn, locale) },
-    // Stripe shows when an invoice was sent; Granite says to whom too.
+    // Stripe shows when an invoice was sent; Tabulado says to whom too.
     { label: tk("send.action"), value: collect.lastSent ? tk("send.lastSent", { date: when(collect.lastSent.at, { time: false }), email: collect.lastSent.to }) : tk("send.never"), testId: "summary-sent" },
     ...(credit ? [] : [{ label: td("due"), value: longDate(r.dueOn, locale) }]),
     { label: td("period"), value: dateRange(r.period.startsOn, r.period.endsOn, locale) },

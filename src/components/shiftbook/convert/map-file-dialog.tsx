@@ -2,7 +2,7 @@
 
 /**
  * "Map this file" (docs/patterns/inbox.md; the placement import's mapping step, Attio): the line
- * holding the column names, then each Granite field given a file column with sample values beside it
+ * holding the column names, then each Tabulado field given a file column with sample values beside it
  * and the date format, then the first rows as they will be read, a name, and Save. Saving reads the
  * file again; later files with these columns are read without asking (SPEC §6 saved profiles).
  */

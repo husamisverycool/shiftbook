@@ -21,7 +21,7 @@ Source URL: https://docs.restaurant365.com/docs/punch-audit-report
 Researched: 2026-10-15. Confidence: high for Airtable shortcuts and behaviors, medium for Airtable
 toolbar order (not documented); high for Rippling content, medium until URLs are browser-checked.
 
-## Purpose in Granite
+## Purpose in Tabulado
 Every time entry for the period in one spreadsheet-style grid (SPEC §7). The coordinator fixes what
 needs review, with the source image beside the grid, and approves what is right.
 
@@ -46,7 +46,7 @@ needs review, with the source image beside the grid, and approves what is right.
    the selection; grouped views show per-group summaries and a total.
 8. **Side panel** (Airtable expanded record, opened with Space or the expand icon): the entry's
    fields, and on the right an activity section (All activity / Comments / Revision history). For
-   Granite the panel also shows the source document image (Rossum validation screen):
+   Tabulado the panel also shows the source document image (Rossum validation screen):
    - zoom in, zoom out and reset zoom above the image;
    - a box around every value read from it, in one of three states (Rossum): read but not yet
      reviewed · checked by a person · stops confirmation (shadcn theme tokens, destructive for the
@@ -54,7 +54,7 @@ needs review, with the source image beside the grid, and approves what is right.
    - hovering a box names the field it fills; clicking a value on the image selects its cell in
      the grid (Rossum: clicking a value jumps to its field).
 9. **Bulk action bar** (Rippling: "bottom center of your screen" when rows are checked): Approve /
-   Reject. Granite rule: bulk approve applies only to high-confidence rows (SPEC §7); other
+   Reject. Tabulado rule: bulk approve applies only to high-confidence rows (SPEC §7); other
    selected rows are left unchanged and counted in the bar.
 
 ## Interactions
@@ -77,12 +77,12 @@ Editing an entry (Restaurant365 Punch Edits, researched 2026-10-15):
 - The row's edit control (or Enter on the row) makes that row's values editable in place: worker
   (roster choice), date, in, out, break. Times are typed in place.
 - A **reason is required before saving**: a list of preset reasons, more than one may be chosen
-  (Restaurant365: "required selections made when adding or editing a punch"). Granite's preset
+  (Restaurant365: "required selections made when adding or editing a punch"). Tabulado's preset
   reasons: corrected a misread value · confirmed with the client · confirmed with the worker ·
   matched to the right worker · other. Saving is the row's checkmark; each row is saved on its own
   (no group edit); cancel leaves the row unchanged.
 - Edited rows carry a marker next to the changed value (Restaurant365: "a blue marker … next to
-  punches that have been edited"; Granite uses the theme's primary token, not blue).
+  punches that have been edited"; Tabulado uses the theme's primary token, not blue).
 - The side panel shows the entry's audit log in time order: who, which fields changed from what to
   what, the reasons, and when (Restaurant365 Punch Edit Audit Log).
 Rules from the SPEC that apply to every interaction above:
@@ -97,7 +97,7 @@ Rules from the SPEC that apply to every interaction above:
 - Hours whose worker is assigned that day only at another client than the timesheet's, or whose
   timesheet's client is unclear: held, naming that client (several: each, in name order). Editing
   the row offers "Attach to {client}" for each named client, with the same required reason as Save;
-  the history keeps both clients. A Granite rule (slice (b) plan, decision B5), not from the
+  the history keeps both clients. A Tabulado rule (slice (b) plan, decision B5), not from the
   references: a timesheet's hours never move to another client's bill by themselves.
 
 ## Not known from the references (settled, owner 2026-10-17: build everything)
@@ -108,7 +108,7 @@ Rules from the SPEC that apply to every interaction above:
   them, and clearing a payroll value without a reason would skip the required reason.
 - Empty state: `_components/empty-state.md`; loading: the converter's loading panel.
 - The view (row height, hidden fields, order, widths, group, sort, summaries) is the person's own,
-  kept in this browser — Airtable keeps a personal view; Granite does not store it on the server.
+  kept in this browser — Airtable keeps a personal view; Tabulado does not store it on the server.
 - "Insert above / below" opens the add-entry row for the same worker and day: entries are hours,
   not ordered rows, so where one is inserted is not kept. "Delete" is the row's Reject (an entry is
   never deleted; SPEC §19).

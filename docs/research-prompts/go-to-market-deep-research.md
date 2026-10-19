@@ -1,4 +1,4 @@
-# Deep research prompt — who to reach, how, and in what order (Granite go-to-market)
+# Deep research prompt — who to reach, how, and in what order (Tabulado go-to-market)
 
 Paste everything below the line into Claude with Research turned on. Fill in the three
 `[brackets]` first (your names and school, how many hours a week you can give this, and your city).
@@ -15,7 +15,7 @@ cash-strapped businesses, and like a researcher who refuses to state anything un
 
 ## 1. What I have built (facts — do not research these, use them)
 
-**Granite** is back-office software for small US temporary staffing agencies (roughly 20–500 workers on
+**Tabulado** is back-office software for small US temporary staffing agencies (roughly 20–500 workers on
 assignment; light industrial, warehouse, manufacturing, events, hospitality, janitorial, clerical).
 Everything hangs off the *assignment* (a worker placed at a client's worksite at a pay rate and a bill
 rate). It is built, tested and about to go online, in English and Spanish:

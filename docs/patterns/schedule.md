@@ -14,7 +14,7 @@ Source URL: https://help.deputy.com/hc/en-au/articles/360000985936-Shift-confirm
 Researched: 2026-10-17 (`docs/research/scheduling-slice-u.md` §§1–5, "Recommended hierarchy").
 Confidence: high for the written callouts; screenshots were not inspected (no colors or icons copied).
 
-## Purpose in Granite
+## Purpose in Tabulado
 The week's shifts for each job order: who works when, which shifts are still open, which are
 published and which the worker has confirmed. A confirmed shift attaches to the worker's assignment on
 that job order; hours still come only from timesheets (SPEC §6) — a schedule never makes a time entry.

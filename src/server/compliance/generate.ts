@@ -314,7 +314,7 @@ export function wantedObligations(input: GenerateInput): Wanted[] {
         });
       }
     }
-    // New Jersey equal pay from the first day: Granite cannot know the client's averages, so a person
+    // New Jersey equal pay from the first day: Tabulado cannot know the client's averages, so a person
     // confirms the rate against them by the start (N.J.S.A. 34:8D-7(b)).
     if (p.state === "NJ" && p.socCode) {
       const r = ruleOn("nj_equal_pay_check", p.startDate);

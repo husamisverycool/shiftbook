@@ -5,7 +5,7 @@
  * half session whose next step is the authenticator every Owner needs (SPEC §2).
  *
  * No enumeration: a request answers the same whatever the email. An email that already signs in to
- * Granite is sent a note instead of a link (only its inbox learns which), and its agency's log records
+ * Tabulado is sent a note instead of a link (only its inbox learns which), and its agency's log records
  * the attempt. Too many requests for one email (3 an hour) or from one address (10 an hour) wait.
  *
  * The app role cannot insert agencies (drizzle/0001): signup_create_agency (drizzle/0043, given the raw
@@ -29,7 +29,7 @@ export const SIGNUP_LINK_HOURS = 24;
 const HOUR_MS = 60 * 60 * 1000;
 const PER_EMAIL_PER_HOUR = 3;
 const PER_ADDRESS_PER_HOUR = 10;
-const BY = "Granite sign-up";
+const BY = "Tabulado sign-up";
 
 export interface SignupDeps {
   db: Db;
@@ -41,7 +41,7 @@ export interface SignupDeps {
 export interface SignupRender {
   /** The link that finishes creating the agency (only the language: nothing the requester typed). */
   link(link: string, who: { locale: string }): LinkMail;
-  /** The note for an email that already signs in to Granite: the ways back in. */
+  /** The note for an email that already signs in to Tabulado: the ways back in. */
   existing(links: { signIn: string; reset: string }, who: { locale: string }): LinkMail;
 }
 
@@ -86,7 +86,7 @@ async function tooMany(tx: Tx, keys: string[], now: Date): Promise<boolean> {
   return n(keys[0]) >= PER_EMAIL_PER_HOUR || n(keys[1]) >= PER_ADDRESS_PER_HOUR;
 }
 
-const outgoing = (id: string, to: { email: string; name: string | null }, mail: LinkMail): OutgoingMail => ({ id, fromName: "Granite", replyTo: null, to, subject: mail.subject, text: mail.text, html: mail.html });
+const outgoing = (id: string, to: { email: string; name: string | null }, mail: LinkMail): OutgoingMail => ({ id, fromName: "Tabulado", replyTo: null, to, subject: mail.subject, text: mail.text, html: mail.html });
 
 /**
  * A sign-up asked for: checked for its shape, throttled, then a link (or, for an email that already
@@ -107,7 +107,7 @@ export async function requestSignup(deps: SignupDeps, input: SignupInput, addres
     await tx.insert(s.signInFailures).values(keys.map((keyHash) => ({ keyHash, at: now })));
     const [login] = await tx.select({ userId: s.userLogins.userId, agencyId: s.userLogins.agencyId }).from(s.userLogins).where(eq(s.userLogins.email, email));
     if (login) {
-      // Already signs in to Granite: a note to that inbox, a line in its agency's log, no agency.
+      // Already signs in to Tabulado: a note to that inbox, a line in its agency's log, no agency.
       await enterAgency(tx, login.agencyId);
       await auditBy(tx, { agencyId: login.agencyId, userId: null, label: BY }, [{ action: "refuse", entityType: "user", entityId: login.userId, after: { signUp: "this email already signs in" } }]);
       const mail = render.existing({ signIn: `${baseUrl}/${locale}/sign-in`, reset: `${baseUrl}/${locale}/sign-in/reset` }, { locale });
@@ -180,7 +180,7 @@ export type CompleteSignupResult = { ok: true; token: string; next: "setup"; loc
 /**
  * The link used with a password: the agency, its Owner (active, with that password), its billing row
  * (the free days from now) and a half session whose next step is the authenticator setup — in one
- * transaction. A link works once; an email that started signing in to Granite meanwhile is refused.
+ * transaction. A link works once; an email that started signing in to Tabulado meanwhile is refused.
  */
 export async function completeSignup(deps: SignupDeps, token: string, password: string, userAgent: string | null, opts: { trialDays: number }): Promise<CompleteSignupResult> {
   const found = await signupFor(deps, token);

@@ -41,7 +41,7 @@ for (const locale of ["en", "es"] as const) {
     const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
     expect(result.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
 
-    // Available: the catalogue, with Paychex Flex to set up and the VMS Granite cannot read yet said so.
+    // Available: the catalogue, with Paychex Flex to set up and the VMS Tabulado cannot read yet said so.
     await page.getByTestId("tab-available").click();
     await expect(page).toHaveURL(/tab=available/);
     await expect(page.getByTestId("available-payroll")).toContainText(c.systems.paychex_flex_csv);

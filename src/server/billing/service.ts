@@ -1,5 +1,5 @@
 /**
- * The agency's subscription to Granite (decision 0036): Stripe's Checkout and Customer Portal for the
+ * The agency's subscription to Tabulado (decision 0036): Stripe's Checkout and Customer Portal for the
  * Owner, Stripe's webhook, and the billing row that decides whether the agency may change things.
  *
  * - Calls to Stripe are made outside database transactions (a slow answer never holds a lock).
@@ -156,7 +156,7 @@ export async function openPortal(deps: BillingDeps, actor: Actor, input: { baseU
 
 /**
  * The subscription that counts, as Stripe has it now, kept on the agency's row (its row locked): the best
- * of the customer's subscriptions (Granite's price first, then the best state; security review — a second
+ * of the customer's subscriptions (Tabulado's price first, then the best state; security review — a second
  * subscription still paid counts when the kept one is canceled), or none.
  */
 async function recordSubscription(tx: Tx, agencyId: string, facts: SubscriptionFacts | null, by: { userId: string | null; label: string }, now: Date): Promise<"recorded" | "unchanged"> {

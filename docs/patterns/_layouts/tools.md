@@ -3,11 +3,11 @@
 Status: adopted — slice q (2026-10-17)
 Reference product and screen: Gusto's and Rippling's free calculator pages — the product's mark at
 the top left with one way into the product at the right, one reading column, the footer with the
-language choice (as Granite's sign-in pages, `_layouts/auth.md`)
+language choice (as Tabulado's sign-in pages, `_layouts/auth.md`)
 Source URL: https://gusto.com/resources/calculators/employer-tax-calculator
 Source URL: https://www.rippling.com/calculators
 Researched: 2026-10-17 (`docs/research/hours-checker-slice-q.md`). Confidence: medium (the sites'
-headers are marketing navigation; Granite keeps only the mark and one button).
+headers are marketing navigation; Tabulado keeps only the mark and one button).
 
 ## Hierarchy
 1. A plain header: the mark and wordmark at the left (to the tool itself); at the right, "Sign in"

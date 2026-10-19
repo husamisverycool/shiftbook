@@ -2,7 +2,7 @@
 
 Status: adopted — slice q (2026-10-17; SPEC §27 item 2)
 Reference product and screen: Gusto's free employer tax calculator page (hierarchy); Rippling's free
-calculators page (no account, nothing saved, FAQ); Granite's own table and status badges for results
+calculators page (no account, nothing saved, FAQ); Tabulado's own table and status badges for results
 Source URL: https://gusto.com/resources/calculators/employer-tax-calculator
 Source URL: https://www.rippling.com/calculators
 Source URL: https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=2417&ChapterID=68
@@ -26,11 +26,11 @@ Researched: 2026-10-17 (`docs/research/hours-checker-slice-q.md`). Confidence: h
      passed; past first, then near, then the rest, most hours first;
    - rows that could not be read, by row number and what was wrong;
    - "Download results (CSV)".
-5. One soft line and one button: see the same counter run every week inside Granite with a demo
+5. One soft line and one button: see the same counter run every week inside Tabulado with a demo
    agency (Gusto's "See plans and pricing"; Rippling's closing band).
 6. **How the count works** (Gusto's explanation section): H3s — the rule (with its citation and a
    link to the statute), what counts (hours worked at one client, from April 1, 2024; each client
-   apart), the 4,160-hour rule, the 600-hour heads-up (Granite's, not law), what to do after a
+   apart), the 4,160-hour rule, the 600-hour heads-up (Tabulado's, not law), what to do after a
    crossing (equal pay or its hourly value, the client's data due before the next pay period).
 7. **Your data** (Rippling's FAQ): no account; nothing is saved or kept — the file is read and
    forgotten.

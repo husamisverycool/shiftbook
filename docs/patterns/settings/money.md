@@ -12,9 +12,9 @@ Source URL: https://www.federalregister.gov/documents/2025/12/23/2025-23735/trut
 Source URL: https://altline.sobanco.com/factoring-for-small-businesses/
 Source URL: https://getscalefunding.com/scale-funding-insights/get-cash-to-run-your-business/
 Researched: 2026-10-17 (`docs/research/money-flows-slice-w.md` §5, §6). Confidence: high for the
-layout (Granite's settings pattern); medium for the factors' typical terms.
+layout (Tabulado's settings pattern); medium for the factors' typical terms.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The agency's own rules for wage access and invoice funding, each kept by the date it applies from.
 
 ## Hierarchy

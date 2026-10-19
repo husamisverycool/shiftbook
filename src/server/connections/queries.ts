@@ -1,6 +1,6 @@
 /**
  * Settings › Connections (decision 0040; docs/patterns/settings/connections.md — Zapier's App
- * Connections, Stripe's apps catalogue): every system Granite exchanges files with, what uses it, when
+ * Connections, Stripe's apps catalogue): every system Tabulado exchanges files with, what uses it, when
  * it was last used and whether it is ready. Read from what the agency already has: the payroll system
  * and its codes, saved placement mappings and imports, time-file profiles and the files read with them,
  * clients' invoice uploads. Partners (slice w) come from a typed registry.

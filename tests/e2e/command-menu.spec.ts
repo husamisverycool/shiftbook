@@ -1,6 +1,6 @@
 /**
  * Slice (p): the command menu (decision 0038; docs/patterns/_components/command-menu.md) — GitHub's
- * command palette in Granite: ⌘K/Ctrl+K from anywhere, pages, records found on the server, `>` for
+ * command palette in Tabulado: ⌘K/Ctrl+K from anywhere, pages, records found on the server, `>` for
  * actions, `@` for people, a client's page as the scope, Tab to scope, Backspace to leave it, recent
  * items. English and Spanish; axe on the open menu.
  */

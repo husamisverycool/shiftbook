@@ -9,7 +9,7 @@ import { documentStore } from "@/server/storage";
 export const dynamic = "force-dynamic";
 
 /**
- * An import's files (Avionté's View Imports: "Download CSV"): `?file=rows` the rows as Granite kept them
+ * An import's files (Avionté's View Imports: "Download CSV"): `?file=rows` the rows as Tabulado kept them
  * (columns holding SSNs or birth dates were removed on receipt; typed fixes applied; rows left out
  * removed), `?file=results` each row's result and
  * reason. Row-level security limits it to the signed-in agency.

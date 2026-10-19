@@ -167,7 +167,7 @@ ruleCase(
 
 ruleCase(
   "holiday-and-short-day-same-day-held",
-  "Illinois worker at $18.25/h whose rate card promises a 4-hour day. The agency's holiday policy pays 8 hours for a holiday not worked. Wednesday October 7 is confirmed both as a holiday not worked and as a short day on the same assignment. Holiday pay and a short day's minimums would both pay the same day, so Granite holds the week for a person to remove one of the confirmations: no lines, one blocker.",
+  "Illinois worker at $18.25/h whose rate card promises a 4-hour day. The agency's holiday policy pays 8 hours for a holiday not worked. Wednesday October 7 is confirmed both as a holiday not worked and as a short day on the same assignment. Holiday pay and a short day's minimums would both pay the same day, so Tabulado holds the week for a person to remove one of the confirmations: no lines, one blocker.",
   {
     ...input([shift(WEEK[2]!, 0, { entryIds: [], reportedOnly: true, startMinute: null, contractMinimumMinutes: 240 })]),
     holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 480, billWorkedMultiplier: null, billNotWorked: false }],
@@ -218,7 +218,7 @@ ruleCase(
 
 ruleCase(
   "holiday-premium-with-differential-held",
-  "Illinois worker at $18.25/h works 8 hours on Wednesday October 7, 2026, a holiday under the agency's policy paying 1.5× for hours worked, on a shift that also carries a Night differential of $1.50/h. Whether a holiday premium stays out of the regular rate compares it with the rate for like work on other days (29 C.F.R. § 778.203); with a differential on the shift Granite does not work that comparison out, so the week is held for a person instead of guessed: no lines, one blocker.",
+  "Illinois worker at $18.25/h works 8 hours on Wednesday October 7, 2026, a holiday under the agency's policy paying 1.5× for hours worked, on a shift that also carries a Night differential of $1.50/h. Whether a holiday premium stays out of the regular rate compares it with the rate for like work on other days (29 C.F.R. § 778.203); with a differential on the shift Tabulado does not work that comparison out, so the week is held for a person instead of guessed: no lines, one blocker.",
   {
     ...input([shift(WEEK[2]!, 480, { differential: { name: "Night", payCentsPerHour: 150, billCentsPerHour: 0 } })]),
     holidayPolicies: [{ clientId: null, name: "Agency holidays", dates: [WEEK[2]!], workedMultiplier: { num: 3, den: 2 }, notWorkedMinutes: 0, billWorkedMultiplier: null, billNotWorked: false }],
@@ -587,7 +587,7 @@ function exportCaseWithText(name: string, summary: string, fixture: ExportFixtur
 
 // Decision 0040: Paychex Flex and Paylocity, the same week by hand — Álvarez 40 h at $18.25 ($730.00),
 // 37 overtime minutes at $27.375 ($16.88, written 0.62 h, which the system pays as $16.97), a $150.00
-// bonus; Okafor 38 h at $18.25 ($693.50). Granite gross $1,590.38; the system's $1,590.47 (+$0.09).
+// bonus; Okafor 38 h at $18.25 ($693.50). Tabulado gross $1,590.38; the system's $1,590.47 (+$0.09).
 const WEEK_0040: ExportFixture["payLines"] = [
   { workerId: "w2", type: "REG", minutes: 2280, amountCents: 69_350, rate: { num: 1825, den: 1 }, workweekStart: "2026-10-05" },
   { workerId: "w1", type: "REG", minutes: 2400, amountCents: 73_000, rate: { num: 1825, den: 1 }, workweekStart: "2026-10-05" },
@@ -597,7 +597,7 @@ const WEEK_0040: ExportFixture["payLines"] = [
 const TOTALS_0040 = { workers: 2, minutesByType: { REG: 4680, OT: 37 }, amountsByType: { BONUS: 15_000 }, grossCents: 159_038, payrollSystemGrossCents: 159_047, payrollSystemDifferenceCents: 9 };
 exportCaseWithText(
   "paychex-flex-spi-basic",
-  "Paychex Flex Standard Payroll Import, sixteen columns: hours rows carry their rate and no amount; the bonus carries its amount and no hours or rate (Paychex: \"Amount must be empty if Hours is nonzero\"). The agency declares that its \"Overtime 1.5x\" pay component multiplies the rate by 1.5, so overtime's $27.375 is written as $27.375 ÷ 1.5 = 18.2500. Paychex pays 40.00 × 18.2500 = $730.00, 0.62 × 18.2500 × 1.5 = 16.9725 → $16.97 (Granite $16.88, +$0.09), $150.00 and 38.00 × 18.2500 = $693.50: $1,590.47 against Granite's $1,590.38.",
+  "Paychex Flex Standard Payroll Import, sixteen columns: hours rows carry their rate and no amount; the bonus carries its amount and no hours or rate (Paychex: \"Amount must be empty if Hours is nonzero\"). The agency declares that its \"Overtime 1.5x\" pay component multiplies the rate by 1.5, so overtime's $27.375 is written as $27.375 ÷ 1.5 = 18.2500. Paychex pays 40.00 × 18.2500 = $730.00, 0.62 × 18.2500 × 1.5 = 16.9725 → $16.97 (Tabulado $16.88, +$0.09), $150.00 and 38.00 × 18.2500 = $693.50: $1,590.47 against Tabulado's $1,590.38.",
   {
     format: "paychex_flex_csv",
     mappingVersion: "paychex-flex-spi-v1",
@@ -623,7 +623,7 @@ exportCaseWithText(
 );
 exportCaseWithText(
   "paylocity-time-import-basic",
-  "Paylocity time import batch: Id, Det (E), detCode, Hours, Amount, Rate, rateCode. Hours rows with their rate and no amount, the bonus as an amount. The agency declares that its OT15 earning code multiplies the rate by 1.5, so overtime's $27.375 is written as 18.2500. Same week and totals as paychex-flex-spi-basic: Paylocity pays 0.62 × 18.2500 × 1.5 = $16.97 for overtime and $1,590.47 in all, against Granite's $1,590.38 (+$0.09 on the 37 overtime minutes written as 0.62 h).",
+  "Paylocity time import batch: Id, Det (E), detCode, Hours, Amount, Rate, rateCode. Hours rows with their rate and no amount, the bonus as an amount. The agency declares that its OT15 earning code multiplies the rate by 1.5, so overtime's $27.375 is written as 18.2500. Same week and totals as paychex-flex-spi-basic: Paylocity pays 0.62 × 18.2500 × 1.5 = $16.97 for overtime and $1,590.47 in all, against Tabulado's $1,590.38 (+$0.09 on the 37 overtime minutes written as 0.62 h).",
   {
     format: "paylocity_time_csv",
     mappingVersion: "paylocity-timeimprt-v1",
@@ -743,7 +743,7 @@ exportRefusal(
 const ADP_CODES = { REG: { code: "Reg Hours", as: "hours" as const }, OT: { code: "O/T Hours", as: "hours" as const, factor: { num: 3, den: 2 } }, DT: { code: "D", as: "hours" as const, factor: { num: 2, den: 1 } }, BONUS: { code: "B", as: "dollars" as const } };
 exportCaseWithText(
   "adp-wfn-basic",
-  "ADP Workforce Now paydata (decision F4), the gusto-hours-basic week plus a $150.00 bonus for Marcus. One row per worker and Temp Rate ($18.2500), hours to two decimals rounded up, dollars under code B on their own row, blanks never zeros, CRLF, batch 26101101 (period end 10/11/26, version 01), file PRXYZEPI.csv. Granite: $2,279.88 + $150.00 = $2,429.88. ADP: 40.00 × 18.25 = $730.00 and 4.00 × 18.25 × 1.5 = $109.50 and $150.00 (Marcus); 38.00 × 18.25 = $693.50 (Lucía); 40.00 × 18.25 = $730.00 and 0.62 × 18.25 × 1.5 = $16.9725 → $16.97 (Tran: 37 min written as 0.62 h, rounded up) = $2,429.97, 9 cents more; the notes say so and name the multiples assumed.",
+  "ADP Workforce Now paydata (decision F4), the gusto-hours-basic week plus a $150.00 bonus for Marcus. One row per worker and Temp Rate ($18.2500), hours to two decimals rounded up, dollars under code B on their own row, blanks never zeros, CRLF, batch 26101101 (period end 10/11/26, version 01), file PRXYZEPI.csv. Tabulado: $2,279.88 + $150.00 = $2,429.88. ADP: 40.00 × 18.25 = $730.00 and 4.00 × 18.25 × 1.5 = $109.50 and $150.00 (Marcus); 38.00 × 18.25 = $693.50 (Lucía); 40.00 × 18.25 = $730.00 and 0.62 × 18.25 × 1.5 = $16.9725 → $16.97 (Tran: 37 min written as 0.62 h, rounded up) = $2,429.97, 9 cents more; the notes say so and name the multiples assumed.",
   { format: "adp_wfn_paydata", mappingVersion: "adp-wfn-v1", period: PERIOD, earningCodeMap: {}, target: { format: "adp_wfn_paydata", companyCode: "XYZ" }, codes: ADP_CODES, workers: THREE("adp_wfn", ["000101", "000102", "000103"]), payLines: [...WEEK_LINES, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 } }] },
   { workers: 3, minutesByType: { REG: 7080, OT: 277 }, amountsByType: { BONUS: 15000 }, grossCents: 242988, payrollSystemGrossCents: 242997, payrollSystemDifferenceCents: 9 },
   ["Co Code,Batch ID,File #,Temp Rate,Reg Hours,O/T Hours,Earnings 3 Code,Earnings 3 Amount", "XYZ,26101101,000102,18.2500,40.00,4.00,,", "XYZ,26101101,000102,,,,B,150.00", "XYZ,26101101,000101,18.2500,38.00,,,", "XYZ,26101101,000103,18.2500,40.00,0.62,,", ""].join("\r\n"),
@@ -751,7 +751,7 @@ exportCaseWithText(
 
 exportCaseWithText(
   "adp-wfn-weighted-overtime",
-  "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Granite's ($365.00 + $400.00 + $57.50). Only the multiples note.",
+  "Overtime at a worked-week regular rate (decision F4): Ben works 20 h at $18.25 and 20 h at $20.00, then 2 h overtime at $28.75/h (1.5 × $19.1666…). Each line's Temp Rate is its rate ÷ the column's multiple, so the overtime goes on its own row at Temp Rate 19.1667 (= $28.75 ÷ 1.5, to four decimals). ADP: 20.00 × 18.25 = $365.00; 2.00 × 19.1667 × 1.5 = $57.50010 → $57.50; 20.00 × 20.00 = $400.00; total $822.50, exactly Tabulado's ($365.00 + $400.00 + $57.50). Only the multiples note.",
   {
     format: "adp_wfn_paydata",
     mappingVersion: "adp-wfn-v1",
@@ -790,7 +790,7 @@ const RUN_CODES = { REG: { code: "REG", as: "hours" as const }, OT: { code: "OT"
 const runRow = (id: string, code: string, hours: string, dollars: string) => `ABC1234,W,10/05/2026,10/11/2026,${id},${code},${hours},${dollars},0,,BASE`;
 exportCaseWithText(
   "adp-run-basic",
-  "RUN Powered by ADP time sheet import (decision F5), the gusto-hours-basic week plus Marcus's $150.00 bonus: the version row, the headings, then one row per worker and earnings code at rate code BASE, weekly (W, a 7-day period). RUN pays the stored rate × 1 or 1.5: Marcus 40.00 × $18.25 = $730.00, 4.00 × $18.25 × 1.5 = $109.50, $150.00; Lucía 38.00 × $18.25 = $693.50; Tran $730.00 and 0.62 × $18.25 × 1.5 = $16.9725 → $16.97 (37 min rounded up to 0.62 h). RUN $2,429.97 against Granite's $2,429.88: 9 cents, in the notes.",
+  "RUN Powered by ADP time sheet import (decision F5), the gusto-hours-basic week plus Marcus's $150.00 bonus: the version row, the headings, then one row per worker and earnings code at rate code BASE, weekly (W, a 7-day period). RUN pays the stored rate × 1 or 1.5: Marcus 40.00 × $18.25 = $730.00, 4.00 × $18.25 × 1.5 = $109.50, $150.00; Lucía 38.00 × $18.25 = $693.50; Tran $730.00 and 0.62 × $18.25 × 1.5 = $16.9725 → $16.97 (37 min rounded up to 0.62 h). RUN $2,429.97 against Tabulado's $2,429.88: 9 cents, in the notes.",
   { format: "adp_run_csv", mappingVersion: "adp-run-v1", period: PERIOD, earningCodeMap: {}, target: { format: "adp_run_csv", companyCode: "ABC1234" }, codes: RUN_CODES, workers: THREE("adp_run", ["101", "102", "103"]), payLines: [...WEEK_LINES, { workerId: "w2", type: "BONUS", minutes: 0, amountCents: 15000, rate: { num: 15000, den: 1 } }] },
   { workers: 3, minutesByType: { REG: 7080, OT: 277 }, amountsByType: { BONUS: 15000 }, grossCents: 242988, payrollSystemGrossCents: 242997, payrollSystemDifferenceCents: 9 },
   [
@@ -844,7 +844,7 @@ const SHEET = {
 };
 exportCaseWithText(
   "spreadsheet-basic",
-  "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Granite's own (REG), overtime under the agency's code OT15. The amount column carries Granite's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
+  "A spreadsheet in the agency's layout (decision F6), the gusto-hours-basic week: one row per pay line, hours to two decimals rounded up, rates to four decimals, amounts to the cent; a blank code falls back to Tabulado's own (REG), overtime under the agency's code OT15. The amount column carries Tabulado's exact pay, so the receiver pays what is written: $2,279.88 both ways.",
   {
     format: "spreadsheet_csv",
     mappingVersion: "spreadsheet-v1",

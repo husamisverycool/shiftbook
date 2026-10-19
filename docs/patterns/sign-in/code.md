@@ -7,13 +7,13 @@ Source URL: https://docs.github.com/en/authentication/securing-your-account-with
 Source URL: https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/recovering-your-account-if-you-lose-your-2fa-credentials
 Researched: 2026-10-16. Confidence: high for the steps and the recovery-code option.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The second step of signing in (SPEC §2: required for the Owner and Coordinators; anyone who set up
 an authenticator uses it too).
 
 ## Hierarchy
 1. **H1** "Enter your code".
-2. One line: open the authenticator app and type the six-digit code it shows for Granite.
+2. One line: open the authenticator app and type the six-digit code it shows for Tabulado.
 3. **Form:**
    1. **Code** field: six digits, numeric keyboard, autocomplete "one-time-code".
    2. **Verify** button (primary, full width).

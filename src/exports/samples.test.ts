@@ -18,6 +18,6 @@ describe("reading a sample of the payroll system's import file", () => {
 
   it("says when a file is empty or holds two client ids", () => {
     expect(readPayrollSample("paychex_flex_csv", "").problems).toEqual(["The file is empty."]);
-    expect(readPayrollSample("paychex_flex_csv", "AA111111,1,,,Hourly,1,,1,,10/11/2026,,,,,,\nBB222222,2,,,Hourly,1,,1,,10/11/2026,,,,,,").problems).toEqual(["The file holds more than one client id; Granite writes one."]);
+    expect(readPayrollSample("paychex_flex_csv", "AA111111,1,,,Hourly,1,,1,,10/11/2026,,,,,,\nBB222222,2,,,Hourly,1,,1,,10/11/2026,,,,,,").problems).toEqual(["The file holds more than one client id; Tabulado writes one."]);
   });
 });

@@ -13,11 +13,11 @@ repository (they are theirs).
 ### Sign in — `sign-in.md` in `_layouts/auth.md` (Linear, Vercel, Notion, GitHub login pages; decisions 0031–0034)
 Screens: `slice-l/l00-sign-in.png`, `l50-sign-in-full.png`, `l54-sign-in-es.png`, `l51-google-demo.png`,
 `l52-sso.png`, `l53-email-code.png`.
-- ✓ The demo banner, then the light page with no header bar; one narrow column with the Granite mark
-  above "Sign in to Granite" (bare, in the text colour, as Linear and Notion show theirs).
+- ✓ The demo banner, then the light page with no header bar; one narrow column with the Tabulado mark
+  above "Sign in to Tabulado" (bare, in the text colour, as Linear and Notion show theirs).
 - ✓ The demo people first, the Owner filled; "or"; email and password; "Email me a sign-in code";
   "or continue with" and four tiles — Google and Microsoft with their own marks, Passkey, SSO.
-- ✓ The demo's stand-in for Google and Microsoft (`l51`): Granite's frame, "Choose an account".
+- ✓ The demo's stand-in for Google and Microsoft (`l51`): Tabulado's frame, "Choose an account".
 - ✓ Company SSO (`l52`) and the emailed code (`l53`) pages: heading, one line, one field, one button.
 - ✓ The language at the foot; Spanish (`l54`).
 - Fixed since the first pass: the line under the heading no longer wraps narrower than the column.

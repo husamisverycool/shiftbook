@@ -103,7 +103,7 @@ export async function lockReceivables(tx: Tx, agencyId: string): Promise<void> {
 
 /**
  * "exported": its files were created here (the latest run is exported or closed).
- * "history": paid before Granite — no exported run here, and hours already locked by that payment.
+ * "history": paid before Tabulado — no exported run here, and hours already locked by that payment.
  * A correction in progress (an earlier version exported, the latest not yet) is "open".
  */
 export async function periodState(tx: Tx, payPeriodId: string): Promise<"open" | "exported" | "history"> {

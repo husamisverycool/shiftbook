@@ -15,7 +15,7 @@ Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §5.1). Confidence: 
 mechanics; Stripe's exact default columns are not documented, so the columns are the ones Stripe's
 docs name (amount, status, number, customer, due date) plus the pay period.
 
-## Purpose in Granite
+## Purpose in Tabulado
 Every invoice, supplemental invoice and credit note the weekly runs made, newest first, with their
 documents; and the way to put several of one client's invoices into one statement (decision G1).
 
@@ -25,7 +25,7 @@ documents; and the way to put several of one client's invoices into one statemen
    and a client chooser.
 3. **Table**, newest first, one row per document: a checkbox, amount, status badge (Stripe), number
    with its kind for a supplemental invoice or credit note, client, pay period, issued, due; a ⋯
-   menu at the right (Stripe row menu: Download PDF; Granite adds Download CSV and, when the
+   menu at the right (Stripe row menu: Download PDF; Tabulado adds Download CSV and, when the
    client is on Fieldglass, Download VMS file).
 4. **Selection bar** when rows are checked (Bullhorn "# Selected"): the count and **Make
    statement** (Avionté Invoice Merge: invoices of one client), **Schedule of accounts** for the

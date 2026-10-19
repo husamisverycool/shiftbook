@@ -12,7 +12,7 @@ Researched: 2026-10-17 (`docs/research/connections-exports-slice-s.md` §6). Con
 columns and the signed assignment (the form and the agreement themselves); medium for the layout
 (one form's image).
 
-## Purpose in Granite
+## Purpose in Tabulado
 The page an agency signs and sends its factor with the invoices it assigns; the CSV of the same rows
 and each invoice's PDF (with its timesheet backup) travel with it in one file.
 

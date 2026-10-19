@@ -3,7 +3,7 @@
  * screens and the tests read the same rule.
  *
  * Changes are allowed for the demo agency, for a subscription Stripe calls `active` or `trialing` to
- * Granite's own price (STRIPE_PRICE_ID; a cheaper or free plan in the same Stripe account never counts —
+ * Tabulado's own price (STRIPE_PRICE_ID; a cheaper or free plan in the same Stripe account never counts —
  * security review), and during the agency's own free days. Anything else pauses changes — never reading,
  * never sign-in, never downloads, and nothing is deleted.
  */
@@ -68,7 +68,7 @@ export function planView({ demo, billing, now, priceId }: StandingInput): PlanVi
   const changes = standing({ demo, billing, now, priceId }).changes;
   if (demo) return { state: "demo", date: null, nextCharge: null, canStart: false, canManage: false, changes };
   const canManage = Boolean(billing?.stripeCustomerId);
-  // A live subscription to another price: not Granite's plan; it can be changed in Stripe's portal, or Granite's started.
+  // A live subscription to another price: not Tabulado's plan; it can be changed in Stripe's portal, or Tabulado's started.
   if (billing?.status && PAYING.includes(billing.status) && !ownPlan(billing, priceId)) return { state: "other_plan", date: null, nextCharge: null, canStart: true, canManage, changes };
   const charge = (on: Date | null) => (on ? { amountCents: billing?.amountCents ?? null, currency: billing?.currency ?? null, on } : null);
   const view = (state: PlanState, date: Date | null, nextCharge: PlanView["nextCharge"], canStart: boolean): PlanView => ({ state, date, nextCharge, canStart, canManage, changes });

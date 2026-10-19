@@ -17,14 +17,14 @@ Researched: 2026-10-15 and 2026-10-16. Confidence: high for the sidebar's role, 
 navigation shortcuts; medium for the inset sheet (shadcn's documented variant; Linear's refresh
 describes the dimmer sidebar and softer structure, not the sheet itself).
 
-## Purpose in Granite
+## Purpose in Tabulado
 The frame around every app page: one place to move between areas, the same on every page, inside the
 root frame (demo banner above it).
 
 ## Hierarchy
 1. **Sidebar** on the left, full height under the demo banner, on the frame's dim tone (Linear's
    refresh: a sidebar "a few notches dimmer", inactive items muted):
-   1. Workspace name at the top (Linear: the workspace menu at the top of the sidebar). In Granite:
+   1. Workspace name at the top (Linear: the workspace menu at the top of the sidebar). In Tabulado:
       the agency's name, a button that opens a menu with **Settings** (Linear: "Click your workspace
       name in the upper-left corner and select Settings"). Settings opens the payroll file settings
       (slice f), the first settings page; Margin settings (slice i) is the next item, for the Owner
@@ -84,7 +84,7 @@ root frame (demo banner above it).
   screens hide every change, as for the accountant, and a page's "only these roles change this" line
   says instead that changes are paused and the Owner can restart the subscription in Settings › Billing
   (the role line would be wrong for the Owner). Home's banner says why (`home.md`).
-- Narrow screens: not documented by Linear for the web app. Granite uses shadcn's sidebar default
+- Narrow screens: not documented by Linear for the web app. Tabulado uses shadcn's sidebar default
   (collapses behind a menu button; the sheet fills the width) — listed as a difference.
 
 ## Never copy

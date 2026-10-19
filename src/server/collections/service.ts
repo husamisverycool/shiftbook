@@ -500,7 +500,7 @@ export async function sweepReminders(deps: CollectionsDeps, agencyId: string): P
           .insert(s.emailMessages)
           .values({ agencyId, kind: "invoice_reminder", invoiceId: b.invoice.id, toEmail: client.billingEmail, toName: client.name, subject: rendered.subject, textBody: rendered.text, status: "sending", attachments: [{ filename, bytes: 0 }], createdAt: nowOf(deps) })
           .returning({ id: s.emailMessages.id });
-        await tx.insert(s.reminders).values({ agencyId, invoiceId: b.invoice.id, stage, locale, how: "emailed", emailMessageId: mail!.id, createdByLabel: "Granite" });
+        await tx.insert(s.reminders).values({ agencyId, invoiceId: b.invoice.id, stage, locale, how: "emailed", emailMessageId: mail!.id, createdByLabel: "Tabulado" });
         mailId = mail!.id;
       }
       out.push({ mailId, agencyId, fromName: agency.name, replyTo: agency.email, to: { email: client.billingEmail, name: client.name }, rendered, attachment: { filename, key: b.invoice.pdfStorageKey }, extra: [] });

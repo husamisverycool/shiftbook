@@ -219,7 +219,7 @@ export interface KindRule {
   hours?: { column?: string; factor: Fraction; declared?: boolean };
   /** Dollars: the file's fixed column, or a code the agency sets. */
   dollars?: { column?: string };
-  /** When no code is set: "refused" (the run names the worker) or "own_code" (Granite's code, REG/OT/…). */
+  /** When no code is set: "refused" (the run names the worker) or "own_code" (Tabulado's code, REG/OT/…). */
   blank: "refused" | "own_code" | "fixed";
 }
 

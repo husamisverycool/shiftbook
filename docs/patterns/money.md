@@ -10,9 +10,9 @@ Source URL: https://docs.stripe.com/capital/api-integration
 Source URL: https://docs.stripe.com/connect/hosted-onboarding
 Source URL: https://docs.checkhq.com/reference/payroll
 Researched: 2026-10-17 (`docs/research/money-flows-slice-w.md` §1–§3). Confidence: high for the
-statuses and the record-then-check discipline; the list's layout follows Granite's Stripe table.
+statuses and the record-then-check discipline; the list's layout follows Tabulado's Stripe table.
 
-## Purpose in Granite
+## Purpose in Tabulado
 SPEC §27 item 9: the money that would flow through a licensed partner — payroll, wage access, invoice
 funding, the insurance broker's figures — computed in full and handed off as a recorded payload.
 Nothing moves in this version. This page is the record of every handoff.

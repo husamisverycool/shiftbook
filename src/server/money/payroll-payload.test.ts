@@ -66,7 +66,7 @@ describe("payroll payload", () => {
     expect(p.zeal.differences).toEqual([{ line_id: "l2", worker: "granite:worker:w1", exact_cents: 1528, partner_cents: 1527, difference_cents: -1 }]);
   });
 
-  it("never carries an SSN, names what Granite is missing and what the partner collects", () => {
+  it("never carries an SSN, names what Tabulado is missing and what the partner collects", () => {
     const p = buildPayrollPayload({ run, runGrossCents: 100, workers: [worker("w1", { ssnLast4: null, hireDate: null })], workplaces: [site], lines: [{ ...line("l1", "w1", "REG", 60, { num: 100, den: 1 }, 100), workplaceId: null }] });
     const e = p.neutral.employees[0]!;
     expect(e.ssn).toEqual({ on_file: false, last_four: null });

@@ -16,7 +16,7 @@ import { floorDiv, mod, roundHalfUpBig } from "@shiftbook/rules";
 
 export const PAYLOAD_VERSION = "granite.payroll-handoff/1";
 
-/** Granite's earning types → Check earning types (hours-bearing where Check requires hours). */
+/** Tabulado's earning types → Check earning types (hours-bearing where Check requires hours). */
 const CHECK_TYPES: Record<string, string | undefined> = {
   REG: "hourly",
   OT: "overtime",
@@ -27,7 +27,7 @@ const CHECK_TYPES: Record<string, string | undefined> = {
 };
 /** Types Check carries without hours. */
 const AMOUNT_ONLY = new Set(["BONUS", "BONUS_OT"]);
-/** Zeal shift earnings by Granite type; anything else goes in `amount_only` with a note. */
+/** Zeal shift earnings by Tabulado type; anything else goes in `amount_only` with a note. */
 const ZEAL_TYPES: Record<string, "hourly" | "overtime" | "doubletime" | undefined> = { REG: "hourly", OT: "overtime", DT: "doubletime", HOL: "hourly", HOL_NOT_WORKED: "hourly" };
 
 export interface PayloadWorker {
@@ -96,11 +96,11 @@ export interface EarningOut {
   explain: string;
 }
 
-/** What Granite holds for the partner's onboarding, and what the partner collects from the worker. */
+/** What Tabulado holds for the partner's onboarding, and what the partner collects from the worker. */
 export interface Readiness {
-  /** Missing in Granite: fix before handing off. */
+  /** Missing in Tabulado: fix before handing off. */
   missing: ("start_date" | "workplace" | "ssn" | "covers_recovery")[];
-  /** Never held by Granite; the partner's own onboarding collects these (Check `onboard`). */
+  /** Never held by Tabulado; the partner's own onboarding collects these (Check `onboard`). */
   partnerCollects: ("dob" | "residence" | "payment_method" | "withholdings")[];
 }
 
@@ -114,7 +114,7 @@ export interface EmployeeOut {
   earnings: EarningOut[];
   gross_cents: number;
   gross: string;
-  /** Deductions Granite knows of: wage access repaid from this paycheck (taxes are the partner's). */
+  /** Deductions Tabulado knows of: wage access repaid from this paycheck (taxes are the partner's). */
   deductions: { kind: "earned_wage_access_recovery"; handoff_id: string; amount: string; amount_cents: number }[];
 }
 
@@ -140,7 +140,7 @@ export interface PayrollPayload {
   neutral: NeutralPayload;
   check: Record<string, unknown>;
   zeal: { checks: Record<string, unknown>[]; amount_only: { line_id: string; employee: string; type: string; amount: number }[]; differences: ZealDifference[] };
-  /** True when nothing blocks the handoff: the totals reconcile and every worker has what Granite must supply. */
+  /** True when nothing blocks the handoff: the totals reconcile and every worker has what Tabulado must supply. */
   ready: boolean;
 }
 

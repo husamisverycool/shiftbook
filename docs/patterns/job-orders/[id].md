@@ -20,7 +20,7 @@ Source URL: https://linear.app/docs/parent-and-sub-issues
 Researched: 2026-10-15. Confidence: high for Bullhorn's versions and rules, Gusto's card states and
 Stripe's rule; medium for Attio's exact tab order.
 
-## Purpose in Granite
+## Purpose in Tabulado
 One job order: its details, the workers assigned to it, and its rate card over time (SPEC §8: full
 create/edit with effective dating; rate changes never rewrite locked periods).
 

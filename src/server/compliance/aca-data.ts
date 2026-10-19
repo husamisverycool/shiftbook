@@ -1,6 +1,6 @@
 /**
  * The ACA look-back's data (slice j step 3c, decision J8; docs/patterns/compliance/aca.md): the dated
- * limits (aca_rules), the agency's dated measurement settings, the hours of service Granite paid,
+ * limits (aca_rules), the agency's dated measurement settings, the hours of service Tabulado paid,
  * the days it has hours for, and the months imported from before it. Reads only; the Owner's changes
  * are in aca-service.ts.
  *
@@ -64,7 +64,7 @@ export async function paidCoverage(tx: Tx, latest?: DoneRun[]): Promise<Covered[
   return rows.map((r) => ({ start: r.start, end: r.end, ...(r.skipped.length > 0 ? { except: r.skipped.map((x) => x.workerId).sort(cmp) } : {}) })).sort((a, b) => cmp(a.start, b.start));
 }
 
-/** The hours of service Granite paid, per worker and day. */
+/** The hours of service Tabulado paid, per worker and day. */
 export async function paidService(tx: Tx, latest?: DoneRun[]): Promise<ServiceDay[]> {
   const runs = latest ?? (await doneRuns(tx)).latest;
   if (runs.length === 0) return [];

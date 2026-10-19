@@ -23,7 +23,7 @@ const DAY = 24 * 60 * 60 * 1000;
 let clock = new Date();
 const seconds = () => Math.floor(clock.getTime() / 1000);
 
-/** Stripe, as far as Granite asks it: subscriptions and checkout sessions it "has", every call noted. */
+/** Stripe, as far as Tabulado asks it: subscriptions and checkout sessions it "has", every call noted. */
 class FakeStripe implements StripeApi {
   calls: string[] = [];
   customers = 0;
@@ -47,14 +47,14 @@ class FakeStripe implements StripeApi {
   }
   async getSubscription(id: string) {
     this.calls.push(`subscription ${id}`);
-    if (this.failing) throw new StripeError("Granite could not reach Stripe (TypeError).", 0);
+    if (this.failing) throw new StripeError("Tabulado could not reach Stripe (TypeError).", 0);
     const sub = this.subscriptions.get(id);
     if (!sub) throw new StripeError("Stripe refused the request (404 invalid_request_error resource_missing).", 404, "resource_missing");
     return sub;
   }
   async listSubscriptions(customer: string) {
     this.calls.push(`subscriptions of ${customer}`);
-    if (this.failing) throw new StripeError("Granite could not reach Stripe (TypeError).", 0);
+    if (this.failing) throw new StripeError("Tabulado could not reach Stripe (TypeError).", 0);
     return [...this.subscriptions.values()].filter((x) => x.customer === customer);
   }
   async getCheckoutSession(id: string) {
@@ -223,7 +223,7 @@ describe("Stripe's webhook (/api/billing/webhook)", () => {
     expect((await row()).cancelAt).toEqual(new Date(clock.getTime() + 30 * DAY));
   });
 
-  it("an event about a customer Granite did not make, an event it does not use, or a subscription of another customer: answered and set aside", async () => {
+  it("an event about a customer Tabulado did not make, an event it does not use, or a subscription of another customer: answered and set aside", async () => {
     stripe.subscriptions.set("sub_test7", sub({ id: "sub_test7", customer: "cus_stranger" }));
     expect(await deliver(delivery("customer.subscription.updated", { id: "sub_test7", customer: "cus_stranger" }))).toEqual({ status: 200, outcome: "ignored" });
     expect(await deliver(delivery("invoice.paid", { id: "in_test1", customer: "cus_test1" }))).toEqual({ status: 200, outcome: "ignored" });
@@ -269,7 +269,7 @@ describe("Stripe's webhook (/api/billing/webhook)", () => {
     expect(await deliver(delivery("customer.subscription.created", { id: "sub_free", customer: "cus_test1" }))).toEqual({ status: 200, outcome: "recorded" });
     expect(await row()).toMatchObject({ stripeSubscriptionId: "sub_free", status: "active", stripePriceId: "price_free" });
     expect(await agencyStanding(deps(), agencyId)).toMatchObject({ standing: { changes: false, reason: "other_plan" } });
-    // Granite's own price, started later, wins over it.
+    // Tabulado's own price, started later, wins over it.
     stripe.subscriptions.set("sub_test1", sub());
     await deliver(delivery("customer.subscription.created", { id: "sub_test1", customer: "cus_test1" }));
     expect(await row()).toMatchObject({ stripeSubscriptionId: "sub_test1", stripePriceId: PRICE });

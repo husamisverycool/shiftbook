@@ -49,7 +49,7 @@ for (const locale of ["en", "es"] as const) {
     expect(href).toMatch(new RegExp(`/${locale}/portal/sbcp_[A-Za-z0-9_-]{43}$`));
     const path = new URL(href!, "http://localhost").pathname;
 
-    // The contact opens it with no Granite session.
+    // The contact opens it with no Tabulado session.
     const visitor = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const client = await visitor.newPage();
     await client.goto(path);

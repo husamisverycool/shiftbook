@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { citationCodeOf, equalPayExplain, noteKeyOf, sayInEnglish } from "./explain-keys";
 
-describe("Granite's notes read back into keys (decision 0028)", () => {
-  it("each note Granite writes becomes keys that say exactly it", () => {
+describe("Tabulado's notes read back into keys (decision 0028)", () => {
+  it("each note Tabulado writes becomes keys that say exactly it", () => {
     const person = (kind: string) => ({ kind, closedBySystem: false });
     const shiftbook = (kind: string) => ({ kind, closedBySystem: true });
     for (const [note, where] of [
@@ -20,7 +20,7 @@ describe("Granite's notes read back into keys (decision 0028)", () => {
     }
   });
 
-  it("a person's own words stay as typed, even when they read like Granite's", () => {
+  it("a person's own words stay as typed, even when they read like Tabulado's", () => {
     expect(noteKeyOf("Renewal filed online.", { kind: "il_registration_renewal", closedBySystem: false })).toBeNull();
     expect(noteKeyOf("Reverified on 2026-10-01 by phone.", { kind: "i9_reverify", closedBySystem: false })).toBeNull();
     expect(noteKeyOf("Renewed: online portal, expires 2027-06-30.", { kind: "il_registration_renewal", closedBySystem: false })).toBeNull();

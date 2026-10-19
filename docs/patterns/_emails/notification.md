@@ -7,9 +7,9 @@ Source URL: https://linear.app/docs/notifications
 Researched: 2026-10-17. Confidence: medium (Linear does not publish the email's text).
 
 ## Hierarchy
-1. Sender "Granite"; subject: what happened, in one line.
+1. Sender "Tabulado"; subject: what happened, in one line.
 2. One paragraph: what happened and to what (client, period, duty, invoice).
-3. One link: open it in Granite.
+3. One link: open it in Tabulado.
 4. Footer: why this email came (the person's notification settings) and where to change it.
 
 ## States

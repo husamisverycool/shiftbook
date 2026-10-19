@@ -1,6 +1,6 @@
-# Everything Granite does
+# Everything Tabulado does
 
-Granite is the back office for a small temp staffing agency. Each week it takes the agency's
+Tabulado is the back office for a small temp staffing agency. Each week it takes the agency's
 timesheets in whatever messy form they arrive and turns them into:
 
 - a payroll file for the payroll system the agency already uses
@@ -22,7 +22,7 @@ It never moves money itself. It works it all out, creates the files and records 
   time-clock spreadsheets (CSV/Excel) and staffing-portal exports. The portals are SAP Fieldglass,
   Beeline, Coupa and Magnit. Each one has a saved "column map", so the next file goes in with one click.
 - **Forward by email:** each agency gets its own address. Anyone can forward a timesheet email to it
-  and the attachments land in Granite automatically.
+  and the attachments land in Tabulado automatically.
 - **Typing by hand:** hours can be entered directly.
 - **AI reading of photos:** every photo is read twice in two different ways. If the two readings
   disagree, or a number fails a check, a person is asked to look. Examples of failed checks:
@@ -97,7 +97,7 @@ All money is calculated in exact cents.
   - kept per state and city with start dates
   - a rate below the minimum is automatically topped up on its own line, with a warning
 - **Other pay:** holidays, minimum-hours guarantees and bonuses.
-- **Unknown location:** if Granite doesn't know a worksite's state rules, it stops the payroll
+- **Unknown location:** if Tabulado doesn't know a worksite's state rules, it stops the payroll
   instead of guessing.
 - **Billing overtime:** each client's overtime billing rule is applied separately from how the
   worker is paid.
@@ -176,7 +176,7 @@ All money is calculated in exact cents.
   - promise-to-pay notes
   - short-pay tracking
   - write-offs
-- **Bank file import:** Granite suggests which invoice each deposit pays (by amount, reference and
+- **Bank file import:** Tabulado suggests which invoice each deposit pays (by amount, reference and
   client), and a person confirms.
 
 ## 10. Profit and cash (margin analytics)

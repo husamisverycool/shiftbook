@@ -1,7 +1,7 @@
 # Pattern: Illinois proof of registration (`src/pdf/il-registration-proof.tsx`)
 
 Status: adopted — slice (j) plan, decision J3 (2026-10-16)
-Reference product and screen: Granite's own statement document (`_documents/statement.md`: the
+Reference product and screen: Tabulado's own statement document (`_documents/statement.md`: the
 agency and the client at the top, a dated title, a table, page numbers), with the contents the law
 asks for: 820 ILCS 175/85(a) (the client verifies the agency's registration before contracting and on
 March 1 and September 1) and 56 Ill. Adm. Code 260.510 (the agency gives proof of a valid
@@ -10,9 +10,9 @@ Source URL: https://ilga.gov/Documents/legislation/ilcs/documents/082001750K85.h
 Source URL: https://ilga.gov/ftp/JCAR/AdminCode/056/056002600E05100R.html
 Source URL: https://labor.illinois.gov/employers/approveddtlsa.html
 Researched: 2026-10-16 (`docs/research/compliance-slice-j.md` §1). Confidence: high for what the law
-asks; the layout follows Granite's statement (no product publishes such a page).
+asks; the layout follows Tabulado's statement (no product publishes such a page).
 
-## Purpose in Granite
+## Purpose in Tabulado
 The page the agency gives an Illinois client so the client can verify the agency's registration, at
 the contract's start and before each March 1 and September 1.
 

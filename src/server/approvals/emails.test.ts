@@ -94,7 +94,7 @@ describe("decision emails", () => {
     expect(m.text).toContain("To change anything, contact Cedar Row Staffing (demo).");
   });
 
-  it("tells the agency, with a link into Granite, in the agency's language", () => {
+  it("tells the agency, with a link into Tabulado, in the agency's language", () => {
     const m = renderDecisionEmail({ ...base, kind: "approval_notice", locale: "es", disputed: [], agencyLink: "https://granite.example/es/approvals/1" });
     expect(m.subject).toBe("Prairie Molding (demo) aprobó horas del 5–11 de octubre de 2026");
     expect(m.text).toContain("https://granite.example/es/approvals/1");

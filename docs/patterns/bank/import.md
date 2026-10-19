@@ -9,7 +9,7 @@ Source URL: https://quickbooks.intuit.com/learn-support/en-us/help-article/impor
 Source URL: https://www.zoho.com/us/books/kb/banking/how-to-import-a-bank-statement.html
 Researched: 2026-10-16 (`docs/research/receivables-slice-h.md` §3a–3d). Confidence: high.
 
-## Purpose in Granite
+## Purpose in Tabulado
 Bring the bank's activity CSV in, so its deposits can be matched to invoices (decision H5).
 
 ## Hierarchy
@@ -17,10 +17,10 @@ Bring the bank's activity CSV in, so its deposits can be matched to invoices (de
    Choose lines (QuickBooks Online).
 2. **Upload:** drop zone or choose a CSV file; the limits (1,000 lines, 1 MB); in demo mode a link
    to download a sample bank file.
-3. **Map columns:** the file's header row (or "no header row"), then for each Granite field —
+3. **Map columns:** the file's header row (or "no header row"), then for each Tabulado field —
    date, description, amount — the file's column; how amounts are given (one signed column; a
    deposits and a withdrawals column; an amount and a type column) (Zoho); the date format; a
-   preview of the first lines as Granite reads them. The mapping last used is chosen
+   preview of the first lines as Tabulado reads them. The mapping last used is chosen
    automatically and remembered (Zoho).
 4. **Choose lines:** each line with its date, description and amount, deposits ticked, withdrawals
    and lines already imported unticked and marked; **Import** with the count.

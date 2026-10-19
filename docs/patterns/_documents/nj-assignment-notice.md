@@ -5,7 +5,7 @@ Reference: the New Jersey Department of Labor and Workforce Development's own fo
 ("Temporary Laborer Assignment Notification | Notificación de Asignación de Trabajadores Temporales,
 under | bajo N.J.S.A. 34:8D-3"). The firm must use the form the Commissioner approved (NJDOL's
 answer on its Temporary Workers page), so this document reproduces the form's fields, order and
-two languages exactly; Granite fills them in. It is the state's form, not a product's design: its
+two languages exactly; Tabulado fills them in. It is the state's form, not a product's design: its
 wording is law, not a reference's copy.
 Source URL: https://www.nj.gov/labor/wageandhour/assets/PDFs/Forms%20and%20Publications/MW-23%20(5-15-23)pkg.pdf
 Source URL: https://www.nj.gov/labor/myworkrights/worker-protections/temp_workers/

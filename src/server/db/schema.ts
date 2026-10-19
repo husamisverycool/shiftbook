@@ -1,5 +1,5 @@
 /**
- * Granite database schema (SPEC §4). Slice (a) subset: every table the converter needs, with the
+ * Tabulado database schema (SPEC §4). Slice (a) subset: every table the converter needs, with the
  * columns it needs; later slices add columns. Rules:
  * - Every tenant table has `agency_id`; row-level security (migration `rls`) fences the app role
  *   to the agency in `app.agency_id`.
@@ -382,7 +382,7 @@ export const nicknames = pgTable(
 );
 
 // ---------- job orders, rate cards, assignments ----------
-/** What a Massachusetts job order states that Granite does not otherwise know (drizzle/0030; M.G.L. c. 149 § 159C(b)). */
+/** What a Massachusetts job order states that Tabulado does not otherwise know (drizzle/0030; M.G.L. c. 149 § 159C(b)). */
 export interface NoticeDetails {
   /** The worksite employer's telephone number (the law asks for its name, address and phone). */
   employerPhone: string;
@@ -536,7 +536,7 @@ export const placementImports = pgTable("placement_imports", {
   sha256: text("sha256").notNull(),
   storageKey: text("storage_key").notNull(),
   status: importStatus("status").notNull().default("draft"),
-  /** Granite field → file column. */
+  /** Tabulado field → file column. */
   mapping: jsonb("mapping").$type<Record<string, string>>().notNull().default({}),
   /** Per field, raw value → decision (matched id, "leave_out", or a new job order's worksite). */
   decisions: jsonb("decisions").$type<Record<string, Record<string, string>>>().notNull().default({}),
@@ -1126,13 +1126,13 @@ export const obligations = pgTable(
     message: text("message").notNull(),
     /** The message as keys and values, for the reader's language (decision 0028; drizzle/0036). */
     explain: jsonb("explain").$type<Explain>(),
-    /** Granite's own closing note as keys and values (a person's note stays as typed). */
+    /** Tabulado's own closing note as keys and values (a person's note stays as typed). */
     noteKey: jsonb("note_key").$type<Explain>(),
     createdAt: createdAt(),
     doneAt: timestamp("done_at", { withTimezone: true }),
     doneBy: uuid("done_by"),
     doneByLabel: text("done_by_label"),
-    /** Closed by Granite (renewed, dates entered, no longer applies), so Granite may reopen it. */
+    /** Closed by Tabulado (renewed, dates entered, no longer applies), so Tabulado may reopen it. */
     closedBySystem: boolean("closed_by_system").notNull().default(false),
   },
   (t) => [index("obligations_due").on(t.agencyId, t.status, t.dueOn)],
@@ -1223,7 +1223,7 @@ export const obligationDocuments = pgTable("obligation_documents", {
   unlinkedByLabel: text("unlinked_by_label"),
 });
 
-/** Hours a worker did for a client before Granite, for the Illinois equal-pay counter (slice j, J5). */
+/** Hours a worker did for a client before Tabulado, for the Illinois equal-pay counter (slice j, J5). */
 export const hoursOpeningBalances = pgTable("hours_opening_balances", {
   id: id(),
   agencyId: agencyId(),
@@ -1287,7 +1287,7 @@ export const acaRules = pgTable("aca_rules", {
   effectiveTo: isoDate("effective_to"),
 });
 
-/** Hours of service before Granite, per worker and month (an import; slice j, J8). */
+/** Hours of service before Tabulado, per worker and month (an import; slice j, J8). */
 export const acaMonthlyHours = pgTable("aca_monthly_hours", {
   id: id(),
   agencyId: agencyId(),
@@ -1733,7 +1733,7 @@ export const reminders = pgTable(
     invoiceId: uuid("invoice_id").notNull().references(() => invoices.id),
     stage: text("stage").$type<ReminderStage>().notNull(),
     locale: text("locale").$type<"en" | "es">().notNull(),
-    /** "emailed": sent by Granite on the agency's schedule (slice r), naming its email. */
+    /** "emailed": sent by Tabulado on the agency's schedule (slice r), naming its email. */
     how: text("how").$type<"copied" | "email_app" | "emailed">().notNull(),
     emailMessageId: uuid("email_message_id").references(() => emailMessages.id),
     createdAt: createdAt(),
@@ -2055,7 +2055,7 @@ export const agencySubscriptions = pgTable("agency_subscriptions", {
   amountCents: integer("amount_cents"),
   currency: text("currency"),
   billingInterval: text("billing_interval").$type<"day" | "week" | "month" | "year">(),
-  /** The subscription's price (drizzle/0044): only Granite's own (STRIPE_PRICE_ID) counts as paying. */
+  /** The subscription's price (drizzle/0044): only Tabulado's own (STRIPE_PRICE_ID) counts as paying. */
   stripePriceId: text("stripe_price_id"),
   updatedAt: updatedAt(),
 });

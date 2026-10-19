@@ -1,5 +1,5 @@
 /**
- * Why a timesheet could not be read, in the reader's language. The reason is stored as Granite's own
+ * Why a timesheet could not be read, in the reader's language. The reason is stored as Tabulado's own
  * English (intake/service.ts plainReason); each of those reasons is known here so a screen can say it
  * again from its key (convert.upload.readErrors), the file's name kept. Anything else shows as written.
  */

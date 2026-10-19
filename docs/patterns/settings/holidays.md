@@ -12,8 +12,8 @@ Source URL: https://linear.app/docs/account-preferences
 Researched: 2026-10-17 (Gusto's help center and embedded payroll docs). Confidence: medium (Gusto's
 own holiday article was not reachable; its embedded docs and time-off overview were).
 
-## Purpose in Granite
-The agency's holiday policies (agency data, not law: no state Granite covers requires holiday pay):
+## Purpose in Tabulado
+The agency's holiday policies (agency data, not law: no state Tabulado covers requires holiday pay):
 which days are holidays, what hours worked on them pay and bill (a multiple of the rate), and how
 many hours a holiday not worked pays when a person confirms the worker is eligible. The agency's
 policy applies to every client; a client's own policy wins on that client's work (the engine never

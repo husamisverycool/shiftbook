@@ -1,4 +1,4 @@
-# Settings for hosting Granite
+# Settings for hosting Tabulado
 
 These go in the hosting service's environment settings — never in the code, never in chat.
 
@@ -46,10 +46,10 @@ be on the volume. The app itself is started without `DATABASE_OWNER_URL` or `DAT
 | `SHIFTBOOK_STORAGE_DIR` | Where uploaded files are kept, if not the default. |
 | `SHIFTBOOK_GOOGLE_CLIENT_ID`, `SHIFTBOOK_GOOGLE_CLIENT_SECRET` | "Continue with Google" (optional; decision 0033). From a Google Cloud OAuth client of type "Web application" whose authorized redirect URI is `<SHIFTBOOK_APP_URL>/api/auth/oidc/google/callback`. The button appears once both are set. |
 | `SHIFTBOOK_MICROSOFT_CLIENT_ID`, `SHIFTBOOK_MICROSOFT_CLIENT_SECRET` | "Continue with Microsoft" (optional; decision 0033). From a Microsoft Entra app registration for "accounts in any organizational directory and personal Microsoft accounts", web redirect URI `<SHIFTBOOK_APP_URL>/api/auth/oidc/microsoft/callback`, with the optional ID-token claims `email` and `xms_edov` added (without `xms_edov`, people connect Microsoft from Your account before signing in with it). |
-| `STRIPE_SECRET_KEY` | Payments (decision 0036): Stripe's secret key, so Granite can open Stripe's own checkout and billing pages for an agency. Starts with `sk_live_` (or `sk_test_` while trying it out). Step by step below. Without it, Settings › Billing says payments are not available, and nobody is charged. |
-| `STRIPE_WEBHOOK_SECRET` | Payments: the "signing secret" of the address Stripe tells about payments (starts with `whsec_`). Granite believes Stripe's messages only when they carry this signature. Step by step below. |
+| `STRIPE_SECRET_KEY` | Payments (decision 0036): Stripe's secret key, so Tabulado can open Stripe's own checkout and billing pages for an agency. Starts with `sk_live_` (or `sk_test_` while trying it out). Step by step below. Without it, Settings › Billing says payments are not available, and nobody is charged. |
+| `STRIPE_WEBHOOK_SECRET` | Payments: the "signing secret" of the address Stripe tells about payments (starts with `whsec_`). Tabulado believes Stripe's messages only when they carry this signature. Step by step below. |
 | `STRIPE_PRICE_ID` | Payments: the monthly price agencies pay (starts with `price_`). Step by step below. Only a subscription to this exact price unlocks an agency (a cheaper or free price in the same Stripe account never does). So once agencies subscribe, keep it: if you put a new price here, agencies still on the old one stop counting as paying until they are moved to the new price in Stripe. |
-| `STRIPE_TRIAL_DAYS` | Optional: how many days a new agency uses Granite free before it must subscribe (a whole number, for example `14`). Leave it out for no free days. Agencies that existed before payments were added got 30 free days from the day the update was installed. |
+| `STRIPE_TRIAL_DAYS` | Optional: how many days a new agency uses Tabulado free before it must subscribe (a whole number, for example `14`). Leave it out for no free days. Agencies that existed before payments were added got 30 free days from the day the update was installed. |
 
 An agency's own single sign-on needs no setting here: its Owner enters the provider's details in
 Settings › Single sign-on and registers `<SHIFTBOOK_APP_URL>/api/auth/oidc/sso/callback` with it (the
@@ -60,13 +60,13 @@ call at all.
 
 ## Payments with Stripe, step by step
 
-Agencies pay a monthly subscription through Stripe. Granite never sees a card: Stripe's own pages take
+Agencies pay a monthly subscription through Stripe. Tabulado never sees a card: Stripe's own pages take
 the card, send the invoices and handle canceling. Do this once, signed in to your Stripe account at
 dashboard.stripe.com. (To try it first without real money, switch on **Test mode** at the top of the
 Stripe dashboard and do the same steps there; the keys then start with `sk_test_`.)
 
 1. **The price (`STRIPE_PRICE_ID`).** In Stripe, open **Product catalog** and choose **Add product**.
-   Name it (for example "Granite monthly"), choose **Recurring**, **Monthly**, and type the amount.
+   Name it (for example "Tabulado monthly"), choose **Recurring**, **Monthly**, and type the amount.
    Save. Open the product: under **Pricing**, the price has an ID that starts with `price_`. Copy it
    into the hosting settings as `STRIPE_PRICE_ID`.
 2. **The secret key (`STRIPE_SECRET_KEY`).** In Stripe, open **Developers** (bottom left), then
@@ -103,7 +103,7 @@ pnpm tsx scripts/create-agency.ts --name "Agency name" --owner-name "Owner name"
 It prints the Owner's invite link once (it works for 10 days). The Owner opens it, chooses a
 password, sets up an authenticator app, and invites everyone else from Settings › Members.
 
-Agencies can also create themselves (decision 0036): on the sign-in page, **New to Granite? Create an
+Agencies can also create themselves (decision 0036): on the sign-in page, **New to Tabulado? Create an
 agency** asks for a work email, a name and the agency's name, emails a link (it needs `RESEND_API_KEY`
 and `MAIL_FROM`), and the person sets a password and an authenticator app. Both ways give the agency
 the same free days (`STRIPE_TRIAL_DAYS`).

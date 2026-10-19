@@ -119,7 +119,7 @@ describe("the free days' last week (Home's banner for the Owner)", () => {
   });
 });
 
-describe("only Granite's price counts as paying (security review: a cheaper or free plan in the same Stripe account)", () => {
+describe("only Tabulado's price counts as paying (security review: a cheaper or free plan in the same Stripe account)", () => {
   it("an active or trialing subscription to another price pauses changes, and the page says why", () => {
     expect(standing({ demo: false, billing: row({ status: "active", stripePriceId: "price_cheap" }), now: NOW, priceId: PRICE })).toEqual({ changes: false, reason: "other_plan" });
     expect(standing({ demo: false, billing: row({ status: "trialing", stripePriceId: null }), now: NOW, priceId: PRICE })).toEqual({ changes: false, reason: "other_plan" });

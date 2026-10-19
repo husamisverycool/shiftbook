@@ -1,5 +1,5 @@
 /**
- * Starts Granite on a host in one step (decision 0035): the host runs this and nothing else.
+ * Starts Tabulado on a host in one step (decision 0035): the host runs this and nothing else.
  *
  *   pnpm start:hosted
  *

@@ -91,7 +91,7 @@ for (const locale of ["en", "es"] as const) {
     await page.getByTestId("bank-file").setInputFiles({ name: sample.suggestedFilename(), mimeType: "text/csv", buffer: readFileSync((await sample.path())!) });
     await page.getByTestId("next").click();
 
-    // Map columns: chosen from the file's header; the first lines as Granite reads them.
+    // Map columns: chosen from the file's header; the first lines as Tabulado reads them.
     await expect(page.getByTestId("map-preview")).toBeVisible();
     await expect(page.locator("#map-date")).toHaveValue("0");
     await expect(page.locator("#map-description")).toHaveValue("1");

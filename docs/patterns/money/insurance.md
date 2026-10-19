@@ -11,7 +11,7 @@ Source URL: https://docs.zeal.com/docs/customer-accounts-closed-beta.md
 Researched: 2026-10-16 and 2026-10-17 (`docs/research/compliance-slice-j.md`;
 `docs/research/money-flows-slice-w.md` §4). Confidence: high (the packet's own reference).
 
-## Purpose in Granite
+## Purpose in Tabulado
 The figures an insurance broker prices and audits workers' comp on: what was paid, by state and class
 code, for pay dates in a range, with the overtime premium apart; downloaded and recorded as handed
 off to the broker.

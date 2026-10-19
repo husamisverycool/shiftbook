@@ -92,7 +92,7 @@ export interface FundingPacket {
 
 const bps = (part: number, whole: number) => (whole <= 0 ? 0 : roundHalfUp(part * 10_000, whole));
 
-/** The advance rounds down; the flat fee rounds half up once, as every amount in Granite does (at most half a cent). */
+/** The advance rounds down; the flat fee rounds half up once, as every amount in Tabulado does (at most half a cent). */
 export function offerFor(balanceCents: number, rules: Pick<FundingRules, "advanceBps" | "feeBps">) {
   const advanceCents = Number((BigInt(balanceCents) * BigInt(rules.advanceBps)) / 10_000n);
   const feeCents = roundHalfUp(balanceCents * rules.feeBps, 10_000);

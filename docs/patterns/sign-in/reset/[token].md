@@ -7,7 +7,7 @@ then "Change password")
 Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/updating-your-github-access-credentials
 Researched: 2026-10-16. Confidence: high for the order of the steps and the fields.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The page the reset email links to. A person with an authenticator proves it first, so whoever reads
 their email alone cannot change their password.
 

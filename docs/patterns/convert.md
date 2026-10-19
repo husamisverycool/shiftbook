@@ -41,7 +41,7 @@ Source URL: https://kb.bullhorn.com/bhone/Content/BH1/Topics/settingRebillInvoic
 Source URL: https://support.gusto.com/article/250220135301667/Custom-earnings-types-for-admins
 Source URL: https://support.gusto.com/article/999946501000000/Run-a-bonus-payroll
 
-## Purpose in Granite
+## Purpose in Tabulado
 The smallest end-to-end product: take last week's timesheets for one period, read them, let a
 person fix what needs review, and hand back the payroll file and one client invoice.
 
@@ -50,7 +50,7 @@ person fix what needs review, and hand back the payroll file and one client invo
 status — with the row's action (start, or continue a saved run) at the row's end. Last week's
 period is the first row. Opening the page makes this week's and last week's periods when they do not
 exist yet (completeness audit G1); **Start a pay period** at the heading's right opens a small dialog
-with a date — the earlier week that contains it is added (a week paid late, or before Granite). Until
+with a date — the earlier week that contains it is added (a week paid late, or before Tabulado). Until
 the pay week's day is set, the page says so with a link to Settings › Payroll file.
 
 **Every step (Gusto flow frame), top to bottom:**
@@ -144,7 +144,7 @@ the pay week's day is set, the page says so with a link to Settings › Payroll 
 
 ## States
 Run states (Gusto: editable → calculated → submitting → processed; Check: draft → preview →
-approved): Granite PayRun `draft` → `ready` / `blocked` → `approved` → `exported` (SPEC §4). A
+approved): Tabulado PayRun `draft` → `ready` / `blocked` → `approved` → `exported` (SPEC §4). A
 change after approval returns the run to `ready`/`blocked` (Gusto: preparing again cancels the
 calculations; Check: a change resets the preview). A correction is the next version of the same
 period, through the same steps. Loading panels while reading files, computing totals and

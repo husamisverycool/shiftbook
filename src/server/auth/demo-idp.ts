@@ -85,7 +85,7 @@ export interface AuthorizeRequest {
 
 const short = (v: string | null, max = 512) => (v && v.length > 0 && v.length <= max ? v : null);
 
-/** The authorization request, if it is one Granite itself made (its client, its callback, PKCE S256). */
+/** The authorization request, if it is one Tabulado itself made (its client, its callback, PKCE S256). */
 export function readAuthorize(params: URLSearchParams, base: string, provider: ProviderId, now: Date): AuthorizeRequest | null {
   const state = short(params.get("state"));
   const nonce = short(params.get("nonce"));

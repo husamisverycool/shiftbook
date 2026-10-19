@@ -135,7 +135,7 @@ describe("sign-in through the database", () => {
     const setup = await beginAuthenticatorSetup(deps, session);
     if (!setup.ok) throw new Error(setup.error);
     const { setupKey, uri } = setup;
-    expect(uri).toContain("otpauth://totp/Granite%3Apat%40agency.example");
+    expect(uri).toContain("otpauth://totp/Tabulado%3Apat%40agency.example");
     expect(await confirmAuthenticator(deps, session, "000000")).toEqual({ ok: false, error: "invalid" });
     const turnedOn = await confirmAuthenticator(deps, session, codeAt(setupKey));
     if (!turnedOn.ok) throw new Error(turnedOn.error);

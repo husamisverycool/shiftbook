@@ -19,13 +19,13 @@ Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §3). C
 the steps (password first, then the code; reset by email); the page's exact layout is shown in
 screenshots, not described in text.
 
-## Purpose in Granite
+## Purpose in Tabulado
 Where everyone signs in (SPEC §2): email and password; then, for a person with an authenticator or
 whose role needs one, the code page. In demo mode the page also lists the demo people, so the demo
 opens with no password (decision K3).
 
 ## Hierarchy
-1. **H1** "Sign in to Granite", centred; in demo mode one muted line under it saying what the demo
+1. **H1** "Sign in to Tabulado", centred; in demo mode one muted line under it saying what the demo
    is (Notion's two-line heading).
 2. **Notice** (only when there is one): signed out; the session ended (timed out or signed out
    elsewhere); the password was changed; the link used has expired; another way in was refused
@@ -52,7 +52,7 @@ opens with no password (decision K3).
    two-column grid of tiles, each the way's mark over its name: **Google** and **Microsoft** (each
    provider's own mark, as its branding rules require; shown once its keys are set, always in the
    demo through the demo's stand-in), **Passkey** (decision 0032), **SSO** (to `/sign-in/sso`).
-7. **New to Granite? Create an agency** (decision 0036): one muted line, centred, "Create an agency" a
+7. **New to Tabulado? Create an agency** (decision 0036): one muted line, centred, "Create an agency" a
    link to `/sign-up` (`sign-up.md`) — the mirror of the foot line Stripe's register page and Linear's
    signup page end with, which links back to signing in (screenshots, 2026-10-17).
 

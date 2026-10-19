@@ -11,7 +11,7 @@ Source URL: https://www.notion.so/help/saml-sso-configuration
 Researched: 2026-10-16. Confidence: high for the two steps (email, then the code on the same page);
 the exact layout is shown in screenshots, not described.
 
-## Purpose in Granite
+## Purpose in Tabulado
 A way in without a password: a six-digit code sent to the member's email (10 minutes, once). It is a
 first factor: the authenticator code or its setup follows as after a password (SPEC §2).
 

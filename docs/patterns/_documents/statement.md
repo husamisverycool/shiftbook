@@ -13,7 +13,7 @@ Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §2.2). Confidence: 
 behaviour (presentation only, AR per invoice); medium for the first page's columns (QuickBooks
 statements, read through excerpts).
 
-## Purpose in Granite
+## Purpose in Tabulado
 Several of one client's invoices in one PDF for the client's convenience; it is not a new bill.
 
 ## Hierarchy

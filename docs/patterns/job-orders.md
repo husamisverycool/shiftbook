@@ -17,7 +17,7 @@ Source URL: https://www.notion.com/help/views-filters-and-sorts
 Researched: 2026-10-15. Confidence: high for Linear's list mechanics and shortcuts; medium for the
 side panel (Attio documents its contents; Linear documents only the Space key).
 
-## Purpose in Granite
+## Purpose in Tabulado
 Every job order of the agency (SPEC §4, §8): what position, at which client and worksite, how many
 workers, the rate in force today. Open one to see its details, assignments and rate card.
 
@@ -31,7 +31,7 @@ workers, the rate in force today. Open one to see its details, assignments and r
    and a collapse toggle at its left edge: full-width tinted bands, the rows running edge to edge
    under them with hairline dividers and no box around the list (Linear's list view screenshot,
    https://linear.app/docs/filters).
-4. **Rows:** the properties chosen in display options. Granite's properties: position, client,
+4. **Rows:** the properties chosen in display options. Tabulado's properties: position, client,
    worksite (city, state), shift, headcount (assigned / wanted), pay rate in force today, bill rate
    in force today, prevailing-wage flag. A checkbox appears at the left edge on hover (Linear).
 5. **Bulk action bar** at the bottom when rows are selected (Linear).
@@ -63,7 +63,7 @@ workers, the rate in force today. Open one to see its details, assignments and r
   client, created), visible properties; personal by default (Linear).
 - C opens the create modal: client, worksite (only that client's), position, SOC code, shift,
   headcount, pay range, prevailing wage. Esc with changes asks to keep or discard (Linear drafts —
-  Granite keeps the draft in the browser only).
+  Tabulado keeps the draft in the browser only).
 - Bulk bar: in this slice only "Clear selection" (Linear's bulk actions that change issues have no
   job-order equivalent yet).
 

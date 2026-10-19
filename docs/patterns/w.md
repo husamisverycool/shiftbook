@@ -20,7 +20,7 @@ Researched: 2026-10-17 (`docs/research/workers-app-slice-t.md` §2, §4). Confid
    date, time, position at client — and, when shifts or offers wait for an answer, how many;
    **See shifts**. No upcoming shift and nothing waiting: nothing.
 6. **Earned pay you can request** (slice w; only when the agency offers it): the amount available
-   from approved hours not yet paid, a plain line that no money moves in Granite and the agency's
+   from approved hours not yet paid, a plain line that no money moves in Tabulado and the agency's
    payroll partner would pay it, and **Request** (an amount, then a confirmation).
 7. **Latest pay**: the last stub's gross and its week; **See pay**.
 

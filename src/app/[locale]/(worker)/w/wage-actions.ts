@@ -2,7 +2,7 @@
 
 /**
  * The worker's own earned-wage-access request (docs/patterns/w.md item 6; SPEC §27 item 9): recorded
- * for the agency's wage-access partner under the agency's rules — nothing moves in Granite.
+ * for the agency's wage-access partner under the agency's rules — nothing moves in Tabulado.
  */
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";

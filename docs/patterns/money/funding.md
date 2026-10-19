@@ -12,7 +12,7 @@ Source URL: https://docs.stripe.com/capital/marketing.md
 Researched: 2026-10-17 (`docs/research/money-flows-slice-w.md` §2, §6). Confidence: medium (factor
 requirements are vendor pages); high for the wording rules.
 
-## Purpose in Granite
+## Purpose in Tabulado
 Every open invoice with its funding decision under the agency's rules, so the Owner sees which
 invoices a funding partner would consider and why the others would not.
 

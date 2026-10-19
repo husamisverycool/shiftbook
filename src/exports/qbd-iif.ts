@@ -64,7 +64,7 @@ export function renderQbdIif(fixture: ExportFixture): ExportResult {
       payrollSystemGrossCents += cents;
       if (cents !== t.amountCents) {
         notes.push(
-          `${who(w.worker)} — ${t.types.join(", ")}: QuickBooks pays ${hoursMinutes(t.minutes)} × ${formatRate(rate)} = ${formatCents(cents)}; Granite computed ${formatCents(t.amountCents)} (${signedCents(cents - t.amountCents)}), because Granite rounds each workweek's line separately.`,
+          `${who(w.worker)} — ${t.types.join(", ")}: QuickBooks pays ${hoursMinutes(t.minutes)} × ${formatRate(rate)} = ${formatCents(cents)}; Tabulado computed ${formatCents(t.amountCents)} (${signedCents(cents - t.amountCents)}), because Tabulado rounds each workweek's line separately.`,
         );
       }
     }

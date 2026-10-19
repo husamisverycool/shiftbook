@@ -1,4 +1,4 @@
-# Putting Granite online — the owner's guide
+# Putting Tabulado online — the owner's guide
 
 > The complete, ordered walkthrough with domain, email, payments, texts and costs is
 > `docs/go-live.md`. This page is the shorter reference it builds on.
@@ -34,7 +34,7 @@ buttons sometimes move, so if one is named slightly differently, pick the closes
 
    Click **Update Variables**, then the **Deploy** button at the top of the page.
 8. Wait about 10 minutes, until the box shows a green tick. Open the address from step 6. You will
-   see **Sign in to Granite** with the demo people. Click **Continue as Demo Owner**. That is your
+   see **Sign in to Tabulado** with the demo people. Click **Continue as Demo Owner**. That is your
    demo, ready to show anyone.
 
 ## Part 2 — The real one, for paying agencies
@@ -57,9 +57,9 @@ Keep the demo as it is. Make a second, separate copy for real customers:
    **Custom Domain**, type for example `app.yourdomain.com`, and copy the records it shows into your
    domain company's DNS page. Then add the variable `SHIFTBOOK_APP_URL` with the value
    `https://app.yourdomain.com` and click **Deploy**.
-4. **Payments** (agencies pay you monthly by card; Stripe's own pages take the card, Granite never
+4. **Payments** (agencies pay you monthly by card; Stripe's own pages take the card, Tabulado never
    sees it). Sign up at **stripe.com** and finish its account steps, then in the Stripe dashboard:
-   1. Open **Product catalog**, click **Add product**, name it (for example "Granite monthly"),
+   1. Open **Product catalog**, click **Add product**, name it (for example "Tabulado monthly"),
       choose **Recurring** and **Monthly**, type your price, and save. Open the product and copy the
       price's ID (it starts with `price_`). In Railway, add the variable `STRIPE_PRICE_ID` with it.
    2. Open **Developers**, then **API keys**, click **Reveal** next to **Secret key**, and copy it (it
@@ -79,7 +79,7 @@ Keep the demo as it is. Make a second, separate copy for real customers:
    To try all of this without real money first, switch on **Test mode** at the top of the Stripe
    dashboard and do the same steps there (the key then starts with `sk_test_`; Stripe's test card is
    4242 4242 4242 4242). Repeat in normal mode when you are ready to charge.
-5. **Try it as a customer would.** Open your address, click **New to Granite? Create an agency**,
+5. **Try it as a customer would.** Open your address, click **New to Tabulado? Create an agency**,
    and sign up with your own email. Open the emailed link, choose a password, set up the
    authenticator app on your phone, then open **Settings › Billing** and click **Start
    subscription**. Agencies sign themselves up the same way: send them your address.
@@ -97,18 +97,18 @@ Keep the demo as it is. Make a second, separate copy for real customers:
    (that receiving domain) and `INBOUND_EMAIL_SECRET` (the webhook's signing secret, which Resend shows
    on the webhook's page). Click **Deploy**. `docs/hosting-settings.md` has the details.
 9. **Reminders on a schedule** (client approvals, notifications and collection reminders): nothing to
-   do. Granite sends them by itself every 15 minutes. (`CRON_SECRET` exists only for a developer who
+   do. Tabulado sends them by itself every 15 minutes. (`CRON_SECRET` exists only for a developer who
    wants an outside scheduler to trigger them instead; see `docs/hosting-settings.md`.)
 10. **"Continue with Google" and "Continue with Microsoft"** (optional). These need a developer for
    about an hour; `docs/hosting-settings.md` lists exactly what they set.
 11. **Backups.** Open the **Postgres** box and its **Backups** tab, and turn on scheduled backups.
    Then do the same in the live **shiftbook** box's **Backups** tab: its disk holds the uploaded files
-   and the key that locks Social Security numbers. Never delete that disk. If it is ever lost, Granite
+   and the key that locks Social Security numbers. Never delete that disk. If it is ever lost, Tabulado
    will refuse to start (it never quietly makes a new key) until the disk is restored from a backup.
 
 ## Part 3 — Before the first real payroll
 
-These are people, not settings. Granite is careful, but it is new:
+These are people, not settings. Tabulado is careful, but it is new:
 
 1. **An employment lawyer** reads the pay rules (overtime, Illinois equal pay, holiday pay) and the
    compliance duties. Give them `docs/legal-review-brief.md`: every rule as built, with the
@@ -116,7 +116,7 @@ These are people, not settings. Granite is careful, but it is new:
 2. **A security firm** tests the live copy (a "penetration test") before real Social Security
    numbers go in.
 3. **Terms of service and a privacy policy**, from the same lawyer.
-4. **One friendly agency first.** Run its payroll in Granite next to its old way for two or three
+4. **One friendly agency first.** Run its payroll in Tabulado next to its old way for two or three
    weeks, and compare the totals before switching over.
 
 ## If something goes wrong

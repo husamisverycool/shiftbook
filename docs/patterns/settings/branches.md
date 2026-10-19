@@ -8,7 +8,7 @@ Source URL: https://support.gusto.com/article/106622257100000/edit-company-detai
 Source URL: https://linear.app/docs/members-roles
 Researched: 2026-10-17 (`docs/research/agency-setup-g1.md`). Confidence: high.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The agency's offices: job orders name the branch whose margin they count in (decision I10), and
 Illinois branch registrations name them (slice j).
 

@@ -18,7 +18,7 @@ Researched: 2026-10-16; laid out on 2026-10-17 as Linear's SAML settings from it
 it lives (the agency's security settings, owner only), the address to copy, the provider's details and
 the layout.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The Owner lets the agency's people sign in through the agency's own identity provider (OpenID
 Connect: Okta, Entra ID, Google Workspace and most others), as one more way in. Everyone keeps their
 other ways in (Linear and Notion keep owners able to sign in when the provider fails).
@@ -64,7 +64,7 @@ of its row, the setup's label over a full-width field and the action at the bott
 
 ## Look (checked against Linear's screenshots, 2026-10-17)
 As `_components/settings.md`. Remaining difference: Linear puts the SAML switch at the right of the
-section heading; Granite puts it in a row of its own, as Linear's "Enable member API keys" panel.
+section heading; Tabulado puts it in a row of its own, as Linear's "Enable member API keys" panel.
 
 ## Never copy
 Notion's, Linear's or Stripe's wording, icons, colors or logos.

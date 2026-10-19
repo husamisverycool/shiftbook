@@ -1,5 +1,5 @@
 /**
- * Stripe over plain fetch (decision 0036): the four calls Granite makes — a customer, a Checkout
+ * Stripe over plain fetch (decision 0036): the four calls Tabulado makes — a customer, a Checkout
  * Session for the monthly subscription, a Customer Portal session, and reading a subscription (or a
  * Checkout Session) back. Every request carries the pinned API version; the secret key travels only in
  * the Authorization header and never appears in an error. The demo never builds this (SPEC §18).
@@ -52,7 +52,7 @@ export interface SubscriptionFacts {
   amountCents: number | null;
   currency: string | null;
   interval: "day" | "week" | "month" | "year" | null;
-  /** The item's price id: only Granite's own price (STRIPE_PRICE_ID) counts as paying. */
+  /** The item's price id: only Tabulado's own price (STRIPE_PRICE_ID) counts as paying. */
   priceId: string | null;
 }
 
@@ -63,7 +63,7 @@ const seconds = (v: unknown): Date | null => (typeof v === "number" && Number.is
 const record = (v: unknown): Record<string, unknown> | null => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
 const idOf = (v: unknown): string | null => (typeof v === "string" ? v : typeof record(v)?.id === "string" ? (record(v)!.id as string) : null);
 
-/** The few fields Granite uses of a Stripe subscription, or null when it cannot be trusted. */
+/** The few fields Tabulado uses of a Stripe subscription, or null when it cannot be trusted. */
 export function subscriptionFacts(value: unknown): SubscriptionFacts | null {
   const sub = record(value);
   if (!sub) return null;
@@ -99,8 +99,8 @@ const RANK: Record<SubscriptionStatus, number> = { active: 6, trialing: 5, past_
 
 /**
  * The subscription that counts for an agency among its customer's (two Checkout tabs can make two;
- * security review): those to Granite's own price first, then the best state, then the later period's
- * end. Only other prices: the best of those (the billing page then says it is not Granite's plan).
+ * security review): those to Tabulado's own price first, then the best state, then the later period's
+ * end. Only other prices: the best of those (the billing page then says it is not Tabulado's plan).
  */
 export function bestSubscription(subscriptions: readonly SubscriptionFacts[], priceId: string | null): SubscriptionFacts | null {
   const score = (x: SubscriptionFacts) => [priceId && x.priceId === priceId ? 1 : 0, RANK[x.status], x.currentPeriodEnd?.getTime() ?? 0];
@@ -135,7 +135,7 @@ export interface CheckoutSessionFacts {
   status: string | null;
 }
 
-/** What Granite asks of Stripe; tests give a fake. */
+/** What Tabulado asks of Stripe; tests give a fake. */
 export interface StripeApi {
   createCustomer(input: { agencyId: string; name: string; email: string; idempotencyKey: string }): Promise<{ id: string }>;
   createCheckoutSession(input: { customer: string; priceId: string; agencyId: string; trialEnd: number | null; locale: string; successUrl: string; cancelUrl: string; idempotencyKey: string }): Promise<{ id: string; url: string }>;
@@ -164,7 +164,7 @@ export class StripeHttp implements StripeApi {
     try {
       response = await this.fetchFn(`${API}${path}`, { method, headers, body: method === "POST" ? formEncode(params ?? {}) : undefined, signal: AbortSignal.timeout(20_000) });
     } catch (error) {
-      throw new StripeError(`Granite could not reach Stripe (${error instanceof Error ? error.name : "error"}).`, 0);
+      throw new StripeError(`Tabulado could not reach Stripe (${error instanceof Error ? error.name : "error"}).`, 0);
     }
     const answer = record(await response.json().catch(() => null)) ?? {};
     if (!response.ok) {
@@ -212,7 +212,7 @@ export class StripeHttp implements StripeApi {
   async getSubscription(id: string) {
     if (!SUBSCRIPTION_ID.test(id)) throw new StripeError("Not a subscription id.", 400);
     const facts = subscriptionFacts(await this.call("GET", `/subscriptions/${id}`));
-    if (!facts) throw new StripeError("Stripe answered with a subscription Granite cannot read.", 502);
+    if (!facts) throw new StripeError("Stripe answered with a subscription Tabulado cannot read.", 502);
     return facts;
   }
 

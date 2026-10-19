@@ -83,12 +83,12 @@
     "disputedTitle": "Disputados, a la espera de {agency}:",
     "disputedLine": "{worker}, {date}: {reason}",
     "changeHint": "Para cambiar algo, comuníquese con {agency}.",
-    "noticeOpen": "Abra la solicitud en Granite: {link}",
+    "noticeOpen": "Abra la solicitud en Tabulado: {link}",
     "contact": "¿Preguntas? Comuníquese con {agency}: {contact}.",
-    "footer": "Enviado por Granite en nombre de {agency}."
+    "footer": "Enviado por Tabulado en nombre de {agency}."
   },
   "meta": {
-    "title": "Granite"
+    "title": "Tabulado"
   },
   "banner": {
     "demo": "Agencia de demostración con datos inventados. Nada aquí es real y la demostración no se conecta con servicios externos.",
@@ -518,7 +518,7 @@
         "pay_bill_mismatch": "Las horas de pago y de facturación no coinciden",
         "invalid_input": "Horas que no se pueden pagar como están",
         "unknown_jurisdiction": "No hay reglas salariales para el estado del lugar de trabajo",
-        "rule_not_supported_yet": "Una regla salarial que Granite aún no maneja",
+        "rule_not_supported_yet": "Una regla salarial que Tabulado aún no maneja",
         "rule_data_missing": "Faltan datos de reglas salariales",
         "rule_data_invalid": "Los datos de reglas salariales tienen un problema",
         "below_minimum_wage": "Pago por debajo del salario mínimo",
@@ -573,7 +573,7 @@
       "controlTotals": "Totales de control",
       "workers": "Trabajadores",
       "minutes": "Horas {type}",
-      "gross": "Pago bruto (Granite)",
+      "gross": "Pago bruto (Tabulado)",
       "difference": "Diferencia",
       "notes": "Notas",
       "fingerprint": "SHA-256",
@@ -1173,7 +1173,7 @@
         "dispute_kept": "Disputa resuelta: se mantuvieron las horas",
         "approval_withdrawn": "Aprobación retirada"
       },
-      "automatic": "Granite, automáticamente",
+      "automatic": "Tabulado, automáticamente",
       "viewEmail": "Ver correo",
       "emailKind": {
         "approval_request": "Solicitud",
@@ -1352,11 +1352,11 @@
     },
     "back": "Atrás",
     "next": "Siguiente",
-    "mapBody": "Relacione cada columna del archivo con un campo de Granite. Las columnas en \"No importar\" se omiten.",
+    "mapBody": "Relacione cada columna del archivo con un campo de Tabulado. Las columnas en \"No importar\" se omiten.",
     "missingTitle": "Todavía falta",
     "fileColumn": "Columna del archivo",
     "samples": "Valores de ejemplo",
-    "shiftbookField": "Campo de Granite",
+    "shiftbookField": "Campo de Tabulado",
     "fieldFor": "Campo para {column}",
     "dontImport": "No importar",
     "fields": {
@@ -1559,7 +1559,7 @@
       "body": "Las horas de este periodo ya se pagaron. Para cambiar algo, comuníquese con {agency}."
     },
     "contact": "¿Preguntas? Comuníquese con {agency}: {contact}",
-    "providedBy": "Proporcionado por {agency} a través de Granite.",
+    "providedBy": "Proporcionado por {agency} a través de Tabulado.",
     "language": "Idioma",
     "english": "English",
     "spanish": "Español",
@@ -1638,11 +1638,11 @@
         },
         "paychex_flex_csv": {
           "name": "Paychex Flex",
-          "carries": "Horas con su tarifa, o dólares, con sus componentes de pago. Para horas extra y tiempo doble, indique el múltiplo que aplica su componente de pago (1.5 si Paychex multiplica la tarifa, 1 si paga la tarifa tal como se escribe): Granite escribe la tarifa dividida entre él, para que Paychex pague el importe correcto."
+          "carries": "Horas con su tarifa, o dólares, con sus componentes de pago. Para horas extra y tiempo doble, indique el múltiplo que aplica su componente de pago (1.5 si Paychex multiplica la tarifa, 1 si paga la tarifa tal como se escribe): Tabulado escribe la tarifa dividida entre él, para que Paychex pague el importe correcto."
         },
         "paylocity_time_csv": {
           "name": "Paylocity",
-          "carries": "Horas con su tarifa, o dólares, con sus códigos de ingreso. Para horas extra y tiempo doble, indique el múltiplo que aplica su código de ingreso (1.5 si Paylocity multiplica la tarifa, 1 si paga la tarifa tal como se escribe): Granite escribe la tarifa dividida entre él, para que Paylocity pague el importe correcto."
+          "carries": "Horas con su tarifa, o dólares, con sus códigos de ingreso. Para horas extra y tiempo doble, indique el múltiplo que aplica su código de ingreso (1.5 si Paylocity multiplica la tarifa, 1 si paga la tarifa tal como se escribe): Tabulado escribe la tarifa dividida entre él, para que Paylocity pague el importe correcto."
         }
       },
       "fields": {
@@ -1678,7 +1678,7 @@
         "columns": "Columnas de la hoja"
       },
       "codes": {
-        "hint": "El código que usa {system} para cada tipo de pago que Granite puede producir.",
+        "hint": "El código que usa {system} para cada tipo de pago que Tabulado puede producir.",
         "colKind": "Tipo de pago",
         "colCode": "Código",
         "colAs": "Se envía como",
@@ -1689,7 +1689,7 @@
         "notCarried": "Este sistema no lo admite.",
         "blank": {
           "refused": "La nómina se detiene y nombra al trabajador, para pagarlo a mano.",
-          "own_code": "Se usa el código de Granite ({code}).",
+          "own_code": "Se usa el código de Tabulado ({code}).",
           "fixed": "Siempre en su columna.",
           "not_carried": "La nómina nombra al trabajador, para pagarlo a mano."
         },
@@ -2317,7 +2317,7 @@
     "deposits": "Depósitos",
     "withdrawals": "Retiros",
     "type": "Tipo (crédito o débito)",
-    "previewTitle": "Cómo lee Granite las primeras líneas",
+    "previewTitle": "Cómo lee Tabulado las primeras líneas",
     "previewEmpty": "Ninguna línea se puede leer con estas columnas. Revise las columnas de fecha y monto y el formato de fecha.",
     "problems": {
       "date": "Línea {row}: la fecha «{text}» no se puede leer con este formato.",
@@ -2409,7 +2409,7 @@
     "noEmail": "No hay correo de facturación",
     "subject": "Asunto",
     "message": "Mensaje",
-    "sendsNothing": "Granite no envía nada: copie el mensaje o ábralo en su aplicación de correo. El día queda registrado en esta factura.",
+    "sendsNothing": "Tabulado no envía nada: copie el mensaje o ábralo en su aplicación de correo. El día queda registrado en esta factura.",
     "copy": "Copiar",
     "openEmail": "Abrir en la aplicación de correo",
     "creditForClient": "Crédito para el cliente",
@@ -2735,7 +2735,7 @@
       "wc_audit": "Entregue al auditor de primas de la aseguradora la nómina por clase, con la prima de horas extra aparte por trabajador y por clase.",
       "aca_offer": "Ofrezca cobertura médica a cada trabajador medido como de tiempo completo (en promedio al menos 30 horas de servicio por semana en un periodo de medición) antes de que termine el periodo administrativo, para que rija desde el primer día del periodo de estabilidad.",
       "nj_equal_pay_check": "Confirme que la tarifa de pago es al menos el promedio que el cliente paga a sus propios empleados por un trabajo sustancialmente similar, más el costo promedio de sus beneficios o su equivalente en efectivo, antes de que empiece la asignación.",
-      "nj_assignment_notice": "Entregue al trabajador la Notificación de Asignación de Trabajadores Temporales (formulario MW-23) cuando lo envíe a la asignación. Granite llena el formulario con los datos de la orden de trabajo."
+      "nj_assignment_notice": "Entregue al trabajador la Notificación de Asignación de Trabajadores Temporales (formulario MW-23) cuando lo envíe a la asignación. Tabulado llena el formulario con los datos de la orden de trabajo."
     },
     "emptyOpen": "No hay ninguna obligación de cumplimiento abierta.",
     "nextUpcoming": "La siguiente vence el {date}.",
@@ -2778,7 +2778,7 @@
       "openPlacement": "Abrir la orden de trabajo",
       "doneBy": "Hecha por {by} el {date}.",
       "naBy": "Descartada por {by} el {date}.",
-      "byGranite": "Granite",
+      "byTabulado": "Tabulado",
       "note": "Nota: {note}",
       "addFile": "Agregar archivo",
       "file": "Archivo",
@@ -2789,7 +2789,7 @@
       "unlink": "Desvincular",
       "download": "Descargar",
       "uploaded": "Subido",
-      "generated": "Hecho por Granite",
+      "generated": "Hecho por Tabulado",
       "addedBy": "Agregado por {by} el {date}",
       "unlinkedBy": "Desvinculado por {by} el {date}",
       "fileTypes": "PDF, imágenes, hojas de cálculo, documentos o texto, hasta 20 MB.",
@@ -2815,7 +2815,7 @@
         "workAuth": "La autorización de trabajo vence (si vence)",
         "save": "Guardar fechas",
         "saved": "Guardado.",
-        "datesOnly": "Granite guarda solo fechas, nunca copias del formulario ni de los documentos."
+        "datesOnly": "Tabulado guarda solo fechas, nunca copias del formulario ni de los documentos."
       },
       "reverify": {
         "title": "Registrar la reverificación",
@@ -2837,12 +2837,12 @@
         "ma_job_order": "Hacer la orden de trabajo",
         "wc_audit": "Hacer el paquete",
         "made": "Hecho y agregado a la evidencia.",
-        "hint": "Granite hace el documento con lo que sabe y lo guarda aquí.",
+        "hint": "Tabulado hace el documento con lo que sabe y lo guarda aquí.",
         "nj_assignment_notice": "Preparar el aviso de asignación"
       },
       "notice": {
         "title": "Datos de la orden de trabajo",
-        "intro": "Lo que la orden de trabajo indica y Granite no sabe de otra forma. Se guarda en la orden de trabajo para cada asignación.",
+        "intro": "Lo que la orden de trabajo indica y Tabulado no sabe de otra forma. Se guarda en la orden de trabajo para cada asignación.",
         "startTime": "Inicio diario",
         "endTime": "Fin previsto",
         "overtime": "Horas extra",
@@ -2873,7 +2873,7 @@
         "emptyMeansNo": "Vacío significa No"
       },
       "missingRegistration": "No hay registro de Illinois vigente: primero agréguelo en Configuración de cumplimiento.",
-      "noI9Files": "Las copias del Formulario I-9 no se guardan en Granite (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
+      "noI9Files": "Las copias del Formulario I-9 no se guardan en Tabulado (contienen números de Seguro Social y fechas de nacimiento): registre las fechas en Resumen y guarde el formulario donde la ley lo pide.",
       "proofNoRegistration": "No hay registro de Illinois vigente el {date}, el día en que el cliente verifica: primero agregue el registro renovado.",
       "equalPay": {
         "title": "Tarifa de igualdad salarial",
@@ -2947,7 +2947,7 @@
         "meals": "Diga si se dan comidas y su costo (hasta 300 caracteres).",
         "transport": "Diga si se da transporte y su tarifa (hasta 300 caracteres).",
         "contact": "Escriba los datos de contacto (hasta 500 caracteres).",
-        "i9_files": "Las copias del Formulario I-9 no se guardan en Granite: registre solo las fechas.",
+        "i9_files": "Las copias del Formulario I-9 no se guardan en Tabulado: registre solo las fechas.",
         "agency_phone": "La agencia no tiene número de teléfono registrado, y la orden de trabajo debe indicarlo.",
         "employerPhone": "Escriba el teléfono del empleador del lugar de trabajo.",
         "carrierContact": "La dirección y el teléfono de la aseguradora deben tener menos de 500 caracteres.",
@@ -2968,7 +2968,7 @@
         "stabilityMonths": "El periodo de estabilidad debe ser al menos el mínimo y no más corto que el de medición.",
         "rule": "Los límites de la ACA no están registrados."
       },
-      "closed_by_data": "Granite cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
+      "closed_by_data": "Tabulado cerró esta obligación según los datos; se abre sola de nuevo si los datos la piden."
     },
     "calendar": {
       "today": "Hoy",
@@ -3024,7 +3024,7 @@
       "tieSettled": "Cuadra con los archivos de nómina con estas fechas de pago ({files}): bruto {gross}, y {settled} que las correcciones liquidaron fuera de los archivos ({decisions, plural, one {# decisión} other {# decisiones}})."
     },
     "counters": {
-      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica (820 ILCS 175/42) después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Granite se agregan como saldos iniciales, y la nómina también las cuenta.",
+      "intro": "Horas de trabajo diario y temporal en cada cliente de Illinois. La igualdad salarial se aplica (820 ILCS 175/42) después de más de {trigger} horas allí en {months} meses (o {longTrigger} en {longMonths}); pasadas {warn} el trabajador está cerca. Las horas trabajadas antes de Tabulado se agregan como saldos iniciales, y la nómina también las cuenta.",
       "search": "Buscar",
       "searchPlaceholder": "Trabajador",
       "client": "Cliente",
@@ -3047,7 +3047,7 @@
         "client": "Cliente",
         "twelve": "{months} meses",
         "fortyEight": "{months} meses",
-        "before": "Antes de Granite",
+        "before": "Antes de Tabulado",
         "state": "Igualdad salarial"
       },
       "of": "{hours} de {limit} h",
@@ -3057,7 +3057,7 @@
       "near": "Cerca: faltan {hours}",
       "toGo": "Faltan {hours}",
       "toggle": "Saldos iniciales de {worker} en {client}",
-      "balancesTitle": "Horas antes de Granite",
+      "balancesTitle": "Horas antes de Tabulado",
       "noBalances": "No hay saldos iniciales.",
       "balance": "{hours} hasta el {date}",
       "addedBy": "agregado por {by}, {date}",
@@ -3065,8 +3065,8 @@
       "remove": "Quitar",
       "removeTitle": "Quitar este saldo",
       "removeBody": "Queda en la lista como quitado, con su motivo; la próxima nómina ya no lo cuenta.",
-      "addTitle": "Agregar horas trabajadas antes de Granite",
-      "addBody": "Las horas que el trabajador hizo para este cliente antes de Granite. Cuentan en la fecha hasta la que llegan, la más tardía en que pudieron trabajarse.",
+      "addTitle": "Agregar horas trabajadas antes de Tabulado",
+      "addBody": "Las horas que el trabajador hizo para este cliente antes de Tabulado. Cuentan en la fecha hasta la que llegan, la más tardía en que pudieron trabajarse.",
       "fields": {
         "pair": "Trabajador y cliente",
         "choose": "Elija…",
@@ -3086,10 +3086,10 @@
       "changeSettings": "Cámbielos en Configuración de cumplimiento",
       "setSettings": "Definir los periodos",
       "hoursTitle": "Horas registradas",
-      "paidLine": "Semanas pagadas en Granite: {range}.",
-      "noPaid": "Aún no se ha pagado ninguna semana en Granite.",
-      "importsLine": "Importadas de antes de Granite: {rows, plural, one {# total mensual} other {# totales mensuales}} de {workers, plural, one {# trabajador} other {# trabajadores}}, {range}. Último archivo {source}, por {by}, {date}.",
-      "noImports": "No se importaron horas de antes de Granite.",
+      "paidLine": "Semanas pagadas en Tabulado: {range}.",
+      "noPaid": "Aún no se ha pagado ninguna semana en Tabulado.",
+      "importsLine": "Importadas de antes de Tabulado: {rows, plural, one {# total mensual} other {# totales mensuales}} de {workers, plural, one {# trabajador} other {# trabajadores}}, {range}. Último archivo {source}, por {by}, {date}.",
+      "noImports": "No se importaron horas de antes de Tabulado.",
       "needsSettings": "El método retrospectivo necesita primero sus periodos: cuánto dura un periodo de medición y cuándo empieza, los días administrativos y el periodo de estabilidad.",
       "noRule": "Los límites de la ACA no están registrados, así que no se puede medir a nadie.",
       "search": "Buscar",
@@ -3137,8 +3137,8 @@
       "since": "Desde el {date}",
       "import": {
         "open": "Importar horas",
-        "title": "Importar horas de antes de Granite",
-        "body": "Un archivo CSV con una fila por trabajador y mes: el nombre completo del trabajador, el mes y las horas de servicio, con los feriados y permisos pagados. Agregue una columna Payroll ID para distinguir a dos trabajadores con el mismo nombre. Los meses pueden escribirse 2025-10, 10/2025 u Oct-25; las horas como 140, 140:30 o 140.5. Solo meses ya terminados; para un mes que Granite pagó en parte, solo las horas fuera de las semanas que pagó. No se guarda nada hasta que todas las filas estén bien; un mes importado de nuevo reemplaza al registrado.",
+        "title": "Importar horas de antes de Tabulado",
+        "body": "Un archivo CSV con una fila por trabajador y mes: el nombre completo del trabajador, el mes y las horas de servicio, con los feriados y permisos pagados. Agregue una columna Payroll ID para distinguir a dos trabajadores con el mismo nombre. Los meses pueden escribirse 2025-10, 10/2025 u Oct-25; las horas como 140, 140:30 o 140.5. Solo meses ya terminados; para un mes que Tabulado pagó en parte, solo las horas fuera de las semanas que pagó. No se guarda nada hasta que todas las filas estén bien; un mes importado de nuevo reemplaza al registrado.",
         "example": "Worker,Month,Hours\nMarcus Bell,2025-10,140\nAnita Patel,2025-10,121:30",
         "file": "Archivo CSV",
         "problemsTitle": "No se guardó nada. Corrija estas filas e importe de nuevo:",
@@ -3149,7 +3149,7 @@
           "columns": "La primera fila debe nombrar las columnas Worker, Month y Hours.",
           "duplicate": "Fila {row}: el mismo trabajador y mes otra vez.",
           "empty": "El archivo no tiene filas debajo de los nombres de las columnas.",
-          "paid": "Fila {row}: Granite ya pagó ese mes completo, así que sus horas ya están registradas.",
+          "paid": "Fila {row}: Tabulado ya pagó ese mes completo, así que sus horas ya están registradas.",
           "too_many": "El archivo tiene más de 5000 filas: impórtelo por partes."
         },
         "cancel": "Cancelar",
@@ -3454,13 +3454,13 @@
     }
   },
   "authFrame": {
-    "product": "Granite",
+    "product": "Tabulado",
     "language": "Idioma",
     "english": "English",
     "spanish": "Español"
   },
   "signIn": {
-    "title": "Inicie sesión en Granite",
+    "title": "Inicie sesión en Tabulado",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "forgot": "¿Olvidó su contraseña?",
@@ -3475,11 +3475,11 @@
       "password_changed": "Su contraseña cambió. Inicie sesión con la nueva.",
       "link_expired": "Ese enlace ya no funciona.",
       "provider_failed": "El proveedor no inició su sesión. Inténtelo de nuevo, o use otra forma de entrar.",
-      "no_account": "Ningún miembro de Granite usa esa cuenta. Pida una invitación al Propietario de su agencia.",
+      "no_account": "Ningún miembro de Tabulado usa esa cuenta. Pida una invitación al Propietario de su agencia.",
       "not_verified": "El proveedor no confirmó el correo de esa cuenta. Inicie sesión de otra forma y conéctela desde Su cuenta.",
       "suspended": "Su acceso a esta agencia está suspendido. Consulte al Propietario de la agencia.",
       "too_many": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
-      "other_identity": "Su inicio de sesión en Granite ya está conectado a otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
+      "other_identity": "Su inicio de sesión en Tabulado ya está conectado a otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
     },
     "demoTitle": "Pruebe la demostración como",
     "demoHint": "Las personas de la demostración no necesitan contraseña ni código.",
@@ -3495,12 +3495,12 @@
       "passkey": "Llave de acceso",
       "sso": "SSO"
     },
-    "newHere": "¿Es nuevo en Granite?",
+    "newHere": "¿Es nuevo en Tabulado?",
     "createAgency": "Cree una agencia"
   },
   "signInCode": {
     "title": "Escriba su código",
-    "body": "Abra su aplicación de autenticación y escriba el código de seis dígitos que muestra para Granite.",
+    "body": "Abra su aplicación de autenticación y escriba el código de seis dígitos que muestra para Tabulado.",
     "code": "Código de seis dígitos",
     "verify": "Verificar",
     "verifying": "Verificando…",
@@ -3543,7 +3543,7 @@
     "copied": "Códigos de recuperación copiados.",
     "saved": "Ya guardé mis códigos de recuperación",
     "fileName": "shiftbook-codigos-de-recuperacion.txt",
-    "fileHeader": "Códigos de recuperación de Granite para {email}. Cada código funciona una vez.",
+    "fileHeader": "Códigos de recuperación de Tabulado para {email}. Cada código funciona una vez.",
     "on": "Su autenticador está activado.",
     "signOut": "Cerrar sesión",
     "cancel": "Cancelar"
@@ -3603,7 +3603,7 @@
     "who": "{email} · {role}",
     "preferencesTitle": "Preferencias",
     "language": "Idioma",
-    "languageHint": "Sus pantallas, su página de inicio de sesión y los correos que Granite le envía.",
+    "languageHint": "Sus pantallas, su página de inicio de sesión y los correos que Tabulado le envía.",
     "languageSaved": "Idioma guardado.",
     "passwordTitle": "Contraseña",
     "passwordChanged": "Último cambio: {date}.",
@@ -3630,7 +3630,7 @@
     "setUpAgain": "Configurar de nuevo",
     "setUpAgainHint": "Para un teléfono nuevo. La aplicación anterior sigue funcionando hasta que se verifique la nueva.",
     "signOut": "Cerrar sesión",
-    "signOutLine": "Cerrar la sesión de Granite en este navegador",
+    "signOutLine": "Cerrar la sesión de Tabulado en este navegador",
     "demoNote": "Demostración: nada de aquí sale de la demostración; pruebe la contraseña y el autenticador libremente.",
     "appearance": "Apariencia",
     "appearanceHint": "Sistema sigue la configuración clara u oscura de su dispositivo.",
@@ -3728,33 +3728,33 @@
   },
   "authEmail": {
     "greeting": "Hola, {name}:",
-    "footer": "Enviado por Granite en nombre de {agency}.",
+    "footer": "Enviado por Tabulado en nombre de {agency}.",
     "invite": {
-      "subject": "Invitación de {by} para unirse a {agency} en Granite",
-      "intro": "{by} le envió una invitación para unirse a {agency} en Granite como {role}.",
+      "subject": "Invitación de {by} para unirse a {agency} en Tabulado",
+      "intro": "{by} le envió una invitación para unirse a {agency} en Tabulado como {role}.",
       "open": "Aceptar la invitación",
       "expires": "La invitación funciona hasta el {date}. Es solo para usted, así que por favor no la reenvíe.",
       "unexpected": "Si no esperaba esta invitación, puede ignorar este correo."
     },
     "reset": {
-      "subject": "Restablezca su contraseña de Granite",
-      "intro": "Alguien pidió restablecer la contraseña con la que inicia sesión en {agency} en Granite.",
+      "subject": "Restablezca su contraseña de Tabulado",
+      "intro": "Alguien pidió restablecer la contraseña con la que inicia sesión en {agency} en Tabulado.",
       "open": "Elegir una contraseña nueva",
       "expires": "El enlace funciona una vez, durante una hora.",
       "unexpected": "Si no fue usted, ignore este correo: su contraseña sigue igual."
     },
     "hello": "Hola:",
     "signUp": {
-      "subject": "Termine de crear su agencia en Granite",
-      "intro": "Alguien pidió crear una agencia en Granite con esta dirección de correo. Si fue usted, elija su contraseña para terminar.",
+      "subject": "Termine de crear su agencia en Tabulado",
+      "intro": "Alguien pidió crear una agencia en Tabulado con esta dirección de correo. Si fue usted, elija su contraseña para terminar.",
       "open": "Elegir su contraseña",
       "expires": "El enlace funciona una vez, durante 24 horas. Como Propietario de la agencia, a continuación configurará una aplicación de autenticación.",
       "unexpected": "Si no fue usted, ignore este correo: no se crea nada.",
-      "footer": "Enviado por Granite."
+      "footer": "Enviado por Tabulado."
     },
     "signUpExisting": {
-      "subject": "Usted ya tiene una cuenta de Granite",
-      "intro": "Alguien intentó crear una agencia en Granite con esta dirección de correo, que ya inicia sesión en Granite. No se creó ninguna agencia.",
+      "subject": "Usted ya tiene una cuenta de Tabulado",
+      "intro": "Alguien intentó crear una agencia en Tabulado con esta dirección de correo, que ya inicia sesión en Tabulado. No se creó ninguna agencia.",
       "signIn": "Iniciar sesión",
       "reset": "Restablecer su contraseña",
       "invited": "Si recibió una invitación y aún no se ha unido, use el enlace de su correo de invitación.",
@@ -3849,7 +3849,7 @@
       "too_many": "Demasiados números de Seguro Social ingresados en la última hora. Inténtelo más tarde.",
       "not_found": "Este trabajador ya no está aquí. Vuelva a cargar la página.",
       "generic": "No se guardó. Inténtelo de nuevo.",
-      "busy": "Granite está ocupado. Inténtelo de nuevo en un momento.",
+      "busy": "Tabulado está ocupado. Inténtelo de nuevo en un momento.",
       "ended": "El empleo de este trabajador ya terminó.",
       "active": "Este trabajador ya está activo.",
       "none": "No hay número de Seguro Social registrado para este trabajador.",
@@ -3938,7 +3938,7 @@
         "endConfirm": "Dar de baja",
         "i9": {
           "title": "Fecha de contratación y Formulario I-9",
-          "hint": "Solo fechas: Granite no guarda copia del formulario ni de documentos de identidad.",
+          "hint": "Solo fechas: Tabulado no guarda copia del formulario ni de documentos de identidad.",
           "hireDate": "Fecha de contratación",
           "section1On": "Sección 1 completada",
           "section2On": "Sección 2 completada",
@@ -4128,7 +4128,7 @@
       "steps": {
         "payroll": {
           "title": "Elija su sistema de nómina",
-          "body": "Granite crea el archivo que importa su sistema de nómina: Gusto, ADP, QuickBooks o una hoja de cálculo.",
+          "body": "Tabulado crea el archivo que importa su sistema de nómina: Gusto, ADP, QuickBooks o una hoja de cálculo.",
           "action": "Abrir la configuración del archivo de nómina"
         },
         "placements": {
@@ -4138,7 +4138,7 @@
         },
         "convert": {
           "title": "Convierta una semana de hojas de horas",
-          "body": "Suelte fotos, PDF y exportaciones del reloj checador, y revise solo las filas que Granite marca.",
+          "body": "Suelte fotos, PDF y exportaciones del reloj checador, y revise solo las filas que Tabulado marca.",
           "demo": "En esta demostración, elija «Usar las hojas de horas de ejemplo» en la página de carga.",
           "action": "Convertir hojas de horas"
         },
@@ -4149,7 +4149,7 @@
         },
         "files": {
           "title": "Apruebe la semana y cree los archivos",
-          "body": "Se revisa cada regla de pago y luego Granite crea el archivo de nómina y la factura de cada cliente con su respaldo.",
+          "body": "Se revisa cada regla de pago y luego Tabulado crea el archivo de nómina y la factura de cada cliente con su respaldo.",
           "action": "Abrir el periodo de pago"
         },
         "bank": {
@@ -4525,7 +4525,7 @@
     "contractCountsStatutory": " y ya se pagaron {paid} de pago mínimo que exige la ley",
     "labelBilledContractMinimum": "Jornada mínima por contrato facturada",
     "billContractMinimum": " La tarjeta de tarifas factura su jornada mínima, a la tarifa de cobro.",
-    "holidayWithDifferential": " Se paga una prima de feriado el {date} en un turno que también tiene un diferencial por turno; si la prima queda fuera de la tarifa regular depende de la tarifa del mismo trabajo en otros días ({citation}), que Granite todavía no calcula con un diferencial. Pague esta semana a mano, o quite el diferencial o el feriado de ese día."
+    "holidayWithDifferential": " Se paga una prima de feriado el {date} en un turno que también tiene un diferencial por turno; si la prima queda fuera de la tarifa regular depende de la tarifa del mismo trabajo en otros días ({citation}), que Tabulado todavía no calcula con un diferencial. Pague esta semana a mano, o quite el diferencial o el feriado de ese día."
   },
   "said": {
     "alreadySettled": " Ya resuelto fuera de los archivos: {decisions}.",
@@ -4692,11 +4692,11 @@
     "result": {
       "connected": "{provider} conectada. Ya puede iniciar sesión con ella.",
       "disconnected": "{provider} desconectada.",
-      "taken": "Esa cuenta ya está conectada a otra persona de Granite.",
+      "taken": "Esa cuenta ya está conectada a otra persona de Tabulado.",
       "already": "Primero desconecte la cuenta que tiene conectada.",
       "failed": "{provider} no se conectó. Inténtelo de nuevo.",
       "confirm": "Confirme que es usted y vuelva a conectar.",
-      "unavailable": "{provider} no está configurado en este Granite."
+      "unavailable": "{provider} no está configurado en este Tabulado."
     },
     "demo": {
       "title": "Inicio de sesión de demostración: {provider}",
@@ -4705,12 +4705,12 @@
         "microsoft": "Microsoft",
         "sso": "el SSO de su agencia"
       },
-      "body": "Esta página reemplaza a {provider} en la demostración. Nada sale de Granite y no se pide contraseña: elija quién es usted.",
+      "body": "Esta página reemplaza a {provider} en la demostración. Nada sale de Tabulado y no se pide contraseña: elija quién es usted.",
       "choose": "Elija una cuenta",
       "notMember": "Alguien que no es miembro",
       "cancel": "Cancelar",
       "working": "Iniciando sesión…",
-      "badTitle": "Este no es un inicio de sesión que Granite haya empezado",
+      "badTitle": "Este no es un inicio de sesión que Tabulado haya empezado",
       "badBody": "Empiece de nuevo desde la página de inicio de sesión.",
       "back": "Volver a iniciar sesión"
     },
@@ -4723,24 +4723,24 @@
       "provider_failed": "El proveedor no inició su sesión. Inténtelo de nuevo, o cree una contraseña.",
       "not_verified": "El proveedor no confirmó el correo de esa cuenta. Cree una contraseña, o use otra cuenta.",
       "email_mismatch": "El correo de esa cuenta no es el invitado ({email}). Use el correo invitado, o cree una contraseña.",
-      "taken": "Esa cuenta ya está conectada a otra persona de Granite."
+      "taken": "Esa cuenta ya está conectada a otra persona de Tabulado."
     },
     "mail": {
       "providers": {
         "google": "Google",
         "microsoft": "Microsoft"
       },
-      "subject": "{provider} se conectó a su cuenta de Granite",
+      "subject": "{provider} se conectó a su cuenta de Tabulado",
       "greeting": "Hola, {name}:",
-      "body": "La cuenta de {provider} {email} ya puede iniciar su sesión en {agency} en Granite.",
-      "bodyNoEmail": "Una cuenta de {provider} ya puede iniciar su sesión en {agency} en Granite.",
+      "body": "La cuenta de {provider} {email} ya puede iniciar su sesión en {agency} en Tabulado.",
+      "bodyNoEmail": "Una cuenta de {provider} ya puede iniciar su sesión en {agency} en Tabulado.",
       "when": "Se conectó el {date}.",
       "review": "Revisar sus cuentas conectadas",
       "unexpected": "Si no fue usted, desconéctela de inmediato desde Su cuenta e informe al Propietario de su agencia.",
-      "footer": "Enviado por Granite en nombre de {agency}.",
-      "subjectSso": "El inicio de sesión único (SSO) se conectó a su cuenta de Granite",
-      "bodySso": "La cuenta {email} del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Granite.",
-      "bodyNoEmailSso": "Una cuenta del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Granite."
+      "footer": "Enviado por Tabulado en nombre de {agency}.",
+      "subjectSso": "El inicio de sesión único (SSO) se conectó a su cuenta de Tabulado",
+      "bodySso": "La cuenta {email} del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Tabulado.",
+      "bodyNoEmailSso": "Una cuenta del inicio de sesión único (SSO) de su agencia ya puede iniciar su sesión en {agency} en Tabulado."
     }
   },
   "emailCode": {
@@ -4762,19 +4762,19 @@
     "demoCopy": "Demostración: no se envía ningún correo. Esta es la copia del buzón de la demostración:",
     "back": "Volver a iniciar sesión",
     "mail": {
-      "subject": "Su código de acceso a Granite",
+      "subject": "Su código de acceso a Tabulado",
       "greeting": "Hola, {name}:",
-      "intro": "Alguien pidió iniciar sesión en {agency} en Granite con este correo. Su código:",
+      "intro": "Alguien pidió iniciar sesión en {agency} en Tabulado con este correo. Su código:",
       "expires": "Funciona una vez, durante 10 minutos.",
       "unexpected": "Si no fue usted, ignore este correo: nadie puede iniciar sesión sin el código.",
-      "footer": "Enviado por Granite en nombre de {agency}.",
-      "subjectLink": "Confirme la conexión de {provider} con Granite",
-      "subjectConfirm": "Su código de confirmación de Granite",
-      "introLink": "Alguien está conectando una cuenta de {provider} a su inicio de sesión de Granite en {agency}. Si es usted, escriba este código:",
-      "introConfirm": "Alguien pidió confirmar un cambio en su cuenta de Granite en {agency}. Si es usted, escriba este código:",
-      "never": "Nunca comparta este código con nadie. Granite nunca se lo pedirá por teléfono, chat ni correo.",
-      "subjectLinkSso": "Confirme la conexión del inicio de sesión único (SSO) con Granite",
-      "introLinkSso": "Alguien está conectando la cuenta del inicio de sesión único (SSO) de su agencia a su inicio de sesión de Granite en {agency}. Si es usted, escriba este código:"
+      "footer": "Enviado por Tabulado en nombre de {agency}.",
+      "subjectLink": "Confirme la conexión de {provider} con Tabulado",
+      "subjectConfirm": "Su código de confirmación de Tabulado",
+      "introLink": "Alguien está conectando una cuenta de {provider} a su inicio de sesión de Tabulado en {agency}. Si es usted, escriba este código:",
+      "introConfirm": "Alguien pidió confirmar un cambio en su cuenta de Tabulado en {agency}. Si es usted, escriba este código:",
+      "never": "Nunca comparta este código con nadie. Tabulado nunca se lo pedirá por teléfono, chat ni correo.",
+      "subjectLinkSso": "Confirme la conexión del inicio de sesión único (SSO) con Tabulado",
+      "introLinkSso": "Alguien está conectando la cuenta del inicio de sesión único (SSO) de su agencia a su inicio de sesión de Tabulado en {agency}. Si es usted, escriba este código:"
     }
   },
   "sso": {
@@ -4839,7 +4839,7 @@
   },
   "linkProof": {
     "title": "Confirme que es su correo",
-    "body": "Para conectar esta cuenta de {provider} a su inicio de sesión de Granite, escriba el código enviado a {hint}. Funciona una vez, durante 10 minutos.",
+    "body": "Para conectar esta cuenta de {provider} a su inicio de sesión de Tabulado, escriba el código enviado a {hint}. Funciona una vez, durante 10 minutos.",
     "providers": {
       "google": "Google",
       "microsoft": "Microsoft",
@@ -4857,7 +4857,7 @@
       "invalid": "Ese código no funciona. Revíselo, o pida uno nuevo.",
       "locked": "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo.",
       "expired": "Este inicio de sesión esperó demasiado. Empiece de nuevo desde la página de inicio de sesión.",
-      "taken": "Esa cuenta ya está conectada a otra persona de Granite.",
+      "taken": "Esa cuenta ya está conectada a otra persona de Tabulado.",
       "other_identity": "Ya conectó otra cuenta de ese proveedor. Inicie sesión con esa, o desconéctela primero desde Su cuenta."
     }
   },
@@ -4876,13 +4876,13 @@
     },
     "done": "Listo",
     "email": {
-      "footer": "Enviado por Granite en nombre de {agency}.",
+      "footer": "Enviado por Tabulado en nombre de {agency}.",
       "greeting": "Hola, {name}:",
       "ifNot": "Si no fue usted, abra Su cuenta, quite la llave de acceso y cambie su contraseña; después avise al Propietario de su agencia.",
       "ifYou": "Si la agregó usted, no tiene que hacer nada.",
       "intro": "Se agregó una llave de acceso llamada «{passkey}» a la cuenta que usa para {agency}, el {when}.",
       "open": "Abrir Su cuenta",
-      "subject": "Se agregó una llave de acceso a su cuenta de Granite"
+      "subject": "Se agregó una llave de acceso a su cuenta de Tabulado"
     },
     "intro": "Inicie sesión con la huella, el rostro o el bloqueo de pantalla de su dispositivo en lugar de su contraseña y su código. Una llave de acceso cuenta como los dos pasos.",
     "lastUsed": "Último uso: {date}",
@@ -4944,15 +4944,15 @@
     "expiredBody": "Un enlace de registro funciona una vez, durante 24 horas, y uno más nuevo lo reemplaza. Empiece de nuevo para recibir un enlace nuevo.",
     "startAgain": "Cree su agencia",
     "toSignIn": "Ir a iniciar sesión",
-    "taken": "Este correo ya inicia sesión en Granite. Inicie sesión en su lugar."
+    "taken": "Este correo ya inicia sesión en Tabulado. Inicie sesión en su lugar."
   },
   "billing": {
     "eyebrow": "Configuración",
     "title": "Suscripción",
-    "body": "La suscripción mensual de su agencia a Granite. Las tarjetas, las facturas y la cancelación se manejan en las páginas seguras de Stripe.",
+    "body": "La suscripción mensual de su agencia a Tabulado. Las tarjetas, las facturas y la cancelación se manejan en las páginas seguras de Stripe.",
     "demoNote": "Esta es la demostración: no se cobra nada y nunca se abre Stripe.",
     "plan": "Plan",
-    "planName": "Granite mensual",
+    "planName": "Tabulado mensual",
     "status": {
       "demo": "Activa (demostración)",
       "free_days": "Prueba gratis",
@@ -4979,7 +4979,7 @@
       "paused": "La prueba terminó sin tarjeta. Agregue una en Administrar pagos.",
       "incomplete": "El primer pago no se completó. Inicie la suscripción de nuevo.",
       "canceled": "Cancelada. Inicie la suscripción de nuevo para hacer cambios.",
-      "other_plan": "Esta suscripción no es al plan de Granite, así que no mantiene los cambios activos. Cámbiela en Administrar pagos o inicie la suscripción."
+      "other_plan": "Esta suscripción no es al plan de Tabulado, así que no mantiene los cambios activos. Cámbiela en Administrar pagos o inicie la suscripción."
     },
     "nextCharge": "Próximo cobro",
     "nextChargeAmount": "{amount} el {date}",
@@ -4994,7 +4994,7 @@
       "unpaid": "Ninguno hasta que se actualice la tarjeta.",
       "paused": "Ninguno hasta que se agregue una tarjeta.",
       "incomplete": "Ninguno. El primer pago no se completó.",
-      "other_plan": "Ninguno para el plan de Granite."
+      "other_plan": "Ninguno para el plan de Tabulado."
     },
     "footNote": "Los datos de la tarjeta, las facturas y la cancelación están en las páginas de Stripe.",
     "start": "Iniciar la suscripción",
@@ -5031,7 +5031,7 @@
       "incomplete": "El primer pago de la suscripción de esta agencia no se completó.",
       "incomplete_expired": "El primer pago de la suscripción de esta agencia no se completó.",
       "canceled": "La suscripción de esta agencia se canceló.",
-      "other_plan": "La suscripción de esta agencia no es al plan de Granite."
+      "other_plan": "La suscripción de esta agencia no es al plan de Tabulado."
     },
     "kept": "Todo se puede seguir leyendo y descargando, y no se borra nada.",
     "owner": "Ir a Suscripción",
@@ -5109,11 +5109,11 @@
     "metaTitle": "Verificador gratuito de 720 horas de Illinois",
     "eyebrow": "Verificador de 720 horas de Illinois",
     "title": "Vea qué trabajadores temporales están cerca de la igualdad salarial de Illinois.",
-    "intro": "Illinois exige igualdad salarial para un trabajador por día o temporal después de más de 720 horas con el mismo cliente en 12 meses. Agregue sus horas y este verificador cuenta a cada trabajador con cada cliente como lo hace la nómina semanal de Granite, y muestra quién pasó las 720 horas, quién está cerca y cuándo.",
+    "intro": "Illinois exige igualdad salarial para un trabajador por día o temporal después de más de 720 horas con el mismo cliente en 12 meses. Agregue sus horas y este verificador cuenta a cada trabajador con cada cliente como lo hace la nómina semanal de Tabulado, y muestra quién pasó las 720 horas, quién está cerca y cuándo.",
     "header": {
       "signIn": "Iniciar sesión",
       "demo": "Ver la demostración",
-      "home": "Herramientas gratuitas de Granite"
+      "home": "Herramientas gratuitas de Tabulado"
     },
     "tool": {
       "heading": "Contar horas por trabajador y cliente",
@@ -5176,7 +5176,7 @@
       "file": "illinois-720-horas.csv"
     },
     "demo": {
-      "line": "Granite cuenta estas horas cada semana a partir de sus hojas de horas, avisa a las 600 horas y abre la obligación de igualdad salarial el día en que un trabajador pasa las 720.",
+      "line": "Tabulado cuenta estas horas cada semana a partir de sus hojas de horas, avisa a las 600 horas y abre la obligación de igualdad salarial el día en que un trabajador pasa las 720.",
       "button": "Véalo con una agencia de demostración"
     },
     "how": {
@@ -5189,7 +5189,7 @@
       "longHeading": "La regla de las 4,160 horas",
       "long": "Más de 4,160 horas con el mismo cliente en 48 meses trae más obligaciones sobre la información del cliente. El verificador también muestra cuándo se pasaron.",
       "nearHeading": "El aviso de las 600 horas",
-      "near": "Granite señala a un trabajador que pasa las 600 horas para que haya tiempo de pedir al cliente el salario comparable. Las 600 horas son un aviso de Granite, no de la ley.",
+      "near": "Tabulado señala a un trabajador que pasa las 600 horas para que haya tiempo de pedir al cliente el salario comparable. Las 600 horas son un aviso de Tabulado, no de la ley.",
       "afterHeading": "Después de que un trabajador pasa las 720 horas",
       "after": "Pague la tarifa de igualdad salarial por las horas después del cruce, con la información del cliente sobre su empleado comparable. La información del cliente debe llegar antes del inicio del siguiente periodo de pago del trabajador."
     },
@@ -5295,7 +5295,7 @@
       }
     },
     "email": {
-      "open": "Abrir en Granite",
+      "open": "Abrir en Tabulado",
       "footer": "Recibe este correo por su configuración de notificaciones. Puede cambiarla en Configuración › Notificaciones."
     }
   },
@@ -5379,7 +5379,7 @@
     "settings": {
       "title": "Cobranza",
       "remindersTitle": "Recordatorios automáticos",
-      "remindersIntro": "Granite envía un correo al contacto de facturación del cliente en estos días, con la factura adjunta, hasta que se pague.",
+      "remindersIntro": "Tabulado envía un correo al contacto de facturación del cliente en estos días, con la factura adjunta, hasta que se pague.",
       "enabled": "Recordatorios por correo de facturas sin pagar",
       "enabledHint": "Cada recordatorio se envía una sola vez, al correo de facturación del cliente.",
       "stages": {
@@ -5513,7 +5513,7 @@
       },
       "missingList": "Falta: {items}",
       "collectsTitle": "Lo que solicita el socio",
-      "collectsBody": "Granite nunca guarda estos datos. La incorporación del propio socio de nómina se los pide a cada trabajador antes de su primer cheque.",
+      "collectsBody": "Tabulado nunca guarda estos datos. La incorporación del propio socio de nómina se los pide a cada trabajador antes de su primer cheque.",
       "collects": {
         "dob": "Fecha de nacimiento",
         "residence": "Domicilio",
@@ -5783,10 +5783,10 @@
   },
   "payrollSample": {
     "title": "Leer un archivo de muestra",
-    "hint": "Elija un archivo de importación que ya usa con este sistema. Granite revisa sus columnas y enumera los códigos que contiene. El archivo no sale de esta computadora.",
+    "hint": "Elija un archivo de importación que ya usa con este sistema. Tabulado revisa sus columnas y enumera los códigos que contiene. El archivo no sale de esta computadora.",
     "choose": "Elegir archivo de muestra",
-    "matches": "{name}: las columnas son las que Granite escribe ({rows, plural, one {# fila leída} other {# filas leídas}}).",
-    "differs": "{name}: las columnas no son las que Granite escribe.",
+    "matches": "{name}: las columnas son las que Tabulado escribe ({rows, plural, one {# fila leída} other {# filas leídas}}).",
+    "differs": "{name}: las columnas no son las que Tabulado escribe.",
     "clientIdFound": "ID de cliente en la muestra: {id} (completado arriba; guarde para conservarlo).",
     "codesFound": "Códigos en la muestra, para usar en la pestaña Códigos:"
   },
@@ -5822,7 +5822,7 @@
       "connected": "Conectadas",
       "available": "Disponibles"
     },
-    "empty": "Todavía no hay nada conectado. Vea con qué trabaja Granite en",
+    "empty": "Todavía no hay nada conectado. Vea con qué trabaja Tabulado en",
     "kinds": {
       "payroll": "Sistema de nómina",
       "recruiting": "Sistema de reclutamiento",
@@ -5869,10 +5869,10 @@
       "partners": "Socios"
     },
     "groupHints": {
-      "payroll": "Granite prepara el archivo de horas que importa cada sistema; un sistema a la vez.",
+      "payroll": "Tabulado prepara el archivo de horas que importa cada sistema; un sistema a la vez.",
       "recruiting": "Traiga las asignaciones desde el archivo de exportación de un sistema de reclutamiento.",
-      "time": "Archivos de horas que Granite lee en Convertir hojas de horas.",
-      "partners": "Paquetes para socios con licencia. No se mueve dinero a través de Granite."
+      "time": "Archivos de horas que Tabulado lee en Convertir hojas de horas.",
+      "partners": "Paquetes para socios con licencia. No se mueve dinero a través de Tabulado."
     },
     "systems": {
       "gusto_hours_csv": "Gusto",
@@ -5914,9 +5914,9 @@
       "other": "Cualquier archivo CSV o Excel con una asignación por fila.",
       "fieldglass-approved-time-sheet": "Hojas de horas aprobadas descargadas de SAP Fieldglass.",
       "timeclock-punch-export": "Marcaciones exportadas de un reloj de control, leídas como horas.",
-      "vmsNotYet": "Granite todavía no puede leer la exportación de este sistema.",
-      "partner": "Granite prepara el paquete en Dinero; un socio con licencia actuaría con él. Aún no hay nada registrado.",
-      "partnerLast": "Último registro {date} · {count, plural, one {# paquete} other {# paquetes}} en Dinero. En Granite no se mueve dinero.",
+      "vmsNotYet": "Tabulado todavía no puede leer la exportación de este sistema.",
+      "partner": "Tabulado prepara el paquete en Dinero; un socio con licencia actuaría con él. Aún no hay nada registrado.",
+      "partnerLast": "Último registro {date} · {count, plural, one {# paquete} other {# paquetes}} en Dinero. En Tabulado no se mueve dinero.",
       "beeline-timesheet-export": "Hojas de horas aprobadas exportadas de Beeline; los nombres de las columnas se pueden cambiar según el informe del cliente.",
       "coupa-time-sheet-lines": "Líneas de hojas de servicio/horas aprobadas exportadas de Coupa; los nombres de las columnas se pueden cambiar según el informe del cliente.",
       "magnit-timesheet-export": "Hojas de horas aprobadas exportadas de Magnit; los nombres de las columnas se pueden cambiar según el informe del cliente."
@@ -5983,7 +5983,7 @@
       "needsAnswer": "{count, plural, one {# turno espera su respuesta} other {# turnos esperan su respuesta}}",
       "wageTitle": "Pago ganado que puede solicitar",
       "wageBody": "Disponible ahora de {earned} ganados en horas aprobadas aún no pagadas.",
-      "wageNote": "En Granite no se mueve dinero: el socio de su agencia lo pagaría y lo descontaría de su próximo cheque.",
+      "wageNote": "En Tabulado no se mueve dinero: el socio de su agencia lo pagaría y lo descontaría de su próximo cheque.",
       "wageRequest": "Solicitar",
       "wageDialogTitle": "Solicitar pago ganado",
       "policiesTitle": "Políticas por confirmar",
@@ -6246,7 +6246,7 @@
     "phoneChanged": "{agency}: se cambió el número de celular de su aplicación de horas y pago, y se cerró su sesión. Si usted no lo pidió, llame a su agencia."
   },
   "workerAppForms": {
-    "subtitle": "Registro de las respuestas dadas en la aplicación del trabajador de Granite.",
+    "subtitle": "Registro de las respuestas dadas en la aplicación del trabajador de Tabulado.",
     "worker": "Empleado",
     "ssn": "Número de Seguro Social",
     "signedBy": "Firma electrónica",
@@ -6304,7 +6304,7 @@
     },
     "stub": {
       "title": "Talón de pago",
-      "note": "Pago bruto, antes de impuestos y deducciones, que calcula el proveedor de nómina de la agencia. Generado por Granite."
+      "note": "Pago bruto, antes de impuestos y deducciones, que calcula el proveedor de nómina de la agencia. Generado por Tabulado."
     },
     "maskedNote": "Los números bancarios y de documentos se muestran por sus últimos cuatro dígitos; su agencia conserva el formulario completo."
   },
@@ -6931,7 +6931,7 @@
   },
   "periodSetup": {
     "start": "Iniciar un periodo de pago",
-    "body": "Elija una fecha: se agrega la semana de pago que la contiene, para una semana pagada tarde o antes de usar Granite.",
+    "body": "Elija una fecha: se agrega la semana de pago que la contiene, para una semana pagada tarde o antes de usar Tabulado.",
     "date": "Un día de esa semana",
     "started": "Periodo de pago agregado",
     "noWeekTitle": "Elija el día en que empieza su semana de pago",
@@ -7340,7 +7340,7 @@
     "title": "Pago adicional",
     "add": "Agregar pago",
     "addTitle": "Agregar pago",
-    "addBody": "Granite calcula el pago según las reglas; usted confirma lo que ocurrió. Se registra con su nombre y el motivo.",
+    "addBody": "Tabulado calcula el pago según las reglas; usted confirma lo que ocurrió. Se registra con su nombre y el motivo.",
     "worker": "Trabajador",
     "assignment": "Asignación",
     "what": "Qué",
@@ -7410,7 +7410,7 @@
     "add": "Agregar política",
     "addTitle": "Agregar una política de feriados",
     "editTitle": "Editar política de feriados",
-    "dialogHint": "Ninguna ley de los estados que cubre Granite exige pago por feriados; esta es la política propia de la agencia.",
+    "dialogHint": "Ninguna ley de los estados que cubre Tabulado exige pago por feriados; esta es la política propia de la agencia.",
     "empty": "Aún no hay políticas de feriados.",
     "agencyDefault": "Predeterminada de la agencia",
     "rowLine": "{who} · {count, plural, one {# día} other {# días}}",

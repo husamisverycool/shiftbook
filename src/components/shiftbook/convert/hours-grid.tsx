@@ -1137,7 +1137,7 @@ export function HoursGrid(props: { periodId: string; rows: GridRow[]; roster: { 
               </TableFooter>
             </Table>
           </ContextMenuTrigger>
-          {/* Airtable: right-click a row — insert above or below, duplicate; Granite rejects rather than deletes. */}
+          {/* Airtable: right-click a row — insert above or below, duplicate; Tabulado rejects rather than deletes. */}
           <ContextMenuContent aria-label={g("rowMenu")} data-testid="row-menu">
             {menuRow && (
               <>

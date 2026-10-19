@@ -3,7 +3,7 @@
  * duties are created (not those further back than their look-back), open ones follow their dates,
  * the data closes what it settles (a renewal, an I-9 date), and an open duty the data no longer calls
  * for is closed as not applicable — never one only because it is old. A person's decision (done, not
- * applicable) is never undone; what Granite closed, Granite may reopen or close again as the data
+ * applicable) is never undone; what Tabulado closed, Tabulado may reopen or close again as the data
  * says. The run keeps the Illinois equal-pay crossings itself.
  */
 import { addDays, workweekStart, type Weekday } from "@shiftbook/rules";
@@ -18,8 +18,8 @@ import { EQUAL_PAY_KINDS } from "./kinds";
 import { acaOffers } from "./aca-data";
 import { keyOf, wantedObligations, type ComplianceRule, type GenerateInput, type OpenDays, type Placement, type Wanted } from "./generate";
 
-/** Who Granite's own changes are recorded as. */
-export const SYSTEM = "Granite";
+/** Who Tabulado's own changes are recorded as. */
+export const SYSTEM = "Tabulado";
 /** The weekdays the agency is open (0 Sunday … 6 Saturday), dated: its weekend days count as I-9 business days. */
 export const OPEN_DAYS_KEY = "compliance.open_weekdays";
 
@@ -147,12 +147,12 @@ export async function syncObligations(tx: Tx, agencyId: string, today: string): 
       await auditBy(tx, who, [{ action: "update", entityType: "obligation", entityId: o.id, before: { status: "open" }, after: { status: "done", note: w.done!.note, noteKey: w.done!.key } }]);
       closed += 1;
     } else if (o.closedBySystem && closedNow && (o.status !== "done" || o.statusNote !== closedNow.statusNote)) {
-      // Granite closed it and the data now settles it (or settles it another way): done, saying how.
+      // Tabulado closed it and the data now settles it (or settles it another way): done, saying how.
       await tx.update(s.obligations).set({ dueOn: w.dueOn, remindOn: w.remindOn, facts: w.facts, message: w.message, explain: w.explain, ...closedNow }).where(eq(s.obligations.id, o.id));
       await auditBy(tx, who, [{ action: "update", entityType: "obligation", entityId: o.id, before: { status: o.status, note: o.statusNote }, after: { status: "done", note: w.done!.note, noteKey: w.done!.key } }]);
       changed += 1;
     } else if (o.status !== "open" && o.closedBySystem && !closedNow) {
-      // Granite closed it and the data calls for it again: open.
+      // Tabulado closed it and the data calls for it again: open.
       await tx.update(s.obligations).set({ status: "open", statusNote: null, noteKey: null, doneAt: null, doneBy: null, doneByLabel: null, closedBySystem: false, dueOn: w.dueOn, remindOn: w.remindOn, facts: w.facts, message: w.message, explain: w.explain }).where(eq(s.obligations.id, o.id));
       await auditBy(tx, who, [{ action: "update", entityType: "obligation", entityId: o.id, before: { status: o.status }, after: { status: "open" }, reason: "the data calls for it again" }]);
       changed += 1;

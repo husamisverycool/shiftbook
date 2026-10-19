@@ -5,7 +5,7 @@ Reference product and screen: Stripe — Settings › Billing › "Manage invoic
 "Send reminders … before, when, or after the invoice is due"
 Source URL: https://docs.stripe.com/invoicing/send-email
 Researched: 2026-10-17 (`docs/research/notifications-slice-r.md`). Confidence: medium (the setting's
-option list needs a sign-in; Granite uses the three reminder kinds slice h already has).
+option list needs a sign-in; Tabulado uses the three reminder kinds slice h already has).
 
 ## Hierarchy
 The settings column (`_components/settings.md`):

@@ -121,7 +121,7 @@ describe("an email to the forwarding address", () => {
   });
 
   it("holds the files when last week is already paid, and a person files them into an open week", async () => {
-    // Received on Tuesday October 6: last week is September 28, paid before Granite in the demo.
+    // Received on Tuesday October 6: last week is September 28, paid before Tabulado in the demo.
     const r = await receiveInboundEmail(deps, mail(await addressA(), { receivedAt: new Date("2026-10-06T15:00:00Z") }));
     expect(r).toMatchObject({ status: "held", filed: 0, held: 1 });
     const [held] = await inAgency((tx) => tx.select().from(s.inboundAttachments).where(eq(s.inboundAttachments.outcome, "held")));

@@ -10,23 +10,23 @@ Source URL: https://docs.github.com/en/authentication/keeping-your-account-and-d
 Researched: 2026-10-16. Confidence: medium — none of them publishes the email's text; the order
 below follows the approval emails' (`approval-request.md`), which follow Stripe's invoice email.
 
-## Purpose in Granite
+## Purpose in Tabulado
 The two emails that carry a one-time sign-in link: an invite to join the agency, and a password
 reset. Plain text with a simple HTML copy; no images, no tracking, nothing loaded from other sites.
 
 ## Hierarchy (invite)
-1. Sender: "{agency} via Granite"; replies go to the agency's email address.
-2. Subject: who invited them, to which agency, on Granite.
+1. Sender: "{agency} via Tabulado"; replies go to the agency's email address.
+2. Subject: who invited them, to which agency, on Tabulado.
 3. Greeting with their name.
 4. One line: who invited them, to which agency, with which role; the role's one-line description.
 5. The link to accept the invite.
 6. Until when the invite works (10 days), and that it is meant for them only.
 7. If they did not expect it, they can ignore it.
-8. Footer: sent by Granite on behalf of the agency.
+8. Footer: sent by Tabulado on behalf of the agency.
 
 ## Hierarchy (password reset)
 1. Sender and replies as above.
-2. Subject: reset your Granite password.
+2. Subject: reset your Tabulado password.
 3. Greeting with their name.
 4. One line: someone asked to reset the password they use for the agency.
 5. The link to choose a new password.
@@ -36,7 +36,7 @@ reset. Plain text with a simple HTML copy; no images, no tracking, nothing loade
 
 ## States
 - Language: the person's own language (English or Spanish).
-- The copy Granite keeps of either email hides the link (only the person's inbox has it).
+- The copy Tabulado keeps of either email hides the link (only the person's inbox has it).
 
 ## Never copy
 Stripe's, Linear's or GitHub's wording, icons, colors or logos.

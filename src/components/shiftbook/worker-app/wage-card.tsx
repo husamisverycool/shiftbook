@@ -1,7 +1,7 @@
 "use client";
 
 // Pattern: docs/patterns/w.md item 6 — earned pay the worker can request (the agency's wage-access
-// rules; the CFPB's "covered EWA" terms in the request dialog); no money moves in Granite.
+// rules; the CFPB's "covered EWA" terms in the request dialog); no money moves in Tabulado.
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

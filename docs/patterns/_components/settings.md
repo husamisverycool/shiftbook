@@ -47,9 +47,9 @@ colours are not used.
    the left (who changed it last; Vercel), the actions at the right, the primary last (Linear's SAML
    setup). A list whose section records who changed it last ends with the same foot holding only the note.
 
-## Look (measured on Linear's 2× screenshots; Linear sets its type at 13px, Granite at 14px, so lengths
+## Look (measured on Linear's 2× screenshots; Linear sets its type at 13px, Tabulado at 14px, so lengths
 tied to type are scaled by 14/13 and the rest kept)
-| Part | Linear (CSS px) | Granite |
+| Part | Linear (CSS px) | Tabulado |
 |---|---|---|
 | Column | 640 wide, centred | 688 wide (`max-w-188` with the page's 32px side padding), centred |
 | Section heading | 15px medium | 16px medium (`text-base font-medium`) |
@@ -77,6 +77,6 @@ tied to type are scaled by 14/13 and the rest kept)
 - Saving: the action says it is working; a saved form says so next to its action, live.
 
 ## Never copy
-Linear's or Vercel's colours, icons, wording or logos; the type sizes are scaled to Granite's own.
+Linear's or Vercel's colours, icons, wording or logos; the type sizes are scaled to Tabulado's own.
 
 Deviations allowed: none

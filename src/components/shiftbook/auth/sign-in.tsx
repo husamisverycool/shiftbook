@@ -3,7 +3,7 @@
 // Pattern: docs/patterns/sign-in.md (decision 0031) — Linear's sign-in: the heading centred, the main way
 // in as one filled full-width button and the others outlined under it (in the demo, the demo people);
 // an "or" rule between ways in (GitHub, Stripe, Notion); then GitHub's form (email, password with
-// "Forgot password?", Sign in; the code comes on its own page); "New to Granite? Create an agency" at the foot
+// "Forgot password?", Sign in; the code comes on its own page); "New to Tabulado? Create an agency" at the foot
 // (decision 0036).
 import { Building2Icon, KeyRoundIcon, MailIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";

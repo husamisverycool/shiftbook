@@ -13,7 +13,7 @@ Source URL: https://squareup.com/help/us/en/article/6455
 Researched: 2026-10-16 (`docs/research/roster-audit-language-slice-k.md` §1b, §1c). Confidence: high
 for the tabs, the per-section Edit and the Retrieve SSN steps; the layout's spacing is not documented.
 
-## Purpose in Granite
+## Purpose in Tabulado
 One worker (SPEC §17): who they are, their language, their SSN (the last four; the whole number
 only for the Owner, with a reason, every look recorded), their payroll numbers per system, their
 documents, and their employment (hire date, I-9 dates, assignments, end of employment).

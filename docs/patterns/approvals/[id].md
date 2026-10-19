@@ -16,7 +16,7 @@ Source URL: https://help.instawork.com/en/articles/3758225-how-to-review-dispute
 Source URL: https://docs.stripe.com/disputes/responding.md
 Researched: 2026-10-16. Confidence: high for Stripe and Harvest; medium for Instawork (one article).
 
-## Purpose in Granite
+## Purpose in Tabulado
 One client's approval request for one pay period: what was sent to whom, what the client decided,
 the disputes to settle, and the history.
 

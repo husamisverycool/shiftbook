@@ -18,7 +18,7 @@ Source URL: https://support.gusto.com/article/106622257100000/edit-company-detai
 Researched: 2026-10-16 (`docs/research/invoices-slice-g.md` §5.3). Confidence: high for the
 sections and the dated versions; the page layout follows Stripe's documented Details → Edit flow.
 
-## Purpose in Granite
+## Purpose in Tabulado
 A client's invoice settings (SPEC §4 ClientBillingProfile), dated so a change applies from a date,
 and the client's invoices.
 
