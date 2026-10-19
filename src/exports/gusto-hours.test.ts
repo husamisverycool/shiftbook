@@ -51,7 +51,7 @@ describe("Gusto hours CSV", () => {
   it("lists every line whose minutes are not exact in two-decimal hours, with the money effect", () => {
     const r = renderGustoHours(base());
     expect(r.notes).toEqual([
-      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Gusto pays 0.62 h × $27.375/h = $16.97; Granite computed $16.88 (+$0.09).",
+      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Gusto pays 0.62 h × $27.375/h = $16.97; Tabulado computed $16.88 (+$0.09).",
     ]);
   });
 
@@ -122,7 +122,7 @@ describe("Gusto hours CSV", () => {
     const r = renderGustoHours(fixture);
     expect(r.controlTotals.payrollSystemDifferenceCents).toBe(-1);
     expect(r.notes).toEqual([
-      "Álvarez, Ana — REG: 2400 min written as 40.00 h (exact). Gusto pays 40.00 h × $18.25/h = $730.00; Granite computed $730.01 (−$0.01), because Granite rounds each pay line separately.",
+      "Álvarez, Ana — REG: 2400 min written as 40.00 h (exact). Gusto pays 40.00 h × $18.25/h = $730.00; Tabulado computed $730.01 (−$0.01), because Tabulado rounds each pay line separately.",
     ]);
   });
 

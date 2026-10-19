@@ -54,8 +54,8 @@ export function renderAdpRun(fixture: ExportFixture): ExportResult {
       if (!exactHours || cents !== t.amountCents) {
         const written = exactHours ? `${t.minutes} min written as ${twoDecimals(h)} h (exact)` : `${t.minutes} min written as ${twoDecimals(h)} h (${exactDecimal(t.minutes, 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
         const factor = t.factor.num === t.factor.den ? "" : ` × ${exactDecimal(t.factor.num, t.factor.den)}`;
-        const why = exactHours ? ", because Granite rounds each pay line separately" : "";
-        notes.push(`${who(w.worker)} — ${t.types.join(", ")}: ${written}. RUN pays ${twoDecimals(h)} h × ${formatRate(w.base!)}${factor} = ${formatCents(cents)}; Granite computed ${formatCents(t.amountCents)} (${signedCents(cents - t.amountCents)})${why}.`);
+        const why = exactHours ? ", because Tabulado rounds each pay line separately" : "";
+        notes.push(`${who(w.worker)} — ${t.types.join(", ")}: ${written}. RUN pays ${twoDecimals(h)} h × ${formatRate(w.base!)}${factor} = ${formatCents(cents)}; Tabulado computed ${formatCents(t.amountCents)} (${signedCents(cents - t.amountCents)})${why}.`);
       }
     }
   }

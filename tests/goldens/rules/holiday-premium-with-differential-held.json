@@ -1,6 +1,6 @@
 {
   "name": "holiday-premium-with-differential-held",
-  "summary": "Illinois worker at $18.25/h works 8 hours on Wednesday October 7, 2026, a holiday under the agency's policy paying 1.5× for hours worked, on a shift that also carries a Night differential of $1.50/h. Whether a holiday premium stays out of the regular rate compares it with the rate for like work on other days (29 C.F.R. § 778.203); with a differential on the shift Granite does not work that comparison out, so the week is held for a person instead of guessed: no lines, one blocker.",
+  "summary": "Illinois worker at $18.25/h works 8 hours on Wednesday October 7, 2026, a holiday under the agency's policy paying 1.5× for hours worked, on a shift that also carries a Night differential of $1.50/h. Whether a holiday premium stays out of the regular rate compares it with the rate for like work on other days (29 C.F.R. § 778.203); with a differential on the shift Tabulado does not work that comparison out, so the week is held for a person instead of guessed: no lines, one blocker.",
   "input": {
     "workweekStartsOn": 1,
     "shifts": [
@@ -999,7 +999,7 @@
         "longTriggerMinutes": 249600,
         "effectiveFrom": "2024-08-09",
         "effectiveTo": null,
-        "citation": "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Granite's (SPEC §9), not law."
+        "citation": "820 ILCS 175/42(a) (P.A. 103-1030, eff. 2024-08-09) — equal pay and benefits (or their hourly cash value, § 42(b)) after more than 720 hours at the same third party client within a 12-month period, counting work on or after April 1, 2024; § 42(a)(2)(B), (c): more than 4,160 hours within a 48-month period; 56 Ill. Adm. Code 260.445, 260.505(b) — the client's data is due before the next pay period begins. The 600-hour heads-up is Tabulado's (SPEC §9), not law."
       }
     ],
     "regularRateRules": [
@@ -1044,7 +1044,7 @@
         "workweekStart": "2026-10-05",
         "jurisdiction": "IL",
         "date": "2026-10-07",
-        "message": " A holiday premium is paid on 2026-10-07 on a shift that also carries a shift differential; whether the premium stays out of the regular rate depends on the rate for like work on other days (29 C.F.R. § 778.203), which Granite does not work out with a differential yet. Pay this week by hand, or remove the differential or the holiday from that day."
+        "message": " A holiday premium is paid on 2026-10-07 on a shift that also carries a shift differential; whether the premium stays out of the regular rate depends on the rate for like work on other days (29 C.F.R. § 778.203), which Tabulado does not work out with a differential yet. Pay this week by hand, or remove the differential or the holiday from that day."
       }
     ],
     "warnings": [],

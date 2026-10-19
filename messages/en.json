@@ -4525,7 +4525,7 @@
     "contractCountsStatutory": " and {paid} of minimum pay the law requires were already paid",
     "labelBilledContractMinimum": "Contractual minimum day billed",
     "billContractMinimum": " The rate card bills its minimum day, at the bill rate.",
-    "holidayWithDifferential": " A holiday premium is paid on {date} on a shift that also carries a shift differential; whether the premium stays out of the regular rate depends on the rate for like work on other days ({citation}), which Granite does not work out with a differential yet. Pay this week by hand, or remove the differential or the holiday from that day."
+    "holidayWithDifferential": " A holiday premium is paid on {date} on a shift that also carries a shift differential; whether the premium stays out of the regular rate depends on the rate for like work on other days ({citation}), which Tabulado does not work out with a differential yet. Pay this week by hand, or remove the differential or the holiday from that day."
   },
   "said": {
     "alreadySettled": " Already settled outside the files: {decisions}.",

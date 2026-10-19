@@ -9,7 +9,7 @@
  *
  * One row per pay line (worker, workweek, kind of pay, rate). Hours go out with two decimals rounded
  * up (no worked time lost), rates with four, amounts to the cent. A kind of pay with no code set goes
- * out under Granite's own code (REG, OT, …). With an amount column the receiver pays what is
+ * out under Tabulado's own code (REG, OT, …). With an amount column the receiver pays what is
  * written; without one it prices hours × the written rate, and the notes say what rounding does.
  */
 import { exactDecimal, formatCents, formatRate, roundHalfUpBig, type Fraction } from "@shiftbook/rules";
@@ -181,7 +181,7 @@ export function renderLayout(fixture: ExportFixture, format: ExportFormat, layou
       const written = exactHours ? `${row.minutes} min written as ${twoDecimals(h)} h (exact)` : `${row.minutes} min written as ${twoDecimals(h)} h (${exactDecimal(row.minutes, 60)} h exactly, rounded up to the next hundredth so no worked time is lost)`;
       const multiple = row.factor.num === row.factor.den ? "" : ` × ${exactDecimal(row.factor.num, row.factor.den)}`;
       const worker = c.workers[row.workerIndex]!.worker;
-      notes.push(`${who(worker)} — ${row.type}: ${written}. ${opts.amountOn === "every_row" ? "The receiver" : opts.receiver} pays ${twoDecimals(h)} h × ${rateText(t4)}${multiple} = ${formatCents(cents)}; Granite computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
+      notes.push(`${who(worker)} — ${row.type}: ${written}. ${opts.amountOn === "every_row" ? "The receiver" : opts.receiver} pays ${twoDecimals(h)} h × ${rateText(t4)}${multiple} = ${formatCents(cents)}; Tabulado computed ${formatCents(row.amountCents)} (${signedCents(cents - row.amountCents)}).`);
     }
   }
 

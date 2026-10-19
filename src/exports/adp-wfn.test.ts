@@ -69,7 +69,7 @@ describe("ADP Workforce Now paydata file", () => {
   it("notes the multiples it assumed and every line whose hours are rounded up", () => {
     expect(renderAdpWfn(base()).notes).toEqual([
       "ADP prices O/T Hours at Temp Rate × 1.5 and code D at Temp Rate × 2: the multiples in the payroll file settings. If ADP is set up with other multiples, its gross will differ.",
-      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). ADP pays 0.62 h × 18.2500 × 1.5 = $16.97; Granite computed $16.88 (+$0.09).",
+      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). ADP pays 0.62 h × 18.2500 × 1.5 = $16.97; Tabulado computed $16.88 (+$0.09).",
     ]);
   });
 

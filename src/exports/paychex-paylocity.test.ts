@@ -1,7 +1,7 @@
 /**
  * Paychex Flex SPI and Paylocity time import (decision 0040). By hand, the run below:
- *   Álvarez (Paychex A123): REG 2400 min at $18.25 = $730.00; OT 37 min at $27.375 = $16.88 (Granite);
- *   a $150.00 bonus. Okafor (B456): REG 2280 min at $18.25 = $693.50. Granite gross $1,590.38.
+ *   Álvarez (Paychex A123): REG 2400 min at $18.25 = $730.00; OT 37 min at $27.375 = $16.88 (Tabulado);
+ *   a $150.00 bonus. Okafor (B456): REG 2280 min at $18.25 = $693.50. Tabulado gross $1,590.38.
  *   Written: 40.00 h, 0.62 h (37 min = 0.6166… h, rounded up), 38.00 h; the bonus as $150.00.
  *   The overtime component multiplies by 1.5, as the agency declares (export review finding 2), so its
  *   rate is written as $27.375 ÷ 1.5 = 18.2500 and the system pays 0.62 × 18.2500 × 1.5 = 16.9725 →
@@ -71,7 +71,7 @@ describe("Paychex Flex Standard Payroll Import", () => {
     const r = renderExport(paychex());
     expect(r.controlTotals).toEqual(TOTALS);
     expect(r.notes).toEqual([
-      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Paychex Flex pays 0.62 h × 18.2500 × 1.5 = $16.97; Granite computed $16.88 (+$0.09).",
+      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). Paychex Flex pays 0.62 h × 18.2500 × 1.5 = $16.97; Tabulado computed $16.88 (+$0.09).",
     ]);
   });
 
@@ -115,7 +115,7 @@ describe("Paylocity time import (TimeImprt)", () => {
   it("reconciles to the run and says what Paylocity pays", () => {
     const r = renderExport(paylocity());
     expect(r.controlTotals).toEqual(TOTALS);
-    expect(r.notes[0]).toContain("Paylocity pays 0.62 h × 18.2500 × 1.5 = $16.97; Granite computed $16.88 (+$0.09).");
+    expect(r.notes[0]).toContain("Paylocity pays 0.62 h × 18.2500 × 1.5 = $16.97; Tabulado computed $16.88 (+$0.09).");
   });
 
   it("refuses a worker with no Paylocity id", () => {

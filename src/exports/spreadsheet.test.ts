@@ -39,7 +39,7 @@ describe("Spreadsheet (the agency's own layout)", () => {
         "",
       ].join("\r\n"),
     );
-    // The amount column carries Granite's exact pay: the receiver pays what is written.
+    // The amount column carries Tabulado's exact pay: the receiver pays what is written.
     expect(r.controlTotals).toEqual({ workers: 2, minutesByType: { REG: 4680, OT: 37 }, amountsByType: { BONUS: 15_000 }, grossCents: 159_038, payrollSystemGrossCents: 159_038, payrollSystemDifferenceCents: 0 });
     expect(r.notes).toEqual([]);
   });
@@ -71,7 +71,7 @@ describe("Spreadsheet (the agency's own layout)", () => {
     // 0.62 h × $27.3750 = $16.9725 → $16.97 against $16.88.
     expect(r.controlTotals.payrollSystemDifferenceCents).toBe(9);
     expect(r.notes).toEqual([
-      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). The receiver pays 0.62 h × 27.3750 = $16.97; Granite computed $16.88 (+$0.09).",
+      "Álvarez, Ana — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). The receiver pays 0.62 h × 27.3750 = $16.97; Tabulado computed $16.88 (+$0.09).",
     ]);
   });
 
@@ -97,7 +97,7 @@ describe("Spreadsheet (the agency's own layout)", () => {
     expect(r.notes[0]).toContain("Correction 2 of this pay period");
   });
 
-  it("sends a kind of pay with no saved code the way its defaults say (a top-up as dollars), under Granite's code", () => {
+  it("sends a kind of pay with no saved code the way its defaults say (a top-up as dollars), under Tabulado's code", () => {
     const r = renderSpreadsheet(fixtureWith(DEFAULT_LAYOUT, { codes: {}, payLines: [{ workerId: "w1", type: "MW_TRUEUP", minutes: 60, amountCents: 75, rate: { num: 75, den: 1 }, workweekStart: "2026-10-05" }] }));
     expect(text(r.bytes).split("\r\n")[1]).toBe("A-001,Álvarez,Ana,10/11/2026,MW_TRUEUP,,,0.75");
   });

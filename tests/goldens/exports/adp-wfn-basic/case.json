@@ -1,5 +1,5 @@
 {
-  "summary": "ADP Workforce Now paydata (decision F4), the gusto-hours-basic week plus a $150.00 bonus for Marcus. One row per worker and Temp Rate ($18.2500), hours to two decimals rounded up, dollars under code B on their own row, blanks never zeros, CRLF, batch 26101101 (period end 10/11/26, version 01), file PRXYZEPI.csv. Granite: $2,279.88 + $150.00 = $2,429.88. ADP: 40.00 × 18.25 = $730.00 and 4.00 × 18.25 × 1.5 = $109.50 and $150.00 (Marcus); 38.00 × 18.25 = $693.50 (Lucía); 40.00 × 18.25 = $730.00 and 0.62 × 18.25 × 1.5 = $16.9725 → $16.97 (Tran: 37 min written as 0.62 h, rounded up) = $2,429.97, 9 cents more; the notes say so and name the multiples assumed.",
+  "summary": "ADP Workforce Now paydata (decision F4), the gusto-hours-basic week plus a $150.00 bonus for Marcus. One row per worker and Temp Rate ($18.2500), hours to two decimals rounded up, dollars under code B on their own row, blanks never zeros, CRLF, batch 26101101 (period end 10/11/26, version 01), file PRXYZEPI.csv. Tabulado: $2,279.88 + $150.00 = $2,429.88. ADP: 40.00 × 18.25 = $730.00 and 4.00 × 18.25 × 1.5 = $109.50 and $150.00 (Marcus); 38.00 × 18.25 = $693.50 (Lucía); 40.00 × 18.25 = $730.00 and 0.62 × 18.25 × 1.5 = $16.9725 → $16.97 (Tran: 37 min written as 0.62 h, rounded up) = $2,429.97, 9 cents more; the notes say so and name the multiples assumed.",
   "fixture": {
     "format": "adp_wfn_paydata",
     "mappingVersion": "adp-wfn-v1",
@@ -154,6 +154,6 @@
   },
   "notes": [
     "ADP prices O/T Hours at Temp Rate × 1.5: the multiples in the payroll file settings. If ADP is set up with other multiples, its gross will differ.",
-    "Nguyen, Tran — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). ADP pays 0.62 h × 18.2500 × 1.5 = $16.97; Granite computed $16.88 (+$0.09)."
+    "Nguyen, Tran — OT: 37 min written as 0.62 h (0.6166… h exactly, rounded up to the next hundredth so no worked time is lost). ADP pays 0.62 h × 18.2500 × 1.5 = $16.97; Tabulado computed $16.88 (+$0.09)."
   ]
 }

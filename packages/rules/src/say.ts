@@ -315,7 +315,7 @@ export const ENGINE_EN = {
   labelBilledContractMinimum: "Contractual minimum day billed",
   billContractMinimum: " The rate card bills its minimum day, at the bill rate.",
   holidayWithDifferential:
-    " A holiday premium is paid on {date} on a shift that also carries a shift differential; whether the premium stays out of the regular rate depends on the rate for like work on other days ({citation}), which Granite does not work out with a differential yet. Pay this week by hand, or remove the differential or the holiday from that day.",
+    " A holiday premium is paid on {date} on a shift that also carries a shift differential; whether the premium stays out of the regular rate depends on the rate for like work on other days ({citation}), which Tabulado does not work out with a differential yet. Pay this week by hand, or remove the differential or the holiday from that day.",
   whyHolidayNotWorked:
     ' Rule {rule}: {date} is a holiday under the holiday policy "{policy}", the worker did not work that day, and a person confirmed the worker is eligible; it is pay, not hours worked, so it counts toward neither overtime nor the regular rate ({citation}).',
   billHolidayNotWorked: ' Client billed for a holiday not worked under the holiday policy "{policy}", at the bill rate from the rate card.',

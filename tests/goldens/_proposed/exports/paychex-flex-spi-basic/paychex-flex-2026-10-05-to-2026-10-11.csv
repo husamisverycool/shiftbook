@@ -1,5 +1,0 @@
-Client ID,Worker ID,Org,Job Number,Pay Component,Rate,Rate Number,Hours,Units,Line Date,Amount,Check Seq Number,Override State,Override Local,Override Local Jurisdiction,Labor Assignment
-ABC12345,A123,,,Hourly,18.2500,,40.00,,10/11/2026,,,,,,
-ABC12345,A123,,,Overtime 1.5x,18.2500,,0.62,,10/11/2026,,,,,,
-ABC12345,A123,,,Bonus,,,,,10/11/2026,150.00,,,,,
-ABC12345,B456,,,Hourly,18.2500,,38.00,,10/11/2026,,,,,,
