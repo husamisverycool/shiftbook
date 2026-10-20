@@ -39,10 +39,10 @@ function Heading({ title, line }: { title: string; line?: string }) {
 
 type RequestError = "invalid_email" | "invalid_name" | "invalid_agency_name" | "too_many" | "demo" | "generic";
 
-export function SignUpView({ demo, trialDays }: { demo: boolean; trialDays: number }) {
+export function SignUpView({ demo, trialDays, initialEmail }: { demo: boolean; trialDays: number; initialEmail?: string }) {
   const t = useTranslations("signUp");
   const id = useId();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [name, setName] = useState("");
   const [agencyName, setAgencyName] = useState("");
   const [error, setError] = useState<RequestError | null>(null);

@@ -347,3 +347,217 @@
   transition-duration: var(--motion-short) !important;
   transition-timing-function: var(--ease-exit) !important;
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * The website (slice aa, docs/research/website-visual-slice-aa.md). Its own fixed palette, so the
+ * marketing pages read the same in light and dark system settings, as the references do:
+ * Mercury's near-black navy band (#171721) and warm paper (#F6F5F2), the product's indigo accent.
+ * ---------------------------------------------------------------------------------------------- */
+.site {
+  --s-ink: #14151c;
+  --s-ink-2: #1c1d26;
+  --s-ink-3: #262733;
+  --s-paper: #f6f5f2;
+  --s-paper-2: #efede8;
+  --s-card: #ebe8e2;
+  --s-text: #16171d;
+  --s-muted: #67665f;
+  --s-line: rgb(22 23 29 / 0.1);
+  --s-dtext: #ededf3;
+  --s-dmuted: #9b9dab;
+  --s-dline: rgb(255 255 255 / 0.09);
+  --s-accent: oklch(52% 0.17 268);
+  --s-accent-2: oklch(46% 0.17 268);
+  --s-accent-soft: oklch(80% 0.08 268);
+  --s-mint: #dff3e4;
+  --s-green: #1f7a4d;
+  --s-amber: #b45309;
+  color: var(--s-text);
+  background: var(--s-paper);
+}
+
+/* Film grain (Mercury's cards, Vercel's 70px noise at multiply): an SVG turbulence tile. */
+@utility site-grain {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 140px 140px;
+  }
+}
+@utility site-grain-light {
+  &::after {
+    mix-blend-mode: screen;
+    opacity: 0.12;
+  }
+}
+
+/* Logo and name strips (Mercury, Stripe): an endless row, faded at both edges, paused on hover. */
+@keyframes site-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@utility animate-site-marquee {
+  animation: site-marquee 60s linear infinite;
+}
+@utility site-edge-fade {
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Mercury's carousel progress segments: the active one fills over its slide's time. */
+@keyframes site-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+@utility animate-site-fill {
+  transform-origin: left;
+  animation: site-fill 6s linear both;
+}
+
+/* Campfire's line-mask headline: each line rises from below its own clipped box. */
+@keyframes site-rise {
+  from {
+    transform: translateY(105%);
+  }
+}
+@utility site-line {
+  display: block;
+  overflow: clip;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+@utility animate-site-rise {
+  display: block;
+  animation: site-rise 900ms cubic-bezier(0.7, 0, 0.38, 1) both;
+}
+
+/* Campfire's flooding pill: three circles grow across the button on hover, staggered. */
+@utility site-flood {
+  transition: transform 500ms cubic-bezier(0.7, 0, 0.38, 1);
+}
+
+/* Small living details inside product pictures (Cursor's shimmer, Warp's resolving rows). */
+@keyframes site-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@utility animate-site-shimmer {
+  background-image: linear-gradient(90deg, currentColor 0 30%, color-mix(in oklch, currentColor 35%, transparent) 55%, currentColor 70% 100%);
+  background-size: 200% 100%;
+  background-clip: text;
+  color: transparent;
+  animation: site-shimmer 2.5s linear infinite;
+}
+@keyframes site-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@utility animate-site-float {
+  animation: site-float 6s ease-in-out infinite;
+}
+@keyframes site-cursor {
+  0%, 12% { transform: translate(0, 0); }
+  40%, 55% { transform: translate(-150px, 64px); }
+  85%, 100% { transform: translate(0, 0); }
+}
+@utility animate-site-cursor {
+  animation: site-cursor 7s cubic-bezier(0.6, 0, 0.2, 1) infinite;
+}
+@keyframes site-pulse-ring {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@utility animate-site-ring {
+  animation: site-pulse-ring 2.4s cubic-bezier(0.3, 0.8, 0.6, 1) infinite;
+}
+@utility site-crossfade {
+  transition: opacity 500ms var(--ease-move), transform 500ms var(--ease-move);
+}
+@utility site-color-slow {
+  transition: color 300ms var(--ease-hover), background-color 300ms var(--ease-hover), border-color 300ms var(--ease-hover), opacity 300ms var(--ease-hover);
+  &:hover {
+    transition-duration: 60ms;
+  }
+}
+
+/* Warp's resolving rows: "Checking" gives way to the result, once, when the picture is seen. */
+@keyframes site-resolve-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes site-resolve-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animate-site-resolve-out {
+  animation: site-resolve-out 300ms var(--ease-move) both;
+}
+@utility animate-site-resolve-in {
+  animation: site-resolve-in 300ms var(--ease-move) both;
+}
+
+/* Stripe's moving gradient: soft colour fields drifting under a skewed band, slowly and forever. */
+@keyframes site-drift-a {
+  50% {
+    transform: translate(18%, -12%) scale(1.15);
+  }
+}
+@keyframes site-drift-b {
+  50% {
+    transform: translate(-16%, 14%) scale(0.9);
+  }
+}
+@keyframes site-drift-c {
+  50% {
+    transform: translate(10%, 18%) scale(1.2);
+  }
+}
+@utility animate-site-drift-a {
+  animation: site-drift-a 19s ease-in-out infinite;
+}
+@utility animate-site-drift-b {
+  animation: site-drift-b 23s ease-in-out infinite;
+}
+@utility animate-site-drift-c {
+  animation: site-drift-c 29s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-site-marquee,
+  .animate-site-drift-a,
+  .animate-site-drift-b,
+  .animate-site-drift-c,
+  .animate-site-float,
+  .animate-site-cursor,
+  .animate-site-ring,
+  .animate-site-shimmer,
+  .animate-site-fill {
+    animation: none;
+  }
+  .animate-site-rise {
+    animation-name: page-in;
+  }
+  .animate-site-resolve-out,
+  .animate-site-resolve-in {
+    animation-duration: 1ms;
+  }
+}

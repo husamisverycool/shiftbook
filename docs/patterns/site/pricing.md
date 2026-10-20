@@ -1,34 +1,29 @@
 # Pattern: Website pricing (tabulado.com/pricing)
 
-Status: adopted — slice aa (2026-10-20)
-Reference product and screen: Resend's pricing title (a plain title and one line), Linear's and Attio's
-plan card ("Everything in …" list, a specific button label), Mercury's and Resend's few-card pages that
-still read as complete, Gusto's and Warp's pricing FAQs (contract, hidden fees, changing headcount,
-support), Mercury's numbered footnotes.
-Source URL: https://resend.com/pricing
-Source URL: https://linear.app/pricing
-Source URL: https://attio.com/pricing
+Status: adopted — slice aa, second design (2026-10-20)
+Reference product and screen: Ramp's and Mercury's pricing pages (a dark opening band with a centred
+heading; the plan card rising out of it onto the light page), Linear's grouped "what's included" list,
+Check's "not included", Mercury's label-left questions and its centred close.
+Source URL: https://ramp.com/pricing
 Source URL: https://mercury.com/pricing
-Source URL: https://gusto.com/product/pricing
-Source URL: https://www.warp.co/pricing
-Researched: 2026-10-20 (`docs/research/website-slice-aa.md`). Confidence: medium.
+Source URL: https://linear.app/pricing
+Source URL: https://www.checkhq.com
+Researched: 2026-10-20 (`docs/research/website-visual-slice-aa.md`). Confidence: medium.
 
 ## Hierarchy
-1. Title and one line (Resend).
-2. One plan card (Linear, Attio): the plan's name; the price per month as Stripe holds it (or, when it
-   cannot be read, no figure and the free days); the free days; "Start free" (filled) and "Try the demo"
-   (outline, when set); the full included list in groups of three to six (Gusto's groups: reading
-   timesheets, wage rules, payroll files and invoices, getting paid, compliance and onboarding, workers
-   and scheduling, security).
-3. What is not included (Check's split): moving money, running payroll and filing taxes, funding.
-4. Frequently asked questions (Gusto, Warp, Mercury): an accordion; one open at a time is not required.
-5. Footnotes (Mercury).
+1. Dark band: a small uppercase label, the h1 "One plan. Everything in it.", one sentence.
+2. The plan card overlapping the band's foot: at the left the plan name, the monthly price (from Stripe,
+   when set), the free days, "Start free" and "Try the demo" pills and the Stripe footnote; at the right
+   seven groups of included items with checks.
+3. Not included: heading and one line at the left, three items between hairlines at the right.
+4. Questions: heading at the left, the accordion at the right.
+5. Dark close: centred heading and the two pills; then the footer.
 
 ## Interactions
-- The accordion: each question is a button with `aria-expanded`; the answer opens with Primer's state
-  change motion; Enter and Space toggle; Tab moves between questions.
+- Questions open one or several at a time, with the plus turning to a cross.
 
 ## States
-- Price unknown (no Stripe in this deployment): the card says the free days and "Start free" only.
+- No live price: the price line is not shown; everything else stays.
+- No demo address: the demo pills are hidden.
 
 Deviations allowed: none

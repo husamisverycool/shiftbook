@@ -1,12 +1,12 @@
-// Pattern: docs/patterns/site/security.md — Linear's and Mercury's security hero, Resend's honest status
-// row, Mercury's groups of plain controls, Resend's responsible disclosure, Mercury's and Resend's FAQ.
+// Pattern: docs/patterns/site/security.md — Mercury's security band as a page: a dark opening band with a
+// centred heading over its abstract render (rings around a frosted pill), an honest status row of frosted
+// tiles (Resend), Mercury's label-left groups of plain controls on the light page, Resend's responsible
+// disclosure, Mercury's questions, and Mercury's centred close.
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Section, SITE_BUTTON } from "@/components/site/blocks";
+import { Eyebrow, FrostButton, Section } from "@/components/site/blocks";
 import { Faq } from "@/components/site/faq";
 import { SiteFooter } from "@/components/site/site-footer";
-import { Status } from "@/components/shiftbook/status";
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { siteLinks } from "@/server/site/context";
 
@@ -42,56 +42,55 @@ export default async function SiteSecurity({ params }: { params: Promise<{ local
 
   return (
     <>
-      {/* 1. Hero (Linear, Mercury). */}
-      <section aria-labelledby="security-title" className="mx-auto w-full max-w-7xl px-6 pt-16 pb-10 md:pt-24">
-        <h1 id="security-title" className="max-w-[18ch] text-[clamp(2.5rem,4vw+1rem,4rem)] leading-none font-semibold tracking-[-0.03em] text-balance">
+      {/* 1. Dark band: heading over Mercury's rings, then the honest status row (Resend). */}
+      <section aria-labelledby="security-title" className="site-grain site-grain-light relative overflow-hidden bg-[var(--s-ink)] px-6 pt-40 pb-24 text-center text-white md:pt-48">
+        <span aria-hidden className="absolute top-[58%] left-1/2 -z-10 size-[64rem] -translate-x-1/2 -translate-y-1/2 bg-[repeating-radial-gradient(circle,rgba(255,255,255,0.12)_0_1px,transparent_1.5px_22px)] [mask-image:radial-gradient(circle,#000_8%,transparent_60%)]" />
+        <Eyebrow tone="dark">{t("eyebrow")}</Eyebrow>
+        <h1 id="security-title" className="mx-auto max-w-[18ch] text-[clamp(2.5rem,4vw+1rem,4.5rem)] leading-[1.02] font-[450] tracking-[-0.035em] text-balance">
           {t("title")}
         </h1>
-        <p className="mt-5 max-w-[56ch] text-lg leading-relaxed text-muted-foreground md:text-xl">{t("lead")}</p>
-      </section>
-
-      {/* 2. Honest status row (Resend). */}
-      <Section labelledBy="status" className="pt-0 md:pt-0">
-        <h2 id="status" className="sr-only">
-          {t("statusLabel")}
-        </h2>
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <p className="mx-auto mt-6 max-w-[46ch] text-[clamp(1.0625rem,0.4vw+1rem,1.25rem)] leading-relaxed text-white/75">{t("lead")}</p>
+        <h2 className="sr-only">{t("statusLabel")}</h2>
+        <ul className="mx-auto mt-20 grid max-w-[1200px] grid-cols-1 gap-3 text-left sm:grid-cols-2 lg:grid-cols-4">
           {status.map((s) => (
-            <li key={s.label} className="flex flex-col gap-3 rounded-xl border p-5">
-              <span className="text-sm font-medium">{s.label}</span>
-              <Status tone={s.on ? "success" : "neutral"}>{s.on ? t("statusOn") : t("statusNotYet")}</Status>
+            <li key={s.label} className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-white/6 p-5 backdrop-blur-md">
+              <span className="text-[15px] leading-snug text-white">{s.label}</span>
+              <span className={cn("inline-flex items-center gap-2 text-[13px]", s.on ? "text-emerald-300" : "text-[var(--s-dmuted)]")}>
+                <span aria-hidden className={cn("size-1.5 rounded-full", s.on ? "bg-emerald-300" : "bg-white/30")} />
+                {s.on ? t("statusOn") : t("statusNotYet")}
+              </span>
             </li>
           ))}
         </ul>
-      </Section>
+      </section>
 
-      {/* 3. Groups of controls (Mercury's order). */}
-      <Section labelledBy="controls" className="pt-0 md:pt-0">
+      {/* 2. Groups of controls: the label at the left, the plain facts at the right (Mercury). */}
+      <Section labelledBy="controls">
         <h2 id="controls" className="sr-only">
           {t("title")}
         </h2>
-        <div className="divide-y border-y">
+        <div className="flex flex-col">
           {GROUPS.map((g) => (
-            <div key={g.title} className="grid gap-4 py-8 md:grid-cols-[minmax(0,0.75fr)_minmax(0,1.6fr)] md:gap-10">
-              <h3 className="text-lg font-semibold tracking-tight">{t(g.title)}</h3>
-              <ul className="flex flex-col gap-3">
+            <div key={g.title} className="grid gap-4 border-t border-[var(--s-line)] py-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-10">
+              <h3 className="text-[clamp(1.25rem,0.6vw+1rem,1.5rem)] leading-tight font-[450] tracking-[-0.02em]">{t(g.title)}</h3>
+              <ul className="flex flex-col gap-4">
                 {g.items.map((i) => (
-                  <li key={i} className="max-w-[68ch] text-base leading-relaxed text-muted-foreground">
+                  <li key={i} className="max-w-[60ch] text-[17px] leading-relaxed text-[var(--s-text)]/80">
                     {t(i)}
                   </li>
                 ))}
               </ul>
             </div>
           ))}
-          {/* 4. Responsible disclosure (Resend, Mercury), when there is an address to write to. */}
+          {/* 3. Responsible disclosure (Resend, Mercury), when there is an address to write to. */}
           {links.contact && (
-            <div className="grid gap-4 py-8 md:grid-cols-[minmax(0,0.75fr)_minmax(0,1.6fr)] md:gap-10">
-              <h3 className="text-lg font-semibold tracking-tight">{t("reportTitle")}</h3>
-              <p className="max-w-[68ch] text-base leading-relaxed text-muted-foreground">
+            <div className="grid gap-4 border-t border-[var(--s-line)] py-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-10">
+              <h3 className="text-[clamp(1.25rem,0.6vw+1rem,1.5rem)] leading-tight font-[450] tracking-[-0.02em]">{t("reportTitle")}</h3>
+              <p className="max-w-[60ch] text-[17px] leading-relaxed text-[var(--s-text)]/80">
                 {t.rich("report", {
                   address: links.contact,
                   email: (chunks) => (
-                    <a href={`mailto:${links.contact}`} className="font-medium text-accent-text underline-offset-4 hover:underline">
+                    <a href={`mailto:${links.contact}`} className="font-medium text-[var(--s-accent)] underline underline-offset-4">
                       {chunks}
                     </a>
                   ),
@@ -102,34 +101,28 @@ export default async function SiteSecurity({ params }: { params: Promise<{ local
         </div>
       </Section>
 
-      {/* 5. Questions (Mercury, Resend). */}
+      {/* 4. Questions (Mercury). */}
       <Section labelledBy="security-faq" className="pt-0 md:pt-0">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.6fr)]">
-          <h2 id="security-faq" className="text-3xl font-semibold leading-[1.1] tracking-[-0.02em]">
+        <div className="grid gap-8 border-t border-[var(--s-line)] pt-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <h2 id="security-faq" className="text-[clamp(1.5rem,1vw+1.1rem,2rem)] leading-[1.1] font-[450] tracking-[-0.03em]">
             {t("faqTitle")}
           </h2>
           <Faq items={faq} />
         </div>
       </Section>
 
-      {/* 6. Closing call to action (Linear). */}
-      <Section labelledBy="security-closing" className="pt-0 text-center md:pt-0">
-        <div className="flex flex-col items-center gap-6 py-6">
-          <h2 id="security-closing" className="text-[clamp(2rem,2vw+1.5rem,3rem)] leading-[1.05] font-semibold tracking-[-0.03em]">
-            {t("closingTitle")}
-          </h2>
-          <div className="flex flex-wrap justify-center gap-3">
-            <a href={links.signUp} className={cn(buttonVariants(), SITE_BUTTON)}>
-              {nav("start")}
-            </a>
-            {links.demo && (
-              <a href={links.demo} className={cn(buttonVariants({ variant: "outline" }), SITE_BUTTON)}>
-                {nav("demo")}
-              </a>
-            )}
-          </div>
+      {/* 5. Mercury's centred close. */}
+      <section aria-labelledby="security-closing" className="bg-[var(--s-ink)] px-6 pt-32 pb-8 text-center">
+        <h2 id="security-closing" className="text-[clamp(2rem,2.8vw+1rem,3.5rem)] leading-[1.08] font-[450] tracking-[-0.035em] text-white">
+          {t("closingTitle")}
+        </h2>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <a href={links.signUp} className="inline-flex h-12 items-center rounded-full bg-[var(--s-accent)] px-6 text-[15px] font-medium text-white outline-none site-color-slow hover:bg-[var(--s-accent-2)] focus-visible:ring-2 focus-visible:ring-white/70">
+            {nav("start")}
+          </a>
+          {links.demo && <FrostButton href={links.demo}>{nav("demo")}</FrostButton>}
         </div>
-      </Section>
+      </section>
 
       <SiteFooter links={links} locale={locale} page="/security" />
     </>
