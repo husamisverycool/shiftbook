@@ -13,7 +13,7 @@ const LOGOS = [
   { file: "paylocity", name: "Paylocity", height: 26 },
 ] as const;
 
-function svg(file: string): string {
+export function svg(file: string): string {
   return readFileSync(join(process.cwd(), "public/site/logos", `${file}.svg`), "utf8").replace("<svg", '<svg aria-hidden="true" style="height:100%;width:auto;display:block"');
 }
 

@@ -8,8 +8,12 @@ follows Linear's homepage part by part, with Linear's own type scale and colours
 the site's typeface.
 Reference product and screen: Linear's homepage (logo row; statement with three figures; product sections
 with a two-line title, a grey paragraph, a product scene and a "Features" row; changelog; pre-footer).
-The opening keeps Mercury's photograph and email field and the self-playing app (Cursor, Granola).
+Between the product sections, three parts that are not the product (owner, 2026-10-20; plan
+`.claude/plans/website-interludes.md`): Raycast's "What else can Raycast do?", Stripe's "Book of the week"
+card and Stripe's "Connect to existing systems" diagram. The opening keeps Mercury's photograph and email field and the self-playing app (Cursor, Granola).
 Source URL: https://linear.app
+Source URL: https://www.raycast.com
+Source URL: https://stripe.com
 Source URL: https://mercury.com
 Source URL: https://cursor.com
 Researched: 2026-10-20 (linear.app's markup and layout stylesheet read directly; measured at 1440px).
@@ -44,6 +48,27 @@ lines and the exporters' files.
    bottom, with one brighter panel in front (a client's text thread; California's hours-by-day chart with
    the 8- and 12-hour lines; a client's approval email; the file's control totals); then "Features" at the
    left and the feature names in two columns split by a hairline, each with a "+" that opens one sentence.
+   Between them, in this order:
+   a. After Intake — "What else does Tabulado do?" (Raycast): left column about 400px, a 24px white
+      question, then one paragraph of eight short true sentences at 24px on 38px lines, grey except the
+      current one, white with a faint glow; under it a chip (icon and name) and a two-line 14px grey
+      caption; at the right a window over a dim striped backdrop, its panel in front showing what the
+      sentence does (two readings side by side, nicknames matched, pay lines with the engine's explanation,
+      the Paychex file, approvals, reminders, last four digits only, Illinois' 720-hour counts). Moves on
+      every 3.2s while on screen; pointing at or focusing a sentence holds it; arrow keys step.
+   b. After Wage rules — "From the rule book" (Stripe's book card): one wide card about 590px tall; the
+      left two-fifths a raised panel with a page of the law (the official text, verbatim, in English, on
+      an off-white page with its heading and citation); the right the label, two arrows, the rule's name
+      (32px), the citation (20px grey), a 17px paragraph on how Tabulado pays it, "Read" with links to the
+      official text and to the pay lines; five short bars, one per rule book (federal, California,
+      Illinois, Massachusetts, New Jersey).
+   c. After Approvals — "One way in. One file out." (Stripe's diagram): a 32px heading and a 20px grey
+      paragraph at the top left; a 1040 x 560 field of fine dots fading at its edges; Tabulado's dark
+      square in the middle; dotted lines to pills ("Read twice", "Wage rules", "Dated changes", "Payroll
+      file", "Invoices"); the six ways hours arrive as tiles at the left; the five rule books as slots
+      above, filling in one by one; the five payroll systems' wordmarks in a tray at the right; three
+      clients as dashed slots below; "Your bank, not connected" as a dashed box with no line. Phones: the
+      same pieces as a list.
 5. Changelog (Linear): "Rule changes"; one hairline with a dot over each of four entries, the newest lit;
    each entry a title, its citation (two lines at most) and its date — from the rule tables.
 6. Pre-footer (Linear): centred 72px two-sentence title, at most 16 characters a line; Linear's light and
@@ -53,6 +78,8 @@ lines and the exporters' files.
 ## Interactions
 - Arrivals from a blur on headings, scenes and rows; the opening's player runs only while on screen and
   holds still under reduced motion.
+- The rule book's arrows and bars are buttons; the diagram is a picture with its words also listed for
+  phones and screen readers.
 - Feature names are native disclosures (keyboard and screen readers work without script).
 
 ## States

@@ -8782,7 +8782,121 @@
           "note": "Gusto pays 0.62 hours for 37 minutes, rounded up so no time is lost. That is the 9 cents."
         }
       },
-      "trademarks": "Gusto, ADP, Paychex, QuickBooks and Paylocity are trademarks of their owners. Tabulado writes files their systems import and is not affiliated with them."
+      "trademarks": "Gusto, ADP, Paychex, QuickBooks and Paylocity are trademarks of their owners. Tabulado writes files their systems import and is not affiliated with them.",
+      "whatElse": {
+        "title": "What else does Tabulado do?",
+        "more": "And a good deal more.",
+        "items": {
+          "read": {
+            "sentence": "Reads every timesheet twice.",
+            "name": "Two readings",
+            "caption": "Two separate readings of every page. Only the hours where they disagree come to you."
+          },
+          "names": {
+            "sentence": "Matches nicknames to your roster.",
+            "name": "Roster matching",
+            "caption": "“Bobby J.” in Monday’s email is Robert Jones in your records."
+          },
+          "explain": {
+            "sentence": "Explains every pay line.",
+            "name": "Pay lines",
+            "caption": "The hours, the rule, the rate and the arithmetic, in one sentence."
+          },
+          "file": {
+            "sentence": "Writes the Paychex file.",
+            "name": "Payroll file",
+            "caption": "In the layout Paychex imports, checked against the pay lines to the cent."
+          },
+          "approve": {
+            "sentence": "Sends each client an approval link.",
+            "name": "Client approval",
+            "caption": "One link for one client and one week. Nothing to sign up for."
+          },
+          "remind": {
+            "sentence": "Reminds clients who pay late.",
+            "name": "Collections",
+            "caption": "Reminders on the days you choose, until the invoice is paid."
+          },
+          "ssn": {
+            "sentence": "Shows only the last four.",
+            "name": "Social Security numbers",
+            "caption": "Full numbers stay encrypted. Only the Owner can look one up, and must give a reason."
+          },
+          "il720": {
+            "sentence": "Counts Illinois’s 720 hours.",
+            "name": "Illinois equal pay",
+            "caption": "When a temporary worker passes 720 hours at one client, the equal pay rate starts."
+          }
+        },
+        "panel": {
+          "worker": "Worker",
+          "first": "First",
+          "second": "Second",
+          "balanced": "Balanced",
+          "approved": "Approved",
+          "opened": "Opened",
+          "sent": "Sent",
+          "paid": "Paid",
+          "reminded": "Reminded",
+          "due": "Due Friday",
+          "reveal": "Full number: Owner only, with a reason"
+        }
+      },
+      "ruleBook": {
+        "label": "From the rule book",
+        "previous": "Previous law",
+        "next": "Next law",
+        "books": "Rule books",
+        "read": "Read",
+        "official": "The official text",
+        "payLines": "How it is paid",
+        "laws": {
+          "federal": {
+            "book": "Federal",
+            "title": "Over 40 hours in a week",
+            "body": "The federal rule under every other one. Tabulado adds up each worker’s week across every client, and pays the hours past 40 at one and a half times the regular rate, with bonuses and shift premiums counted into that rate."
+          },
+          "california": {
+            "book": "California",
+            "title": "Over 8 hours in a day",
+            "body": "California counts the day as well as the week. Tabulado pays time and a half past 8 hours, double time past 12, and the seventh day of the week its own way, and never pays the same hour twice."
+          },
+          "illinois": {
+            "book": "Illinois",
+            "title": "Equal pay after 720 hours",
+            "body": "Illinois asks staffing agencies to match the client’s own pay once a temporary worker passes 720 hours at that client. Tabulado keeps the count for every worker and client, and starts the equal pay rate on the right day."
+          },
+          "massachusetts": {
+            "book": "Massachusetts",
+            "title": "Over 40 hours, Massachusetts",
+            "body": "Massachusetts has its own overtime law beside the federal one. Tabulado follows both and names the one each pay line used."
+          },
+          "newJersey": {
+            "book": "New Jersey",
+            "title": "Sent, and not used",
+            "body": "Under New Jersey’s Temporary Workers’ Bill of Rights, a worker sent to a client and not put to work is owed at least four hours. Tabulado adds that pay line when a client sends someone home."
+          }
+        }
+      },
+      "connections": {
+        "title": "One way in. One file out.",
+        "body": "Hours arrive however your clients send them. They leave as the file your payroll system imports and an invoice for each client. Your bank is never connected.",
+        "readTwice": "Read twice",
+        "rules": "Wage rules",
+        "changes": "Dated changes",
+        "file": "Payroll file",
+        "invoices": "Invoices",
+        "bank": "Your bank, not connected",
+        "books": [
+          "Federal",
+          "California",
+          "Illinois",
+          "Massachusetts",
+          "New Jersey"
+        ],
+        "sources": "Email, texts, photos, spreadsheets, time clocks and client portals",
+        "clients": "One invoice for each client"
+      }
     }
   }
 }

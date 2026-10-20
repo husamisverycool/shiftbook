@@ -1,7 +1,8 @@
 // Pattern: docs/patterns/site.md — Linear's homepage, part for part and at its measured sizes (linear.app,
 // 2026-10-20; decision 0048): the hero (unchanged, owner); the logo row with its caption; the statement and
 // its three figures; four product sections (title, description, a dim product scene with one panel in front,
-// a Features row); the changelog; the centred pre-footer; the footer.
+// a Features row), with Raycast's lit sentences, Stripe's book card (a page of the law) and Stripe's systems
+// diagram between them; the changelog; the centred pre-footer; the footer.
 import type { Metadata } from "next";
 import Image from "next/image";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
@@ -15,6 +16,9 @@ import { Logos } from "@/components/site/linear/logos";
 import { ApprovalsScene, FileScene, IntakeScene, RulesScene } from "@/components/site/linear/scenes";
 import { Keyline, ProductSection } from "@/components/site/linear/section";
 import { Statement } from "@/components/site/linear/statement";
+import { Connections, type ConnectionsText } from "@/components/site/linear/connections";
+import { RuleBook } from "@/components/site/linear/rule-book";
+import { WhatElse } from "@/components/site/linear/what-else";
 import { getEngineSay } from "@/components/shiftbook/engine-say-server";
 import { siteLinks } from "@/server/site/context";
 import { ruleUpdates } from "@/server/site/rule-updates";
@@ -109,9 +113,14 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
         <Keyline />
         <ProductSection id="intake-title" title={v("intake.title")} body={v("intake.body")} scene={<IntakeScene />} featuresLabel={v("featuresLabel")} features={features("intake")} />
         <Keyline />
+        <WhatElse id="what-else-title" demo={demo} />
+        <Keyline />
         <ProductSection id="rules-title" title={v("rules.title")} body={v("rules.body")} scene={<RulesScene demo={demo} days={days} />} featuresLabel={v("featuresLabel")} features={features("rules")} />
+        <RuleBook id="rule-book-title" />
         <Keyline />
         <ProductSection id="approvals-title" title={v("approvals.title")} body={v("approvals.body")} scene={<ApprovalsScene />} featuresLabel={v("featuresLabel")} features={features("approvals")} />
+        <Keyline />
+        <Connections id="connections-title" text={v.raw("connections") as ConnectionsText} />
         <Keyline />
         <ProductSection
           id="files-title"

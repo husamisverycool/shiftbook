@@ -8782,7 +8782,121 @@
           "note": "Gusto paga 0.62 horas por 37 minutos, redondeado hacia arriba para no perder tiempo. Esos son los 9 centavos."
         }
       },
-      "trademarks": "Gusto, ADP, Paychex, QuickBooks y Paylocity son marcas de sus dueños. Tabulado escribe archivos que importan sus sistemas y no está afiliado con ellos."
+      "trademarks": "Gusto, ADP, Paychex, QuickBooks y Paylocity son marcas de sus dueños. Tabulado escribe archivos que importan sus sistemas y no está afiliado con ellos.",
+      "whatElse": {
+        "title": "¿Qué más hace Tabulado?",
+        "more": "Y bastante más.",
+        "items": {
+          "read": {
+            "sentence": "Cada hoja de horas, leída dos veces.",
+            "name": "Dos lecturas",
+            "caption": "Dos lecturas separadas de cada página. Solo le llegan las horas en que no coinciden."
+          },
+          "names": {
+            "sentence": "Apodos reconocidos en su lista de trabajadores.",
+            "name": "Lista de trabajadores",
+            "caption": "“Bobby J.” en el correo del lunes es Robert Jones en sus registros."
+          },
+          "explain": {
+            "sentence": "Cada línea de pago, explicada.",
+            "name": "Líneas de pago",
+            "caption": "Las horas, la regla, la tarifa y la cuenta, en una frase."
+          },
+          "file": {
+            "sentence": "El archivo para Paychex, ya escrito.",
+            "name": "Archivo de nómina",
+            "caption": "Con el formato que Paychex importa, cotejado con las líneas de pago hasta el centavo."
+          },
+          "approve": {
+            "sentence": "Un enlace de aprobación para cada cliente.",
+            "name": "Aprobación del cliente",
+            "caption": "Un enlace por cliente y por semana. Sin cuentas que crear."
+          },
+          "remind": {
+            "sentence": "Recordatorios a los clientes que pagan tarde.",
+            "name": "Cobros",
+            "caption": "Recordatorios en los días que usted elija, hasta que se pague la factura."
+          },
+          "ssn": {
+            "sentence": "Solo los últimos cuatro dígitos a la vista.",
+            "name": "Números de Seguro Social",
+            "caption": "Los números completos van cifrados. Solo el Propietario puede consultarlos, y debe dar un motivo."
+          },
+          "il720": {
+            "sentence": "Las 720 horas de Illinois, contadas.",
+            "name": "Igualdad salarial en Illinois",
+            "caption": "Cuando un trabajador temporal pasa de 720 horas con un cliente, empieza la tarifa de igualdad salarial."
+          }
+        },
+        "panel": {
+          "worker": "Trabajador",
+          "first": "Primera",
+          "second": "Segunda",
+          "balanced": "Cuadrado",
+          "approved": "Aprobado",
+          "opened": "Abierto",
+          "sent": "Enviado",
+          "paid": "Pagada",
+          "reminded": "Recordada",
+          "due": "Vence el viernes",
+          "reveal": "Número completo: solo el Propietario, con un motivo"
+        }
+      },
+      "ruleBook": {
+        "label": "Del libro de reglas",
+        "previous": "Ley anterior",
+        "next": "Ley siguiente",
+        "books": "Libros de reglas",
+        "read": "Leer",
+        "official": "El texto oficial (en inglés)",
+        "payLines": "Cómo se paga",
+        "laws": {
+          "federal": {
+            "book": "Federal",
+            "title": "Más de 40 horas en la semana",
+            "body": "La regla federal, debajo de todas las demás. Tabulado suma la semana de cada trabajador en todos sus clientes y paga las horas que pasan de 40 a una vez y media la tarifa regular, con bonos y primas de turno incluidos en esa tarifa."
+          },
+          "california": {
+            "book": "California",
+            "title": "Más de 8 horas en un día",
+            "body": "California cuenta el día además de la semana. Tabulado paga una vez y media después de 8 horas, el doble después de 12, y el séptimo día de la semana a su manera, sin pagar nunca la misma hora dos veces."
+          },
+          "illinois": {
+            "book": "Illinois",
+            "title": "Igualdad salarial después de 720 horas",
+            "body": "Illinois pide a las agencias igualar el pago del propio cliente cuando un trabajador temporal pasa de 720 horas con ese cliente. Tabulado lleva la cuenta de cada trabajador y cliente, y empieza la tarifa de igualdad salarial el día que corresponde."
+          },
+          "massachusetts": {
+            "book": "Massachusetts",
+            "title": "Más de 40 horas, Massachusetts",
+            "body": "Massachusetts tiene su propia ley de horas extra junto a la federal. Tabulado sigue las dos y nombra la que usó cada línea de pago."
+          },
+          "newJersey": {
+            "book": "Nueva Jersey",
+            "title": "Enviado y no utilizado",
+            "body": "Según la Carta de Derechos de los Trabajadores Temporales de Nueva Jersey, a un trabajador enviado a un cliente que no lo pone a trabajar se le deben al menos cuatro horas. Tabulado agrega esa línea de pago cuando un cliente manda a alguien a casa."
+          }
+        }
+      },
+      "connections": {
+        "title": "Una sola entrada. Un archivo de salida.",
+        "body": "Las horas llegan como sus clientes las envíen. Salen como el archivo que importa su sistema de nómina y una factura para cada cliente. Su banco nunca se conecta.",
+        "readTwice": "Dos lecturas",
+        "rules": "Reglas salariales",
+        "changes": "Cambios con fecha",
+        "file": "Archivo de nómina",
+        "invoices": "Facturas",
+        "bank": "Su banco, sin conectar",
+        "books": [
+          "Federal",
+          "California",
+          "Illinois",
+          "Massachusetts",
+          "Nueva Jersey"
+        ],
+        "sources": "Correos, mensajes de texto, fotos, hojas de cálculo, relojes de entrada y portales de clientes",
+        "clients": "Una factura para cada cliente"
+      }
     }
   }
 }
