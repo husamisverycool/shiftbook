@@ -144,6 +144,15 @@ export interface StripeApi {
   /** Every subscription of the customer, whatever its status (the newest 100). */
   listSubscriptions(customer: string): Promise<SubscriptionFacts[]>;
   getCheckoutSession(id: string): Promise<CheckoutSessionFacts>;
+  /** A price's amount and interval, for the website's pricing page (slice aa). */
+  getPrice?(id: string): Promise<PriceFacts>;
+}
+
+export interface PriceFacts {
+  /** Integer cents; null when Stripe gives no whole-cent amount (tiered or custom prices). */
+  unitAmountCents: number | null;
+  currency: string | null;
+  interval: "day" | "week" | "month" | "year" | null;
 }
 
 export class StripeHttp implements StripeApi {
@@ -174,6 +183,18 @@ export class StripeHttp implements StripeApi {
       throw new StripeError(`Stripe refused the request (${response.status} ${type}${code ? ` ${code}` : ""}).`, response.status, code);
     }
     return answer;
+  }
+
+  async getPrice(id: string): Promise<PriceFacts> {
+    if (!PRICE_ID.test(id)) throw new StripeError("Not a price id.", 400);
+    const r = await this.call("GET", `/prices/${id}`);
+    const unit = typeof r.unit_amount === "number" && Number.isInteger(r.unit_amount) && r.unit_amount >= 0 ? r.unit_amount : null;
+    const interval = record(r.recurring)?.interval;
+    return {
+      unitAmountCents: unit,
+      currency: typeof r.currency === "string" && /^[a-z]{3}$/.test(r.currency) ? r.currency : null,
+      interval: interval === "day" || interval === "week" || interval === "month" || interval === "year" ? interval : null,
+    };
   }
 
   async createCustomer(input: { agencyId: string; name: string; email: string; idempotencyKey: string }) {

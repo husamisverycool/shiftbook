@@ -282,6 +282,22 @@
   animation: page-in var(--motion-short) var(--ease-enter);
 }
 
+/*
+ * The website's hero heading (slice aa; Linear's per-line reveal, softened to Attio's blur and lift):
+ * each line from transparent, 4px blur and 8px lower, over Primer's medium duration with the enter
+ * easing. Reduced motion keeps the fade only (below).
+ */
+@keyframes site-line-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(8px);
+  }
+}
+@utility animate-site-line-in {
+  animation: site-line-in var(--motion-medium) var(--ease-enter) both;
+}
+
 /* Carbon skeleton: a slow 3000ms ease-in-out pulse. */
 @keyframes skeleton-pulse {
   50% {
@@ -313,6 +329,9 @@
   .animate-skeleton,
   .animate-pulse {
     animation: none;
+  }
+  .animate-site-line-in {
+    animation-name: page-in;
   }
 }
 

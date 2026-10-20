@@ -58,12 +58,6 @@ const nextConfig: NextConfig = {
       })),
     ];
   },
-  async redirects() {
-    return [
-      // Home is each language's root (decision 0029).
-      { source: "/", destination: "/en", permanent: false },
-    ];
-  },
 };
 
 export default withNextIntl(nextConfig);
