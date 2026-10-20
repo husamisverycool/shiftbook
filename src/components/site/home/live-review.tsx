@@ -46,7 +46,8 @@ export interface LiveReviewLabels {
   sample: string;
   pause: string;
   play: string;
-  chips: [string, string, string, string];
+  read1: string;
+  read2: string;
 }
 
 export interface LiveReviewLine {
@@ -139,21 +140,27 @@ export function LiveReview({ l, lines, total, file }: { l: LiveReviewLabels; lin
     <div ref={ref} className="relative mx-auto w-full max-w-[1120px] [perspective:2000px]">
       {/* Linear's lit floor. */}
       <div aria-hidden className="absolute inset-x-[8%] -bottom-24 h-48 rounded-[50%] bg-[radial-gradient(closest-side,rgba(130,140,255,0.35),transparent)] blur-2xl" />
-      {/* Deel's status chips, floating at different depths over the photograph. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-20 hidden xl:block">
-        {[
-          { at: "-top-6 -left-24", delay: "0ms", dot: "bg-emerald-500" },
-          { at: "top-28 -right-28", delay: "900ms", dot: "bg-amber-500" },
-          { at: "top-[58%] -left-28", delay: "1800ms", dot: "bg-[var(--s-accent)]" },
-          { at: "-bottom-6 -right-20", delay: "2700ms", dot: "bg-emerald-500" },
-        ].map((c, i) => (
-          <span key={c.at} className={cn("absolute animate-page-in", c.at)} style={{ animationDelay: `${700 + i * 140}ms` }}>
-            <span className={cn("flex items-center gap-2 rounded-xl bg-white/92 px-3.5 py-2.5 text-[13px] font-medium whitespace-nowrap text-[var(--s-text)] shadow-[0_18px_40px_-14px_rgba(8,9,20,0.6)] ring-1 ring-black/5 backdrop-blur-md", !still && "animate-site-float")} style={{ animationDelay: c.delay }}>
-              <span className={cn("size-2 rounded-full", c.dot)} />
-              {l.chips[i]}
-            </span>
-          </span>
-        ))}
+      {/* Linear's floating window over the frame: the one question the week has for a person. */}
+      <div className="absolute -right-6 -bottom-16 z-20 hidden w-[310px] animate-page-in [animation-delay:900ms] lg:block xl:-right-16">
+        <div className="overflow-hidden rounded-xl bg-[#14151c]/95 text-white shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/12 backdrop-blur-xl">
+          <div className="flex items-center gap-2 border-b border-white/[0.08] px-3.5 py-2.5 text-[12px]">
+            <TabuladoMark className="size-3.5 text-white" />
+            <span className="font-medium">{l.toCheck}</span>
+            <span className={cn("ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium site-crossfade", decided ? "bg-emerald-400/15 text-emerald-300" : "bg-amber-400/15 text-amber-300")}>{decided ? l.kept : "1"}</span>
+          </div>
+          <div className="px-3.5 py-3">
+            <p className="text-[12px] leading-snug text-white/85">Robert Jones · {l.disagree}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-center text-[11px]">
+              {["8", "6"].map((n, i) => (
+                <span key={n} className={cn("rounded-lg py-2 ring-1 site-crossfade", i === 0 && decided ? "bg-white text-[var(--s-text)] ring-white" : "bg-white/[0.04] ring-white/10")}>
+                  <span className="block text-[10px] text-current opacity-60">{i === 0 ? l.read1 : l.read2}</span>
+                  <span className="text-[18px] font-medium tabular-nums">{n}</span>
+                </span>
+              ))}
+            </div>
+            <span className={cn("mt-3 flex h-8 items-center justify-center rounded-full text-[12px] font-medium site-crossfade", decided ? "bg-emerald-500/15 text-emerald-300" : "bg-white text-[var(--s-text)]")}>{decided ? l.kept : l.keep}</span>
+          </div>
+        </div>
       </div>
       <div
         className="relative origin-top overflow-hidden rounded-2xl bg-white text-[var(--s-text)] shadow-[0_50px_100px_-30px_rgba(8,9,20,0.75),0_30px_60px_-30px_rgba(8,9,20,0.6)] ring-1 ring-white/10"

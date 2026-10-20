@@ -93,7 +93,7 @@ function Stage({ p, l }: { p: number; l: MondayLabels }) {
   };
   const card = "absolute rounded-xl bg-white p-3 shadow-[0_18px_40px_-18px_rgba(22,23,29,0.45)] ring-1 ring-black/5";
   return (
-    <div className="site-grain relative aspect-[16/11] w-full [container-type:inline-size] overflow-hidden rounded-3xl bg-[var(--s-card)] text-[var(--s-text)] sm:aspect-[16/9]">
+    <div className="site-dots relative aspect-[16/11] w-full [container-type:inline-size] overflow-hidden rounded-3xl bg-white text-[var(--s-text)] ring-1 ring-black/[0.06] sm:aspect-[16/9]">
       {/* The tangle's dashed lines. */}
       <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full" style={{ opacity: 0.9 - seg(p, 0.1, 0.4) }}>
         {LINKS.map(([a, b]) => (

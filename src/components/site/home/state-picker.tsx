@@ -54,7 +54,7 @@ export function StatePicker({ views, l }: { views: StateView[]; l: StatePickerLa
         ))}
       </Tabs.List>
 
-      <Tabs.Panel value={state} className="mt-8 grid grid-cols-1 overflow-hidden rounded-2xl bg-white shadow-[0_30px_60px_-30px_rgba(22,23,29,0.3)] ring-1 ring-black/5 outline-none lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <Tabs.Panel value={state} className="mt-8 grid grid-cols-1 overflow-hidden rounded-2xl bg-white text-[var(--s-text)] shadow-[0_30px_60px_-30px_rgba(22,23,29,0.3)] ring-1 ring-black/5 outline-none lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Hours by day. */}
         <figure className="border-b border-[var(--s-line)] p-6 lg:border-r lg:border-b-0">
           <figcaption className="flex items-center justify-between text-[13px] text-[var(--s-muted)]">

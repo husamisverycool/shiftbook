@@ -32,7 +32,7 @@ export function ApproveCard({
   const [shown, setShown] = useState(0);
   const approved = shown > 0;
   return (
-    <div className="flex h-full flex-col gap-5 sm:flex-row">
+    <div className="flex h-full flex-col gap-5 sm:flex-row [.approve-row_&]:sm:flex-col">
       <div className="flex-1 rounded-xl border border-[var(--s-line)] bg-[var(--s-paper)] p-4">
         <p className="text-[13px] font-medium">Prairie Line Manufacturing</p>
         <p className="text-[12px] text-[var(--s-muted)]">Oct 5 – 11</p>

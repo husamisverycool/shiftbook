@@ -1,20 +1,22 @@
-// Pattern: docs/patterns/site.md — the product itself does the work on screen, on sample data, and the
-// visitor sets it off (research: docs/research/website-visual-slice-aa.md). Mercury's photo hero with
-// Cursor's and Granola's self-playing review window rising out of it (Check's flip-up, Linear's lit floor);
-// Ramp's "Systems that never spoke" pinned scroll; Linear's two-circle method diagram beside Increase's
-// checking card; Stripe's country tabs re-paying one week through the real rules engine; Stripe Connect's
-// flow with the real export files; Stripe's bento with live pieces (Resend, Apple, Column, Rippling);
-// Gusto's collage of the demo's own sheets; Mercury's figures, security trio and close; Stripe's rails.
+// Pattern: docs/patterns/site.md — fourth design, each part from a software company's home page: Mercury's
+// photograph under Linear's left-set headline and app frame with its floating window; Stripe's row of
+// names; Linear's statement and FIG drawings; Stripe's bento of live product pieces on fields of colour,
+// two of them standing on paintings as Cursor's do; Ramp's pinned "Monday" on its dot grid; Stripe's
+// indigo band with its burst of light; Linear's dark chapters with page-wide product scenes and feature
+// rows (the real rules engine paying one week in four states; the dated rule changes; Stripe Connect's
+// flow with the real export files); Mercury's security trio; Stripe's colour band at the close.
 import type { Metadata } from "next";
 import Image from "next/image";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLink, FrostButton, Section, TwoTone } from "@/components/site/blocks";
 import { BorderLight } from "@/components/site/border-light";
-import { ApproveCard, MapCard, PhonesCard, SsnCard } from "@/components/site/home/bento";
+import { ApproveCard, MapCard, PhonesCard } from "@/components/site/home/bento";
+import { Chapter } from "@/components/site/home/chapter";
+import { IndigoBand } from "@/components/site/home/indigo-band";
+import { ArtPanel, FileMock, GradientPanel, InvoicesMock, PayLineMock, ReadTwiceMock } from "@/components/site/home/showcase";
 import { Figs } from "@/components/site/home/figs";
 import { LiveReview } from "@/components/site/home/live-review";
 import { Monday } from "@/components/site/home/monday";
-import { ReadTwice } from "@/components/site/home/read-twice";
 import { StatePicker } from "@/components/site/home/state-picker";
 import { WeekFlow } from "@/components/site/home/week-flow";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -53,6 +55,7 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
   const linesOf = (w: (typeof weeks)[number]) => w.lines.map((l) => ({ label: t(`state.${l.type as "REG"}`), hours: hm(l.minutes), amount: usd(l.amountCents), explain: say({ say: l.say, explain: l.explain }) }));
   const dayLabels = [t("state.mon"), t("state.tue"), t("state.wed"), t("state.thu"), t("state.fri"), t("state.sat")];
   const illinois = weeks.find((w) => w.state === "IL")!;
+  const ilOvertime = linesOf(illinois).find((l, i) => illinois.lines[i]!.type === "OT")!;
   const files = siteSampleFiles().map((f) => ({
     format: f.format,
     system: f.system,
@@ -70,21 +73,21 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
 
   return (
     <>
-      {/* 1. Hero: Mercury's photograph and email field; the product rising out of it, playing itself. */}
+      {/* 1. Hero: Mercury's photograph, Linear's left-set headline and app frame with its floating window. */}
       <section aria-labelledby="hero-title" className="relative isolate overflow-hidden bg-[var(--s-ink)] text-white">
         <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-[min(100svh,860px)]">
           <Image src="/site/hero-warehouse.jpg" alt="" fill priority sizes="100vw" className="object-cover object-[50%_60%]" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(14,15,22,0.8)_0%,rgba(14,15,22,0.5)_40%,rgba(20,21,28,0.75)_75%,var(--s-ink)_100%)]" />
         </div>
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center px-6 pt-36 text-center md:pt-44">
+        <div className="mx-auto flex w-full max-w-[1240px] flex-col items-start px-6 pt-36 text-left md:pt-48">
           {/* Linear's headline: each line arrives from a blur. */}
-          <h1 id="hero-title" className="text-[clamp(2.5rem,3.4vw+1rem,4rem)] leading-[1.05] font-[450] tracking-[-0.03em] text-balance">
+          <h1 id="hero-title" className="max-w-[16ch] text-[clamp(2.75rem,4.4vw+1rem,5.25rem)] leading-[1] font-[500] tracking-[-0.045em] text-balance">
             <span className="block animate-site-blur-in">{t("hero.line1")}</span>
             <span className="block animate-site-blur-in [animation-delay:120ms]">{t("hero.line2")}</span>
           </h1>
-          <p className="mt-6 max-w-[52ch] animate-page-in text-[clamp(1.0625rem,0.4vw+1rem,1.25rem)] leading-relaxed text-white/80 [animation-delay:300ms]">{t("hero.lead")}</p>
+          <p className="mt-7 max-w-[46ch] animate-page-in text-[clamp(1.0625rem,0.4vw+1rem,1.25rem)] leading-relaxed text-white/80 [animation-delay:300ms]">{t("hero.lead")}</p>
           {/* Mercury's frosted email field with the button inside it, and the demo beside it. */}
-          <div className="mt-10 flex w-full max-w-[34rem] animate-page-in flex-col items-stretch gap-3 [animation-delay:400ms] sm:flex-row sm:items-center sm:justify-center">
+          <div className="mt-10 flex w-full max-w-[34rem] animate-page-in flex-col items-stretch gap-3 [animation-delay:400ms] sm:flex-row sm:items-center">
             <form action={links.signUp} method="get" className="flex h-12 flex-1 items-center rounded-full border border-white/20 bg-white/12 p-1 pl-5 backdrop-blur-[20px] focus-within:border-white/50">
               <label htmlFor="hero-email" className="sr-only">
                 {t("hero.emailLabel")}
@@ -131,7 +134,8 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
               sample: t("window.sample"),
               pause: t("window.pause"),
               play: t("window.play"),
-              chips: [t("window.chip1"), t("window.chip2"), t("window.chip3"), t("window.chip4")],
+              read1: t("twice.a"),
+              read2: t("twice.b"),
             }}
             lines={linesOf(illinois)}
             total={usd(illinois.totalCents)}
@@ -140,7 +144,30 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* 2. Linear's statement and its three figures, on the hero's dark band. */}
+      {/* 2. Stripe's logo row, as the payroll systems' names, on the hero's band. */}
+      <section aria-labelledby="systems-strip" className="bg-[var(--s-ink)] px-6 pb-24">
+        <div className="mx-auto w-full max-w-[1240px]">
+          <h2 id="systems-strip" className="mb-6 text-center text-[13px] text-[var(--s-dmuted)]">
+            {t("v4.systemsStrip")}
+          </h2>
+          <ul className="grid grid-cols-2 border-t border-l border-white/[0.08] sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { n: "Gusto", c: "text-[22px] font-semibold tracking-[-0.04em] lowercase" },
+              { n: "ADP Workforce Now", c: "text-[15px] font-bold tracking-[-0.01em]" },
+              { n: "RUN", c: "text-[20px] font-black tracking-[0.12em]" },
+              { n: "QuickBooks", c: "text-[19px] font-semibold tracking-[-0.03em]" },
+              { n: "Paychex Flex", c: "text-[18px] font-medium tracking-[-0.02em] italic" },
+              { n: "Paylocity", c: "text-[19px] font-semibold tracking-[-0.035em]" },
+            ].map((x) => (
+              <li key={x.n} className={cn("flex h-24 items-center justify-center border-r border-b border-white/[0.08] px-4 text-white/55 site-color-slow hover:text-white", x.c)}>
+                {x.n}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* 3. Linear's statement and its three figures, on the hero's dark band. */}
       <section aria-labelledby="figs-title" className="bg-[var(--s-ink)] px-6 pb-28 md:pb-36">
         <div className="mx-auto w-full max-w-[1200px]">
           <TwoTone id="figs-title" tone="dark" strong={t("figs.title")} muted={t("figs.titleMuted")} className="mb-14 max-w-[24em] text-[clamp(1.75rem,2vw+1rem,2.75rem)]" />
@@ -148,9 +175,75 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      <div className="relative">
+      <div className="relative bg-[var(--s-paper)]">
         <Rails />
-        {/* 3. Monday at an agency (Ramp's pinned tangle-to-order). */}
+        {/* 4. Stripe's bento: each card a live piece of the product on a field of colour or, as on Cursor's
+            page, standing on a painting. */}
+        <Section labelledBy="bento-title">
+          <TwoTone id="bento-title" strong={t("v4.bentoTitle")} muted={t("v4.bentoTitleMuted")} className="mb-12 max-w-[22em]" />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <BorderLight className="lg:col-span-2" inner="flex h-full flex-col p-2">
+              <p className="px-4 pt-4 pb-5 text-[17px] leading-snug font-medium tracking-[-0.01em]">
+                {t("v4.b1")} <span className="font-normal text-[var(--s-muted)]">{t("v4.b1m")}</span>
+              </p>
+              <ArtPanel art="poppies" focus="50% 40%" className="flex min-h-[380px] flex-1 items-center justify-center p-6 sm:p-10">
+                <ReadTwiceMock l={{ title: t("v4.readTitle"), a: t("twice.a"), b: t("twice.b"), needs: t("twice.needs"), ok: t("twice.ok"), fields: [{ label: t("twice.name"), a: "Bob Jones", b: "Bob Jones" }, { label: t("twice.in"), a: "3:00", b: "3:00" }, { label: t("twice.out"), a: "11:30", b: "11:30" }, { label: t("twice.lunch"), a: "30", b: "30" }, { label: t("twice.total"), a: "8", b: "6" }] }} />
+              </ArtPanel>
+            </BorderLight>
+            <BorderLight className="" inner="flex h-full flex-col p-2">
+              <p className="px-4 pt-4 pb-5 text-[17px] leading-snug font-medium tracking-[-0.01em]">
+                {t("v4.b2")} <span className="font-normal text-[var(--s-muted)]">{t("v4.b2m")}</span>
+              </p>
+              <GradientPanel tone="dawn" className="flex min-h-[380px] flex-1 items-center justify-center p-6">
+                <PayLineMock l={{ title: t("v4.payTitle"), label: ilOvertime.label, hours: ilOvertime.hours, amount: ilOvertime.amount, explain: ilOvertime.explain, law: "Illinois Minimum Wage Law, 820 ILCS 105/4a(1) · Fair Labor Standards Act, 29 U.S.C. § 207(a)(1)" }} />
+              </GradientPanel>
+            </BorderLight>
+            <BorderLight className="" inner="flex h-full flex-col p-2">
+              <p className="px-4 pt-4 pb-5 text-[17px] leading-snug font-medium tracking-[-0.01em]">
+                {t("v4.b3")} <span className="font-normal text-[var(--s-muted)]">{t("v4.b3m")}</span>
+              </p>
+              <GradientPanel tone="ink" className="flex min-h-[340px] flex-1 items-center justify-center p-6">
+                <FileMock filename={files[0]!.filename} lines={files[0]!.preview} />
+              </GradientPanel>
+            </BorderLight>
+            <BorderLight className="" inner="flex h-full flex-col p-2">
+              <p className="px-4 pt-4 pb-5 text-[17px] leading-snug font-medium tracking-[-0.01em]">
+                {t("v4.b4")} <span className="font-normal text-[var(--s-muted)]">{t("v4.b4m")}</span>
+              </p>
+              <ArtPanel art="poplars" focus="50% 30%" className="flex min-h-[340px] flex-1 items-center justify-center p-6">
+                <InvoicesMock l={{ invoice: t("v4.invoice"), due: t("v4.due"), backup: t("v4.backup") }} />
+              </ArtPanel>
+            </BorderLight>
+            <BorderLight className="" inner="flex h-full flex-col p-2">
+              <p className="px-4 pt-4 pb-5 text-[17px] leading-snug font-medium tracking-[-0.01em]">
+                {t("v4.b5")} <span className="font-normal text-[var(--s-muted)]">{t("v4.b5m")}</span>
+              </p>
+              <GradientPanel tone="dusk" className="flex min-h-[340px] flex-1 items-center p-5 [&_.approve-row]:flex-col">
+                <div className="approve-row w-full rounded-xl bg-white/90 p-4 shadow-[0_24px_50px_-20px_rgba(20,21,28,0.45)] backdrop-blur">
+                  <ApproveCard l={{ approve: t("bento.approve"), reset: t("bento.reset"), events: [t("bento.ev1"), t("bento.ev2"), t("bento.ev3"), t("bento.ev4")], now: t("bento.now") }} />
+                </div>
+              </GradientPanel>
+            </BorderLight>
+            <BorderLight className="lg:col-span-2" inner="flex h-full flex-col p-2">
+              <p className="px-4 pt-4 pb-5 text-[17px] leading-snug font-medium tracking-[-0.01em]">
+                {t("v4.b6")} <span className="font-normal text-[var(--s-muted)]">{t("v4.b6m")}</span>
+              </p>
+              <ArtPanel art="field" focus="50% 70%" className="flex min-h-[400px] flex-1 flex-col p-6">
+                <PhonesCard label={t("bento.langLabel")} initial={locale === "es" ? "es" : "en"} />
+              </ArtPanel>
+            </BorderLight>
+            <BorderLight className="" inner="flex h-full flex-col p-2">
+              <p className="px-4 pt-4 pb-5 text-[17px] leading-snug font-medium tracking-[-0.01em]">
+                {t("v4.b7")} <span className="font-normal text-[var(--s-muted)]">{t("v4.b7m")}</span>
+              </p>
+              <div className="flex min-h-[400px] flex-1 items-center rounded-xl bg-[var(--s-paper)] p-6">
+                <MapCard covered={SITE_STATES} label={t("bento.mapLabel")} names={stateNames} />
+              </div>
+            </BorderLight>
+          </div>
+        </Section>
+
+        {/* 5. Monday at an agency (Ramp's pinned tangle-to-order). */}
         <section id="monday" aria-labelledby="monday-title" className="scroll-mt-16">
           <h2 id="monday-title" className="sr-only">
             {t("monday.title")}
@@ -187,69 +280,65 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
           />
         </section>
 
-        {/* 4. Read twice (Linear's method diagram, Increase's checking card). */}
-        <Section labelledBy="twice-title" className="border-t border-[var(--s-line)]">
-          <TwoTone id="twice-title" strong={t("twice.title")} muted={t("twice.titleMuted")} className="mb-14" />
-          <ReadTwice
-            l={{
-              a: t("twice.a"),
-              b: t("twice.b"),
-              agree: t("twice.agree"),
-              differ: t("twice.differ"),
-              cardTitle: t("twice.cardTitle"),
-              checking: t("twice.checking"),
-              ok: t("twice.ok"),
-              needs: t("twice.needs"),
-              replay: t("twice.replay"),
-              fields: [
-                { label: t("twice.name"), a: "Bob Jones", b: "Bob Jones" },
-                { label: t("twice.date"), a: "10/6/26", b: "10/6/26" },
-                { label: t("twice.in"), a: "3:00", b: "3:00" },
-                { label: t("twice.out"), a: "11:30", b: "11:30" },
-                { label: t("twice.lunch"), a: "30", b: "30" },
-                { label: t("twice.total"), a: "8", b: "6" },
-              ],
-            }}
-          />
-        </Section>
-
-        {/* 5. Pick a state (Stripe's country tabs; the real rules engine). */}
-        <Section labelledBy="state-title" className="border-t border-[var(--s-line)]">
-          <TwoTone id="state-title" strong={t("state.title")} muted={t("state.titleMuted")} className="mb-10" />
-          <StatePicker
-            views={weeks.map((w) => ({
-              state: w.state,
-              name: t(`state.${w.state}`),
-              total: usd(w.totalCents),
-              lines: linesOf(w),
-              days: weekByDay(w).map((d, i) => ({ label: dayLabels[i]!, regular: d.regular, overtime: d.overtime, double: d.double, sentHome: d.sentHome })),
-              daily: w.state === "CA",
-            }))}
-            l={{
-              tabsLabel: t("state.tabsLabel"),
-              chartLabel: t("state.chartLabel"),
-              regular: t("state.regular"),
-              overtime: t("state.overtime"),
-              double: t("state.double"),
-              sentHome: t("state.sentHome"),
-              daily8: t("state.daily8"),
-              daily12: t("state.daily12"),
-              weekly: t("state.weekly"),
-              sentNote: t("state.sentNote"),
-              total: t("state.total"),
-              who: t("state.who"),
-              why: t("state.why"),
-            }}
-          />
-          <p className="mt-6 text-[14px] text-[var(--s-muted)]">{t("state.other")}</p>
-        </Section>
       </div>
 
-      {/* 6. Where the week goes (Stripe Connect's flow and file panel), on the dark band. */}
-      <section aria-labelledby="flow-title" className="bg-[var(--s-ink)] px-6 py-28 text-[var(--s-dtext)] md:py-36">
-        <div className="mx-auto w-full max-w-[1200px]">
-          <TwoTone id="flow-title" tone="dark" strong={t("flow.title")} muted={t("flow.titleMuted")} className="mb-16" />
-          <WeekFlow
+      {/* 6. Stripe's indigo band: four product facts and the burst of light. */}
+      <IndigoBand title={t("v4.indigoTitle")} titleLine2={t("v4.indigoTitle2")} label={t("stats.label")} stats={([1, 2, 3, 4] as const).map((n) => ({ value: t(`stats.s${n}`), label: t(`stats.s${n}Label`) }))} />
+
+      {/* 7. Linear's chapter: the same week paid in four states, then the dated rule changes. */}
+      <Chapter id="state-title" title={t("state.title")} body={t("state.titleMuted")} link={{ href: links.pricing, label: t("v4.stateLink") }} featuresLabel={t("v4.featuresLabel")} features={(t.raw("v4.stateF") as [string, string][]).map(([name, text]) => ({ name, text }))}>
+        <GradientPanel tone="ink" className="p-3 sm:p-6 md:p-10">
+            <StatePicker
+              views={weeks.map((w) => ({
+                state: w.state,
+                name: t(`state.${w.state}`),
+                total: usd(w.totalCents),
+                lines: linesOf(w),
+                days: weekByDay(w).map((d, i) => ({ label: dayLabels[i]!, regular: d.regular, overtime: d.overtime, double: d.double, sentHome: d.sentHome })),
+                daily: w.state === "CA",
+              }))}
+              l={{
+                tabsLabel: t("state.tabsLabel"),
+                chartLabel: t("state.chartLabel"),
+                regular: t("state.regular"),
+                overtime: t("state.overtime"),
+                double: t("state.double"),
+                sentHome: t("state.sentHome"),
+                daily8: t("state.daily8"),
+                daily12: t("state.daily12"),
+                weekly: t("state.weekly"),
+                sentNote: t("state.sentNote"),
+                total: t("state.total"),
+                who: t("state.who"),
+                why: t("state.why"),
+              }}
+            />
+          <p className="mt-6 text-[13px] text-white/60">{t("state.other")}</p>
+        </GradientPanel>
+        <div className="mt-16 grid grid-cols-1 gap-10 md:grid-cols-[1fr_2fr]">
+          <div>
+            <h3 className="text-[17px] font-medium text-white">{t("bento.updatesTitle")}</h3>
+            <p className="mt-2 max-w-[32ch] text-[14px] leading-relaxed text-[var(--s-dmuted)]">{t("v4.updatesBody2")}</p>
+          </div>
+          {/* Linear's changelog: a line with a dot per change, the next one lit. */}
+          <ol className="grid grid-cols-1 gap-8 border-t border-white/10 pt-8 sm:grid-cols-2 lg:grid-cols-4">
+            {updates.map((u, i) => (
+              <li key={`${u.state}-${u.scope}-${u.effectiveFrom}`} title={u.citation} className="relative">
+                <span aria-hidden className={cn("absolute -top-[37px] left-0 size-[9px] rounded-full", u.daysUntil > 0 ? "bg-[var(--s-accent-soft)] shadow-[0_0_12px_var(--s-accent-soft)]" : "bg-white/25", i === 0 && "ring-4 ring-[var(--s-accent)]/30")} />
+                <p className="text-[14px] font-medium text-white">{t("bento.minWage", { state: u.scope ?? stateNames[u.state]!, rate: `${usd(u.rateCents)}/h` })}</p>
+                <p className="mt-1 text-[13px] leading-snug text-[var(--s-dmuted)]">{u.citation.split(" — ")[0]}</p>
+                <p className={cn("mt-2 font-mono text-[11px] uppercase", u.daysUntil > 0 ? "text-[var(--s-accent-soft)]" : "text-white/40")}>
+                  {format.dateTime(new Date(`${u.effectiveFrom}T12:00:00Z`), { dateStyle: "medium", timeZone: "UTC" })} · {u.daysUntil > 0 ? t("bento.inDays", { days: u.daysUntil }) : t("bento.inForce")}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Chapter>
+
+      {/* 8. Linear's chapter: where the week goes (Stripe Connect's flow and the real files). */}
+      <Chapter id="flow-title" title={t("flow.title")} body={t("flow.titleMuted")} featuresLabel={t("v4.featuresLabel")} features={(t.raw("v4.flowF") as [string, string][]).map(([name, text]) => ({ name, text }))}>
+        <WeekFlow
             files={files}
             l={{
               sheets: t("flow.sheets"),
@@ -269,81 +358,12 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
               difference: t("flow.difference"),
             }}
           />
-        </div>
-      </section>
+      </Chapter>
 
-      <div className="relative">
-        <Rails />
-        {/* 7. The bento of live pieces (Stripe's cards with the border light). */}
-        <Section labelledBy="bento-title">
-          <TwoTone id="bento-title" strong={t("bento.title")} muted={t("bento.titleMuted")} className="mb-12" />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <BorderLight className="lg:col-span-2" inner="flex flex-col gap-6 p-6">
-              <div>
-                <h3 className="text-[17px] font-medium">{t("bento.approveTitle")}</h3>
-                <p className="mt-1 max-w-[52ch] text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.approveBody")}</p>
-              </div>
-              <ApproveCard l={{ approve: t("bento.approve"), reset: t("bento.reset"), events: [t("bento.ev1"), t("bento.ev2"), t("bento.ev3"), t("bento.ev4")], now: t("bento.now") }} />
-            </BorderLight>
-            <BorderLight inner="flex flex-col gap-5 p-6">
-              <div>
-                <h3 className="text-[17px] font-medium">{t("bento.updatesTitle")}</h3>
-                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.updatesBody")}</p>
-              </div>
-              {/* Linear's changelog line with Ramp's live counter. */}
-              <ol className="relative flex flex-col gap-4 pl-5 before:absolute before:top-1.5 before:bottom-1.5 before:left-[4px] before:w-px before:bg-[var(--s-line)]">
-                {updates.map((u, i) => (
-                  <li key={`${u.state}-${u.scope}-${u.effectiveFrom}`} title={u.citation} className="relative">
-                    <span aria-hidden className={cn("absolute top-1.5 -left-5 size-[9px] rounded-full ring-2 ring-white", u.daysUntil > 0 ? "bg-[var(--s-accent)]" : "bg-[var(--s-muted)]/40", i === 0 && "shadow-[0_0_0_4px_color-mix(in_oklch,var(--s-accent)_20%,transparent)]")} />
-                    <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-[13px]">
-                      <span className="font-medium">{t("bento.minWage", { state: u.scope ?? stateNames[u.state]!, rate: `${usd(u.rateCents)}/h` })}</span>
-                      <span className={cn("text-[12px] tabular-nums", u.daysUntil > 0 ? "font-medium text-[var(--s-accent)]" : "text-[var(--s-muted)]")}>{u.daysUntil > 0 ? t("bento.inDays", { days: u.daysUntil }) : t("bento.inForce")}</span>
-                    </p>
-                    <p className="text-[12px] text-[var(--s-muted)]">{format.dateTime(new Date(`${u.effectiveFrom}T12:00:00Z`), { dateStyle: "medium", timeZone: "UTC" })}</p>
-                    <p className="mt-0.5 line-clamp-1 text-[11px] text-[var(--s-muted)]/80">{u.citation.split(" — ")[0]}</p>
-                  </li>
-                ))}
-              </ol>
-            </BorderLight>
-            <BorderLight inner="flex flex-col gap-4 p-6">
-              <div>
-                <h3 className="text-[17px] font-medium">{t("bento.phonesTitle")}</h3>
-                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.phonesBody")}</p>
-              </div>
-              <PhonesCard label={t("bento.langLabel")} initial={locale === "es" ? "es" : "en"} />
-            </BorderLight>
-            <BorderLight inner="flex flex-col gap-5 p-6">
-              <div>
-                <h3 className="text-[17px] font-medium">{t("bento.mapTitle")}</h3>
-                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.mapBody")}</p>
-              </div>
-              <MapCard covered={SITE_STATES} label={t("bento.mapLabel")} names={stateNames} />
-            </BorderLight>
-            <BorderLight inner="flex flex-col gap-5 p-6">
-              <div>
-                <h3 className="text-[17px] font-medium">{t("bento.ssnTitle")}</h3>
-                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.ssnBody")}</p>
-              </div>
-              <SsnCard l={{ reveal: t("bento.reveal"), why: t("bento.why"), w4: t("bento.w4"), i9: t("bento.i9"), revealed: t.raw("bento.revealed") as string, hide: t("bento.hide"), log: t("bento.log"), past: [t("bento.past1"), t("bento.past2")] }} />
-            </BorderLight>
-          </div>
-        </Section>
-
-      </div>
-
-      {/* 8. Dark band: Mercury's row of figures, then its security trio with abstract renders. */}
-      <section aria-labelledby="security-title" className="overflow-x-clip bg-[var(--s-ink)] px-6 pt-20 pb-28 text-[var(--s-dtext)] md:pb-36">
+      {/* 9. Dark band: Mercury's security trio with abstract renders. */}
+      <section aria-labelledby="security-title" className="overflow-x-clip bg-[var(--s-ink)] px-6 pt-16 pb-28 text-[var(--s-dtext)] md:pb-36">
         <div className="mx-auto w-full max-w-[1200px]">
-          <h2 className="sr-only">{t("stats.label")}</h2>
-          <dl className="grid grid-cols-2 gap-y-10 md:grid-cols-4">
-            {([1, 2, 3, 4] as const).map((n) => (
-              <div key={n} className={cn("flex flex-col-reverse items-center gap-2 px-4 text-center", n > 1 && "md:border-l md:border-[var(--s-dline)]", n % 2 === 0 && "border-l border-[var(--s-dline)] md:border-l")}>
-                <dt className="max-w-[18ch] text-[14px] leading-snug text-[var(--s-dmuted)]">{t(`stats.s${n}Label`)}</dt>
-                <dd className="text-[clamp(2.75rem,3vw+1.5rem,4rem)] leading-none font-[450] tracking-[-0.04em] text-white tabular-nums">{t(`stats.s${n}`)}</dd>
-              </div>
-            ))}
-          </dl>
-          <div className="mt-24 border-t border-[var(--s-dline)] pt-10">
+          <div className="pt-10">
             <TwoTone id="security-title" tone="dark" strong={t("security.title")} muted={t("security.titleMuted")} className="text-[clamp(1.5rem,1vw+1.1rem,2rem)]" />
           </div>
           <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -389,7 +409,7 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
             {t("security.link")}
           </ArrowLink>
 
-          {/* 9. Mercury's centred close with its two pills, and two cards with a round arrow. */}
+          {/* 10. Mercury's centred close with its two pills, and two cards with a round arrow. */}
           <div className="relative isolate mt-36 flex flex-col items-center py-28 text-center">
             {/* Stripe's skewed band of drifting colour, in Tabulado's blue, amber and mint. */}
             <div aria-hidden className="absolute inset-x-[-50vw] inset-y-0 -z-10 -skew-y-6 overflow-hidden">

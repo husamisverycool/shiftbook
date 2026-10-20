@@ -598,8 +598,25 @@
   animation: site-spin 900ms linear infinite;
 }
 
+/* Stripe's light rays: the burst breathes, slowly. */
+@keyframes site-breathe {
+  50% {
+    transform: scale(1.035);
+    opacity: 0.85;
+  }
+}
+@utility animate-site-breathe {
+  animation: site-breathe 7s ease-in-out infinite;
+}
+/* Ramp's canvas: a fine dot grid. */
+@utility site-dots {
+  background-image: radial-gradient(circle at 1px 1px, rgb(22 23 29 / 0.13) 1px, transparent 0);
+  background-size: 18px 18px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-site-marquee,
+  .animate-site-breathe,
   .animate-site-dash,
   .animate-site-dash-y,
   .animate-site-trace,

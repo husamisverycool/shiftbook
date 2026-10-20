@@ -7490,7 +7490,7 @@
       "note3": "Los nombres y las cifras de las imágenes son datos de muestra de la agencia ficticia de la demostración de Tabulado.",
       "copyright": "© {year} Tabulado",
       "notesTitle": "Avisos y notas",
-      "photos": "Fotografía principal en Unsplash de <sulyok>Adrian Sulyok</sulyok>.",
+      "photos": "Fotografía principal en Unsplash de <sulyok>Adrian Sulyok</sulyok>. Pinturas, todas de dominio público: Claude Monet, Campo de amapolas (Giverny), Art Institute of Chicago; Ľudovít Čordák, Paisaje con castillo, y Alois Kalvoda, Paisaje de primavera con álamos, Galería Nacional Eslovaca.",
       "free": "Herramientas gratis"
     },
     "home": {
@@ -7719,6 +7719,87 @@
         "f3Label": "FIG 0.3",
         "f3Title": "Un archivo para cada sistema",
         "f3": "Gusto, ADP, QuickBooks, Paychex o Paylocity, con totales que deben cuadrar."
+      },
+      "v4": {
+        "systemsStrip": "Prepara el archivo que su sistema de nómina ya importa",
+        "bentoTitle": "Todo lo que hay entre la hoja de horas y el cheque.",
+        "bentoTitleMuted": "Cada pieza funcionando con una semana de muestra.",
+        "b1": "Cada hoja, leída dos veces.",
+        "b1m": "Donde las lecturas difieren, decide una persona.",
+        "b2": "Las reglas de cada estado.",
+        "b2m": "Cada línea indica su ley.",
+        "b3": "Cualquier sistema de nómina.",
+        "b3m": "El archivo que ya importa.",
+        "b4": "Una factura por cliente.",
+        "b4m": "Con el respaldo adjunto.",
+        "b5": "Aprobación por enlace.",
+        "b5m": "Sin cuenta para sus clientes.",
+        "b6": "Trabajadores en su idioma.",
+        "b6m": "Turnos, registro de entrada y talones de pago en español.",
+        "b7": "Los estados cubiertos hoy.",
+        "b7m": "Cualquier otro lugar detiene la semana para que la revise una persona.",
+        "readTitle": "Bob Jones · mar 6 oct",
+        "payTitle": "Marcus Bell · semana del 5 oct",
+        "invoice": "Factura",
+        "due": "Vence el 26 oct",
+        "backup": "Hojas de horas adjuntas",
+        "indigoTitle": "Hecho para ser revisado,",
+        "indigoTitle2": "hasta el centavo.",
+        "featuresLabel": "Funciones",
+        "stateLink": "Ver los precios",
+        "stateF": [
+          [
+            "Horas extra diarias y semanales",
+            "Las líneas de 8 y 12 horas de California y la semana de 40 horas, aplicadas en el orden correcto."
+          ],
+          [
+            "Tiempo doble",
+            "Después de 12 horas al día en California, y en el séptimo día."
+          ],
+          [
+            "Enviado a casa, pagado igual",
+            "Pago por presentarse y pago por enviado y no utilizado, cada estado a su manera."
+          ],
+          [
+            "Salario mínimo por ciudad",
+            "Tarifas estatales y locales con sus fechas de inicio; una hora por debajo se completa."
+          ],
+          [
+            "Igualdad salarial de Illinois",
+            "El conteo de 720 horas llevado para cada trabajador en cada cliente."
+          ],
+          [
+            "En espera, nunca adivinado",
+            "Un lugar de trabajo que Tabulado no cubre espera a una persona."
+          ]
+        ],
+        "flowF": [
+          [
+            "Gusto",
+            "Horas por código de ingreso, una fila por trabajador."
+          ],
+          [
+            "ADP Workforce Now",
+            "Lote de datos de pago con el código de su empresa."
+          ],
+          [
+            "RUN Powered by ADP",
+            "Importación de hojas de horas con códigos de tarifa."
+          ],
+          [
+            "Paychex Flex",
+            "Importación estándar de nómina, dieciséis columnas."
+          ],
+          [
+            "Paylocity",
+            "Importación de horas por código de ingreso."
+          ],
+          [
+            "Cualquier otro",
+            "Configure una vez el archivo de muestra de su sistema."
+          ]
+        ],
+        "updatesBody2": "Las reglas de Tabulado llevan sus fechas de inicio, así un cambio entra en vigor el día correcto por sí solo."
       }
     },
     "pricing": {

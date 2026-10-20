@@ -7490,7 +7490,7 @@
       "note3": "Names and figures in the pictures are sample data from Tabulado's made-up demo agency.",
       "copyright": "© {year} Tabulado",
       "notesTitle": "Disclaimers and footnotes",
-      "photos": "Hero photograph on Unsplash by <sulyok>Adrian Sulyok</sulyok>.",
+      "photos": "Hero photograph on Unsplash by <sulyok>Adrian Sulyok</sulyok>. Paintings, all in the public domain: Claude Monet, Poppy Field (Giverny), Art Institute of Chicago; Ľudovít Čordák, Landscape with a Castle, and Alois Kalvoda, Spring Landscape with Poplar Trees, Slovak National Gallery.",
       "free": "Free tools"
     },
     "home": {
@@ -7719,6 +7719,87 @@
         "f3Label": "FIG 0.3",
         "f3Title": "A file for each system",
         "f3": "Gusto, ADP, QuickBooks, Paychex or Paylocity, with totals that must balance."
+      },
+      "v4": {
+        "systemsStrip": "Writes the file your payroll system already imports",
+        "bentoTitle": "Everything between the timesheet and the paycheck.",
+        "bentoTitleMuted": "Each piece working on a sample week.",
+        "b1": "Every timesheet, read twice.",
+        "b1m": "Where the readings differ, a person decides.",
+        "b2": "Each state's rules.",
+        "b2m": "Every line names its law.",
+        "b3": "Any payroll system.",
+        "b3m": "The file it already imports.",
+        "b4": "One invoice per client.",
+        "b4m": "With the backup attached.",
+        "b5": "Approval by link.",
+        "b5m": "No account for your clients.",
+        "b6": "Workers in their language.",
+        "b6m": "Shifts, clock-in and pay stubs in Spanish.",
+        "b7": "The states covered today.",
+        "b7m": "Anywhere else holds the week for a person.",
+        "readTitle": "Bob Jones · Tue, Oct 6",
+        "payTitle": "Marcus Bell · week of Oct 5",
+        "invoice": "Invoice",
+        "due": "Due Oct 26",
+        "backup": "Timesheets attached",
+        "indigoTitle": "Built to be checked,",
+        "indigoTitle2": "down to the cent.",
+        "featuresLabel": "Features",
+        "stateLink": "See the pricing",
+        "stateF": [
+          [
+            "Daily and weekly overtime",
+            "California's 8- and 12-hour lines and the 40-hour week, applied in the right order."
+          ],
+          [
+            "Double time",
+            "Past 12 hours a day in California, and on the seventh day."
+          ],
+          [
+            "Sent home, paid anyway",
+            "Reporting pay and sent-and-not-used pay, each state its own way."
+          ],
+          [
+            "Minimum wage by city",
+            "State and local rates with their start dates; an hour below is topped up."
+          ],
+          [
+            "Illinois equal pay",
+            "The 720-hour count kept for every worker at every client."
+          ],
+          [
+            "Held, never guessed",
+            "A worksite Tabulado doesn't cover waits for a person."
+          ]
+        ],
+        "flowF": [
+          [
+            "Gusto",
+            "Hours by earning code, one row per worker."
+          ],
+          [
+            "ADP Workforce Now",
+            "Paydata batch with your company code."
+          ],
+          [
+            "RUN Powered by ADP",
+            "Time sheet import with rate codes."
+          ],
+          [
+            "Paychex Flex",
+            "Standard payroll import, sixteen columns."
+          ],
+          [
+            "Paylocity",
+            "Time import by earning code."
+          ],
+          [
+            "Anything else",
+            "Map your own system's sample file once."
+          ]
+        ],
+        "updatesBody2": "Tabulado's rules carry their start dates, so a change takes effect on the right day by itself."
       }
     },
     "pricing": {
