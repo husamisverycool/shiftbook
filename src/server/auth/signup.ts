@@ -136,8 +136,11 @@ async function deliverSignupMail(deps: SignupDeps, requestId: string | null, mai
   let ok = true;
   try {
     await deps.mail.send(mail);
-  } catch {
+  } catch (error) {
     ok = false;
+    // The reason only (the email service's answer), never the address: the host's logs say what to fix.
+    const reason = (error instanceof Error ? error.message : String(error)).replace(/[^\s@()]+@[^\s@()]+/g, "[an address]");
+    console.error(`[tabulado] a sign-up email could not be sent: ${reason}`);
   }
   if (!requestId) return;
   await inSignInMode(deps.db, (tx) =>
