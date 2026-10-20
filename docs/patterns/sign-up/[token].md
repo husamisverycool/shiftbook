@@ -31,7 +31,7 @@ Inside the sign-in frame (`_layouts/auth.md`), as the invite page:
 - Create agency → the agency, its Owner and its billing row are made; the authenticator setup opens.
 
 ## States
-- The link is expired (24 hours), already used, replaced by a newer one, or wrong: "This link no
+- The link is expired (an hour; 30 minutes once opened by the code), already used, replaced by a newer one, or wrong: "This link no
   longer works" — start again; **Create your agency** (primary) and **Go to sign in** (outlined).
 - The email signed up meanwhile elsewhere (an invite was accepted): the message says to sign in instead.
 - The passwords differ, or the password breaks the rule: a message under the field.

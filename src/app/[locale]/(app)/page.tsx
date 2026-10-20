@@ -55,15 +55,15 @@ export default async function HomePage({ params, searchParams }: { params: Promi
   const periodHref = period ? { pathname: "/convert", query: { period: period.id, step: period.state === "exported" || period.state === "closed" ? "files" : period.state === "blocked" ? "exceptions" : period.state === "ready" || period.state === "approved" ? "totals" : "upload" } } : "/convert";
   const hrefs: Record<SetupStep, GuideStep["href"]> = {
     agency: "/settings/agency",
-    clients: "/clients",
-    branches: "/settings/branches",
     payroll: "/settings/payroll",
+    team: "/settings/members",
+    clients: "/clients",
     placements: "/job-orders",
     convert: period ? { pathname: "/convert", query: { period: period.id, step: "upload" } } : "/convert",
+    forwarding: "/settings/connections",
     approval: "/approvals",
     files: periodHref,
-    bank: "/bank",
-    ssn: "/workers",
+    subscription: "/settings/billing",
   };
   const steps: GuideStep[] = SETUP_STEPS.map((key) => ({ key, done: view.steps[key], href: hrefs[key] }));
 

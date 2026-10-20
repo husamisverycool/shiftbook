@@ -56,7 +56,7 @@ export class ResendTransport implements MailTransport {
 
   async send(mail: OutgoingMail): Promise<{ providerId: string | null }> {
     const body: Record<string, unknown> = {
-      from: address(this.fromAddress, `${mail.fromName} via Tabulado`),
+      from: address(this.fromAddress, mail.fromName === "Tabulado" ? "Tabulado" : `${mail.fromName} via Tabulado`),
       to: [address(mail.to.email, mail.to.name)],
       ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
       subject: mail.subject,

@@ -31,8 +31,8 @@ export function renderInviteEmail(link: string, invite: { name: string; agencyNa
     { link, label: t("invite.open") },
     { text: t("invite.expires", { date: until }) },
     { text: t("invite.unexpected") },
-    { text: t("footer", { agency: invite.agencyName }) },
-  ]);
+    { footer: t("footer", { agency: invite.agencyName }) },
+  ], { locale });
 }
 
 export function renderResetEmail(link: string, user: { name: string; locale: string; agencyName: string }): RenderedEmail {
@@ -43,18 +43,22 @@ export function renderResetEmail(link: string, user: { name: string; locale: str
     { link, label: t("reset.open") },
     { text: t("reset.expires") },
     { text: t("reset.unexpected") },
-    { text: t("footer", { agency: user.agencyName }) },
-  ]);
+    { footer: t("footer", { agency: user.agencyName }) },
+  ], { locale: user.locale });
 }
 
 /**
- * The sign-up emails (docs/patterns/_emails/sign-up.md, decision 0036): the link that finishes creating
- * the agency, or the note for an email that already signs in. Neither carries anything the requester
+ * The sign-up emails (docs/patterns/_emails/sign-up.md, decision 0036): the code and the link that finish
+ * creating the agency (slice ab), or the note for an email that already signs in. Neither carries anything the requester
  * typed (the address is not proved yet), so neither can carry a stranger's words.
  */
-export function renderSignupEmail(link: string, who: { locale: string }): RenderedEmail {
+export function renderSignupEmail(link: string, code: string, who: { locale: string }): RenderedEmail {
   const t = translator(localeOf(who.locale));
-  return assemble(t("signUp.subject"), [{ text: t("hello") }, { text: t("signUp.intro") }, { link, label: t("signUp.open") }, { text: t("signUp.expires") }, { text: t("signUp.unexpected") }, { text: t("signUp.footer") }]);
+  return assemble(
+    t("signUp.subject"),
+    [{ heading: t("signUp.heading") }, { text: t("signUp.intro") }, { code }, { text: t("signUp.orButton") }, { link, label: t("signUp.open") }, { text: t("signUp.expires") }, { text: t("signUp.unexpected") }, { footer: t("signUp.footer") }],
+    { locale: who.locale, preheader: t("signUp.preheader") },
+  );
 }
 
 export function renderSignupExistingEmail(links: { signIn: string; reset: string }, who: { locale: string }): RenderedEmail {
@@ -66,6 +70,6 @@ export function renderSignupExistingEmail(links: { signIn: string; reset: string
     { link: links.reset, label: t("signUpExisting.reset") },
     { text: t("signUpExisting.invited") },
     { text: t("signUpExisting.unexpected") },
-    { text: t("signUp.footer") },
-  ]);
+    { footer: t("signUp.footer") },
+  ], { locale: who.locale });
 }

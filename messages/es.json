@@ -3542,11 +3542,25 @@
     "copy": "Copiar",
     "copied": "Códigos de recuperación copiados.",
     "saved": "Ya guardé mis códigos de recuperación",
-    "fileName": "shiftbook-codigos-de-recuperacion.txt",
+    "fileName": "tabulado-codigos-de-recuperacion.txt",
     "fileHeader": "Códigos de recuperación de Tabulado para {email}. Cada código funciona una vez.",
     "on": "Su autenticador está activado.",
     "signOut": "Cerrar sesión",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "passkey": {
+      "title": "Inicie sesión más rápido la próxima vez",
+      "body": "Agregue una llave de acceso: la próxima vez, inicie sesión con la huella, la cara o el PIN de este dispositivo en lugar de su contraseña y código. Confirmará con un código de su aplicación de autenticación.",
+      "add": "Agregar una llave de acceso",
+      "adding": "Agregando…",
+      "notNow": "Ahora no",
+      "addedTitle": "Llave de acceso agregada",
+      "addedBody": "La próxima vez, elija «Llave de acceso» en la página de inicio de sesión. Su aplicación de autenticación también sigue funcionando.",
+      "continue": "Continuar",
+      "continuing": "Abriendo…",
+      "failed": "No se agregó la llave de acceso. Inténtelo de nuevo, o elija Ahora no y agréguela después en Su cuenta.",
+      "pageTitle": "Su cuenta está protegida",
+      "pageLine": "Su aplicación de autenticación está activada y sus códigos de recuperación están guardados."
+    }
   },
   "reset": {
     "title": "Restablezca su contraseña",
@@ -3745,12 +3759,15 @@
     },
     "hello": "Hola:",
     "signUp": {
-      "subject": "Termine de crear su agencia en Tabulado",
-      "intro": "Alguien pidió crear una agencia en Tabulado con esta dirección de correo. Si fue usted, elija su contraseña para terminar.",
-      "open": "Elegir su contraseña",
-      "expires": "El enlace funciona una vez, durante 24 horas. Como Propietario de la agencia, a continuación configurará una aplicación de autenticación.",
-      "unexpected": "Si no fue usted, ignore este correo: no se crea nada.",
-      "footer": "Enviado por Tabulado."
+      "subject": "Confirme su correo para crear su agencia",
+      "preheader": "Su código funciona durante una hora. No lo comparta con nadie.",
+      "heading": "Confirme su dirección de correo",
+      "intro": "Escriba este código en la ventana de Tabulado que tiene abierta para terminar de crear su agencia. Funciona en cualquier dispositivo.",
+      "orButton": "O continúe en este navegador:",
+      "open": "Continuar el registro",
+      "expires": "El código y el botón funcionan una vez, durante una hora. Tabulado nunca le pedirá este código por teléfono, chat ni correo.",
+      "unexpected": "Si no intentó crear una agencia en Tabulado, puede ignorar este correo: no se crea nada.",
+      "footer": "Enviado por Tabulado porque se escribió esta dirección para crear una agencia."
     },
     "signUpExisting": {
       "subject": "Usted ya tiene una cuenta de Tabulado",
@@ -4116,8 +4133,8 @@
     "title": "Inicio",
     "showGuide": "Guía de configuración",
     "guide": {
-      "title": "Guía de configuración",
-      "intro": "Estos pasos llevan a una agencia nueva de sus propios datos a una semana de hojas de horas convertida en facturas pagadas. Cada uno se marca como hecho cuando ocurre.",
+      "title": "Termine la configuración",
+      "intro": "Estos pasos llevan a su agencia de sus propios datos a una semana de hojas de horas convertida en archivos de nómina y facturas pagadas. Cada uno se marca cuando ocurre.",
       "progress": "{done} de {total} pasos hechos",
       "hide": "Ocultar la guía",
       "collapse": "Contraer la guía",
@@ -4152,17 +4169,6 @@
           "body": "Se revisa cada regla de pago y luego Tabulado crea el archivo de nómina y la factura de cada cliente con su respaldo.",
           "action": "Abrir el periodo de pago"
         },
-        "bank": {
-          "title": "Empareje un archivo del banco con las facturas",
-          "body": "Importe el CSV de su banco y cada depósito se empareja con las facturas que paga.",
-          "action": "Abrir banco",
-          "demo": "En esta demostración, elija «Usar el archivo de banco de ejemplo» en la página de importación."
-        },
-        "ssn": {
-          "title": "Consulte el número de Seguro Social de un trabajador",
-          "body": "Solo el Propietario puede, con un motivo. El registro de actividad guarda quién lo consultó, cuándo y por qué.",
-          "action": "Abrir trabajadores"
-        },
         "agency": {
           "title": "Agregue los datos de su agencia",
           "body": "Su dirección y teléfono aparecen en las facturas; su zona horaria y el día en que empieza su semana de pago fijan los vencimientos y los periodos de pago.",
@@ -4173,10 +4179,20 @@
           "body": "El condado y la ciudad de un lugar de trabajo deciden qué reglas salariales se aplican, por eso salen de la lista del Censo.",
           "action": "Abrir clientes"
         },
-        "branches": {
-          "title": "Agregue una sucursal",
-          "body": "Las órdenes de trabajo cuentan en el margen de una sucursal; los registros de Illinois nombran sucursales.",
-          "action": "Abrir sucursales"
+        "team": {
+          "title": "Invite a su equipo",
+          "body": "Coordinadores, facturación y su contador inician sesión cada uno con su propia cuenta, solo con lo que su rol necesita.",
+          "action": "Abrir miembros"
+        },
+        "forwarding": {
+          "title": "Reenvíe las hojas de horas a la dirección de su agencia",
+          "body": "Copie la dirección de hojas de horas de su agencia y pida a sus clientes que envíen las horas allí, o cree una regla de reenvío en su correo. Cada correo llega a Convertir por sí solo.",
+          "action": "Copiar la dirección"
+        },
+        "subscription": {
+          "title": "Comience su suscripción",
+          "body": "Siga usando Tabulado después de sus días gratis. Un solo precio mensual; paga con tarjeta en la página de Stripe y puede cancelar cuando quiera.",
+          "action": "Abrir facturación"
         }
       }
     },
@@ -4908,8 +4924,8 @@
   },
   "signUp": {
     "title": "Cree su agencia",
-    "subtitle": "A continuación elegirá una contraseña y una aplicación de autenticación.",
-    "subtitleTrial": "{days, plural, one {El primer día es gratis.} other {Los primeros # días son gratis.}} A continuación elegirá una contraseña y una aplicación de autenticación.",
+    "subtitle": "Confirmará su correo y luego elegirá una contraseña y el inicio de sesión en dos pasos.",
+    "subtitleTrial": "{days, plural, one {El primer día es gratis.} other {Los primeros # días son gratis.}} Sin tarjeta.",
     "email": "Correo del trabajo",
     "name": "Su nombre",
     "agencyName": "Nombre de la agencia",
@@ -4923,15 +4939,29 @@
       "invalid_agency_name": "Escriba el nombre de la agencia (hasta 200 caracteres).",
       "too_many": "Demasiados intentos. Espere una hora e inténtelo de nuevo.",
       "demo": "La demostración no crea agencias.",
-      "generic": "Eso no funcionó. Inténtelo de nuevo."
+      "generic": "Eso no funcionó. Inténtelo de nuevo.",
+      "send_failed": "No pudimos enviar el correo en este momento. Espere un minuto e inténtelo de nuevo."
     },
     "sentTitle": "Revise su correo",
-    "sentBody": "Enviamos un correo a {email}. Abra el enlace que contiene para elegir su contraseña y terminar. El enlace funciona una vez, durante 24 horas.",
-    "sentHint": "¿No llegó nada? Revise su carpeta de correo no deseado, o",
-    "differentEmail": "use otro correo",
+    "sentBody": "Enviamos un código de 6 dígitos a <b>{email}</b>. Funciona durante una hora.",
+    "sentHint": "¿No llegó nada? Revise su carpeta de spam, o",
     "back": "Volver a iniciar sesión",
     "demoBody": "La demostración usa su propia agencia inventada, así que aquí no se crea ninguna agencia. Para recorrerla, continúe como una de las personas de la demostración.",
-    "demoContinue": "Continuar como una persona de la demostración"
+    "demoContinue": "Continuar como una persona de la demostración",
+    "wrongEmail": "¿Correo equivocado?",
+    "codeLabel": "Código del correo",
+    "openGmail": "Abrir Gmail",
+    "openOutlook": "Abrir Outlook",
+    "resend": "envíe un código nuevo",
+    "resendIn": "envíe un código nuevo en {seconds} s",
+    "resent": "Va en camino un código nuevo.",
+    "checking": "Comprobando…",
+    "codeErrors": {
+      "wrong_code": "Ese código no es correcto. Revise el correo, o envíe un código nuevo.",
+      "too_many": "Demasiados intentos. Espere una hora e inténtelo de nuevo.",
+      "demo": "La demostración no crea agencias.",
+      "generic": "Eso no funcionó. Inténtelo de nuevo."
+    }
   },
   "signUpFinish": {
     "title": "Elija su contraseña",
@@ -4939,9 +4969,9 @@
     "email": "Iniciará sesión con {email}.",
     "submit": "Crear la agencia",
     "submitting": "Creando…",
-    "nextSetup": "Los Propietarios necesitan una aplicación de autenticación: la configura a continuación.",
+    "nextSetup": "Después protegerá la cuenta con el inicio de sesión en dos pasos.",
     "expiredTitle": "Este enlace ya no funciona",
-    "expiredBody": "Un enlace de registro funciona una vez, durante 24 horas, y uno más nuevo lo reemplaza. Empiece de nuevo para recibir un enlace nuevo.",
+    "expiredBody": "Un código o enlace de registro funciona una vez, durante una hora, y uno más nuevo lo reemplaza. Empiece de nuevo para recibir un código nuevo.",
     "startAgain": "Cree su agencia",
     "toSignIn": "Ir a iniciar sesión",
     "taken": "Este correo ya inicia sesión en Tabulado. Inicie sesión en su lugar."
@@ -8900,6 +8930,105 @@
         "sources": "Correos, mensajes de texto, fotos, hojas de cálculo, relojes de entrada y portales de clientes",
         "clients": "Una factura para cada cliente"
       }
+    }
+  },
+  "welcome": {
+    "back": "Atrás",
+    "progress": "Paso {step} de {total}",
+    "skip": "Omitir por ahora",
+    "saving": "Guardando…",
+    "agency": {
+      "title": "¿Dónde está su agencia?",
+      "line": "Las facturas y los correos llevan su dirección, y «hoy» sigue su zona horaria.",
+      "street": "Dirección",
+      "city": "Ciudad, estado y código postal",
+      "cityPlaceholder": "Joliet, IL 60431",
+      "phone": "Teléfono (opcional)",
+      "weekHint": "Las horas extra se cuentan en esta semana. Puede cambiarse hasta que se registren horas.",
+      "continue": "Continuar"
+    },
+    "payroll": {
+      "title": "¿Qué sistema de nómina usa?",
+      "line": "Tabulado escribe el archivo de cada semana con el formato que este importa. Usted sigue pagando a su gente allí.",
+      "choose": "Elija su sistema de nómina, u omítalo por ahora.",
+      "other": "Otro",
+      "continue": "Continuar",
+      "generic": "No se guardó. Inténtelo de nuevo, u omítalo y termínelo en Configuración.",
+      "lines": {
+        "gusto_hours_csv": "Importación de horas, por tipo de pago.",
+        "adp_wfn_paydata": "Archivo de lote Paydata.",
+        "adp_run_csv": "Importación de hojas de horas de RUN.",
+        "paychex_flex_csv": "Importación de nómina de Paychex Flex.",
+        "qbo_time_csv": "Importación de horas para QuickBooks Online Payroll.",
+        "qbd_iif": "Archivo de horas para QuickBooks Desktop.",
+        "paylocity_time_csv": "Lote de importación de horas, por código de pago.",
+        "other": "Una PEO, un factor u otro sistema: configure sus columnas en Configuración."
+      },
+      "details": {
+        "companyCode": "Código de empresa de ADP",
+        "companyCodeRun": "Código de empresa de RUN",
+        "clientId": "ID de cliente de Paychex",
+        "customer": "Cliente de QuickBooks Online para las horas",
+        "version": "Versión de QuickBooks Desktop"
+      },
+      "detailRules": {
+        "companyCode": "El código de empresa de ADP tiene 2 o 3 letras mayúsculas o dígitos.",
+        "companyCodeRun": "El código de empresa de RUN tiene hasta 10 letras o dígitos.",
+        "clientId": "El ID de cliente de Paychex tiene hasta 8 letras o dígitos.",
+        "customer": "Escriba un cliente que exista en QuickBooks Online, de hasta 100 caracteres.",
+        "version": "Elija la versión."
+      },
+      "versions": {
+        "later": "2022 o posterior",
+        "earlier": "2021 o anterior (termine en Configuración)"
+      }
+    },
+    "team": {
+      "title": "Invite a su equipo",
+      "line": "Cada persona inicia sesión con su propia cuenta y solo con lo que su rol necesita. Puede agregar más personas cuando quiera.",
+      "name": "Nombre",
+      "email": "Correo de trabajo",
+      "role": "Rol",
+      "send": "Enviar invitación",
+      "sendAnother": "Enviar otra invitación",
+      "sending": "Enviando…",
+      "sent": "Invitación enviada a {email}",
+      "skip": "Omitir por ahora",
+      "finish": "Ir a Inicio",
+      "errors": {
+        "invalid_email": "Escriba su dirección de correo de trabajo.",
+        "invalid_name": "Escriba su nombre.",
+        "email_taken": "Ese correo ya inicia sesión en Tabulado.",
+        "generic": "No se envió la invitación. Inténtelo de nuevo."
+      }
+    }
+  },
+  "onboardingEmail": {
+    "welcome": {
+      "subject": "{agency} está lista en Tabulado",
+      "heading": "Le damos la bienvenida a Tabulado, {name}",
+      "ready": "{agency} está configurada.",
+      "readyTrial": "{agency} está configurada, y sus días gratis duran hasta el {date}.",
+      "nextForward": "Su primer paso: reenvíe las hojas de horas de una semana a {address}. Tabulado lee cada una dos veces y prepara la semana para revisarla.",
+      "nextConvert": "Su primer paso: suba a Convertir las hojas de horas de una semana. Tabulado lee cada una dos veces y prepara la semana para revisarla.",
+      "open": "Abrir Tabulado",
+      "guide": "«Termine la configuración», en su página de Inicio, muestra lo que falta y marca cada paso cuando ocurre.",
+      "footer": "Enviado por Tabulado porque usted creó {agency}."
+    },
+    "nudge": {
+      "heading": "{left, plural, one {Falta un paso} other {Faltan # pasos}} antes de su primera semana",
+      "preheader": "{left, plural, one {Falta un paso} other {Faltan # pasos}} en Termine la configuración.",
+      "hi": "Toma unos minutos. Los siguientes pasos le esperan en su página de Inicio.",
+      "footer": "Enviado por Tabulado porque la configuración de {agency} no está terminada. Estos recordatorios se detienen cuando lo esté, y nunca son más de dos."
+    },
+    "trial": {
+      "subject": "Sus días gratis terminan el {date}",
+      "heading": "{days, plural, one {Queda un día} other {Quedan # días}} de sus días gratis",
+      "preheader": "Comience su suscripción para seguir después del {date}.",
+      "body": "Después del {date}, los cambios en {agency} se pausan hasta que comience una suscripción.",
+      "start": "Comenzar la suscripción",
+      "nothingLost": "No se pierde nada: todo lo que registró se queda, y puede comenzar cuando quiera.",
+      "footer": "Enviado por Tabulado al Propietario de {agency}."
     }
   }
 }

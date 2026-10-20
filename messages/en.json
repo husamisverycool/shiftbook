@@ -3542,11 +3542,25 @@
     "copy": "Copy",
     "copied": "Recovery codes copied.",
     "saved": "I have saved my recovery codes",
-    "fileName": "shiftbook-recovery-codes.txt",
+    "fileName": "tabulado-recovery-codes.txt",
     "fileHeader": "Tabulado recovery codes for {email}. Each code works once.",
     "on": "Your authenticator is on.",
     "signOut": "Sign out",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "passkey": {
+      "title": "Sign in faster next time",
+      "body": "Add a passkey: next time, sign in with this device’s fingerprint, face or PIN instead of your password and code. You will confirm with a code from your authenticator app.",
+      "add": "Add a passkey",
+      "adding": "Adding…",
+      "notNow": "Not now",
+      "addedTitle": "Passkey added",
+      "addedBody": "Next time, choose “Passkey” on the sign-in page. Your authenticator app still works too.",
+      "continue": "Continue",
+      "continuing": "Opening…",
+      "failed": "The passkey wasn’t added. Try again, or choose Not now and add one later in Your account.",
+      "pageTitle": "Your account is protected",
+      "pageLine": "Your authenticator app is on, and your recovery codes are saved."
+    }
   },
   "reset": {
     "title": "Reset your password",
@@ -3745,12 +3759,15 @@
     },
     "hello": "Hello,",
     "signUp": {
-      "subject": "Finish creating your agency on Tabulado",
-      "intro": "Someone asked to create an agency on Tabulado with this email address. If it was you, set your password to finish.",
-      "open": "Set your password",
-      "expires": "The link works once, for 24 hours. As the agency's Owner, you will set up an authenticator app next.",
-      "unexpected": "If it was not you, ignore this email: nothing is created.",
-      "footer": "Sent by Tabulado."
+      "subject": "Confirm your email to create your agency",
+      "preheader": "Your code works for one hour. Never share it.",
+      "heading": "Confirm your email address",
+      "intro": "Enter this code in the Tabulado window you have open to finish creating your agency. It works on any device.",
+      "orButton": "Or continue in this browser:",
+      "open": "Continue sign-up",
+      "expires": "The code and the button work once, for one hour. Tabulado will never ask you for this code by phone, chat or email.",
+      "unexpected": "If you did not try to create an agency on Tabulado, you can ignore this email: nothing is created.",
+      "footer": "Sent by Tabulado because this address was entered to create an agency."
     },
     "signUpExisting": {
       "subject": "You already have a Tabulado account",
@@ -4116,8 +4133,8 @@
     "title": "Home",
     "showGuide": "Setup guide",
     "guide": {
-      "title": "Setup guide",
-      "intro": "These steps take a new agency from its own details to a week of timesheets turned into paid invoices. Each is marked done when it happens.",
+      "title": "Finish setting up",
+      "intro": "These steps take your agency from its own details to a week of timesheets turned into payroll files and paid invoices. Each is checked off when it happens.",
       "progress": "{done} of {total} steps done",
       "hide": "Hide guide",
       "collapse": "Collapse the guide",
@@ -4152,17 +4169,6 @@
           "body": "Every pay rule is checked, then Tabulado makes the payroll file and each client's invoice with its backup.",
           "action": "Open the pay period"
         },
-        "bank": {
-          "title": "Match a bank file to the invoices",
-          "body": "Import your bank's CSV and each deposit is matched to the invoices it pays.",
-          "action": "Open bank",
-          "demo": "In this demo, choose “Use the sample bank file” on the import page."
-        },
-        "ssn": {
-          "title": "Look up a worker's SSN",
-          "body": "Only the Owner can, with a reason. The activity log keeps who looked, when and why.",
-          "action": "Open workers"
-        },
         "agency": {
           "title": "Add your agency's details",
           "body": "Your address and phone go on invoices; your time zone and the day your pay week starts set due dates and pay periods.",
@@ -4173,10 +4179,20 @@
           "body": "A worksite's county and city decide which wage rules apply, so they come from the Census list.",
           "action": "Open clients"
         },
-        "branches": {
-          "title": "Add a branch",
-          "body": "Job orders count in a branch's margin; Illinois registrations name branches.",
-          "action": "Open branches"
+        "team": {
+          "title": "Invite your team",
+          "body": "Coordinators, billing and your accountant each sign in as themselves, with only what their role needs.",
+          "action": "Open members"
+        },
+        "forwarding": {
+          "title": "Forward timesheets to your agency’s address",
+          "body": "Copy your agency’s timesheet address and have clients send hours there, or set a forwarding rule in your inbox. Each email lands in Convert by itself.",
+          "action": "Copy the address"
+        },
+        "subscription": {
+          "title": "Start your subscription",
+          "body": "Keep using Tabulado after your free days. One monthly price; you pay by card on Stripe’s page and can cancel anytime.",
+          "action": "Open billing"
         }
       }
     },
@@ -4908,8 +4924,8 @@
   },
   "signUp": {
     "title": "Create your agency",
-    "subtitle": "You will set a password and an authenticator app next.",
-    "subtitleTrial": "{days, plural, one {The first day is free.} other {The first # days are free.}} You will set a password and an authenticator app next.",
+    "subtitle": "You will confirm your email, then set a password and two-step sign-in.",
+    "subtitleTrial": "{days, plural, one {The first day is free.} other {The first # days are free.}} No card needed.",
     "email": "Work email",
     "name": "Your name",
     "agencyName": "Agency name",
@@ -4923,15 +4939,29 @@
       "invalid_agency_name": "Enter the agency's name (up to 200 characters).",
       "too_many": "Too many tries. Wait an hour and try again.",
       "demo": "The demo makes no agencies.",
-      "generic": "That didn't work. Try again."
+      "generic": "That didn't work. Try again.",
+      "send_failed": "We couldn’t send the email just now. Wait a minute and try again."
     },
     "sentTitle": "Check your email",
-    "sentBody": "We sent an email to {email}. Open the link in it to set your password and finish. The link works once, for 24 hours.",
+    "sentBody": "We sent a 6-digit code to <b>{email}</b>. It works for one hour.",
     "sentHint": "Nothing there? Check your spam folder, or",
-    "differentEmail": "use a different email",
     "back": "Back to sign in",
     "demoBody": "The demo uses its own made-up agency, so no agency is created here. To look around, continue as one of the demo people.",
-    "demoContinue": "Continue as a demo person"
+    "demoContinue": "Continue as a demo person",
+    "wrongEmail": "Wrong email?",
+    "codeLabel": "Code from the email",
+    "openGmail": "Open Gmail",
+    "openOutlook": "Open Outlook",
+    "resend": "send a new code",
+    "resendIn": "send a new code in {seconds}s",
+    "resent": "A new code is on its way.",
+    "checking": "Checking…",
+    "codeErrors": {
+      "wrong_code": "That code isn’t right. Check the email, or send a new code.",
+      "too_many": "Too many tries. Wait an hour and try again.",
+      "demo": "The demo makes no agencies.",
+      "generic": "That didn’t work. Try again."
+    }
   },
   "signUpFinish": {
     "title": "Set your password",
@@ -4939,9 +4969,9 @@
     "email": "You will sign in with {email}.",
     "submit": "Create agency",
     "submitting": "Creating…",
-    "nextSetup": "Owners need an authenticator app: you set it up next.",
+    "nextSetup": "Next, you will protect the account with two-step sign-in.",
     "expiredTitle": "This link no longer works",
-    "expiredBody": "A sign-up link works once, for 24 hours, and a newer one replaces it. Start again to get a new link.",
+    "expiredBody": "A sign-up code or link works once, for one hour, and a newer one replaces it. Start again to get a new code.",
     "startAgain": "Create your agency",
     "toSignIn": "Go to sign in",
     "taken": "This email already signs in to Tabulado. Sign in instead."
@@ -8900,6 +8930,105 @@
         "sources": "Email, texts, photos, spreadsheets, time clocks and client portals",
         "clients": "One invoice for each client"
       }
+    }
+  },
+  "welcome": {
+    "back": "Back",
+    "progress": "Step {step} of {total}",
+    "skip": "Skip for now",
+    "saving": "Saving…",
+    "agency": {
+      "title": "Where is your agency?",
+      "line": "Invoices and emails carry your address, and “today” follows your time zone.",
+      "street": "Street address",
+      "city": "City, state and ZIP",
+      "cityPlaceholder": "Joliet, IL 60431",
+      "phone": "Phone (optional)",
+      "weekHint": "Overtime is counted in this week. It can change until hours are filed.",
+      "continue": "Continue"
+    },
+    "payroll": {
+      "title": "Which payroll system do you use?",
+      "line": "Tabulado writes each week’s file in the layout it imports. You keep paying people there.",
+      "choose": "Choose your payroll system, or skip for now.",
+      "other": "Something else",
+      "continue": "Continue",
+      "generic": "That didn’t save. Try again, or skip and finish it in Settings.",
+      "lines": {
+        "gusto_hours_csv": "Hours import, by kind of pay.",
+        "adp_wfn_paydata": "Paydata batch file.",
+        "adp_run_csv": "RUN’s time sheet import.",
+        "paychex_flex_csv": "Paychex Flex payroll import.",
+        "qbo_time_csv": "Time import for QuickBooks Online Payroll.",
+        "qbd_iif": "Time data file for QuickBooks Desktop.",
+        "paylocity_time_csv": "Time import batch, by earning code.",
+        "other": "A PEO, a factor or another system: set up its columns in Settings."
+      },
+      "details": {
+        "companyCode": "ADP company code",
+        "companyCodeRun": "RUN company code",
+        "clientId": "Paychex client ID",
+        "customer": "QuickBooks Online customer for the hours",
+        "version": "QuickBooks Desktop version"
+      },
+      "detailRules": {
+        "companyCode": "ADP’s company code is 2 or 3 capital letters or digits.",
+        "companyCodeRun": "RUN’s company code is up to 10 letters or digits.",
+        "clientId": "Paychex’s client ID is up to 8 letters or digits.",
+        "customer": "Enter a customer that exists in QuickBooks Online, up to 100 characters.",
+        "version": "Choose the version."
+      },
+      "versions": {
+        "later": "2022 or later",
+        "earlier": "2021 or earlier (finish in Settings)"
+      }
+    },
+    "team": {
+      "title": "Invite your team",
+      "line": "Everyone signs in as themselves, with only what their role needs. You can add more people anytime.",
+      "name": "Name",
+      "email": "Work email",
+      "role": "Role",
+      "send": "Send invite",
+      "sendAnother": "Send another invite",
+      "sending": "Sending…",
+      "sent": "Invite sent to {email}",
+      "skip": "Skip for now",
+      "finish": "Go to Home",
+      "errors": {
+        "invalid_email": "Enter their work email address.",
+        "invalid_name": "Enter their name.",
+        "email_taken": "That email already signs in to Tabulado.",
+        "generic": "The invite wasn’t sent. Try again."
+      }
+    }
+  },
+  "onboardingEmail": {
+    "welcome": {
+      "subject": "{agency} is ready on Tabulado",
+      "heading": "Welcome to Tabulado, {name}",
+      "ready": "{agency} is set up.",
+      "readyTrial": "{agency} is set up, and your free days run until {date}.",
+      "nextForward": "Your first step: forward one week’s timesheets to {address}. Tabulado reads each one twice and gets the week ready to check.",
+      "nextConvert": "Your first step: drop one week’s timesheets into Convert. Tabulado reads each one twice and gets the week ready to check.",
+      "open": "Open Tabulado",
+      "guide": "“Finish setting up” on your Home page lists what is left, and ticks each step off when it happens.",
+      "footer": "Sent by Tabulado because you created {agency}."
+    },
+    "nudge": {
+      "heading": "{left, plural, one {One step left} other {# steps left}} before your first week",
+      "preheader": "{left, plural, one {One step left} other {# steps left}} in Finish setting up.",
+      "hi": "It takes a few minutes. The next steps are waiting on your Home page.",
+      "footer": "Sent by Tabulado because {agency}’s setup isn’t finished. These reminders stop once it is, and there are never more than two."
+    },
+    "trial": {
+      "subject": "Your free days end on {date}",
+      "heading": "{days, plural, one {One day} other {# days}} left of your free days",
+      "preheader": "Start your subscription to keep going after {date}.",
+      "body": "After {date}, changes in {agency} pause until a subscription starts.",
+      "start": "Start subscription",
+      "nothingLost": "Nothing is lost: everything you entered stays, and you can start anytime.",
+      "footer": "Sent by Tabulado to {agency}’s Owner."
     }
   }
 }

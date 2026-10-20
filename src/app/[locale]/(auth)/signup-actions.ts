@@ -6,12 +6,11 @@
  */
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { renderSignupEmail, renderSignupExistingEmail } from "@/server/auth/emails";
 import { LINK_TOKEN_SHAPE, MAX_SESSION_MS, SESSION_COOKIE, type PasswordError } from "@/server/auth/service";
-import { completeSignup, requestSignup, type SignupRequestResult } from "@/server/auth/signup";
+import { completeSignup, requestSignup, verifySignupCode, type SignupCodeResult, type SignupRequestResult } from "@/server/auth/signup";
 import { signupDeps } from "@/server/auth/signup-deps";
 import { billingConfig } from "@/server/billing/config";
 import { env } from "@/server/env";
@@ -27,7 +26,7 @@ async function keepSession(token: string): Promise<void> {
   (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: Math.floor(MAX_SESSION_MS / 1000) });
 }
 
-/** The sign-up request: the same answer whatever the email (the email goes out after the response). */
+/** The sign-up request (and "Send a new code"): the same answer whatever the email; a failed send is said. */
 export async function requestSignupAction(input: { email: string; name: string; agencyName: string }): Promise<SignupRequestResult | { ok: false; error: "demo" }> {
   if (isDemo()) return { ok: false, error: "demo" };
   const parsed = Request.safeParse(input);
@@ -37,10 +36,18 @@ export async function requestSignupAction(input: { email: string; name: string; 
     signupDeps(),
     { ...parsed.data, locale },
     (await requestSender()).ipAddress,
-    { link: (link, who) => renderSignupEmail(link, who), existing: (links, who) => renderSignupExistingEmail(links, who) },
+    { link: (link, code, who) => renderSignupEmail(link, code, who), existing: (links, who) => renderSignupExistingEmail(links, who) },
     linkBaseUrl(await requestOrigin()),
-    (job) => after(job),
   );
+}
+
+/** The emailed code, typed on the "Check your email" screen: right, on to the password step. */
+export async function verifySignupCodeAction(email: string, code: string): Promise<{ ok: false; error: Exclude<SignupCodeResult, { ok: true }>["error"] | "demo" }> {
+  if (isDemo()) return { ok: false, error: "demo" };
+  if (typeof email !== "string" || typeof code !== "string" || email.length > 320 || code.length > 20) return { ok: false, error: "wrong_code" };
+  const r = await verifySignupCode(signupDeps(), email, code, (await requestSender()).ipAddress);
+  if (!r.ok) return r;
+  redirect(`/${r.locale}/sign-up/${r.token}`);
 }
 
 /** The link's password: the agency is made, and the Owner goes on to set up an authenticator. */
@@ -50,5 +57,6 @@ export async function completeSignupAction(token: string, password: string): Pro
   const r = await completeSignup(signupDeps(), token, password, (await headers()).get("user-agent"), { trialDays: billingConfig().trialDays });
   if (!r.ok) return r;
   await keepSession(r.token);
-  redirect(`/${r.locale}/sign-in/setup`);
+  // A new agency: two-step sign-in, then the three setup questions (docs/patterns/welcome.md).
+  redirect(`/${r.locale}/sign-in/setup?next=${encodeURIComponent("/welcome")}`);
 }

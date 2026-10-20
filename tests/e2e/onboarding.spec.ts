@@ -94,3 +94,27 @@ for (const locale of ["en", "es"] as const) {
     await context.close();
   });
 }
+
+// Slice ab (docs/patterns/welcome.md): the three setup questions, one per screen under a progress bar,
+// each skippable, then Home's "Finish setting up". Skipped here (the demo agency's answers are kept).
+for (const locale of ["en", "es"] as const) {
+  test(`the three setup questions, skipped through to Finish setting up (${locale})`, async ({ page }) => {
+    const m = MESSAGES[locale];
+    await page.goto(`/${locale}/welcome`);
+    await expect(page.getByRole("heading", { level: 1, name: m.welcome.agency.title })).toBeVisible();
+    await expect(page.getByTestId("welcome-progress")).toHaveText(m.welcome.progress.replace("{step}", "1").replace("{total}", "3"));
+    await check(page, `${locale} welcome 1`);
+    await page.getByTestId("welcome-skip").click();
+    await expect(page.getByRole("heading", { level: 1, name: m.welcome.payroll.title })).toBeVisible();
+    await check(page, `${locale} welcome 2`);
+    await page.getByTestId("welcome-back").click();
+    await expect(page.getByRole("heading", { level: 1, name: m.welcome.agency.title })).toBeVisible();
+    await page.getByTestId("welcome-skip").click();
+    await page.getByTestId("welcome-skip").click();
+    await expect(page.getByRole("heading", { level: 1, name: m.welcome.team.title })).toBeVisible();
+    await check(page, `${locale} welcome 3`);
+    await page.getByTestId("welcome-finish").click();
+    await expect(page).toHaveURL(new RegExp(`/${locale}$`));
+    await expect(page.getByTestId("setup-guide")).toContainText(m.home.guide.title);
+  });
+}

@@ -9,19 +9,22 @@ export interface BillingConfig {
   webhookSecret: string | null;
   /** STRIPE_PRICE_ID: the monthly price agencies subscribe to. */
   priceId: string | null;
-  /** STRIPE_TRIAL_DAYS: a new agency's free days (none when unset). */
+  /** STRIPE_TRIAL_DAYS: a new agency's free days (0 for none; unset, the default). */
   trialDays: number;
 }
 
 /** Stripe allows trials of up to 730 days. */
 const MAX_TRIAL_DAYS = 730;
 
-/** A whole number of days from 0 to 730; anything else counts as none. */
+/** Free days when the setting is missing or unreadable (decision 0049): the 30 decision 0036 gave agencies already there. */
+export const DEFAULT_TRIAL_DAYS = 30;
+
+/** A whole number of days from 0 to 730 ("0": none); anything else, the default — a new agency is never paused for a missing setting. */
 export function trialDaysFrom(raw: string | undefined): number {
   const text = raw?.trim() ?? "";
-  if (!/^\d{1,3}$/.test(text)) return 0;
+  if (!/^\d{1,3}$/.test(text)) return DEFAULT_TRIAL_DAYS;
   const days = Number(text);
-  return days <= MAX_TRIAL_DAYS ? days : 0;
+  return days <= MAX_TRIAL_DAYS ? days : DEFAULT_TRIAL_DAYS;
 }
 
 const setting = (value: string | undefined) => (value && value.trim() ? value.trim() : null);

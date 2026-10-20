@@ -8,6 +8,7 @@ Source URL: https://docs.stripe.com/dashboard/basics
 Source URL: https://shopify.dev/docs/api/app-home/patterns/compositions/setup-guide
 Source URL: https://shopify.dev/docs/api/app-home/polaris-web-components/feedback-and-status-indicators/banner
 Source URL: https://vercel.com/docs/plans/pro-plan/billing
+Source URL: https://support.gusto.com/article/100758300100000/gusto-onboarding-guide-for-employers
 Researched: 2026-10-16 from the products' own screenshots (`docs/research/design-gravity-slice-l.md`
 part C). Confidence: high for the parts and their order (Stripe's screenshot shows "Today" then
 "Your overview"; Polaris puts the setup guide on the homepage).
@@ -31,28 +32,29 @@ quarter at a glance.
      ask the agency's Owner to restart it in Settings › Billing (no button).
    - **Free days end soon** (info tone; the last 7 days of the agency's free days with no
      subscription): for the Owner only, **Start subscription** → Billing.
-1. **Setup guide** (Polaris, as its screenshot shows it; for the Owner, while not hidden): a white
-   card with "Setup guide", hide (×) and collapse (⌃) buttons on the right, one intro line, "N of M
-   steps done", then the steps in a bordered box with dividers — each a checkbox (ticked by
-   Tabulado when the step has happened, never by hand: Polaris "Mark tasks as complete when
-   merchants finish them"), its title and a chevron. One step open at a time, the first not done:
-   its one-line description and its button. The steps (the first three added by completeness audit
-   G1, so an agency that signs itself up sets up its business first; Polaris: the guide lists what a
-   new store must do first):
+1. **Finish setting up** (Polaris's setup guide, as its screenshot shows it, with Gusto's "Finish setting
+   up" list of remaining tasks — slice ab, onboarding; for the Owner, while not hidden): a white card
+   with "Finish setting up", hide (×) and collapse (⌃) buttons on the right, one intro line, "N of M
+   steps done", then the steps in a bordered box with dividers — each a checkbox (ticked by Tabulado
+   when the step has happened, never by hand: Polaris "Mark tasks as complete when merchants finish
+   them"), its title and a chevron. One step open at a time, the first not done: its one-line
+   description and its button. The first three are the setup questions' (`welcome.md`), so a new
+   agency usually finds them ticked:
    1. Add your agency's details → Settings › Agency. Done: an address, a time zone and the pay week's
       day are set.
-   2. Add a client and its worksite → Clients. Done: a client has a worksite.
-   3. Add a branch → Settings › Branches. Done: a branch exists.
-   4. Choose the payroll system → payroll file settings. Done: a payroll system is chosen.
+   2. Choose the payroll system → payroll file settings. Done: a payroll system is chosen.
+   3. Invite your team → Settings › Members. Done: someone besides the Owner joined or is invited.
+   4. Add a client and its worksite → Clients. Done: a client has a worksite.
    5. Add job orders and place workers → Job orders. Done: a worker is on an assignment.
    6. Convert a week's timesheets → the pay period's upload. Done: a pay period not paid before
       Tabulado has a timesheet or hours. (In the demo it points at "Use the sample timesheets".)
-   7. Ask a client to approve the hours → Client approvals. Done: an approval request was sent.
-   8. Approve the week and create the files → the pay period. Done: a week has its files.
-   9. Match a bank file to the invoices → Bank. Done: a bank file was imported. (In the demo it
-      points at "Use the sample bank file".)
-   10. Look up a worker's SSN → Workers. Done: the Owner looked one up since the agency last started
-      over.
+   7. Forward timesheets to your agency's address → Settings › Connections. Done: a forwarded email
+      has arrived.
+   8. Ask a client to approve the hours → Client approvals. Done: an approval request was sent.
+   9. Approve the week and create the files → the pay period. Done: a week has its files.
+   10. Start your subscription → Settings › Billing. Done: Stripe says the subscription is paid (the
+       demo counts as done).
+   (Branches, the bank file and an SSN look-up are no longer steps: each is found where it lives.)
 2. **Today** (Stripe Home "Today"): the heading, large and bold, over a hairline. On the left the
    pay period's figures as plain type — hours this pay period (its dates under it), workers with
    hours, and the period's status — and under them its hours by day as bars on hairline gridlines,

@@ -29,6 +29,6 @@ export function renderPasskeyAddedEmail(input: { name: string; locale: string; a
     { text: t("ifYou") },
     { text: t("ifNot") },
     { link: input.accountLink, label: t("open") },
-    { text: t("footer", { agency: input.agencyName }) },
-  ]);
+    { footer: t("footer", { agency: input.agencyName }) },
+  ], { locale });
 }

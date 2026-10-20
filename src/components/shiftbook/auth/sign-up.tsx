@@ -5,14 +5,16 @@
 // the foot), Linear's and Vercel's email step ("Check your email" in place of the form); and
 // docs/patterns/sign-up/[token].md — the invite page's "Set your password" (GitHub: the password twice,
 // then two-factor before access).
-import { useId, useState, useTransition, type ComponentProps } from "react";
+import { useEffect, useId, useState, useTransition, type ComponentProps } from "react";
+import { ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { completeSignupAction, requestSignupAction } from "@/app/[locale]/(auth)/signup-actions";
+import { completeSignupAction, requestSignupAction, verifySignupCodeAction } from "@/app/[locale]/(auth)/signup-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/navigation";
+import { CodeBoxes } from "./code-boxes";
 import { NewPasswordFields } from "./fields";
 
 /** Stripe's and Linear's foot line: "Already have an account? Sign in". */
@@ -37,7 +39,94 @@ function Heading({ title, line }: { title: string; line?: string }) {
   );
 }
 
-type RequestError = "invalid_email" | "invalid_name" | "invalid_agency_name" | "too_many" | "demo" | "generic";
+type RequestError = "invalid_email" | "invalid_name" | "invalid_agency_name" | "too_many" | "send_failed" | "demo" | "generic";
+type CodeError = "wrong_code" | "too_many" | "demo" | "generic";
+
+const RESEND_SECONDS = 60;
+const MAIL_SITES = [
+  { key: "openGmail", href: "https://mail.google.com/mail/u/0/#search/from%3Atabulado+in%3Aanywhere" },
+  { key: "openOutlook", href: "https://outlook.live.com/mail/0/" },
+] as const;
+
+/** "Check your email": the code boxes, the mail sites, and a new code once a minute (Slack). */
+function SentStep({ email, onWrongEmail, onResend }: { email: string; onWrongEmail: () => void; onResend: () => Promise<RequestError | null> }) {
+  const t = useTranslations("signUp");
+  const id = useId();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<CodeError | RequestError | null>(null);
+  const [notice, setNotice] = useState(false);
+  const [wait, setWait] = useState(RESEND_SECONDS);
+  const [pending, start] = useTransition();
+  useEffect(() => {
+    if (wait <= 0) return;
+    const timer = window.setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [wait]);
+  const check = (digits: string) =>
+    start(async () => {
+      setNotice(false);
+      try {
+        const r = await verifySignupCodeAction(email, digits);
+        // Reached only when refused (a right code opens the password step).
+        setError(r.error);
+        setCode("");
+      } catch {
+        setError("generic");
+      }
+    });
+  const message = !error ? null : error === "wrong_code" || error === "too_many" || error === "demo" || error === "generic" ? t(`codeErrors.${error}`) : t(`errors.${error}`);
+  return (
+    <>
+      <div className="flex flex-col gap-2 text-center" role="status" data-testid="sign-up-sent">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("sentTitle")}</h1>
+        <p className="text-sm text-balance text-muted-foreground">
+          {t.rich("sentBody", { email, b: (c) => <strong className="font-medium text-foreground">{c}</strong> })}{" "}
+          <button type="button" className="text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={onWrongEmail} data-testid="sign-up-different-email">
+            {t("wrongEmail")}
+          </button>
+        </p>
+      </div>
+      <div className="flex flex-col gap-3">
+        <CodeBoxes value={code} onChange={setCode} onComplete={check} label={t("codeLabel")} disabled={pending} invalid={Boolean(error)} describedBy={message ? `${id}-error` : undefined} />
+        <p id={`${id}-error`} role="alert" className="min-h-5 text-center text-sm text-destructive" data-testid="sign-up-code-error">
+          {pending ? <span className="text-muted-foreground">{t("checking")}</span> : notice ? <span className="text-muted-foreground">{t("resent")}</span> : message}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {MAIL_SITES.map((m) => (
+          <a key={m.key} href={m.href} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "outline", className: "bg-background" })} data-testid={`sign-up-${m.key}`}>
+            {t(m.key)}
+            <ExternalLink aria-hidden className="size-3.5 text-muted-foreground" />
+          </a>
+        ))}
+      </div>
+      <p className="text-center text-sm text-muted-foreground">
+        {t("sentHint")}{" "}
+        <button
+          type="button"
+          disabled={wait > 0 || pending}
+          className="text-accent-text underline-offset-4 enabled:hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:text-muted-foreground"
+          onClick={() =>
+            start(async () => {
+              const r = await onResend();
+              setError(r);
+              setNotice(!r);
+              setCode("");
+              setWait(RESEND_SECONDS);
+            })
+          }
+          data-testid="sign-up-resend"
+        >
+          {wait > 0 ? t("resendIn", { seconds: wait }) : t("resend")}
+        </button>
+        .
+      </p>
+      <Link href="/sign-in" className="self-center text-sm text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+        {t("back")}
+      </Link>
+    </>
+  );
+}
 
 export function SignUpView({ demo, trialDays, initialEmail }: { demo: boolean; trialDays: number; initialEmail?: string }) {
   const t = useTranslations("signUp");
@@ -64,25 +153,16 @@ export function SignUpView({ demo, trialDays, initialEmail }: { demo: boolean; t
       </>
     );
 
-  if (sentTo)
-    return (
-      <>
-        <div className="flex flex-col gap-2 text-center" role="status" data-testid="sign-up-sent">
-          <h1 className="text-2xl font-semibold tracking-tight">{t("sentTitle")}</h1>
-          <p className="text-sm">{t("sentBody", { email: sentTo })}</p>
-        </div>
-        <p className="text-center text-sm text-muted-foreground">
-          {t("sentHint")}{" "}
-          <button type="button" className="text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50" onClick={() => setSentTo(null)} data-testid="sign-up-different-email">
-            {t("differentEmail")}
-          </button>
-          .
-        </p>
-        <Link href="/sign-in" className="self-center text-sm text-accent-text underline-offset-4 hover:underline rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-          {t("back")}
-        </Link>
-      </>
-    );
+  const send = async (): Promise<RequestError | null> => {
+    try {
+      const r = await requestSignupAction({ email, name, agencyName });
+      return r.ok ? null : r.error;
+    } catch {
+      return "generic";
+    }
+  };
+
+  if (sentTo) return <SentStep email={sentTo} onWrongEmail={() => setSentTo(null)} onResend={send} />;
 
   const field = (key: "email" | "name" | "agencyName", value: string, set: (v: string) => void, props: Partial<ComponentProps<typeof Input>>) => (
     <div className="flex flex-col gap-2">
@@ -113,15 +193,9 @@ export function SignUpView({ demo, trialDays, initialEmail }: { demo: boolean; t
           if (!name.trim()) return setError("invalid_name");
           if (!agencyName.trim()) return setError("invalid_agency_name");
           start(async () => {
-            try {
-              const r = await requestSignupAction({ email, name, agencyName });
-              if (r.ok) {
-                setError(null);
-                setSentTo(email.trim());
-              } else setError(r.error);
-            } catch {
-              setError("generic");
-            }
+            const problem = await send();
+            setError(problem);
+            if (!problem) setSentTo(email.trim());
           });
         }}
       >

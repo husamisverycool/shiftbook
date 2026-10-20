@@ -17,9 +17,9 @@ describe("the passkey added email", () => {
     expect(lines[1]).toMatch(/^A passkey named “Synced passkey” was added to the account you use for Cedar Row Staffing \(demo\) on October 16, 2026 at 10:00/);
     expect(lines[2]).toBe("If you added it, there is nothing to do.");
     expect(lines[3]).toBe("If you did not, open Your account, remove the passkey and change your password, then tell your agency's Owner.");
-    expect(lines[4]).toBe("Open Your account: https://app.example/en/settings/account");
-    expect(lines[5]).toBe("Sent by Tabulado on behalf of Cedar Row Staffing (demo).\n");
-    expect(mail.html).toContain('<a href="https://app.example/en/settings/account">Open Your account</a>');
+    expect(lines[4]).toBe("Open Your account:\nhttps://app.example/en/settings/account");
+    expect(lines[5]).toBe("--\nSent by Tabulado on behalf of Cedar Row Staffing (demo).\n");
+    expect(mail.html).toMatch(/<a class="tb-button" href="https:\/\/app\.example\/en\/settings\/account"[^>]*>Open Your account<\/a>/);
     expect(mail.text).not.toMatch(/sbau_/);
   });
 
@@ -29,7 +29,7 @@ describe("the passkey added email", () => {
     expect(mail.text).toContain("Hola, Pat Lee:");
     expect(mail.text).toContain("«Llave de acceso sincronizada»");
     expect(mail.text).toContain("16 de octubre de 2026");
-    expect(mail.text).toContain("Abrir Su cuenta: https://app.example/es/settings/account");
+    expect(mail.text).toContain("Abrir Su cuenta:\nhttps://app.example/es/settings/account");
   });
 
   it("falls back to UTC for an unknown time zone rather than failing", () => {

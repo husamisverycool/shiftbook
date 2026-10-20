@@ -67,3 +67,11 @@ the references below. Every screen and email copies its reference; pattern files
 - Typecheck, lint, unit and integration tests; Playwright run of the whole journey in English and
   Spanish; screenshots of each screen and email beside its pattern file, differences listed.
 - A second-opinion review by a subagent of the security parts (codes, links, two-step).
+
+## As built (2026-10-20)
+- Code and link work for one hour (not 15 minutes): the password step follows, and a right code gives
+  it 30 more minutes. Codes never go in the subject (review L4 of decision 0033).
+- The authenticator stays required (decision 0032); the passkey is offered right after it, optionally.
+- Question 1 asks where the agency is (address, time zone, pay week) instead of which states: those
+  are what Tabulado actually needs and saves; the states come from each worksite.
+- Security review findings fixed: see decision 0049.

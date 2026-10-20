@@ -73,7 +73,7 @@ export function renderInvoiceEmail(input: { locale: Locale; agency: Agency; invo
     : t("invoiceBody", { agency: input.agency.name, number: input.invoice.number, amount: formatCents(input.invoice.totalCents), due: dayIn(input.invoice.dueOn, input.locale) });
   const contact = contactOf(input.agency);
   const blocks: Block[] = [{ text: t("greeting") }, { text: body }, ...(input.message ? [{ text: input.message }] : []), ...(contact ? [{ text: t("contact", { contact }) }] : [])];
-  return assemble(subject, blocks);
+  return assemble(subject, blocks, { locale: input.locale });
 }
 
 /** A scheduled reminder: slice h's template for the stage (the same words the person sends by hand). */

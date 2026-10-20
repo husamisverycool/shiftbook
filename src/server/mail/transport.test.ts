@@ -52,6 +52,12 @@ describe("Resend transport (decision 0012)", () => {
     }
   });
 
+  it("sends Tabulado's own mail as plain \"Tabulado\", never \"Tabulado via Tabulado\"", async () => {
+    const f = fakeFetch({ status: 200, body: { id: "x" } });
+    await new ResendTransport({ apiKey: "k", fromAddress: "hello@granite.example", fetch: f.fn }).send({ ...mail(), fromName: "Tabulado" });
+    expect((JSON.parse(String(f.calls[0]!.init.body)) as { from: string }).from).toBe('"Tabulado" <hello@granite.example>');
+  });
+
   it("refuses a sending address with no email in it, saying which setting to fix", () => {
     expect(() => new ResendTransport({ apiKey: "k", fromAddress: "Tabulado" })).toThrow(/MAIL_FROM/);
   });

@@ -30,5 +30,5 @@ export function renderPortalEmail(input: PortalEmailInput): RenderedEmail {
     { text: t("expires", { when: expires }) },
     { text: t("private") },
     ...(contact ? [{ text: t("questions", { agency: input.agency.name, contact }) }] : []),
-  ]);
+  ], { locale: input.locale });
 }

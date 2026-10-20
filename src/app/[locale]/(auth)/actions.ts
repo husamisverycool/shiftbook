@@ -42,7 +42,9 @@ import {
 import { DEMO_PEOPLE } from "@/server/demo/people";
 import { env } from "@/server/env";
 import { requestOrigin, requestSender } from "@/server/request-info";
-import { linkBaseUrl } from "@/server/services";
+import { linkBaseUrl, mailTransport } from "@/server/services";
+import { withAgency } from "@/server/db";
+import { sendWelcome } from "@/server/onboarding/service";
 import { currentActor, currentSession, isDemo } from "@/server/session";
 
 const email = z.string().trim().min(3).max(254);
@@ -177,11 +179,18 @@ export async function confirmSetupAction(value: string): Promise<{ ok: true; rec
   return confirmAuthenticator(authDeps(), (await currentSession())!, value);
 }
 
-/** Leaving the recovery codes after the setup a role needs: the session goes on under a fresh token. */
+/**
+ * Leaving the recovery codes after the setup a role needs: the session goes on under a fresh token. The
+ * agency's first Owner is welcomed by email once (slice ab; docs/patterns/_emails/onboarding.md).
+ */
 export async function finishSetupAction(): Promise<void> {
-  await currentActor();
+  const actor = await currentActor();
   const fresh = await rotateSession(authDeps(), await tokenNow(), await userAgent());
   if (fresh) await keepSession(fresh);
+  if (actor.role === "owner" && !isDemo()) {
+    const baseUrl = linkBaseUrl(await requestOrigin());
+    after(() => sendWelcome({ mailTransport, baseUrl }, withAgency, actor.agencyId, actor.userId).catch((error: unknown) => console.error("[tabulado] the welcome email failed:", error instanceof Error ? error.message : String(error))));
+  }
 }
 
 export async function newRecoveryCodesAction(): Promise<{ ok: true; recoveryCodes: string[] } | { ok: false; error: "confirm" | "none" }> {

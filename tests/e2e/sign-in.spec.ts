@@ -111,6 +111,11 @@ test("the Owner invites a coordinator; they join, set up the authenticator, sign
   const recovery = await casey.getByTestId("recovery-code-item").allTextContents();
   await check(casey, "recovery codes");
   await casey.getByTestId("codes-saved").click();
+  // Slice ab: the passkey offer (docs/patterns/sign-in/setup.md, part 4), the account now protected.
+  await expect(casey.getByRole("heading", { level: 1, name: en.setup.passkey.pageTitle })).toBeVisible();
+  await expect(casey.getByTestId("passkey-offer")).toContainText(en.setup.passkey.title);
+  await check(casey, "passkey offer");
+  await casey.getByTestId("passkey-offer-skip").click();
   await expect(casey).toHaveURL(/\/en$/);
 
   // Sign out from the agency menu.

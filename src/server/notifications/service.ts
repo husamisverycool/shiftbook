@@ -244,7 +244,7 @@ export async function emailNotices(deps: NotifyMailDeps, withAgency: <T>(agencyI
       const locale = localeOf(person.preferredLocale);
       const t = createTranslator({ locale, messages: MESSAGES[locale], namespace: "notify.email" });
       const text = noticeText(row.kind, row.params, locale);
-      const rendered = assemble(text.title, [{ text: text.line }, { link: `${deps.baseUrl}/${locale}${row.href}`, label: t("open") }, { text: t("footer") }]);
+      const rendered = assemble(text.title, [{ text: text.line }, { link: `${deps.baseUrl}/${locale}${row.href}`, label: t("open") }, { footer: t("footer") }], { locale });
       const [mail] = await tx.insert(s.emailMessages).values({ agencyId, kind: "notification", toEmail: person.email, toName: person.name, subject: rendered.subject, textBody: rendered.text, status: "sending" }).returning({ id: s.emailMessages.id });
       await tx.update(s.notifications).set({ emailedAt: new Date() }).where(eq(s.notifications.id, row.id));
       out.push({ row, mailId: mail!.id, to: { email: person.email, name: person.name }, rendered });

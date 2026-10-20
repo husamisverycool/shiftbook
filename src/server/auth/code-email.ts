@@ -29,12 +29,12 @@ export function renderSignInCodeEmail(code: string, user: { name: string; locale
   return assemble(subject, [
     { text: t("greeting", { name: user.name }) },
     { text: intro },
-    { text: code },
+    { code },
     { text: t("expires") },
     { text: t("never") },
     { text: t("unexpected") },
-    { text: t("footer", { agency: user.agencyName }) },
-  ]);
+    { footer: t("footer", { agency: user.agencyName }) },
+  ], { locale });
 }
 
 export function renderIdentityLinkedEmail(input: { provider: ProviderId; providerEmail: string | null; name: string; locale: string; agencyName: string; accountUrl: string; at: Date }): RenderedEmail {
@@ -57,6 +57,6 @@ export function renderIdentityLinkedEmail(input: { provider: ProviderId; provide
     { text: t("when", { date: when }) },
     { link: input.accountUrl, label: t("review") },
     { text: t("unexpected") },
-    { text: t("footer", { agency: input.agencyName }) },
-  ]);
+    { footer: t("footer", { agency: input.agencyName }) },
+  ], { locale });
 }

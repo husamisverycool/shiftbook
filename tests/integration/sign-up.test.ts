@@ -6,7 +6,7 @@
  */
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { completeSignup, requestSignup, SIGNUP_LINK_HOURS, signupFor, type SignupDeps, type SignupRender } from "../../src/server/auth/signup";
+import { completeSignup, requestSignup, SIGNUP_CODE_TRIES, SIGNUP_LINK_MINUTES, signupFor, verifySignupCode, type SignupDeps, type SignupRender } from "../../src/server/auth/signup";
 import { beginAuthenticatorSetup, confirmAuthenticator, firstOwnerInvite, inviteMember, listMembers, nextStep, readSession, signIn, type AuthDeps, type LinkMail } from "../../src/server/auth/service";
 import { base32Decode, hotp, stepAt } from "../../src/server/auth/totp";
 import * as s from "../../src/server/db/schema";
@@ -25,10 +25,11 @@ const authDeps: AuthDeps = { db: app.db, mailTransport: () => deps.mail, now: ()
 const PASSWORD = "a long enough passphrase";
 const BASE = "https://app.example";
 const render: SignupRender = {
-  link: (link, who) => ({ subject: `Finish (${who.locale})`, text: `Open ${link}`, html: `<a href="${link}">Finish</a>` }),
+  link: (link, code, who) => ({ subject: `Finish (${who.locale})`, text: `Open ${link} or type ${code}`, html: `<a href="${link}">Finish</a> ${code}` }),
   existing: (links) => ({ subject: "You already have an account", text: `Sign in at ${links.signIn} or reset at ${links.reset}`, html: "<p>Already</p>" }),
 };
 const linkIn = (m: OutgoingMail) => /sbau_[A-Za-z0-9_-]{43}/.exec(m.text)?.[0] ?? null;
+const codeIn = (m: OutgoingMail) => /type (\d{6})$/.exec(m.text)?.[1] ?? null;
 const codeAt = (setupKey: string, at = clock) => hotp(base32Decode(setupKey), stepAt(Math.floor(at.getTime() / 1000)));
 let n = 0;
 /** A fresh address each test: emails are unique across agencies. */
@@ -71,7 +72,7 @@ describe("an agency signs itself up (decision 0036)", () => {
     expect(kept!.tokenHash).toMatch(/^[0-9a-f]{64}$/);
     expect(JSON.stringify(kept)).not.toContain(token);
     expect(kept!.sentAt).not.toBeNull();
-    expect(kept!.expiresAt.getTime() - clock.getTime()).toBe(SIGNUP_LINK_HOURS * 60 * 60 * 1000);
+    expect(kept!.expiresAt.getTime() - clock.getTime()).toBe(SIGNUP_LINK_MINUTES * 60 * 1000);
 
     expect(await signupFor(deps, token)).toEqual({ email, name: "Robin Vega", agencyName: "Harbor Light Staffing", locale: "es" });
     const done = await completeSignup(deps, token, PASSWORD, "test", { trialDays: 14 });
@@ -146,16 +147,16 @@ describe("an agency signs itself up (decision 0036)", () => {
     expect(after[0]!.n).toBe(before[0]!.n);
   });
 
-  it("throttles: 3 an hour for one email (known or not), 10 an hour from one address; an hour later it works again", async () => {
+  it("throttles: 5 an hour for one email (known or not), 10 an hour from one address; an hour later it works again", async () => {
     const email = fresh();
-    for (let i = 0; i < 3; i++) expect(await requestSignup(deps, input(email), `198.51.100.${i}`, render, BASE)).toEqual({ ok: true });
+    for (let i = 0; i < 5; i++) expect(await requestSignup(deps, input(email), `198.51.100.${i}`, render, BASE)).toEqual({ ok: true });
     expect(await requestSignup(deps, input(email), "198.51.100.9", render, BASE)).toEqual({ ok: false, error: "too_many" });
     const member = fresh("member");
     await inviteMember(authDeps, theOwner, { name: "Pat Lee", email: member, role: "billing", locale: "en" }, (link): LinkMail => ({ subject: "Join", text: link, html: link }), BASE);
     sent.length = 0;
-    for (let i = 0; i < 3; i++) await requestSignup(deps, input(member), `198.51.101.${i}`, render, BASE);
+    for (let i = 0; i < 5; i++) await requestSignup(deps, input(member), `198.51.101.${i}`, render, BASE);
     expect(await requestSignup(deps, input(member), "198.51.101.9", render, BASE)).toEqual({ ok: false, error: "too_many" });
-    expect(sent).toHaveLength(3);
+    expect(sent).toHaveLength(5);
 
     for (let i = 0; i < 10; i++) expect(await requestSignup(deps, input(fresh(`a${i}`)), "192.0.2.50", render, BASE)).toEqual({ ok: true });
     expect(await requestSignup(deps, input(fresh("a11")), "192.0.2.50", render, BASE)).toEqual({ ok: false, error: "too_many" });
@@ -188,11 +189,11 @@ describe("an agency signs itself up (decision 0036)", () => {
     expect((await owner.db.select().from(s.agencies).where(eq(s.agencies.id, session.agencyId)))[0]!.name).toBe("Harbor Light Staffing LLC");
   });
 
-  it("a link expires after 24 hours (the service's clock and the database's own)", async () => {
+  it("a link expires after an hour (the service's clock and the database's own)", async () => {
     const email = fresh();
     await requestSignup(deps, input(email), "203.0.113.10", render, BASE);
     const token = linkIn(sent[0]!)!;
-    clock = new Date(clock.getTime() + (SIGNUP_LINK_HOURS * 60 + 1) * 60 * 1000);
+    clock = new Date(clock.getTime() + (SIGNUP_LINK_MINUTES + 1) * 60 * 1000);
     expect(await signupFor(deps, token)).toBeNull();
     expect(await completeSignup(deps, token, PASSWORD, "test", { trialDays: 0 })).toEqual({ ok: false, error: "expired" });
     // The definer function checks the time itself: an expired row makes no agency even if asked directly.
@@ -231,21 +232,113 @@ describe("an agency signs itself up (decision 0036)", () => {
     expect(await app.withAgency(DEMO_AGENCY.id, (tx) => tx.select().from(s.signupRequests))).toHaveLength(0);
   });
 
-  it("a send that fails is recorded, and the answer is still the same", async () => {
+  it("a send that fails is recorded and said, for a new email and a known one alike", async () => {
     const failing: SignupDeps = { ...deps, mail: { send: async () => { throw new Error("mail service down"); } } };
     const email = fresh();
-    expect(await requestSignup(failing, input(email), null, render, BASE)).toEqual({ ok: true });
+    expect(await requestSignup(failing, input(email), null, render, BASE)).toEqual({ ok: false, error: "send_failed" });
+    expect(await requestSignup(failing, input(DEMO_OWNER.email), null, render, BASE)).toEqual({ ok: false, error: "send_failed" });
     const [kept] = await owner.db.select().from(s.signupRequests).where(eq(s.signupRequests.email, email));
     expect(kept!.sentAt).toBeNull();
     expect(kept!.sendFailedAt).not.toBeNull();
   });
 });
 
+describe("the email's six-digit code (slice ab, onboarding: Slack's and Linear's confirm emails)", () => {
+  it("one email carries the link and a code; only the code's digest is kept", async () => {
+    const email = fresh();
+    await requestSignup(deps, input(email), "203.0.113.20", render, BASE);
+    const code = codeIn(sent[0]!)!;
+    expect(code).toMatch(/^\d{6}$/);
+    const [kept] = await owner.db.select().from(s.signupRequests).where(eq(s.signupRequests.email, email));
+    expect(kept!.codeHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(kept)).not.toContain(code);
+    expect(kept!.codeTries).toBe(0);
+  });
+
+  it("the code, typed on any device, opens the password step once; the email's link then stops working", async () => {
+    const email = fresh();
+    await requestSignup(deps, input(email), "203.0.113.21", render, BASE);
+    const link = linkIn(sent[0]!)!;
+    const code = codeIn(sent[0]!)!;
+    const r = await verifySignupCode(deps, email.toUpperCase(), code, "203.0.113.99");
+    if (!r.ok) throw new Error(r.error);
+    expect(r.token).toMatch(/^sbau_/);
+    expect(r.locale).toBe("en");
+    expect(await signupFor(deps, r.token)).toEqual({ email, name: "Robin Vega", agencyName: "Harbor Light Staffing", locale: "en" });
+    expect(await signupFor(deps, link)).toBeNull();
+    expect(await verifySignupCode(deps, email, code, "203.0.113.99")).toEqual({ ok: false, error: "wrong_code" });
+    const done = await completeSignup(deps, r.token, PASSWORD, "test", { trialDays: 14 });
+    expect(done.ok).toBe(true);
+  });
+
+  it("five wrong codes end the request, answered as any wrong code (nothing learned): then even the right one is refused, and the link too", async () => {
+    const email = fresh();
+    await requestSignup(deps, input(email), "203.0.113.22", render, BASE);
+    const code = codeIn(sent[0]!)!;
+    const wrong = code === "000000" ? "111111" : "000000";
+    for (let i = 1; i < SIGNUP_CODE_TRIES; i++) expect(await verifySignupCode(deps, email, wrong, null)).toEqual({ ok: false, error: "wrong_code" });
+    expect(await verifySignupCode(deps, email, wrong, null)).toEqual({ ok: false, error: "wrong_code" });
+    expect(await verifySignupCode(deps, email, code, null)).toEqual({ ok: false, error: "wrong_code" });
+    expect(await signupFor(deps, linkIn(sent[0]!)!)).toBeNull();
+  });
+
+  it("a newer request replaces the older code; an expired code is refused", async () => {
+    const email = fresh();
+    await requestSignup(deps, input(email), "203.0.113.23", render, BASE);
+    const first = codeIn(sent[0]!)!;
+    await requestSignup(deps, input(email), "203.0.113.23", render, BASE);
+    const second = codeIn(sent[1]!)!;
+    if (first !== second) expect(await verifySignupCode(deps, email, first, null)).toEqual({ ok: false, error: "wrong_code" });
+    clock = new Date(clock.getTime() + (SIGNUP_LINK_MINUTES + 1) * 60 * 1000);
+    expect(await verifySignupCode(deps, email, second, null)).toEqual({ ok: false, error: "wrong_code" });
+  });
+
+  it("an email with no sign-up waiting answers as a wrong code (nothing learned about it)", async () => {
+    expect(await verifySignupCode(deps, DEMO_OWNER.email, "123456", null)).toEqual({ ok: false, error: "wrong_code" });
+    expect(await verifySignupCode(deps, fresh(), "123456", null)).toEqual({ ok: false, error: "wrong_code" });
+    expect(await verifySignupCode(deps, fresh(), "12345", null)).toEqual({ ok: false, error: "wrong_code" });
+  });
+
+  it("guessing one email's code across new codes and addresses stops at 10 wrong codes a day (security review M1)", async () => {
+    const email = fresh();
+    for (let round = 0; round < 3; round++) {
+      await requestSignup(deps, input(email), null, render, BASE);
+      const code = codeIn(sent.at(-1)!)!;
+      const wrong = code === "000000" ? "111111" : "000000";
+      for (let i = 0; i < 4 && round * 4 + i < 10; i++) await verifySignupCode(deps, email, wrong, `198.18.${round}.${i}`);
+    }
+    // Ten wrong codes today: even the right code of a fresh request waits.
+    await requestSignup(deps, input(email), null, render, BASE);
+    expect(await verifySignupCode(deps, email, codeIn(sent.at(-1)!)!, "198.18.9.9")).toEqual({ ok: false, error: "too_many" });
+    clock = new Date(clock.getTime() + 25 * 60 * 60 * 1000);
+    await requestSignup(deps, input(email), null, render, BASE);
+    const r = await verifySignupCode(deps, email, codeIn(sent.at(-1)!)!, "198.18.9.9");
+    expect(r.ok).toBe(true);
+  });
+
+  it("guessing across emails from one address is throttled (30 tries an hour)", async () => {
+    for (let i = 0; i < 30; i++) await verifySignupCode(deps, fresh(`g${i}`), "123456", "192.0.2.90");
+    expect(await verifySignupCode(deps, fresh("g31"), "123456", "192.0.2.90")).toEqual({ ok: false, error: "too_many" });
+  });
+
+  it("the app role cannot change a code, only count wrong tries", async () => {
+    const email = fresh();
+    await requestSignup(deps, input(email), null, render, BASE);
+    const inSignInMode = <T>(fn: Parameters<typeof app.db.transaction<T>>[0]) =>
+      app.db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.auth', 'on', true)`);
+        return fn(tx);
+      });
+    expect(await databaseError(inSignInMode((tx) => tx.update(s.signupRequests).set({ codeHash: "0".repeat(64) }).where(eq(s.signupRequests.email, email))))).toMatch(/permission denied/);
+    expect(await databaseError(inSignInMode((tx) => tx.update(s.signupRequests).set({ codeTries: 6 }).where(eq(s.signupRequests.email, email))))).toMatch(/check constraint|violates/);
+  });
+});
+
 describe("sign-up hardening (decision 0036, security review)", () => {
-  it("the throttle holds under parallel requests: exactly 3 for one email, exactly 10 from one address", async () => {
+  it("the throttle holds under parallel requests: exactly 5 for one email, exactly 10 from one address", async () => {
     const email = fresh("race");
     const same = await Promise.all(Array.from({ length: 8 }, (_, i) => requestSignup(deps, input(email), `198.51.100.${100 + i}`, render, BASE)));
-    expect(same.filter((r) => r.ok)).toHaveLength(3);
+    expect(same.filter((r) => r.ok)).toHaveLength(5);
     const many = await Promise.all(Array.from({ length: 16 }, (_, i) => requestSignup(deps, input(fresh(`race${i}`)), "192.0.2.77", render, BASE)));
     expect(many.filter((r) => r.ok)).toHaveLength(10);
   });

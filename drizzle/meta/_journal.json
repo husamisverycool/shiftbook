@@ -456,6 +456,13 @@
       "when": 1792181700000,
       "tag": "0067_tabulado_name",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1792181800000,
+      "tag": "0068_signup_code",
+      "breakpoints": true
     }
   ]
 }

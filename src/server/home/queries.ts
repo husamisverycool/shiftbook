@@ -13,7 +13,13 @@ import { marginPeriod, marginView } from "../margin/queries";
 import { payrollTarget } from "../payroll/settings";
 import { receivablesView } from "../receivables/queries";
 
-export const SETUP_STEPS = ["agency", "clients", "branches", "payroll", "placements", "convert", "approval", "files", "bank", "ssn"] as const;
+/**
+ * "Finish setting up" (slice ab, onboarding; Gusto's remaining tasks): the agency's details, its payroll
+ * system and its team (the three setup questions ask these first), then its first client and placements,
+ * a week of timesheets, the forwarding address so the next ones come by themselves, a client's approval,
+ * the files, and the subscription.
+ */
+export const SETUP_STEPS = ["agency", "payroll", "team", "clients", "placements", "convert", "forwarding", "approval", "files", "subscription"] as const;
 export type SetupStep = (typeof SETUP_STEPS)[number];
 
 const exists = async (q: Promise<{ n: number }[]>) => ((await q)[0]?.n ?? 0) > 0;
@@ -21,37 +27,25 @@ const exists = async (q: Promise<{ n: number }[]>) => ((await q)[0]?.n ?? 0) > 0
 /** Each step of the setup guide, done or not, from the agency's own records. */
 export async function setupSteps(tx: Tx, periodsStarted: boolean): Promise<Record<SetupStep, boolean>> {
   // The business set up first (completeness audit G1): its details, time zone and pay week; a client
-  // with a worksite; a branch.
-  const [agency] = await tx.select({ addressLines: s.agencies.addressLines }).from(s.agencies);
-  const [settingRows, clientsWithSites, branches] = await Promise.all([
+  // with a worksite.
+  const [agency] = await tx.select({ addressLines: s.agencies.addressLines, isDemo: s.agencies.isDemo }).from(s.agencies);
+  const [settingRows, clientsWithSites, team, forwarding, subscription] = await Promise.all([
     tx.select({ key: s.agencySettings.key }).from(s.agencySettings).where(inArray(s.agencySettings.key, ["time_zone", "workweek_starts_on"])),
     exists(tx.select({ n: count() }).from(s.worksites).innerJoin(s.clients, eq(s.clients.id, s.worksites.clientId))),
-    exists(tx.select({ n: count() }).from(s.branches)),
+    // Someone besides the Owner, joined or invited.
+    tx.select({ n: count() }).from(s.users).then((r) => (r[0]?.n ?? 0) > 1),
+    exists(tx.select({ n: count() }).from(s.inboundEmails)),
+    // Stripe says it is paid for (the demo never pays).
+    exists(tx.select({ n: count() }).from(s.agencySubscriptions).where(and(inArray(s.agencySubscriptions.status, ["active", "trialing"]), sql`${s.agencySubscriptions.stripeSubscriptionId} is not null`))),
   ]);
   const agencySet = (agency?.addressLines.length ?? 0) > 0 && ["time_zone", "workweek_starts_on"].every((k) => settingRows.some((r) => r.key === k));
-  const [payroll, placements, approval, files, bank, ssn] = await Promise.all([
+  const [payroll, placements, approval, files] = await Promise.all([
     payrollTarget(tx).then((t) => t !== null),
     exists(tx.select({ n: count() }).from(s.assignments).where(eq(s.assignments.status, "active"))),
     exists(tx.select({ n: count() }).from(s.approvalRequests)),
     exists(tx.select({ n: count() }).from(s.payRuns).where(inArray(s.payRuns.status, ["exported", "closed"]))),
-    exists(tx.select({ n: count() }).from(s.bankImports)),
-    // The Owner's look at one SSN (decision 0027): a reveal of a worker's SSN field since the agency
-    // last started over (the log is append-only, so a demo reset leaves earlier reveals in it).
-    exists(
-      tx
-        .select({ n: count() })
-        .from(s.auditEvents)
-        .where(
-          and(
-            eq(s.auditEvents.action, "reveal"),
-            eq(s.auditEvents.entityType, "worker"),
-            sql`${s.auditEvents.after}->>'field' = 'ssn'`,
-            sql`${s.auditEvents.occurredAt} > coalesce((select max(r.occurred_at) from audit_events r where r.action = 'reset' and r.entity_type = 'agency'), '-infinity'::timestamptz)`,
-          ),
-        ),
-    ),
   ]);
-  return { agency: agencySet, clients: clientsWithSites, branches, payroll, placements, convert: periodsStarted, approval, files, bank, ssn };
+  return { agency: agencySet, payroll, team, clients: clientsWithSites, placements, convert: periodsStarted, forwarding, approval, files, subscription: subscription || Boolean(agency?.isDemo) };
 }
 
 export type PeriodState = "none" | "draft" | "validating" | "blocked" | "ready" | "approved" | "exported" | "closed" | "correcting";

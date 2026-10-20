@@ -1441,7 +1441,11 @@ export type EmailKind =
   | "invoice_reminder"
   | "notification"
   // Slice v (drizzle/0051): a client contact's portal link.
-  | "portal_link";
+  | "portal_link"
+  // Slice ab (onboarding): the welcome, a setup reminder, the free days ending — to the Owner.
+  | "welcome"
+  | "setup_nudge"
+  | "trial_ending";
 
 /** A file an email carried, kept by name (the bytes are the stored document). */
 export interface EmailAttachmentName {
@@ -2038,6 +2042,10 @@ export const signupRequests = pgTable("signup_requests", {
   sentAt: timestamp("sent_at", { withTimezone: true }),
   sendFailedAt: timestamp("send_failed_at", { withTimezone: true }),
   createdAgencyId: uuid("created_agency_id").references(() => agencies.id),
+  /** The six-digit code's digest (salted with the id); it works only while the request is unused and unexpired. */
+  codeHash: text("code_hash"),
+  /** Wrong codes typed; the fifth ends the request. */
+  codeTries: integer("code_tries").notNull().default(0),
 });
 
 /** An agency's own free days and what Stripe says of its subscription (money in integer cents). */

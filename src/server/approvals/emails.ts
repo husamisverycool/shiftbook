@@ -7,6 +7,7 @@ import en from "../../../messages/en.json";
 import es from "../../../messages/es.json";
 import { hoursMinutes, shortDate } from "../../components/shiftbook/format";
 import type { ApprovalLocale } from "../db/schema";
+import { layout, type Block, type LayoutOptions, type RenderedEmail } from "../mail/layout";
 
 const MESSAGES = { en, es } as const;
 
@@ -44,14 +45,6 @@ export interface DecisionEmailInput extends Common {
   agencyLink?: string;
 }
 
-export interface RenderedEmail {
-  subject: string;
-  text: string;
-  html: string;
-}
-
-const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-
 const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
 function translator(locale: ApprovalLocale) {
@@ -68,25 +61,10 @@ function contactOf(agency: EmailAgency) {
   return [agency.phone, agency.email].filter((v): v is string => Boolean(v)).join(", ");
 }
 
-/** Paragraphs → text and HTML; a paragraph may hold a link (the one button). */
-export type Block = { text: string } | { link: string; label: string } | { list: string[] };
-
-export function assemble(subject: string, blocks: Block[]): RenderedEmail {
-  const text = blocks
-    .map((b) => ("text" in b ? b.text : "link" in b ? `${b.label}: ${b.link}` : b.list.map((line) => `- ${line}`).join("\n")))
-    .join("\n\n");
-  const html = [
-    `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(subject)}</title></head><body>`,
-    ...blocks.map((b) =>
-      "text" in b
-        ? `<p>${escapeHtml(b.text)}</p>`
-        : "link" in b
-          ? `<p><a href="${escapeHtml(b.link)}">${escapeHtml(b.label)}</a></p>`
-          : `<ul>${b.list.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`,
-    ),
-    "</body></html>",
-  ].join("");
-  return { subject, text: `${text}\n`, html };
+/** Every email's blocks and layout (src/server/mail/layout.ts). */
+export type { Block, RenderedEmail } from "../mail/layout";
+export function assemble(subject: string, blocks: Block[], options?: LayoutOptions): RenderedEmail {
+  return layout(subject, blocks, options);
 }
 
 export function renderLinkEmail(input: LinkEmailInput): RenderedEmail {
@@ -103,8 +81,8 @@ export function renderLinkEmail(input: LinkEmailInput): RenderedEmail {
     { link: input.link, label: t("open") },
     { text: t("expires", { date: expires }) },
     ...(contact ? [{ text: t("contact", { agency: input.agency.name, contact }) }] : []),
-    { text: t("footer", { agency: input.agency.name }) },
-  ]);
+    { footer: t("footer", { agency: input.agency.name }) },
+  ], { locale: input.locale });
 }
 
 export function renderDecisionEmail(input: DecisionEmailInput): RenderedEmail {
@@ -128,6 +106,6 @@ export function renderDecisionEmail(input: DecisionEmailInput): RenderedEmail {
   } else if (input.agencyLink) {
     blocks.push({ text: t("noticeOpen", { link: input.agencyLink }) });
   }
-  blocks.push({ text: t("footer", { agency: input.agency.name }) });
-  return assemble(subject, blocks);
+  blocks.push({ footer: t("footer", { agency: input.agency.name }) });
+  return assemble(subject, blocks, { locale: input.locale });
 }

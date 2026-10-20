@@ -12,7 +12,7 @@ import * as s from "../../src/server/db/schema";
 import { DEMO_AGENCY } from "../../src/server/demo/dataset";
 import { assignmentId, clearDemoAgency, periodId, seedDemoAgency, workerId } from "../../src/server/demo/seed";
 import { createRunFiles } from "../../src/server/files/service";
-import { homeView } from "../../src/server/home/queries";
+import { homeView, SETUP_STEPS, setupSteps } from "../../src/server/home/queries";
 import { marginPeriod, marginView } from "../../src/server/margin/queries";
 import type { Actor } from "../../src/server/session";
 import { LocalDocumentStore } from "../../src/server/storage";
@@ -96,5 +96,31 @@ describe("Home's Today and Your overview", () => {
   it("has no overview for a role that may not see margin", async () => {
     const view = await inAgency((tx) => homeView(tx, theOwner.agencyId, TODAY, { viewMargin: false, weeks: "4" }));
     expect(view.overview).toBeNull();
+  });
+});
+
+describe("Home's Finish setting up (slice ab, onboarding: Gusto's remaining tasks)", () => {
+  beforeEach(freshAgency);
+
+  it("lists the ten steps in the order a new agency takes them, each done by the agency's own records", async () => {
+    expect([...SETUP_STEPS]).toEqual(["agency", "payroll", "team", "clients", "placements", "convert", "forwarding", "approval", "files", "subscription"]);
+    const steps = await inAgency((tx) => setupSteps(tx, false));
+    // The demo agency: its details, payroll system, people, clients and placements are there; its week not started.
+    expect(steps).toMatchObject({ agency: true, payroll: true, team: true, clients: true, placements: true, convert: false });
+    // The demo agency never pays: its subscription counts as done.
+    expect(steps.subscription).toBe(true);
+  });
+
+  it("the timesheet address is done once a forwarded email arrives; the subscription once Stripe says it is paid", async () => {
+    expect((await inAgency((tx) => setupSteps(tx, true))).forwarding).toBe(false);
+    await owner.db.update(s.agencies).set({ isDemo: false }).where(eq(s.agencies.id, DEMO_AGENCY.id));
+    try {
+      expect((await inAgency((tx) => setupSteps(tx, true))).subscription).toBe(false);
+      await owner.db.insert(s.agencySubscriptions).values({ agencyId: DEMO_AGENCY.id, status: "active", stripeSubscriptionId: "sub_test1" }).onConflictDoUpdate({ target: s.agencySubscriptions.agencyId, set: { status: "active", stripeSubscriptionId: "sub_test1" } });
+      expect((await inAgency((tx) => setupSteps(tx, true))).subscription).toBe(true);
+    } finally {
+      await owner.db.update(s.agencies).set({ isDemo: true }).where(eq(s.agencies.id, DEMO_AGENCY.id));
+      await owner.db.delete(s.agencySubscriptions).where(eq(s.agencySubscriptions.agencyId, DEMO_AGENCY.id));
+    }
   });
 });

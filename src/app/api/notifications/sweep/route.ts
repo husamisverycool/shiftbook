@@ -3,6 +3,7 @@ import { sweepReminders } from "@/server/collections/service";
 import { db, withAgency } from "@/server/db";
 import { env } from "@/server/env";
 import { agenciesToSweep, emailNotices, syncNotifications } from "@/server/notifications/service";
+import { onboardingSweep } from "@/server/onboarding/service";
 import { mailTransport } from "@/server/services";
 import { documentStore } from "@/server/storage";
 
@@ -18,7 +19,8 @@ function same(a: string, b: string): boolean {
  * Slice r: the host's scheduler calls this (with "Authorization: Bearer <CRON_SECRET>", as the
  * approval reminders route, decision 0013). For each agency: its notices are brought up to date and
  * emailed to who keeps email on (Linear), and its collection reminders due today are sent once each
- * (Stripe's automatic reminders). One agency's problem never stops the others.
+ * (Stripe's automatic reminders), and its Owner gets a setup reminder or a free-days notice when one is
+ * due (slice ab, onboarding). One agency's problem never stops the others.
  */
 export async function GET(request: Request): Promise<Response> {
   if (!env.cronSecret) return new Response("Not found", { status: 404 });
@@ -29,6 +31,7 @@ export async function GET(request: Request): Promise<Response> {
   let reminders = 0;
   let failed = 0;
   let agencyErrors = 0;
+  let onboarding = 0;
   for (const agencyId of await agenciesToSweep(db)) {
     try {
       const made = await withAgency(agencyId, (tx) => syncNotifications(tx, agencyId));
@@ -37,10 +40,11 @@ export async function GET(request: Request): Promise<Response> {
       const r = await sweepReminders({ withAgency, store: documentStore, mailTransport }, agencyId);
       reminders += r.sent;
       failed += r.failed;
+      onboarding += await onboardingSweep({ mailTransport, baseUrl: env.appUrl }, withAgency, agencyId);
     } catch (error) {
       agencyErrors += 1;
       console.error(`sweep failed for agency ${agencyId}:`, error instanceof Error ? error.message : String(error));
     }
   }
-  return Response.json({ notices, emailed, reminders, failed, agencyErrors });
+  return Response.json({ notices, emailed, reminders, onboarding, failed, agencyErrors });
 }
