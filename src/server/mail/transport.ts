@@ -46,8 +46,11 @@ export class ResendTransport implements MailTransport {
   constructor(options: { apiKey: string | undefined; fromAddress: string | undefined; fetch?: typeof fetch }) {
     if (!options.apiKey) throw new Error("Email cannot be sent: RESEND_API_KEY is not set in the environment settings.");
     if (!options.fromAddress) throw new Error("Email cannot be sent: MAIL_FROM (Tabulado's sending address) is not set in the environment settings.");
+    // The guide writes the setting as `Tabulado <hello@…>`; the agency's name goes in front of the bare address.
+    const bare = (/<([^<>\s]+@[^<>\s]+)>/.exec(options.fromAddress)?.[1] ?? options.fromAddress).trim();
+    if (!/^[^\s@<>"]+@[^\s@<>"]+$/.test(bare)) throw new Error("Email cannot be sent: MAIL_FROM (Tabulado's sending address) in the environment settings is not an email address.");
     this.apiKey = options.apiKey;
-    this.fromAddress = options.fromAddress;
+    this.fromAddress = bare;
     this.fetchFn = options.fetch ?? fetch;
   }
 

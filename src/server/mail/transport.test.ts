@@ -44,6 +44,18 @@ describe("Resend transport (decision 0012)", () => {
     });
   });
 
+  it("takes the sending address with or without a name around it, as the setup guide writes it", async () => {
+    for (const setting of ["Tabulado <hello@granite.example>", '"Tabulado" <hello@granite.example>', "  hello@granite.example  ", "<hello@granite.example>"]) {
+      const f = fakeFetch({ status: 200, body: { id: "x" } });
+      await new ResendTransport({ apiKey: "k", fromAddress: setting, fetch: f.fn }).send(mail());
+      expect((JSON.parse(String(f.calls[0]!.init.body)) as { from: string }).from, setting).toBe('"Cedar Row Staffing (demo) via Tabulado" <hello@granite.example>');
+    }
+  });
+
+  it("refuses a sending address with no email in it, saying which setting to fix", () => {
+    expect(() => new ResendTransport({ apiKey: "k", fromAddress: "Tabulado" })).toThrow(/MAIL_FROM/);
+  });
+
   it("keeps display names from breaking the address (quotes, backslashes, angle brackets, line breaks)", async () => {
     const f = fakeFetch({ status: 200, body: { id: "x" } });
     const transport = new ResendTransport({ apiKey: "k", fromAddress: "a@granite.example", fetch: f.fn });
