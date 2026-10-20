@@ -1,12 +1,19 @@
-// Pattern: docs/patterns/site/pricing.md — Mercury's and Ramp's pricing: a dark opening band with a centred
-// heading, the plan card rising out of it onto the light page (price, free days, the two pills), Linear's
-// grouped "what's included" list, Check's "not included", Mercury's questions with the heading at the left,
-// and Mercury's centred close.
+// Pattern: docs/patterns/site/pricing.md — Ramp /pricing in the site's one system, for a single plan: a
+// dark page with a centred heading; Stripe's floating pill bar of the page's parts; Ramp's plan card with
+// its fit label on the top edge, the price, the free days, the email field inside the card, then "All of
+// it" grouped checklists; Ramp's compare table with its sticky header and dotted, explained row labels,
+// here comparing who does each job (Tabulado, your payroll provider, your bank); Check's "not included";
+// Vercel's two-column questions; the home page's close.
 import type { Metadata } from "next";
+import { Check, Minus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { FrostButton, Eyebrow, Section } from "@/components/site/blocks";
 import { Faq } from "@/components/site/faq";
+import { ScrollStage } from "@/components/site/scroll";
 import { SiteFooter } from "@/components/site/site-footer";
+import { Close } from "@/components/site/v6/close";
+import { PillBar } from "@/components/site/v6/pill-bar";
+import { Eyebrow, Mono } from "@/components/site/v6/ui";
+import { cn } from "@/lib/utils";
 import { billingConfig } from "@/server/billing/config";
 import { siteLinks } from "@/server/site/context";
 import { sitePrice } from "@/server/site/price";
@@ -27,20 +34,13 @@ const GROUPS = [
   { key: "g7", items: ["g7a", "g7b", "g7c"] },
 ] as const;
 
-const PILL = "inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-medium outline-none site-color-slow focus-visible:ring-2 focus-visible:ring-[var(--s-accent-soft)] focus-visible:ring-offset-2";
-
-function Check() {
-  return (
-    <svg aria-hidden viewBox="0 0 16 16" className="mt-1 size-3.5 shrink-0 text-[var(--s-accent)]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 8.5l3 3 7-7" />
-    </svg>
-  );
-}
+type WhoRow = { label: string; tip: string; who: [number, number, number] };
 
 export default async function SitePricing({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("site.pricing");
+  const v = await getTranslations("site.v6.pricingPage");
   const links = await siteLinks(locale);
   const price = await sitePrice();
   const amount =
@@ -49,107 +49,188 @@ export default async function SitePricing({ params }: { params: Promise<{ locale
       : null;
   const trialDays = billingConfig().trialDays;
   const faq = ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const).map((n) => ({ q: t(`q${n}`), a: t(`a${n}`) }));
+  const who = v.raw("groups") as { name: string; rows: WhoRow[] }[];
+  const cols = [v("cols.tabulado"), v("cols.provider"), v("cols.bank")];
 
   return (
-    <>
-      {/* 1. Dark opening band with a centred heading (Mercury, Ramp). */}
-      <section aria-labelledby="pricing-title" className="site-grain site-grain-light relative bg-[var(--s-ink)] px-6 pt-40 pb-56 text-center text-white md:pt-48">
-        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_100%,rgba(99,102,241,0.28),transparent)]" />
-        <Eyebrow tone="dark">{t("eyebrow")}</Eyebrow>
-        <h1 id="pricing-title" className="mx-auto max-w-[16ch] text-[clamp(2.5rem,4vw+1rem,4.5rem)] leading-[1.02] font-[450] tracking-[-0.035em] text-balance">
-          {t("headline")}
-        </h1>
-        <p className="mx-auto mt-6 max-w-[46ch] text-[clamp(1.0625rem,0.4vw+1rem,1.25rem)] leading-relaxed text-white/75">{t("lead")}</p>
-      </section>
+    <ScrollStage>
+      <div data-tone="ink" className="bg-[var(--s-ink)] text-white">
+        {/* 1. The centred opening. */}
+        <section aria-labelledby="pricing-title" className="relative isolate px-6 pt-40 pb-16 text-center md:pt-52">
+          <div aria-hidden className="absolute top-0 left-1/2 -z-10 h-[560px] w-[min(1100px,100vw)] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(closest-side,rgba(107,120,255,0.2),transparent)]" />
+          <Eyebrow tone="dark">{t("eyebrow")}</Eyebrow>
+          <h1 id="pricing-title" className="mx-auto mt-6 max-w-[16ch] text-[clamp(2.5rem,4vw+1rem,4.5rem)] leading-[1.02] font-[500] tracking-[-0.04em] text-balance">
+            {t("headline")}
+          </h1>
+          <p className="mx-auto mt-6 max-w-[46ch] text-[clamp(1.0625rem,0.4vw+1rem,1.25rem)] leading-relaxed text-[var(--s-dmuted)]">{t("lead")}</p>
+        </section>
 
-      {/* 2. The plan card rising out of the band (Ramp), with Linear's grouped list beside the price. */}
-      <div className="relative z-10 -mt-40 px-6">
-        <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 overflow-hidden rounded-3xl bg-white shadow-[0_40px_100px_-40px_rgba(20,21,28,0.45)] ring-1 ring-black/5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.6fr)]">
-          <div className="flex flex-col gap-6 border-b border-[var(--s-line)] bg-[var(--s-paper-2)] p-8 md:p-10 lg:border-r lg:border-b-0">
-            <h2 className="text-[15px] font-medium text-[var(--s-muted)]">{t("plan")}</h2>
-            {amount && (
-              <p className="flex items-baseline gap-2">
-                <span className="text-[56px] leading-none font-[450] tracking-[-0.04em] tabular-nums">{amount}</span>
-                <span className="text-[15px] text-[var(--s-muted)]">{t("perMonth")}</span>
-              </p>
-            )}
-            <p className="text-[15px] text-[var(--s-muted)]">{t("freeDays", { days: trialDays })}</p>
-            <div className="mt-2 flex flex-col gap-3">
-              <a href={links.signUp} className={`${PILL} bg-[var(--s-accent)] text-white hover:bg-[var(--s-accent-2)]`}>
-                {t("start")}
-              </a>
+        {/* 2. Stripe's pill bar, held only while its parts are on screen. */}
+        <div className="relative">
+        <PillBar
+          label={v("tabsLabel")}
+          items={[
+            { id: "plan", label: v("tabs.plan") },
+            { id: "included", label: v("tabs.included") },
+            { id: "who", label: v("tabs.who") },
+            { id: "faq", label: v("tabs.faq") },
+          ]}
+        />
+
+        {/* 3. Ramp's plan card: the fit label on its top edge, the email field inside it. */}
+        <section id="plan" aria-labelledby="plan-title" className="scroll-mt-36 px-6 pt-16">
+          <div className="site-reveal relative mx-auto w-full max-w-[720px] pt-7">
+            <span className="absolute top-0 left-6 inline-flex h-7 items-center rounded-t-lg bg-[var(--s-accent)] px-3 text-[12px] font-medium text-white">{v("fit")}</span>
+            <div className="rounded-2xl rounded-tl-none bg-[linear-gradient(180deg,#17181f,#111218)] p-8 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[var(--s-accent)]/60 md:p-10">
+              <div className="flex flex-wrap items-end justify-between gap-6">
+                <div>
+                  <h2 id="plan-title" className="text-[20px] font-medium">
+                    {t("plan")}
+                  </h2>
+                  {amount ? (
+                    <p className="mt-4 flex items-baseline gap-2">
+                      <span className="text-[56px] leading-none font-[500] tracking-[-0.045em] tabular-nums">{amount}</span>
+                      <span className="text-[15px] text-[var(--s-dmuted)]">{t("perMonth")}</span>
+                    </p>
+                  ) : (
+                    <p className="mt-4 text-[15px] text-[var(--s-dmuted)]">{v("priceLater")}</p>
+                  )}
+                </div>
+                <p className="max-w-[24ch] text-[15px] leading-snug text-white/80">{t("freeDays", { days: trialDays })}</p>
+              </div>
+              <form action={links.signUp} method="get" className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <label htmlFor="plan-email" className="sr-only">
+                  {v("emailLabel")}
+                </label>
+                <input id="plan-email" name="email" type="email" autoComplete="email" placeholder={v("emailPlaceholder")} className="h-11 min-w-0 flex-1 rounded-full bg-white/[0.05] px-5 text-[15px] text-white ring-1 ring-white/12 outline-none placeholder:text-white/40 focus:ring-[var(--s-accent-soft)]" />
+                <button type="submit" className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-[#e9e9eb] px-5 text-[15px] font-medium text-[#0b0c10] outline-none site-color-slow hover:bg-white focus-visible:ring-2 focus-visible:ring-white/60">
+                  {t("start")}
+                </button>
+              </form>
               {links.demo && (
-                <a href={links.demo} className={`${PILL} border border-[var(--s-line)] bg-white text-[var(--s-text)] hover:bg-[var(--s-paper)]`}>
-                  {t("demo")}
+                <a href={links.demo} className="mt-4 inline-flex text-[14px] text-[var(--s-accent-soft)] underline-offset-4 outline-none hover:underline focus-visible:underline">
+                  {t("demo")} →
                 </a>
               )}
+              <p className="mt-8 border-t border-white/[0.08] pt-5 text-[12px] leading-relaxed text-white/45">{t("footnote1")}</p>
             </div>
-            <p className="mt-auto text-[12px] leading-relaxed text-[var(--s-muted)]">{t("footnote1")}</p>
           </div>
-          <div className="p-8 md:p-10">
-            <h3 className="text-[15px] font-medium text-[var(--s-muted)]">{t("includedLabel")}</h3>
-            <div className="mt-8 grid gap-x-10 gap-y-9 sm:grid-cols-2">
+        </section>
+
+        {/* 4. Everything included: Ramp's grouped checklists. */}
+        <section id="included" aria-labelledby="included-title" className="scroll-mt-36 px-6 pt-28">
+          <div className="mx-auto w-full max-w-[1200px]">
+            <h2 id="included-title" className="site-reveal text-[clamp(1.75rem,1.6vw+1rem,2.5rem)] leading-[1.08] font-[500] tracking-[-0.03em]">
+              {v("includedTitle")} <span className="text-white/45">{v("includedMuted")}</span>
+            </h2>
+            <div className="site-reveal mt-12 grid grid-cols-1 border-t border-l border-white/[0.08] sm:grid-cols-2 lg:grid-cols-4">
               {GROUPS.map((g) => (
-                <div key={g.key} className="flex flex-col gap-3">
-                  <h4 className="text-[15px] font-medium">{t(g.key)}</h4>
-                  <ul className="flex flex-col gap-2.5">
+                <div key={g.key} className="flex flex-col gap-4 border-r border-b border-white/[0.08] p-6">
+                  <Mono className="text-[var(--s-accent-soft)]">{t(g.key)}</Mono>
+                  <ul className="flex flex-col gap-3">
                     {g.items.map((i) => (
-                      <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed text-[var(--s-text)]/85">
-                        <Check />
+                      <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed text-white/80">
+                        <Check aria-hidden className="mt-1 size-3.5 shrink-0 text-[var(--s-accent-soft)]" strokeWidth={2.5} />
                         {t(i)}
                       </li>
                     ))}
                   </ul>
                 </div>
               ))}
+              {/* Check's "not included", in the same sheet. */}
+              <div className="flex flex-col gap-4 border-r border-b border-white/[0.08] bg-white/[0.02] p-6">
+                <Mono className="text-white/50">{t("notIncludedLabel")}</Mono>
+                <ul className="flex flex-col gap-3">
+                  {(["not1", "not2", "not3"] as const).map((k) => (
+                    <li key={k} className="flex gap-2.5 text-[14px] leading-relaxed text-white/60">
+                      <Minus aria-hidden className="mt-1 size-3.5 shrink-0 text-white/40" strokeWidth={2.5} />
+                      {t(k)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* 3. Not included (Check), in Mercury's label-left layout. */}
-      <Section labelledBy="not-included" className="pb-0 md:pb-0">
-        <div className="grid gap-8 border-t border-[var(--s-line)] pt-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          <div>
-            <h2 id="not-included" className="text-[clamp(1.5rem,1vw+1.1rem,2rem)] leading-[1.1] font-[450] tracking-[-0.03em]">
-              {t("notIncludedLabel")}
+        {/* 5. Ramp's compare table, as who does what. */}
+        <section id="who" aria-labelledby="who-title" className="scroll-mt-36 px-6 pt-28">
+          <div className="mx-auto w-full max-w-[1200px]">
+            <h2 id="who-title" className="site-reveal max-w-[24em] text-[clamp(1.75rem,1.6vw+1rem,2.5rem)] leading-[1.08] font-[500] tracking-[-0.03em]">
+              {v("whoTitle")} <span className="text-white/45">{v("whoMuted")}</span>
             </h2>
-            <p className="mt-3 max-w-[32ch] text-[15px] leading-relaxed text-[var(--s-muted)]">{t("notIncludedLead")}</p>
+            <table className="site-reveal mt-12 w-full border-collapse text-left">
+              <thead className="sticky top-[7.75rem] z-10 bg-[var(--s-ink)]/95 backdrop-blur">
+                <tr className="border-b border-white/[0.1]">
+                  <th className="w-[46%] py-4 text-[13px] font-normal text-[var(--s-dmuted)]">
+                    <span className="sr-only">{v("tabs.who")}</span>
+                  </th>
+                  {cols.map((c, i) => (
+                    <th key={c} scope="col" className={cn("px-2 py-4 text-center text-[13px] font-medium sm:text-[14px]", i === 0 ? "text-white" : "text-white/70")}>
+                      {c}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              {who.map((g) => (
+                <tbody key={g.name}>
+                  <tr>
+                    <th colSpan={4} scope="colgroup" className="pt-10 pb-3 text-left">
+                      <Mono className="text-[var(--s-accent-soft)]">{g.name}</Mono>
+                    </th>
+                  </tr>
+                  {g.rows.map((r) => (
+                    <tr key={r.label} className="border-b border-white/[0.06]">
+                      <th scope="row" className="py-4 pr-4 text-[14px] font-normal text-white/85 sm:text-[15px]">
+                        {/* Ramp's dotted label: the explanation on hover or focus. */}
+                        <span tabIndex={0} className="group/tip relative cursor-help underline decoration-white/30 decoration-dotted underline-offset-4 outline-none focus-visible:decoration-white">
+                          {r.label}
+                          <span role="tooltip" className="pointer-events-none absolute top-full left-0 z-20 mt-2 w-[min(320px,70vw)] rounded-lg bg-[#1d1e25] px-3 py-2 text-[13px] leading-snug text-white/80 no-underline opacity-0 shadow-xl ring-1 ring-white/10 site-crossfade group-hover/tip:opacity-100 group-focus/tip:opacity-100">
+                            {r.tip}
+                          </span>
+                        </span>
+                      </th>
+                      {r.who.map((on, i) => (
+                        <td key={i} className="px-2 py-4 text-center">
+                          {on ? (
+                            <span className={cn("inline-flex size-5 items-center justify-center rounded-full", i === 0 ? "bg-[var(--s-accent)] text-white" : "bg-white/12 text-white")}>
+                              <Check aria-hidden className="size-3" strokeWidth={3} />
+                              <span className="sr-only">{v("yes")}</span>
+                            </span>
+                          ) : (
+                            <span className="text-white/25">
+                              <span aria-hidden>—</span>
+                              <span className="sr-only">{v("no")}</span>
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              ))}
+            </table>
           </div>
-          <ul className="flex flex-col border-t border-[var(--s-line)] md:border-t-0">
-            {(["not1", "not2", "not3"] as const).map((k) => (
-              <li key={k} className="border-b border-[var(--s-line)] py-5 text-[17px] leading-relaxed text-[var(--s-text)] first:pt-0 md:first:pt-0">
-                {t(k)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Section>
+        </section>
 
-      {/* 4. Questions (Mercury, Ramp): the heading at the left, the list at the right. */}
-      <Section labelledBy="faq">
-        <div className="grid gap-8 border-t border-[var(--s-line)] pt-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          <h2 id="faq" className="max-w-[14ch] text-[clamp(1.5rem,1vw+1.1rem,2rem)] leading-[1.1] font-[450] tracking-[-0.03em] text-balance">
-            {t("faqTitle")}
-          </h2>
-          <Faq items={faq} />
-        </div>
-      </Section>
+        {/* 6. Vercel's two-column questions. */}
+        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-36 px-6 py-28">
+          <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-10 border-t border-white/[0.08] pt-14 md:grid-cols-12">
+            <h2 id="faq-title" className="site-reveal max-w-[14ch] text-[clamp(1.75rem,1.6vw+1rem,2.5rem)] leading-[1.08] font-[500] tracking-[-0.03em] text-balance md:col-span-5">
+              {v("faqTitle")}
+            </h2>
+            <div className="site-reveal md:col-span-7">
+              <Faq items={faq} tone="dark" />
+            </div>
+          </div>
+        </section>
 
-      {/* 5. Mercury's centred close on the dark band. */}
-      <section aria-labelledby="pricing-closing" className="bg-[var(--s-ink)] px-6 pt-32 pb-8 text-center">
-        <h2 id="pricing-closing" className="mx-auto max-w-[18ch] text-[clamp(2rem,2.8vw+1rem,3.5rem)] leading-[1.08] font-[450] tracking-[-0.035em] text-balance text-white">
-          {t("closingTitle")}
-        </h2>
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <a href={links.signUp} className={`${PILL} bg-[var(--s-accent)] text-white hover:bg-[var(--s-accent-2)]`}>
-            {t("start")}
-          </a>
-          {links.demo && <FrostButton href={links.demo}>{t("demo")}</FrostButton>}
         </div>
-      </section>
 
+        {/* 7. The home page's close. */}
+        <Close id="pricing-closing" title={t("closingTitle")} primary={{ href: links.signUp, label: t("start") }} secondary={links.demo ? { href: links.demo, label: t("demo") } : { href: links.home, label: t("plan") }} />
+      </div>
       <SiteFooter links={links} locale={locale} page="/pricing" />
-    </>
+    </ScrollStage>
   );
 }

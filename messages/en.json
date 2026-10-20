@@ -8439,6 +8439,171 @@
         "note6": "Only the Owner can see a full number, and only with a reason; every look-up is written to a log that can be added to, never edited.",
         "note7": "Rule books: federal, California, Illinois, Massachusetts and New Jersey. Every row of every table carries the date it takes effect.",
         "photos": "Hero photograph on Unsplash by <sulyok>Adrian Sulyok</sulyok>."
+      },
+      "pricingPage": {
+        "tabs": {
+          "plan": "Plan",
+          "included": "Included",
+          "who": "Who does what",
+          "faq": "Questions"
+        },
+        "tabsLabel": "On this page",
+        "fit": "Every agency, any number of workers",
+        "emailLabel": "Work email",
+        "emailPlaceholder": "Your work email",
+        "priceLater": "Shown before you subscribe",
+        "includedTitle": "Everything included.",
+        "includedMuted": "No tiers, no add-ons.",
+        "whoTitle": "Who does what.",
+        "whoMuted": "Tabulado does the week's paperwork. Money moves where it moves today.",
+        "cols": {
+          "tabulado": "Tabulado",
+          "provider": "Your payroll provider",
+          "bank": "Your bank"
+        },
+        "yes": "Yes",
+        "no": "No",
+        "groups": [
+          {
+            "name": "The week",
+            "rows": [
+              {
+                "label": "Read every timesheet twice",
+                "tip": "Two independent readings of each email, text, photo or export; a person decides where they differ.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Apply each state's wage rules",
+                "tip": "Federal, California, Illinois, Massachusetts and New Jersey, each line with its law.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Make the payroll file",
+                "tip": "In the exact layout your payroll system imports, checked to the cent.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Pay your workers",
+                "tip": "Your payroll provider runs payroll from the file and pays your people.",
+                "who": [
+                  0,
+                  1,
+                  0
+                ]
+              },
+              {
+                "label": "File payroll taxes",
+                "tip": "Your payroll provider files and pays payroll taxes, as it does today.",
+                "who": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Billing",
+            "rows": [
+              {
+                "label": "Make one invoice per client",
+                "tip": "From the same approved hours, at each client's bill rates.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Get each client's approval",
+                "tip": "A link in an email; no account, no password.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Match deposits to invoices",
+                "tip": "Your bank's deposit lines matched to open invoices.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Hold and move money",
+                "tip": "Clients pay into your own bank account; Tabulado never touches it.",
+                "who": [
+                  0,
+                  0,
+                  1
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Records",
+            "rows": [
+              {
+                "label": "Keep the activity log",
+                "tip": "Every change, approval, export and look-up, with who and when; added to, never edited.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Keep Social Security numbers encrypted",
+                "tip": "With a key kept outside the database; screens show the last four digits.",
+                "who": [
+                  1,
+                  1,
+                  0
+                ]
+              },
+              {
+                "label": "Keep pay stubs and W-2s",
+                "tip": "Your payroll provider issues them; the worker app shows Tabulado's pay lines.",
+                "who": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "faqTitle": "Questions agency owners ask."
+      },
+      "securityPage": {
+        "title": "How we protect <d>your workers' information</d>.",
+        "statusTitle": "Where we are, honestly.",
+        "lead": {
+          "ssnTitle": "Encrypted, shown only with a reason.",
+          "aiTitle": "Blacked out first.",
+          "wallTitle": "Walled off by the database.",
+          "signTitle": "A second step for anyone who sees pay.",
+          "logTitle": "Every look-up, written down.",
+          "moneyTitle": "No access to money.",
+          "demoTitle": "A made-up agency.",
+          "reportTitle": "Tell us."
+        },
+        "faqTitle": "Questions."
       }
     }
   }

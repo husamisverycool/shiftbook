@@ -38,7 +38,7 @@ export async function SiteFooter({ links, locale, page }: { links: SiteLinks; lo
   const english = locale === "en" ? links.home : links.other(page);
   const spanish = locale === "es" ? links.home : links.other(page);
   return (
-    <footer className="bg-[var(--s-ink)] text-[var(--s-dtext)]">
+    <footer data-tone="ink" className="bg-[var(--s-ink)] text-[var(--s-dtext)]">
       <div className="mx-auto grid w-full max-w-[1200px] grid-cols-2 gap-x-8 gap-y-12 px-6 pt-24 pb-16 md:grid-cols-[1.6fr_repeat(3,1fr)]">
         <div className="col-span-2 flex flex-col gap-4 md:col-span-1">
           <TabuladoLogo className="h-6 text-white" title="Tabulado" />

@@ -8439,6 +8439,171 @@
         "note6": "Solo el Propietario puede ver un número completo, y solo indicando el motivo; cada consulta se escribe en un registro al que se le agrega, nunca se edita.",
         "note7": "Reglamentos: federal, California, Illinois, Massachusetts y Nueva Jersey. Cada fila de cada tabla lleva la fecha en que entra en vigor.",
         "photos": "Fotografía principal en Unsplash de <sulyok>Adrian Sulyok</sulyok>."
+      },
+      "pricingPage": {
+        "tabs": {
+          "plan": "Plan",
+          "included": "Incluido",
+          "who": "Quién hace qué",
+          "faq": "Preguntas"
+        },
+        "tabsLabel": "En esta página",
+        "fit": "Cualquier agencia, cualquier número de trabajadores",
+        "emailLabel": "Correo de trabajo",
+        "emailPlaceholder": "Su correo de trabajo",
+        "priceLater": "Se muestra antes de suscribirse",
+        "includedTitle": "Todo incluido.",
+        "includedMuted": "Sin niveles ni extras.",
+        "whoTitle": "Quién hace qué.",
+        "whoMuted": "Tabulado hace el papeleo de la semana. El dinero se mueve por donde se mueve hoy.",
+        "cols": {
+          "tabulado": "Tabulado",
+          "provider": "Su proveedor de nómina",
+          "bank": "Su banco"
+        },
+        "yes": "Sí",
+        "no": "No",
+        "groups": [
+          {
+            "name": "La semana",
+            "rows": [
+              {
+                "label": "Leer cada hoja de horas dos veces",
+                "tip": "Dos lecturas independientes de cada correo, mensaje, foto o exportación; una persona decide donde difieren.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Aplicar las reglas salariales de cada estado",
+                "tip": "Federal, California, Illinois, Massachusetts y Nueva Jersey, cada línea con su ley.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Preparar el archivo de nómina",
+                "tip": "Con el formato exacto que importa su sistema de nómina, revisado al centavo.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Pagar a sus trabajadores",
+                "tip": "Su proveedor de nómina procesa la nómina con el archivo y paga a su gente.",
+                "who": [
+                  0,
+                  1,
+                  0
+                ]
+              },
+              {
+                "label": "Presentar los impuestos de nómina",
+                "tip": "Su proveedor de nómina presenta y paga los impuestos de nómina, como hoy.",
+                "who": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Cobro",
+            "rows": [
+              {
+                "label": "Hacer una factura por cliente",
+                "tip": "Con las mismas horas aprobadas, a la tarifa de cobro de cada cliente.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Obtener la aprobación de cada cliente",
+                "tip": "Un enlace en un correo; sin cuenta ni contraseña.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Conciliar depósitos con facturas",
+                "tip": "Los depósitos de su banco vinculados con las facturas abiertas.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Guardar y mover dinero",
+                "tip": "Los clientes pagan a su propia cuenta bancaria; Tabulado nunca la toca.",
+                "who": [
+                  0,
+                  0,
+                  1
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Registros",
+            "rows": [
+              {
+                "label": "Llevar el registro de actividad",
+                "tip": "Cada cambio, aprobación, exportación y consulta, con quién y cuándo; se le agrega, nunca se edita.",
+                "who": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "label": "Guardar cifrados los números de Seguro Social",
+                "tip": "Con una clave guardada fuera de la base de datos; las pantallas muestran los últimos cuatro dígitos.",
+                "who": [
+                  1,
+                  1,
+                  0
+                ]
+              },
+              {
+                "label": "Guardar talones de pago y formularios W-2",
+                "tip": "Los emite su proveedor de nómina; la app para trabajadores muestra las líneas de pago de Tabulado.",
+                "who": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "faqTitle": "Preguntas de los dueños de agencias."
+      },
+      "securityPage": {
+        "title": "Cómo protegemos <d>la información de sus trabajadores</d>.",
+        "statusTitle": "Dónde estamos, con franqueza.",
+        "lead": {
+          "ssnTitle": "Cifrados, visibles solo con un motivo.",
+          "aiTitle": "Tapados primero.",
+          "wallTitle": "Separados por la base de datos.",
+          "signTitle": "Un segundo paso para quien ve pagos.",
+          "logTitle": "Cada consulta, por escrito.",
+          "moneyTitle": "Sin acceso al dinero.",
+          "demoTitle": "Una agencia ficticia.",
+          "reportTitle": "Avísenos."
+        },
+        "faqTitle": "Preguntas."
       }
     }
   }
