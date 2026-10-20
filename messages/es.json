@@ -8754,7 +8754,10 @@
       "changelog": {
         "title": "Cambios de reglas",
         "rises": "El salario mínimo de {place} sube a {rate}",
-        "is": "El salario mínimo de {place} es {rate}"
+        "is": "El salario mínimo de {place} es {rate}",
+        "body": "Cada tarifa en Tabulado lleva la fecha en que empieza. Cuando cambia la ley, el pago cambia ese día, sin que usted tenga que actualizar nada.",
+        "today": "Hoy",
+        "until": "{days, plural, one {en # día} other {en # días}}"
       },
       "prefooter": "Hecho para agencias de personal. Listo esta semana.",
       "scenes": {

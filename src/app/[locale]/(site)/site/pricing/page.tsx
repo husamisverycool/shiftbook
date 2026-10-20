@@ -87,7 +87,7 @@ export default async function SitePricing({ params }: { params: Promise<{ locale
                 <label htmlFor="plan-email" className="sr-only">
                   {v("emailLabel")}
                 </label>
-                <input id="plan-email" name="email" type="email" autoComplete="email" placeholder={v("emailPlaceholder")} className="h-11 min-w-0 flex-1 rounded-full bg-white/[0.05] px-5 l-text-regular text-[var(--l-text)] ring-1 ring-white/12 outline-none placeholder:text-white/40 focus:ring-white/30" />
+                <input id="plan-email" name="email" type="email" autoComplete="email" placeholder={v("emailPlaceholder")} className="h-11 min-w-0 shrink-0 rounded-full sm:flex-1 bg-white/[0.05] px-5 l-text-regular text-[var(--l-text)] ring-1 ring-white/12 outline-none placeholder:text-white/40 focus:ring-white/30" />
                 <button type="submit" className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-[#e5e5e6] px-5 l-text-regular font-[510] text-[#08090a] outline-none site-color-slow hover:bg-white focus-visible:ring-2 focus-visible:ring-white/60">
                   {t("start")}
                 </button>

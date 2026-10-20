@@ -31,9 +31,9 @@ function Features({ label, items }: { label: string; items: Feature[] }) {
       {list.map((f) => (
         <li key={f.name}>
           <details className="group/f">
-            <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-sm py-1 l-text-regular text-[var(--l-text-3)] outline-none site-color-slow hover:text-[var(--l-text)] focus-visible:ring-2 focus-visible:ring-white/30 [&::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer list-none rounded-sm py-1 l-text-regular text-[var(--l-text-3)] outline-none site-color-slow hover:text-[var(--l-text)] focus-visible:ring-2 focus-visible:ring-white/30 [&::-webkit-details-marker]:hidden">
               {f.name}
-              <span aria-hidden className="text-[var(--l-text-4)] motion-state group-open/f:rotate-45">
+              <span aria-hidden className="ml-1.5 inline-block text-[var(--l-text-4)] motion-state group-open/f:rotate-45">
                 +
               </span>
             </summary>

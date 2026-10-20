@@ -8754,7 +8754,10 @@
       "changelog": {
         "title": "Rule changes",
         "rises": "{place} minimum wage rises to {rate}",
-        "is": "{place} minimum wage is {rate}"
+        "is": "{place} minimum wage is {rate}",
+        "body": "Every rate in Tabulado carries the date it starts. When the law changes, pay changes on that day, with nothing for you to update.",
+        "today": "Today",
+        "until": "{days, plural, one {in # day} other {in # days}}"
       },
       "prefooter": "Built for staffing agencies. Ready this week.",
       "scenes": {

@@ -1,31 +1,5 @@
-// Pattern: docs/patterns/site.md — Linear's changelog and pre-footer (linear.app, 2026-10-20). Changelog:
-// the title (48px) at the left, then one hairline across the page with a dot over each of four entries, the
-// newest dot lit; each entry a title (15px, #d0d6e0, 510, one line), two grey lines, and the date. Pre-footer:
+// Pattern: docs/patterns/site.md — Linear's pre-footer (linear.app, 2026-10-20):
 // a centred two-sentence title (72px, weight 510, at most 16ch) and two pills, Linear's light and dark ones.
-import { cn } from "@/lib/utils";
-
-export function Changelog({ id, title, entries }: { id: string; title: string; entries: { key: string; title: string; body: string; date: string }[] }) {
-  return (
-    <section aria-labelledby={id} className="py-32 md:py-40">
-      <div className="mx-auto w-full max-w-[1440px] px-6 md:px-20">
-        <h2 id={id} className="site-reveal l-title-6 text-[var(--l-text)]">
-          {title}
-        </h2>
-        <ol className="site-reveal relative mt-16 grid grid-cols-1 gap-10 pt-10 sm:grid-cols-2 lg:mt-[72px] lg:grid-cols-4 lg:gap-8">
-          <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-[var(--l-line)]" />
-          {entries.map((e, i) => (
-            <li key={e.key} className="relative flex flex-col">
-              <span aria-hidden className={cn("absolute -top-[45px] left-0 size-[9px] rounded-full ring-4 ring-[var(--l-bg)]", i === 0 ? "bg-[var(--l-text)] shadow-[0_0_10px_rgba(255,255,255,0.6)]" : "bg-[var(--l-text-4)]")} />
-              <span className="truncate l-text-regular font-[510] text-[var(--l-text-2)]">{e.title}</span>
-              <span className="mt-2 line-clamp-2 l-text-regular text-[var(--l-text-3)]">{e.body}</span>
-              <span className="mt-3 l-text-mini text-[var(--l-text-4)]">{e.date}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
 
 export function Prefooter({ id, title, primary, secondary }: { id: string; title: string; primary: { href: string; label: string }; secondary: { href: string; label: string } }) {
   return (

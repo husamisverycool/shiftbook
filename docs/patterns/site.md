@@ -69,8 +69,12 @@ lines and the exporters' files.
       above, filling in one by one; the five payroll systems' wordmarks in a tray at the right; three
       clients as dashed slots below; "Your bank, not connected" as a dashed box with no line. Phones: the
       same pieces as a list.
-5. Changelog (Linear): "Rule changes"; one hairline with a dot over each of four entries, the newest lit;
-   each entry a title, its citation (two lines at most) and its date — from the rule tables.
+5. Rule changes as Linear's project timeline: the 48px title at the left and a 20px grey paragraph at the
+   right; under them one panel with a month axis (13px grey, the year on January) and faint monthly
+   gridlines; a white "Today" pill over a lit vertical line, the days ahead faintly lit; one row per change
+   (six, from the rule tables) with a diamond milestone at its date — grey once in force, white and glowing
+   while to come, with "in N days" — and its name, date and citation beside it (to the left of the diamond
+   in the timeline's last third). Rows arrive one after another. Phones: the same milestones listed down the page with "Today" between past and coming.
 6. Pre-footer (Linear): centred 72px two-sentence title, at most 16 characters a line; Linear's light and
    dark pills.
 7. Footer (layout pattern).

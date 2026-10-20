@@ -2,7 +2,7 @@
 // 2026-10-20; decision 0048): the hero (unchanged, owner); the logo row with its caption; the statement and
 // its three figures; four product sections (title, description, a dim product scene with one panel in front,
 // a Features row), with Raycast's lit sentences, Stripe's book card (a page of the law) and Stripe's systems
-// diagram between them; the changelog; the centred pre-footer; the footer.
+// diagram between them; Linear's project timeline of rule changes; the centred pre-footer; the footer.
 import type { Metadata } from "next";
 import Image from "next/image";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
@@ -11,7 +11,8 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { ScrollStage } from "@/components/site/scroll";
 import type { Demo } from "@/components/site/app/data";
 import { HeroPlayer } from "@/components/site/app/hero-player";
-import { Changelog, Prefooter } from "@/components/site/linear/closing";
+import { Prefooter } from "@/components/site/linear/closing";
+import { Timeline } from "@/components/site/linear/timeline";
 import { Logos } from "@/components/site/linear/logos";
 import { ApprovalsScene, FileScene, IntakeScene, RulesScene } from "@/components/site/linear/scenes";
 import { Keyline, ProductSection } from "@/components/site/linear/section";
@@ -62,12 +63,16 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
   const features = (k: "intake" | "rules" | "approvals" | "files") => (v.raw(`${k}.features`) as [string, string][]).map(([name, text]) => ({ name, text }));
 
   const today = new Date().toISOString().slice(0, 10);
-  const entries = ruleUpdates(today).map((u) => ({
+  const entries = ruleUpdates(today, 6).map((u) => ({
     key: `${u.state}-${u.scope}-${u.effectiveFrom}`,
     title: v(u.daysUntil > 0 ? "changelog.rises" : "changelog.is", { place: u.scope ?? t(`state.${u.state}`), rate: usd(u.rateCents) }),
-    body: u.citation.split(" — ")[0]!,
+    citation: u.citation.split(" — ")[0]!,
     date: date(u.effectiveFrom),
+    daysUntil: u.daysUntil,
+    day: Math.floor(Date.parse(`${u.effectiveFrom}T00:00:00Z`) / 86_400_000),
+    until: v("changelog.until", { days: u.daysUntil }),
   }));
+  const month = (iso: string) => format.dateTime(new Date(`${iso}T12:00:00Z`), { month: "short", year: iso.endsWith("-01-01") ? "numeric" : undefined, timeZone: "UTC" });
 
   return (
     <ScrollStage>
@@ -132,7 +137,7 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
         />
         <Keyline />
 
-        <Changelog id="changelog-title" title={v("changelog.title")} entries={entries} />
+        <Timeline id="changelog-title" title={v("changelog.title")} body={v("changelog.body")} todayLabel={v("changelog.today")} today={today} todayText={date(today)} entries={entries} month={month} />
 
         <Prefooter id="prefooter-title" title={v("prefooter")} primary={{ href: links.signUp, label: t("hero.start") }} secondary={secondary} />
       </div>
