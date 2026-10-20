@@ -60,7 +60,7 @@ const ANCHORS: Record<MenuKey, string[]> = {
   how: ["#tour", "#twice-title", "#payline-title", "#rules-title", "#hub-title"],
 };
 const FOOT: Record<MenuKey, string> = { product: "#systems-title", how: "#specs-title" };
-const WIDTH: Record<MenuKey, number> = { product: 560, how: 440 };
+const WIDTH: Record<MenuKey, number> = { product: 560, how: 360 };
 const DARK_TONES = new Set(["ink", "deep", "night", "black", "flow"]);
 
 const PANEL_LINK = "border-b border-[var(--s-line)] py-4 text-lg font-medium text-[var(--s-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--s-accent-soft)]";
@@ -142,7 +142,8 @@ export function SiteHeader({ labels, links }: { labels: SiteHeaderLabels; links:
   }, [open]);
 
   const light = scrolled && !dark;
-  const link = cn("rounded-md text-[14px] font-medium outline-none site-color-slow focus-visible:ring-2", light ? "text-[var(--s-text)]/70 hover:text-[var(--s-text)] focus-visible:ring-[var(--s-accent-soft)]" : "text-white/75 hover:text-white focus-visible:ring-white/60");
+  // Linear's header anchor: 32px tall, 12px sides, 13px, grey turning white on a faint glass hover.
+  const link = cn("inline-flex h-8 items-center rounded-full px-3 text-[13px] outline-none site-color-slow focus-visible:ring-2 aria-expanded:bg-white/[0.08] aria-expanded:text-[var(--l-text)]", light ? "text-[var(--s-text)]/70 hover:bg-black/[0.06] hover:text-[var(--s-text)] focus-visible:ring-[var(--s-accent-soft)]" : "text-[var(--l-text-3)] hover:bg-white/[0.08] hover:text-[var(--l-text)] focus-visible:ring-white/50");
   const href = (anchor: string) => `${links.home}${anchor}`;
 
   return (
@@ -152,7 +153,7 @@ export function SiteHeader({ labels, links }: { labels: SiteHeaderLabels; links:
       </a>
       <header className={cn("fixed inset-x-0 top-[var(--banner-height,0px)] z-40 site-morph", hidden ? "-translate-y-full" : "translate-y-0")} onPointerLeave={() => hide(260)}>
         {/* The frosted bar: invisible over the photograph, dark or light by the band under it. */}
-        <div aria-hidden className={cn("pointer-events-none absolute inset-0 border-b backdrop-blur-xl site-crossfade", !scrolled ? "border-transparent opacity-0" : dark ? "border-white/[0.08] bg-[#0b0c10]/75 opacity-100" : "border-[var(--s-line)] bg-[var(--s-paper)]/85 opacity-100")} />
+        <div aria-hidden className={cn("pointer-events-none absolute inset-0 border-b backdrop-blur-xl site-crossfade", !scrolled ? "border-transparent opacity-0" : dark ? "border-white/[0.08] bg-[var(--l-bg)]/90 opacity-100" : "border-[var(--s-line)] bg-[var(--s-paper)]/85 opacity-100")} />
         <div ref={bar} className="relative mx-auto flex h-16 w-full max-w-[1320px] items-center gap-10 px-6">
           <NextLink href={links.home} aria-label={labels.home} className={cn("rounded-md outline-none site-color-slow focus-visible:ring-2 focus-visible:ring-white/60", light ? "text-[var(--s-text)]" : "text-white")}>
             <TabuladoLogo className="h-6" title="Tabulado" />
@@ -199,7 +200,7 @@ export function SiteHeader({ labels, links }: { labels: SiteHeaderLabels; links:
             <a href={links.logIn} className={link}>
               {labels.logIn}
             </a>
-            <a href={links.start} className="inline-flex h-9 items-center rounded-full bg-[var(--s-accent)] px-4 text-[14px] font-medium text-white outline-none site-color-slow hover:bg-[var(--s-accent-2)] focus-visible:ring-2 focus-visible:ring-[var(--s-accent-soft)] focus-visible:ring-offset-2">
+            <a href={links.start} className="inline-flex h-8 items-center rounded-full bg-[#e5e5e6] px-3 text-[13px] font-[510] text-[#08090a] shadow-[0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.07),0_3px_2px_rgba(0,0,0,0.04)] outline-none site-color-slow hover:bg-white focus-visible:ring-2 focus-visible:ring-white/60">
               {labels.start}
             </a>
           </div>
@@ -210,8 +211,7 @@ export function SiteHeader({ labels, links }: { labels: SiteHeaderLabels; links:
             style={{ left: place?.left ?? 0, width: open ? WIDTH[open] : WIDTH.product, transition: "left 260ms cubic-bezier(0.2,0.8,0.2,1), width 260ms cubic-bezier(0.2,0.8,0.2,1)" }}
             onPointerEnter={() => window.clearTimeout(timer.current)}
           >
-            <span aria-hidden className={cn("absolute -top-1.5 size-3 rotate-45 rounded-[2px] bg-[#15161d] ring-1 ring-white/10 site-crossfade", open ? "opacity-100" : "opacity-0")} style={{ left: (place?.caret ?? 0) - 6, transition: "left 260ms cubic-bezier(0.2,0.8,0.2,1), opacity 200ms" }} />
-            <div className={cn("relative overflow-hidden rounded-xl bg-[#15161d] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/10 site-crossfade", open ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0")} style={{ height: place?.height ?? 0, transition: "height 260ms cubic-bezier(0.2,0.8,0.2,1), opacity 200ms, transform 200ms" }}>
+            <div className={cn("relative overflow-hidden rounded-[14px] border border-white/[0.08] bg-[#08090a]/90 shadow-[0_8px_32px_#08090a] backdrop-blur-[32px] site-crossfade", open ? "scale-100 opacity-100" : "scale-[0.98] opacity-0")} style={{ height: place?.height ?? 0, transformOrigin: "top", transition: "height 220ms, opacity 180ms, transform 180ms" }}>
               {MENUS.map((key) => {
                 const m = labels.menus[key];
                 return (
@@ -225,26 +225,26 @@ export function SiteHeader({ labels, links }: { labels: SiteHeaderLabels; links:
                     className={cn("absolute inset-x-0 top-0 site-crossfade", open === key ? "opacity-100" : "pointer-events-none opacity-0")}
                     style={{ width: WIDTH[key] }}
                   >
-                    <p className="px-5 pt-4 pb-1 font-mono text-[10.5px] tracking-[0.08em] text-white/40 uppercase">{m.title}</p>
-                    <ul className={cn("grid gap-0.5 p-2", key === "product" ? "grid-cols-2" : "grid-cols-1")}>
+                    <p className="sr-only">{m.title}</p>
+                    <ul className={cn("grid gap-2 p-2", key === "product" ? "grid-cols-2" : "grid-cols-1")}>
                       {m.items.map((item, i) => {
                         const I = ICONS[key][i]!;
                         return (
                           <li key={item.title} className={key === "product" && i === m.items.length - 1 ? "col-span-2" : undefined}>
-                            <a href={href(ANCHORS[key][i]!)} tabIndex={open === key ? 0 : -1} onClick={() => setOpen(null)} className="group/item flex gap-3 rounded-lg p-3 outline-none site-color-slow hover:bg-white/[0.05] focus-visible:bg-white/[0.06] focus-visible:ring-1 focus-visible:ring-white/20">
-                              <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-[var(--s-accent-soft)] ring-1 ring-white/[0.08]">
-                                <I className="size-4" strokeWidth={1.8} />
+                            <a href={href(ANCHORS[key][i]!)} tabIndex={open === key ? 0 : -1} onClick={() => setOpen(null)} className="group/item flex h-full gap-3 rounded-[10px] bg-white/[0.04] p-4 outline-none site-color-slow hover:bg-white/[0.08] focus-visible:bg-white/[0.08] focus-visible:ring-1 focus-visible:ring-white/20">
+                              <span aria-hidden className="mt-px flex shrink-0 text-[var(--l-text-2)]">
+                                <I className="size-4" strokeWidth={1.6} />
                               </span>
-                              <span className="flex flex-col gap-0.5">
-                                <span className="text-[14px] font-medium text-white">{item.title}</span>
-                                <span className="text-[13px] leading-snug text-white/50">{item.body}</span>
+                              <span className="flex flex-col gap-1.5">
+                                <span className="text-[13px] leading-none font-[510] text-[var(--l-text)]">{item.title}</span>
+                                <span className="text-[13px] leading-snug text-[var(--l-text-3)] opacity-80 group-hover/item:text-[var(--l-text-2)]">{item.body}</span>
                               </span>
                             </a>
                           </li>
                         );
                       })}
                     </ul>
-                    <a href={href(FOOT[key])} tabIndex={open === key ? 0 : -1} onClick={() => setOpen(null)} className="flex items-center justify-between border-t border-white/[0.07] bg-white/[0.025] px-5 py-3 text-[13px] text-white/70 outline-none site-color-slow hover:text-white focus-visible:text-white">
+                    <a href={href(FOOT[key])} tabIndex={open === key ? 0 : -1} onClick={() => setOpen(null)} className="mx-2 mb-2 flex items-center justify-between rounded-md px-4 py-3 text-[13px] text-[var(--l-text-3)] outline-none site-color-slow hover:bg-white/[0.04] hover:text-[var(--l-text)] focus-visible:text-[var(--l-text)]">
                       {m.foot}
                       <span aria-hidden>→</span>
                     </a>
@@ -255,7 +255,7 @@ export function SiteHeader({ labels, links }: { labels: SiteHeaderLabels; links:
           </div>
 
           <div className="ml-auto flex items-center gap-2 lg:hidden">
-            <a href={links.start} className="inline-flex h-9 items-center rounded-full bg-[var(--s-accent)] px-4 text-sm font-medium text-white outline-none focus-visible:ring-2 focus-visible:ring-[var(--s-accent-soft)]">
+            <a href={links.start} className="inline-flex h-8 items-center rounded-full bg-[#e5e5e6] px-3 text-[13px] font-[510] text-[#08090a] shadow-[0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.07),0_3px_2px_rgba(0,0,0,0.04)] outline-none site-color-slow hover:bg-white focus-visible:ring-2 focus-visible:ring-white/60">
               {labels.start}
             </a>
             <Sheet open={sheet} onOpenChange={setSheet}>

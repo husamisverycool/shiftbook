@@ -8605,6 +8605,184 @@
         },
         "faqTitle": "Preguntas."
       }
+    },
+    "linear": {
+      "logos": "Tabulado escribe el archivo de nómina que importan estos sistemas",
+      "statement": {
+        "strong": "Software administrativo para agencias de personal.",
+        "rest": "Tabulado lee cada hoja de horas, paga cada línea según las reglas del estado donde se trabajó y le entrega el archivo de nómina y una factura para cada cliente."
+      },
+      "benefits": [
+        {
+          "title": "Leído dos veces",
+          "body": "Cada hoja de horas se lee de dos maneras distintas. Usted solo revisa las horas en las que no coinciden."
+        },
+        {
+          "title": "Pagado según la ley",
+          "body": "Reglas federales y de cuatro estados, cada línea de pago con la regla que sigue."
+        },
+        {
+          "title": "Archivos que cuadran",
+          "body": "Cada archivo de nómina se compara con las líneas de pago al centavo antes de que lo descargue."
+        }
+      ],
+      "featuresLabel": "Funciones",
+      "intake": {
+        "title": "Recepción\ny lectura",
+        "body": "Los clientes envían las horas por correo, mensaje, foto o exportación del reloj checador. Tabulado lee cada una dos veces, vincula los nombres con su lista de trabajadores y aparta solo las horas que necesitan a una persona.",
+        "features": [
+          [
+            "Bandeja de correo",
+            "Cada agencia tiene su propia dirección. Reenvíe las horas y aparecen en la bandeja."
+          ],
+          [
+            "Mensajes de texto",
+            "Trabajadores y supervisores pueden enviar horas o una corrección por mensaje."
+          ],
+          [
+            "Fotos y escaneos",
+            "Las imágenes se leen solo después de tapar todo lo que parezca un número de Seguro Social."
+          ],
+          [
+            "Archivos del reloj checador",
+            "Las exportaciones del reloj y las hojas de cálculo se leen directamente, sin IA."
+          ],
+          [
+            "Vinculación de nombres",
+            "Los apodos y errores de escritura se vinculan con el trabajador de su lista."
+          ],
+          [
+            "Dos lecturas",
+            "Las dos lecturas se comparan campo por campo. Donde difieren, las horas lo esperan a usted."
+          ]
+        ]
+      },
+      "rules": {
+        "title": "Reglas salariales\ny pago",
+        "body": "Cada línea se paga según las reglas del estado donde se trabajó, desde las horas extra diarias hasta el pago por presentarse y los salarios mínimos de cada ciudad. Cada línea muestra su aritmética y la ley que sigue.",
+        "features": [
+          [
+            "Horas extra",
+            "Horas extra semanales en todos los estados, y diarias en California."
+          ],
+          [
+            "Horas dobles",
+            "Después de 12 horas en un día, y en el séptimo día seguido, en California."
+          ],
+          [
+            "Pago por presentarse",
+            "Lo que se le debe a un trabajador enviado a casa antes o no utilizado, según la regla de cada estado."
+          ],
+          [
+            "Salarios mínimos de ciudades",
+            "Las tarifas de Chicago y del condado de Cook, y las ciudades de California detenidas para revisión hasta tener sus tarifas."
+          ],
+          [
+            "Igualdad salarial de Illinois",
+            "Un conteo de horas con cada cliente hasta la marca de 720 horas."
+          ],
+          [
+            "Tablas de reglas con fecha",
+            "Cada tarifa lleva la fecha en que entra en vigor, así un cambio se aplica el día correcto."
+          ]
+        ]
+      },
+      "approvals": {
+        "title": "Aprobaciones\ny facturas",
+        "body": "Cada cliente aprueba las horas de su gente desde un enlace en un correo, sin crear una cuenta. Las mismas horas aprobadas se convierten en una factura por cliente.",
+        "features": [
+          [
+            "Enlaces de aprobación",
+            "Un enlace por cliente por semana, válido solo para esa semana."
+          ],
+          [
+            "Recordatorios",
+            "A los clientes que no han respondido se les recuerda según su calendario."
+          ],
+          [
+            "Preguntas",
+            "Un cliente puede cuestionar una sola línea e indicar el motivo."
+          ],
+          [
+            "Una factura por cliente",
+            "A la tarifa de cobro de cada cliente, con las horas aprobadas adjuntas."
+          ],
+          [
+            "Depósitos conciliados",
+            "Los depósitos del banco se vinculan con las facturas que pagan."
+          ],
+          [
+            "Notas de crédito",
+            "Las correcciones salen como notas de crédito. Nada se sobrescribe."
+          ]
+        ]
+      },
+      "files": {
+        "title": "Archivos de nómina\ny exportaciones",
+        "body": "La semana sale como un archivo que importa su sistema de nómina. Antes de que lo descargue, sus totales se comparan con las líneas de pago y cualquier diferencia se explica.",
+        "features": [
+          [
+            "Gusto",
+            "Un archivo de horas con el formato que importa Gusto, con el ID de Gusto de cada trabajador."
+          ],
+          [
+            "ADP Workforce Now",
+            "Un lote de datos de pago con su código de compañía y sus códigos de ingresos."
+          ],
+          [
+            "RUN Powered by ADP",
+            "El archivo de importación genérico, una fila por código de ingresos."
+          ],
+          [
+            "Paychex Flex",
+            "Conceptos de pago y tarifas con el formato que lee Paychex Flex."
+          ],
+          [
+            "Paylocity",
+            "Una importación de horas con sus códigos de ingresos."
+          ],
+          [
+            "QuickBooks",
+            "Actividades de tiempo para QuickBooks Desktop u Online."
+          ]
+        ],
+        "workers": "Trabajadores",
+        "gross": "Bruto de Tabulado",
+        "theirs": "Gusto pagará",
+        "difference": "Diferencia"
+      },
+      "changelog": {
+        "title": "Cambios de reglas",
+        "rises": "El salario mínimo de {place} sube a {rate}",
+        "is": "El salario mínimo de {place} es {rate}"
+      },
+      "prefooter": "Hecho para agencias de personal. Listo esta semana.",
+      "scenes": {
+        "intake": {
+          "title": "Mensajes",
+          "m1": "¿Me corrige el miércoles? Salí a las 2, no a las 4.",
+          "m2": "Las horas del muelle 3 de la semana están en el correo.",
+          "m3": "Gracias. El viernes fueron 8 completas.",
+          "action": "Agregar a la semana"
+        },
+        "rules": {
+          "title": "California, horas por día",
+          "eight": "8 horas",
+          "twelve": "12 horas"
+        },
+        "approvals": {
+          "subject": "Horas de la semana del 5 oct",
+          "from": "De Cedar Row Staffing",
+          "body": "Por favor revise las horas de su gente de la semana pasada. 12 trabajadores, 486 horas.",
+          "approve": "Aprobar",
+          "question": "Cuestionar una línea"
+        },
+        "file": {
+          "title": "Totales de control",
+          "note": "Gusto paga 0.62 horas por 37 minutos, redondeado hacia arriba para no perder tiempo. Esos son los 9 centavos."
+        }
+      },
+      "trademarks": "Gusto, ADP, Paychex, QuickBooks y Paylocity son marcas de sus dueños. Tabulado escribe archivos que importan sus sistemas y no está afiliado con ellos."
     }
   }
 }

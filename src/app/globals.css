@@ -354,17 +354,28 @@
  * Mercury's near-black navy band (#171721) and warm paper (#F6F5F2), the product's indigo accent.
  * ---------------------------------------------------------------------------------------------- */
 .site {
-  --s-ink: #14151c;
-  --s-ink-2: #1c1d26;
-  --s-ink-3: #262733;
+  /* Linear's dark (linear.app's stylesheet, 2026-10-20; decision 0048). */
+  --l-bg: #08090a;
+  --l-panel: #0f1011;
+  --l-level-2: #141516;
+  --l-level-3: #191a1b;
+  --l-border: #23252a;
+  --l-line: rgb(255 255 255 / 0.08);
+  --l-text: #f7f8f8;
+  --l-text-2: #d0d6e0;
+  --l-text-3: #8a8f98;
+  --l-text-4: #62666d;
+  --s-ink: #08090a;
+  --s-ink-2: #141516;
+  --s-ink-3: #191a1b;
   --s-paper: #f6f5f2;
   --s-paper-2: #efede8;
   --s-card: #ebe8e2;
   --s-text: #16171d;
   --s-muted: #67665f;
   --s-line: rgb(22 23 29 / 0.1);
-  --s-dtext: #ededf3;
-  --s-dmuted: #9b9dab;
+  --s-dtext: #f7f8f8;
+  --s-dmuted: #8a8f98;
   --s-dline: rgb(255 255 255 / 0.09);
   --s-accent: oklch(52% 0.17 268);
   --s-accent-2: oklch(46% 0.17 268);
@@ -374,6 +385,108 @@
   --s-amber: #b45309;
   color: var(--s-text);
   background: var(--s-paper);
+}
+
+/* Linear's type scale (linear.app's stylesheet, 2026-10-20; decision 0048): Inter, weight 510 for titles,
+ * each size with its own line height and tracking, stepping down at Linear's breakpoints. */
+@utility l-title-9 {
+  font-size: 4.5rem;
+  line-height: 1;
+  letter-spacing: -0.022em;
+  font-weight: 510;
+  @media (max-width: 1280px) {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+}
+@utility l-title-8 {
+  font-size: 4rem;
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  font-weight: 510;
+  @media (max-width: 1024px) {
+    font-size: 3rem;
+    line-height: 1;
+  }
+  @media (max-width: 640px) {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+}
+@utility l-title-6 {
+  font-size: 3rem;
+  line-height: 1;
+  letter-spacing: -0.022em;
+  font-weight: 510;
+  @media (max-width: 1280px) {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+  @media (max-width: 768px) {
+    font-size: 2rem;
+    line-height: 1.125;
+  }
+  @media (max-width: 640px) {
+    font-size: 1.5rem;
+    line-height: 1.33;
+    letter-spacing: -0.012em;
+  }
+}
+@utility l-title-4 {
+  font-size: 2rem;
+  line-height: 1.125;
+  letter-spacing: -0.022em;
+  font-weight: 510;
+  @media (max-width: 640px) {
+    font-size: 1.5rem;
+    line-height: 1.33;
+    letter-spacing: -0.012em;
+  }
+}
+@utility l-title-3 {
+  font-size: 1.5rem;
+  line-height: 1.33;
+  letter-spacing: -0.012em;
+  font-weight: 510;
+}
+@utility l-title-2 {
+  font-size: 1.25rem;
+  line-height: 1.33;
+  letter-spacing: -0.012em;
+  @media (max-width: 640px) {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    letter-spacing: -0.011em;
+  }
+}
+@utility l-title-1 {
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  font-weight: 510;
+}
+@utility l-text-large {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+@utility l-text-regular {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+}
+@utility l-text-small {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  letter-spacing: -0.013em;
+}
+@utility l-text-mini {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+@utility l-text-micro {
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 /* Film grain (Mercury's cards, Vercel's 70px noise at multiply): an SVG turbulence tile. */

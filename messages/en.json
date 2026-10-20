@@ -8605,6 +8605,184 @@
         },
         "faqTitle": "Questions."
       }
+    },
+    "linear": {
+      "logos": "Tabulado writes the payroll file these systems import",
+      "statement": {
+        "strong": "Back-office software for staffing agencies.",
+        "rest": "Tabulado reads every timesheet, pays each line by the rules of the state the work was in, and hands you the payroll file and an invoice for every client."
+      },
+      "benefits": [
+        {
+          "title": "Read twice",
+          "body": "Every timesheet is read two separate ways. You only look at the hours where they disagree."
+        },
+        {
+          "title": "Paid by the law",
+          "body": "Federal rules and the rules of four states, each pay line citing the one it follows."
+        },
+        {
+          "title": "Files that balance",
+          "body": "Each payroll file is checked against the pay lines to the cent before you download it."
+        }
+      ],
+      "featuresLabel": "Features",
+      "intake": {
+        "title": "Intake\nand reading",
+        "body": "Clients send hours by email, text, photo or time-clock export. Tabulado reads each one twice, matches names to your roster, and sets aside only the hours that need a person.",
+        "features": [
+          [
+            "Email inbox",
+            "Every agency gets its own address. Forward hours to it and they show up in the inbox."
+          ],
+          [
+            "Text messages",
+            "Workers and supervisors can text in hours or a correction."
+          ],
+          [
+            "Photos and scans",
+            "Pictures are read only after anything shaped like a Social Security number is blacked out."
+          ],
+          [
+            "Time-clock files",
+            "Clock exports and spreadsheets are read directly, without AI."
+          ],
+          [
+            "Name matching",
+            "Nicknames and misspellings are matched to the worker on your roster."
+          ],
+          [
+            "Two readings",
+            "Both readings are compared field by field. Where they differ, the hours wait for you."
+          ]
+        ]
+      },
+      "rules": {
+        "title": "Wage rules\nand pay",
+        "body": "Each line is paid by the rules of the state the work was in, from daily overtime to reporting pay and city minimum wages. Every line shows its arithmetic and the law it follows.",
+        "features": [
+          [
+            "Overtime",
+            "Weekly overtime everywhere, and daily overtime in California."
+          ],
+          [
+            "Double time",
+            "Past 12 hours in a day, and on a seventh day in a row, in California."
+          ],
+          [
+            "Reporting pay",
+            "What a worker is owed when sent home early or not used, by each state's rule."
+          ],
+          [
+            "City minimum wages",
+            "Chicago and Cook County rates, with California cities held for review until their rates are on file."
+          ],
+          [
+            "Illinois equal pay",
+            "A running count of hours at each client toward the 720-hour mark."
+          ],
+          [
+            "Dated rule tables",
+            "Every rate carries the date it takes effect, so a change applies on the right day."
+          ]
+        ]
+      },
+      "approvals": {
+        "title": "Approvals\nand invoices",
+        "body": "Each client approves its people's hours from a link in an email, with no account to set up. The same approved hours become one invoice per client.",
+        "features": [
+          [
+            "Approval links",
+            "One link per client per week, good for that week only."
+          ],
+          [
+            "Reminders",
+            "Clients who haven't answered are reminded on your schedule."
+          ],
+          [
+            "Questions",
+            "A client can question a single line and say why."
+          ],
+          [
+            "One invoice per client",
+            "At each client's bill rates, with the approved hours attached."
+          ],
+          [
+            "Deposits matched",
+            "Bank deposits are matched to the invoices they pay."
+          ],
+          [
+            "Credit notes",
+            "Corrections go out as credit notes. Nothing is overwritten."
+          ]
+        ]
+      },
+      "files": {
+        "title": "Payroll files\nand exports",
+        "body": "The week goes out as a file your payroll system imports. Before you download it, its totals are checked against the pay lines and any difference is explained.",
+        "features": [
+          [
+            "Gusto",
+            "An hours file in the layout Gusto imports, with each worker's Gusto ID."
+          ],
+          [
+            "ADP Workforce Now",
+            "A pay data batch with your company code and earnings codes."
+          ],
+          [
+            "RUN Powered by ADP",
+            "The generic import file, one row per earnings code."
+          ],
+          [
+            "Paychex Flex",
+            "Pay components and rates in the layout Paychex Flex reads."
+          ],
+          [
+            "Paylocity",
+            "A time import with your earning codes."
+          ],
+          [
+            "QuickBooks",
+            "Time activities for QuickBooks Desktop or Online."
+          ]
+        ],
+        "workers": "Workers",
+        "gross": "Tabulado's gross",
+        "theirs": "Gusto will pay",
+        "difference": "Difference"
+      },
+      "changelog": {
+        "title": "Rule changes",
+        "rises": "{place} minimum wage rises to {rate}",
+        "is": "{place} minimum wage is {rate}"
+      },
+      "prefooter": "Built for staffing agencies. Ready this week.",
+      "scenes": {
+        "intake": {
+          "title": "Messages",
+          "m1": "Can you fix my Wednesday? I left at 2, not 4.",
+          "m2": "Dock 3 hours for the week are in the email.",
+          "m3": "Thanks. Friday was a full 8.",
+          "action": "Add to the week"
+        },
+        "rules": {
+          "title": "California, hours by day",
+          "eight": "8 hours",
+          "twelve": "12 hours"
+        },
+        "approvals": {
+          "subject": "Hours for the week of Oct 5",
+          "from": "From Cedar Row Staffing",
+          "body": "Please check your people's hours for last week. 12 workers, 486 hours.",
+          "approve": "Approve",
+          "question": "Question a line"
+        },
+        "file": {
+          "title": "Control totals",
+          "note": "Gusto pays 0.62 hours for 37 minutes, rounded up so no time is lost. That is the 9 cents."
+        }
+      },
+      "trademarks": "Gusto, ADP, Paychex, QuickBooks and Paylocity are trademarks of their owners. Tabulado writes files their systems import and is not affiliated with them."
     }
   }
 }

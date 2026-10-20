@@ -1,37 +1,36 @@
 # Pattern: Website layout (public, tabulado.com)
 
-Status: adopted — slice aa, second design (2026-10-20); header raised in the sixth design (Linear's bar with
-Stripe's menu, `.claude/plans/website-v6.md`).
-Reference product and screen: Mercury's header (fixed over a dark photograph, see-through with white
-text, the logo at the left, plain links in the centre, "Log in" and one accent pill at the right) with
-Ramp's and Stripe's light blurred bar once the page scrolls; Linear's mobile menu; Mercury's dark footer
-with its "Disclaimers and footnotes" block (label at the left, numbered notes at the right) and Stripe's
-footer language choice.
-Source URL: https://mercury.com
-Source URL: https://ramp.com
-Source URL: https://stripe.com
+Status: adopted — slice aa, seventh design (2026-10-20). Header and footer in Linear's type, sizes and
+colours (decision 0048); the menu keeps Stripe's single morphing panel, drawn with Linear's popup styling.
+Reference product and screen: Linear's header (32px-tall links in 13px grey that brighten on a faint
+rounded hover, a light "Sign up" pill; its menus a blurred near-black panel, 14px radius, one hairline,
+items on a faint raised fill with 10px radius) with Stripe's one panel that slides and resizes between
+triggers; Linear's footer (logo, columns of 13px links, a top hairline) with Mercury's "Disclaimers and
+footnotes" block and Stripe's footer language choice.
 Source URL: https://linear.app
-Researched: 2026-10-20 (`docs/research/website-visual-slice-aa.md`). Confidence: high.
+Source URL: https://stripe.com
+Source URL: https://mercury.com
+Researched: 2026-10-20 (linear.app's markup and layout stylesheet read directly). Confidence: high.
 
 ## Hierarchy
 1. "Skip to content", visible only when focused.
-2. Header, fixed, 64px: logo; "Product ▾", "How it works ▾", Pricing, Security, Free tools in the centre;
-   the other language, Log in and the accent "Start free" pill at the right. Over the opening photograph it
-   is see-through with white text; after 24px of scroll a frosted bar with a hairline fades in, dark with
-   white text over the page's dark bands and paper with dark text over its light ones (the band under
-   the bar decides). It slides up out of view while the reader scrolls down past the first screen and
-   returns on any scroll up. "Product" and "How it works" open Stripe's one floating panel (dark, 12px
-   radius, hairline ring, a caret under the open trigger): a mono title, items each with an icon tile, a
-   title and a grey line (two columns for Product, one for How it works), and a footer strip with an arrow
-   link. Moving between the two triggers slides the panel and changes its width and height while the
-   contents crossfade. Below 1024px: logo, "Start free" and a two-bar menu button opening a full-width
-   light panel with every link.
-3. The page (each page opens with a dark band).
-4. Footer, dark (Mercury): logo and one line; columns Product, Free tools, Account; a hairline; at the
-   left "Disclaimers and footnotes" and the language choice, at the right the numbered notes (1 never
-   moves money; 2 not legal advice; 3 sample data; 4 encryption; 5 blacked out before reading; 6 the
-   look-up log; 7 the dated rule books), each the target of a footnote mark on the page, the
-   photographer's credit (with Adrian Sulyok's requested link) and the copyright.
+2. Header, fixed, 64px: logo; "Product ▾", "How it works ▾", Pricing, Security, Free tools in the centre
+   (13px, #8a8f98, 32px tall, 12px sides, white on a faint rounded fill when hovered or open); the other
+   language, Log in and the light "Start free" pill (#e5e5e6 on #08090a, 13px, weight 510) at the right.
+   Over the opening photograph it is see-through; after 24px of scroll a frosted bar with a hairline fades
+   in, its colours following the part of the page under it. It slides up out of view while the reader
+   scrolls down past the first screen and returns on any scroll up. "Product" and "How it works" open one
+   floating panel (#08090a at 90%, 32px blur, 14px radius, one 8% white hairline, shadow 0 8px 32px): items
+   on a faint fill (10px radius, 16px padding), each an icon, a 13px title and a 13px grey line (two
+   columns for Product, one for How it works), and a footer link. Moving between the triggers slides the
+   panel and changes its size over 0.22s while the contents crossfade. Below 1024px: logo, "Start free" and
+   a menu button opening a full-width panel with every link.
+3. The page (each page opens on #08090a).
+4. Footer (Linear): a top hairline; the logo and one 13px grey line; columns Product, Free tools, Account
+   (13px headings in white, weight 510; 13px grey links); then "Disclaimers and footnotes" and the
+   language choice at the left, the numbered notes at the right (1 never moves money; 2 not legal advice;
+   3 sample data), the payroll systems' trademark line, the photographer's credit (with Adrian Sulyok's
+   requested link) and the copyright.
 
 ## Interactions
 - Colours change over the slow hover timing; every link shows a focus ring.
