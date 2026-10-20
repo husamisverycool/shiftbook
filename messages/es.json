@@ -7471,7 +7471,62 @@
       "closeMenu": "Cerrar menú",
       "language": "Idioma",
       "otherLanguage": "English",
-      "otherLanguageName": "View this page in English"
+      "otherLanguageName": "View this page in English",
+      "how": "Cómo funciona",
+      "menus": {
+        "product": {
+          "title": "Lo que hace Tabulado",
+          "items": [
+            {
+              "title": "Una bandeja, leída dos veces",
+              "body": "Horas de correos, mensajes, fotos y exportaciones."
+            },
+            {
+              "title": "Las reglas de cada estado",
+              "body": "Cuatro estados, cada línea de pago con su cita."
+            },
+            {
+              "title": "Su archivo de nómina",
+              "body": "Gusto, ADP, RUN, Paychex, Paylocity, QuickBooks."
+            },
+            {
+              "title": "Facturas y aprobaciones",
+              "body": "Una factura por cliente, aprobada desde un enlace."
+            },
+            {
+              "title": "Una app para trabajadores en dos idiomas",
+              "body": "Turnos, registro de entrada y talones de pago en inglés o en español."
+            }
+          ],
+          "foot": "Todos los sistemas de nómina incluidos"
+        },
+        "how": {
+          "title": "Cómo transcurre una semana",
+          "items": [
+            {
+              "title": "Una semana, de principio a fin",
+              "body": "Las seis pantallas por las que pasa un lunes."
+            },
+            {
+              "title": "Leído dos veces",
+              "body": "Una persona solo donde las lecturas difieren."
+            },
+            {
+              "title": "Una línea de pago, desarmada",
+              "body": "Horas, regla, tarifa, aritmética, redondeo, ley."
+            },
+            {
+              "title": "Las reglas, con fecha",
+              "body": "Cada regla por estado, con su ley."
+            },
+            {
+              "title": "A dónde van los archivos",
+              "body": "Todo lo que toca, nada que pague."
+            }
+          ],
+          "foot": "Lo que trae"
+        }
+      }
     },
     "footer": {
       "about": "La administración de las agencias de personal temporal: entran las hojas de horas, salen el archivo de nómina y las facturas.",
@@ -8092,6 +8147,298 @@
           "name": "Archivo de nómina",
           "body": "La semana como archivo para Gusto, ADP, RUN, Paychex o Paylocity, con sus totales revisados antes de descargarlo."
         }
+      }
+    },
+    "v6": {
+      "systems": {
+        "eyebrow": "Archivos de nómina",
+        "title": "Su sistema de nómina, ya incluido.",
+        "muted": "Un archivo por semana, con el formato exacto que importa.",
+        "caption": "8 formatos · revisado al centavo · usted sube el archivo",
+        "spreadsheet": "Hoja de cálculo",
+        "kinds": {
+          "gusto_hours_csv": "CSV · horas",
+          "adp_wfn_paydata": "CSV · datos de pago",
+          "adp_run_csv": "CSV · importación genérica",
+          "paychex_flex_csv": "CSV · conceptos de pago",
+          "paylocity_time_csv": "CSV · importación de horas",
+          "qbd_iif": "IIF · actividades de tiempo",
+          "qbo_time_csv": "CSV · horas",
+          "spreadsheet_csv": "CSV · una fila por línea"
+        }
+      },
+      "statement": {
+        "label": "Lo que hace Tabulado",
+        "text": "Cada semana, alguien en su agencia vuelve a escribir horas de mensajes, fotos y hojas de cálculo, busca las horas extra de cada estado, arma el archivo de nómina y hace una factura para cada cliente. *Tabulado* *hace* *esa* *semana.* Lee cada hoja de horas dos veces, paga según las reglas del estado donde se trabajó y muestra su aritmética y la ley en cada línea. Nunca mueve dinero."
+      },
+      "tour": {
+        "eyebrow": "El producto"
+      },
+      "twice": {
+        "eyebrow": "Leído dos veces",
+        "title": "Dos lecturas.",
+        "muted": "Una persona solo donde difieren.",
+        "body": "Cada conjunto de horas se lee dos veces, por separado, y las dos lecturas se comparan campo por campo. Lo que coincide entra directo a la semana; lo que difiere lo espera a usted con las dos lecturas lado a lado.",
+        "a": "LECTURA A",
+        "b": "LECTURA B",
+        "decide": "DIFIEREN · DECIDE UNA PERSONA",
+        "captions": [
+          [
+            "Dos lecturas independientes",
+            "Cada correo, mensaje, foto o exportación se lee dos veces, sin que una vea la otra."
+          ],
+          [
+            "Comparadas campo por campo",
+            "Trabajador, día, entrada, salida, descanso y total, uno por uno."
+          ],
+          [
+            "Coinciden: entran directo",
+            "Nadie tiene que revisar las horas en las que las dos lecturas coinciden."
+          ],
+          [
+            "Difieren: usted decide",
+            "Solo el campo que difiere se muestra a una persona, con las dos lecturas."
+          ]
+        ]
+      },
+      "payline": {
+        "eyebrow": "Una línea de pago",
+        "title": "Cada línea muestra su cálculo.",
+        "muted": "Desarme una.",
+        "who": "Marcus Bell · Prairie Line Manufacturing · semana del 5 oct · California",
+        "engine": "Tal como la escribe el motor de reglas",
+        "ruleTag": "Horas extra · más de 8:00 al día",
+        "readingTag": "Leído dos veces ✓",
+        "parts": {
+          "hours": {
+            "name": "Horas",
+            "caption": "Más de 8 en un día: {days}. La hora 13 del viernes es hora doble, en su propia línea."
+          },
+          "rule": {
+            "name": "Regla",
+            "caption": "California paga horas extra por día además de por semana: cada hora después de 8 en una jornada."
+          },
+          "rate": {
+            "name": "Tarifa",
+            "caption": "{multiplier} × la tarifa acordada de {base} por hora = {rate}, sin redondear."
+          },
+          "arithmetic": {
+            "name": "Aritmética",
+            "caption": "{minutes} minutos × {rate} ÷ 60 = {exact}. Minutos y centavos como números enteros; nada redondeado todavía."
+          },
+          "rounding": {
+            "name": "Redondeo",
+            "caption": "Una sola vez, en la línea, hacia arriba desde la mitad: {amount}. La línea indica que se redondeó."
+          },
+          "law": {
+            "name": "Ley",
+            "caption": "{citation}, de la tabla de reglas con fecha con la que se pagó la línea."
+          },
+          "reading": {
+            "name": "Revisado",
+            "caption": "Las dos lecturas de la semana coincidieron en estas horas, así que nadie tuvo que revisarlas."
+          }
+        }
+      },
+      "rules": {
+        "eyebrow": "Las reglas",
+        "title": "Cuatro estados.",
+        "muted": "Cada regla con fecha, cada línea con su cita.",
+        "body": "Tabulado paga según las reglas del estado donde se hizo el trabajo, leídas de tablas que llevan la fecha en que cada regla entra en vigor. Un lugar de trabajo en cualquier otro lugar detiene la semana para que la revise una persona.",
+        "mapLabel": "Mapa de Estados Unidos con California, Illinois, Massachusetts y Nueva Jersey iluminados",
+        "indexTitle": "Cada regla con la que paga Tabulado",
+        "changesTitle": "Cambios de reglas, antes de que ocurran",
+        "changesBody": "Cada cambio está registrado con su fecha de inicio, así la tarifa correcta se aplica sola el día correcto.",
+        "books": {
+          "US": "Federal",
+          "CA": "California",
+          "IL": "Illinois",
+          "MA": "Massachusetts",
+          "NJ": "Nueva Jersey"
+        },
+        "names": {
+          "weekly_overtime": "Horas extra después de 40 horas a la semana",
+          "minimum_wage": "Salario mínimo",
+          "ca_daily_overtime": "Horas extra después de 8 horas al día",
+          "ca_daily_double_time": "Horas dobles después de 12 horas al día",
+          "ca_seventh_day": "Séptimo día seguido: primeras 8 horas",
+          "ca_seventh_day_double_time": "Séptimo día seguido: después de 8 horas",
+          "ca_meal_premium": "Comida no dada: una hora de pago",
+          "ca_rest_premium": "Descanso no dado: una hora de pago",
+          "ca_reporting_time": "Pago por presentarse",
+          "il_day_labor_minimum": "Enviado y no usado: 4 horas de pago",
+          "il_dtlsa_equal_pay": "Igualdad salarial después de 720 horas con un cliente",
+          "ma_reporting_pay": "Pago por presentarse: al menos 3 horas",
+          "nj_sent_not_used": "Enviado y no usado: 4 horas de pago"
+        },
+        "localWage": "Salario mínimo de {place}",
+        "rate": "{rate}/h",
+        "held": "{count} ciudades y condados con su propio salario mínimo",
+        "heldLaw": "se detienen para una persona hasta tener sus tarifas",
+        "inForce": "vigente",
+        "since": "desde {date}",
+        "next": "{rate} desde {date}",
+        "newVersion": "nueva versión desde {date}",
+        "pin": {
+          "CA": "Salario mínimo {now} · {next} desde {date}",
+          "IL": "Salario mínimo {now} · Chicago {chicago}",
+          "MA": "Salario mínimo {now} · pago por presentarse",
+          "NJ": "Salario mínimo {now} · {next} desde {date}"
+        },
+        "change": "Salario mínimo de {place} {rate}",
+        "inDays": "{date} · en {days, plural, one {# día} other {# días}}",
+        "inForceOn": "{date} · vigente"
+      },
+      "highlights": {
+        "title": "Lo más destacado.",
+        "label": "Lo más destacado",
+        "pause": "Pausar lo destacado",
+        "play": "Reproducir lo destacado",
+        "show": "Mostrar lo destacado {n}",
+        "cards": {
+          "twice": {
+            "a": "Dos lecturas.",
+            "b": "Una respuesta."
+          },
+          "explains": {
+            "a": "Cada línea",
+            "b": "se explica sola."
+          },
+          "link": {
+            "a": "Aprobación por enlace.",
+            "b": "Sin cuentas que crear."
+          },
+          "language": {
+            "a": "English y español.",
+            "b": "La app para trabajadores habla los dos."
+          },
+          "sealed": {
+            "a": "Números de Seguro Social,",
+            "b": "sellados."
+          },
+          "cent": {
+            "a": "Revisado al centavo.",
+            "b": "Antes de descargarlo."
+          }
+        },
+        "approve": "Aprobar horas",
+        "approved": "Aprobado",
+        "clockIn": "Clock in",
+        "clockInEs": "Registrar entrada",
+        "ours": "Tabulado",
+        "theirs": "Gusto pagará",
+        "difference": "Explicado"
+      },
+      "hub": {
+        "eyebrow": "A dónde van los archivos",
+        "title": "Todo lo que toca.",
+        "muted": "Nada que pague.",
+        "body": "Las horas llegan como sus clientes las envíen, se aplican las reglas del estado y salen un archivo de nómina para su sistema y una factura para cada cliente.",
+        "inLabel": "Horas que llegan",
+        "inPill": "Leído dos veces",
+        "rulesPill": "Tablas de reglas con fecha",
+        "outPill": "8 formatos de nómina",
+        "invoicePill": "Una factura por cliente",
+        "sources": [
+          "Correo",
+          "Mensaje",
+          "Foto",
+          "Reloj checador",
+          "Hoja de cálculo",
+          "Portal"
+        ],
+        "never": "Tabulado nunca mueve dinero. Su proveedor de nómina paga a su gente; sus clientes pagan a su banco."
+      },
+      "file": {
+        "eyebrow": "Archivo de nómina",
+        "title": "El archivo, tal como lo lee su sistema de nómina.",
+        "muted": "Revisado antes de que lo descargue.",
+        "body": "Tabulado escribe la semana con el formato exacto que importa su sistema y luego compara el archivo con sus propias líneas de pago.",
+        "checks": [
+          "Cada trabajador vinculado con su número en su sistema",
+          "Totales comparados con las líneas de pago, al centavo",
+          "Cualquier diferencia explicada, línea por línea"
+        ],
+        "dialog": "Exportar archivo de nómina",
+        "week": "Semana del 5 al 11 oct 2026",
+        "format": "Formato",
+        "download": "Descargar",
+        "summary": "Totales de control",
+        "workers": "Trabajadores en el archivo",
+        "gross": "Pago bruto de Tabulado",
+        "theirs": "Lo que pagará {system}",
+        "difference": "Diferencia, explicada",
+        "preview": "Vista previa"
+      },
+      "seam": {
+        "title": "Hecho para ser revisado, no para pedir confianza.",
+        "money": "de su dinero movido por Tabulado",
+        "readings": "lecturas independientes de cada hoja de horas",
+        "books": "reglamentos, cada uno con fecha",
+        "formats": "formatos de archivo de nómina"
+      },
+      "security": {
+        "title": "Los datos de nómina merecen más que una contraseña.",
+        "muted": "Tabulado los trata así.",
+        "log": [
+          "10:42 · Propietario · número completo · motivo: W-4",
+          "10:40 · Coordinador · solo los últimos cuatro",
+          "09:12 · archivo de nómina · sin números"
+        ],
+        "facts": [
+          "Cifrado con una clave guardada fuera de la base de datos",
+          "Nunca en registros, instrucciones ni exportaciones",
+          "El modo de demostración no hace llamadas externas",
+          "Nunca mueve dinero"
+        ]
+      },
+      "specs": {
+        "title": "Lo que trae.",
+        "muted": "Todo lo que hace Tabulado, y lo que nunca hace.",
+        "states": "Estados cubiertos",
+        "statesText": "Un lugar de trabajo en cualquier otro estado detiene la semana para que la revise una persona. Nunca adivina.",
+        "inputs": "Las horas llegan por",
+        "inputsChips": [
+          "Correo",
+          "Mensaje de texto",
+          "Foto",
+          "Exportación del reloj checador",
+          "Hoja de cálculo",
+          "Portal del cliente",
+          "App para trabajadores"
+        ],
+        "readings": "Lecturas",
+        "readingsText": "Dos lecturas independientes de cada conjunto de horas; una persona decide solo donde difieren.",
+        "lines": "Líneas de pago",
+        "linesText": "Minutos y centavos como números enteros, redondeados una vez por línea, cada línea con sus datos, su regla, su aritmética y su ley.",
+        "files": "Formatos de archivo de nómina",
+        "invoices": "Facturas",
+        "invoicesText": "Una factura por cliente por semana, con las mismas horas aprobadas, a sus tarifas de cobro.",
+        "approvals": "Aprobaciones de clientes",
+        "approvalsText": "Los clientes aprueban las horas de su gente desde un enlace en un correo. Sin cuenta ni contraseña.",
+        "app": "App para trabajadores",
+        "appText": "Turnos, registro de entrada y talones de pago, en inglés o en español.",
+        "safety": "Seguridad",
+        "safetyText": "Números de Seguro Social cifrados con una clave guardada fuera de la base de datos, tapados antes de cualquier lectura con IA, y cada consulta registrada.",
+        "never": "Lo que nunca hace",
+        "neverText": "Tabulado nunca mueve dinero ni presenta impuestos. Su proveedor de nómina paga a su gente y presenta; sus clientes pagan a su banco."
+      },
+      "close": {
+        "title": "Su próxima semana de nómina,",
+        "line2": "explicada línea por línea.",
+        "pricingTitle": "Vea cuánto cuesta",
+        "pricingBody": "Un precio por agencia, con todos los estados y todos los formatos de nómina incluidos.",
+        "pricingLink": "Precios",
+        "checkerTitle": "Revise las 720 horas de un trabajador",
+        "checkerBody": "El contador gratuito de igualdad salarial de Illinois, sin cuenta.",
+        "checkerLink": "Abrir el contador"
+      },
+      "notes": {
+        "note4": "Los números de Seguro Social se cifran dentro de la aplicación con una clave guardada fuera de la base de datos; las pantallas muestran los últimos cuatro dígitos.",
+        "note5": "Antes de cualquier lectura automática, todo lo que parezca un número de Seguro Social o una fecha de nacimiento se tapa en la imagen.",
+        "note6": "Solo el Propietario puede ver un número completo, y solo indicando el motivo; cada consulta se escribe en un registro al que se le agrega, nunca se edita.",
+        "note7": "Reglamentos: federal, California, Illinois, Massachusetts y Nueva Jersey. Cada fila de cada tabla lleva la fecha en que entra en vigor.",
+        "photos": "Fotografía principal en Unsplash de <sulyok>Adrian Sulyok</sulyok>."
       }
     }
   }

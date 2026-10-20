@@ -1,6 +1,7 @@
 // Pattern: docs/patterns/_layouts/site.md — Mercury's dark footer: the logo, link columns and the language
 // choice (Stripe's footer picker), then a hairline and Mercury's "Disclaimers and footnotes" — the label at
-// the left, the numbered notes at the right — and the photographers' credits.
+// the left, the numbered notes at the right, each the target of a footnote mark on the page — and the
+// photographer's credit.
 import NextLink from "next/link";
 import { getTranslations } from "next-intl/server";
 import { TabuladoLogo } from "@/components/shiftbook/brand-mark";
@@ -11,6 +12,7 @@ const LINK = "rounded-sm text-[15px] text-[var(--s-dtext)]/80 outline-none site-
 export async function SiteFooter({ links, locale, page }: { links: SiteLinks; locale: string; page: "" | "/pricing" | "/security" }) {
   const t = await getTranslations("site.footer");
   const nav = await getTranslations("site.nav");
+  const more = await getTranslations("site.v6.notes");
   const columns = [
     {
       title: t("product"),
@@ -82,9 +84,13 @@ export async function SiteFooter({ links, locale, page }: { links: SiteLinks; lo
               <li id="note-1">{t("note1")}</li>
               <li id="note-2">{t("note2")}</li>
               <li id="note-3">{t("note3")}</li>
+              <li id="note-4">{more("note4")}</li>
+              <li id="note-5">{more("note5")}</li>
+              <li id="note-6">{more("note6")}</li>
+              <li id="note-7">{more("note7")}</li>
             </ol>
             <p>
-              {t.rich("photos", {
+              {more.rich("photos", {
                 sulyok: (chunks) => (
                   <a href="https://sulyokimaging.ro" rel="noopener" className="underline decoration-white/30 underline-offset-2 outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-white/50">
                     {chunks}

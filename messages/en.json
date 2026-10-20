@@ -7471,7 +7471,62 @@
       "closeMenu": "Close menu",
       "language": "Language",
       "otherLanguage": "Español",
-      "otherLanguageName": "Ver esta página en español"
+      "otherLanguageName": "Ver esta página en español",
+      "how": "How it works",
+      "menus": {
+        "product": {
+          "title": "What Tabulado does",
+          "items": [
+            {
+              "title": "An inbox, read twice",
+              "body": "Hours from email, texts, photos and exports."
+            },
+            {
+              "title": "Each state's rules",
+              "body": "Four states, every pay line cited."
+            },
+            {
+              "title": "Your payroll file",
+              "body": "Gusto, ADP, RUN, Paychex, Paylocity, QuickBooks."
+            },
+            {
+              "title": "Invoices and approvals",
+              "body": "One invoice per client, approved from a link."
+            },
+            {
+              "title": "A worker app in two languages",
+              "body": "Shifts, clock-in and pay stubs in English or Spanish."
+            }
+          ],
+          "foot": "Every payroll system supported"
+        },
+        "how": {
+          "title": "How a week goes",
+          "items": [
+            {
+              "title": "One week, start to finish",
+              "body": "The six screens a Monday goes through."
+            },
+            {
+              "title": "Read twice",
+              "body": "A person only where the readings differ."
+            },
+            {
+              "title": "One pay line, taken apart",
+              "body": "Hours, rule, rate, arithmetic, rounding, law."
+            },
+            {
+              "title": "The rules, dated",
+              "body": "Every rule by state, with its law."
+            },
+            {
+              "title": "Where the files go",
+              "body": "Everything it touches, nothing it pays."
+            }
+          ],
+          "foot": "What's inside"
+        }
+      }
     },
     "footer": {
       "about": "The back office for temporary staffing agencies: timesheets in, payroll file and invoices out.",
@@ -8092,6 +8147,298 @@
           "name": "Payroll file",
           "body": "The week as a file for Gusto, ADP, RUN, Paychex or Paylocity, with its totals checked before you download it."
         }
+      }
+    },
+    "v6": {
+      "systems": {
+        "eyebrow": "Payroll files",
+        "title": "Your payroll system, already supported.",
+        "muted": "One file a week, in the exact layout it imports.",
+        "caption": "8 formats · checked to the cent · you upload the file",
+        "spreadsheet": "Spreadsheet",
+        "kinds": {
+          "gusto_hours_csv": "CSV · hours",
+          "adp_wfn_paydata": "CSV · pay data",
+          "adp_run_csv": "CSV · generic import",
+          "paychex_flex_csv": "CSV · pay components",
+          "paylocity_time_csv": "CSV · time import",
+          "qbd_iif": "IIF · time activities",
+          "qbo_time_csv": "CSV · time",
+          "spreadsheet_csv": "CSV · one row a line"
+        }
+      },
+      "statement": {
+        "label": "What Tabulado does",
+        "text": "Every week, someone at your agency retypes hours from texts, photos and spreadsheets, looks up each state's overtime, builds the payroll file, and makes an invoice for every client. *Tabulado* *does* *that* *week.* It reads every timesheet twice, pays by the rules of the state the work was in, and shows its arithmetic and the law on every line. It never moves money."
+      },
+      "tour": {
+        "eyebrow": "The product"
+      },
+      "twice": {
+        "eyebrow": "Read twice",
+        "title": "Two readings.",
+        "muted": "A person only where they differ.",
+        "body": "Every set of hours is read twice, separately, and the two are compared field by field. What agrees goes straight into the week; what differs waits for you with both readings side by side.",
+        "a": "READING A",
+        "b": "READING B",
+        "decide": "DIFFERS · A PERSON DECIDES",
+        "captions": [
+          [
+            "Two independent readings",
+            "Each email, text, photo or export is read twice, neither seeing the other."
+          ],
+          [
+            "Compared field by field",
+            "Worker, day, start, end, break and total, one at a time."
+          ],
+          [
+            "Agree: straight through",
+            "No one has to look at hours both readings agree on."
+          ],
+          [
+            "Differ: you decide",
+            "Only the field that differs is shown to a person, with both readings."
+          ]
+        ]
+      },
+      "payline": {
+        "eyebrow": "One pay line",
+        "title": "Every line shows its work.",
+        "muted": "Take one apart.",
+        "who": "Marcus Bell · Prairie Line Manufacturing · week of Oct 5 · California",
+        "engine": "As the rules engine writes it",
+        "ruleTag": "Overtime · past 8:00 in a day",
+        "readingTag": "Read twice ✓",
+        "parts": {
+          "hours": {
+            "name": "Hours",
+            "caption": "Past 8 in a day: {days}. Friday's 13th hour is double time, on a line of its own."
+          },
+          "rule": {
+            "name": "Rule",
+            "caption": "California pays overtime by the day as well as the week: every hour past 8 in a workday."
+          },
+          "rate": {
+            "name": "Rate",
+            "caption": "{multiplier} × the agreed {base} an hour = {rate}, kept exact."
+          },
+          "arithmetic": {
+            "name": "Arithmetic",
+            "caption": "{minutes} minutes × {rate} ÷ 60 = {exact}. Minutes and cents as whole numbers; nothing rounded yet."
+          },
+          "rounding": {
+            "name": "Rounding",
+            "caption": "Once, at the line, half up: {amount}. The line says it was rounded."
+          },
+          "law": {
+            "name": "Law",
+            "caption": "{citation}, from the dated rule table the line was paid by."
+          },
+          "reading": {
+            "name": "Checked",
+            "caption": "Both readings of the week agreed on these hours, so nobody had to look."
+          }
+        }
+      },
+      "rules": {
+        "eyebrow": "The rules",
+        "title": "Four states.",
+        "muted": "Every rule dated, every line cited.",
+        "body": "Tabulado pays by the rules of the state where the work was done, read from tables that carry the date each rule takes effect. A worksite anywhere else holds the week for a person.",
+        "mapLabel": "Map of the United States with California, Illinois, Massachusetts and New Jersey lit",
+        "indexTitle": "Every rule Tabulado pays by",
+        "changesTitle": "Rule changes, before they happen",
+        "changesBody": "Each change is on file with its start date, so the right rate applies on the right day by itself.",
+        "books": {
+          "US": "Federal",
+          "CA": "California",
+          "IL": "Illinois",
+          "MA": "Massachusetts",
+          "NJ": "New Jersey"
+        },
+        "names": {
+          "weekly_overtime": "Overtime past 40 hours a week",
+          "minimum_wage": "Minimum wage",
+          "ca_daily_overtime": "Overtime past 8 hours a day",
+          "ca_daily_double_time": "Double time past 12 hours a day",
+          "ca_seventh_day": "Seventh day in a row: first 8 hours",
+          "ca_seventh_day_double_time": "Seventh day in a row: past 8 hours",
+          "ca_meal_premium": "Missed meal break: an hour's pay",
+          "ca_rest_premium": "Missed rest break: an hour's pay",
+          "ca_reporting_time": "Reporting-time pay",
+          "il_day_labor_minimum": "Sent and not used: 4 hours' pay",
+          "il_dtlsa_equal_pay": "Equal pay after 720 hours at one client",
+          "ma_reporting_pay": "Reporting pay: at least 3 hours",
+          "nj_sent_not_used": "Sent and not used: 4 hours' pay"
+        },
+        "localWage": "{place} minimum wage",
+        "rate": "{rate}/h",
+        "held": "{count} cities and counties with their own minimum wage",
+        "heldLaw": "held for a person until their rates are on file",
+        "inForce": "in force",
+        "since": "since {date}",
+        "next": "{rate} from {date}",
+        "newVersion": "new version from {date}",
+        "pin": {
+          "CA": "Minimum wage {now} · {next} from {date}",
+          "IL": "Minimum wage {now} · Chicago {chicago}",
+          "MA": "Minimum wage {now} · reporting pay",
+          "NJ": "Minimum wage {now} · {next} from {date}"
+        },
+        "change": "{place} minimum wage {rate}",
+        "inDays": "{date} · in {days, plural, one {# day} other {# days}}",
+        "inForceOn": "{date} · in force"
+      },
+      "highlights": {
+        "title": "Get the highlights.",
+        "label": "Highlights",
+        "pause": "Pause the highlights",
+        "play": "Play the highlights",
+        "show": "Show highlight {n}",
+        "cards": {
+          "twice": {
+            "a": "Two readings.",
+            "b": "One answer."
+          },
+          "explains": {
+            "a": "Every line",
+            "b": "explains itself."
+          },
+          "link": {
+            "a": "Approve by link.",
+            "b": "No accounts to set up."
+          },
+          "language": {
+            "a": "English y español.",
+            "b": "The worker app speaks both."
+          },
+          "sealed": {
+            "a": "Social Security numbers,",
+            "b": "sealed."
+          },
+          "cent": {
+            "a": "Checked to the cent.",
+            "b": "Before you download."
+          }
+        },
+        "approve": "Approve hours",
+        "approved": "Approved",
+        "clockIn": "Clock in",
+        "clockInEs": "Registrar entrada",
+        "ours": "Tabulado",
+        "theirs": "Gusto will pay",
+        "difference": "Explained"
+      },
+      "hub": {
+        "eyebrow": "Where the files go",
+        "title": "Everything it touches.",
+        "muted": "Nothing it pays.",
+        "body": "Hours come in however your clients send them, the state's rule books are applied, and out come a payroll file for your system and an invoice for each client.",
+        "inLabel": "Hours in",
+        "inPill": "Read twice",
+        "rulesPill": "Dated rule tables",
+        "outPill": "8 payroll formats",
+        "invoicePill": "One invoice per client",
+        "sources": [
+          "Email",
+          "Text",
+          "Photo",
+          "Time clock",
+          "Spreadsheet",
+          "Portal"
+        ],
+        "never": "Tabulado never moves money. Your payroll provider pays your people; your clients pay your bank."
+      },
+      "file": {
+        "eyebrow": "Payroll file",
+        "title": "The file, as your payroll system reads it.",
+        "muted": "Checked before you download it.",
+        "body": "Tabulado writes the week in the exact layout your system imports, then checks the file against its own pay lines.",
+        "checks": [
+          "Every worker matched to their id in your system",
+          "Totals compared with the pay lines, to the cent",
+          "Any difference explained, line by line"
+        ],
+        "dialog": "Export payroll file",
+        "week": "Week of Oct 5 – Oct 11, 2026",
+        "format": "Format",
+        "download": "Download",
+        "summary": "Control totals",
+        "workers": "Workers in the file",
+        "gross": "Tabulado's gross pay",
+        "theirs": "What {system} will pay",
+        "difference": "Difference, explained",
+        "preview": "Preview"
+      },
+      "seam": {
+        "title": "Built to be checked, not trusted.",
+        "money": "of your money moved by Tabulado",
+        "readings": "independent readings of every timesheet",
+        "books": "rule books, each dated",
+        "formats": "payroll file formats"
+      },
+      "security": {
+        "title": "Payroll data deserves more than a password.",
+        "muted": "Tabulado treats it that way.",
+        "log": [
+          "10:42 · Owner · full number · reason: W-4 fix",
+          "10:40 · Coordinator · last four only",
+          "09:12 · payroll file · no numbers in it"
+        ],
+        "facts": [
+          "Encrypted with a key kept outside the database",
+          "Never in logs, prompts or exports",
+          "Demo mode makes no outside calls",
+          "Never moves money"
+        ]
+      },
+      "specs": {
+        "title": "What's inside.",
+        "muted": "Everything Tabulado does, and what it never does.",
+        "states": "States covered",
+        "statesText": "A worksite in any other state holds the week for a person. It never guesses.",
+        "inputs": "Hours come in from",
+        "inputsChips": [
+          "Email",
+          "Text message",
+          "Photo",
+          "Time-clock export",
+          "Spreadsheet",
+          "Client portal",
+          "Worker app"
+        ],
+        "readings": "Readings",
+        "readingsText": "Two independent readings of every set of hours; a person decides only where they differ.",
+        "lines": "Pay lines",
+        "linesText": "Minutes and cents as whole numbers, rounded once per line, each line with its inputs, its rule, its arithmetic and its law.",
+        "files": "Payroll file formats",
+        "invoices": "Invoices",
+        "invoicesText": "One invoice per client per week, from the same approved hours, at their bill rates.",
+        "approvals": "Client approvals",
+        "approvalsText": "Clients approve their people's hours from a link in an email. No account, no password.",
+        "app": "Worker app",
+        "appText": "Shifts, clock-in and pay stubs, in English or Spanish.",
+        "safety": "Security",
+        "safetyText": "Social Security numbers encrypted with a key kept outside the database, blacked out before any AI reading, every look-up logged.",
+        "never": "What it never does",
+        "neverText": "Tabulado never moves money and never files taxes. Your payroll provider pays your people and files; your clients pay your bank."
+      },
+      "close": {
+        "title": "Your next payroll week,",
+        "line2": "explained line by line.",
+        "pricingTitle": "See what it costs",
+        "pricingBody": "One price per agency, with every state and every payroll format included.",
+        "pricingLink": "Pricing",
+        "checkerTitle": "Check a worker's 720 hours",
+        "checkerBody": "The free Illinois equal-pay counter, no account needed.",
+        "checkerLink": "Open the checker"
+      },
+      "notes": {
+        "note4": "Social Security numbers are encrypted inside the app with a key kept outside the database; screens show the last four digits.",
+        "note5": "Before any automated reading, anything shaped like a Social Security number or a birth date is blacked out of the picture.",
+        "note6": "Only the Owner can see a full number, and only with a reason; every look-up is written to a log that can be added to, never edited.",
+        "note7": "Rule books: federal, California, Illinois, Massachusetts and New Jersey. Every row of every table carries the date it takes effect.",
+        "photos": "Hero photograph on Unsplash by <sulyok>Adrian Sulyok</sulyok>."
       }
     }
   }

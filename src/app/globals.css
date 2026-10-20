@@ -709,6 +709,85 @@
   will-change: transform;
 }
 
+/* Sixth design (docs/patterns/site.md). Attio's scroll-lit words: each eases from grey to ink. */
+@utility site-word {
+  transition: color 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Linear's two plates: their fields light in turn as they are compared. */
+@keyframes site-cell {
+  0%,
+  100% {
+    fill-opacity: 0;
+  }
+  8% {
+    fill-opacity: 0.22;
+  }
+  20% {
+    fill-opacity: 0;
+  }
+}
+@utility animate-site-cell {
+  animation: site-cell 3.3s linear infinite;
+}
+/* The plates' chevrons: a slow wave climbing one side and falling the other. */
+@keyframes site-chevron {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+@utility animate-site-chevron {
+  animation: site-chevron 2s ease-in-out infinite;
+}
+/* Stripe's hub: a light travelling each line. */
+@keyframes site-pulse {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@utility animate-site-pulse {
+  animation: site-pulse 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+/* Apple's highlights: the current dot fills over the card's time. */
+@keyframes site-fill-dwell {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+@utility animate-site-fill-dwell {
+  animation: site-fill-dwell 6s linear both;
+}
+/* Mercury's security objects: a black bar sweeping over a line; a new log row dropping in. */
+@keyframes site-redact {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+@utility animate-site-redact {
+  animation: site-redact 700ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@keyframes site-row-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+@utility animate-site-row-drop {
+  animation: site-row-drop 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-site-marquee,
   .animate-site-breathe,
@@ -723,7 +802,11 @@
   .animate-site-cursor,
   .animate-site-ring,
   .animate-site-shimmer,
-  .animate-site-fill {
+  .animate-site-fill,
+  .animate-site-cell,
+  .animate-site-chevron,
+  .animate-site-pulse,
+  .animate-site-fill-dwell {
     animation: none;
   }
   .animate-site-rise,
@@ -734,13 +817,16 @@
   .site-roll,
   .site-morph,
   .site-reveal,
-  .site-tone-field {
+  .site-tone-field,
+  .site-word {
     transition-duration: 1ms;
   }
   .animate-site-resolve-out,
   .animate-site-resolve-in,
   .animate-site-screen-in,
-  .animate-site-row-in {
+  .animate-site-row-in,
+  .animate-site-redact,
+  .animate-site-row-drop {
     animation-duration: 1ms;
   }
 }

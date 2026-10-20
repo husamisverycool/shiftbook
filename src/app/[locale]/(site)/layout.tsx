@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 import { siteHosts } from "@/lib/site-routing";
-import { SiteHeader } from "@/components/site/site-header";
+import { SiteHeader, type SiteMenuLabels } from "@/components/site/site-header";
 import { siteLinks } from "@/server/site/context";
 
 // Link previews (the share image) need the website's own address, not the server's.
@@ -25,6 +25,8 @@ export default async function SiteLayout({ children, params }: { children: React
           home: t("home"),
           main: t("main"),
           product: t("product"),
+          how: t("how"),
+          menus: { product: t.raw("menus.product") as SiteMenuLabels, how: t.raw("menus.how") as SiteMenuLabels },
           pricing: t("pricing"),
           security: t("security"),
           tools: t("tools"),

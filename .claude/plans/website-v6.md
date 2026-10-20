@@ -1,6 +1,6 @@
 # Plan: website, sixth design — one system, every part from its best reference
 
-Date: 2026-10-20. Status: proposed, waiting for the owner's "go".
+Date: 2026-10-20. Status: approved 2026-10-20 ("go but dont change opening"): the hero stays exactly as it is.
 
 ## Why
 The owner: the mid-page sections (Monday before/after, the bento, Same week four states, Where the week
@@ -30,9 +30,7 @@ security pages across them) agree on three things:
 1. **Header** — Stripe's morphing menu (one panel that changes size and slides between "Product" and
    "How it works"), drawn as Linear's bar: clear over the photo, frosted with a hairline once scrolled,
    hidden on scroll down and back on scroll up. Full keyboard support. Phone: a full-screen sheet.
-2. **Hero** — kept (the owner likes it): the warehouse photo, the headline, the email field, the
-   self-playing app. Raised: Attio's blur-in entrance; under the app, Ramp's honest ticker strip in mono
-   (STATES 4 · RULE BOOKS 5 · PAYROLL FORMATS 8 · MONEY MOVED $0), read from the data, nothing invented.
+2. **Hero** — unchanged (owner, 2026-10-20: "dont change opening").
 3. **Payroll systems** — Attio's "whole stack, connected": two rows of tiles drifting opposite ways, each
    the system's name in text plus its file type in mono (never their logos). Replaces the bordered grid.
 4. **Statement** — Attio's scroll-lit paragraph: one large paragraph whose words light up one by one as
