@@ -87,3 +87,16 @@ from the export registry. Test numbers are 9xx. No timesheet or sign-in sheet pi
 A. The system (tokens, buttons, headings, labels) and header/footer · B. Home parts 2–8 · C. Home parts
 9–15 · D. Pricing and Security pages. Each: pattern file first, tests where data is shown, typecheck,
 lint, build, desktop/phone/Spanish screenshots compared with the reference, then commit and push.
+
+## Owner feedback after the sixth design (2026-10-20) — read before any more website work
+The owner rejected the sixth design's text and type as looking and reading machine-made. Specifically:
+- Fonts, sizes and proportions must be taken from a named reference, never chosen here. The mono
+  upper-case micro-labels (Geist Mono, e.g. "CSV · ONE ROW A LINE", "TWO INDEPENDENT READINGS") were
+  singled out; so was the "·" middle-dot separator used everywhere.
+- Copy must not read as generated: no "Label: phrase" pairs ("Agree: straight through"), no stacked
+  two-tone slogans on every section, no em-dash glosses. Write the way the reference's own pages write.
+- "Read twice" (two plates) looks worse and less clean than the fifth design's version.
+- The payroll-systems strip should show the systems' real logos, not names typed in our font.
+  CLAUDE.md says "Never copy logos"; that rule is about copying the reference sites' design, but using
+  Gusto's, ADP's and others' marks needs the owner's explicit decision (and their brand guidelines)
+  before it is done.
