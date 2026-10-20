@@ -1,78 +1,99 @@
 # Pattern: Website home (tabulado.com)
 
-Status: adopted — slice aa, second design (2026-10-20; the owner rejected the first as "basic" and
-"like the app" and asked for Mercury, Stripe and Ramp)
-Reference product and screen: Mercury's home, section for section (full-bleed photograph hero with a
-centred headline, a frosted email field with the button inside it and a frosted "Launch demo"; a frosted
-legal note at the photograph's foot; a dark band with a heading over an accordion beside floating product
-panels; a centred heading and a photo carousel straddling the dark and light bands; a 2×2 grid of grainy
-cards with sparkle chips; a dark row of four figures; a dark security trio with abstract renders; a
-centred close with two pills; footnotes). Campfire's line-mask headline reveal, flooding pill and
-cycling feature list; Check's scroll-lit statement; Stripe's and Ramp's moving name strip; Ramp's
-floating product card over a photograph; Deel's warm bento with white product pieces; Warp's rows that
-resolve from "Checking" to a result.
+Status: adopted — slice aa, third design (2026-10-20). The owner found the second design too basic; four
+research passes over about thirty sites (scratchpad research2: stripe-vercel-linear.md, fintech.md,
+craft.md, awards.md; summary in `docs/research/website-visual-slice-aa.md`) agreed that the best pages
+make the product do the work on screen, on sample data, and let the visitor set it off. The owner chose
+the research plan over keeping the second design's sections (`.claude/plans/website-v3.md`).
+Reference product and screen: Mercury (photo hero, frosted email field, disclosure docked on the
+product, dark figures, security trio, close, footnotes); Cursor and Granola (a self-playing product
+window with a stage switch; the source highlighted when a row is hovered); Check (the product leaning
+back and flattening as the page scrolls); Linear (lit floor under the product, headline lines arriving
+from a blur, the method diagram's two circles with a traced arc); Ramp ("Systems that never spoke": a
+pinned scroll pulling a tangle into order); Increase (a checking card that ticks fields and leaves one
+for a person); Stripe (country tabs re-rendering one card, the odometer, Connect's flow diagram with a
+code panel, the bento's pointer-following border light, page rails, the drifting colour band); Resend
+(a button whose presses add to a timeline); Apple (fanned phones with a switch that turns all three);
+Column (a map with only the covered places lit); Rippling (a guardrail shown as a feature, with its log);
+Deel (status chips floating over the hero photograph); Linear's FIG drawings.
 Source URL: https://mercury.com
-Source URL: https://stripe.com
-Source URL: https://ramp.com
-Source URL: https://www.campfire.ai
+Source URL: https://cursor.com
+Source URL: https://www.granola.ai
 Source URL: https://www.checkhq.com
+Source URL: https://linear.app
+Source URL: https://linear.app/method
+Source URL: https://ramp.com
+Source URL: https://increase.com
+Source URL: https://stripe.com/payments
+Source URL: https://stripe.com/connect
+Source URL: https://stripe.com
+Source URL: https://resend.com
+Source URL: https://www.apple.com/iphone-18-pro/
+Source URL: https://column.com
+Source URL: https://www.rippling.com
 Source URL: https://www.deel.com
-Source URL: https://www.warp.dev
-Source URL: https://www.apple.com/macbook-pro/
-Researched: 2026-10-20 (`docs/research/website-visual-slice-aa.md`; Mercury's home captured frame by
-frame). Confidence: high for Mercury's structure, medium for the borrowed details.
+Researched: 2026-10-20. Confidence: high for structure; motion timings are typical values (screenshots
+are still images; HTML and CSS were read where available).
 
 ## Hierarchy
-1. Hero (Mercury): a full-bleed photograph of temp work (warehouse), darkened top and bottom; centred
-   two-line h1 at regular weight (450), tight tracking, revealed line by line (Campfire); one lead
-   sentence; a frosted pill holding the email field and the accent "Start free" button (submits to
-   sign-up with the email filled in); a frosted "Try the demo" pill (or "See how it works" when no demo
-   address is set); a frosted dark note at the foot: Tabulado never moves money, with footnote 1.
-2. Dark band (Mercury): a two-tone heading; at the left an accordion of four steps (the open one with a
-   dot and its sentence, the others as titles between hairlines) and a "Try the demo" link; at the right
-   the open step's floating dark panel (files read twice; the sign-in sheet with the disagreeing cell and
-   a pointer moving to "Keep 8"; client approvals; the payroll file with control totals and superscript
-   cents), cross-fading; a "sample data" label under it. Arrow keys move between steps.
-3. Carousel (Mercury): a centred heading on the dark band; a wide rounded photograph carousel across the
-   dark-to-light edge — a tag at the top-left, white words at the bottom-left, Ramp's floating white card,
-   a pause button, three progress segments (the open one fills over six seconds). No customer quotes.
-4. Payroll systems (Stripe, Ramp): a two-tone heading and an endless strip of the systems' names as words
-   (never logos), faded at both edges, pausing on hover; "any other system" under it.
-5. Scroll-pinned story (Apple's and Stripe's pinned product scenes; Ramp's receipt matching; Mercury's
-   grainy card and sparkle chips): four screens of scrolling with the picture pinned. At the left the
-   heading and four captions on a rail that fills as you scroll (the current one ink, the rest grey). At
-   the right one grainy card: the photographed sign-in sheet is scanned by a line; it moves aside as its
-   rows lift into a table and the handwritten names turn into the roster's names, the doubtful cell
-   resolving to "Kept 8"; the client's approval card rises and its button turns to "Approved"; the
-   payroll file and three invoices fan out and "Balanced" appears. Phones and reduced motion: the four
-   states as still pictures in a 2×2 grid, each with its caption (Mercury's grid).
-6. Statement (Check): one large sentence that lights word by word as it is scrolled; a sample pay line in
-   monospace under it.
-7. Cycling list (Campfire): heading and the flooding pill to Pricing at the left; ten names at the right,
-   a light moving down them, faded at the edges.
-8. Rules bento (Deel, Warp): one large warm card with the five rule books whose rows turn from "Checking"
-   to "Applied" when seen; two small cards — the city minimum wage, and the state it holds instead of
-   guessing.
-9. Dark band (Mercury): four figures with dividers; a hairline; the security heading and three cards with
-   abstract renders (rings round a last-four pill; a glowing page with lines blacked out; glossy pills as
-   log entries); a link to the security page.
-10. Close (Mercury) over Stripe's skewed band of slowly drifting colour (Tabulado's blue, amber and
-    mint, with grain): centred two-line heading, accent and frosted pills; then two dark cards with a
-    round arrow (start free; the free Illinois checker).
-11. Footer (layout pattern).
+1. Hero: Mercury's photograph (darkening into the ink band), the two headline lines arriving from a blur
+   (Linear), one lead sentence, the frosted email field with "Start free" inside it (submits to sign-up
+   with the email filled in) and a frosted "Try the demo". Under it Linear's app frame: a sidebar of
+   sections (Inbox, To check, This week, Clients, Payroll files, Invoices) beside the week's work, with an
+   Hours / Pay lines / Payroll file switch and a play/pause button (Cursor, Granola). The play: the week by
+   worker and day fills row by row (where each came from beside it), the one total the two readings
+   disagree on waits with "Keep 8" and is decided; the Illinois week's pay lines from the real rules
+   engine with their explanations and the total rolling in (Stripe's odometer); the Gusto file the real
+   exporter writes, line by line, "Ready to import". The frame leans back and flattens as the page scrolls
+   (Check) on a lit floor (Linear); Deel's status chips float over the photograph at different depths
+   (wide screens); Mercury's disclosure docked on the frame's foot: Tabulado never moves money.
+2. Linear's statement and FIG 0.1–0.3, on the same dark band: a two-tone sentence, then three columns
+   split by hairlines, each with its figure label, a fine isometric line drawing whose layers lift apart
+   on hover (two readings over the sheet's grid with the disagreeing cell lit; the stacked rule books with
+   their tabs; one file per payroll system, fanned), and a title with a sentence.
+3. Monday at a staffing agency (Ramp): pinned for about two and a half screens; a tangle of the week's
+   loose ends (a missed call with its voicemail, a supervisor's text, a spreadsheet with a doubtful cell,
+   a sticky note, a time-clock export, an email disputing hours, the wage poster, the payroll deadline)
+   joined by dashed lines draws together and gives way to one week by worker and day, the changed and
+   disputed cells marked, with where each came from; a Before / After marker follows the scroll. Phones and
+   reduced motion: the two states stacked.
+4. Read twice (Linear's method diagram, Increase's checking card): two dashed circles, the shared part
+   hatched with an arc travelling its edge; beside it the sheet's fields with both readings, checked in
+   turn, ticked where they agree, the total left "Needs a person"; "Check again" replays it.
+5. Same week, four states (Stripe's country tabs): California, Illinois, Massachusetts, New Jersey. One
+   sample week (Mon 10h, Tue 8h, Wed 9h, Thu 8h, Fri 13h, Saturday sent home) paid by the real rules
+   engine on the reference rule data (`src/server/site/state-week.ts`, tested by hand arithmetic). Left:
+   hours by day, stacked regular / overtime / double time / sent-home pay, California's 8 h and 12 h lines
+   drawn across; right: the pay lines, each with its explanation (open for the whole), and the week's
+   total rolling (Stripe's odometer). Then: any other state holds the week for a person.
+6. Where the week goes (Stripe Connect), dark band: sheets → Tabulado (badge: no money passes through
+   Tabulado) → payroll file → your payroll provider pays; Tabulado → one invoice per client → client
+   approves → clients pay your bank; dashes travel along the lines. Under it a dark file panel with a tab
+   per payroll system showing the file the real exporters write for a sample week
+   (`src/server/site/sample-files.ts`), its control totals (Tabulado's gross, what the system will pay,
+   the difference) and the clerk's note (English page only).
+7. Try the rest (Stripe's bento with the border light): a client approving from a link — pressing
+   Approve adds to a timeline that ends "Nothing paid by Tabulado" (Resend); rule changes before they
+   happen, from the dated rule tables with days to go and each law (Linear's changelog, Ramp's counters);
+   the worker app on three fanned phones with an English / Español switch (Apple); the covered states lit
+   on a tile map (Column); a Social Security number shown only with a reason, with the activity log
+   (Rippling). Numbers in it are test numbers (9xx).
+8. Dark band (Mercury): four product facts as figures; the security trio with abstract renders and a link
+   to the security page; the close on Stripe's drifting colour band with the two pills; two cards (start
+   free; the free Illinois checker).
+9. Footer (layout pattern). Stripe's page rails frame the light bands.
 
 ## Interactions
-- Hero lines rise once on load; the lead and form fade in after them. Reduced motion: no rise.
-- Carousel advances every six seconds, pauses on the button; segment buttons jump. Reduced motion:
-  it does not advance.
-- Statement and cycling list hold still with reduced motion. Marquee, float, pointer, rings and the
-  drifting colour stop; the scroll story shows its four states as still pictures.
-- Header is see-through over the hero and turns light on scroll (layout pattern).
+- Plays and loops run only while on screen; every one holds still under reduced motion (the hero window
+  shows its last stage; the pinned pieces become still pictures).
+- Tabs (window stages, states, payroll systems) are Base UI tabs: arrow keys move between them.
+- The bento's border light follows a mouse pointer only.
 
 ## States
-- No demo address: the second hero pill reads "See how it works" and scrolls to the dark band; the
-  band's demo link is hidden.
-- Spanish: every word in Spanish (usted); sample names and figures stay as they are.
+- No demo address: "Try the demo" becomes "See how it works" and scrolls to Monday.
+- Owner, 2026-10-20: no photographed or drawn timesheets anywhere on the site.
+- Spanish: every word in Spanish (usted); the exporters' clerk notes are not shown; sample names and
+  figures stay; the worker-app phones open in Spanish.
 - The site keeps its own palette under a dark system setting.
 
 Deviations allowed: none

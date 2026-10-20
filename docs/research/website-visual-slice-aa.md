@@ -52,3 +52,21 @@ Removed the tells that read as generated: the electric indigo (now a calmer blue
 uppercase labels (now Mercury's sentence-case muted labels), a code-looking pay line (now the pay
 screen's own line with superscript cents), a hover fill that left stripes (now Campfire's circles
 growing from the arrow), and an oversized hero headline (now Mercury's calmer scale).
+
+## Third pass (owner: "way too basic… draw purely from inspiration, very ambitious")
+Four research passes (Stripe, Vercel, Linear; Ramp, Rippling, Brex, Deel, Gusto, Check, Mercury
+treasury; Apple, Framer, Raycast, Arc, Cursor, Attio, Linear's README; Granola, Increase, Modern
+Treasury, Plain, Clay, Resend, Column, Razorpay) agreed: the best pages make the product do the work on
+screen, on sample data, and let the visitor set it off; ours explained instead. The owner chose the
+research plan over keeping the second design's sections. What was built, each from its reference, is in
+`docs/patterns/site.md`. What keeps it honest:
+- "Same week, four states" runs the real rules engine on the reference rule data
+  (`src/server/site/state-week.ts`; hand-checked in its test). The four states are the ones the engine
+  covers; the report's suggested New York, Washington and Texas were left out.
+- "Where the week goes" shows files made by the real exporters (`src/server/site/sample-files.ts`),
+  including the clerk's note about the payroll system's own rounding.
+- "Rule changes" reads the dated minimum-wage rows (`src/server/site/rule-updates.ts`).
+- The owner asked for no timesheet pictures at all: the hero is Linear's app frame without a photo of
+  a sheet, Monday's pile has no sheets, and the collage was replaced by Linear's FIG line drawings.
+- Left out on purpose: the visitor dropping their own sheet (demo mode makes no outside calls), customer
+  logos, quotes and usage counters, WebGL objects and video.

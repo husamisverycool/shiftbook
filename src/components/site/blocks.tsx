@@ -119,3 +119,36 @@ export function Money({ value, className }: { value: string; className?: string 
     </span>
   );
 }
+
+/**
+ * Stripe's odometer: each digit of a figure is a column of 0–9 that rolls to its place when the figure
+ * changes; other characters stand still. Screen readers read the figure once, plainly.
+ */
+export function Odometer({ value, className }: { value: string; className?: string }) {
+  const chars = [...value];
+  return (
+    <span className={cn("relative inline-flex tabular-nums", className)}>
+      <span className="sr-only">{value}</span>
+      <span aria-hidden className="inline-flex overflow-hidden [mask-image:linear-gradient(180deg,transparent,#000_18%,#000_82%,transparent)]">
+        {chars.map((c, i) =>
+          /\d/.test(c) ? (
+            <span key={`${chars.length - i}`} className="relative inline-block h-[1.15em] w-[0.62em] overflow-hidden leading-[1.15em]">
+              <span className="absolute inset-x-0 top-0 flex flex-col site-roll" style={{ transform: `translateY(${-Number(c) * 1.15}em)` }}>
+                {DIGITS.map((d) => (
+                  <span key={d} className="h-[1.15em] text-center">
+                    {d}
+                  </span>
+                ))}
+              </span>
+            </span>
+          ) : (
+            <span key={`${chars.length - i}`} className="inline-block h-[1.15em] leading-[1.15em]">
+              {c}
+            </span>
+          ),
+        )}
+      </span>
+    </span>
+  );
+}
+const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];

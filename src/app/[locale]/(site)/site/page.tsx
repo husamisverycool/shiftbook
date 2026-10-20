@@ -1,22 +1,29 @@
-// Pattern: docs/patterns/site.md — Mercury's home, section for section: a full-bleed photograph with a
-// centred headline and a frosted email field, a dark accordion beside product panels, a photo carousel
-// across the dark and light bands, a 2×2 grid of grainy cards, a dark row of figures, a dark security trio
-// and a centred close; with Campfire's line reveal, flooding button and cycling list, Check's scroll-lit
-// statement, Stripe's and Ramp's name strip, and Deel's warm bento with Warp's resolving rows.
+// Pattern: docs/patterns/site.md — the product itself does the work on screen, on sample data, and the
+// visitor sets it off (research: docs/research/website-visual-slice-aa.md). Mercury's photo hero with
+// Cursor's and Granola's self-playing review window rising out of it (Check's flip-up, Linear's lit floor);
+// Ramp's "Systems that never spoke" pinned scroll; Linear's two-circle method diagram beside Increase's
+// checking card; Stripe's country tabs re-paying one week through the real rules engine; Stripe Connect's
+// flow with the real export files; Stripe's bento with live pieces (Resend, Apple, Column, Rippling);
+// Gusto's collage of the demo's own sheets; Mercury's figures, security trio and close; Stripe's rails.
 import type { Metadata } from "next";
 import Image from "next/image";
-import NextLink from "next/link";
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowLink, FloodButton, FrostButton, Money, Pill, Section, TwoTone } from "@/components/site/blocks";
-import { InView } from "@/components/site/in-view";
-import { People } from "@/components/site/home/people";
-import { ScrollScene } from "@/components/site/home/scroll-scene";
-import { ProductBand } from "@/components/site/home/product-band";
-import { Statement } from "@/components/site/home/statement";
-import { WordCycle } from "@/components/site/home/word-cycle";
+import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { ArrowLink, FrostButton, Section, TwoTone } from "@/components/site/blocks";
+import { BorderLight } from "@/components/site/border-light";
+import { ApproveCard, MapCard, PhonesCard, SsnCard } from "@/components/site/home/bento";
+import { Figs } from "@/components/site/home/figs";
+import { LiveReview } from "@/components/site/home/live-review";
+import { Monday } from "@/components/site/home/monday";
+import { ReadTwice } from "@/components/site/home/read-twice";
+import { StatePicker } from "@/components/site/home/state-picker";
+import { WeekFlow } from "@/components/site/home/week-flow";
 import { SiteFooter } from "@/components/site/site-footer";
+import { getEngineSay } from "@/components/shiftbook/engine-say-server";
 import { cn } from "@/lib/utils";
 import { siteLinks } from "@/server/site/context";
+import { ruleUpdates } from "@/server/site/rule-updates";
+import { siteSampleFiles } from "@/server/site/sample-files";
+import { SITE_STATES, stateWeek, weekByDay } from "@/server/site/state-week";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -24,31 +31,56 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: t("homeTitle"), description: t("homeDescription"), openGraph: { title: t("homeTitle"), description: t("homeDescription"), siteName: "Tabulado", images: ["/site/hero-warehouse.jpg"] } };
 }
 
-const SYSTEMS = ["Gusto", "ADP Workforce Now", "ADP RUN", "QuickBooks Desktop", "QuickBooks Online", "Paychex Flex", "Paylocity", "CSV"];
+const usd = (cents: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+const hm = (minutes: number) => `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
+
+/** Stripe's page rails: two hairlines down the content column, so the light bands read as one sheet. */
+function Rails() {
+  return <div aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-full max-w-[1248px] -translate-x-1/2 border-x border-[var(--s-line)] md:block" />;
+}
 
 export default async function SiteHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("site.home");
   const links = await siteLinks(locale);
-  const v = (key: string) => t(`band.v.${key}`);
-  const secondary = links.demo ? { href: links.demo, label: t("hero.demo") } : { href: "#product", label: t("hero.howItWorks") };
+  const say = await getEngineSay();
+  const format = await getFormatter();
+  const secondary = links.demo ? { href: links.demo, label: t("hero.demo") } : { href: "#monday", label: t("hero.howItWorks") };
+  const stateNames = Object.fromEntries(SITE_STATES.map((s) => [s, t(`state.${s}`)]));
+
+  const weeks = SITE_STATES.map((s) => stateWeek(s));
+  const linesOf = (w: (typeof weeks)[number]) => w.lines.map((l) => ({ label: t(`state.${l.type as "REG"}`), hours: hm(l.minutes), amount: usd(l.amountCents), explain: say({ say: l.say, explain: l.explain }) }));
+  const dayLabels = [t("state.mon"), t("state.tue"), t("state.wed"), t("state.thu"), t("state.fri"), t("state.sat")];
+  const illinois = weeks.find((w) => w.state === "IL")!;
+  const files = siteSampleFiles().map((f) => ({
+    format: f.format,
+    system: f.system,
+    filename: f.filename,
+    preview: f.preview,
+    workers: String(f.controlTotals.workers),
+    gross: usd(f.controlTotals.grossCents),
+    theirs: usd(f.controlTotals.payrollSystemGrossCents ?? f.controlTotals.grossCents),
+    difference: usd(f.controlTotals.payrollSystemDifferenceCents ?? 0),
+    // The exporters' notes for the payroll clerk are written in English.
+    note: locale === "en" ? (f.notes.at(-1) ?? null) : null,
+  }));
+  const today = new Date().toISOString().slice(0, 10);
+  const updates = ruleUpdates(today);
 
   return (
     <>
-      {/* 1. Hero (Mercury): full-bleed photograph, centred headline, frosted email field, frosted note. */}
-      <section aria-labelledby="hero-title" className="relative isolate flex min-h-[min(100svh,920px)] flex-col overflow-hidden bg-[var(--s-ink)] text-white">
-        <Image src="/site/hero-warehouse.jpg" alt="" fill priority sizes="100vw" className="-z-20 object-cover object-[50%_60%]" />
-        <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(14,15,22,0.78)_0%,rgba(14,15,22,0.5)_42%,rgba(14,15,22,0.35)_65%,rgba(14,15,22,0.85)_100%)]" />
-        <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col items-center px-6 pt-36 pb-10 text-center md:pt-44">
-          {/* Campfire's line reveal: each line rises out of its own clipped box. */}
+      {/* 1. Hero: Mercury's photograph and email field; the product rising out of it, playing itself. */}
+      <section aria-labelledby="hero-title" className="relative isolate overflow-hidden bg-[var(--s-ink)] text-white">
+        <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-[min(100svh,860px)]">
+          <Image src="/site/hero-warehouse.jpg" alt="" fill priority sizes="100vw" className="object-cover object-[50%_60%]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(14,15,22,0.8)_0%,rgba(14,15,22,0.5)_40%,rgba(20,21,28,0.75)_75%,var(--s-ink)_100%)]" />
+        </div>
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-center px-6 pt-36 text-center md:pt-44">
+          {/* Linear's headline: each line arrives from a blur. */}
           <h1 id="hero-title" className="text-[clamp(2.5rem,3.4vw+1rem,4rem)] leading-[1.05] font-[450] tracking-[-0.03em] text-balance">
-            <span className="site-line">
-              <span className="animate-site-rise">{t("hero.line1")}</span>
-            </span>
-            <span className="site-line">
-              <span className="animate-site-rise [animation-delay:90ms]">{t("hero.line2")}</span>
-            </span>
+            <span className="block animate-site-blur-in">{t("hero.line1")}</span>
+            <span className="block animate-site-blur-in [animation-delay:120ms]">{t("hero.line2")}</span>
           </h1>
           <p className="mt-6 max-w-[52ch] animate-page-in text-[clamp(1.0625rem,0.4vw+1rem,1.25rem)] leading-relaxed text-white/80 [animation-delay:300ms]">{t("hero.lead")}</p>
           {/* Mercury's frosted email field with the button inside it, and the demo beside it. */}
@@ -66,206 +98,240 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
               {secondary.label}
             </FrostButton>
           </div>
-          {/* Mercury's frosted legal note at the photograph's foot. */}
-          <p className="mt-auto max-w-[60rem] rounded-lg bg-[var(--s-ink)]/70 px-4 py-2 text-[12px] leading-relaxed text-white/85 backdrop-blur-md">
-            {t("hero.never")}
-            <a href="#note-1" className="ml-0.5 align-super text-[0.75em] underline-offset-2 hover:underline">
-              1
-            </a>
-          </p>
         </div>
-      </section>
-
-      {/* 2. Dark split: heading and accordion beside the product panels (Mercury). */}
-      <section id="product" aria-labelledby="product-title" className="scroll-mt-16 bg-[var(--s-ink)] px-6 pt-28 pb-24 text-[var(--s-dtext)] md:pt-36">
-        <div className="mx-auto w-full max-w-[1200px]">
-          <TwoTone id="product-title" tone="dark" strong={t("band.title")} muted={t("band.titleMuted")} className="mb-12 max-w-[20em] text-[clamp(1.5rem,1vw+1.1rem,2rem)]" />
-          <ProductBand
-            label={t("band.steps")}
-            steps={([1, 2, 3, 4] as const).map((n) => ({ title: t(`band.s${n}Title`), body: t(`band.s${n}`) }))}
-            v={{
-              files: v("files"),
-              kindPhoto: v("kindPhoto"),
-              kindPdf: v("kindPdf"),
-              kindClock: v("kindClock"),
-              kindPortal: v("kindPortal"),
-              readTwice: v("readTwice"),
-              reading: v("reading"),
-              review: v("review"),
-              toCheck: v("toCheck"),
-              disagree: v("disagree"),
-              disagreeNote: v("disagreeNote"),
-              keep: v("keep"),
-              approvals: v("approvals"),
-              approved: v("approved"),
-              waiting: v("waiting"),
-              disputed: v("disputed"),
-              payroll: v("payroll"),
-              totals: v("totals"),
-              gross: v("gross"),
-              hours: v("hours"),
-              difference: v("difference"),
-              download: v("download"),
-              ready: v("ready"),
-              invoices: v("invoices"),
-              workers: t.raw("band.v.workers") as string,
+        <div className="mt-16 animate-page-in px-4 pb-32 [animation-delay:550ms] sm:px-6 md:mt-20">
+          <LiveReview
+            l={{
+              title: t("window.title"),
+              nav: t("window.nav"),
+              inbox: t("window.inbox"),
+              toCheck: t("window.toCheck"),
+              thisWeek: t("window.thisWeek"),
+              clients: t("window.clients"),
+              files: t("window.files"),
+              invoices: t("window.invoices"),
+              heading: t("window.heading"),
+              tabsLabel: t("window.tabsLabel"),
+              hours: t("window.hours"),
+              pay: t("window.pay"),
+              file: t("window.file"),
+              worker: t("window.worker"),
+              source: t("window.source"),
+              total: t("window.total"),
+              photo: t("window.photo"),
+              clock: t("window.clock"),
+              text: t("window.text"),
+              disagree: t("window.disagree"),
+              keep: t("window.keep"),
+              kept: t("window.kept"),
+              payTitle: t("window.payTitle"),
+              weekTotal: t("window.weekTotal"),
+              fileReady: t("window.fileReady"),
+              docked: t("window.docked"),
+              sample: t("window.sample"),
+              pause: t("window.pause"),
+              play: t("window.play"),
+              chips: [t("window.chip1"), t("window.chip2"), t("window.chip3"), t("window.chip4")],
             }}
-            demo={links.demo ? { href: links.demo, label: t("band.demoLink") } : null}
-            sample={t("band.sample")}
+            lines={linesOf(illinois)}
+            total={usd(illinois.totalCents)}
+            file={{ filename: files[0]!.filename, preview: files[0]!.preview }}
           />
         </div>
       </section>
 
-      {/* 3. Centred heading, then the carousel across the dark and light bands (Mercury). */}
-      <section aria-labelledby="people-title" className="bg-[linear-gradient(to_bottom,var(--s-ink)_0,var(--s-ink)_55%,var(--s-paper)_55%)] px-6 pt-16 pb-8">
-        <div className="mx-auto w-full max-w-[1152px]">
-          <h2 id="people-title" className="mx-auto mb-14 max-w-[20ch] text-center text-[clamp(1.875rem,2.4vw+1rem,3rem)] leading-[1.1] font-[450] tracking-[-0.03em] text-balance text-[var(--s-dtext)]">
-            {t("people.title")} {t("people.titleLine2")}
+      {/* 2. Linear's statement and its three figures, on the hero's dark band. */}
+      <section aria-labelledby="figs-title" className="bg-[var(--s-ink)] px-6 pb-28 md:pb-36">
+        <div className="mx-auto w-full max-w-[1200px]">
+          <TwoTone id="figs-title" tone="dark" strong={t("figs.title")} muted={t("figs.titleMuted")} className="mb-14 max-w-[24em] text-[clamp(1.75rem,2vw+1rem,2.75rem)]" />
+          <Figs items={([1, 2, 3] as const).map((n) => ({ label: t(`figs.f${n}Label`), title: t(`figs.f${n}Title`), body: t(`figs.f${n}`) }))} />
+        </div>
+      </section>
+
+      <div className="relative">
+        <Rails />
+        {/* 3. Monday at an agency (Ramp's pinned tangle-to-order). */}
+        <section id="monday" aria-labelledby="monday-title" className="scroll-mt-16">
+          <h2 id="monday-title" className="sr-only">
+            {t("monday.title")}
           </h2>
-          <People
-            label={t("people.label")}
-            pause={t("people.pause")}
-            play={t("people.play")}
-            slideLabels={[1, 2, 3].map((n) => t("people.slide", { number: n }))}
-            slides={[
-              { src: "/site/people-warehouse.jpg", focus: "45% 40%", tag: t("people.p1Tag"), text: t("people.p1"), card: { title: t("people.p1Card"), value: t("people.p1CardValue"), note: t("people.p1CardNote") } },
-              { src: "/site/people-factory.jpg", focus: "58% 45%", tag: t("people.p2Tag"), text: t("people.p2"), card: { title: t("people.p2Card"), value: "$138.24", note: t("people.p2CardNote") } },
-              { src: "/site/people-events.jpg", focus: "50% 30%", tag: t("people.p3Tag"), text: t("people.p3"), card: { title: t("people.p3Card"), value: t("people.p3CardValue"), note: t("people.p3CardNote") } },
-            ]}
+          <Monday
+            heading={<TwoTone as="h3" strong={t("monday.title")} muted={t("monday.titleMuted")} className="text-[clamp(1.5rem,1vw+1.1rem,2rem)]" />}
+            l={{
+              label: t("monday.label"),
+              call: t("monday.call"),
+              callText: t("monday.callText"),
+              note: t("monday.note"),
+              sheet: t("monday.sheet"),
+              text: t("monday.text"),
+              textFrom: t("monday.textFrom"),
+              clock: t("monday.clock"),
+              email: t("monday.email"),
+              emailFrom: t("monday.emailFrom"),
+              poster: t("monday.poster"),
+              due: t("monday.due"),
+              weekTitle: t("monday.weekTitle"),
+              ready: t("monday.ready"),
+              fromPhoto: t("monday.fromPhoto"),
+              fromText: t("monday.fromText"),
+              disputed: t("monday.disputed"),
+              fromClock: t("monday.fromClock"),
+              fileReady: t("monday.fileReady"),
+              worker: t("monday.worker"),
+              total: t("monday.total"),
+              source: t("monday.source"),
+              before: t("monday.before"),
+              after: t("monday.after"),
+              days: [t("state.mon"), t("state.tue"), t("state.wed"), t("state.thu"), t("state.fri"), t("state.sat"), t("monday.sun")],
+            }}
+          />
+        </section>
+
+        {/* 4. Read twice (Linear's method diagram, Increase's checking card). */}
+        <Section labelledBy="twice-title" className="border-t border-[var(--s-line)]">
+          <TwoTone id="twice-title" strong={t("twice.title")} muted={t("twice.titleMuted")} className="mb-14" />
+          <ReadTwice
+            l={{
+              a: t("twice.a"),
+              b: t("twice.b"),
+              agree: t("twice.agree"),
+              differ: t("twice.differ"),
+              cardTitle: t("twice.cardTitle"),
+              checking: t("twice.checking"),
+              ok: t("twice.ok"),
+              needs: t("twice.needs"),
+              replay: t("twice.replay"),
+              fields: [
+                { label: t("twice.name"), a: "Bob Jones", b: "Bob Jones" },
+                { label: t("twice.date"), a: "10/6/26", b: "10/6/26" },
+                { label: t("twice.in"), a: "3:00", b: "3:00" },
+                { label: t("twice.out"), a: "11:30", b: "11:30" },
+                { label: t("twice.lunch"), a: "30", b: "30" },
+                { label: t("twice.total"), a: "8", b: "6" },
+              ],
+            }}
+          />
+        </Section>
+
+        {/* 5. Pick a state (Stripe's country tabs; the real rules engine). */}
+        <Section labelledBy="state-title" className="border-t border-[var(--s-line)]">
+          <TwoTone id="state-title" strong={t("state.title")} muted={t("state.titleMuted")} className="mb-10" />
+          <StatePicker
+            views={weeks.map((w) => ({
+              state: w.state,
+              name: t(`state.${w.state}`),
+              total: usd(w.totalCents),
+              lines: linesOf(w),
+              days: weekByDay(w).map((d, i) => ({ label: dayLabels[i]!, regular: d.regular, overtime: d.overtime, double: d.double, sentHome: d.sentHome })),
+              daily: w.state === "CA",
+            }))}
+            l={{
+              tabsLabel: t("state.tabsLabel"),
+              chartLabel: t("state.chartLabel"),
+              regular: t("state.regular"),
+              overtime: t("state.overtime"),
+              double: t("state.double"),
+              sentHome: t("state.sentHome"),
+              daily8: t("state.daily8"),
+              daily12: t("state.daily12"),
+              weekly: t("state.weekly"),
+              sentNote: t("state.sentNote"),
+              total: t("state.total"),
+              who: t("state.who"),
+              why: t("state.why"),
+            }}
+          />
+          <p className="mt-6 text-[14px] text-[var(--s-muted)]">{t("state.other")}</p>
+        </Section>
+      </div>
+
+      {/* 6. Where the week goes (Stripe Connect's flow and file panel), on the dark band. */}
+      <section aria-labelledby="flow-title" className="bg-[var(--s-ink)] px-6 py-28 text-[var(--s-dtext)] md:py-36">
+        <div className="mx-auto w-full max-w-[1200px]">
+          <TwoTone id="flow-title" tone="dark" strong={t("flow.title")} muted={t("flow.titleMuted")} className="mb-16" />
+          <WeekFlow
+            files={files}
+            l={{
+              sheets: t("flow.sheets"),
+              tabulado: t("flow.tabulado"),
+              tabuladoNote: t("flow.tabuladoNote"),
+              file: t("flow.file"),
+              provider: t("flow.provider"),
+              invoices: t("flow.invoices"),
+              approve: t("flow.approve"),
+              bank: t("flow.bank"),
+              never: t("flow.never"),
+              tabsLabel: t("flow.tabsLabel"),
+              fileNote: t("flow.fileNote"),
+              workers: t("flow.workers"),
+              gross: t("flow.gross"),
+              theirs: t.raw("flow.theirs") as string,
+              difference: t("flow.difference"),
+            }}
           />
         </div>
       </section>
 
-      {/* 4. The payroll systems as a moving strip of names (Stripe's and Ramp's logo strips, as words). */}
-      <Section labelledBy="systems-title" className="pt-24 pb-0 md:pt-28 md:pb-0">
-        <div className="border-t border-[var(--s-line)] pt-10">
-          <TwoTone id="systems-title" strong={t("systems.title")} muted={t("systems.titleMuted")} className="text-[clamp(1.5rem,1vw+1.1rem,2rem)]" />
-        </div>
-        <div className="site-edge-fade group/mq mt-12 overflow-hidden" role="list" aria-label={t("systems.label")}>
-          <div className="flex w-max animate-site-marquee gap-16 group-hover/mq:[animation-play-state:paused]">
-            {[0, 1].map((copy) => (
-              <div key={copy} aria-hidden={copy === 1 || undefined} className="flex shrink-0 items-center gap-16">
-                {SYSTEMS.map((s) => (
-                  <span key={s} role={copy === 0 ? "listitem" : undefined} className="text-[clamp(1.375rem,1vw+1rem,1.875rem)] font-semibold tracking-[-0.03em] whitespace-nowrap text-[var(--s-text)]/45">
-                    {s}
-                  </span>
-                ))}
+      <div className="relative">
+        <Rails />
+        {/* 7. The bento of live pieces (Stripe's cards with the border light). */}
+        <Section labelledBy="bento-title">
+          <TwoTone id="bento-title" strong={t("bento.title")} muted={t("bento.titleMuted")} className="mb-12" />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <BorderLight className="lg:col-span-2" inner="flex flex-col gap-6 p-6">
+              <div>
+                <h3 className="text-[17px] font-medium">{t("bento.approveTitle")}</h3>
+                <p className="mt-1 max-w-[52ch] text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.approveBody")}</p>
               </div>
-            ))}
+              <ApproveCard l={{ approve: t("bento.approve"), reset: t("bento.reset"), events: [t("bento.ev1"), t("bento.ev2"), t("bento.ev3"), t("bento.ev4")], now: t("bento.now") }} />
+            </BorderLight>
+            <BorderLight inner="flex flex-col gap-5 p-6">
+              <div>
+                <h3 className="text-[17px] font-medium">{t("bento.updatesTitle")}</h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.updatesBody")}</p>
+              </div>
+              {/* Linear's changelog line with Ramp's live counter. */}
+              <ol className="relative flex flex-col gap-4 pl-5 before:absolute before:top-1.5 before:bottom-1.5 before:left-[4px] before:w-px before:bg-[var(--s-line)]">
+                {updates.map((u, i) => (
+                  <li key={`${u.state}-${u.scope}-${u.effectiveFrom}`} title={u.citation} className="relative">
+                    <span aria-hidden className={cn("absolute top-1.5 -left-5 size-[9px] rounded-full ring-2 ring-white", u.daysUntil > 0 ? "bg-[var(--s-accent)]" : "bg-[var(--s-muted)]/40", i === 0 && "shadow-[0_0_0_4px_color-mix(in_oklch,var(--s-accent)_20%,transparent)]")} />
+                    <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-[13px]">
+                      <span className="font-medium">{t("bento.minWage", { state: u.scope ?? stateNames[u.state]!, rate: `${usd(u.rateCents)}/h` })}</span>
+                      <span className={cn("text-[12px] tabular-nums", u.daysUntil > 0 ? "font-medium text-[var(--s-accent)]" : "text-[var(--s-muted)]")}>{u.daysUntil > 0 ? t("bento.inDays", { days: u.daysUntil }) : t("bento.inForce")}</span>
+                    </p>
+                    <p className="text-[12px] text-[var(--s-muted)]">{format.dateTime(new Date(`${u.effectiveFrom}T12:00:00Z`), { dateStyle: "medium", timeZone: "UTC" })}</p>
+                    <p className="mt-0.5 line-clamp-1 text-[11px] text-[var(--s-muted)]/80">{u.citation.split(" — ")[0]}</p>
+                  </li>
+                ))}
+              </ol>
+            </BorderLight>
+            <BorderLight inner="flex flex-col gap-4 p-6">
+              <div>
+                <h3 className="text-[17px] font-medium">{t("bento.phonesTitle")}</h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.phonesBody")}</p>
+              </div>
+              <PhonesCard label={t("bento.langLabel")} initial={locale === "es" ? "es" : "en"} />
+            </BorderLight>
+            <BorderLight inner="flex flex-col gap-5 p-6">
+              <div>
+                <h3 className="text-[17px] font-medium">{t("bento.mapTitle")}</h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.mapBody")}</p>
+              </div>
+              <MapCard covered={SITE_STATES} label={t("bento.mapLabel")} names={stateNames} />
+            </BorderLight>
+            <BorderLight inner="flex flex-col gap-5 p-6">
+              <div>
+                <h3 className="text-[17px] font-medium">{t("bento.ssnTitle")}</h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("bento.ssnBody")}</p>
+              </div>
+              <SsnCard l={{ reveal: t("bento.reveal"), why: t("bento.why"), w4: t("bento.w4"), i9: t("bento.i9"), revealed: t.raw("bento.revealed") as string, hide: t("bento.hide"), log: t("bento.log"), past: [t("bento.past1"), t("bento.past2")] }} />
+            </BorderLight>
           </div>
-        </div>
-        <p className="mt-6 text-[15px] text-[var(--s-muted)]">{t("systems.custom")}</p>
-      </Section>
+        </Section>
 
-      {/* 5. The scroll-pinned story (Apple, Stripe, Ramp) in Mercury's grainy card. */}
-      <section aria-labelledby="tiles-title" className="border-t border-[var(--s-line)]">
-        <ScrollScene
-          id="tiles-title"
-          strong={t("tiles.title")}
-          muted={t("tiles.titleMuted")}
-          labels={{
-            steps: ([1, 2, 3, 4] as const).map((n) => ({ title: t(`tiles.t${n}Title`), body: t(`tiles.t${n}`) })),
-            kept: t("tiles.chipKept"),
-            matched: t("tiles.chipMatched"),
-            approved: t("tiles.chipApproved"),
-            balanced: t("tiles.chipBalanced"),
-            approveHours: t("tiles.approveHours"),
-            importFile: t("tiles.importFile"),
-            invoice: t("tiles.invoice"),
-            reading: t("tiles.reading"),
-            sheet: t("tiles.sheet"),
-            rowsTitle: t("tiles.rowsTitle"),
-            label: t("tiles.label"),
-          }}
-        />
-      </section>
+      </div>
 
-      {/* 6. The statement whose words light up as it is read (Check), with the sample line under it. */}
-      <Section labelledBy="statement" className="pt-8 md:pt-12">
-        <h2 id="statement" className="sr-only">
-          {t("statementLabel")}
-        </h2>
-        <Statement text={t("statement")} className="max-w-[24em] text-[clamp(1.75rem,2.6vw+1rem,3.25rem)] leading-[1.12] font-[450] tracking-[-0.03em]" />
-        {/* The line itself, as the pay screen shows it. */}
-        <figure className="mt-14 max-w-[52rem] overflow-hidden rounded-2xl bg-white shadow-[0_24px_60px_-30px_rgba(22,23,29,0.3)] ring-1 ring-black/5">
-          <div className="flex items-center justify-between gap-6 px-6 pt-5">
-            <span className="text-[13px] text-[var(--s-muted)]">{t("statementWho")}</span>
-            <figcaption className="text-[13px] text-[var(--s-muted)]">{t("statementLabel")}</figcaption>
-          </div>
-          <div className="flex items-baseline justify-between gap-6 px-6 pt-3 pb-5">
-            <span className="text-[17px] text-[var(--s-text)]">{t("statementLine")}</span>
-            <Money value="$138.24" className="text-[28px] font-[450] tracking-[-0.03em]" />
-          </div>
-          <p className="border-t border-[var(--s-line)] bg-[var(--s-paper)] px-6 py-3.5 text-[13px] leading-relaxed text-[var(--s-muted)]">{t("statementLaw")}</p>
-        </figure>
-      </Section>
-
-      {/* 7. Campfire's cycling list beside a heading and its flooding button. */}
-      <Section labelledBy="cycle-title" className="bg-[var(--s-paper-2)]">
-        <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
-          <div className="flex flex-col items-start gap-8">
-            <h2 id="cycle-title" className="text-[clamp(1.875rem,2.2vw+1rem,3rem)] leading-[1.08] font-[450] tracking-[-0.03em] text-balance">
-              {t("cycle.title")} <span className="text-[var(--s-muted)]">{t("cycle.titleLine2")}</span>
-            </h2>
-            <FloodButton href={links.pricing}>{t("cycle.cta")}</FloodButton>
-          </div>
-          <WordCycle label={t("cycle.label")} words={([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const).map((n) => t(`cycle.w${n}`))} />
-        </div>
-      </Section>
-
-      {/* 8. The rules as Deel's warm bento with white pieces; Warp's rows resolve when seen. */}
-      <Section labelledBy="rules-title">
-        <TwoTone id="rules-title" strong={t("rules.title")} muted={t("rules.titleMuted")} />
-        <InView className="mt-12 grid grid-cols-1 gap-4 lg:grid-cols-3 lg:grid-rows-2">
-          <div className="flex flex-col justify-between gap-8 rounded-2xl bg-[var(--s-card)] p-7 lg:col-span-2 lg:row-span-2">
-            <div>
-              <h3 className="text-[20px] font-medium tracking-[-0.02em]">{t("rules.mainTitle")}</h3>
-              <p className="mt-1 max-w-[46ch] text-[15px] leading-relaxed text-[var(--s-muted)]">{t("rules.main")}</p>
-            </div>
-            <ul className="flex flex-col overflow-hidden rounded-xl bg-white shadow-[0_24px_60px_-28px_rgba(22,23,29,0.35)]">
-              {(["federal", "ca", "il", "ma", "nj"] as const).map((k, i) => (
-                <li key={k} className="flex items-center gap-4 border-b border-[var(--s-line)] px-5 py-4 last:border-b-0">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-medium">{t(`rules.${k}`)}</span>
-                    <span className="block text-[12px] text-[var(--s-muted)]">{t(`rules.${k}Law`)}</span>
-                  </span>
-                  <span className="relative grid shrink-0 justify-items-end [&>*]:col-start-1 [&>*]:row-start-1">
-                    <span className="animate-site-shimmer text-[12px] font-medium text-[var(--s-muted)] group-data-[inview]/iv:animate-site-resolve-out" style={{ animationDelay: `${600 + i * 450}ms` }}>
-                      {t("rules.checking")}
-                    </span>
-                    <span className="opacity-0 group-data-[inview]/iv:animate-site-resolve-in" style={{ animationDelay: `${750 + i * 450}ms` }}>
-                      <Pill tone="green">{t("rules.applied")}</Pill>
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex flex-col gap-6 rounded-2xl bg-[var(--s-card)] p-7">
-            <div className="rounded-xl bg-white p-4 shadow-[0_16px_40px_-24px_rgba(22,23,29,0.35)]">
-              <p className="text-[12px] text-[var(--s-muted)]">{t("rules.minPlace")}</p>
-              <p className="mt-0.5 text-[24px] font-medium tracking-[-0.03em] tabular-nums">{t("rules.minValue")}</p>
-              <p className="text-[12px] text-[var(--s-muted)]">{t("rules.minFrom")}</p>
-            </div>
-            <div>
-              <h3 className="text-[15px] font-medium">{t("rules.minTitle")}</h3>
-              <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("rules.min")}</p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-6 rounded-2xl bg-[var(--s-card)] p-7">
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-[0_16px_40px_-24px_rgba(22,23,29,0.35)]">
-              <span className="text-[13px] font-medium">{t("rules.holdRow")}</span>
-              <Pill tone="amber">{t("rules.holdPill")}</Pill>
-            </div>
-            <div>
-              <h3 className="text-[15px] font-medium">{t("rules.holdTitle")}</h3>
-              <p className="mt-1 text-[14px] leading-relaxed text-[var(--s-muted)]">{t("rules.hold")}</p>
-            </div>
-          </div>
-        </InView>
-      </Section>
-
-      {/* 9. Dark band: Mercury's row of figures, then its security trio with abstract renders. */}
+      {/* 8. Dark band: Mercury's row of figures, then its security trio with abstract renders. */}
       <section aria-labelledby="security-title" className="overflow-x-clip bg-[var(--s-ink)] px-6 pt-20 pb-28 text-[var(--s-dtext)] md:pb-36">
         <div className="mx-auto w-full max-w-[1200px]">
           <h2 className="sr-only">{t("stats.label")}</h2>
@@ -323,7 +389,7 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
             {t("security.link")}
           </ArrowLink>
 
-          {/* 10. Mercury's centred close with its two pills, and two cards with a round arrow. */}
+          {/* 9. Mercury's centred close with its two pills, and two cards with a round arrow. */}
           <div className="relative isolate mt-36 flex flex-col items-center py-28 text-center">
             {/* Stripe's skewed band of drifting colour, in Tabulado's blue, amber and mint. */}
             <div aria-hidden className="absolute inset-x-[-50vw] inset-y-0 -z-10 -skew-y-6 overflow-hidden">
@@ -364,9 +430,6 @@ export default async function SiteHome({ params }: { params: Promise<{ locale: s
               </a>
             ))}
           </div>
-          <NextLink href={links.pricing} className="sr-only">
-            {t("cycle.cta")}
-          </NextLink>
         </div>
       </section>
 
