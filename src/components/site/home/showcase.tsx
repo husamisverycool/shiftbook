@@ -4,7 +4,9 @@
 // light frame with three dots and a title. And the six bento cards' live product pieces, sample data only.
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { Money, Pill } from "@/components/site/blocks";
+import { Scale } from "lucide-react";
+import { Money } from "@/components/site/blocks";
+import { Avatar, Badge, Btn, Kbd, Ref, Source, Status } from "@/components/site/app/kit";
 import { cn } from "@/lib/utils";
 
 const ART = {
@@ -36,18 +38,18 @@ export function GradientPanel({ tone, children, className }: { tone: "dawn" | "d
   return <div className={cn("site-grain relative isolate overflow-hidden rounded-2xl", fields, className)}>{children}</div>;
 }
 
-/** Cursor's and Attio's window: a light frame, three dots, a title. */
+/** Cursor's and Attio's window: a frame, three dots, a title, the app's own theme inside. */
 export function Window({ title, children, className, dark }: { title: string; children: ReactNode; className?: string; dark?: boolean }) {
   return (
-    <div className={cn("overflow-hidden rounded-xl shadow-[0_30px_60px_-24px_rgba(20,21,28,0.45),0_8px_20px_-12px_rgba(20,21,28,0.25)] ring-1", dark ? "bg-[#101119] text-[#d4d6e4] ring-white/10" : "bg-white text-[var(--s-text)] ring-black/[0.07]", className)}>
-      <div className={cn("flex items-center gap-2 border-b px-3 py-2", dark ? "border-white/[0.07]" : "border-[var(--s-line)] bg-[#fafaf8]")}>
-        <span aria-hidden className="flex gap-1">
-          {[0, 1, 2].map((i) => (
-            <span key={i} className={cn("size-2 rounded-full", dark ? "bg-white/15" : "bg-black/12")} />
+    <div className={cn("site-app overflow-hidden rounded-xl shadow-[0_30px_60px_-24px_rgba(20,21,28,0.45),0_8px_20px_-12px_rgba(20,21,28,0.25)] ring-1", dark ? "site-app-dark ring-white/10" : "ring-black/[0.07]", className)}>
+      <div className="flex h-8 items-center gap-2 border-b border-[var(--a-line)] bg-[var(--a-side)] px-3">
+        <span aria-hidden className="flex gap-1.5">
+          {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
+            <span key={c} className="size-2 rounded-full" style={{ backgroundColor: dark ? "rgb(255 255 255 / 0.15)" : c }} />
           ))}
         </span>
-        <span className={cn("mx-auto truncate text-[10px] font-medium", dark ? "text-white/45" : "text-[var(--s-muted)]")}>{title}</span>
-        <span className="w-6" />
+        <span className="mx-auto truncate text-[10.5px] font-medium text-[var(--a-muted)]">{title}</span>
+        <span className="w-8" />
       </div>
       {children}
     </div>
@@ -55,35 +57,51 @@ export function Window({ title, children, className, dark }: { title: string; ch
 }
 
 /** Bento a — the two readings of one sheet, field by field; the one that differs waits for a person. */
-export function ReadTwiceMock({ l }: { l: { title: string; a: string; b: string; needs: string; ok: string; fields: { label: string; a: string; b: string }[] } }) {
+export function ReadTwiceMock({ l }: { l: { title: string; a: string; b: string; needs: string; ok: string; keep: string; fields: { label: string; a: string; b: string }[] } }) {
   return (
-    <Window title={l.title} className="w-full max-w-[460px]">
-      <div className="grid grid-cols-[minmax(0,1fr)_5rem_5rem_auto] gap-x-3 border-b border-[var(--s-line)] px-4 py-2 text-[10px] text-[var(--s-muted)]">
+    <Window title={l.title} className="w-full max-w-[480px]">
+      <div className="flex items-center gap-2 border-b border-[var(--a-line)] px-4 py-2.5">
+        <Avatar name={l.fields[0]!.a} size={20} />
+        <span className="text-[12.5px] font-semibold">{l.fields[0]!.a}</span>
+        <Source kind="photo" size={18} />
+        <Ref className="ml-auto">IN-316</Ref>
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_3.5rem_3.5rem] sm:grid-cols-[minmax(0,1fr)_4.5rem_4.5rem_6.5rem] gap-x-2 border-b border-[var(--a-line)] bg-[var(--a-panel)] px-4 py-1.5 text-[10.5px] text-[var(--a-faint)]">
         <span />
         <span>{l.a}</span>
         <span>{l.b}</span>
         <span />
       </div>
-      {l.fields.map((f) => {
+      {l.fields.slice(1).map((f) => {
         const same = f.a === f.b;
         return (
-          <div key={f.label} className={cn("grid grid-cols-[minmax(0,1fr)_5rem_5rem_auto] items-center gap-x-3 border-b border-[var(--s-line)] px-4 py-2 text-[12px] last:border-b-0", !same && "bg-amber-50/80")}>
-            <span className="text-[var(--s-muted)]">{f.label}</span>
-            <span className="truncate font-medium tabular-nums">{f.a}</span>
-            <span className={cn("truncate font-medium tabular-nums", !same && "text-amber-800")}>{f.b}</span>
+          <div key={f.label} className={cn("grid h-9 grid-cols-[minmax(0,1fr)_3.5rem_3.5rem] sm:grid-cols-[minmax(0,1fr)_4.5rem_4.5rem_6.5rem] items-center gap-x-2 border-b border-[var(--a-line-2)] px-4 text-[12px] last:border-b-0", !same && "bg-amber-500/[0.07]")}>
+            <span className="flex min-w-0 items-center gap-2 text-[var(--a-muted)]">
+              <Status s={same ? "done" : "check"} />
+              <span className="truncate">{f.label}</span>
+            </span>
+            <span className="font-medium tabular-nums">{f.a}</span>
+            <span className={cn("font-medium tabular-nums", !same && "text-amber-700")}>{f.b}</span>
             {same ? (
-              <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-700">
-                <svg aria-hidden viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 8.5l3 3 7-7" />
-                </svg>
+              <Badge tone="green" className="hidden justify-self-end sm:inline-flex">
                 {l.ok}
-              </span>
+              </Badge>
             ) : (
-              <Pill tone="amber">{l.needs}</Pill>
+              <Badge tone="amber" className="hidden justify-self-end sm:inline-flex">
+                {l.needs}
+              </Badge>
             )}
           </div>
         );
       })}
+      <div className="flex items-center gap-2 border-t border-[var(--a-line)] bg-[var(--a-panel)] px-4 py-2">
+        <Btn primary>
+          {l.keep} 8 <Kbd className="border-white/30 bg-white/15 text-white">1</Kbd>
+        </Btn>
+        <Btn>
+          {l.keep} 6 <Kbd>2</Kbd>
+        </Btn>
+      </div>
     </Window>
   );
 }
@@ -93,17 +111,20 @@ export function PayLineMock({ l }: { l: { title: string; label: string; hours: s
   return (
     <div className="flex w-full max-w-[400px] flex-col gap-3">
       <Window title={l.title}>
-        <div className="flex items-baseline justify-between gap-3 px-4 pt-3 text-[13px]">
-          <span className="font-medium">
-            {l.label} <span className="font-normal text-[var(--s-muted)]">· {l.hours}</span>
-          </span>
-          <Money value={l.amount} className="text-[17px] font-medium" />
+        <div className="flex items-center gap-2 px-4 pt-3 text-[12.5px]">
+          <Status s="done" />
+          <span className="font-semibold">{l.label}</span>
+          <span className="text-[var(--a-muted)]">· {l.hours}</span>
+          <Badge tone="grey" className="ml-1">
+            IL
+          </Badge>
+          <Money value={l.amount} className="ml-auto text-[17px] font-semibold tracking-[-0.02em]" />
         </div>
-        <p className="line-clamp-3 px-4 pt-1 pb-3 text-[11px] leading-snug text-[var(--s-muted)]">{l.explain}</p>
+        <p className="mx-4 mt-2 mb-3 line-clamp-3 border-l-2 border-[var(--a-accent)] pl-2.5 font-mono text-[10px] leading-relaxed text-[var(--a-muted)]">{l.explain}</p>
       </Window>
-      <div className="ml-8 rounded-xl bg-[var(--s-ink)] px-4 py-3 text-[11px] leading-snug text-white/85 shadow-[0_20px_40px_-16px_rgba(20,21,28,0.6)]">
-        <span className="mr-1.5 inline-flex rounded-full bg-white/12 px-2 py-0.5 text-[10px] font-medium text-white">§</span>
-        {l.law}
+      <div className="site-app site-app-dark ml-8 flex gap-2.5 rounded-xl px-3.5 py-3 text-[11px] leading-snug shadow-[0_20px_40px_-16px_rgba(20,21,28,0.6)] ring-1 ring-white/10">
+        <Scale aria-hidden className="mt-px size-3.5 shrink-0 text-[var(--a-accent)]" />
+        <span className="text-[var(--a-text)]/85">{l.law}</span>
       </div>
     </div>
   );
@@ -113,7 +134,7 @@ export function PayLineMock({ l }: { l: { title: string; label: string; hours: s
 export function FileMock({ filename, lines }: { filename: string; lines: string[] }) {
   return (
     <Window title={filename} dark className="w-full max-w-[520px]">
-      <pre className="overflow-hidden px-4 py-3 font-mono text-[10.5px] leading-[1.9]">
+      <pre className="overflow-hidden bg-[var(--a-bg)] px-4 py-3 font-mono text-[10.5px] leading-[1.9]">
         {lines.map((line, i) => (
           <span key={i} className="flex">
             <span aria-hidden className="mr-3 w-3 shrink-0 text-right text-white/25 select-none">

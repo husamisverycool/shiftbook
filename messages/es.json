@@ -7921,6 +7921,178 @@
       "a4": "Descargue primero sus archivos de nómina, facturas e informes; luego pídanos borrar la agencia y sus registros.",
       "closingTitle": "Véalo usted mismo.",
       "eyebrow": "Seguridad"
+    },
+    "app": {
+      "nav": {
+        "search": "Buscar",
+        "home": "Inicio",
+        "inbox": "Bandeja",
+        "check": "Por revisar",
+        "payroll": "Nómina",
+        "weeks": "Semanas",
+        "payRuns": "Nóminas semanales",
+        "files": "Archivos de nómina",
+        "billing": "Cobro",
+        "approvals": "Aprobaciones de clientes",
+        "invoices": "Facturas",
+        "staffing": "Personal",
+        "workers": "Trabajadores",
+        "clients": "Clientes",
+        "schedule": "Horario",
+        "role": "Nómina"
+      },
+      "common": {
+        "filter": "Filtrar",
+        "display": "Vista",
+        "all": "Todo",
+        "week": "Semana del 5 oct"
+      },
+      "inbox": {
+        "s1": "Horas del muelle 3, semana del 5 oct",
+        "s2": "Mensaje: \"El miércoles salí a las 2, 6 h\"",
+        "s3": "2 fotos del jefe de línea",
+        "s4": "Exportación del reloj checador, 14 personas",
+        "s5": "Horas capturadas en el portal del cliente",
+        "s6": "Horas_sem41.xlsx",
+        "received": "recibido a las {time}",
+        "whatWeRead": "Lo que se leyó",
+        "reading": "Leyendo dos veces…",
+        "readTwice": "Leído dos veces · {agree} de {total} coinciden",
+        "sure": "Certeza",
+        "workers": "{count, plural, one {# trabajador} other {# trabajadores}}",
+        "reply": "Responder",
+        "addToWeek": "Agregar a la semana"
+      },
+      "week": {
+        "worker": "Trabajador",
+        "total": "Horas",
+        "days": "L M X J V S D",
+        "runPay": "Calcular el pago",
+        "byClient": "Por cliente",
+        "assignment": "Operador de montacargas · Muelle 3",
+        "client": "Cliente",
+        "state": "Estado",
+        "payRate": "Tarifa de pago",
+        "billRate": "Tarifa de cobro",
+        "sources": "Origen",
+        "activity": "Actividad",
+        "ev1": "Envió las horas del viernes por correo",
+        "ev2": "Dos lecturas del viernes difieren: 8 y 6",
+        "ev3": "{who} dejó 8",
+        "now": "ahora",
+        "differ": "Dos lecturas del viernes difieren",
+        "read1": "Primera lectura",
+        "read2": "Segunda lectura",
+        "keep": "Dejar {n}",
+        "keepShort": "Dejar"
+      },
+      "pay": {
+        "workers": "Trabajadores",
+        "hours": "Horas",
+        "gross": "Pago bruto",
+        "overtime": "Horas extra",
+        "state": "Estado",
+        "reg": "Normales",
+        "ot": "Extra",
+        "dt": "Dobles",
+        "ready": "Lista",
+        "working": "Calculando",
+        "makeFile": "Preparar archivo de nómina"
+      },
+      "approvals": {
+        "remind": "Recordar",
+        "approved": "Aprobado",
+        "opened": "Abierto",
+        "sent": "Enviado",
+        "waiting": "En espera",
+        "clientSees": "Lo que ve el cliente",
+        "more": "y {count} más",
+        "approve": "Aprobar estas horas",
+        "approvedBy": "Aprobado por {who}",
+        "note": "Aprobar es un clic desde el correo. Nadie necesita una cuenta."
+      },
+      "invoices": {
+        "send": "Enviar",
+        "approved": "Horas aprobadas",
+        "draft": "Borrador",
+        "sent": "Enviada",
+        "paid": "Pagada",
+        "invoice": "Factura",
+        "billTo": "Facturar a",
+        "period": "Periodo",
+        "what": "Descripción",
+        "hours": "Horas",
+        "rate": "Tarifa",
+        "amount": "Importe",
+        "l1": "Operadores de montacargas",
+        "l2": "Operadores de montacargas, horas extra",
+        "l3": "Surtidores y empacadores",
+        "backup": "Horas aprobadas adjuntas",
+        "due": "Importe a pagar"
+      },
+      "file": {
+        "download": "Descargar",
+        "ready": "Listo para importar",
+        "c1": "{count} trabajadores vinculados en {system}",
+        "c2": "Pago bruto {amount}",
+        "c3": "{system} mostrará {amount}",
+        "c4": "Diferencia de {amount}: redondeo, explicado en el archivo",
+        "how": "Cómo importar en {system}",
+        "workers": "Trabajadores en el archivo",
+        "gross": "Pago bruto",
+        "theirs": "{system} mostrará",
+        "difference": "Diferencia"
+      },
+      "palette": {
+        "placeholder": "Escriba un comando o busque…",
+        "goTo": "Ir a",
+        "actions": "Acciones",
+        "g1": "Semana del 5 oct",
+        "g2": "Por revisar (1)",
+        "a1": "Calcular el pago de la semana",
+        "a2": "Preparar el archivo de nómina",
+        "a3": "Enviar horas a los clientes para aprobar",
+        "move": "mover",
+        "open": "abrir"
+      },
+      "hero": {
+        "inbox": "Llegan las horas",
+        "inboxBody": "Correos, mensajes, fotos y exportaciones del reloj, en una sola bandeja, cada uno leído dos veces.",
+        "check": "Usted revisa una cosa",
+        "checkBody": "Donde las dos lecturas difieren, la semana lo espera a usted.",
+        "pay": "El pago se calcula solo",
+        "payBody": "Las horas extra de cada estado, cada línea con su razón.",
+        "file": "Se escribe el archivo",
+        "fileBody": "En el formato que importa su sistema de nómina."
+      },
+      "tour": {
+        "title": "Una semana, de principio a fin.",
+        "titleMuted": "Las seis pantallas por las que pasa su lunes, en su orden.",
+        "inbox": {
+          "name": "Bandeja",
+          "body": "Los clientes envían las horas como siempre. Cada correo, mensaje, foto o exportación llega aquí y se lee dos veces."
+        },
+        "check": {
+          "name": "Por revisar",
+          "body": "Donde las dos lecturas coinciden, las horas entran. Donde difieren, la celda lo espera a usted, con las dos lecturas lado a lado."
+        },
+        "pay": {
+          "name": "Nómina semanal",
+          "body": "Horas extra, horas dobles y lo demás, calculado según el estado de cada trabajador, cada línea con la regla y la aritmética."
+        },
+        "approve": {
+          "name": "Aprobaciones de clientes",
+          "body": "Cada cliente recibe por correo las horas de su gente y las aprueba con un clic. Usted ve quién abrió, quién aprobó y cuándo."
+        },
+        "invoice": {
+          "name": "Facturas",
+          "body": "Una factura por cliente con las mismas horas aprobadas, a sus tarifas de cobro, con la aprobación adjunta."
+        },
+        "file": {
+          "name": "Archivo de nómina",
+          "body": "La semana como archivo para Gusto, ADP, RUN, Paychex o Paylocity, con sus totales revisados antes de descargarlo."
+        }
+      }
     }
   }
 }

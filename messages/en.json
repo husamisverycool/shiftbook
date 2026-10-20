@@ -7921,6 +7921,178 @@
       "a4": "Download your payroll files, invoices and reports first; then ask us to delete the agency and its records.",
       "closingTitle": "See it for yourself.",
       "eyebrow": "Security"
+    },
+    "app": {
+      "nav": {
+        "search": "Search",
+        "home": "Home",
+        "inbox": "Inbox",
+        "check": "To check",
+        "payroll": "Payroll",
+        "weeks": "Weeks",
+        "payRuns": "Pay runs",
+        "files": "Payroll files",
+        "billing": "Billing",
+        "approvals": "Client approvals",
+        "invoices": "Invoices",
+        "staffing": "Staffing",
+        "workers": "Workers",
+        "clients": "Clients",
+        "schedule": "Schedule",
+        "role": "Payroll"
+      },
+      "common": {
+        "filter": "Filter",
+        "display": "Display",
+        "all": "All",
+        "week": "Week of Oct 5"
+      },
+      "inbox": {
+        "s1": "Dock 3 hours, week of Oct 5",
+        "s2": "Text: \"Wed I left at 2, 6 hrs\"",
+        "s3": "2 photos from the line lead",
+        "s4": "Time clock export, 14 people",
+        "s5": "Hours entered in the client portal",
+        "s6": "Hours_wk41.xlsx",
+        "received": "received {time}",
+        "whatWeRead": "What was read",
+        "reading": "Reading it twice…",
+        "readTwice": "Read twice · {agree} of {total} agree",
+        "sure": "Sure",
+        "workers": "{count, plural, one {# worker} other {# workers}}",
+        "reply": "Reply",
+        "addToWeek": "Add to the week"
+      },
+      "week": {
+        "worker": "Worker",
+        "total": "Hours",
+        "days": "M T W T F S S",
+        "runPay": "Work out pay",
+        "byClient": "By client",
+        "assignment": "Forklift operator · Dock 3",
+        "client": "Client",
+        "state": "State",
+        "payRate": "Pay rate",
+        "billRate": "Bill rate",
+        "sources": "From",
+        "activity": "Activity",
+        "ev1": "Sent Friday's hours by email",
+        "ev2": "Two readings of Friday differ: 8 and 6",
+        "ev3": "{who} kept 8",
+        "now": "now",
+        "differ": "Two readings of Friday differ",
+        "read1": "First reading",
+        "read2": "Second reading",
+        "keep": "Keep {n}",
+        "keepShort": "Keep"
+      },
+      "pay": {
+        "workers": "Workers",
+        "hours": "Hours",
+        "gross": "Gross pay",
+        "overtime": "Overtime",
+        "state": "State",
+        "reg": "Regular",
+        "ot": "Overtime",
+        "dt": "Double",
+        "ready": "Ready",
+        "working": "Working out",
+        "makeFile": "Make payroll file"
+      },
+      "approvals": {
+        "remind": "Remind",
+        "approved": "Approved",
+        "opened": "Opened",
+        "sent": "Sent",
+        "waiting": "Waiting",
+        "clientSees": "What the client sees",
+        "more": "and {count} more",
+        "approve": "Approve these hours",
+        "approvedBy": "Approved by {who}",
+        "note": "Approving takes one click from the email. Nobody needs an account."
+      },
+      "invoices": {
+        "send": "Send",
+        "approved": "Hours approved",
+        "draft": "Draft",
+        "sent": "Sent",
+        "paid": "Paid",
+        "invoice": "Invoice",
+        "billTo": "Bill to",
+        "period": "Period",
+        "what": "Description",
+        "hours": "Hours",
+        "rate": "Rate",
+        "amount": "Amount",
+        "l1": "Forklift operators",
+        "l2": "Forklift operators, overtime",
+        "l3": "Pickers and packers",
+        "backup": "Approved hours attached",
+        "due": "Amount due"
+      },
+      "file": {
+        "download": "Download",
+        "ready": "Ready to import",
+        "c1": "{count} workers matched to {system}",
+        "c2": "Gross pay {amount}",
+        "c3": "{system} will show {amount}",
+        "c4": "Difference {amount}: rounding, explained in the file",
+        "how": "How to import into {system}",
+        "workers": "Workers in the file",
+        "gross": "Gross pay",
+        "theirs": "{system} will show",
+        "difference": "Difference"
+      },
+      "palette": {
+        "placeholder": "Type a command or search…",
+        "goTo": "Go to",
+        "actions": "Actions",
+        "g1": "Week of Oct 5",
+        "g2": "To check (1)",
+        "a1": "Work out pay for the week",
+        "a2": "Make the payroll file",
+        "a3": "Send hours to clients for approval",
+        "move": "move",
+        "open": "open"
+      },
+      "hero": {
+        "inbox": "Hours come in",
+        "inboxBody": "Email, texts, photos, clock exports, all in one inbox, each read twice.",
+        "check": "You check one thing",
+        "checkBody": "Where the two readings differ, the week waits for you.",
+        "pay": "Pay works itself out",
+        "payBody": "Each state's overtime, each line with its reason.",
+        "file": "The file is written",
+        "fileBody": "In the format your payroll system imports."
+      },
+      "tour": {
+        "title": "One week, start to finish.",
+        "titleMuted": "Six screens your Monday goes through, in the order it does.",
+        "inbox": {
+          "name": "Inbox",
+          "body": "Clients send hours the way they always have. Each email, text, photo or export lands here and is read twice."
+        },
+        "check": {
+          "name": "To check",
+          "body": "Where the two readings agree, the hours go in. Where they differ, the cell waits for you, with both readings side by side."
+        },
+        "pay": {
+          "name": "Pay run",
+          "body": "Overtime, double time and the rest worked out for each worker's state, every line with the rule and the arithmetic."
+        },
+        "approve": {
+          "name": "Client approvals",
+          "body": "Each client gets their people's hours by email and approves with one click. You see who opened, who approved, and when."
+        },
+        "invoice": {
+          "name": "Invoices",
+          "body": "One invoice per client from the same approved hours, at their bill rates, with the approval attached."
+        },
+        "file": {
+          "name": "Payroll file",
+          "body": "The week as a file for Gusto, ADP, RUN, Paychex or Paylocity, with its totals checked before you download it."
+        }
+      }
     }
   }
 }

@@ -39,15 +39,15 @@ function Rays() {
 
 export function IndigoBand({ title, titleLine2, stats, label }: { title: string; titleLine2: string; label: string; stats: { value: string; label: string }[] }) {
   return (
-    <section aria-labelledby="indigo-title" className="relative overflow-hidden bg-[linear-gradient(180deg,#1b1f5e_0%,#2a2f8f_55%,#3b3fb3_100%)] px-6 pt-28 text-white md:pt-36">
+    <section aria-labelledby="indigo-title" data-tone="indigo" className="relative overflow-hidden bg-[linear-gradient(180deg,transparent_0%,rgba(42,47,143,0.6)_55%,#3b3fb3_100%)] px-6 pt-28 text-white md:pt-36">
       <div className="mx-auto w-full max-w-[1200px] text-center">
-        <h2 id="indigo-title" className="text-[clamp(2rem,2.8vw+1rem,3.5rem)] leading-[1.08] font-[450] tracking-[-0.035em]">
+        <h2 id="indigo-title" className="site-reveal text-[clamp(2rem,2.8vw+1rem,3.5rem)] leading-[1.08] font-[450] tracking-[-0.035em]">
           {title}
           <br />
           {titleLine2}
         </h2>
         <h3 className="sr-only">{label}</h3>
-        <dl className="mt-14 grid grid-cols-2 border-y border-white/12 md:grid-cols-4">
+        <dl className="site-reveal mt-14 grid [--reveal-delay:150ms] grid-cols-2 border-y border-white/12 md:grid-cols-4">
           {stats.map((s, i) => (
             <div key={s.label} className={cn("flex flex-col-reverse items-center gap-2 px-4 py-8", i > 0 && "md:border-l md:border-white/12", i % 2 === 1 && "border-l border-white/12")}>
               <dt className="max-w-[18ch] text-[13px] leading-snug text-white/65">{s.label}</dt>
@@ -57,7 +57,9 @@ export function IndigoBand({ title, titleLine2, stats, label }: { title: string;
         </dl>
       </div>
       <div className="mx-auto -mt-2 w-full max-w-[1200px]">
-        <Rays />
+        <div data-parallax="-0.08" className="site-parallax">
+          <Rays />
+        </div>
       </div>
     </section>
   );
