@@ -1,9 +1,15 @@
 // Pattern: docs/patterns/_layouts/site.md — Mercury's fixed header over each page's dark opening band,
 // Mercury's dark footer with its footnotes (rendered by each page, which knows its own address).
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
+import { siteHosts } from "@/lib/site-routing";
 import { SiteHeader } from "@/components/site/site-header";
 import { siteLinks } from "@/server/site/context";
+
+// Link previews (the share image) need the website's own address, not the server's.
+const host = siteHosts(process.env.SHIFTBOOK_SITE_HOSTS)[0];
+export const metadata: Metadata = host ? { metadataBase: new URL(`https://${host}`) } : {};
 
 export default async function SiteLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params;
